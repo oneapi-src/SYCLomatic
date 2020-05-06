@@ -15,6 +15,13 @@ int main() {
   return 0;
 }
 
+template<typename T>
+class M{};
+// CHECK: void foo(const M<sycl::float2>& in) {
+void foo(const M<float2>& in) {
+}
+
+
 // CHECK: template<typename T>
 // CHECK: void kernel(T* in, T* out,
 // CHECK: sycl::nd_item<3> [[ITEM:item_ct1]]) {

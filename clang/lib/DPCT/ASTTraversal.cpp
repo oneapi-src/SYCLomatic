@@ -2019,7 +2019,6 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   if (DupFilter.find(Loc) != DupFilter.end())
     return;
-
   // std::vector<stream type> is elaborated to
   // std::vector<stream type *, std::allocator<stream type *>>
   bool isElaboratedType = false;
@@ -2044,7 +2043,7 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       if (DD) {
         DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
       } else if (TL) {
-        DTL = *TL;
+        DTL = TL->getUnqualifiedLoc();
       }
       TemplateSpecializationTypeLoc TTTL;
       if (isElaboratedType) {
