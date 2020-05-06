@@ -26,10 +26,12 @@ __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image<PlaceHolder/*Fix the type mannually*/, 1> *>(gridTexObj)->get_access(cgh);
 // CHECK-EMPTY:
+// CHECK-NEXT:      auto gridTexObj_smpl = gridTexObj->get_sampler();
+// CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class gather_force_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          gather_force(gridTexObj_acc);
+// CHECK-NEXT:          gather_force(dpct::image_accessor<PlaceHolder/*Fix the type mannually*/, 1>(gridTexObj_smpl, gridTexObj_acc));
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT: }
@@ -165,10 +167,13 @@ int main() {
   // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::image<sycl::uint2, 1> *>(tex21)->get_access(cgh);
   // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::image<sycl::float4, 2> *>(tex42)->get_access(cgh);
   // CHECK-EMPTY:
+  // CHECK-NEXT:     auto tex21_smpl = tex21->get_sampler();
+  // CHECK-NEXT:     auto tex42_smpl = tex42->get_sampler();
+  // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel(tex21_acc, tex42_acc);
+  // CHECK-NEXT:         kernel(dpct::image_accessor<sycl::uint2, 1>(tex21_smpl, tex21_acc), dpct::image_accessor<sycl::float4, 2>(tex42_smpl, tex42_acc));
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel<<<1, 1>>>(tex21, tex42);

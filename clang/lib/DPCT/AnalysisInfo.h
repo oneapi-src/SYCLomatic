@@ -1413,6 +1413,9 @@ public:
     return PS.Str;
   }
 
+  virtual std::string getSamplerDecl() {
+    return buildString("auto ", Name, "_smpl = ", Name, ".get_sampler();");
+  }
   virtual std::string getAccessorDecl() {
     return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
   }
@@ -1423,8 +1426,10 @@ public:
   inline ParameterStream &getFuncArg(ParameterStream &PS) {
     return PS << Name;
   }
-  inline ParameterStream &getKernelArg(ParameterStream &PS) {
-    return PS << Name << "_acc";
+  inline ParameterStream &getKernelArg(ParameterStream &OS) {
+    getType()->printType(OS, "dpct::image_accessor");
+    OS << "(" << Name << "_smpl, " << Name << "_acc)";
+    return OS;
   }
   inline const std::string &getName() { return Name; }
 
@@ -1452,6 +1457,9 @@ public:
     getType()->printType(PS, "dpct::image")
         << " *>(" << Name << ")->get_access(cgh);";
     return PS.Str;
+  }
+  std::string getSamplerDecl() override {
+    return buildString("auto ", Name, "_smpl = ", Name, "->get_sampler();");
   }
   inline unsigned getParamIdx() const { return ParamIdx; }
 
@@ -2046,7 +2054,7 @@ private:
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index, KernelCallExpr* BASE)
         : IsPointer(false), IsRedeclareRequired(false),
-          IsUsedAsLvalueAfterMalloc(Used), Index(Index), Base(BASE) {
+          IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
@@ -2065,13 +2073,13 @@ private:
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
       }
 
-      if (IsRedeclareRequired || IsPointer || Base->IsInMacroDefine) {
-        IdString = getTempNameForExpr(Arg, false, true, Base->IsInMacroDefine);
+      if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
+        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine);
       }
     }
 
-    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr* BASE): Base(BASE) {
-      ArgString = Obj->getName() + "_acc";
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
+        : Texture(Obj) {
       IsPointer = false;
       IsRedeclareRequired = false;
       TypeString = "";
@@ -2096,7 +2104,8 @@ private:
     std::string TypeString;
     std::string IdString;
     int Index;
-    KernelCallExpr *Base;
+
+    std::shared_ptr<TextureObjectInfo> Texture;
   };
 
   class KernelPrinter {
@@ -2293,6 +2302,7 @@ private:
     StmtList PtrList;
     StmtList AccessorList;
     StmtList TextureList;
+    StmtList SamplerList;
     StmtList NdRangeList;
     StmtList CommandGroupList;
 
@@ -2304,7 +2314,8 @@ private:
                 "ranges used for accessors to device memory");
       printList(Printer, PtrList, "pointers to device memory");
       printList(Printer, AccessorList, "accessors to device memory");
-      printList(Printer, TextureList, "accessors to image wrappers");
+      printList(Printer, TextureList, "accessors to image objects");
+      printList(Printer, SamplerList, "sampler of image objects");
       printList(Printer, NdRangeList,
                 "ranges to define ND iteration space for the kernel");
       printList(Printer, CommandGroupList, "helper variables defined");

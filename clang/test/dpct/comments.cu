@@ -48,8 +48,11 @@ int main() {
 // CHECK-NEXT:          sycl::accessor<int, 2, sycl::access::mode::read_write, sycl::access::target::local> b_acc_ct1(b_range_ct1, cgh);
 // CHECK-NEXT:          auto b_acc_ct1 = b.get_access(cgh);
 // CHECK-EMPTY:  
-// CHECK-NEXT:          // accessors to image wrappers
+// CHECK-NEXT:          // accessors to image objects
 // CHECK-NEXT:          auto tex21_acc = tex21.get_access(cgh);
+// CHECK-EMPTY:  
+// CHECK-NEXT:          // sampler of image objects
+// CHECK-NEXT:          auto tex21_smpl = tex21.get_sampler();
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // ranges to define ND iteration space for the kernel
 // CHECK-NEXT:          auto dpct_global_range = griddim * threaddim;
@@ -58,7 +61,7 @@ int main() {
 // CHECK-NEXT:          cgh.parallel_for(
 // CHECK-NEXT:            sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
 // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, c_acc_ct1.get_pointer(), a_ptr_ct1, dpct::accessor<int, dpct::local, 2>(b_acc_ct1, b_range_ct1), tex21_acc);
+// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, c_acc_ct1.get_pointer(), a_ptr_ct1, dpct::accessor<int, dpct::local, 2>(b_acc_ct1, b_range_ct1), dpct::image_accessor<sycl::uint2, 1>(tex21_smpl, tex21_acc));
 // CHECK-NEXT:            });
 // CHECK-NEXT:        });
     kernel<<<griddim, threaddim>>>();

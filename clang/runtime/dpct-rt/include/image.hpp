@@ -253,6 +253,13 @@ public:
   inline bool &coord_normalized() {
     return _normalized;
   }
+  cl::sycl::sampler get_sampler() {
+    return cl::sycl::sampler(
+        coord_normalized()
+            ? cl::sycl::coordinate_normalization_mode::normalized
+            : cl::sycl::coordinate_normalization_mode::unnormalized,
+        addr_mode(), filter_mode());
+  }
 };
 
 /// Image base class.
@@ -302,16 +309,11 @@ public:
 
 public:
   using acc_data_t = typename image_trait<T>::acc_data_t;
+  using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
   // Get image accessor.
-  image_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
-    return image_accessor<T, Dimension>(
-        cl::sycl::sampler(
-            coord_normalized()
-                ? cl::sycl::coordinate_normalization_mode::normalized
-                : cl::sycl::coordinate_normalization_mode::unnormalized,
-            addr_mode(), filter_mode()),
-        _image->template get_access<acc_data_t, cl::sycl::access::mode::read>(
-            cgh));
+  accessor_t get_access(cl::sycl::handler &cgh) {
+    return _image
+        ->template get_access<acc_data_t, cl::sycl::access::mode::read>(cgh);
   }
   // Set data info, attach the data to this class.
   void set_data(image_data *data) override {

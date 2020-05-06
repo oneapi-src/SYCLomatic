@@ -192,8 +192,10 @@ void KernelCallExpr::addAccessorDecl() {
   }
   addAccessorDecl(MemVarInfo::Local);
   addAccessorDecl(MemVarInfo::Global);
-  for (auto &Tex : VM.getTextureMap())
+  for (auto &Tex : VM.getTextureMap()) {
     SubmitStmtsList.TextureList.emplace_back(Tex.second->getAccessorDecl());
+    SubmitStmtsList.SamplerList.emplace_back(Tex.second->getSamplerDecl());
+  }
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
       if (!Tex->getType()) {
@@ -201,6 +203,7 @@ void KernelCallExpr::addAccessorDecl() {
         Tex->setType("PlaceHolder/*Fix the type mannually*/", 1);
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
+      SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
     }
   }
 }
@@ -290,6 +293,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
       SubmitStmtsList.CommandGroupList.emplace_back(ReDeclStr);
       KernelArgs += Arg.getIdStringWithIndex();
+    } else if (Arg.Texture) {
+      ParameterStream OS;
+      Arg.Texture->getKernelArg(OS);
+      KernelArgs += OS.Str;
     } else {
       KernelArgs += Arg.getArgString();
     }

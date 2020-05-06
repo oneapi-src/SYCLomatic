@@ -98,10 +98,13 @@ int main() {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);
   // CHECK-EMPTY:
+  // CHECK-NEXT:         auto tex42_smpl = tex42.get_sampler();
+  // CHECK-NEXT:         auto tex21_smpl = tex21.get_sampler();
+  // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:               kernel(tex42_acc, tex21_acc);
+  // CHECK-NEXT:               kernel(dpct::image_accessor<sycl::float4, 2>(tex42_smpl, tex42_acc), dpct::image_accessor<sycl::uint2, 1>(tex21_smpl, tex21_acc));
   // CHECK-NEXT:             });
   // CHECK-NEXT:       });
   kernel<<<1, 1>>>();

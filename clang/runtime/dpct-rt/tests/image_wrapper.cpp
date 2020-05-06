@@ -7,21 +7,26 @@ dpct::image<cl::sycl::float4, 2> tex42;
 dpct::image<cl::sycl::float2, 1> tex21;
 dpct::image<unsigned short, 3> tex13;
 
-void test_image(dpct::image_accessor<cl::sycl::float4, 2> acc42,
+void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2> acc42,
                   dpct::image_accessor<cl::sycl::float2, 1> acc21,
                   dpct::image_accessor<unsigned short, 3> acc13) {
-  cl::sycl::float4 data42 = dpct::read_image(acc42, 1.0f, 1.0f);
-  unsigned short data13 = dpct::read_image(acc13, 1.0f, 1.0f, 1.0f);
-  cl::sycl::float2 data32 = dpct::read_image(acc21, 1.0f);
-
+  out[0] = dpct::read_image(acc42, 0.5f, 0.5f);
+  unsigned short data13 = dpct::read_image(acc13, 0.5f, 0.5f, 0.5f);
+  cl::sycl::float2 data32 = dpct::read_image(acc21, 0.5f);
+  out[1].x() = data32.y() * data13;
 }
 
 int main() {
 
   cl::sycl::float4 *host_buffer = new cl::sycl::float4[640 * 480 * 24];
+
+  for(int i = 0; i < 640 * 480 * 24; ++i) {
+	  host_buffer[i] = sycl::float4{10.0f, 10.0f, 10.0f, 10.0f};
+  }
   cl::sycl::float4 *device_buffer;
   dpct::dpct_malloc(&device_buffer,
                       640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy(device_buffer, host_buffer, 640 * 480 * 24 * sizeof(sycl::float4));
 
   dpct::image_channel chn1 =
       dpct::create_image_channel(16, 0, 0, 0, dpct::channel_unsigned);
@@ -59,15 +64,33 @@ int main() {
   tex21.filter_mode()=cl::sycl::filtering_mode::linear;
   tex13.filter_mode()=cl::sycl::filtering_mode::linear;
 
+  sycl::float4 d[32];
+  for(int i = 0; i < 32; ++i) {
+	  d[i] = sycl::float4{1.0f, 1.0f, 1.0f, 1.0f};
+  }
   {
+    sycl::buffer<sycl::float4, 1> buf(d, sycl::range<1>(32));
     dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
       auto acc42 = tex42.get_access(cgh);
       auto acc13 = tex13.get_access(cgh);
       auto acc21 = tex21.get_access(cgh);
-      cgh.single_task<dpct_kernel_name<class dpct_single_kernel>>(
-          [=] { test_image(acc42, acc21, acc13); });
+
+      auto smpl42 = tex42.get_sampler();
+      auto smpl13 = tex13.get_sampler();
+      auto smpl21 = tex21.get_sampler();
+
+      auto acc_out = buf.get_access<sycl::access::mode::read_write, sycl::access::target::global_buffer>(cgh);
+
+      cgh.single_task<dpct_kernel_name<class dpct_single_kernel>>([=] {
+        test_image(acc_out.get_pointer(),dpct::image_accessor<cl::sycl::float4, 2>(smpl42, acc42),
+                   dpct::image_accessor<cl::sycl::float2, 1>(smpl21, acc21),
+                   dpct::image_accessor<unsigned short, 3>(smpl13, acc13));
+      });
     });
   }
+
+  printf("d[0]: x[%f] y[%f] z[%f] w[%f]\n", d[0].x(), d[0].y(), d[0].z(), d[0].w());
+  printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
   dpct::detach_image(tex42);
   dpct::detach_image(tex21);
