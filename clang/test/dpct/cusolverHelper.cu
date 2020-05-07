@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     // CHECK: /*
     // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCreate was replaced with 0, because this call is redundant in DPC++.
     // CHECK-NEXT: */
-    // CHECK-NEXT: status = 0;
+    // CHECK: status = 0;
     status = MACRO_A(cusolverH);
 
     // CHECK: /*

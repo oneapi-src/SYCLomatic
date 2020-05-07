@@ -86,6 +86,16 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
 
+  size_t i;
+  // Record all macro define locations
+  for (i = 0; i < MD->getMacroInfo()->getNumTokens(); i++) {
+    std::shared_ptr<dpct::DpctGlobalInfo::MacroDefRecord> R =
+      std::make_shared<dpct::DpctGlobalInfo::MacroDefRecord>(
+        MacroNameTok.getLocation(), IsInRoot);
+    dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc()[SM.getCharacterData(
+        MD->getMacroInfo()->getReplacementToken(i).getLocation())] = R;
+  }
+
   if (!IsInRoot) {
     return;
   }
@@ -124,7 +134,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (MD.getMacroInfo()->getNumTokens() > 0) {
     if (dpct::DpctGlobalInfo::getMacroDefines().find(MD.getMacroInfo()) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
-      // Record all macro definition
+      // Record all processed macro definition
       dpct::DpctGlobalInfo::getMacroDefines()[MD.getMacroInfo()] = true;
       size_t i;
       // Record all tokens in the macro definition
@@ -6207,13 +6217,13 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cusolverDnZgetrf_bufferSize") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+      report(CE, Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, "0"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+      report(CE, Diagnostics::FUNC_CALL_REMOVED, false,
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,

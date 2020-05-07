@@ -218,9 +218,43 @@ protected:
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
   void report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
+      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+        SM.getCharacterData(SM.getImmediateSpellingLoc(SL)));
+      if (ItMatch != dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+        if (ItMatch->second->IsInRoot){
+          SL = ItMatch->second->NameTokenLoc;
+        }
+      }
+    }
     DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
                                           TransformSet, UseTextBegin,
                                           std::forward<Ts>(Vals)...);
+  }
+
+  // Extend version of report()
+  // Pass Stmt to process macro more precisely.
+  // The location should be consistent with the result of ReplaceStmt::getReplacement
+  template <typename IDTy, typename... Ts>
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    SourceLocation Begin(S->getBeginLoc());
+    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
+      if (SM.isMacroArgExpansion(Begin)) {
+        Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      }
+      else {
+        Begin = SM.getSpellingLoc(Begin);
+      }
+    }
+    else {
+      Begin = SM.getExpansionLoc(Begin);
+    }
+
+    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, getCompilerInstance(),
+      TransformSet, UseTextBegin,
+      std::forward<Ts>(Vals)...);
   }
 
   /// Dereference.

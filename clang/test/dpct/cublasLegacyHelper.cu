@@ -18,12 +18,18 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
     }
 }
 
-// CHECK: #define MACRO_A 0
+// CHECK: /*
+// CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0, because this call is redundant in DPC++.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define MACRO_A 0
 #define MACRO_A cublasInit()
 
 #define MACRO_B(status) (status)
 
-// CHECK: #define MACRO_C(pointer) status = (dpct::dpct_free(d_A), 0)
+// CHECK: /*
+// CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define MACRO_C(pointer) status = (dpct::dpct_free(d_A), 0)
 #define MACRO_C(pointer) status = cublasFree(d_A)
 
 void foo2(cublasStatus){}
@@ -135,9 +141,6 @@ int main() {
   // CHECK-NEXT: MACRO_B(0);
   MACRO_B(cublasGetError());
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
   MACRO_C(d_A);
 
   // CHECK: /*

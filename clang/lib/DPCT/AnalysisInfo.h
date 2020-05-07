@@ -424,6 +424,14 @@ public:
     return Info;
   }
 
+  class MacroDefRecord {
+  public:
+    SourceLocation NameTokenLoc;
+    bool IsInRoot;
+    MacroDefRecord(SourceLocation NTL, bool IIR)
+        : NameTokenLoc(NTL), IsInRoot(IIR) {}
+  };
+
   class MacroExpansionRecord {
   public:
     std::string Name;
@@ -853,6 +861,11 @@ public:
     return ExpansionRangeToMacroRecord;
   }
 
+  static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+      &getMacroTokenToMacroDefineLoc() {
+    return MacroTokenToMacroDefineLoc;
+  }
+
   static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
@@ -974,6 +987,8 @@ private:
   static std::map<const char *,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
+  static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+      MacroTokenToMacroDefineLoc;
   static std::map<MacroInfo *, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;

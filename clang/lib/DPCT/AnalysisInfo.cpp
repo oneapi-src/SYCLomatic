@@ -40,6 +40,8 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+    DpctGlobalInfo::MacroTokenToMacroDefineLoc;
 std::map<MacroInfo *, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
