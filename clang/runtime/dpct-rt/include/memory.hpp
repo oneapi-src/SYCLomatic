@@ -53,7 +53,6 @@ enum memory_attribute {
   local,
   shared,
 };
-#define DPCT_USE_PARALLEL_MEMCOPY 1
 
 // Byte type to use.
 typedef uint8_t byte_t;
@@ -340,6 +339,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     }
     break;
   }
+  bool is_cpu=get_current_device().is_cpu();
 
   switch (real_direction) {
   case host_to_host:
@@ -348,74 +348,91 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
   case host_to_device: {
     auto alloc = mm.translate_ptr(to_ptr);
     size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
-    #ifdef DPCT_USE_PARALLEL_MEMCOPY
-    buffer_t from_buffer((byte_t *)from_ptr, cl::sycl::range<1>(size), {cl::sycl::property::buffer::use_host_ptr()});
-    #endif
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      #ifdef DPCT_USE_PARALLEL_MEMCOPY
-      auto from_acc = from_buffer.get_access<cl::sycl::access::mode::read>(cgh);
-      #endif
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
-                         cl::sycl::access::target::global_buffer>
-          acc(alloc.buffer, cgh, r, o);
-      #ifdef DPCT_USE_PARALLEL_MEMCOPY
-      cgh.parallel_for<class memcopyh2d>(r, [=](cl::sycl::id<1> idx) {
-        acc[idx] = from_acc[idx];
-        });
-      #else
-      cgh.copy(from_ptr, acc);
-      #endif
-    });
+    if(is_cpu) {
+      buffer_t from_buffer((byte_t *)from_ptr, cl::sycl::range<1>(size), {cl::sycl::property::buffer::use_host_ptr()});
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto o = cl::sycl::id<1>(offset);
+        auto from_acc = from_buffer.get_access<cl::sycl::access::mode::read>(cgh);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                           cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+        cgh.parallel_for<class memcopyh2d>(r, [=](cl::sycl::id<1> idx) {
+          acc[idx] = from_acc[idx];
+          });
+       });
+    } else {
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto o = cl::sycl::id<1>(offset);
+         cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                           cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+        cgh.copy(from_ptr, acc);
+      });
+    }
   }
   case device_to_host: {
     auto alloc = mm.translate_ptr(from_ptr);
     size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
-    #ifdef DPCT_USE_PARALLEL_MEMCOPY
-    buffer_t to_buffer((byte_t *)to_ptr, cl::sycl::range<1>(size), {cl::sycl::property::buffer::use_host_ptr()});
-    #endif
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      #ifdef DPCT_USE_PARALLEL_MEMCOPY
-      auto to_acc = to_buffer.get_access<cl::sycl::access::mode::write>(cgh);
-      #endif
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
-                         cl::sycl::access::target::global_buffer>
-          acc(alloc.buffer, cgh, r, o);
-      #ifdef DPCT_USE_PARALLEL_MEMCOPY
-      cgh.parallel_for<class memcopyd2h>(r, [=](cl::sycl::id<1> idx) {
-        to_acc[idx] = acc[idx];
-        });
-      #else
-      cgh.copy(acc, to_ptr);
-      #endif
-    });
+    if(is_cpu) {
+      buffer_t to_buffer((byte_t *)to_ptr, cl::sycl::range<1>(size), {cl::sycl::property::buffer::use_host_ptr()});
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto o = cl::sycl::id<1>(offset);
+        auto to_acc = to_buffer.get_access<cl::sycl::access::mode::write>(cgh);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                           cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+        cgh.parallel_for<class memcopyd2h>(r, [=](cl::sycl::id<1> idx) {
+          to_acc[idx] = acc[idx];
+          });
+      });
+    } else {
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto o = cl::sycl::id<1>(offset);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                           cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+        cgh.copy(acc, to_ptr);
+      });
+    }
   }
   case device_to_device: {
     auto to_alloc = mm.translate_ptr(to_ptr);
     auto from_alloc = mm.translate_ptr(from_ptr);
     size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
     size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto to_o = cl::sycl::id<1>(to_offset);
-      auto from_o = cl::sycl::id<1>(from_offset);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
-                         cl::sycl::access::target::global_buffer>
-          to_acc(to_alloc.buffer, cgh, r, to_o);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
-                         cl::sycl::access::target::global_buffer>
-          from_acc(from_alloc.buffer, cgh, r, from_o);
-      #ifdef DPCT_USE_PARALLEL_MEMCOPY
-      cgh.parallel_for<class memcopyd2d>(r, [=](cl::sycl::id<1> idx) {
-        to_acc[idx] = from_acc[idx];
-        });
-      #else
-      cgh.copy(from_acc, to_acc);
-      #endif
-    });
+    if(is_cpu) {
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto to_o = cl::sycl::id<1>(to_offset);
+        auto from_o = cl::sycl::id<1>(from_offset);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                           cl::sycl::access::target::global_buffer>
+            to_acc(to_alloc.buffer, cgh, r, to_o);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                           cl::sycl::access::target::global_buffer>
+            from_acc(from_alloc.buffer, cgh, r, from_o);
+        cgh.parallel_for<class memcopyd2d>(r, [=](cl::sycl::id<1> idx) {
+          to_acc[idx] = from_acc[idx];
+          });
+      });
+    }else {
+      return q.submit([&](cl::sycl::handler &cgh) {
+        auto r = cl::sycl::range<1>(size);
+        auto to_o = cl::sycl::id<1>(to_offset);
+        auto from_o = cl::sycl::id<1>(from_offset);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                           cl::sycl::access::target::global_buffer>
+            to_acc(to_alloc.buffer, cgh, r, to_o);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                           cl::sycl::access::target::global_buffer>
+            from_acc(from_alloc.buffer, cgh, r, from_o);
+        cgh.copy(from_acc, to_acc);
+      });
+    }
   }
   default:
     std::abort();
