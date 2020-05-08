@@ -1115,9 +1115,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // CHECK: f2 = sycl::pow(f0, f1);
   f2 = powf(f0, f1);
-  // CHECK: f2 = sycl::pow((float)i, (float)i);
+  // CHECK: f2 = sycl::pown((float)i, i);
   f2 = powf(i, i);
-  // CHECK: f2 = sycl::pow(f0, (float)i);
+  // CHECK: f2 = sycl::pown(f0, i);
   f2 = powf(f0, i);
   // CHECK: f2 = sycl::pow((float)i, f1);
   f2 = powf(i, f1);
@@ -1456,9 +1456,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // CHECK: f2 = sycl::pow(f0, f1);
   f2 = __powf(f0, f1);
-  // CHECK: f2 = sycl::pow((float)i, (float)i);
+  // CHECK: f2 = sycl::pown((float)i, i);
   f2 = __powf(i, i);
-  // CHECK: f2 = sycl::pow(f0, (float)i);
+  // CHECK: f2 = sycl::pown(f0, i);
   f2 = __powf(f0, i);
   // CHECK: f2 = sycl::pow((float)i, f1);
   f2 = __powf(i, f1);
@@ -3155,4 +3155,95 @@ __device__ void do_math(double i, double j) {
   sin(i);
   // CHECK: sycl::cos(i);
   cos(i);
+}
+
+__global__ void k() {
+  float f;
+
+  char c;
+  unsigned char uc;
+  short s;
+  unsigned short us;
+  int i;
+  unsigned int ui;
+  long l;
+  unsigned long ul;
+  long long ll;
+  unsigned long long ull;
+
+  // CHECK: f * f;
+  pow(f, 2);
+  // CHECK: sycl::pown(f, 3);
+  pow(f, 3);
+  // CHECK: f * f;
+  powf(f, 2);
+  // CHECK: sycl::pown(f, 3);
+  powf(f, 3);
+  // CHECK: f * f;
+  __powf(f, 2);
+  // CHECK: sycl::pown(f, 3);
+  __powf(f, 3);
+
+  // CHECK: sycl::pown(f, (int)c);
+  pow(f, c);
+  // CHECK: sycl::pown(f, (int)uc);
+  pow(f, uc);
+  // CHECK: sycl::pown(f, (int)s);
+  pow(f, s);
+  // CHECK: sycl::pown(f, (int)us);
+  pow(f, us);
+  // CHECK: sycl::pown(f, i);
+  pow(f, i);
+  // CHECK: sycl::pown(f, (int)ui);
+  pow(f, ui);
+  // CHECK: sycl::pow(f, (float)l);
+  pow(f, l);
+  // CHECK: sycl::pow(f, (float)ul);
+  pow(f, ul);
+  // CHECK: sycl::pow(f, (float)ll);
+  pow(f, ll);
+  // CHECK: sycl::pow(f, (float)ull);
+  pow(f, ull);
+
+  // CHECK: sycl::pown(f, (int)c);
+  powf(f, c);
+  // CHECK: sycl::pown(f, (int)uc);
+  powf(f, uc);
+  // CHECK: sycl::pown(f, (int)s);
+  powf(f, s);
+  // CHECK: sycl::pown(f, (int)us);
+  powf(f, us);
+  // CHECK: sycl::pown(f, i);
+  powf(f, i);
+  // CHECK: sycl::pown(f, (int)ui);
+  powf(f, ui);
+  // CHECK: sycl::pow(f, (float)l);
+  powf(f, l);
+  // CHECK: sycl::pow(f, (float)ul);
+  powf(f, ul);
+  // CHECK: sycl::pow(f, (float)ll);
+  powf(f, ll);
+  // CHECK: sycl::pow(f, (float)ull);
+  powf(f, ull);
+
+  // CHECK: sycl::pown(f, (int)c);
+  __powf(f, c);
+  // CHECK: sycl::pown(f, (int)uc);
+  __powf(f, uc);
+  // CHECK: sycl::pown(f, (int)s);
+  __powf(f, s);
+  // CHECK: sycl::pown(f, (int)us);
+  __powf(f, us);
+  // CHECK: sycl::pown(f, i);
+  __powf(f, i);
+  // CHECK: sycl::pown(f, (int)ui);
+  __powf(f, ui);
+  // CHECK: sycl::pow(f, (float)l);
+  __powf(f, l);
+  // CHECK: sycl::pow(f, (float)ul);
+  __powf(f, ul);
+  // CHECK: sycl::pow(f, (float)ll);
+  __powf(f, ll);
+  // CHECK: sycl::pow(f, (float)ull);
+  __powf(f, ull);
 }

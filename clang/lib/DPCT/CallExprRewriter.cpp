@@ -182,47 +182,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         }
       }
 
-      if (SourceCalleeName == "pow") {
-        if (Call->getNumArgs() != 2)
-          return SourceCalleeName.str();
-        LangOptions LO;
-        auto Arg0 = Call->getArg(0);
-        auto Arg1 = Call->getArg(1);
-        auto T0 = Arg0->getType().getAsString(PrintingPolicy(LO));
-        auto T1 = Arg1->getType().getAsString(PrintingPolicy(LO));
-        auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
-        if (T1 == "int") {
-          if (T0 == "int") {
-            if (DRE0)
-              RewriteArgList[0] = "(float)" + RewriteArgList[0];
-            else
-              RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-          }
-          return MapNames::getClNamespace() + "::pown";
-        } else if (T1 == "float") {
-          if (T0 == "int") {
-            if (DRE0)
-              RewriteArgList[0] = "(float)" + RewriteArgList[0];
-            else
-              RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-          } else if (T0 == "double") {
-            if (DRE0)
-              RewriteArgList[1] = "(double)" + RewriteArgList[1];
-            else
-              RewriteArgList[1] = "(double)(" + RewriteArgList[1] + ")";
-          }
-          return MapNames::getClNamespace() + "::pow";
-        } else if (T1 == "double") {
-          if (T0 == "int" || T0 == "float") {
-            if (DRE0)
-              RewriteArgList[0] = "(double)" + RewriteArgList[0];
-            else
-              RewriteArgList[0] = "(double)(" + RewriteArgList[0] + ")";
-          }
-          return MapNames::getClNamespace() + "::pow";
-        }
-      }
-
       if (SourceCalleeName == "__clz" || SourceCalleeName == "__clzll") {
         LangOptions LO;
         auto Arg = Call->getArg(0);
@@ -660,8 +619,11 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  report(Diagnostics::MATH_EMULATION, false,
-         MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
+  // Do need to report warnings for pow migration
+  if (SourceCalleeName != "pow" && SourceCalleeName != "powf"&&
+      SourceCalleeName != "__powf")
+    report(Diagnostics::MATH_EMULATION, false,
+           MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
   const std::string FuncName = SourceCalleeName.str();
   std::string ReplStr;
@@ -841,6 +803,71 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / " + MapNames::getClNamespace() + "::hypot(" << MigratedArg0
        << ", " << MigratedArg1 << ")";
+  } else if (SourceCalleeName == "pow" || SourceCalleeName == "powf" ||
+             SourceCalleeName == "__powf") {
+    RewriteArgList = getMigratedArgs();
+    if (Call->getNumArgs() != 2) {
+      TargetCalleeName = SourceCalleeName.str();
+      return buildRewriteString();
+    }
+    LangOptions LO;
+    auto Arg0 = Call->getArg(0);
+    auto Arg1 = Call->getArg(1);
+    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+    auto T1 = Arg1->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+    auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
+    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+    // For integer literal 2, expand to multiply expression:
+    // pow(x, 2) ==> x * x.
+    if (IL1 && DRE0 && IL1->getValue().getZExtValue() == 2) {
+      auto Arg0Str = ExprAnalysis::ref(Arg0);
+      return Arg0Str + " * " + Arg0Str;
+    }
+    // For i of integer type or integer literals, migrate to sycl::pown:
+    // pow(x, i) ==> pown(x, i);
+    // otherwise, migrate to sycl::pow(x, i).
+    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
+        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
+      if (T0 == "int") {
+        if (DRE0) {
+          RewriteArgList[0] = "(float)" + RewriteArgList[0];
+        } else {
+          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
+        }
+      }
+      if (T1 != "int") {
+        RewriteArgList[1] = "(int)" + RewriteArgList[1];
+      }
+      TargetCalleeName =  MapNames::getClNamespace() + "::pown";
+    } else if (T1 == "long" || T1 == "unsigned long" || T1 == "long long" ||
+               T1 == "unsigned long long") {
+      if (DRE0)
+        RewriteArgList[1] = "(float)" + RewriteArgList[1];
+      else
+        RewriteArgList[1] = "(float)(" + RewriteArgList[1] + ")";
+    } else if (T1 == "float") {
+      if (T0 == "int") {
+        if (DRE0)
+          RewriteArgList[0] = "(float)" + RewriteArgList[0];
+        else
+          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
+      } else if (T0 == "double") {
+        if (DRE0)
+          RewriteArgList[1] = "(double)" + RewriteArgList[1];
+        else
+          RewriteArgList[1] = "(double)(" + RewriteArgList[1] + ")";
+      }
+      TargetCalleeName = MapNames::getClNamespace() + "::pow";
+    } else if (T1 == "double") {
+      if (T0 == "int" || T0 == "float") {
+        if (DRE0)
+          RewriteArgList[0] = "(double)" + RewriteArgList[0];
+        else
+          RewriteArgList[0] = "(double)(" + RewriteArgList[0] + ")";
+      }
+      TargetCalleeName = MapNames::getClNamespace() + "::pow";
+    }
+    return buildRewriteString();
   }
   OS.flush();
   return ReplStr;
