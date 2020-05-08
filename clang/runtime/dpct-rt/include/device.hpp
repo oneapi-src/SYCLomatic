@@ -263,12 +263,12 @@ public:
         eh = exception_handler;
     }
 #ifdef DPCT_USM_LEVEL_NONE
-    cl::sycl::queue* queue = new cl::sycl::queue(
-        _default_queue->get_context(), _default_queue->get_device(), eh);
+    cl::sycl::queue *queue =
+        new cl::sycl::queue(_default_queue->get_context(), *this, eh);
 #else
-    cl::sycl::queue* queue = new cl::sycl::queue(
-        _default_queue->get_context(), _default_queue->get_device(), eh,
-        cl::sycl::property::queue::in_order());
+    cl::sycl::queue *queue =
+        new cl::sycl::queue(_default_queue->get_context(), *this, eh,
+                            cl::sycl::property::queue::in_order());
 #endif
     _queues.insert(queue);
     return queue;

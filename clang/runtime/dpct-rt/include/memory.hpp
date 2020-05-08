@@ -339,7 +339,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     }
     break;
   }
-  bool is_cpu=get_current_device().is_cpu();
+  bool is_cpu = q.get_device().is_cpu();
 
   switch (real_direction) {
   case host_to_host:
