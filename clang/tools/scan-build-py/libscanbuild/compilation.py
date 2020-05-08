@@ -187,6 +187,10 @@ IGNORED_FLAGS = {
     '--options-file' : 0,
     '-optf' : 0,
     '-fopenmp': 0,
+    '-forward-unknown-to-host-compiler' : 0,
+    '-Xllc' : 0,
+    '--Xllc' : 0,
+    '-Xcicc' : 1,
 }
 
 MAP_FLAGS = {
@@ -392,6 +396,12 @@ def parse_args(args):
             new_opt = MAP_FLAGS[result[0]] + gpu_virtual_arch_to_arch(result[1])
             flags.append(new_opt)
             pass
+        elif re.match(r'^-isystem=', arg):
+            #"-isystem=<directory>"" is not a effective option in clang command line,
+            #So replace "-isystem=<directory>" with "-isystem<directory>".
+            new_opt = arg.replace("-isystem=", "-isystem", 8)
+            flags.append(new_opt)
+            pass
         elif re.match(r'^--pre-include=', arg):
             pass
         elif re.match(r'^--library=', arg):
@@ -491,6 +501,8 @@ def parse_args(args):
         # E.g \" is imported by option like
         # [..., '-Xcompiler', '"', '-g', '-O3', '-Wall', '"',...]
         elif arg in {'\"'}:
+            pass
+        elif re.match(r'^-dag-vectorize-ops=', arg):
             pass
         # and consider everything else as compile option.
         else:
