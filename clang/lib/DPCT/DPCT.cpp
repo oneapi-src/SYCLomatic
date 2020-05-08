@@ -1002,6 +1002,8 @@ int run(int argc, const char **argv) {
 
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        "-D__CUDA_ARCH__=400", ArgumentInsertPosition::END));
   }
   SetSDKIncludePath(CudaPath);
 
