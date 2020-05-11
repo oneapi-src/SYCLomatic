@@ -4799,11 +4799,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         EA.analyze(CE->getArg(0));
         LHS = "*(" + EA.getReplacedString() + ")";
       }
-      Repl = LHS + " = dpct::get_current_device().create_queue()";
+      Repl = LHS + " = &dpct::get_default_queue()";
     } else if (FuncName == "cublasDestroy_v2") {
       dpct::ExprAnalysis EA(CE->getArg(0));
-      Repl = "dpct::get_current_device().destroy_queue(" +
-             EA.getReplacedString() + ")";
+      Repl = EA.getReplacedString() + " = nullptr";
     } else if(FuncName == "cublasSetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
       dpct::ExprAnalysis EA1(CE->getArg(1));

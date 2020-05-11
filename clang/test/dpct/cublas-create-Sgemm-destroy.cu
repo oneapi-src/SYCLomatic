@@ -22,11 +22,11 @@ extern cublasHandle_t handle2;
 int main() {
   // CHECK: int status;
   // CHECK-NEXT: sycl::queue* handle;
-  // CHECK-NEXT: handle = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: handle = &dpct::get_default_queue();
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (handle = dpct::get_current_device().create_queue(), 0);
+  // CHECK-NEXT: status = (handle = &dpct::get_default_queue(), 0);
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -137,8 +137,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::get_current_device().destroy_queue(handle), 0);
-  // CHECK-NEXT: dpct::get_current_device().destroy_queue(handle);
+  // CHECK-NEXT: status = (handle = nullptr, 0);
+  // CHECK-NEXT: handle = nullptr;
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);
   cublasDestroy(handle);

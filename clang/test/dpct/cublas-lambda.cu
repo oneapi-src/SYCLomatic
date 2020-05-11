@@ -16,7 +16,7 @@
 int main() {
   cublasStatus_t status;
   cublasHandle_t handle;
-  // CHECK: handle = dpct::get_current_device().create_queue();
+  // CHECK: handle = &dpct::get_default_queue();
   cublasCreate(&handle);
 
   int N = 275;
