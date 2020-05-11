@@ -8787,8 +8787,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
             Lexer::getLocForEndOfToken(BO->getLHS()->getEndLoc(), 0,
                                        *Result.SourceManager,
                                        Result.Context->getLangOpts()),
-            BO->getRHS()->getBeginLoc(), ""));
-        emplaceTransformation(new ReplaceStmt(BO->getRHS(), ""));
+            BO->getRHS()->getEndLoc(), ""));
       } else {
         emplaceTransformation(
             new RenameFieldInMemberExpr(ME, "get_channel_size()"));
@@ -8816,11 +8815,8 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
         MapNames::TypeNamesMap,
         DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
     if (!ReplType.empty())
-      emplaceTransformation(new ReplaceToken(
-          TL->getBeginLoc(),
-          Lexer::getLocForEndOfToken(TL->getEndLoc(), 0, *Result.SourceManager,
-                                     Result.Context->getLangOpts()),
-          std::string(ReplType)));
+      emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
+                                             std::string(ReplType)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
     ExprAnalysis A;
     A.analyze(CE);
@@ -8838,11 +8834,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
       if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
         emplaceTransformation(new ReplaceToken(
-            TL->getBeginLoc(),
-            Lexer::getLocForEndOfToken(TL->getEndLoc(), 0,
-                                       *Result.SourceManager,
-                                       Result.Context->getLangOpts()),
-            "dpct::image_base_p"));
+            TL->getBeginLoc(), TL->getEndLoc(), "dpct::image_base_p"));
       }
     }
   }

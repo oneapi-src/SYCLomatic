@@ -16,8 +16,15 @@ void checkError(cudaError_t err) {
 void foo() {
   int *data;
   size_t width, height, depth, pitch, woffset, hoffset;
+  // CHECK: sycl::queue *s;
+  // CHECK-NEXT: dpct::image_matrix_p a1;
+  // CHECK-NEXT: dpct::image_matrix* a2;
+  // CHECK-NEXT: int err;
+  // CHECK-NEXT: sycl::range<3> extent;
+  // CHECK-NEXT: dpct::image_channel channel;
   cudaStream_t s;
-  cudaArray_t a1, a2;
+  cudaArray_t a1;
+  cudaArray* a2;
   cudaError_t err;
   cudaExtent extent;
   cudaChannelFormatDesc channel;
