@@ -868,7 +868,55 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       TargetCalleeName = MapNames::getClNamespace() + "::pow";
     }
     return buildRewriteString();
+  } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
+    OS << "sycl::exp(" << MigratedArg0 << "*" << MigratedArg0 << ")*"
+       << TargetCalleeName << "(" << MigratedArg0 << ")";
+  } else if (FuncName == "norm3d" || FuncName == "norm3df") {
+    OS << TargetCalleeName << "(sycl::float3(" << MigratedArg0 << ", "
+       << getMigratedArg(1) << ", " << getMigratedArg(2) << "))";
+  } else if (FuncName == "norm4d" || FuncName == "norm4df") {
+    OS << TargetCalleeName << "(sycl::float4(" << MigratedArg0 << ", "
+       << getMigratedArg(1) << ", " << getMigratedArg(2) << ", "
+       << getMigratedArg(3) << "))";
+  } else if (FuncName == "rcbrt" || FuncName == "rcbrtf") {
+    OS << "sycl::native::recip((float)" << TargetCalleeName << "(" << getMigratedArg(0) << "))";
+  } else if (FuncName == "rnorm3d" || FuncName == "rnorm3df") {
+    OS << "sycl::native::recip(" << TargetCalleeName << "(sycl::float3("
+       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
+       << ")))";
+  } else if (FuncName == "rnorm4d" || FuncName == "rnorm4df") {
+    OS << "sycl::native::recip(" << TargetCalleeName << "(sycl::float4("
+       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
+       << ", " << getMigratedArg(3) << ")))";
+  } else if (FuncName == "scalbln" || FuncName == "scalblnf" ||
+             FuncName == "scalbn" || FuncName == "scalbnf") {
+    OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
+  } else if (FuncName == "__double2hiint") {
+    OS << "dpct::cast_double_to_int(" << MigratedArg0 << ")";
+  } else if (FuncName == "__double2loint") {
+    OS << "dpct::cast_double_to_int(" << MigratedArg0 << ", false)";
+  } else if (FuncName == "__hiloint2double") {
+    OS << "dpct::cast_ints_to_double(" << MigratedArg0 << ", " << getMigratedArg(1) << ")";
+  } else if (FuncName == "__sad" || FuncName == "__usad") {
+    OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
+       << ")" << "+" << getMigratedArg(2);
+  } else if (FuncName == "__drcp_rd" || FuncName == "__drcp_rn" ||
+             FuncName == "__drcp_ru" || FuncName == "__drcp_rz") {
+    auto Arg0 = Call->getArg(0);
+    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LangOptions()));
+    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+    report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
+    OS << TargetCalleeName;
+    if (T0 != "float") {
+      if (DRE0)
+        OS << "((float)" << MigratedArg0 << ")";
+      else
+        OS << "((float)(" << MigratedArg0 << "))";
+    } else {
+        OS << "(" << MigratedArg0 << ")";
+    }
   }
+
   OS.flush();
   return ReplStr;
 }

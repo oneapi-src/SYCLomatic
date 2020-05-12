@@ -656,20 +656,36 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = __dmul_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rd call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d1 = sycl::native::recip((float)d0);
   d1 = __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rn call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d1 = sycl::native::recip((float)d0);
   d1 = __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_ru call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d1 = sycl::native::recip((float)d0);
   d1 = __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rz call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d1 = sycl::native::recip((float)d0);
   d1 = __drcp_rz(d0);
 
   // CHECK: /*
@@ -2196,9 +2212,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   f = erfcinvf(f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2217,13 +2231,9 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   f = jnf(i, f);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::fast_length(sycl::float3(f, f, f));
   f = norm3df(f, f, f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2237,29 +2247,19 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   f = normf(i, &f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
   f = rcbrtf(f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   f = rnormf(i, &f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = f*(2<<l);
   f = scalblnf(f, l);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2286,9 +2286,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   d = erfcinv(d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2310,13 +2308,9 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   d = norm(i, &d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
   d = norm3d(d, d, d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
   d = norm4d(d, d, d, d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2326,29 +2320,19 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   d = normcdfinv(d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
   d = rcbrt(d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float3(d, d, d)));
   d = rnorm3d(d, d, d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   d = rnorm(i, &d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = d*(2<<l);
   d = scalbln(d, l);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2373,19 +2357,12 @@ __global__ void testUnsupported() {
   // i = __shfl_up_sync(u, h, u, i);
   // i = __shfl_xor_sync(u, h, u, i);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: i = dpct::cast_double_to_int(d);
   i = __double2hiint(d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: i = dpct::cast_double_to_int(d, false);
   i = __double2loint(d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = dpct::cast_ints_to_double(i, i);
   d = __hiloint2double(i, i);
-
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
@@ -2423,41 +2400,23 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: i = sycl::rhadd(i, i);
   i = __rhadd(i, i);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::abs_diff(i, i)+u;
   u = __sad(i, i, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::hadd(u, u);
   u = __uhadd(u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::mul24(u, u);
   u = __umul24(u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: ull = sycl::mul_hi(ull, ull);
   ull = __umul64hi(ull, ull);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::mul_hi(u, u);
   u = __umulhi(u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::rhadd(u, u);
   u = __urhadd(u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
 }
 
@@ -3246,4 +3205,107 @@ __global__ void k() {
   __powf(f, ll);
   // CHECK: sycl::pow(f, (float)ull);
   __powf(f, ull);
+
+}
+
+__global__ void k2() {
+  int i, i2;
+  unsigned u, u1, u2;
+  float f0, f1, f2, f3;
+  double d0, d1, d2, d3;
+  long l, l2;
+  long long ll, ll2;
+  unsigned long long ull, ull2;
+
+  // CHECK: sycl::exp(d0*d0)*sycl::erfc(d0);
+  erfcx(d0);
+  // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
+  erfcxf(f0);
+  // CHECK: sycl::fast_length(sycl::float3(d0, d1, d2));
+  norm3d(d0, d1, d2);
+  // CHECK: sycl::fast_length(sycl::float3(f0, f1, f2));
+  norm3df(f0, f1, f2);
+  // CHECK: sycl::fast_length(sycl::float4(d0, d1, d2, d3));
+  norm4d(d0, d1, d2, d3);
+  // CHECK: sycl::fast_length(sycl::float4(f0, f1, f2, f3));
+  norm4df(f0, f1, f2, f3);
+  // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
+  rcbrt(d0);
+  // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
+  rcbrtf(f0);
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(d0, d1, d2)));
+  rnorm3d(d0, d1, d2);
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(f0, f1, f2)));
+  rnorm3df(f0, f1, f2);
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(d0, d1, d2, d3)));
+  rnorm4d(d0, d1, d2, d3);
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(f0, f1, f2, f3)));
+  rnorm4df(f0, f1, f2, f3);
+  // CHECK: d0*(2<<l);
+  scalbln(d0, l);
+  // CHECK: f0*(2<<l);
+  scalblnf(f0, l);
+  // CHECK: d0*(2<<i);
+  scalbn(d0, i);
+  // CHECK: f0*(2<<i);
+  scalbnf(f0, i);
+  // CHECK: dpct::cast_double_to_int(d0);
+  __double2hiint(d0);
+  // CHECK: dpct::cast_double_to_int(d0, false);
+  __double2loint(d0);
+  // CHECK: dpct::cast_ints_to_double(i, i2);
+  __hiloint2double(i, i2);
+
+  // CHECK: sycl::abs_diff(i, i2)+u;
+  __sad(i, i2, u);
+  // CHECK: sycl::abs_diff(u, u1)+u2;
+  __usad(u, u1, u2);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rd call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip((float)d0);
+  __drcp_rd(d0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rn call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip((float)d0);
+  __drcp_rn(d0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_ru call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip((float)d0);
+  __drcp_ru(d0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::native::recip call is used instead of the __drcp_rz call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip((float)d0);
+  __drcp_rz(d0);
+
+  // CHECK: sycl::mul_hi(ll, ll);
+  __mul64hi(ll, ll);
+  // CHECK: sycl::rhadd(i, i2);
+  __rhadd(i, i2);
+  // CHECK: sycl::hadd(u, u2);
+  __uhadd(u, u2);
+  // CHECK: sycl::mul24(u, u2);
+  __umul24(u, u2);
+  // CHECK: sycl::mul_hi(ull, ull2);
+  __umul64hi(ull, ull2);
+  // CHECK: sycl::mul_hi(u, u2);
+  __umulhi(u, u2);
+  // CHECK: sycl::rhadd(u, u2);
+  __urhadd(u, u2);
 }

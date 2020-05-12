@@ -94,6 +94,41 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                   sizeof(Ty), direction, queue, async);
 }
 
+/// Cast the high or low 32 bits of a double to an integer.
+/// \param [in] d The double value.
+/// \param [in] use_high32 Cast the high 32 bits of the double if true;
+/// otherwise cast the low 32 bits.
+inline int cast_double_to_int(double d, bool use_high32 = true) {
+  union {
+    double d_val;
+    struct {
+      int high32_bits;
+      int low32_bits;
+    };
+  } u;
+  u.d_val = d;
+  if (use_high32)
+    return u.high32_bits;
+  return u.low32_bits;
+}
+
+/// Combine two integers, the first as the high 32 bits and the second
+/// as the low 32 bits, into a double.
+/// \param [in] high32 The integer as the high 32 bits
+/// \param [in] low32 The integer as the low 32 bits
+inline double cast_ints_to_double(int high32, int low32) {
+  union {
+    double d_val;
+    struct {
+      int high32_bits;
+      int low32_bits;
+    };
+  } u;
+  u.high32_bits = high32;
+  u.low32_bits = low32;
+  return u.d_val;
+}
+
 
 } // namespace dpct
 
