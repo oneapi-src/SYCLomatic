@@ -130,10 +130,10 @@ __device__ void fun(){
   // CHECK: dpct::atomic_fetch_add(a, (double)1);
   atomicAdd(a, 1);
 
-  // CHECK: dpct::atomic_fetch_add(a, (double)(b));
+  // CHECK: dpct::atomic_fetch_add(a, (double)b);
   atomicAdd(a, b);
 
-  // CHECK: dpct::atomic_fetch_add((uint32_t*)(d_error), (uint32_t)1);
+  // CHECK: dpct::atomic_fetch_add((uint32_t*)d_error, (uint32_t)1);
   atomicAdd(d_error, 1);
 }
 
@@ -149,7 +149,7 @@ int main() {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>(&share_array[b], (uint32_t)1);
-// CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>((uint32_t*)(share_array), (uint32_t)1);
+// CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>((uint32_t*)share_array, (uint32_t)1);
 // CHECK-NEXT:  }
 // CHECK-EMPTY:
 // CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>(share_v, (uint32_t)1);

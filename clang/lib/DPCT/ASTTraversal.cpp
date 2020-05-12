@@ -1254,9 +1254,15 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
       if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
         if (i == 0) {
-          insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
+          if (dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+            emplaceTransformation(
+                new InsertBeforeStmt(Arg, "(" + TypeName + "*)"));
+          } else {
+            insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
+          }
         } else {
-          if (dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts())) {
+          if (dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) ||
+              dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
             emplaceTransformation(
                 new InsertBeforeStmt(Arg, "(" + TypeName + ")"));
           } else {
