@@ -1385,21 +1385,36 @@ private:
 class TextureTypeInfo {
   std::string DataType;
   int Dimension;
+  bool IsArray;
 
 public:
-  TextureTypeInfo(std::string &&DataType, int Dimension) {
-    setDataTypeAndDimension(std::move(DataType), Dimension);
+  TextureTypeInfo(std::string &&DataType, int TexType) {
+    setDataTypeAndTexType(std::move(DataType), TexType);
   }
 
-  void setDataTypeAndDimension(std::string &&Type, int Dim) {
+  void setDataTypeAndTexType(std::string &&Type, int TexType) {
     DataType = std::move(Type);
-    Dimension = Dim;
+    IsArray = TexType & 0xF0;
+    Dimension = TexType & 0x0F;
     MapNames::replaceName(MapNames::TypeNamesMap, DataType);
+  }
+
+  void prepareForImage() {
+    if (IsArray)
+      ++Dimension;
+  }
+  void endForImage() {
+    if (IsArray)
+      --Dimension;
   }
 
   ParameterStream &printType(ParameterStream &PS,
                                const std::string &TemplateName) {
-    return PS << TemplateName << "<" << DataType << ", " << Dimension << ">";
+    PS << TemplateName << "<" << DataType << ", " << Dimension;
+    if (IsArray)
+      PS << ", true";
+    PS << ">";
+    return PS;
   }
 };
 
@@ -1441,8 +1456,8 @@ public:
     }
   }
 
-  void setType(std::string &&DataType, int Dimension) {
-    setType(std::make_shared<TextureTypeInfo>(std::move(DataType), Dimension));
+  void setType(std::string &&DataType, int TexType) {
+    setType(std::make_shared<TextureTypeInfo>(std::move(DataType), TexType));
   }
   inline void setType(std::shared_ptr<TextureTypeInfo> TypeInfo) {
     if (TypeInfo)
@@ -1453,7 +1468,9 @@ public:
 
   virtual std::string getHostDeclString() {
     ParameterStream PS;
+    Type->prepareForImage();
     getDecl(PS, "image") << ";";
+    Type->endForImage();
     return PS.Str;
   }
 

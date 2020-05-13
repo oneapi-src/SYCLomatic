@@ -1,7 +1,7 @@
-// RUN: dpcpp image_wrapper.cpp -o texture
+// RUN: dpcpp image_wrapper.cpp -o image_wrapper
 
 #define DPCT_NAMED_LAMBDA
-#include "../include/dpct.hpp"
+#include <dpct/dpct.hpp>
 
 dpct::image<cl::sycl::float4, 2> tex42;
 dpct::image<cl::sycl::float2, 1> tex21;

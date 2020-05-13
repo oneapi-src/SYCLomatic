@@ -9096,14 +9096,15 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           .bind("texEnum"),
       this);
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName(
-                   "cudaCreateChannelDesc", "cudaCreateChannelDescHalf",
-                   "cudaUnbindTexture", "cudaBindTextureToArray",
-                   "cudaBindTexture", "tex1D", "tex2D", "tex3D", "tex1Dfetch",
-                   "cudaCreateTextureObject", "cudaDestroyTextureObject",
-                   "cudaGetTextureObjectResourceDesc",
-                   "cudaGetTextureObjectTextureDesc",
-                   "cudaGetTextureObjectResourceViewDesc"))))
+      callExpr(
+          callee(functionDecl(hasAnyName(
+              "cudaCreateChannelDesc", "cudaCreateChannelDescHalf",
+              "cudaUnbindTexture", "cudaBindTextureToArray", "cudaBindTexture",
+              "tex1D", "tex2D", "tex3D", "tex1Dfetch", "tex1DLayered",
+              "tex2DLayered", "cudaCreateTextureObject",
+              "cudaDestroyTextureObject", "cudaGetTextureObjectResourceDesc",
+              "cudaGetTextureObjectTextureDesc",
+              "cudaGetTextureObjectResourceViewDesc"))))
           .bind("call"),
       this);
 }

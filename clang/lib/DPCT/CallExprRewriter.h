@@ -95,7 +95,7 @@ using ReorderFunctionIsAssignedRewriterFactory = CallExprRewriterFactory<
     ReorderFunctionIsAssignedRewriter, std::string,
     std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
 using TexFunctionRewriterFactory =
-    CallExprRewriterFactory<TexFunctionRewriter, std::string>;
+    CallExprRewriterFactory<TexFunctionRewriter, std::string, int>;
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
 using FuncNameRewriterFactory =
@@ -343,13 +343,13 @@ public:
 };
 
 class TexFunctionRewriter : public FuncCallExprRewriter {
-  void setTextureInfo();
+  void setTextureInfo(int TexType);
 
 public:
   TexFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                      StringRef TargetCalleeName)
+                      StringRef TargetCalleeName,int TexType)
       : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {
-    setTextureInfo();
+    setTextureInfo(TexType);
   }
 
   friend TexFunctionRewriterFactory;

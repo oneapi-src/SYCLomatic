@@ -938,22 +938,20 @@ Optional<std::string> ReorderFunctionIsAssignedRewriter::rewrite() {
   return S;
 }
 
-void TexFunctionRewriter::setTextureInfo() {
+void TexFunctionRewriter::setTextureInfo(int TexType) {
   const Expr *Obj = nullptr;
   std::string DataTy;
-  int Dimension = 0, Idx = 0;
+  int Idx = 0;
   auto &Global = DpctGlobalInfo::getInstance();
   if (Call->getArg(0)->getType()->isPointerType()) {
     DataTy = Global.getUnqualifiedTypeName(
         Call->getArg(0)->getType()->getPointeeType());
     Obj = Call->getArg(1);
-    Dimension = Call->getNumArgs() - 2;
     Idx = 1;
   } else {
     DataTy =
         Global.getUnqualifiedTypeName(Call->getType().getUnqualifiedType());
     Obj = Call->getArg(0);
-    Dimension = Call->getNumArgs() - 1;
     Idx = 0;
   }
 
@@ -963,7 +961,7 @@ void TexFunctionRewriter::setTextureInfo() {
                 ->addCallee(Call)
                 ->addTextureObjectArg(
                     Idx, dyn_cast<DeclRefExpr>(Obj->IgnoreImpCasts()))) {
-      ObjInfo->setType(std::move(DataTy), Dimension);
+      ObjInfo->setType(std::move(DataTy), TexType);
     }
   }
 }
@@ -1035,8 +1033,8 @@ Optional<std::string> TemplatedCallExprRewriter::rewrite() {
 #define REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(FuncName, RewriterName, ...)     \
   REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionIsAssignedRewriterFactory,   \
                          RewriterName, std::vector<unsigned>{__VA_ARGS__})
-#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, RewriterName)                     \
-  REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName)
+#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, RewriterName, TexType)                     \
+  REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName, TexType)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, RewriterName)                     \
@@ -1074,8 +1072,8 @@ const std::unordered_map<std::string,
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME)                 \
   FUNC_NAME_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TEXTURE(SOURCEAPINAME, TARGETAPINAME)                            \
-  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_TEXTURE(SOURCEAPINAME, TARGETAPINAME, TEXTYPE)                            \
+  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, TEXTYPE)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 #define ENTRY_REORDER_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME, ...)            \

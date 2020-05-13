@@ -42,6 +42,10 @@ template <class T> struct image_trait {
   using accessor_t =
       cl::sycl::accessor<acc_data_t, Dimension, cl::sycl::access::mode::read,
                          cl::sycl::access::target::image>;
+  template <int Dimension>
+  using array_accessor_t =
+      cl::sycl::accessor<acc_data_t, Dimension, cl::sycl::access::mode::read,
+                         cl::sycl::access::target::image_array>;
   using data_t = T;
   using elem_t = T;
   static constexpr channel_data_kind channel_kind =
@@ -281,44 +285,29 @@ public:
 inline image_base::~image_base() {}
 using image_base_p = image_base *;
 
-template <class T, int Dimension> class image_accessor;
+template <class T, int Dimension, bool IsImageArray> class image_accessor;
 
+template <class T, int Dimension, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
-template <class T, int Dimension> class image : public image_base {
+template <class T, int Dimension, bool IsImageArray = false> class image : public image_base {
   cl::sycl::image<Dimension> *_image = nullptr;
-
-  // Functor for attaching data to image class.
-  template <class DataT, int Dim> struct attach_data {
-    void operator()(image<DataT, Dim> *in_image, image_data *data) {
-      assert(data->type == data_matrix);
-      in_image->attach(data->data.matrix);
-    }
-  };
-  template <class DataT> struct attach_data<DataT, 1> {
-    void operator()(image<DataT, 1> *in_image, image_data *data) {
-      if (data->type == data_linear)
-        in_image->attach(data->data.linear.data, data->data.linear.chn,
-                      data->data.linear.size);
-      else if (data->type == data_matrix)
-        in_image->attach(data->data.matrix);
-    }
-  };
 
 public:
   ~image() { detach(); }
 
 public:
   using acc_data_t = typename image_trait<T>::acc_data_t;
-  using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
+  using accessor_t =
+      typename image_accessor<T, IsImageArray ? (Dimension - 1) : Dimension,
+                              IsImageArray>::accessor_t;
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    return _image
-        ->template get_access<acc_data_t, cl::sycl::access::mode::read>(cgh);
+    return accessor_t(*_image, cgh);
   }
   // Set data info, attach the data to this class.
   void set_data(image_data *data) override {
     image_base::set_data(data);
-    attach_data<T, Dimension>()(this, data);
+    attach_data<T, Dimension, IsImageArray>()(this, data);
   }
   // Attach matrix data to this class.
   void attach(image_matrix *data) {
@@ -343,8 +332,26 @@ public:
   }
 };
 
+// Functor for attaching data to image class.
+template <class T, int Dimension, bool IsImageArray> struct attach_data {
+  void operator()(image<T, Dimension, IsImageArray> *in_image, image_data *data) {
+    assert(data->type == data_matrix);
+    in_image->attach(data->data.matrix);
+  }
+};
+template <class T, bool IsImageArray>
+struct attach_data<T, 1, IsImageArray> {
+  void operator()(image<T, 1, IsImageArray> *in_image, image_data *data) {
+    if (data->type == data_linear)
+      in_image->attach(data->data.linear.data, data->data.linear.chn,
+                       data->data.linear.size);
+    else if (data->type == data_matrix)
+      in_image->attach(data->data.matrix);
+  }
+};
+
 /// Wrap sampler and image accessor together.
-template <class T, int Dimension> class image_accessor {
+template <class T, int Dimension, bool IsImageArray = false> class image_accessor {
 public:
   using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
   using data_t = typename image_trait<T>::data_t;
@@ -358,6 +365,23 @@ public:
   // Read data from accessor.
   template <class Coords> data_t read(const Coords &coords) {
     return fetch_data<T>()(_img_acc.read(coords, _sampler));
+  }
+};
+template <class T, int Dimension> class image_accessor<T, Dimension, true> {
+public:
+  using accessor_t =
+      typename image_trait<T>::template array_accessor_t<Dimension>;
+  using data_t = typename image_trait<T>::data_t;
+  cl::sycl::sampler _sampler;
+  accessor_t _img_acc;
+
+public:
+  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+      : _sampler(sampler), _img_acc(acc) {}
+
+  // Read data from accessor.
+  template <class Coords> data_t read(int index, const Coords &coords) {
+    return fetch_data<T>()(_img_acc[index].read(coords, _sampler));
   }
 };
 
@@ -421,8 +445,8 @@ template <class T> static inline image_channel create_image_channel() {
 /// Attach a matrix to an image class.
 /// \param image The image class to be attached.
 /// \param a The matrix data class pointer.
-template <class T, int Dimension>
-inline void attach_image(image<T, Dimension> &in_image,
+template <class T, int Dimension, bool IsImageArray>
+inline void attach_image(image<T, Dimension, IsImageArray> &in_image,
                               image_matrix *a) {
   in_image.attach(a);
 }
@@ -433,7 +457,7 @@ inline void attach_image(image<T, Dimension> &in_image,
 /// \param desc Channel info.
 /// \param size Memory block size in bytes.
 template <class T>
-inline void attach_image(image<T, 1> &in_image, void *ptr,
+inline void attach_image(image<T, 1, false> &in_image, void *ptr,
                               const image_channel &chn, size_t size) {
   in_image.attach(ptr, chn, size);
 }
@@ -443,21 +467,21 @@ inline void attach_image(image<T, 1> &in_image, void *ptr,
 /// \param ptr The pointer that point to the memory block.
 /// \param size Memory block size in bytes.
 template <class T>
-inline void attach_image(image<T, 1> &in_image, void *ptr, size_t size) {
+inline void attach_image(image<T, 1, false> &in_image, void *ptr, size_t size) {
   in_image.attach(ptr, create_image_channel<T>(), size);
 }
 
 /// Detach data from an image class.
 /// \param image The image class to be detached.
-template <class T, int Dimension>
-inline void detach_image(image<T, Dimension> *in_image) {
+template <class T, int Dimension, bool IsImageArray>
+inline void detach_image(image<T, Dimension, IsImageArray> *in_image) {
   in_image->detach();
 }
 
 /// Detach data from an image class.
 /// \param image The image class to be detached.
-template <class T, int Dimension>
-inline void detach_image(image<T, Dimension> &in_image) {
+template <class T, int Dimension, bool IsImageArray>
+inline void detach_image(image<T, Dimension, IsImageArray> &in_image) {
   return detach_image(&in_image);
 }
 
@@ -524,6 +548,50 @@ inline void read_image(typename image_trait<T>::data_t *data,
                             image_accessor<T, 4> &acc, CoordT x, CoordT y,
                             CoordT z) {
   *data = read_image(acc, x, y, z);
+}
+
+/// Read data from image array accessor.
+/// \param acc Image array accessor.
+/// \param x Coordinate.
+/// \param index Image array index.
+template <class T, class CoordT>
+inline typename image_trait<T>::data_t
+read_image_array(image_accessor<T, 1, true> &acc, CoordT x, int index) {
+  return acc.read(index, x);
+}
+
+/// Read data from image array accessor.
+/// \param acc Image array accessor.
+/// \param x Coordinate.
+/// \param index Image array index.
+template <class T, class CoordT>
+inline void read_image_array(typename image_trait<T>::data_t *data,
+                             image_accessor<T, 1, true> &acc, CoordT x,
+                             int index) {
+  *data = read_image(acc, x, index);
+}
+
+/// Read data from image array accessor.
+/// \param acc Image array accessor.
+/// \param x Coordinate.
+/// \param y Coordinate.
+/// \param index Image array index.
+template <class T, class CoordT>
+inline typename image_trait<T>::data_t
+read_image_array(image_accessor<T, 2, true> &acc, CoordT x, CoordT y, int index) {
+  return acc.read(index, cl::sycl::vec<CoordT, 2>(x, y));
+}
+
+/// Read data from image array accessor.
+/// \param acc Image array accessor.
+/// \param x Coordinate.
+/// \param y Coordinate.
+/// \param index Image array index.
+template <class T, class CoordT>
+inline void read_image_array(typename image_trait<T>::data_t *data,
+                             image_accessor<T, 2, true> &acc, CoordT x,
+                             CoordT y, int index) {
+  *data = read_image(acc, x, y, index);
 }
 
 /// Create image according with given type \p T and \p dims.
