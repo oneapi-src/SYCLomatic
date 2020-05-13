@@ -386,4 +386,6 @@ bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
 std::string addIndirectionIfNecessary(const clang::Expr *E);
 bool isInReturnStmt(const clang::Expr *E,
                     clang::SourceLocation &OuterInsertLoc);
+
+std::string getHashStrFromLoc(clang::SourceLocation Loc);
 #endif // DPCT_UTILITY_H

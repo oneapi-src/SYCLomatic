@@ -125,10 +125,21 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
 #ifdef INTEL_CUSTOMIZATION
   if (Entry) {
-    llvm::SmallString<512> FilePathAbs(Entry->getName());
-    llvm::sys::path::native(FilePathAbs);
-    Sources.getFileManager().makeAbsolutePath(FilePathAbs);
-    this->FilePath = std::string(FilePathAbs.str());
+    // To avoid potential path inconsist issue,
+    // using tryGetRealPathName while applicable.
+    if (!Entry->tryGetRealPathName().empty()) {
+      this->FilePath = Entry->tryGetRealPathName().str();
+    }
+    else {
+      llvm::SmallString<512> FilePathAbs(Entry->getName());
+      Sources.getFileManager().makeAbsolutePath(FilePathAbs);
+      llvm::sys::path::native(FilePathAbs);
+      // Need to remove dot to keep the file path
+      // added by ASTMatcher and added by
+      // AnalysisInfo::getLocInfo() consistent.
+      llvm::sys::path::remove_dots(FilePathAbs, true);
+      this->FilePath = std::string(FilePathAbs.str());
+    }
   } else {
     this->FilePath = std::string(InvalidLocation);
   }

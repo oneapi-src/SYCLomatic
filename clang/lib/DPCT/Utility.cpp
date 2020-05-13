@@ -1708,3 +1708,11 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
   }
   return false;
 }
+
+std::string getHashStrFromLoc(SourceLocation Loc) {
+  auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
+  std::stringstream CombinedStr;
+  CombinedStr << std::hex << std::hash<std::string>()(dpct::buildString(R.first,R.second));
+  return CombinedStr.str();
+}
+

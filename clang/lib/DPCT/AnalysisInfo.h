@@ -706,16 +706,23 @@ public:
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
-      SmallString<4096> FileName = FileEntry->getName();
-      llvm::sys::fs::make_absolute(FileName);
-
-      // Convert path to the native form.
-      // E.g, on Windows all '/' are converted to '\'.
-      llvm::sys::path::native(FileName);
-
-      llvm::sys::path::remove_dots(FileName, /* remove_dot_dot */ true);
-      getSourceManager().getFileManager().makeAbsolutePath(FileName);
-      return std::make_pair(FileName.str().str(), LocInfo.second);
+      // To avoid potential path inconsist issue,
+      // using tryGetRealPathName while applicable.
+      std::string FileName;
+      if (!FileEntry->tryGetRealPathName().empty()) {
+        FileName = FileEntry->tryGetRealPathName().str();
+      }
+      else {
+        llvm::SmallString<512> FilePathAbs(FileEntry->getName());
+        getSourceManager().getFileManager().makeAbsolutePath(FilePathAbs);
+        llvm::sys::path::native(FilePathAbs);
+        // Need to remove dot to keep the file path
+        // added by ASTMatcher and added by
+        // AnalysisInfo::getLocInfo() consistent.
+        llvm::sys::path::remove_dots(FilePathAbs, true);
+        FileName = std::string(FilePathAbs.str());
+      }
+      return std::make_pair(FileName, LocInfo.second);
     }
     if (IsInvalid)
       *IsInvalid = true;
