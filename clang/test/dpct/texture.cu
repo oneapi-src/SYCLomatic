@@ -49,6 +49,9 @@ int main() {
   // CHECK: dpct::image_channel halfChn = dpct::create_image_channel<sycl::cl_half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
 
+  // CHECK: dpct::image_channel float4Chn = dpct::create_image_channel<sycl::float4>();
+  cudaChannelFormatDesc float4Chn = cudaCreateChannelDesc<float4>();
+
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);

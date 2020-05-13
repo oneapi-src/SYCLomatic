@@ -31,6 +31,7 @@ class ReorderFunctionRewriter;
 class ReorderFunctionIsAssignedRewriter;
 class TexFunctionRewriter;
 class UnsupportFunctionRewriter;
+class TemplatedCallExprRewriter;
 
 /*
 Factory usage example:
@@ -99,6 +100,8 @@ using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
 using FuncNameRewriterFactory =
     CallExprRewriterFactory<FuncNameRewriter, std::string>;
+using TemplatedCallExprRewriterFactory =
+    CallExprRewriterFactory<TemplatedCallExprRewriter, std::string>;
 
 /// Base class for rewriting call expressions
 class CallExprRewriter {
@@ -350,6 +353,21 @@ public:
   }
 
   friend TexFunctionRewriterFactory;
+};
+
+class TemplatedCallExprRewriter : public FuncCallExprRewriter {
+  std::vector<std::string> TemplateArgs;
+  void buildTemplateArgsList();
+  void buildTemplateArgsList(const ArrayRef<TemplateArgumentLoc> &Args);
+
+public:
+  TemplatedCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                            StringRef TargetCalleeName)
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+
+  virtual Optional<std::string> rewrite() override;
+
+  friend TemplatedCallExprRewriterFactory;
 };
 
 class UnsupportFunctionRewriter : public CallExprRewriter {

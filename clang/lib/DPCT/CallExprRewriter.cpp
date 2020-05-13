@@ -968,6 +968,49 @@ void TexFunctionRewriter::setTextureInfo() {
   }
 }
 
+void TemplatedCallExprRewriter::buildTemplateArgsList() {
+  auto Callee = Call->getCallee()->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+    return buildTemplateArgsList(DRE->template_arguments());
+  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+    return buildTemplateArgsList(ULE->template_arguments());
+  }
+}
+
+void TemplatedCallExprRewriter::buildTemplateArgsList(
+    const ArrayRef<TemplateArgumentLoc> &Args) {
+  ExprAnalysis EA;
+  for (auto &Arg : Args) {
+    EA.analyze(Arg);
+    TemplateArgs.push_back(EA.getReplacedString());
+  }
+}
+
+Optional<std::string> TemplatedCallExprRewriter::rewrite() {
+  buildTemplateArgsList();
+  RewriteArgList = getMigratedArgs();
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  OS << TargetCalleeName;
+  if (!TemplateArgs.empty()) {
+    OS << "<";
+    for (size_t i = 0; i < TemplateArgs.size(); ++i) {
+      if (i)
+        OS << ", ";
+      OS << TemplateArgs[i];
+    }
+    OS << ">";
+  }
+  OS << "(";
+  for (size_t i = 0; i < RewriteArgList.size(); ++i) {
+    if (i)
+      OS << ", ";
+    OS << RewriteArgList[i];
+  }
+  OS << ")";
+  return OS.str();
+}
+
 #define REWRITER_FACTORY_ENTRY(FuncName, RewriterTy, ...)                      \
   {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
@@ -996,6 +1039,8 @@ void TexFunctionRewriter::setTextureInfo() {
   REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
+#define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, RewriterName)                     \
+  REWRITER_FACTORY_ENTRY(FuncName, TemplatedCallExprRewriterFactory, RewriterName)
 
 const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1035,10 +1080,13 @@ const std::unordered_map<std::string,
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 #define ENTRY_REORDER_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME, ...)            \
   REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
+#define ENTRY_TEMPLATED(SOURCEAPINAME, TARGETAPINAME)                            \
+  TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #include "APINamesTexture.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_TEMPLATED
 #undef UNSUPPORTED_FACTORY_ENTRY
 };
 
