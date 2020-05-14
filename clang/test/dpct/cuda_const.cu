@@ -29,23 +29,36 @@ __constant__ double2 vec_d;
 // CHECK: dpct::device_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
+// CHECK: struct FuncObj {
+// CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {
+// CHECK-NEXT:   out[index] = const_angle[index];
+struct FuncObj {
+  __device__ void operator()(float *out, int index) {
+    out[index] = const_angle[index];
+  }
+};
+
 // CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT:              float *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  FuncObj f;
 // CHECK-NEXT:  const_ptr[index] = index;
 // CHECK-NEXT:  if (index < 360) {
 // CHECK-NEXT:    d_array[index] = const_angle[index];
 // CHECK-NEXT:  }
+// CHECK-NEXT:  f(d_array, index, const_angle);
 // CHECK-NEXT:  return;
 // CHECK-NEXT:}
 __global__ void simple_kernel(float *d_array) {
   int index;
   index = blockIdx.x * blockDim.x + threadIdx.x;
+  FuncObj f;
   const_ptr[index] = index;
   if (index < 360) {
     d_array[index] = const_angle[index];
   }
+  f(d_array, index);
   return;
 }
 

@@ -508,10 +508,12 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
-  HasArgs = CE->getNumArgs();
+  bool HasImplicitArg = false;
   auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
 
   if (auto CallDecl = CE->getDirectCallee()) {
+    HasImplicitArg =
+        isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(CallDecl);
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
     if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts()))
@@ -529,6 +531,11 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
   }
 
+  if (HasImplicitArg) {
+    HasArgs = CE->getNumArgs() == 1;
+  } else {
+    HasArgs = CE->getNumArgs();
+  }
 
   if (FuncInfo) {
     if (FuncInfo->ParamsNum == 0) {
@@ -537,17 +544,19 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     } else if (FuncInfo->NonDefaultParamNum == 0) {
       // if all params have default value
       ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
-          CE->getArg(0)->getBeginLoc());
+          CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
-      if(CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
+      if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         auto TokenLoc = Lexer::getLocForEndOfToken(
             SM.getSpellingLoc(
-                CE->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc()),
+                CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
+                    ->getEndLoc()),
             0, SM, DpctGlobalInfo::getContext().getLangOpts());
-        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+        ExtraArgLoc =
+            DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
       } else {
         ExtraArgLoc = 0;
       }
