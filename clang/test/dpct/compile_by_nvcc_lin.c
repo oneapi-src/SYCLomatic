@@ -1,4 +1,6 @@
 // UNSUPPORTED: -windows-
+// RUN: cd %T
+// RUN: rm -rf ./compile_by_nvcc
 // RUN: mkdir %T/compile_by_nvcc
 // RUN: cd %T/compile_by_nvcc
 // RUN: cp %s %T/compile_by_nvcc

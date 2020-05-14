@@ -57,7 +57,6 @@ int main(){
   //CHECK-NEXT: a6 = 7;
   //CHECK-NEXT: a6 = 8;
   //CHECK-NEXT: a6 = 9;
-  //CHECK-NEXT: a6 = 10;
   cusparseStatus_t a6;
   a6 = CUSPARSE_STATUS_SUCCESS;
   a6 = CUSPARSE_STATUS_NOT_INITIALIZED;
@@ -69,7 +68,6 @@ int main(){
   a6 = CUSPARSE_STATUS_INTERNAL_ERROR;
   a6 = CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED;
   a6 = CUSPARSE_STATUS_ZERO_PIVOT;
-  a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
 
   //CHECK: mkl::index_base a7;
   cusparseMatDescr_t a7;
