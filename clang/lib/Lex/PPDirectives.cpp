@@ -2859,6 +2859,12 @@ void Preprocessor::HandleUndefDirective() {
     appendMacroDirective(II, Undef);
 }
 
+
+#if INTEL_CUSTOMIZATION
+namespace clang{
+  extern std::function<bool(SourceLocation)> IsInRootFunc;
+}
+#endif
 //===----------------------------------------------------------------------===//
 // Preprocessor Conditional Directive Handling.
 //===----------------------------------------------------------------------===//
@@ -2920,6 +2926,16 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
 
   bool RetainExcludedCB = PPOpts->RetainExcludedConditionalBlocks &&
     getSourceManager().isInMainFile(DirectiveTok.getLocation());
+
+#if INTEL_CUSTOMIZATION
+  // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle it as
+  // defined.
+  if (!MI && MII->getName() == "__CUDA_ARCH__" &&
+      IsInRootFunc(MacroNameTok.getLocation())) {
+    static MacroInfo CudaArchFaker(SourceLocation::getFromRawEncoding(0));
+    MI = &CudaArchFaker;
+  }
+#endif // INTEL_CUSTOMIZATION
 
   // Should we include the stuff contained by this directive?
   if (PPOpts->SingleFileParseMode && !MI) {

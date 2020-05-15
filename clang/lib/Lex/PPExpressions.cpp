@@ -36,6 +36,13 @@
 
 using namespace clang;
 
+#if INTEL_CUSTOMIZATION
+namespace clang {
+inline bool isInRootNull(SourceLocation) { return false; }
+std::function<bool(SourceLocation)> IsInRootFunc = isInRootNull;
+} // namespace clang
+#endif // INTEL_CUSTOMIZATION
+
 namespace {
 
 /// PPValue - Represents the value of a subexpression of a preprocessor
@@ -135,6 +142,14 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   if (Result.Val != 0 && ValueLive)
     PP.markMacroAsUsed(Macro.getMacroInfo());
 
+#ifdef INTEL_CUSTOMIZATION
+  // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle is as
+  // defined.
+  if (!Result.Val && II->getName() == "__CUDA_ARCH__" &&
+      IsInRootFunc(PeekTok.getLocation())) {
+    Result.Val = true;
+  }
+#endif // INTEL_CUSTOMIZATION
   // Save macro token for callback.
   Token macroToken(PeekTok);
 
@@ -254,6 +269,14 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         if (ValueLive)
           PP.Diag(PeekTok, diag::warn_pp_undef_identifier) << II;
         Result.Val = 0;
+#if INTEL_CUSTOMIZATION
+        // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle
+        // it as defined '400'
+        if (II->getName() == "__CUDA_ARCH__" &&
+            IsInRootFunc(PeekTok.getLocation())) {
+          Result.Val = 400;
+        }
+#endif // INTEL_CUSTOMIZATION
         Result.Val.setIsUnsigned(false); // "0" is signed intmax_t 0.
         Result.setIdentifier(II);
         Result.setRange(PeekTok.getLocation());

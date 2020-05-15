@@ -20,6 +20,8 @@
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 namespace clang {
+extern std::function<bool(SourceLocation)> IsInRootFunc;
+
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 // TODO: implement one of this for each source language.
@@ -56,6 +58,10 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
+
+DpctGlobalInfo::DpctGlobalInfo() {
+  IsInRootFunc = DpctGlobalInfo::checkInRoot;
+}
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
@@ -1203,5 +1209,6 @@ void RandomEngineInfo::buildInfo() {
   }
 }
 
+bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }
 } // namespace dpct
 } // namespace clang

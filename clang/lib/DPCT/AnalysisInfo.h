@@ -865,12 +865,15 @@ public:
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
 
 private:
-  DpctGlobalInfo() = default;
+  DpctGlobalInfo();
 
   DpctGlobalInfo(const DpctGlobalInfo &) = delete;
   DpctGlobalInfo(DpctGlobalInfo &&) = delete;
   DpctGlobalInfo &operator=(const DpctGlobalInfo &) = delete;
   DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
+
+  // Wrapper of isInRoot for std::function usage.
+  static bool checkInRoot(SourceLocation SL) { return isInRoot(SL); }
 
   // Find stored info by its corresponding AST node.
   // VarDecl=>MemVarInfo
