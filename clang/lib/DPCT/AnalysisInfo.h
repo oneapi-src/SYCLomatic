@@ -37,6 +37,19 @@ enum class HelperFuncType : int {
   CurrentDevice = 1
 };
 
+enum class KernelArgType : int {
+  Stream = 0,
+  Texture,
+  Accessor1D,
+  Accessor2D,
+  Accessor3D,
+  Array1D,
+  Array2D,
+  Array3D,
+  Default,
+  MaxParameterSize
+};
+
 class CudaMallocInfo;
 class RandomEngineInfo;
 class TextureInfo;
@@ -864,6 +877,9 @@ public:
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
 
+  inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
+    return insertObject(FileMap, FilePath);
+  }
 private:
   DpctGlobalInfo();
 
@@ -901,9 +917,6 @@ private:
         ->template insertNode<Info>(LocInfo.second, N);
   }
 
-  inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
-    return insertObject(FileMap, FilePath);
-  }
   template <class T> static inline SourceLocation getLocation(const T *N) {
     return N->getBeginLoc();
   }
@@ -1575,6 +1588,19 @@ public:
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
     dpct::merge(TextureMap, VarMap.TextureMap);
   }
+  int calculateExtraArgsSize() const {
+    int Size = 0;
+    if (hasStream())
+      Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::Stream);
+
+    Size = Size + calculateExtraArgsSize(LocalVarMap) +
+           calculateExtraArgsSize(GlobalVarMap) +
+           calculateExtraArgsSize(ExternVarMap);
+    Size = Size + TextureMap.size() *
+                      MapNames::KernelArgTypeSizeMap.at(KernelArgType::Texture);
+
+    return Size;
+  }
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
 
   // If want adding the ExtraParam with new line, the second argument should be
@@ -1622,6 +1648,14 @@ private:
               std::make_pair(VarInfoPair.first,
                              std::make_shared<MemVarInfo>(*VarInfoPair.second)))
           .first->second->applyTemplateArguments(TemplateArgs);
+  }
+  int calculateExtraArgsSize(const MemVarInfoMap &Map) const {
+    int Size = 0;
+    for (auto &VarInfoPair : Map) {
+      auto D = VarInfoPair.second->getType()->getDimension();
+      Size += MapNames::getArrayTypeSize(D);
+    }
+    return Size;
   }
 
   template <CallOrDecl COD>
@@ -2093,6 +2127,7 @@ private:
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
       IsKernelParamPtr = Analysis.IsKernelParamPtr;
+
       if (IsPointer) {
         QualType PointerType;
         if (Arg->getType().getTypePtr()->getTypeClass() ==
@@ -2102,6 +2137,16 @@ private:
           PointerType = Arg->getType();
         }
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
+        ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Default);
+      } else {
+        auto QT = Arg->getType();
+        QT = QT.getUnqualifiedType();
+        auto Iter =
+            MapNames::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
+        if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
+          ArgSize = Iter->second;
+        else
+          ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Default);
       }
 
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
@@ -2115,6 +2160,7 @@ private:
       IsRedeclareRequired = false;
       TypeString = "";
       Index = 0;
+      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Texture);
     }
 
     inline const std::string &getArgString() const { return ArgString; }
@@ -2135,6 +2181,7 @@ private:
     std::string TypeString;
     std::string IdString;
     int Index;
+    int ArgSize = 0;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };
@@ -2223,6 +2270,7 @@ public:
   }
 
   inline const std::vector<ArgInfo> &getArgsInfo() { return ArgsInfo; }
+  int calculateOriginArgsSize() const;
 
   std::string getReplacement();
 
@@ -2236,6 +2284,7 @@ private:
   void buildArgsInfo(const CallExpr *CE) {
     KernelArgumentAnalysis Analysis(IsInMacroDefine);
     auto &TexList = getTextureObjectList();
+
     for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
       if (auto Obj = TexList[Idx]) {
         ArgsInfo.emplace_back(Obj, this);
@@ -2369,6 +2418,7 @@ private:
   StmtList KernelStmts;
   std::string KernelArgs;
   std::string QueueStr;
+  int TotalArgsSize = 0;
 };
 
 class CudaMallocInfo {

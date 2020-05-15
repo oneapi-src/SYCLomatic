@@ -19,6 +19,7 @@
 
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "llvm/Support/FormatVariadic.h"
 
 #include <assert.h>
@@ -186,6 +187,23 @@ insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
   return new InsertComment(StartLoc, OS.str(), UseTextBegin);
 }
 
+template <typename... Ts>
+std::string getCommentToInsert(SourceLocation StartLoc, SourceManager &SM,
+                               const DiagnosticsMessage &Msg, Ts &&... Vals) {
+  auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  OS << getMessagePrefix(Msg.ID);
+  OS << Formatted;
+  std::string Text = OS.str();
+
+  std::string OrigIndent = getIndent(StartLoc, SM).str();
+  std::string Comment = (OrigIndent + llvm::Twine("/*") + getNL() + OrigIndent +
+                         Text + getNL() + OrigIndent + "*/" + getNL())
+                            .str();
+  return Comment;
+}
+
 class ReportedWarningInfo {
 public:
   static std::unordered_map<std::string, std::unordered_set<std::string>> &
@@ -197,6 +215,19 @@ private:
   static std::unordered_map<std::string, std::unordered_set<std::string>>
       ReportedWarning;
 };
+
+template <typename... Ts>
+void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
+                   DiagnosticsEngine &Engine, Ts &&... Vals) {
+  std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
+
+  if (OutputVerbosity != OutputVerbosityLev::silent) {
+    unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
+        (DiagnosticIDs::Level)Msg.Category, Message);
+    auto B = Engine.Report(SL, ID);
+    applyReport<Ts...>(B, Vals...);
+  }
+}
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
@@ -235,6 +266,71 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   }
   UniqueID++;
 }
+
+// Emits a warning/error/note and/or comment depending on MsgID. For details
+template <typename IDTy, typename... Ts>
+void report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
+            Ts &&... Vals) {
+  std::shared_ptr<DpctFileInfo> Fileinfo =
+      dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
+
+  SmallString<4096> NativeFormPath(FileAbsPath);
+  // Convert path to the native form.
+  // E.g, on Windows all '/' are converted to '\'.
+  llvm::sys::path::native(NativeFormPath);
+
+  std::string FileAndLine = clang::dpct::buildString(
+      NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
+  std::string WarningIDAndMsg = clang::dpct::buildString(
+      std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
+  if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
+    ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
+  } else if (ReportedWarningInfo::getInfo()[FileAndLine].count(
+                 WarningIDAndMsg) != 0) {
+    return;
+  }
+
+  LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      &DiagnosticPrinter, false);
+
+  FileSystemOptions FSO;
+  FSO.WorkingDir = ".";
+  FileManager FM(FSO, nullptr);
+  SourceManager SM(Diagnostics, FM, false);
+  DiagnosticPrinter.BeginSourceFile(DefaultLangOptions, nullptr);
+  FileID FID = SM.getOrCreateFileID(
+      SM.getFileManager().getFile(NativeFormPath).get(), SrcMgr::C_User);
+
+  unsigned int LineNum = Fileinfo->getLineNumber(Offset);
+  unsigned int ColNum = Offset - Fileinfo->getLineInfo(LineNum).Offset + 1;
+  SourceLocation SL = SM.translateLineCol(FID, LineNum, ColNum);
+
+  if (!SuppressWarningsAllFlag) {
+    // Only report warnings that are not suppressed
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
+        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
+      reportWarning(SL, DiagnosticIDTable[(int)MsgID], Diagnostics,
+                    std::forward<Ts>(Vals)...);
+    }
+  }
+
+  auto StartLoc = getStartOfLine(SL, SM, LangOptions());
+  if (CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            NativeFormPath.str().str(), SM.getDecomposedLoc(StartLoc).second, 0,
+            getCommentToInsert(StartLoc, SM, CommentIDTable[(int)MsgID],
+                               std::forward<Ts>(Vals)...),
+            nullptr));
+  }
+
+  UniqueID++;
+}
+
 } // namespace DiagnosticsUtils
 } // namespace dpct
 } // namespace clang

@@ -203,6 +203,53 @@ const MapNames::SetTy MapNames::SupportedVectorTypes{
     "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
     "double2",   "double3",    "double4"};
 
+const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
+  {"char1", 1},      {"char2", 2},       {"char3", 4},       {"char4", 4},
+  {"uchar1", 1},     {"uchar2", 2},      {"uchar3", 4},      {"uchar4", 4},
+  {"short1", 2},     {"short2", 4},      {"short3", 8},      {"short4", 8},
+  {"ushort1", 2},    {"ushort2", 4},     {"ushort3", 8},     {"ushort4", 8},
+  {"int1", 4},       {"int2", 8},        {"int3", 16},       {"int4", 16},
+  {"uint1", 4},      {"uint2", 8},       {"uint3", 16},      {"uint4", 16},
+  {"long1", 8},      {"long2", 16},      {"long3", 32},      {"long4", 32},
+  {"ulong1", 8},     {"ulong2", 16},     {"ulong3", 32},     {"ulong4", 32},
+  {"longlong1", 8},  {"longlong2", 16},  {"longlong3", 32},  {"longlong4", 32},
+  {"ulonglong1", 8}, {"ulonglong2", 16}, {"ulonglong3", 32}, {"ulonglong4", 32},
+  {"float1", 4},     {"float2", 8},      {"float3", 16},     {"float4", 16},
+  {"double1", 8},    {"double2", 16},    {"double3", 32},    {"double4", 32}};
+
+const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
+    {clang::dpct::KernelArgType::Stream, 208},
+    {clang::dpct::KernelArgType::Texture,
+     48 /*32(image accessor) + 16(sampler)*/},
+    {clang::dpct::KernelArgType::Accessor1D, 32},
+    {clang::dpct::KernelArgType::Accessor2D, 56},
+    {clang::dpct::KernelArgType::Accessor3D, 80},
+    {clang::dpct::KernelArgType::Array1D, 8},
+    {clang::dpct::KernelArgType::Array2D, 24},
+    {clang::dpct::KernelArgType::Array3D, 32},
+    {clang::dpct::KernelArgType::Default, 8},
+    {clang::dpct::KernelArgType::MaxParameterSize, 1024}};
+
+int MapNames::getArrayTypeSize(const int Dim) {
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    if (Dim == 2) {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor2D);
+    } else if (Dim == 3) {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor3D);
+    } else {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor1D);
+    }
+  } else {
+    if (Dim == 2) {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array2D);
+    } else if (Dim == 3) {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array3D);
+    } else {
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array1D);
+    }
+  }
+}
+
 const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
 #define ENTRY(APINAME, MSG) {#APINAME, MSG},
 #include "APINames_removed.inc"

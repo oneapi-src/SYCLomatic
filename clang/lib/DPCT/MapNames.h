@@ -16,6 +16,12 @@
 #include <map>
 #include <set>
 
+namespace clang {
+namespace dpct {
+  enum class KernelArgType;
+}
+}
+
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 /// Record mapping between names
@@ -238,6 +244,9 @@ public:
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
   static const SetTy SupportedVectorTypes;
+  static const std::map<std::string, int> VectorTypeMigratedTypeSizeMap;
+  static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
+  static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;

@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "ExprAnalysis.h"
 #include "Utility.h"
+#include "Diagnostics.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
@@ -143,6 +144,14 @@ DpctGlobalInfo::findRandomEngine(const Expr *E) {
     return findRandomEngineInfo(Src);
   }
   return std::shared_ptr<RandomEngineInfo>();
+}
+
+int KernelCallExpr::calculateOriginArgsSize() const {
+  int Size = 0;
+  for (auto &ArgInfo : ArgsInfo) {
+    Size += ArgInfo.ArgSize;
+  }
+  return Size;
 }
 
 void KernelCallExpr::buildExecutionConfig(
@@ -479,6 +488,13 @@ inline std::string CallFunctionExpr::getExtraArguments() {
 
 void KernelCallExpr::buildInfo() {
   CallFunctionExpr::buildInfo();
+  TotalArgsSize =
+      getVarMap().calculateExtraArgsSize() + calculateOriginArgsSize();
+
+  if (TotalArgsSize >
+      MapNames::KernelArgTypeSizeMap.at(KernelArgType::MaxParameterSize))
+    DiagnosticsUtils::report(getFilePath(), getBegin(),
+                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE);
   // TODO: Output debug info.
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       getFilePath(), getBegin(), 0, getReplacement(), nullptr));
