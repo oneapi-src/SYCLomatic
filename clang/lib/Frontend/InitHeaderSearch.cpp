@@ -591,6 +591,16 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   // #include_next.
   unsigned NonSystemRemoved = RemoveDuplicates(SearchList, NumQuoted, Verbose);
   NumAngled -= NonSystemRemoved;
+  #ifdef INTEL_CUSTOMIZATION
+  // keep one /usr/include in last position to WA include_next issue
+  // eg. cmath using "include_next math.h"
+  for (auto &Entry : SearchList) {
+    if (!Entry.getName().str().compare("/usr/include")) {
+       SearchList.push_back(Entry);
+      break;
+     }
+  }
+  #endif
 
   bool DontSearchCurDir = false;  // TODO: set to true if -I- is set?
   Headers.SetSearchPaths(SearchList, NumQuoted, NumAngled, DontSearchCurDir);
