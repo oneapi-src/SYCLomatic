@@ -176,17 +176,15 @@ void MapNames::setClNamespace(bool Enable) {
 
   // Thrust function name mapping
   ThrustFuncNamesMap = {
-      {"copy", {"std::copy", "dpstd::execution::sycl"}},
-      {"copy_n", {"std::copy_n", "dpstd::execution::sycl"}},
-      {"sequence", {"dpct::sequence", "dpstd::execution::sycl"}},
-      {"stable_sort_by_key",
-       {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
-      {"reduce", {"std::reduce", "dpstd::execution::sycl"}},
-      {"device_malloc", {"dpct::device_malloc", ""}},
-      {"complex", {"std::complex", ""}}, // for constructor calls
-      {"exp", {ClNamespace + "::exp", ""}},
-      {"log", {ClNamespace + "::log", ""}},
-      // ...
+#define ENTRY(from, to, policy) { from, {to, policy} },
+#define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
+#define ENTRY_DEVICE(from, to) ENTRY(from, to, "")
+#define ENTRY_BOTH(from, to) ENTRY(from, to, "")
+#include "APINamesMapThrust.inc"
+#undef ENTRY
+#undef ENTRY_HOST
+#undef ENTRY_DEVICE
+#undef ENTRY_BOTH
   };
 }
 

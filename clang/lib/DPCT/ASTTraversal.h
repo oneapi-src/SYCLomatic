@@ -520,7 +520,6 @@ private:
   bool
   replaceNamedCastExprTemplateType(SourceManager *SM,
                                    const CXXNamedCastExpr *NCE);
-  void insertComplexHeader(SourceLocation SL, std::string &Replacement);
 };
 
 /// Migration rule for inserting namespace for vector types

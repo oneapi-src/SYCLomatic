@@ -1717,6 +1717,13 @@ bool isAuto(const char *StrChar, unsigned Len) {
   return std::string(StrChar, Len) == "auto";
 }
 
+void insertComplexHeader(SourceLocation SL,
+                         std::string &Replacement) {
+  if (SL.isValid() && Replacement.substr(0, 12) == "std::complex") {
+    DpctGlobalInfo::getInstance().insertHeader(SL, Complex);
+  }
+}
+
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
@@ -1758,6 +1765,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
                 MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
 
             if (!Replacement.empty()) {
+              insertComplexHeader(BeginLoc, Replacement);
               emplaceTransformation(
                   new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
               return;
@@ -2234,19 +2242,12 @@ bool TemplateTypeInDeclRule::replaceNamedCastExprTemplateType(
     SR = fixSourceRange(SM, SR);
     unsigned ParamLen = SM->getCharacterData(SR.getEnd()) -
                         SM->getCharacterData(SR.getBegin()) + 1;
+    insertComplexHeader(SR.getBegin(), Replacement);
     emplaceTransformation(
         new ReplaceText(SR.getBegin(), ParamLen, std::move(Replacement)));
-    insertComplexHeader(SR.getBegin(), Replacement);
     return true;
   }
   return false;
-}
-
-void TemplateTypeInDeclRule::insertComplexHeader(SourceLocation SL,
-                                                 std::string &Replacement) {
-  if (SL.isValid() && Replacement.substr(0, 12) == "std::complex") {
-    DpctGlobalInfo::getInstance().insertHeader(SL, Complex);
-  }
 }
 
 void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
@@ -2388,17 +2389,15 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
         TTTL = DTL.getAs<TemplateSpecializationTypeLoc>();
       }
       // Replace each type in the template arguments one by one
-      SourceLocation SL;
       if (DD) {
-        SL = DD->getBeginLoc();
+        insertComplexHeader(DD->getBeginLoc(), Replacement);
         emplaceTransformation(new ReplaceTypeInDecl(DD, TTTL.getArgLoc(i),
                                                     std::move(Replacement)));
       } else if (TL) {
-        SL = TL->getBeginLoc();
+        insertComplexHeader(TL->getBeginLoc(), Replacement);
         emplaceTransformation(new ReplaceTypeInDecl(
             TL->getBeginLoc(), TTTL.getArgLoc(i), std::move(Replacement)));
       }
-      insertComplexHeader(SL, Replacement);
       DupFilter.insert(Loc);
     }
   }
