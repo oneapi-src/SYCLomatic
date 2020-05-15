@@ -260,6 +260,10 @@ public:
     HeaderInsertedBitMap[HeaderType::Algorithm] = B;
   }
 
+ void setTimeHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::Time] = B;
+  }
+
   template <class... Args>
   void concatHeader(llvm::raw_string_ostream &OS, Args... Arguments) {
     std::initializer_list<int>{
@@ -857,6 +861,11 @@ public:
   void setAlgorithmHeaderInserted(SourceLocation Loc, bool B) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->setAlgorithmHeaderInserted(B);
+  }
+
+  void setTimeHeaderInserted(SourceLocation Loc, bool B) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setTimeHeaderInserted(B);
   }
 
   void insertHeader(SourceLocation Loc, HeaderType Type) {

@@ -1103,7 +1103,7 @@ ENTRY(surfCubemapLayeredread, surfCubemapLayeredread, false, NO_FLAG, P4, "comme
 ENTRY(surfCubemapLayeredwrite, surfCubemapLayeredwrite, false, NO_FLAG, P4, "comment")
 ENTRY(__ldg, __ldg, false, NO_FLAG, P0, "comment")
 ENTRY(clock, clock, true, NO_FLAG, P0, "Successful: DPCT1008")
-ENTRY(clock64, clock64, false, NO_FLAG, P0, "comment")
+ENTRY(clock64, clock64, true, NO_FLAG, P0, "Successful: DPCT1008")
 ENTRY(atomicAdd_system, atomicAdd_system, false, NO_FLAG, P0, "comment")
 ENTRY(atomicSub_system, atomicSub_system, false, NO_FLAG, P4, "comment")
 ENTRY(atomicExch_system, atomicExch_system, false, NO_FLAG, P0, "comment")

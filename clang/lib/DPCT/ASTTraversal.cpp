@@ -340,6 +340,11 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
   }
 
+  // Record that time header is included in this file
+  if (IsAngled && (FileName.compare(StringRef("time.h")) == 0 )) {
+    DpctGlobalInfo::getInstance().setTimeHeaderInserted(HashLoc, true);
+  }
+
   // Record that algorithm header is included in this file
   if (IsAngled && FileName.compare(StringRef("algorithm")) == 0) {
     DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
@@ -6376,7 +6381,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcGetEventHandle", "cudaIpcGetMemHandle",
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
-        "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion", "cudaRuntimeGetVersion");
+        "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
+        "cudaRuntimeGetVersion", "clock64");
   };
 
   MF.addMatcher(
@@ -6533,8 +6539,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
-  } else if (FuncName == "clock") {
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false);
+  } else if (FuncName == "clock" || FuncName == "clock64") {
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false, FuncName);
     // Add '#include <time.h>' directive to the file only once
     auto Loc = CE->getBeginLoc();
     DpctGlobalInfo::getInstance().insertHeader(Loc, Time);
