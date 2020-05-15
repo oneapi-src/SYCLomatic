@@ -29,7 +29,7 @@ int main(void) {
   char dst_data[N];
 
   // copy input data to the device
-// CHECK:   dpstd::device_vector<char> input(data, data + N);
+// CHECK:   dpct::device_vector<char> input(data, data + N);
   thrust::device_vector<char> input(data, data + N);
 
   std::cout << "input data:" << std::endl;

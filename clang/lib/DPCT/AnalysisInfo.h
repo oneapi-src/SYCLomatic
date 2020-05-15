@@ -1072,6 +1072,7 @@ public:
   inline bool isTemplate() { return IsTemplate; }
   inline bool isPointer() { return IsPointer; }
   inline bool isReference() { return IsReference; }
+  inline bool isElaborated() { return IsElaborated; }
   inline void adjustAsMemType() {
     setPointerAsArray();
     removeQualifier();
@@ -1083,7 +1084,7 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
-  CtTypeInfo() : IsPointer(false), IsTemplate(false) {}
+  CtTypeInfo() : IsPointer(false), IsTemplate(false), IsElaborated(false) {}
 
   /// For ConstantArrayType, size in generated code is folded as an integer.
   /// If \p NeedSizeFold is true, original size expression will followed as
@@ -1146,6 +1147,7 @@ private:
   bool IsPointer;
   bool IsReference;
   bool IsTemplate;
+  bool IsElaborated;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };

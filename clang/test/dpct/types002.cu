@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
   //TODO: Currently, thrust::device_vector in sizeof is unsupported.
-  //CHECK:dpstd::device_vector<int> device_vec;
+  //CHECK:dpct::device_vector<int> device_vec;
   //CHECK-NEXT:int a = sizeof(thrust::device_vector<int>);
   //CHECK-NEXT:a = sizeof(device_vec);
   //CHECK-NEXT:a = sizeof device_vec;
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   a = sizeof device_p;
 
   //TODO: Currently, thrust::host_vector in sizeof is unsupported.
-  //CHECK:dpstd::host_vector<int> host_vec;
+  //CHECK:std::vector<int> host_vec;
   //CHECK-NEXT:a = sizeof(thrust::host_vector<int>);
   //CHECK-NEXT:a = sizeof(host_vec);
   //CHECK-NEXT:a = sizeof host_vec;

@@ -1618,7 +1618,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       typeLoc(
           loc(qualType(hasDeclaration(anyOf(
               namedDecl(hasAnyName("cudaError", "cufftResult_t", "curandStatus",
-                                   "cublasStatus", "CUstream_st", "complex")),
+                                   "cublasStatus", "CUstream_st", "complex",
+                                   "counting_iterator", "transform_iterator",
+                                   "permutation_iterator")),
               typedefDecl(hasAnyName(
                   "cudaError_t", "CUresult", "cudaEvent_t", "cublasHandle_t",
                   "cublasStatus_t", "cuComplex", "cuDoubleComplex",
@@ -1626,10 +1628,12 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasOperation_t", "cublasStatus", "cusolverStatus_t",
                   "cusolverEigType_t", "cusolverEigMode_t", "curandStatus_t",
                   "curandStatus", "cudaStream_t", "CUstream_st", "complex",
-                  "cusparseStatus_t", "cusparseDiagType_t",
-                  "cusparseFillMode_t", "cusparseIndexBase_t",
-                  "cusparseMatrixType_t", "cusparseOperation_t",
-                  "cusparseMatDescr_t", "cusparseHandle_t")))))))
+                  "counting_iterator", "transform_iterator",
+                  "permutation_iterator", "cusparseStatus_t",
+                  "cusparseDiagType_t", "cusparseFillMode_t",
+                  "cusparseIndexBase_t", "cusparseMatrixType_t",
+                  "cusparseOperation_t", "cusparseMatDescr_t",
+                  "cusparseHandle_t")))))))
           .bind("cudaTypeDef"),
       this);
 }
@@ -2518,6 +2522,34 @@ bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
   }
 }
 
+void VectorTypeNamespaceRule::replaceElaboratedTypeName(TypeLoc TL) {
+  // [typename] namespaceId::typenameId
+  // lookup by namespaceId::typenameId
+  auto LOpts = DpctGlobalInfo::getContext().getLangOpts();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  Token Tok;
+  Lexer::getRawToken(TL.getBeginLoc(), Tok, SM, LOpts, true);
+  auto TokStr = Lexer::getSpelling(Tok, SM, LOpts);
+  auto B = TL.getBeginLoc();
+  if (TokStr == "typename") {
+    Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
+    TokStr = Lexer::getSpelling(Tok, SM, LOpts);
+    B = Tok.getLocation();
+  }
+  auto TypeName = TokStr;
+  Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
+  TokStr = Lexer::getSpelling(Tok, SM, LOpts);
+  if (Tok.is(tok::TokenKind::coloncolon)) {
+    Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
+    TypeName += "::" + Lexer::getSpelling(Tok, SM, LOpts);
+  }
+  auto &NewName = MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
+  if (!NewName.empty()) {
+    auto Length = SM.getFileOffset(Tok.getEndLoc()) - SM.getFileOffset(B);
+    emplaceTransformation(new ReplaceText(B, Length, std::string(NewName)));
+  }
+}
+
 void VectorTypeNamespaceRule::replaceTypeName(TypeLoc TL, bool isDeclType) {
   if (isNamespaceInserted(TL.getBeginLoc()))
     return;
@@ -2530,6 +2562,9 @@ void VectorTypeNamespaceRule::replaceTypeName(TypeLoc TL, bool isDeclType) {
   auto &Str = MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
   if (!Str.empty())
     emplaceTransformation(new ReplaceToken(TL.getBeginLoc(), std::string(Str)));
+  else if (Ty.isElaborated()) {
+    replaceElaboratedTypeName(TL);
+  }
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {

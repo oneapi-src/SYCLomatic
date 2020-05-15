@@ -534,6 +534,7 @@ public:
   bool isNamespaceInserted(SourceLocation SL);
 
 private:
+  void replaceElaboratedTypeName(TypeLoc TL);
   void replaceTypeName(TypeLoc TL, bool isDeclType = false);
   std::unordered_set<unsigned int> DupFilter;
 };
