@@ -911,7 +911,7 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
   void
-  removeTrailingSemicolon(const CUDAKernelCallExpr *KCall,
+  removeTrailingSemicolon(const CallExpr *KCall,
                           const ast_matchers::MatchFinder::MatchResult &Result);
 };
 

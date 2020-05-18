@@ -121,7 +121,7 @@ ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, false, NO_FLAG, P0
 ENTRY(cudaLaunchCooperativeKernel, cudaLaunchCooperativeKernel, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchCooperativeKernelMultiDevice, cudaLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchHostFunc, cudaLaunchHostFunc, false, NO_FLAG, P4, "comment")
-ENTRY(cudaLaunchKernel, cudaLaunchKernel, false, NO_FLAG, P0, "comment")
+ENTRY(cudaLaunchKernel, cudaLaunchKernel, true, NO_FLAG, P0, "Successful: DPCT1004, success only when directly using of kernel function name")
 ENTRY(cudaSetDoubleForDevice, cudaSetDoubleForDevice, false, NO_FLAG, P0, "comment")
 ENTRY(cudaSetDoubleForHost, cudaSetDoubleForHost, false, NO_FLAG, P0, "comment")
 

@@ -21,6 +21,7 @@
 #include <unordered_set>
 
 #include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ParentMapContext.h"
@@ -220,6 +221,11 @@ public:
   template <class Obj, class Node>
   std::shared_ptr<Obj> insertNode(unsigned Offset, const Node *N) {
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
+  }
+  template <class Obj>
+  std::shared_ptr<Obj> insertNode(unsigned Offset,
+                                  std::shared_ptr<Obj> Object) {
+    return getMap<Obj>().insert(std::make_pair(Offset, Object)).first->second;
   }
   inline const std::string &getFilePath() { return FilePath; }
 
@@ -852,6 +858,8 @@ public:
     for (auto &File : FileMap)
       File.second->emplaceReplacements(ReplSets);
   }
+
+  std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
 
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
@@ -1523,6 +1531,7 @@ public:
     }
   }
 
+  virtual ~TextureInfo() = default;
   void setType(std::string &&DataType, int TexType) {
     setType(std::make_shared<TextureTypeInfo>(std::move(DataType), TexType));
   }
@@ -1579,6 +1588,7 @@ public:
   TextureObjectInfo(const ParmVarDecl *PVD)
       : TextureObjectInfo(PVD, PVD->getFunctionScopeIndex()) {}
   TextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD, 0) {}
+  virtual ~TextureObjectInfo() = default;
   std::string getAccessorDecl() override {
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
@@ -1605,11 +1615,29 @@ public:
     }
   }
 
-  static inline bool isTextureObject(const Expr *E) {
+  template <class Node> static inline bool isTextureObject(const Node *E) {
     if (E)
       return DpctGlobalInfo::getUnqualifiedTypeName(E->getType()) ==
              "cudaTextureObject_t";
     return false;
+  }
+};
+
+class CudaLaunchTextureObjectInfo : public TextureObjectInfo {
+  std::string ArgStr;
+
+public:
+  CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
+      : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
+  std::string getAccessorDecl() override {
+    ParameterStream PS;
+    PS << "auto " << Name << "_acc = static_cast<";
+    getType()->printType(PS, "dpct::image")
+        << " *>(" << ArgStr << ")->get_access(cgh);";
+    return PS.Str;
+  }
+  std::string getSamplerDecl() override {
+    return buildString("auto ", Name, "_smpl = ", ArgStr, "->get_sampler();");
   }
 };
 
@@ -1662,6 +1690,7 @@ public:
   }
 
   static bool isPlaceholderType(clang::QualType QT);
+
 private:
   template <class T> void setArgFromExprAnalysis(const T &Arg) {
     ExprAnalysis EA;
@@ -1990,6 +2019,8 @@ protected:
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() {
     return FuncInfo;
   }
+  void buildCalleeInfo(const Expr *Callee);
+  void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
   static std::string getName(const NamedDecl *D);
@@ -2280,6 +2311,33 @@ private:
       }
     }
 
+    ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
+            KernelCallExpr *Kernel)
+        : IsPointer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+                    PVD->getType()->isPointerType()),
+          IsRedeclareRequired(true), IsUsedAsLvalueAfterMalloc(true),
+          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+          IdString(PVD->getName().str() + "_"),
+          Index(PVD->getFunctionScopeIndex()) {
+      /// For parameter declaration 'float *a' with index = 2 and args array's
+      /// name is 'args', the arg string will be '*(float **)args[2]'.
+      std::ostringstream OS;
+      /// Get pointer type of the parameter declaration's type, e.g. 'float **'.
+      auto CastPointerType =
+          DpctGlobalInfo::getContext().getPointerType(PVD->getType());
+      /// Print '*(float **)'.
+      OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
+      /// Print args array subscript.
+      OS << ArgsArrayName << "[" << Index << "]";
+      ArgString = OS.str();
+
+      if (TextureObjectInfo::isTextureObject(PVD)) {
+        IsRedeclareRequired = false;
+        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgString);
+        Kernel->addTextureObjectArgInfo(Index, Texture);
+      }
+    }
+
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
         : Texture(Obj) {
       IsPointer = false;
@@ -2406,7 +2464,16 @@ public:
   inline void setSync(bool Sync = true) { IsSync = Sync; }
   inline bool isSync() { return IsSync; }
 
+  static std::shared_ptr<KernelCallExpr>
+  buildFromCudaLaunchKernel(const std::pair<std::string, unsigned> &LocInfo,
+                            const CallExpr *);
+
 private:
+  KernelCallExpr(unsigned Offset, const std::string &FilePath)
+      : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
+
+  void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
+                                  const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE) {
     KernelArgumentAnalysis Analysis(IsInMacroDefine);
     auto &TexList = getTextureObjectList();
@@ -2425,10 +2492,40 @@ private:
   }
   bool isIncludedFile(const std::string &CurrentFile,
                       const std::string &CheckingFile);
-  void buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
-  void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
+  void buildNeedBracesInfo(const CallExpr *KernelCall);
+  void buildLocationInfo(const CallExpr*KernelCall);
+  template <class ArgsRange>
+  void buildExecutionConfig(const ArgsRange &ConfigArgs) {
+    int Idx = 0;
+    bool LocalReversed = false, GroupReversed = false;
+    for (auto Arg : ConfigArgs) {
+      KernelConfigAnalysis A(IsInMacroDefine);
+      A.analyze(Arg, Idx < 2);
+      ExecutionConfig.Config[Idx] = A.getReplacedString();
+      if (Idx == 0) {
+        GroupReversed = A.reversed();
+        ExecutionConfig.GroupDirectRef = A.isDirectRef();
+      } else if (Idx == 1) {
+        LocalReversed = A.reversed();
+        ExecutionConfig.LocalDirectRef = A.isDirectRef();
+      }
+      ++Idx;
+    }
+    ExecutionConfig.DeclLocalRange =
+        !LocalReversed && !ExecutionConfig.LocalDirectRef;
+    ExecutionConfig.DeclGroupRange =
+        LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
+    ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
+
+    if (ExecutionConfig.Stream == "0") {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      buildTempVariableMap(Index, *ConfigArgs.begin(),
+                           HelperFuncType::DefaultQueue);
+    }
+  }
 
   void removeExtraIndent() {
     DpctGlobalInfo::getInstance().addReplacement(

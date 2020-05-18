@@ -216,6 +216,15 @@ public:
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
+  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
+              std::string OrigAPIName, bool IsNeedProcessMacro,
+              bool IsNeedCleanup, Args &&... S)
+      : TextModification(TMID::ReplaceStmt), TheStmt(E),
+        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
+        OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
+        ReplacementString(std::forward<Args>(S)...), IsCleanup(IsNeedCleanup) {}
+
+  template <class... Args>
   ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems

@@ -80,6 +80,14 @@ private:
   MapTy Map;
 };
 
+class ParensPrinter {
+  std::ostream &OS;
+
+public:
+  ParensPrinter(std::ostream &OS) : OS(OS) { OS << "("; }
+  ~ParensPrinter() { OS << ")"; }
+};
+
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
 bool isCanonical(llvm::StringRef Path);

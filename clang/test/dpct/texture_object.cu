@@ -70,15 +70,15 @@ __device__ void device01(cudaTextureObject_t tex21) {
   tex1Dfetch(&u21, tex21, 1);
 }
 
-// CHECK: void kernel(dpct::image_accessor<sycl::uint2, 1> tex21, dpct::image_accessor<sycl::float4, 2> tex42) {
-// CHECK-NEXT: device01(tex21);
+// CHECK: void kernel(dpct::image_accessor<sycl::uint2, 1> tex2, dpct::image_accessor<sycl::float4, 2> tex4) {
+// CHECK-NEXT: device01(tex2);
 // CHECK-NEXT: sycl::float4 f42;
-// CHECK-NEXT: dpct::read_image(&f42, tex42, 0.5f, 0.5f);
+// CHECK-NEXT: dpct::read_image(&f42, tex4, 0.5f, 0.5f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.
-__global__ void kernel(cudaTextureObject_t tex21, cudaTextureObject_t tex42) {
-  device01(tex21);
+__global__ void kernel(cudaTextureObject_t tex2, cudaTextureObject_t tex4) {
+  device01(tex2);
   float4 f42;
-  tex2D(&f42, tex42, 0.5f, 0.5f);
+  tex2D(&f42, tex4, 0.5f, 0.5f);
 }
 
 int main() {

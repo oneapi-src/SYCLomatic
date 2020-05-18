@@ -6552,12 +6552,16 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       cudaKernelCallExpr(hasAncestor(functionDecl().bind("callContext")))
           .bind("kernelCall"),
       this);
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasName("cudaLaunchKernel"))))
+                    .bind("launch"),
+                this);
 }
 
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
-  auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
+    auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
     const auto &SM = (*Result.Context).getSourceManager();
 
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
@@ -6589,12 +6593,22 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
       return;
 
     Insertions.insert(BodySLoc);
+  } else if (auto LaunchKernelCall =
+                 getNodeAsType<CallExpr>(Result, "launch")) {
+    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall)) {
+      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true,
+                                            std::string("cudaLaunchKernel"),
+                                            true, false, ""));
+      removeTrailingSemicolon(LaunchKernelCall, Result);
+    } else {
+      report(LaunchKernelCall->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+    }
   }
 }
 
 // Find and remove the semicolon after the kernel call
 void KernelCallRule::removeTrailingSemicolon(
-    const CUDAKernelCallExpr *KCall,
+    const CallExpr *KCall,
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
   auto KELoc = KCall->getEndLoc();
@@ -7068,13 +7082,6 @@ void MemoryMigrationRule::mallocMigrationWithTransformation(
     emplaceTransformation(
         new InsertText(C->getRParenLoc(), ", " + PaddingArgs));
 }
-
-class ParensPrinter {
-  std::ostream &OS;
-public:
-  ParensPrinter(std::ostream &OS) : OS(OS) { OS << "("; }
-  ~ParensPrinter() { OS << ")"; }
-};
 
 /// e.g., for int *a and cudaMalloc(&a, size), print "a = ".
 /// If \p DerefType is not null, assign a string "int *".

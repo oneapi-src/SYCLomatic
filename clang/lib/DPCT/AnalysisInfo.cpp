@@ -68,6 +68,22 @@ DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
 }
 
+std::shared_ptr<KernelCallExpr>
+DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
+  auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
+  auto FileInfo = insertFile(LocInfo.first);
+  if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
+    return std::shared_ptr<KernelCallExpr>();
+
+  auto KernelInfo =
+      KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
+  if (KernelInfo) {
+    FileInfo->insertNode(LocInfo.second, KernelInfo);
+  }
+
+  return KernelInfo;
+}
+
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
@@ -158,47 +174,21 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 
-void KernelCallExpr::buildExecutionConfig(
-    const CUDAKernelCallExpr *KernelCall) {
-  auto Config = KernelCall->getConfig();
-  bool LocalReversed = false, GroupReversed = false;
-  for (unsigned Idx = 0; Idx < Config->getNumArgs(); ++Idx) {
-    KernelConfigAnalysis A(IsInMacroDefine);
-    A.analyze(Config->getArg(Idx), Idx < 2);
-    ExecutionConfig.Config[Idx] = A.getReplacedString();
-    if (Idx == 0) {
-      GroupReversed = A.reversed();
-      ExecutionConfig.GroupDirectRef = A.isDirectRef();
-    } else if (Idx == 1) {
-      LocalReversed = A.reversed();
-      ExecutionConfig.LocalDirectRef = A.isDirectRef();
-    }
-  }
-  ExecutionConfig.DeclLocalRange =
-      !LocalReversed && !ExecutionConfig.LocalDirectRef;
-  ExecutionConfig.DeclGroupRange =
-      LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
-  ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
+void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
+  buildLocationInfo(KernelCall);
+  buildExecutionConfig(KernelCall->getConfig()->arguments());
+  buildNeedBracesInfo(KernelCall);
 }
 
-void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
+void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   SourceLocation Begin = KernelCall->getBeginLoc();
   LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
-  buildExecutionConfig(KernelCall);
-  buildNeedBracesInfo(KernelCall);
-
-  if (ExecutionConfig.Stream == "0") {
-    if (checkWhetherIsDuplicate(KernelCall, false))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    buildTempVariableMap(Index, KernelCall, HelperFuncType::DefaultQueue);
-  }
 }
-void KernelCallExpr::buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall) {
+
+void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();
   // if parenet is CompoundStmt, then find if it has more than 1 children.
@@ -500,13 +490,12 @@ std::string KernelCallExpr::getReplacement() {
 }
 
 
-CallFunctionExpr::CallFunctionExpr(unsigned Offset, const std::string &FilePathIn,
-  const CallExpr *CE)
-  : FilePath(FilePathIn), BeginLoc(Offset),
-  TextureObjectList(CE->getNumArgs(),
-    std::shared_ptr<TextureObjectInfo>()) {
-  buildTextureObjectArgsInfo(CE);
-}
+CallFunctionExpr::CallFunctionExpr(unsigned Offset,
+                                   const std::string &FilePathIn,
+                                   const CallExpr *CE)
+    : FilePath(FilePathIn), BeginLoc(Offset),
+      TextureObjectList(CE ? CE->getNumArgs() : 0,
+                        std::shared_ptr<TextureObjectInfo>()) {}
 
 inline std::string CallFunctionExpr::getExtraArguments() {
   if (!FuncInfo)
@@ -514,6 +503,56 @@ inline std::string CallFunctionExpr::getExtraArguments() {
   return getVarMap().getExtraCallArguments(FuncInfo->NonDefaultParamNum,
                                            FuncInfo->ParamsNum -
                                                FuncInfo->NonDefaultParamNum);
+}
+
+const DeclRefExpr *getAddressedRef(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+    if (DRE->getDecl()->getKind() == Decl::Function) {
+      return DRE;
+    }
+  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
+    return getAddressedRef(Paren->getSubExpr());
+  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
+    return getAddressedRef(Cast->getSubExprAsWritten());
+  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return getAddressedRef(UO->getSubExpr());
+    }
+  }
+  return nullptr;
+}
+
+std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
+    const std::pair<std::string, unsigned> &LocInfo, const CallExpr *CE) {
+  auto LaunchFD = CE->getDirectCallee();
+  if (!LaunchFD || LaunchFD->getName() != "cudaLaunchKernel") {
+    return std::shared_ptr<KernelCallExpr>();
+  }
+  if (auto Callee = getAddressedRef(CE->getArg(0))) {
+    auto Kernel = std::shared_ptr<KernelCallExpr>(
+        new KernelCallExpr(LocInfo.second, LocInfo.first));
+    Kernel->buildCalleeInfo(Callee);
+    Kernel->buildLocationInfo(CE);
+    Kernel->buildExecutionConfig(ArrayRef<const Expr *>{
+        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)});
+    Kernel->buildNeedBracesInfo(CE);
+    auto FD =
+        dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
+    auto FuncInfo = Kernel->getFuncInfo();
+    if (FD && FuncInfo) {
+      auto ArgsArray = ExprAnalysis::ref(CE->getArg(3));
+      if (!isa<DeclRefExpr>(CE->getArg(3)->IgnoreImplicitAsWritten())) {
+        ArgsArray = "(" + ArgsArray + ")";
+      }
+      Kernel->resizeTextureObjectList(FD->getNumParams());
+      for (auto &Parm : FD->parameters()) {
+        Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
+      }
+    }
+    return Kernel;
+  }
+  return std::shared_ptr<KernelCallExpr>();
 }
 
 void KernelCallExpr::buildInfo() {
@@ -895,26 +934,18 @@ void deduceTemplateArguments(const CallExpr *CE, const NamedDecl *ND,
   }
 }
 
-
-void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
-  bool HasImplicitArg = false;
-  auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
-  if (auto CallDecl = CE->getDirectCallee()) {
-    HasImplicitArg =
-        isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(CallDecl);
+void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
+  if (auto CallDecl =
+          dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
-    if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())) {
+    if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments());
     }
-    deduceTemplateArguments(CE, CallDecl, TemplateArgs);
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = Unresolved->getName().getAsString();
     FuncInfo = DeviceFunctionDecl::LinkUnresolved(Unresolved);
     buildTemplateArguments(Unresolved->template_arguments());
-    if (Unresolved->getNumDecls())
-      deduceTemplateArguments(CE, Unresolved->decls_begin().getDecl(),
-                              TemplateArgs);
   } else if (auto DependentScope =
                  dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
     Name = DependentScope->getMember().getAsString();
@@ -922,6 +953,22 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
+  }
+}
+
+void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
+  buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
+  buildTextureObjectArgsInfo(CE);
+
+  bool HasImplicitArg = false;
+  if (auto FD = CE->getDirectCallee()) {
+    deduceTemplateArguments(CE, FD, TemplateArgs);
+    HasImplicitArg = isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(FD);
+  } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
+                 CE->getCallee()->IgnoreImplicitAsWritten())) {
+    if (Unresolved->getNumDecls())
+      deduceTemplateArguments(CE, Unresolved->decls_begin().getDecl(),
+		  TemplateArgs);
   }
 
   if (HasImplicitArg) {
