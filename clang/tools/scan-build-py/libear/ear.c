@@ -948,10 +948,44 @@ char * replace_binary_name(const char *src, const char *pos){
     strcpy(insert_point, src);
     return buffer;
 }
+
+int is_ubuntu_platform(void) {
+  FILE *fp = NULL;
+  char buffer[1024] = "";
+
+  fp = popen("cat /proc/version", "r");
+
+  if (fp == NULL) {
+    fp = popen("lsb_release -ds", "r");
+    if (fp == NULL) {
+      perror("bear: failed to get Linux distribution info\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if (fgets(buffer, 1024, fp) == NULL) {
+    perror("bear: fgets\n");
+    exit(EXIT_FAILURE);
+  }
+  pclose(fp);
+
+  if (strstr(buffer, "Ubuntu")) {
+    return 1;
+  }
+  return 0;
+}
+
 #endif
 
 /* this method is to write log about the process creation. */
 #ifdef INTEL_CUSTOMIZATION
+// To indicate whether current OS is a Ubuntu system or other system.
+// Value: 1 ubuntu system, Value: 0 other system.
+static int ubuntu_platform = 0;
+
+// To make sure global ubuntu_platform is only initialized once.
+static int platform_initialized = 0;
+
 static void bear_report_call(char const *fun, char const *argv[]) {
 #else
 static void bear_report_call(char const *fun, char const *const argv[]) {
@@ -1017,6 +1051,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // (CPATH=;command  args), need remove () around the command
     int has_parenthesis=0;
 
+    if(strstr(argv[0], "nvcc") && !platform_initialized) {
+        ubuntu_platform = is_ubuntu_platform();
+        platform_initialized = 1;
+    }
     // try to parse out nvcc and generate obj_file.
     for (size_t it = 0; it < argc; ++it) {
         const char *tail=argv[it];
@@ -1171,7 +1209,15 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // e.g: "/path/to/nvcc -ccbin ... ",
     //      "/bin/sh -c "/path/to"/bin/nvcc -ccbin ..."
     const char *pos = find_nvcc(argv[it_cp]);
-    if(pos != NULL && *pos !='\0')
+
+    int is_stub_need = 0;
+    if (ubuntu_platform) {
+        is_stub_need = (pos != NULL && *pos != '\0');
+    } else {
+        is_stub_need = (pos != NULL);
+    }
+
+    if(is_stub_need)
     {
         ret = 0; // intercept-stub should continue to run.
 
