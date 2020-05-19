@@ -6365,7 +6365,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcGetEventHandle", "cudaIpcGetMemHandle",
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
-        "cudaDeviceEnablePeerAccess");
+        "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion", "cudaRuntimeGetVersion");
   };
 
   MF.addMatcher(
@@ -6417,6 +6417,21 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
+  } else if (FuncName == "cudaDriverGetVersion" ||
+             FuncName == "cudaRuntimeGetVersion") {
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    emplaceTransformation(
+        new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
+
+    std::string ReplStr = "dpct::get_current_device().get_info<" +
+                          MapNames::getClNamespace() +
+                          "::info::device::version>()";
+
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr + Suffix));
+    report(CE->getBeginLoc(), Warnings::TYPE_MISMATCH, false);
   } else if (FuncName == "cudaDeviceReset" || FuncName == "cudaThreadExit") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);

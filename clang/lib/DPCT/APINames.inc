@@ -310,8 +310,8 @@ ENTRY(cudaDestroySurfaceObject, cudaDestroySurfaceObject, false, NO_FLAG, P0, "c
 ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, false, NO_FLAG, P4, "comment")
 
 // Version Management
-ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, false, NO_FLAG, P0, "comment")
-ENTRY(cudaRuntimeGetVersion, cudaRuntimeGetVersion, false, NO_FLAG, P0, "comment")
+ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, true, NO_FLAG, P0, "Successful: DPCT1043")
+ENTRY(cudaRuntimeGetVersion, cudaRuntimeGetVersion, true, NO_FLAG, P0, "Successful: DPCT1043")
 
 ENTRY(cudaGraphAddChildGraphNode, cudaGraphAddChildGraphNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddDependencies, cudaGraphAddDependencies, false, NO_FLAG, P4, "comment")

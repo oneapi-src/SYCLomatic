@@ -61,3 +61,37 @@ checkErrors(cudaSetDevice(device2));
 
 return 0;
 }
+
+void get_version(void) {
+    int driverVersion, runtimeVersion;
+
+    // CHECK: /*
+    // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+    // CHECK-NEXT:  */
+    // CHECK-NEXT:  driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    cudaDriverGetVersion(&driverVersion);
+
+    // CHECK:  /*
+    // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+    // CHECK-NEXT:  */
+    // CHECK-NEXT:  runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    cudaRuntimeGetVersion(&runtimeVersion);
+
+    // CHECK:    /*
+    // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    int error_code_1 = (driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
+
+    // CHECK:    /*
+    // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
+}
