@@ -451,3 +451,30 @@ void foo2(Node *n) {
     cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
   }
 }
+
+class C {
+  // CHECK: sycl::event start, stop;
+  // CHECK-NEXT: clock_t start_ct1;
+  // CHECK-NEXT: clock_t stop_ct1;
+  cudaEvent_t start, stop;
+  float elapsed_time;
+  void a() {
+    // CHECK: start_ct1 = clock();
+    cudaEventRecord(start, 0);
+  }
+  void b() {
+    // CHECK: stop_ct1 = clock();
+    cudaEventRecord(stop, 0);
+    // CHECK: elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000;
+    cudaEventElapsedTime(&elapsed_time, start, stop);
+  }
+  void c() {
+    cudaEventRecord(start, 0);
+  }
+  void d() {
+    // CHECK: stop_ct1 = clock();
+    cudaEventRecord(stop, 0);
+    // CHECK: elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000;
+    cudaEventElapsedTime(&elapsed_time, start, stop);
+  }
+};

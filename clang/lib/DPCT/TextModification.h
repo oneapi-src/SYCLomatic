@@ -405,6 +405,21 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Insert a string after a statement
+class InsertAfterDecl : public TextModification {
+  const Decl *D;
+  std::string T;
+
+public:
+  InsertAfterDecl(const Decl *D, std::string &&T)
+      : TextModification(TMID::InsertAfterStmt), D(D), T(T) {}
+
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context,
+             const bool PrintDetail = true) const override;
+};
+
 /// Insert '/*  */' C style multi line comments
 class InsertComment : public TextModification {
   // The comment will be inserted at this position

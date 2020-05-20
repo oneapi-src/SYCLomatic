@@ -424,6 +424,22 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   return R;
 }
 
+std::shared_ptr<ExtReplacement>
+InsertAfterDecl::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
+  auto Loc = SM.getSpellingLoc(D->getEndLoc());
+  Loc = Loc.getLocWithOffset(
+      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+  auto EndData = SM.getCharacterData(Loc);
+  int Len = 1;
+  while (EndData && *EndData++ != ';')
+    ++Len;
+  Loc = Loc.getLocWithOffset(Len);
+  recordMigrationInfo(Context, Loc);
+  auto R = std::make_shared<ExtReplacement>(SM, Loc, 0, T, this);
+  return R;
+}
+
 static int getExpansionRangeSize(const SourceManager &Sources,
                                  const CharSourceRange &Range,
                                  const LangOptions &LangOpts) {
@@ -850,6 +866,13 @@ void InsertAfterStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
                             const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, S->getEndLoc(), Context, PrintDetail);
+  printInsertion(OS, T);
+}
+
+void InsertAfterDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintDetail) const {
+  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printLocation(OS, D->getEndLoc(), Context, PrintDetail);
   printInsertion(OS, T);
 }
 

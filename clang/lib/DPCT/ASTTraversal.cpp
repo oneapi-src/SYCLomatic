@@ -6692,16 +6692,50 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
   std::ostringstream Repl;
 
-  // Define the helper variable if it is used in the block for first time,
-  // otherwise, just use it.
-  static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
-  const auto *CS = findImmediateBlock(CE);
-  auto StmtStr = getTempNameForExpr(CE->getArg(0), true, false);
-  auto Pair = std::make_pair(CS, StmtStr);
+  std::string StmtStr;
+  bool IsInSameClass = false;
 
-  if (DupFilter.find(Pair) == DupFilter.end()) {
-    DupFilter.insert(Pair);
-    Repl << "auto ";
+  const ValueDecl *MD = nullptr;
+  // Check if the member decl of the event and the function decl is in the
+  // same CXXRecordDecl.
+  if (auto ME = dyn_cast<MemberExpr>(CE->getArg(0)->IgnoreImpCasts())) {
+    auto FD = getFunctionDecl(CE);
+    if (auto CMD = dyn_cast<CXXMethodDecl>(FD)) {
+      auto MethodCRD = CMD->getParent();
+      MD = ME->getMemberDecl();
+      auto MemberCRD = getParentRecordDecl(MD);
+      if (MethodCRD == MemberCRD)
+        IsInSameClass = true;
+    }
+  }
+  // Insert the helper variable inside the class if in the same class
+  if (IsInSameClass) {
+    static std::set<std::pair<const Decl *, const std::string>> MemDupFilter;
+    StmtStr = MD->getNameAsString();
+    auto Pair = std::make_pair(MD, StmtStr);
+    if (MemDupFilter.find(Pair) == MemDupFilter.end()) {
+      MemDupFilter.insert(Pair);
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      std::string InsertStr = getNL();
+      InsertStr += getIndent(MD->getBeginLoc(), SM).str();
+      InsertStr += "clock_t ";
+      InsertStr += StmtStr;
+      InsertStr += getCTFixedSuffix();
+      InsertStr += ";";
+      emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
+    }
+  } else {
+    // Define the helper variable if it is used in the block for first time,
+    // otherwise, just use it.
+    static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
+    const auto *CS = findImmediateBlock(CE);
+    StmtStr = getTempNameForExpr(CE->getArg(0), true, false);
+    auto Pair = std::make_pair(CS, StmtStr);
+
+    if (DupFilter.find(Pair) == DupFilter.end()) {
+      DupFilter.insert(Pair);
+      Repl << "auto ";
+    }
   }
 
   Repl << StmtStr << getCTFixedSuffix() << " = clock()";

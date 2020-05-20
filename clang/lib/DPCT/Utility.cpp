@@ -1506,7 +1506,7 @@ std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
   }
 }
 
-const CXXRecordDecl *getParentRecordDecl(const DeclaratorDecl *DD) {
+const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
   if (!DD)
     return nullptr;
 
