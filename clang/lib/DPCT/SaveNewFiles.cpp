@@ -192,9 +192,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         FileRangesMap;
     // There are matching rules for *.cpp files ,*.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
-    for (auto &Entry : groupReplacementsByFile(
-             Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
-
+    auto GroupResult = groupReplacementsByFile(
+        Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
+    for (auto &Entry : GroupResult) {
       OutPath = StringRef(
           DpctGlobalInfo::removeSymlinks(Rewrite.getSourceMgr().getFileManager(), Entry.first));
       makeCanonical(OutPath);
@@ -250,6 +250,18 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
     }
+    extern bool ProcessAllFlag;
+    // Print the in-root path and the number of processed files
+    size_t ProcessedFileNumber;
+    if (ProcessAllFlag) {
+      ProcessedFileNumber = IncludeFileMap.size();
+    } else {
+      ProcessedFileNumber = GroupResult.size();
+    }
+    std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
+                            " files in -in-root folder \"" + InRoot.str() + "\"\n";
+    PrintMsg(ReportMsg);
+
     if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
       clang::format::setFormatRangeGetterHandler(
           clang::dpct::DpctGlobalInfo::getFormatRange);
