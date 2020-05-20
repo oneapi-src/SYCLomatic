@@ -28,7 +28,7 @@ int main(){
   float *d_data;
 
   //CHECK:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data);
   curandGenerateUniform(rng, d_data, 100*100);
 
 
@@ -36,34 +36,34 @@ int main(){
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data), 0);
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:mkl::rng::lognormal<float> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data), 0);
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
   //CHECK:mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data), 0);
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
   //CHECK:mkl::rng::uniform<double> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d);
   curandGenerateUniformDouble(rng, d_data_d, 100*100);
 
   //CHECK:mkl::rng::lognormal<double> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d);
   curandGenerateLogNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   //CHECK:mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_d);
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   unsigned int* d_data_ui;
@@ -71,23 +71,23 @@ int main(){
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint32_t*)d_data_ui).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint32_t*)d_data_ui), 0);
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (int32_t*)d_data_ui).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (int32_t*)d_data_ui), 0);
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull);
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -95,7 +95,7 @@ int main(){
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -110,7 +110,7 @@ int main(){
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data);
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
@@ -260,7 +260,7 @@ void bar3(){
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&](){
 //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data).wait();
+//CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data);
 //CHECK-NEXT:return 0;
 //CHECK-NEXT:}());
 //CHECK-NEXT:/*
@@ -301,7 +301,7 @@ void bar4(){
 //CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data).wait();
+//CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
 //CHECK-NEXT:  */

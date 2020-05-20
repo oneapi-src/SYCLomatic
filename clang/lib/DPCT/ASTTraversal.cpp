@@ -3696,9 +3696,6 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
                 ", " + Data + ")";
     }
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      ReplStr = ReplStr + ".wait()";
-    }
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty()) {
@@ -4342,9 +4339,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // After this line, the old iterators of CallExprArguReplVec may be
     // invalidation. Need to use new iterators.
 
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      CallExprReplStr = ".wait()";
-    }
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
     if (NeedUseLambda) {
@@ -4496,9 +4490,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // After this line, the old iterators of CallExprArguReplVec may be
     // invalidation. Need to use new iterators.
 
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      CallExprReplStr = ".wait()";
-    }
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
     if (NeedUseLambda) {
@@ -4746,7 +4737,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         CallExprArguReplVec[6] =
             "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
       }
-      CallExprReplStr = ".wait()";
+      addWait(FuncName, CE, SuffixInsertStr, IndentStr);
     }
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
@@ -4855,7 +4846,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      CallExprReplStr = ".wait()";
+      addWait(FuncName, CE, SuffixInsertStr, IndentStr);
     }
 
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
@@ -5067,6 +5058,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    // All legacy APIs are synchronous
     if (FuncName == "cublasSnrm2" || FuncName == "cublasDnrm2" ||
         FuncName == "cublasScnrm2" || FuncName == "cublasDznrm2" ||
         FuncName == "cublasSdot" || FuncName == "cublasDdot" ||

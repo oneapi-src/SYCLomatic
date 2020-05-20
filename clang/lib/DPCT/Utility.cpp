@@ -1302,6 +1302,11 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
   OS.flush();
   if (!KeepLastUnderline)
     IdString.pop_back();
+
+  // If the fisrt char is digit, add "ct_" as prefix
+  if (!IdString.empty() && isdigit(IdString[0]))
+    IdString = "ct_" + IdString;
+
   return IdString;
 }
 // Check if an Expr is the outer most function-like macro

@@ -2113,6 +2113,18 @@ const std::map<std::string, MapNames::BLASGemmExTypeInfo>
           MapNames::getClNamespace() + "::double2", "std::complex<double>",
           MapNames::getClNamespace() + "::double2", "std::complex<double>"}}};
 
+const std::map<std::string, int> MapNames::SyncBLASFunc{
+    {"cublasIsamax_v2", 4}, {"cublasIdamax_v2", 4}, {"cublasIcamax_v2", 4},
+    {"cublasIzamax_v2", 4}, {"cublasIsamin_v2", 4}, {"cublasIdamin_v2", 4},
+    {"cublasIcamin_v2", 4}, {"cublasIzamin_v2", 4}, {"cublasSasum_v2", 4},
+    {"cublasDasum_v2", 4},  {"cublasScasum_v2", 4}, {"cublasDzasum_v2", 4},
+    {"cublasSrotg_v2", 1},  {"cublasDrotg_v2", 1},  {"cublasCrotg_v2", 1},
+    {"cublasZrotg_v2", 1},  {"cublasSrotmg_v2", 4}, {"cublasDrotmg_v2", 4},
+    {"cublasSdot_v2", 6},   {"cublasDdot_v2", 6},   {"cublasCdotu_v2", 6},
+    {"cublasCdotc_v2", 6},  {"cublasZdotu_v2", 6},  {"cublasZdotc_v2", 6},
+    {"cublasSnrm2_v2", 4},  {"cublasDnrm2_v2", 4},  {"cublasScnrm2_v2", 4},
+    {"cublasDznrm2_v2", 4}};
+
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>
     MapNames::SOLVERFuncReplInfoMap{

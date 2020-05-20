@@ -91,12 +91,14 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:if(sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
   //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIsamax(handle, N, x_S, N, result);
   //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
-  //CHECK-NEXT:mkl::blas::iamax(*handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}}).wait();
+  //CHECK-NEXT:mkl::blas::iamax(*handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}});
+  //CHECK-NEXT:if(sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
   //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIdamax(handle, N, x_D, N, result);
@@ -104,81 +106,86 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:if(sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
   //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIcamax(handle, N, x_C, N, result);
   //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
-  //CHECK-NEXT:mkl::blas::iamax(*handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}}).wait();
+  //CHECK-NEXT:mkl::blas::iamax(*handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}});
+  //CHECK-NEXT:if(sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
   //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIzamax(handle, N, x_Z, N, result);
 
-  //CHECK:a = (mkl::blas::rotm(*handle, N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)).wait(), 0);
+  //CHECK:a = (mkl::blas::rotm(*handle, N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)), 0);
   a = cublasSrotm(handle, N, d_C_S, N, d_C_S, N, x_S);
-  //CHECK:mkl::blas::rotm(*handle, N, d_C_D, N, d_C_D, N, const_cast<double*>(x_D)).wait();
+  //CHECK:mkl::blas::rotm(*handle, N, d_C_D, N, d_C_D, N, const_cast<double*>(x_D));
   cublasDrotm(handle, N, d_C_D, N, d_C_D, N, x_D);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::copy(*handle, N, x_S, incx, d_C_S, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::copy(*handle, N, x_S, incx, d_C_S, incy), 0);
   a = cublasScopy(handle, N, x_S, incx, d_C_S, incy);
-  // CHECK:mkl::blas::copy(*handle, N, x_D, incx, d_C_D, incy).wait();
+  // CHECK:mkl::blas::copy(*handle, N, x_D, incx, d_C_D, incy);
   cublasDcopy(handle, N, x_D, incx, d_C_D, incy);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::copy(*handle, N, (std::complex<float>*)x_C, incx, (std::complex<float>*)d_C_C, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::copy(*handle, N, (std::complex<float>*)x_C, incx, (std::complex<float>*)d_C_C, incy), 0);
   a = cublasCcopy(handle, N, x_C, incx, d_C_C, incy);
-  // CHECK:mkl::blas::copy(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)d_C_Z, incy).wait();
+  // CHECK:mkl::blas::copy(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)d_C_Z, incy);
   cublasZcopy(handle, N, x_Z, incx, d_C_Z, incy);
 
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_S, *handle), x_S, incx, result_S, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_S, *handle), x_S, incx, result_S, incy), 0);
   a = cublasSaxpy(handle, N, &alpha_S, x_S, incx, result_S, incy);
-  // CHECK:mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_D, *handle), x_D, incx, result_D, incy).wait();
+  // CHECK:mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_D, *handle), x_D, incx, result_D, incy);
   cublasDaxpy(handle, N, &alpha_D, x_D, incx, result_D, incy);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy), 0);
   a = cublasCaxpy(handle, N, &alpha_C, x_C, incx, result_C, incy);
-  // CHECK:mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy).wait();
+  // CHECK:mkl::blas::axpy(*handle, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy);
   cublasZaxpy(handle, N, &alpha_Z, x_Z, incx, result_Z, incy);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::scal(*handle, N, dpct::get_value(&alpha_S, *handle), result_S, incx).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::scal(*handle, N, dpct::get_value(&alpha_S, *handle), result_S, incx), 0);
   a = cublasSscal(handle, N, &alpha_S, result_S, incx);
-  // CHECK:mkl::blas::scal(*handle, N, dpct::get_value(&alpha_D, *handle), result_D, incx).wait();
+  // CHECK:mkl::blas::scal(*handle, N, dpct::get_value(&alpha_D, *handle), result_D, incx);
   cublasDscal(handle, N, &alpha_D, result_D, incx);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::scal(*handle, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)result_C, incx).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::scal(*handle, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)result_C, incx), 0);
   a = cublasCscal(handle, N, &alpha_C, result_C, incx);
-  // CHECK:mkl::blas::scal(*handle, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)result_Z, incx).wait();
+  // CHECK:mkl::blas::scal(*handle, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)result_Z, incx);
   cublasZscal(handle, N, &alpha_Z, result_Z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::nrm2(*handle, N, x_S, incx, result_S).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::nrm2(*handle, N, x_S, incx, result_S), 0);
+  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   a = cublasSnrm2(handle, N, x_S, incx, result_S);
-  // CHECK:mkl::blas::nrm2(*handle, N, x_D, incx, result_D).wait();
-
+  // CHECK:mkl::blas::nrm2(*handle, N, x_D, incx, result_D);
+  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   cublasDnrm2(handle, N, x_D, incx, result_D);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::nrm2(*handle, N, (std::complex<float>*)x_C, incx, result_S).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::nrm2(*handle, N, (std::complex<float>*)x_C, incx, result_S), 0);
+  // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   a = cublasScnrm2(handle, N, x_C, incx, result_S);
-  // CHECK:mkl::blas::nrm2(*handle, N, (std::complex<double>*)x_Z, incx, result_D).wait();
+  // CHECK:mkl::blas::nrm2(*handle, N, (std::complex<double>*)x_Z, incx, result_D);
+  // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) handle->wait();
   cublasDznrm2(handle, N, x_Z, incx, result_D);
 
 
@@ -187,38 +194,38 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::gemv(*handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, N, N, dpct::get_value(&alpha_S, *handle), x_S, lda, y_S, incx, dpct::get_value(&beta_S, *handle), result_S, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::gemv(*handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, N, N, dpct::get_value(&alpha_S, *handle), x_S, lda, y_S, incx, dpct::get_value(&beta_S, *handle), result_S, incy), 0);
   a = cublasSgemv(handle, (cublasOperation_t)trans2, N, N, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
-  // CHECK:mkl::blas::gemv(*handle, mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_D, *handle), x_D, lda, y_D, incx, dpct::get_value(&beta_D, *handle), result_D, incy).wait();
+  // CHECK:mkl::blas::gemv(*handle, mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_D, *handle), x_D, lda, y_D, incx, dpct::get_value(&beta_D, *handle), result_D, incy);
   cublasDgemv(handle, CUBLAS_OP_N, N, N, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::gemv(*handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, dpct::get_value(&beta_C, *handle), (std::complex<float>*)result_C, incy).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::gemv(*handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, dpct::get_value(&beta_C, *handle), (std::complex<float>*)result_C, incy), 0);
   a = cublasCgemv(handle, (cublasOperation_t)trans2, N, N, &alpha_C, x_C, lda, y_C, incx, &beta_C, result_C, incy);
-  // CHECK:mkl::blas::gemv(*handle, mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)result_Z, incy).wait();
+  // CHECK:mkl::blas::gemv(*handle, mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)result_Z, incy);
   cublasZgemv(handle, CUBLAS_OP_N, N, N, &alpha_Z, x_Z, lda, y_Z, incx, &beta_Z, result_Z, incy);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::ger(*handle, N, N, dpct::get_value(&alpha_S, *handle), x_S, incx, y_S, incy, result_S, lda).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::ger(*handle, N, N, dpct::get_value(&alpha_S, *handle), x_S, incx, y_S, incy, result_S, lda), 0);
   a = cublasSger(handle, N, N, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
-  // CHECK:mkl::blas::ger(*handle, N, N, dpct::get_value(&alpha_D, *handle), x_D, incx, y_D, incy, result_D, lda).wait();
+  // CHECK:mkl::blas::ger(*handle, N, N, dpct::get_value(&alpha_D, *handle), x_D, incx, y_D, incy, result_D, lda);
   cublasDger(handle, N, N, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::geru(*handle, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::geru(*handle, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda), 0);
   a = cublasCgeru(handle, N, N, &alpha_C, x_C, incx, y_C, incy, result_C, lda);
-  // CHECK:mkl::blas::gerc(*handle, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait();
+  // CHECK:mkl::blas::gerc(*handle, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda);
   cublasCgerc(handle, N, N, &alpha_C, x_C, incx, y_C, incy, result_C, lda);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::geru(*handle, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::geru(*handle, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda), 0);
   a = cublasZgeru(handle, N, N, &alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
-  // CHECK:mkl::blas::gerc(*handle, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait();
+  // CHECK:mkl::blas::gerc(*handle, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda);
   cublasZgerc(handle, N, N, &alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
 
 
@@ -233,31 +240,31 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N), 0);
   a = cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
-  //CHECK:mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_B_D, N, dpct::get_value(&beta_D, *handle), d_C_D, N).wait();
+  //CHECK:mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_B_D, N, dpct::get_value(&beta_D, *handle), d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_B_C, N, dpct::get_value(&beta_C, *handle), (std::complex<float>*)d_C_C, N).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_B_C, N, dpct::get_value(&beta_C, *handle), (std::complex<float>*)d_C_C, N), 0);
   a = cublasCgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N);
-  //CHECK:mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_B_Z, N, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)d_C_Z, N).wait();
+  //CHECK:mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_B_Z, N, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)d_C_Z, N);
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, &beta_Z, d_C_Z, N);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, 16, d_B_S, N, 16, dpct::get_value(&beta_S, *handle), d_C_S, N, 16, 10).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, 16, d_B_S, N, 16, dpct::get_value(&beta_S, *handle), d_C_S, N, 16, 10), 0);
   a = cublasSgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, 16, d_B_S, N, 16, &beta_S, d_C_S, N, 16, 10);
-  //CHECK:mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, 16, d_B_D, N, 16, dpct::get_value(&beta_D, *handle), d_C_D, N, 16, 10).wait();
+  //CHECK:mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, 16, d_B_D, N, 16, dpct::get_value(&beta_D, *handle), d_C_D, N, 16, 10);
   cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_D, d_A_D, N, 16, d_B_D, N, 16, &beta_D, d_C_D, N, 16, 10);
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, 16, (std::complex<float>*)d_B_C, N, 16, dpct::get_value(&beta_C, *handle), (std::complex<float>*)d_C_C, N, 16, 10).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, 16, (std::complex<float>*)d_B_C, N, 16, dpct::get_value(&beta_C, *handle), (std::complex<float>*)d_C_C, N, 16, 10), 0);
   a = cublasCgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_C, d_A_C, N, 16, d_B_C, N, 16, &beta_C, d_C_C, N, 16, 10);
-  //CHECK:mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, 16, (std::complex<double>*)d_B_Z, N, 16, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)d_C_Z, N, 16, 10).wait();
+  //CHECK:mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, 16, (std::complex<double>*)d_B_Z, N, 16, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)d_C_Z, N, 16, 10);
   cublasZgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, 16, d_B_Z, N, 16, &beta_Z, d_C_Z, N, 16, 10);
 
   __half *d_A_H = 0;
@@ -322,31 +329,31 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N), 0);
   a = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
   //CHECK:dpct::matrix_mem_copy(d_C_D, d_B_D, N, N, N, N, dpct::device_to_device, *handle);
-  //CHECK-NEXT:mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_C_D, N).wait();
+  //CHECK-NEXT:mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_C_D, N);
   cublasDtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
   //CHECK:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::trmm(*handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_C_C, N).wait(), 0);
+  //CHECK-NEXT:a = (mkl::blas::trmm(*handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_C_C, N), 0);
   a = cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N);
   //CHECK:dpct::matrix_mem_copy(d_C_Z, d_B_Z, N, N, N, N, dpct::device_to_device, *handle);
-  //CHECK-NEXT:mkl::blas::trmm(*handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_C_Z, N).wait();
+  //CHECK-NEXT:mkl::blas::trmm(*handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_C_Z, N);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
 
 
-  //CHECK:a = (mkl::blas::gemmt(*handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N).wait(), 0);
+  //CHECK:a = (mkl::blas::gemmt(*handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N), 0);
   a = cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
-  //CHECK:mkl::blas::gemmt(*handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_B_D, N, dpct::get_value(&beta_D, *handle), d_C_D, N).wait();
+  //CHECK:mkl::blas::gemmt(*handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_D, *handle), d_A_D, N, d_B_D, N, dpct::get_value(&beta_D, *handle), d_C_D, N);
   cublasDsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
 
 
   // CHECK: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
-  // CHECK-NEXT: mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N).wait();
+  // CHECK-NEXT: mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -356,7 +363,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: if(int stat = (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N).wait(), 0)){}
+  // CHECK-NEXT: if(int stat = (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N), 0)){}
   if(int stat = cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){}
 
 
@@ -364,7 +371,7 @@ int main() {
 
 // CHECK: int foo1() try {
 // CHECK-NEXT:   dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
-// CHECK-NEXT:   mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N).wait();
+// CHECK-NEXT:   mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_C_S, N);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
 // CHECK-NEXT:   */
@@ -378,7 +385,7 @@ int foo1(){
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  return (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N).wait(), 0);
+// CHECK-NEXT:  return (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S, N, d_B_S, N, dpct::get_value(&beta_S, *handle), d_C_S, N), 0);
 // CHECK-NEXT:}
 int foo2(){
   return cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);

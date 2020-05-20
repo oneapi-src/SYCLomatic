@@ -731,6 +731,24 @@ public:
     return FuncName + "(*" + ResultStr + ")";
   }
 
+  void addWait(const std::string &FuncName, const CallExpr *CE,
+               std::string &SuffixInsertStr, const std::string &IndentStr) {
+    auto I = MapNames::SyncBLASFunc.find(FuncName);
+    if (I != MapNames::SyncBLASFunc.end()) {
+      ExprAnalysis EA(CE->getArg(I->second));
+      SuffixInsertStr = getNL() + IndentStr + "if(" +
+                        MapNames::getClNamespace() + "::get_pointer_type(" +
+                        EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
+                        "->get_context())!=" + MapNames::getClNamespace() +
+                        "::usm::alloc::device && " +
+                        MapNames::getClNamespace() + "::get_pointer_type(" +
+                        EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
+                        "->get_context())!=" + MapNames::getClNamespace() +
+                        "::usm::alloc::shared) " + CallExprArguReplVec[0] +
+                        "->wait();" + SuffixInsertStr;
+    }
+  }
+
   void
   applyMigrationText(bool NeedUseLambda, bool IsMacroArg, bool CanAvoidBrace,
                      bool CanAvoidUsingLambda, std::string OriginStmtType,

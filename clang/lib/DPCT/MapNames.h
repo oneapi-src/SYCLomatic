@@ -273,6 +273,7 @@ public:
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
+  static const std::map<std::string, int> SyncBLASFunc;
 
   static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASGemmExTypeInfoMap;
