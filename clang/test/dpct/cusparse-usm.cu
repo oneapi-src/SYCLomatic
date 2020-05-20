@@ -33,8 +33,8 @@ int main(){
   //CHECK-NEXT: descrA = mkl::index_base::zero;
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA, csrColIndA, csrValA);
-  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x, beta, y);
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseCreate(&handle);
   cusparseCreateMatDescr(&descrA);
@@ -47,8 +47,8 @@ int main(){
 
   //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA, csrColIndA, csrValA);
-  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x, beta, y);
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
@@ -58,8 +58,8 @@ int main(){
 
   //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA, csrColIndA, csrValA);
-  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x, beta, y);
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in for statement. You need to rewrite this code.
@@ -69,8 +69,8 @@ int main(){
   
   //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA, csrColIndA, csrValA);
-  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x, beta, y);
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in switch statement. You need to rewrite this code.
@@ -89,8 +89,8 @@ int main(){
 //CHECK: int foo(mkl::index_base descrB) try {
 //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, csrRowPtrA, csrColIndA, csrValA);
-//CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x, beta, y);
+//CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+//CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
 //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in return statement. You need to rewrite this code.

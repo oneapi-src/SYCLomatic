@@ -3714,11 +3714,20 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                       MatrixHandleName + ";" + getNL() + IndentStr;
     PrefixInsertStr = PrefixInsertStr + "mkl::sparse::init_matrix_handle(&" +
                       MatrixHandleName + ");" + getNL() + IndentStr;
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
-                      MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-                      CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-                      ", " + CSRRowPtrA + ", " + CSRColIndA +
-                      ", " + CSRValA + ");" + getNL() + IndentStr;
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      PrefixInsertStr =
+          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+          ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
+          CallExprArguReplVec[6] + ", " + CSRRowPtrA + ", " + CSRColIndA +
+          ", " + CSRValA + ");" + getNL() + IndentStr;
+    } else {
+      PrefixInsertStr =
+          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+          ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
+          CallExprArguReplVec[6] + ", const_cast<int*>(" + CSRRowPtrA +
+          "), const_cast<int*>(" + CSRColIndA + "), const_cast<" + BufferType +
+          "*>(" + CSRValA + "));" + getNL() + IndentStr;
+    }
     SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
                       "mkl::sparse::release_matrix_handle(&" +
                       MatrixHandleName + ");";
@@ -3743,11 +3752,17 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         TransStr = CallExprArguReplVec[1];
       }
     }
-
-    Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
-           ", " + addIndirectionIfNecessary(CE->getArg(5)) + ", " +
-           MatrixHandleName + ", " + X + ", " +
-           addIndirectionIfNecessary(CE->getArg(11)) + ", " + Y + ")";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
+             ", " + addIndirectionIfNecessary(CE->getArg(5)) + ", " +
+             MatrixHandleName + ", " + X + ", " +
+             addIndirectionIfNecessary(CE->getArg(11)) + ", " + Y + ")";
+    } else {
+      Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
+             ", " + addIndirectionIfNecessary(CE->getArg(5)) + ", " +
+             MatrixHandleName + ", const_cast<" + BufferType + "*>(" + X +
+             "), " + addIndirectionIfNecessary(CE->getArg(11)) + ", " + Y + ")";
+    }
   }
 
 
