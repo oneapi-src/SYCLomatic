@@ -1876,3 +1876,7 @@ template <> void foo2(cudaStream_t){}
 template <> void foo3(cudaStream_t){}
 template <> void foo4(cudaStream_t){}
 
+void foo_struct(void) {
+// CHECK: dpct::device_info d_t;
+struct cudaDeviceProp d_t;
+}

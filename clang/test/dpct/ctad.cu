@@ -22,20 +22,38 @@ int main() {
   // CHECK: sycl::range deflt(1, 1, 1);
   dim3 deflt;
 
+  // CHECK:  sycl::range deflt_1;
+  // CHECK-NEXT: sycl::id deflt_2;
+  cudaExtent deflt_1;
+  cudaPos deflt_2;
+
   // CHECK: sycl::range round1_1(NUM, 1, 1);
   dim3 round1_1(NUM);
+
+  cudaExtent exten = make_cudaExtent(1,1,1);;
 
   // CHECK: sycl::range castini = sycl::range(4, 1, 1);
   dim3 castini = (dim3)4;
 
+  // CHECK:   sycl::range castini_1 = exten;
+  // CHECK-NEXT:sycl::id castini_2 = deflt_2;
+  cudaExtent castini_1 = exten;
+  cudaPos castini_2 = deflt_2;
+
   // CHECK: sycl::range copyctor1 = sycl::range(sycl::range(33, 1, 1));
   dim3 copyctor1 = dim3((dim3)33);
+
 
   // CHECK: sycl::range copyctor2 = sycl::range(copyctor1);
   dim3 copyctor2 = dim3(copyctor1);
 
   // CHECK: sycl::range copyctor3(copyctor1);
   dim3 copyctor3(copyctor1);
+
+  // CHECK: sycl::range copyctor31(exten);
+  // CHECK-NEXT: sycl::id copyctor32(deflt_2);
+  cudaExtent copyctor31(exten);
+  cudaPos copyctor32(deflt_2);
 
   // CHECK: func(sycl::range(1, 1, 1), sycl::range(1, 1, 1), sycl::range(2, 1, 1), sycl::range(3, 2, 1));
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
@@ -47,6 +65,11 @@ int main() {
   dim3 *p = &deflt;
   // CHECK: sycl::range<3> **pp = &p;
   dim3 **pp = &p;
+
+  // CHECK: sycl::range<3> *p_1 = &deflt_1;
+  // CHECK-NEXT: sycl::id<3> *p_2 = &deflt_2;
+  cudaExtent *p_1 = &deflt_1;
+  cudaPos *p_2 = &deflt_2;
 
   struct  container
   {

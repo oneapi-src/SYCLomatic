@@ -12,19 +12,19 @@
 void func(dim3 a, dim3 b, dim3 c, dim3 d) {
 }
 
-// CHECK: void test(const sycl::range<3> & a, const sycl::range<3> & b) {
+// CHECK: void test(const sycl::range<3>& a, const sycl::range<3>& b) {
 void test(const dim3& a, const dim3& b) {
 }
 
-// CHECK: void test(sycl::range<3> && a, sycl::range<3> && b) {
+// CHECK: void test(sycl::range<3>&& a, sycl::range<3>&& b) {
 void test(dim3&& a, dim3&& b) {
 }
 
-// CHECK: void test(const sycl::range<3> * a, const sycl::range<3> * b) {
+// CHECK: void test(const sycl::range<3>* a, const sycl::range<3>* b) {
 void test(const dim3* a, const dim3* b) {
 }
 
-// CHECK: void test(const sycl::range<3> ** a, const sycl::range<3> ** b) {
+// CHECK: void test(const sycl::range<3>** a, const sycl::range<3>** b) {
 void test(const dim3** a, const dim3** b) {
 }
 

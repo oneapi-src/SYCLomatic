@@ -9,9 +9,8 @@
 
 
 int main(int argc, char **argv) {
-  //TODO: Currently, thrust::device_vector in sizeof is unsupported.
   //CHECK:dpct::device_vector<int> device_vec;
-  //CHECK-NEXT:int a = sizeof(thrust::device_vector<int>);
+  //CHECK-NEXT:int a = sizeof(dpct::device_vector<int>);
   //CHECK-NEXT:a = sizeof(device_vec);
   //CHECK-NEXT:a = sizeof device_vec;
   thrust::device_vector<int> device_vec;
@@ -19,9 +18,8 @@ int main(int argc, char **argv) {
   a = sizeof(device_vec);
   a = sizeof device_vec;
 
-  //TODO: Currently, thrust::device_ptr in sizeof is unsupported.
   //CHECK:dpct::device_ptr<int> device_p;
-  //CHECK-NEXT:a = sizeof(thrust::device_ptr<int>);
+  //CHECK-NEXT:a = sizeof(dpct::device_ptr<int>);
   //CHECK-NEXT:a = sizeof(device_p);
   //CHECK-NEXT:a = sizeof device_p;
   thrust::device_ptr<int> device_p;
@@ -29,13 +27,12 @@ int main(int argc, char **argv) {
   a = sizeof(device_p);
   a = sizeof device_p;
 
-  //TODO: Currently, thrust::host_vector in sizeof is unsupported.
   //CHECK:std::vector<int> host_vec;
-  //CHECK-NEXT:a = sizeof(thrust::host_vector<int>);
+  //CHECK-NEXT:a = sizeof(std::vector<int>);
   //CHECK-NEXT:a = sizeof(host_vec);
   //CHECK-NEXT:a = sizeof host_vec;
-  thrust::host_vector<int> host_vec;
-  a = sizeof(thrust::host_vector<int>);
+  std::vector<int> host_vec;
+  a = sizeof(std::vector<int>);
   a = sizeof(host_vec);
   a = sizeof host_vec;
 }

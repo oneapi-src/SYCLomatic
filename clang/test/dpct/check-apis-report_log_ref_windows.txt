@@ -12,7 +12,7 @@
 // CHECK: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2
 // CHECK: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1
 // CHECK: cudaStream_t                                 1
-// CHECK: dim3                                         1
+// CHECK: dim3                                         2
 // CHECK: float max(float a,float b)                   1
 // CHECK: int2                                         3
 // CHECK: longlong4                                    1

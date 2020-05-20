@@ -11,8 +11,7 @@
 // RUN: echo "]" >> %T/compile_by_gcc/compile_commands.json
 // RUN: dpct --format-range=none --out-root %T/compile_by_gcc -p=./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_gcc/compile_by_gcc_lin.c.dp.cpp
-// RUN: cd ..
-// RUN: rm -r ./compile_by_gcc
+// RUN: rm -rf %T/compile_by_gcc
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
