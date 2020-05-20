@@ -322,7 +322,7 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
       // get the index from the placeholder string
       int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
       // get the HelperFuncType from the placeholder string
-      HelperFuncType HFT;
+      HelperFuncType HFT = HelperFuncType::InitValue;
       if (MatchedStr.substr(13, 1) == "Q")
         HFT = HelperFuncType::DefaultQueue;
       else if (MatchedStr.substr(13, 1) == "D")

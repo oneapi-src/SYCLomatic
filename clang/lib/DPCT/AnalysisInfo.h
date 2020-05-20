@@ -33,8 +33,9 @@ namespace clang {
 namespace dpct {
 
 enum class HelperFuncType : int {
-  DefaultQueue = 0,
-  CurrentDevice = 1
+  InitValue = 0,
+  DefaultQueue = 1,
+  CurrentDevice = 2
 };
 
 enum class KernelArgType : int {
