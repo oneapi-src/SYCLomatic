@@ -299,10 +299,8 @@ void IncludesCallbacks::InclusionDirective(
 
   std::string IncludePath = SearchPath.str();
   makeCanonical(IncludePath);
-  std::string IncludingFile = SM.getFilename(HashLoc).str();
 
-  IncludingFile = getAbsolutePath(IncludingFile);
-  makeCanonical(IncludingFile);
+  std::string IncludingFile = DpctGlobalInfo::getLocInfo(HashLoc).first;
 
   // eg. '/home/path/util.h' -> '/home/path'
   StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
@@ -316,8 +314,17 @@ void IncludesCallbacks::InclusionDirective(
     return;
   }
 
-  std::string FilePath = File->getName().str();
-  makeCanonical(FilePath);
+  std::string FilePath;
+  if (!File->tryGetRealPathName().empty()) {
+    FilePath = File->tryGetRealPathName().str();
+  } else {
+    llvm::SmallString<512> FilePathAbs(File->getName());
+    DpctGlobalInfo::getSourceManager().getFileManager().makeAbsolutePath(
+        FilePathAbs);
+    llvm::sys::path::native(FilePathAbs);
+    llvm::sys::path::remove_dots(FilePathAbs, true);
+    FilePath = std::string(FilePathAbs.str());
+  }
 
   std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
   bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
@@ -333,6 +340,13 @@ void IncludesCallbacks::InclusionDirective(
   if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
     return;
   }
+
+  // The "FilePath" is included by the "IncludingFile".
+  // If "FilePath" is not under the Inroot folder, do not record the including
+  // relationship information.
+  if (DpctGlobalInfo::isInRoot(FilePath, false))
+    DpctGlobalInfo::getInstance().recordIncludingRelationship(IncludingFile,
+                                                              FilePath);
 
   // Record that math header is included in this file
   if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||

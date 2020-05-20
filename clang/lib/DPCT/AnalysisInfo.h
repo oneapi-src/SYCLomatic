@@ -363,8 +363,20 @@ public:
     else
       LineRange.SrcEndLine = EndLine.Number;
   }
+  void insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info) {
+    auto Iter = IncludedFilesInfoSet.find(Info);
+    if (Iter == IncludedFilesInfoSet.end()) {
+      IncludedFilesInfoSet.insert(Info);
+    }
+  }
+
+  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
+    return IncludedFilesInfoSet;
+  }
 
 private:
+  std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
+
   template <class Obj> GlobalMap<Obj> &getMap() {
     llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
     static GlobalMap<Obj> NullMap;
@@ -500,10 +512,14 @@ public:
                         .getFilename(getSourceManager().getExpansionLoc(SL))
                         .str());
   }
-  static bool isInRoot(const std::string &FilePath) {
-    std::string Path = removeSymlinks(getFileManager(), FilePath);
-    makeCanonical(Path);
-    return isChildPath(InRoot, Path);
+  static bool isInRoot(const std::string &FilePath, bool IsFilePathAbs = true) {
+    if (IsFilePathAbs) {
+      std::string Path = removeSymlinks(getFileManager(), FilePath);
+      makeCanonical(Path);
+      return isChildPath(InRoot, Path);
+    } else {
+      return isChildPath(InRoot, FilePath, IsFilePathAbs);
+    }
   }
   inline static bool replaceMacroName(SourceLocation SL) {
     auto &SM = getSourceManager();
@@ -910,6 +926,14 @@ public:
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
+
+  inline void recordIncludingRelationship(const std::string &CurrentFileName,
+                                          const std::string &IncludedFileName) {
+    auto CurrentFileInfo = this->insertFile(CurrentFileName);
+    auto IncludedFileInfo = this->insertFile(IncludedFileName);
+    CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
+  }
+
 private:
   DpctGlobalInfo();
 
@@ -2348,6 +2372,8 @@ private:
       }
     }
   }
+  bool isIncludedFile(const std::string &CurrentFile,
+                      const std::string &CheckingFile);
   void buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);

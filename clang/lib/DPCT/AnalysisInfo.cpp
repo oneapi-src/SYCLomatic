@@ -18,6 +18,8 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
+#include <deque>
+
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 namespace clang {
@@ -247,6 +249,30 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
   }
 }
 
+bool KernelCallExpr::isIncludedFile(const std::string &CurrentFile,
+                                    const std::string &CheckingFile) {
+  auto CurrentFileInfo = DpctGlobalInfo::getInstance().insertFile(CurrentFile);
+  auto CheckingFileInfo =
+      DpctGlobalInfo::getInstance().insertFile(CheckingFile);
+
+  std::deque<std::shared_ptr<DpctFileInfo>> Q(
+      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
+      CurrentFileInfo->getIncludedFilesInfoSet().end());
+
+  while (!Q.empty()) {
+    if (Q.front() == nullptr) {
+      continue;
+    } else if (Q.front() == CheckingFileInfo) {
+      return true;
+    } else {
+      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
+               Q.front()->getIncludedFilesInfoSet().end());
+      Q.pop_front();
+    }
+  }
+  return false;
+}
+
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
     if (VI->getType()->getDimension() > 1) {
@@ -256,7 +282,8 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   } else if (!VI->isGlobal()) {
     SubmitStmtsList.MemoryList.emplace_back(
         VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  } else if (getFilePath() != VI->getFilePath()) {
+  } else if (getFilePath() != VI->getFilePath() &&
+             !isIncludedFile(getFilePath(), VI->getFilePath())) {
     // Global variable definition and global variable reference are not in the
     // same file, and are not a share varible, insert extern variable
     // declaration.

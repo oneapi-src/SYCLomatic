@@ -91,15 +91,20 @@ bool isCanonical(llvm::StringRef Path);
 /// /x/y and /x/y/z -> true
 /// /x/y and /x/y   -> false
 /// /x/y and /x/yy/ -> false (not a prefix in terms of a path)
-inline bool isChildPath(const std::string &RootAbs, const std::string &Child) {
+inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
+                        bool IsChildAbs = true) {
   // 1st make Child as absolute path, then do compare.
   llvm::SmallString<256> ChildAbs;
   std::error_code EC;
   bool InChildAbsValid = true;
 
-  EC = llvm::sys::fs::real_path(Child, ChildAbs);
-  if ((bool)EC) {
-    InChildAbsValid = false;
+  if (IsChildAbs) {
+    EC = llvm::sys::fs::real_path(Child, ChildAbs);
+    if ((bool)EC) {
+      InChildAbsValid = false;
+    }
+  } else {
+    ChildAbs = Child;
   }
 
 #if defined(_WIN64)
