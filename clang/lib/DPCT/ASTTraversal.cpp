@@ -805,6 +805,17 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   emplaceTransformation(new ReplaceStmt(If, ""));
+
+  // if the last token right after the ifstmt is ";"
+  // remove the token
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto EndLoc = Lexer::getLocForEndOfToken(
+      SM.getSpellingLoc(If->getEndLoc()), 0, SM, Result.Context->getLangOpts());
+  Token Tok;
+  Lexer::getRawToken(EndLoc, Tok, SM, Result.Context->getLangOpts(), true);
+  if (Tok.getKind() == tok::semi) {
+    emplaceTransformation(new ReplaceText(EndLoc, 1, ""));
+  }
 }
 
 REGISTER_RULE(ErrorHandlingIfStmtRule)

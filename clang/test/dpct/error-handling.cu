@@ -62,7 +62,6 @@ void test_typedef()  {
 
 // CHECK:void test_no_braces() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:  ;
 // CHECK-NEXT:}
 void test_no_braces() {
   cudaError_t err;
@@ -318,9 +317,6 @@ void test_21(const cudaError_t& err, int arg) {
 }
 
 // CHECK:void test_no_side_effects(int err, int arg) {
-// CHECK-NEXT: ;
-// CHECK-NEXT: ;
-// CHECK-NEXT: ;
 // CHECK-NEXT:}
 void test_no_side_effects(cudaError_t err, int arg) {
   if (err)
@@ -336,8 +332,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 }
 
 // CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
-// CHECK-NEXT:  ;
-// CHECK-NEXT:/*
+// CHECK:/*
 // CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
@@ -364,7 +359,6 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    x = printf("fmt string");
-// CHECK-NEXT:  ;
 // CHECK-NEXT:}
 
 void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
