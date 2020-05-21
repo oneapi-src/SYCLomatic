@@ -80,7 +80,7 @@ const TemplateArgumentInfo &TemplateDependentReplacement::getTargetArgument(
     const std::vector<TemplateArgumentInfo> &TemplateList) {
   if (TemplateIndex < TemplateList.size())
     return TemplateList[TemplateIndex];
-  static TemplateArgumentInfo TAI("PlaceHolder/*Fix the type mannually*/");
+  static TemplateArgumentInfo TAI;
   return TAI;
 }
 

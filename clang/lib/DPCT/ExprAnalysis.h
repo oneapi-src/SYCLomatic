@@ -88,7 +88,7 @@ public:
       const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
           &InTDRs);
 
-  inline const std::string &getSourceString() { return SourceStr; }
+  inline const std::string &getSourceString() const { return SourceStr; }
 
   /// Get the result when given template arguments are applied.
   /// e.g.: X<T> with template dependent replacement {2, 1, 0}, argument is int,

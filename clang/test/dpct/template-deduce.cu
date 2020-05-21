@@ -1,8 +1,8 @@
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce.dp.cpp
 
-template<class T1, class T2> class TemplateClass {};
+template<class T1, class T2> class TemplateClass { using type = T1; };
 
 // CHECK: template<class T, size_t S> void template_device(T *a) {
 // CHECK-EMPTY
@@ -133,8 +133,8 @@ void foo() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<T1, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<T2, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -146,7 +146,7 @@ void foo() {
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<PlaceHolder/*Fix the type mannually*/, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -171,7 +171,7 @@ void foo() {
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<PlaceHolder/*Fix the type mannually*/, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -192,4 +192,187 @@ void foo() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<T3, T4><<<16, 32>>>(1, 2.3);
+}
+
+template<class T>
+__global__ void kernel_ptr(T *b) { __shared__ T a[10]; }
+template<class T, int N>
+__global__ void kernel_array(T b[][N]) { __shared__ T a[N]; }
+template<class T1, class T2>
+__global__ void kernel_class(TemplateClass<T1, T2> b) {
+  __shared__ T1 a1[10];
+  __shared__ T2 a2[10];
+}
+template<class T>
+__global__ void kernel_ref(const T &b) { __shared__ T a[10]; }
+
+template<class T1, class T2, size_t S> void implicit_host() {
+    typedef typename TemplateClass<T1, T2>::type typedef_1;
+    using using_1 = typename TemplateClass<T1, T2>::type;
+    
+    T1 *d_a;
+    int *d_b;
+    typedef_1 *d_c;
+    using_1 *d_d;
+
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ptr(d_a, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ptr<<<1,1>>>(d_a);
+    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ptr(d_b, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ptr<<<1,1>>>(d_b);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ptr(d_c, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ptr<<<1,1>>>(d_c);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ptr(d_d, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ptr<<<1,1>>>(d_d);
+    
+    T1 r_a;
+    int r_b;
+    typedef_1 r_c;
+    using_1 r_d;
+
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ref(r_a, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ref<<<1,1>>>(r_a);
+    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ref(r_b, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ref<<<1,1>>>(r_b);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ref(r_c, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ref<<<1,1>>>(r_c);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_ref(r_d, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_ref<<<1,1>>>(r_d);
+
+    T1 a_a[10][20];
+    int a_b[10][20];
+    typedef_1 a_c[10][20];
+    using_1 a_d[10][20];
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_array(a_a, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_array<<<1,1>>>(a_a);
+    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_array(a_b, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_array<<<1,1>>>(a_b);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_array(a_c, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_array<<<1,1>>>(a_c);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_array(a_d, a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_array<<<1,1>>>(a_d);
+    
+    using typedef_class = TemplateClass<T1, T2>;
+    typedef_class c_a;
+    TemplateClass<T1, T2> c_b;
+    TemplateClass<T1, int> c_c;
+    TemplateClass<int, T2> c_d;
+    TemplateClass<int, double> c_e;
+
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_class(c_a, a1_acc_ct1.get_pointer(), a2_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_class<<<1,1>>>(c_a);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_class(c_b, a1_acc_ct1.get_pointer(), a2_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_class<<<1,1>>>(c_b);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_class(c_c, a1_acc_ct1.get_pointer(), a2_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_class<<<1,1>>>(c_c);
+    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_class(c_d, a1_acc_ct1.get_pointer(), a2_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_class<<<1,1>>>(c_d);
+    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<double, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_class(c_e, a1_acc_ct1.get_pointer(), a2_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_class<<<1,1>>>(c_e);
 }

@@ -1617,28 +1617,64 @@ class TemplateArgumentInfo {
 public:
   explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL)
       : Kind(TAL.getArgument().getKind()) {
-    ExprAnalysis EA;
-    EA.analyze(TAL);
-    DependentStr = EA.getTemplateDependentStringInfo();
+    setArgFromExprAnalysis(TAL);
   }
 
   explicit TemplateArgumentInfo(std::string &&Str)
-      : DependentStr(
-            std::make_shared<TemplateDependentStringInfo>(std::move(Str))),
-        Kind(TemplateArgument::Null) {}
-
-  inline bool isType() { return Kind == TemplateArgument::Type; }
-  inline const std::string &getString() const {
-    return DependentStr->getSourceString();
+      : Kind(TemplateArgument::Null) {
+    setArgStr(std::move(Str));
   }
-  inline std::shared_ptr<TemplateDependentStringInfo>
+  TemplateArgumentInfo() : Kind(TemplateArgument::Null), IsWritten(false) {}
+
+  inline bool isWritten() const { return IsWritten; }
+  inline bool isNull() const { return !DependentStr; }
+  inline bool isType() const { return Kind == TemplateArgument::Type; }
+  inline const std::string &getString() const {
+    return getDependentStringInfo()->getSourceString();
+  }
+  inline std::shared_ptr<const TemplateDependentStringInfo>
   getDependentStringInfo() const {
+    if (isNull()) {
+      static std::shared_ptr<TemplateDependentStringInfo> Placeholder =
+          std::make_shared<TemplateDependentStringInfo>(
+              "PlaceHolder/*Fix the type mannually*/");
+      return Placeholder;
+    }
     return DependentStr;
   }
+  void setAsType(QualType QT) {
+    if (isPlaceholderType(QT))
+      return;
+    setArgStr(DpctGlobalInfo::getReplacedTypeName(QT));
+    Kind = TemplateArgument::Type;
+  }
+  void setAsType(const TypeLoc &TL) {
+    setArgFromExprAnalysis(TL);
+    Kind = TemplateArgument::Type;
+  }
+  void setAsNonType(const llvm::APInt &Int) {
+    setArgStr(Int.toString(10, true));
+    Kind = TemplateArgument::Integral;
+  }
+  void setAsNonType(const Expr *E) {
+    setArgFromExprAnalysis(E);
+    Kind = TemplateArgument::Expression;
+  }
 
+  static bool isPlaceholderType(clang::QualType QT);
 private:
+  template <class T> void setArgFromExprAnalysis(const T &Arg) {
+    ExprAnalysis EA;
+    EA.analyze(Arg);
+    DependentStr = EA.getTemplateDependentStringInfo();
+  }
+  void setArgStr(std::string &&Str) {
+    DependentStr =
+        std::make_shared<TemplateDependentStringInfo>(std::move(Str));
+  }
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
+  bool IsWritten = true;
 };
 
 // memory variable map includes memory variable used in __global__/__device__
@@ -1923,7 +1959,12 @@ public:
 
   void emplaceReplacement();
   inline bool hasArgs() { return HasArgs; }
-  inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
+  inline bool hasWrittenTemplateArgs() {
+    for (auto &Arg : TemplateArgs)
+      if (!Arg.isNull() && Arg.isWritten())
+        return true;
+    return false;
+  }
   inline const std::string &getName() { return Name; }
 
   std::string getTemplateArguments(bool WithScalarWrapped = false);
@@ -1954,8 +1995,9 @@ private:
   static std::string getName(const NamedDecl *D);
   void
   buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
-    for (auto &Arg : ArgsList)
-      TemplateArgs.emplace_back(Arg);
+    if (TemplateArgs.empty())
+      for (auto &Arg : ArgsList)
+        TemplateArgs.emplace_back(Arg);
   }
 
   void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);

@@ -426,10 +426,11 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
       DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
   if (DpctGlobalInfo::isSyclNamedLambda()) {
-    Printer.line("cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
-                 LocInfo.LocHash,
-                 (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
-                 ">>(");
+    Printer.line(
+        "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
+        LocInfo.LocHash,
+        (hasWrittenTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
+        ">>(");
   } else {
     Printer.line("cgh.parallel_for(");
   }
@@ -475,7 +476,7 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   for (auto &S : KernelStmts)
     Printer.line(S);
   Printer.indent() << getName()
-                   << (hasTemplateArgs()
+                   << (hasWrittenTemplateArgs()
                            ? buildString("<", getTemplateArguments(), ">")
                            : "")
                    << "(" << KernelArgs << ");";
@@ -558,21 +559,357 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
 }
 
+#define TYPE_CAST(qual_type, type) dyn_cast<type>(qual_type)
+#define ARG_TYPE_CAST(type) TYPE_CAST(ArgType, type)
+#define PARM_TYPE_CAST(type) TYPE_CAST(ParmType, type)
+
+bool TemplateArgumentInfo::isPlaceholderType(QualType QT) {
+  if (auto BT = QT->getAs<BuiltinType>()) {
+    if (BT->isPlaceholderType() || BT->isDependentType())
+      return true;
+  }
+  return false;
+}
+
+template <class T>
+void setTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
+                             unsigned Idx, T Ty) {
+  auto &TA = TAILis[Idx];
+  if (TA.isNull())
+    TA.setAsType(Ty);
+}
+template <class T>
+void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
+                                unsigned Idx, T Ty) {
+  auto &TA = TAILis[Idx];
+  if (TA.isNull())
+    TA.setAsNonType(Ty);
+}
+
+/// Return true if Ty is TypedefType.
+bool getTypedefNameType(QualType &Ty, TypeLoc &TL) {
+  if (auto TypedefTy = dyn_cast<TypedefType>(Ty)) {
+    if (!TemplateArgumentInfo::isPlaceholderType(TypedefTy->desugar())) {
+      Ty = TypedefTy->desugar();
+      TL = TypedefTy->getDecl()->getTypeSourceInfo()->getTypeLoc();
+      return true;
+    }
+  }
+  return false;
+}
+
+void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
+                                    QualType ParmType, QualType ArgType,
+                                    TypeLoc TL = TypeLoc());
+
+template <class NonTypeValueT>
+void deduceNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
+                                   const Expr *Parm,
+                                   const NonTypeValueT &Value) {
+  Parm = Parm->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(Parm)) {
+    if (auto NTTPD = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl())) {
+      setNonTypeTemplateArgument(TAIList, NTTPD->getIndex(), Value);
+    }
+  } else if (auto C = dyn_cast<ConstantExpr>(Parm)) {
+    deduceNonTypeTemplateArgument(TAIList, C->getSubExpr(), Value);
+  } else if (auto S = dyn_cast<SubstNonTypeTemplateParmExpr>(Parm)) {
+    deduceNonTypeTemplateArgument(TAIList, S->getReplacement(), Value);
+  }
+}
+
+void deduceTemplateArgumentFromTemplateArgs(
+    std::vector<TemplateArgumentInfo> &TAIList, const TemplateArgument &Parm,
+    const TemplateArgument &Arg,
+    const TemplateArgumentLoc &ArgLoc = TemplateArgumentLoc()) {
+  switch (Parm.getKind()) {
+  case TemplateArgument::Expression:
+    switch (Arg.getKind()) {
+    case TemplateArgument::Expression:
+      deduceNonTypeTemplateArgument(TAIList, Parm.getAsExpr(), Arg.getAsExpr());
+      return;
+    case TemplateArgument::Integral:
+      if (ArgLoc.getArgument().isNull())
+        deduceNonTypeTemplateArgument(TAIList, Parm.getAsExpr(),
+                                      Arg.getAsIntegral());
+      else
+        deduceNonTypeTemplateArgument(TAIList, Parm.getAsExpr(),
+                                      ArgLoc.getSourceExpression());
+      break;
+    default:
+      break;
+    }
+    break;
+  case TemplateArgument::Type:
+    if (Arg.getKind() != TemplateArgument::Type)
+      return;
+    if (ArgLoc.getArgument().isNull()) {
+      deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
+                                     Arg.getAsType());
+    } else {
+      deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
+                                     ArgLoc.getTypeSourceInfo()->getType(),
+                                     ArgLoc.getTypeSourceInfo()->getTypeLoc());
+    }
+  default:
+    break;
+  }
+}
+
+void deduceTemplateArgumentFromTemplateSpecialization(
+    std::vector<TemplateArgumentInfo> &TAIList,
+    const TemplateSpecializationType *ParmType, QualType ArgType,
+    TypeLoc TL = TypeLoc()) {
+  switch (ArgType->getTypeClass()) {
+  case Type::Record:
+    if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
+            ARG_TYPE_CAST(RecordType)->getDecl())) {
+      if (CTSD->getTypeAsWritten() &&
+          CTSD->getTypeAsWritten()->getType()->getTypeClass() ==
+              Type::TemplateSpecialization) {
+        auto TL = CTSD->getTypeAsWritten()->getTypeLoc();
+        auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
+        for (unsigned i = 0; i < ParmType->getNumArgs(); ++i) {
+          deduceTemplateArgumentFromTemplateArgs(
+              TAIList, ParmType->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TSTL.getArgLoc(i));
+        }
+      }
+    }
+    break;
+  case Type::TemplateSpecialization:
+    if (TL) {
+      auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
+      for (unsigned i = 0; i < ParmType->getNumArgs(); ++i) {
+        deduceTemplateArgumentFromTemplateArgs(TAIList, ParmType->getArg(i),
+                                               TSTL.getArgLoc(i).getArgument(),
+                                               TSTL.getArgLoc(i));
+      }
+    } else {
+      auto TST = ARG_TYPE_CAST(TemplateSpecializationType);
+      for (unsigned i = 0; i < ParmType->getNumArgs(); ++i) {
+        deduceTemplateArgumentFromTemplateArgs(TAIList, ParmType->getArg(i),
+                                               TST->getArg(i));
+      }
+    }
+    break;
+  default:
+    break;
+  }
+
+  if (getTypedefNameType(ArgType, TL)) {
+    deduceTemplateArgumentFromTemplateSpecialization(TAIList, ParmType, ArgType,
+                                                     TL);
+  }
+}
+
+TypeLoc getPointeeTypeLoc(TypeLoc TL) {
+  if (!TL)
+    return TL;
+  switch (TL.getTypeLocClass()) {
+  case TypeLoc::ConstantArray:
+  case TypeLoc::DependentSizedArray:
+  case TypeLoc::IncompleteArray:
+    return TYPELOC_CAST(ArrayTypeLoc).getElementLoc();
+  case TypeLoc::Pointer:
+    return TYPELOC_CAST(PointerTypeLoc).getPointeeLoc();
+  default:
+    return TypeLoc();
+  }
+}
+
+void deduceTemplateArgumentFromArrayElement(
+    std::vector<TemplateArgumentInfo> &TAIList, QualType ParmType,
+    QualType ArgType, TypeLoc TL = TypeLoc()) {
+  const ArrayType *ParmArray = PARM_TYPE_CAST(ArrayType);
+  const ArrayType *ArgArray = ARG_TYPE_CAST(ArrayType);
+  if (!ParmArray || !ArgArray) {
+    return;
+  }
+  deduceTemplateArgumentFromType(TAIList, ParmArray->getElementType(),
+                                 ArgArray->getElementType(),
+                                 getPointeeTypeLoc(TL));
+}
+
+void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
+                                    QualType ParmType, QualType ArgType,
+                                    TypeLoc TL) {
+  ParmType = ParmType.getCanonicalType();
+  if (!ParmType->isDependentType())
+    return;
+
+  if (TL)
+    TL = TL.getUnqualifiedLoc();
+
+  switch (ParmType->getTypeClass()) {
+  case Type::TemplateTypeParm:
+    if (TL) {
+      setTypeTemplateArgument(
+          TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
+    } else {
+      setTypeTemplateArgument(
+          TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
+    }
+    break;
+  case Type::TemplateSpecialization:
+    return deduceTemplateArgumentFromTemplateSpecialization(
+        TAIList, PARM_TYPE_CAST(TemplateSpecializationType), ArgType, TL);
+  case Type::Pointer:
+    if (auto ArgPointer = ARG_TYPE_CAST(PointerType)) {
+      deduceTemplateArgumentFromType(TAIList, ParmType->getPointeeType(),
+                                     ArgPointer->getPointeeType(),
+                                     getPointeeTypeLoc(TL));
+    } else if (auto ArgArray = ARG_TYPE_CAST(ArrayType)) {
+      deduceTemplateArgumentFromType(TAIList, ParmType->getPointeeType(),
+                                     ArgArray->getElementType(),
+                                     getPointeeTypeLoc(TL));
+    }
+    break;
+  case Type::LValueReference: {
+    auto ParmPointeeType =
+        PARM_TYPE_CAST(LValueReferenceType)->getPointeeTypeAsWritten();
+    if (auto LVRT = ARG_TYPE_CAST(LValueReferenceType)) {
+      deduceTemplateArgumentFromType(
+          TAIList, ParmPointeeType, LVRT->getPointeeTypeAsWritten(),
+          TL ? TYPELOC_CAST(LValueReferenceTypeLoc).getPointeeLoc() : TL);
+    } else if (ParmPointeeType.getQualifiers().hasConst()) {
+      deduceTemplateArgumentFromType(TAIList, ParmPointeeType, ArgType, TL);
+    }
+    break;
+  }
+  case Type::RValueReference:
+    if (auto RVRT = ARG_TYPE_CAST(RValueReferenceType)) {
+      deduceTemplateArgumentFromType(
+          TAIList,
+          PARM_TYPE_CAST(RValueReferenceType)->getPointeeTypeAsWritten(),
+          RVRT->getPointeeTypeAsWritten(),
+          TL ? TYPELOC_CAST(RValueReferenceTypeLoc).getPointeeLoc() : TL);
+    }
+    break;
+  case Type::ConstantArray: {
+    auto ArgConstArray = ARG_TYPE_CAST(ConstantArrayType);
+    auto ParmConstArray = PARM_TYPE_CAST(ConstantArrayType);
+    if (ArgConstArray &&
+        ArgConstArray->getSize() == ParmConstArray->getSize()) {
+      deduceTemplateArgumentFromArrayElement(TAIList, ParmType, ArgType, TL);
+    }
+    break;
+  }
+  case Type::IncompleteArray:
+    deduceTemplateArgumentFromArrayElement(TAIList, ParmType, ArgType, TL);
+    break;
+  case Type::DependentSizedArray: {
+    deduceTemplateArgumentFromArrayElement(TAIList, ParmType, ArgType, TL);
+    auto ParmSizeExpr = PARM_TYPE_CAST(DependentSizedArrayType)->getSizeExpr();
+    if (TL && TL.getTypePtr()->isArrayType()) {
+      deduceNonTypeTemplateArgument(TAIList, ParmSizeExpr,
+                                    TYPELOC_CAST(ArrayTypeLoc).getSizeExpr());
+    } else if (auto DSAT = ARG_TYPE_CAST(DependentSizedArrayType)) {
+      deduceNonTypeTemplateArgument(TAIList, ParmSizeExpr, DSAT->getSizeExpr());
+    } else if (auto CAT = ARG_TYPE_CAST(ConstantArrayType)) {
+      deduceNonTypeTemplateArgument(TAIList, ParmSizeExpr, CAT->getSize());
+    }
+    break;
+  }
+  default:
+    break;
+  }
+
+  if (getTypedefNameType(ArgType, TL)) {
+    deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
+  }
+}
+
+void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
+                            const Expr *Arg, const ParmVarDecl *PVD) {
+  auto ArgType = Arg->getType();
+  auto ParmType = PVD->getType();
+
+  TypeLoc TL;
+  if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImplicitAsWritten())) {
+    if (auto DD = dyn_cast<DeclaratorDecl>(DRE->getDecl()))
+      TL = DD->getTypeSourceInfo()->getTypeLoc();
+  }
+
+  deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
+}
+
+void deduceTemplateArguments(const CallExpr *CE,
+                             const FunctionTemplateDecl *FTD,
+                             std::vector<TemplateArgumentInfo> &TAIList) {
+  if (!FTD)
+    return;
+
+  if (!DpctGlobalInfo::isInRoot(FTD->getBeginLoc()))
+    return;
+  auto &TemplateParmsList = *FTD->getTemplateParameters();
+  if (TAIList.size() == TemplateParmsList.size())
+    return;
+
+  TAIList.resize(TemplateParmsList.size());
+
+  auto ArgItr = CE->arg_begin();
+  auto ParmItr = FTD->getTemplatedDecl()->param_begin();
+  while (ArgItr != CE->arg_end() &&
+         ParmItr != FTD->getTemplatedDecl()->param_end()) {
+    deduceTemplateArgument(TAIList, *ArgItr, *ParmItr);
+    ++ArgItr;
+    ++ParmItr;
+  }
+  for (size_t i = 0; i < TAIList.size(); ++i) {
+    auto &Arg = TAIList[i];
+    if (!Arg.isNull())
+      continue;
+    auto TemplateParm = TemplateParmsList.getParam(i);
+    if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+      if (TTPD->hasDefaultArgument())
+        Arg.setAsType(TTPD->getDefaultArgumentInfo()->getTypeLoc());
+    } else if (auto NTTPD = dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+      if (NTTPD->hasDefaultArgument())
+        Arg.setAsNonType(NTTPD->getDefaultArgument());
+    }
+  }
+}
+
+void deduceTemplateArguments(const CallExpr *CE, const FunctionDecl *FD,
+                             std::vector<TemplateArgumentInfo> &TAIList) {
+  if (FD)
+    return deduceTemplateArguments(CE, FD->getPrimaryTemplate(), TAIList);
+}
+
+void deduceTemplateArguments(const CallExpr *CE, const NamedDecl *ND,
+                             std::vector<TemplateArgumentInfo> &TAIList) {
+  if (!ND)
+    return;
+  if (auto FTD = dyn_cast<FunctionTemplateDecl>(ND)) {
+    deduceTemplateArguments(CE, FTD, TAIList);
+  } else if (auto FD = dyn_cast<FunctionDecl>(ND)) {
+    deduceTemplateArguments(CE, FD, TAIList);
+  } else if (auto UD = dyn_cast<UsingShadowDecl>(ND)) {
+    deduceTemplateArguments(CE, UD->getUnderlyingDecl(), TAIList);
+  }
+}
+
+
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   bool HasImplicitArg = false;
   auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
-
   if (auto CallDecl = CE->getDirectCallee()) {
     HasImplicitArg =
         isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(CallDecl);
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
-    if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts()))
+    if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())) {
       buildTemplateArguments(DRE->template_arguments());
+    }
+    deduceTemplateArguments(CE, CallDecl, TemplateArgs);
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = Unresolved->getName().getAsString();
     FuncInfo = DeviceFunctionDecl::LinkUnresolved(Unresolved);
     buildTemplateArguments(Unresolved->template_arguments());
+    if (Unresolved->getNumDecls())
+      deduceTemplateArguments(CE, Unresolved->decls_begin().getDecl(),
+                              TemplateArgs);
   } else if (auto DependentScope =
                  dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
     Name = DependentScope->getMember().getAsString();
@@ -668,6 +1005,8 @@ std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
+    if (TA.isNull() || !TA.isWritten())
+      continue;
     if (WithScalarWrapped && !TA.isType())
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
     else
