@@ -21,46 +21,45 @@ cusolverStatus_t foo3(int m, int n)
     return CUSOLVER_STATUS_SUCCESS;
 }
 
-// CHECK: extern sycl::queue * cusolverH2 = NULL;
-extern cusolverDnHandle_t* cusolverH2 = NULL;
+// CHECK: extern sycl::queue* cusolverH2 = NULL;
+extern cusolverDnHandle_t cusolverH2 = NULL;
 
 int main(int argc, char *argv[])
 {
-    // CHECK: sycl::queue * cusolverH = NULL;
+    // CHECK: sycl::queue* cusolverH = NULL;
     // CHECK-NEXT: int status = 0;
     // CHECK-NEXT: status = 1;
-    cusolverDnHandle_t* cusolverH = NULL;
+    cusolverDnHandle_t cusolverH = NULL;
     cusolverStatus_t status = CUSOLVER_STATUS_SUCCESS;
     status = CUSOLVER_STATUS_NOT_INITIALIZED;
 
     // CHECK: foo(0, 1, 2, 3, 4, 6, 7, 8);
     foo(CUSOLVER_STATUS_SUCCESS, CUSOLVER_STATUS_NOT_INITIALIZED, CUSOLVER_STATUS_ALLOC_FAILED, CUSOLVER_STATUS_INVALID_VALUE, CUSOLVER_STATUS_ARCH_MISMATCH, CUSOLVER_STATUS_EXECUTION_FAILED, CUSOLVER_STATUS_INTERNAL_ERROR, CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusolverDnCreate was removed, because this call is redundant in DPC++.
-    // CHECK-NEXT: */
-    cusolverDnCreate(cusolverH);
+    // CHECK: cusolverH = &q_ct1;
+    cusolverDnCreate(&cusolverH);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCreate was replaced with 0, because this call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: status = 0;
-    status = cusolverDnCreate(cusolverH);
+    // CHECK-NEXT: status = (cusolverH = &q_ct1, 0);
+    status = cusolverDnCreate(&cusolverH);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCreate was replaced with 0, because this call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK: status = 0;
-    status = MACRO_A(cusolverH);
+    // CHECK-NEXT: status = (cusolverH = &q_ct1, 0);
+    status = MACRO_A(&cusolverH);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroy was replaced with 0, because this call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: status = 0;
-    status = cusolverDnDestroy(*cusolverH);
+    // CHECK-NEXT: status = (cusolverH = nullptr, 0);
+    status = cusolverDnDestroy(cusolverH);
 
     // CHECK: int a = sizeof(int);
-    // CHECK-NEXT: int b = sizeof(sycl::queue);
+    // CHECK-NEXT: int b = sizeof(sycl::queue*);
     int a = sizeof(cublasStatus_t);
     int b = sizeof(cusolverDnHandle_t);
 }
+

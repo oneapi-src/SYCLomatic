@@ -119,7 +119,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"thrust::counting_iterator", "dpstd::counting_iterator"},
       {"thrust::permutation_iterator", "dpct::permutation_iterator"},
       {"thrust::transform_iterator", "dpstd::transform_iterator"},
-      {"cusolverDnHandle_t", ClNamespace + "::queue"},
+      {"cusolverDnHandle_t", ClNamespace + "::queue*"},
       {"cusolverEigType_t", "int64_t"},
       {"cusolverEigMode_t", "mkl::job"},
       {"cusolverStatus_t", "int"},

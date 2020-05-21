@@ -1445,73 +1445,8 @@ void ThrustCtorExprRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustCtorExprRule)
 
-auto HandleTypeNames =
-    hasAnyName("cusolverDnHandle_t");
-
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
-
-  auto HandleTypedefs =
-      typedefType(hasDeclaration(typedefDecl(HandleTypeNames)));
-
-
-  MF.addMatcher(unaryExprOrTypeTraitExpr(hasArgumentOfType(hasDeclaration(typedefDecl(HandleTypeNames))))
-                    .bind("TypeInUnaryExprOrTypeTraitExpr"),
-                this);
-
-  // TODO: HandleType in template, in macro body, assigined, as function param
-  // and as macro argument
-  MF.addMatcher(
-      varDecl(
-          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
-                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
-                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
-                      hasType(references(typedefDecl(HandleTypeNames))),
-                      hasType(arrayType(hasElementType(HandleTypedefs))),
-                      hasType(
-                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
-                      hasType(arrayType(
-                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
-                unless(hasType(substTemplateTypeParmType()))),
-          hasAncestor(functionDecl(
-              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
-          .bind("TypeInVarDeclDevice"),
-      this);
-
-  MF.addMatcher(
-      varDecl(
-          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
-                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
-                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
-                      hasType(references(typedefDecl(HandleTypeNames))),
-                      hasType(arrayType(hasElementType(HandleTypedefs))),
-                      hasType(
-                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
-                      hasType(arrayType(
-                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
-                unless(hasType(substTemplateTypeParmType()))),
-          unless(hasAncestor(functionDecl(
-              allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))))))
-          .bind("TypeInVarDecl"),
-      this);
-
-  MF.addMatcher(
-      fieldDecl(
-          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
-                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
-                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
-                      hasType(references(typedefDecl(HandleTypeNames))),
-                      hasType(arrayType(hasElementType(HandleTypedefs))),
-                      hasType(
-                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
-                      hasType(arrayType(
-                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
-                unless(hasType(substTemplateTypeParmType()))),
-          hasAncestor(functionDecl(
-              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
-          .bind("TypeInFieldDeclDevice"),
-      this);
-
   MF.addMatcher(
       typeLoc(
           loc(qualType(hasDeclaration(anyOf(
@@ -1523,7 +1458,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "__half2", "half2", "cudaMemoryAdvise",
                              "cudaError_enum", "cudaDeviceProp",
                              "cudaPitchedPtr", "counting_iterator",
-                             "transform_iterator", "permutation_iterator"),
+                             "transform_iterator", "permutation_iterator",
+                             "cusolverDnHandle_t"),
                   matchesName("cudnn.*|nccl.*"))),
               typedefDecl(anyOf(
                   hasAnyName("cudaError_t", "CUresult",
@@ -1543,7 +1479,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "half", "__half2", "half2", "cudaMemoryAdvise",
                              "cudaError_enum", "cudaDeviceProp",
                              "cudaPitchedPtr", "counting_iterator",
-                             "transform_iterator", "permutation_iterator"),
+                             "transform_iterator", "permutation_iterator",
+                             "cusolverDnHandle_t"),
                   matchesName("cudnn.*|nccl.*"))))))))
           .bind("cudaTypeDef"),
       this);
@@ -1869,137 +1806,6 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
   }
-
-  // DD points to a VarDecl or a FieldDecl
-  const VarDecl *VD = getNodeAsType<VarDecl>(Result, "TypeInVarDeclDevice");
-  const DeclaratorDecl *DD = VD;
-  const UnaryExprOrTypeTraitExpr *UETTE;
-  const CStyleCastExpr *CSCE;
-  QualType QT;
-  bool HasDeviceAttr = false;
-  bool IsUETTE = false;
-  bool IsInFieldDecl = false;
-  if ((DD) ||
-      ((VD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
-    DD = VD;
-    QT = DD->getType();
-    HasDeviceAttr = true;
-    IsInFieldDecl = true;
-  } else if ((VD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
-    DD = VD;
-    QT = DD->getType();
-  } else if ((UETTE = getNodeAsType<UnaryExprOrTypeTraitExpr>(
-                  Result, "TypeInUnaryExprOrTypeTraitExpr"))) {
-    IsUETTE = true;
-  } else {
-    return;
-  }
-
-  SourceManager *SM = Result.SourceManager;
-  unsigned int Loc;
-  std::string TypeStr;
-  SourceLocation BeginLoc;
-  unsigned Len = 0;
-  bool IsMacro = false;
-
-  TypeSourceInfo *ArgTypeInfo = nullptr;
-  if (IsUETTE) {
-    if (!UETTE->isArgumentType())
-      return;
-    if ((ArgTypeInfo = UETTE->getArgumentTypeInfo())) {
-      BeginLoc = ArgTypeInfo->getTypeLoc().getBeginLoc();
-    } else {
-      return;
-    }
-  } else {
-    if ((ArgTypeInfo = DD->getTypeSourceInfo())) {
-      BeginLoc = ArgTypeInfo->getTypeLoc().getSourceRange().getBegin();
-    } else {
-      return;
-    }
-  }
-
-  if (BeginLoc.isMacroID()) {
-    IsMacro = true;
-    auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-    if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-      BeginLoc = SM->getExpansionLoc(BeginLoc);
-    } else {
-      BeginLoc = SpellingLocation;
-    }
-  }
-
-  Loc = BeginLoc.getRawEncoding();
-  if (DupFilter.find(Loc) != DupFilter.end())
-    return;
-
-  auto BeginLocChar = SM->getCharacterData(SM->getExpansionLoc(BeginLoc));
-  Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
-
-  if (isAuto(BeginLocChar, Len)) {
-    // do not replace if keyword/token 'auto' is used
-    return;
-  } else if (IsUETTE) {
-    TypeStr = std::string(BeginLocChar, Len);
-  } else {
-    if (QT->isArrayType()) {
-      auto ArrType = Result.Context->getAsArrayType(QT);
-      auto EleType = ArrType->getElementType();
-      TypeStr = EleType.getAsString();
-    } else {
-      TypeStr = QT.getAsString();
-    }
-  }
-
-  std::string TypeStrRemovePrefix;
-  auto Replacement = getReplacementForType(
-      TypeStr, DD && (DD->getKind() == Decl::Var), &TypeStrRemovePrefix);
-
-  if (Replacement.empty())
-    // TODO report migration error
-    return;
-
-  if (HasDeviceAttr) {
-    report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
-    return;
-  }
-
-  bool IsTemplateType = getTemplateTypeReplacement(TypeStr, Replacement, Len);
-
-  if (IsUETTE || IsTemplateType) {
-    emplaceTransformation(
-        new ReplaceText(BeginLoc, Len, std::move(Replacement)));
-  } else {
-    if (IsMacro) {
-      Token Tok;
-      auto LOpts = Result.Context->getLangOpts();
-      SourceManager *SM = Result.SourceManager;
-      Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-      if (Tok.isAnyIdentifier()) {
-        std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
-                                                    Tok.getRawIdentifier().str());
-        if (!Str.empty()) {
-          emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-          return;
-        }
-      }
-    } else {
-      emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
-    }
-    if ((TypeStr == "cusolverDnHandle_t") &&
-        !IsInFieldDecl) {
-      auto EndLoc = DD->getEndLoc();
-      if (EndLoc.isMacroID()) {
-        EndLoc = SM->getSpellingLoc(EndLoc);
-      }
-      EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
-          SM->getExpansionLoc(EndLoc), *SM,
-          dpct::DpctGlobalInfo::getContext().getLangOpts()));
-      emplaceTransformation(new InsertText(
-          EndLoc, "(dpct::get_default_context(), dpct::get_current_device())"));
-    }
-  }
-  DupFilter.insert(Loc);
 }
 
 REGISTER_RULE(TypeInDeclRule)
@@ -6144,6 +5950,11 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                             getNL() + IndentStr;
         }
       }
+      if (i == 0) {
+        // process handle argument
+        emplaceTransformation(new ReplaceStmt(
+            CE->getArg(i), "*" + getStmtSpelling(CE->getArg(i))));
+      }
     }
 
     if (!ReplInfo.MissedArgumentFinalLocation.empty()) {
@@ -6206,8 +6017,41 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(StmtBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
     }
   } else if (FuncName == "cusolverDnCreate" ||
-             FuncName == "cusolverDnDestroy" ||
-             FuncName == "cusolverDnSpotrf_bufferSize" ||
+             FuncName == "cusolverDnDestroy") {
+    std::string Repl;
+    if (FuncName == "cusolverDnCreate") {
+      std::string LHS;
+      if (isSimpleAddrOf(CE->getArg(0))) {
+        LHS = getNameStrRemovedAddrOf(CE->getArg(0));
+      } else {
+        dpct::ExprAnalysis EA;
+        EA.analyze(CE->getArg(0));
+        if (isAnIdentifierOrLiteral(CE->getArg(0)))
+          LHS = "*" + EA.getReplacedString();
+        else
+          LHS = "*(" + EA.getReplacedString() + ")";
+      }
+      if (checkWhetherIsDuplicate(CE, false))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    } else if (FuncName == "cusolverDnDestroy") {
+      dpct::ExprAnalysis EA(CE->getArg(0));
+      Repl = EA.getReplacedString() + " = nullptr";
+    } else {
+      return;
+    }
+
+    if (IsAssigned) {
+      report(SM->getExpansionLoc(CE->getBeginLoc()),
+             Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      emplaceTransformation(
+          new ReplaceStmt(CE, false, FuncName, true, "(" + Repl + ", 0)"));
+    } else {
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, Repl));
+    }
+  } else if (FuncName == "cusolverDnSpotrf_bufferSize" ||
              FuncName == "cusolverDnDpotrf_bufferSize" ||
              FuncName == "cusolverDnCpotrf_bufferSize" ||
              FuncName == "cusolverDnZpotrf_bufferSize" ||
