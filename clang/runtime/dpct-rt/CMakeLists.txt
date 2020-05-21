@@ -16,6 +16,7 @@ set(dpct_rt_dpstd_files
   include/dpstd_extras/iterators.h
   include/dpstd_extras/algorithm.h
   include/dpstd_extras/numeric.h
+  include/dpstd_extras/vector.h
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

@@ -17,8 +17,8 @@
 #ifndef __DPCT_FUNCTIONAL_H__
 #define __DPCT_FUNCTIONAL_H__
 
-#include <dpstd/internal/function.h>
-#include <dpstd/iterators.h>
+#include <dpstd/functional>
+#include <dpstd/iterator>
 #include <functional>
 
 #ifdef __PSTL_BACKEND_SYCL
@@ -133,36 +133,6 @@ private:
   T1 source;
 };
 
-} // end namespace internal
-
-struct identity {
-  template <typename _T> constexpr _T &&operator()(_T &&x) const noexcept {
-    return std::forward<_T>(x);
-  }
-};
-
-template <typename T> struct maximum {
-  typedef T result_type;
-  typedef T first_argument_type;
-  typedef T second_argument_type;
-
-  T operator()(const T &lhs, const T &rhs) const {
-    return lhs < rhs ? rhs : lhs;
-  }
-};
-
-template <typename T> struct minimum {
-  typedef T result_type;
-  typedef T first_argument_type;
-  typedef T second_argument_type;
-
-  T operator()(const T &lhs, const T &rhs) const {
-    return lhs < rhs ? lhs : rhs;
-  }
-};
-
-namespace internal {
-
 // Functor compares first element (key) from tied sequence.
 template <typename Compare = class internal::__less> struct compare_key_fun {
   typedef bool result_of;
@@ -195,8 +165,7 @@ private:
 };
 
 // Used by: remove_if
-template <typename Predicate>
-struct negate_predicate_key_fun {
+template <typename Predicate> struct negate_predicate_key_fun {
   typedef bool result_of;
   negate_predicate_key_fun(Predicate _pred) : pred(_pred) {}
 
@@ -237,8 +206,7 @@ private:
 
 // Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
 // });
-template <typename T, typename Predicate>
-struct replace_if_fun {
+template <typename T, typename Predicate> struct replace_if_fun {
 public:
   typedef T result_of;
   replace_if_fun(Predicate _pred, T _new_value)
@@ -270,8 +238,8 @@ private:
 template <typename T, typename Predicate, typename BinaryOperation>
 class transform_if_zip_stencil_fun {
 public:
-  transform_if_zip_stencil_fun(Predicate _pred = identity(),
-                               BinaryOperation _op = identity())
+  transform_if_zip_stencil_fun(Predicate _pred = dpstd::identity(),
+                               BinaryOperation _op = dpstd::identity())
       : pred(_pred), op(_op) {}
   template <typename _T> void operator()(_T &&t) {
     using std::get;

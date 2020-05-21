@@ -48,13 +48,11 @@ template <typename Policy, typename ForwardIt, typename InputIt,
           typename Predicate>
 ForwardIt remove_if(Policy &&policy, ForwardIt first, ForwardIt last,
                     InputIt stencil, Predicate p) {
-  using dpstd::make_transform_iterator;
   using dpstd::make_zip_iterator;
   using policy_type = typename std::decay<Policy>::type;
   using internal::__buffer;
   using ValueType = typename std::iterator_traits<ForwardIt>::value_type;
   using DiscardType = typename std::iterator_traits<InputIt>::value_type;
-  using Ref1 = typename dpstd::zip_iterator<ForwardIt, InputIt>::reference;
 
   __buffer<ValueType> _tmp(std::distance(first, last));
 
@@ -74,7 +72,6 @@ template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt, typename Predicate>
 OutputIt remove_copy_if(Policy &&policy, InputIt1 first, InputIt1 last,
                         InputIt2 stencil, OutputIt result, Predicate p) {
-  using dpstd::make_transform_iterator;
   using dpstd::make_zip_iterator;
   using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::remove_copy_if(
@@ -178,15 +175,6 @@ OutputIt transform(Policy &&policy, InputIt1 first1, InputIt1 last1,
                         result, unary_op);
 }
 
-template <typename Policy, typename InputIt, typename UnaryOperation,
-          typename OutputType, typename BinaryOperation>
-OutputType transform_reduce(Policy &&policy, InputIt first, InputIt last,
-                            UnaryOperation unary_op, OutputType init,
-                            BinaryOperation binary_op) {
-  return std::transform_reduce(std::forward<Policy>(policy), first, last, init,
-                               binary_op, unary_op);
-}
-
 template <class Policy, class ForwardIt1, class ForwardIt2,
           class UnaryOperation, class Predicate>
 ForwardIt2 transform_if(Policy &&policy, ForwardIt1 first, ForwardIt1 last,
@@ -281,7 +269,6 @@ void sequence(Policy &&policy, InputIter first, InputIter last, T init,
 
 template <class Policy, class InputIter, class T>
 void sequence(Policy &&policy, InputIter first, InputIter last, T init) {
-  using DiffSize = typename std::iterator_traits<InputIter>::difference_type;
   sequence(std::forward<Policy>(policy), first, last, init, T(1));
 }
 
@@ -344,17 +331,14 @@ set_intersection_by_key(Policy &&policy, InputIter1 keys_first1,
                         InputIter1 keys_last1, InputIter2 keys_first2,
                         InputIter2 keys_last2, InputIter3 values_first1,
                         OutputIter1 keys_result, OutputIter2 values_result) {
+  using DiscardType = typename std::iterator_traits<InputIter2>::value_type;
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       dpstd::make_zip_iterator(keys_first1, values_first1),
       dpstd::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      dpstd::make_zip_iterator(
-          keys_first2,
-          keys_first2), // second element is dummy and actually never used!
-      dpstd::make_zip_iterator(
-          keys_last2,
-          keys_last2), // second element is dummy and actually never used!
+      dpstd::make_zip_iterator(keys_first2, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(keys_last2, discard_iterator<DiscardType>()),
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),
@@ -368,17 +352,14 @@ std::pair<OutputIter1, OutputIter2> set_intersection_by_key(
     Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
     InputIter2 keys_first2, InputIter2 keys_last2, InputIter3 values_first1,
     OutputIter1 keys_result, OutputIter2 values_result, Compare comp) {
+  using DiscardType = typename std::iterator_traits<InputIter2>::value_type;
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       dpstd::make_zip_iterator(keys_first1, values_first1),
       dpstd::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      dpstd::make_zip_iterator(
-          keys_first2,
-          keys_first2), // second element is dummy and actually never used!
-      dpstd::make_zip_iterator(
-          keys_last2,
-          keys_last2), // second element is dummy and actually never used!
+      dpstd::make_zip_iterator(keys_first2, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(keys_last2, discard_iterator<DiscardType>()),
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Compare>(comp));
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),

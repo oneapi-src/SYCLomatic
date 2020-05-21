@@ -31,5 +31,6 @@
 #include "dpstd_extras/algorithm.h"
 #include "dpstd_extras/numeric.h"
 #include "dpstd_extras/iterators.h"
+#include "dpstd_extras/vector.h"
 
 #endif // __DPSTD_UTILS_HPP

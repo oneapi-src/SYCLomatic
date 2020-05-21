@@ -173,11 +173,12 @@ public:
 #ifdef __USE_DPCT
   template <typename OtherT>
   device_ptr(OtherT *ptr)
-      : buffer(dpct::detail::mem_mgr::instance()
-                   .translate_ptr(ptr)
-                   .buffer.template reinterpret<T, 1>(sycl::range<1>(
-                       dpct::detail::mem_mgr::instance().translate_ptr(ptr).size /
-                       sizeof(T)))),
+      : buffer(
+            dpct::detail::mem_mgr::instance()
+                .translate_ptr(ptr)
+                .buffer.template reinterpret<T, 1>(sycl::range<1>(
+                    dpct::detail::mem_mgr::instance().translate_ptr(ptr).size /
+                    sizeof(T)))),
         idx() {}
 #endif
   // needed for device_malloc, n is number of bytes to allocate
@@ -203,19 +204,19 @@ public:
   device_ptr operator-(difference_type backward) const {
     return device_ptr{buffer, idx - backward};
   }
-  device_ptr& operator+=(difference_type forward) {
+  device_ptr &operator+=(difference_type forward) {
     idx += forward;
     return *this;
   }
-  device_ptr& operator-=(difference_type backward) {
+  device_ptr &operator-=(difference_type backward) {
     idx -= backward;
     return *this;
   }
-  device_ptr& operator++() {
+  device_ptr &operator++() {
     idx += 1;
     return *this;
   }
-  device_ptr& operator--() {
+  device_ptr &operator--() {
     idx -= 1;
     return *this;
   }
@@ -255,15 +256,15 @@ public:
   using reference = T &;
   using const_reference = const T &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::false_type; // required
+  using is_hetero = std::false_type;         // required
   using is_passed_directly = std::true_type; // required
 
   device_ptr(T *p) : ptr(p) {}
   // needed for device_malloc, n is number of bytes to allocate
   device_ptr(const std::size_t n) {
     cl::sycl::queue default_queue;
-    ptr = static_cast<T*>(cl::sycl::malloc_device(n, default_queue.get_device(),
-                                                  default_queue.get_context()));
+    ptr = static_cast<T *>(cl::sycl::malloc_device(
+        n, default_queue.get_device(), default_queue.get_context()));
   }
   device_ptr() : ptr(nullptr) {}
   device_ptr &operator=(const device_iterator<T> &in) {
@@ -300,11 +301,11 @@ public:
   device_ptr operator-(difference_type backward) const {
     return device_ptr{ptr - backward};
   }
-  device_ptr& operator+=(difference_type forward) {
+  device_ptr &operator+=(difference_type forward) {
     ptr = ptr + forward;
     return *this;
   }
-  device_ptr& operator-=(difference_type backward) {
+  device_ptr &operator-=(difference_type backward) {
     ptr = ptr - backward;
     return *this;
   }
@@ -325,7 +326,7 @@ public:
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type;                // required
-  using is_passed_directly = std::false_type; // required
+  using is_passed_directly = std::false_type;      // required
   static constexpr sycl::access::mode mode = Mode; // required
 
   device_iterator() : Base() {}
@@ -420,7 +421,7 @@ public:
   using pointer = typename Base::pointer;
   using reference = typename Base::reference;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::false_type; // required
+  using is_hetero = std::false_type;         // required
   using is_passed_directly = std::true_type; // required
   static constexpr sycl::access::mode mode =
       cl::sycl::access::mode::read_write; // required
