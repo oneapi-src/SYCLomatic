@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++11" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test.dp.cpp
 
 #include <iostream>

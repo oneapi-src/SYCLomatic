@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>
@@ -3034,9 +3034,9 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
-  //CHECK-NEXT: sycl::acosh((double)f);
+  //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
-  //CHECK-NEXT: sycl::asinh((double)f);
+  //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);

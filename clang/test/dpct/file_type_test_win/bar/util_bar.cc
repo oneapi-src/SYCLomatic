@@ -2,6 +2,9 @@
 #include "util_bar.hh"
 #include <iostream>
 
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf, if your code is used on the device.
+// CHECK-NEXT:    */
 #define foo_assert( cond) \
    do \
    { \
@@ -22,9 +25,6 @@ HOST_DEVICE_END
 // CHECK-NEXT:void FooQueue::
 // CHECK-NEXT:push( int neighbor_, int vault_index_ ){
 // CHECK-NEXT:    int a = 2;
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf, if your code is used on the device.
-// CHECK-NEXT:    */
 // CHECK-NEXT:    foo_assert(a > 1);
 // CHECK-NEXT:}
 HOST_DEVICE
