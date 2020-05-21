@@ -265,7 +265,7 @@ int main() {
   // CHECK: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
   // CHECK-NEXT: mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N).wait();
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if(int stat = 0){}
   if(int stat = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)){}
@@ -283,7 +283,7 @@ int main() {
 // CHECK-NEXT:   dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
 // CHECK-NEXT:   mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N).wait();
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in return statement. You need to rewrite this code.
+// CHECK-NEXT:   DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   return 0;
 // CHECK-NEXT: }

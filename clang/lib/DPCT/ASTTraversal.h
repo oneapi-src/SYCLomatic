@@ -780,7 +780,8 @@ public:
         emplaceTransformation(
             new InsertText(OuterInsertLoc, std::move(InsertStr)));
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
-               OriginStmtType);
+               OriginStmtType == "if" ? "an " + OriginStmtType
+                                      : "a " + OriginStmtType);
         if (IsHelperFunction)
           emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                                 "0", true, FuncName));

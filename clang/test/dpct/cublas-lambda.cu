@@ -36,8 +36,9 @@ int main() {
   // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-  // CHECK-NEXT: codes. 0 is used in if statement. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
+  // CHECK-NEXT: codes. 0 is used instead of an error code in an if statement. You may need to
+  // CHECK-NEXT: rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (0) {
   // CHECK-NEXT: }
@@ -71,8 +72,9 @@ int main() {
   // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-  // CHECK-NEXT: codes. 0 is used in if statement. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
+  // CHECK-NEXT: codes. 0 is used instead of an error code in an if statement. You may need to
+  // CHECK-NEXT: rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (int stat = 0) {
   // CHECK-NEXT: }
@@ -89,8 +91,9 @@ int main() {
   // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-  // CHECK-NEXT: codes. 0 is used in for statement. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
+  // CHECK-NEXT: codes. 0 is used instead of an error code in a for statement. You may need to
+  // CHECK-NEXT: rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: for (0;;) {
   // CHECK-NEXT: }
@@ -161,8 +164,9 @@ int main() {
   // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-  // CHECK-NEXT: codes. 0 is used in switch statement. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
+  // CHECK-NEXT: codes. 0 is used instead of an error code in a switch statement. You may need
+  // CHECK-NEXT: to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: switch (int stat = 0) {}
   switch (int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
@@ -182,8 +186,9 @@ int main() {
 // CHECK-NEXT:                    beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:  }
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-// CHECK-NEXT:  codes. 0 is used in return statement. You need to rewrite this code.
+// CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
+// CHECK-NEXT: codes. 0 is used instead of an error code in a return statement. You may need
+// CHECK-NEXT: to rewrite this code.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  return 0;
 // CHECK-NEXT:}

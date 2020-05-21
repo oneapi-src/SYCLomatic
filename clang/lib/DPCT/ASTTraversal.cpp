@@ -3486,7 +3486,8 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(
           new InsertText(OuterInsertLoc, std::move(InsertStr)));
       report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
-             OriginStmtType);
+             OriginStmtType == "if" ? "an " + OriginStmtType
+                                    : "a " + OriginStmtType);
       emplaceTransformation(new ReplaceText(FuncNameBegin, Len, "0"));
     } else {
       if (IsAssigned) {
@@ -3851,7 +3852,8 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(
             new InsertText(OuterInsertLoc, std::move(InsertStr)));
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
-               OriginStmtType);
+               OriginStmtType == "if" ? "an " + OriginStmtType
+                                      : "a " + OriginStmtType);
         emplaceTransformation(new ReplaceStmt(CE, "0"));
       } else {
         if (IsAssigned) {

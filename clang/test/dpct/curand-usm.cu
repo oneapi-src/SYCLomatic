@@ -89,7 +89,7 @@ int main(){
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK:if(s1 = 0){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
@@ -97,7 +97,7 @@ int main(){
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:if(0){}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
@@ -303,7 +303,7 @@ void bar4(){
 //CHECK-NEXT:  mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data).wait();
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in return statement. You need to rewrite this code.
+//CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  return 0;
 //CHECK-NEXT:}
