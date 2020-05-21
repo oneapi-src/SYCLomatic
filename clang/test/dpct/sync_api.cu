@@ -13,6 +13,10 @@ using namespace cooperative_groups;
 
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
+__device__ void foo(int i) {}
+
+#define FOO(x) foo(x)
+
 // CHECK: void k(sycl::nd_item<3> item_ct1) {
 __global__ void k() {
   // CHECK: sycl::group<3> cta = item_ct1.get_group();
@@ -37,4 +41,29 @@ __global__ void k() {
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);
+
+  int p;
+  // CHECK: item_ct1.mem_fence();
+  __threadfence_block();
+  // CHECK: item_ct1.barrier();
+  // CHECK-NEXT: sycl::intel::all_of(item_ct1.get_group(), p);
+  __syncthreads_and(p);
+  // CHECK: item_ct1.barrier();
+  // CHECK-NEXT: sycl::intel::any_of(item_ct1.get_group(), p);
+  __syncthreads_or(p);
+
+  // CHECK: int a = (item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p));
+  int a = __syncthreads_and(p);
+  // CHECK: int b = (item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p));
+  int b = __syncthreads_or(p);
+
+  // CHECK: foo((item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p)));
+  foo(__syncthreads_and(p));
+  // CHECK: foo((item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p)));
+  foo(__syncthreads_or(p));
+
+  // CHECK: FOO((item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p)));
+  FOO(__syncthreads_and(p));
+  // CHECK: FOO((item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p)));
+  FOO(__syncthreads_or(p));
 }
