@@ -12,8 +12,9 @@ void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2> acc
                   dpct::image_accessor<unsigned short, 3> acc13) {
   out[0] = dpct::read_image(acc42, 0.5f, 0.5f);
   unsigned short data13 = dpct::read_image(acc13, 0.5f, 0.5f, 0.5f);
-  cl::sycl::float2 data32 = dpct::read_image(acc21, 0.5f);
-  out[1].x() = data32.y() * data13;
+  cl::sycl::float2 data21 = dpct::read_image(acc21, 0.5f);
+  out[1].x() = data21.x();
+  out[1].y() = data13;
 }
 
 int main() {
@@ -36,19 +37,19 @@ int main() {
       dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
   chn4.set_channel_size(4, 32);
 
+  sycl::float4 *image_data2 = (sycl::float4 *)std::malloc(650 * 480 * sizeof(sycl::float4));
+
   dpct::image_matrix_p array1;
-  dpct::image_matrix_p array2;
   dpct::image_matrix_p array3;
 
-  array1 = new dpct::image_matrix(chn2, sycl::range<2>(640, 1));
-  array2 = new dpct::image_matrix(chn4, sycl::range<2>(640, 480));
+  array1 = new dpct::image_matrix(chn2, sycl::range<1>(640));
   array3 = new dpct::image_matrix(chn1, sycl::range<3>(640, 480, 24));
 
   dpct::dpct_memcpy(array1->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * sizeof(cl::sycl::float2), 640 * sizeof(cl::sycl::float2), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * sizeof(cl::sycl::float2), 1, 1));
-  dpct::dpct_memcpy(array2->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float4), 640 * 480 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float4), 1, 1));
+  dpct::dpct_memcpy(dpct::pitched_data(image_data2, 650 * sizeof(cl::sycl::float4), 640 * sizeof(cl::sycl::float4*), 480), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float4), 640 * 480 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float4), 1, 1));
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(unsigned short), 640 * 480 * 24 * sizeof(unsigned short), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(unsigned short), 1, 1));
 
-  dpct::attach_image(tex42, array2);
+  dpct::attach_image(tex42, image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
   dpct::attach_image(tex21, array1);
   dpct::attach_image(tex13, array3);
 
@@ -95,4 +96,8 @@ int main() {
   dpct::detach_image(tex42);
   dpct::detach_image(tex21);
   dpct::detach_image(tex13);
+
+  sycl::free(device_buffer, dpct::get_default_queue());
+  std::free(host_buffer);
+  std::free(image_data2);
 }

@@ -23,6 +23,10 @@ ENTRY_TEXTURE("tex2DLayered", "dpct::read_image_array", 0xF2)
 ENTRY_REORDER_ISASSIGNED("cudaBindTexture", "dpct::attach_image",
               1 /*ref to tex object*/, 2 /*source pointer*/,
               3 /*ref to channel desc*/, 4 /*size in bytes*/)
+ENTRY_REORDER_ISASSIGNED("cudaBindTexture2D", "dpct::attach_image",
+                         1 /*ref to tex object*/, 2 /*source pointer*/,
+                         3 /*ref to channel desc*/, 4 /*size in dimension x*/,
+                         5 /*size in dimension y*/, 6 /*pitch*/)
 ENTRY_REORDER_ISASSIGNED("cudaBindTextureToArray", "dpct::attach_image",
               0 /*ref of texture object*/, 1 /*ref of array*/)
 ENTRY_REORDER_ISASSIGNED("cudaCreateTextureObject", "dpct::create_image",

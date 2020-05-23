@@ -8039,6 +8039,11 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
                     "::", (Name == "make_cudaPos") ? "id" : "range"),
         3);
     emplaceTransformation(new ReplaceCalleeName(C, std::move(OS.str()), Name));
+  } else if (Name == "cudaGetChannelDesc") {
+    std::ostringstream OS;
+    printDerefOp(OS, C->getArg(0));
+    OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
+    emplaceTransformation(new ReplaceStmt(C, OS.str()));
   }
 }
 
@@ -8145,7 +8150,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
         "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
         "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise");
+        "cudaMemAdvise", "cudaGetChannelDesc");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -8321,7 +8326,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
           {"cudaArrayGetInfo", &MemoryMigrationRule::cudaArrayGetInfo},
           {"cudaHostGetFlags", &MemoryMigrationRule::cudaHostGetFlags},
-          {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise}};
+          {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
+          {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
@@ -9008,8 +9014,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           callee(functionDecl(hasAnyName(
               "cudaCreateChannelDesc", "cudaCreateChannelDescHalf",
               "cudaUnbindTexture", "cudaBindTextureToArray", "cudaBindTexture",
-              "tex1D", "tex2D", "tex3D", "tex1Dfetch", "tex1DLayered",
-              "tex2DLayered", "cudaCreateTextureObject",
+              "cudaBindTexture2D", "tex1D", "tex2D", "tex3D", "tex1Dfetch",
+              "tex1DLayered", "tex2DLayered", "cudaCreateTextureObject",
               "cudaDestroyTextureObject", "cudaGetTextureObjectResourceDesc",
               "cudaGetTextureObjectTextureDesc",
               "cudaGetTextureObjectResourceViewDesc"))))

@@ -966,7 +966,8 @@ Optional<std::string> ReorderFunctionRewriter::rewrite() {
   for (auto ArgIdx : RewriterArgsIdx) {
     if (ArgIdx >= Call->getNumArgs())
       continue;
-    if (SourceCalleeName == "cudaBindTexture" &&
+    if ((SourceCalleeName == "cudaBindTexture" ||
+         SourceCalleeName == "cudaBindTexture2D") &&
         Call->getArg(1)->getType()->isPointerType() &&
         (ArgIdx == 1 || ArgIdx == 3)) {
       std::ostringstream OS;

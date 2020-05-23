@@ -318,11 +318,25 @@ public:
   void attach(void *ptr, const image_channel &chn_desc, size_t count) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr).get_access<cl::sycl::access::mode::read_write>()
+      ptr = get_buffer(ptr)
+                .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     _image = new cl::sycl::image<Dimension>(
         ptr, chn_desc.get_channel_order(), chn_desc.type,
         cl::sycl::range<1>(count / chn_desc.elem_size));
+  }
+  // Attach 2D data to this class.
+  void attach(dpct::pitched_data data_2D, const image_channel &chn_desc) {
+    detach();
+    auto ptr = data_2D.data;
+    if (detail::mem_mgr::instance().is_device_ptr(ptr))
+      ptr = get_buffer(ptr)
+                .get_access<cl::sycl::access::mode::read_write>()
+                .get_pointer();
+    cl::sycl::range<1> pitch(data_2D.pitch);
+    _image = new cl::sycl::image<Dimension>(
+        ptr, chn_desc.get_channel_order(), chn_desc.type,
+        cl::sycl::range<2>(data_2D.x / chn_desc.elem_size, data_2D.y), pitch);
   }
   // Detach data.
   void detach() {
@@ -334,13 +348,13 @@ public:
 
 // Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data {
-  void operator()(image<T, Dimension, IsImageArray> *in_image, image_data *data) {
+  void operator()(image<T, Dimension, IsImageArray> *in_image,
+                  image_data *data) {
     assert(data->type == data_matrix);
     in_image->attach(data->data.matrix);
   }
 };
-template <class T, bool IsImageArray>
-struct attach_data<T, 1, IsImageArray> {
+template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
   void operator()(image<T, 1, IsImageArray> *in_image, image_data *data) {
     if (data->type == data_linear)
       in_image->attach(data->data.linear.data, data->data.linear.chn,
@@ -351,7 +365,8 @@ struct attach_data<T, 1, IsImageArray> {
 };
 
 /// Wrap sampler and image accessor together.
-template <class T, int Dimension, bool IsImageArray = false> class image_accessor {
+template <class T, int Dimension, bool IsImageArray = false>
+class image_accessor {
 public:
   using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
   using data_t = typename image_trait<T>::data_t;
@@ -456,8 +471,8 @@ inline void attach_image(image<T, Dimension, IsImageArray> &in_image,
 /// \param ptr The pointer that point to the memory block.
 /// \param desc Channel info.
 /// \param size Memory block size in bytes.
-template <class T>
-inline void attach_image(image<T, 1, false> &in_image, void *ptr,
+template <class T, bool IsImageArray>
+inline void attach_image(image<T, 1, IsImageArray> &in_image, void *ptr,
                               const image_channel &chn, size_t size) {
   in_image.attach(ptr, chn, size);
 }
@@ -466,9 +481,34 @@ inline void attach_image(image<T, 1, false> &in_image, void *ptr,
 /// \param image The image class to be attached.
 /// \param ptr The pointer that point to the memory block.
 /// \param size Memory block size in bytes.
-template <class T>
-inline void attach_image(image<T, 1, false> &in_image, void *ptr, size_t size) {
+template <class T, bool IsImageArray>
+inline void attach_image(image<T, 1, IsImageArray> &in_image, void *ptr, size_t size) {
   in_image.attach(ptr, create_image_channel<T>(), size);
+}
+
+/// Attach a memory block to an image class.
+/// \param image The image class to be attached.
+/// \param ptr The pointer that point to the memory block.
+/// \param desc Channel info.
+/// \param x Memory block size in dimension x.
+/// \param y Memory block size in dimension y.
+/// \param pitch Memory block pitch in bytes.
+template <class T, bool IsImageArray>
+inline void attach_image(image<T, 2, IsImageArray> &in_image, void *ptr,
+                         const image_channel &desc, size_t x, size_t y,
+                         size_t pitch) {
+  in_image.attach(dpct::pitched_data(ptr, pitch, x, y), desc);
+}
+/// Attach a memory block to an image class.
+/// \param image The image class to be attached.
+/// \param ptr The pointer that point to the memory block.
+/// \param x Memory block size in dimension x.
+/// \param y Memory block size in dimension y.
+/// \param pitch Memory block pitch in bytes.
+template <class T, bool IsImageArray>
+inline void attach_image(image<T, 2, IsImageArray> &in_image, void *ptr, size_t x,
+                         size_t y, size_t pitch) {
+  attach_image(in_image, ptr, create_image_channel<T>(), x, y, pitch);
 }
 
 /// Detach data from an image class.

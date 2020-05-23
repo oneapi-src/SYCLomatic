@@ -62,6 +62,9 @@ int main() {
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.filter_mode() = sycl::filtering_mode::nearest;
+  // CHECK-NEXT: dpct::attach_image(tex42, d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4));
+  // CHECK-NEXT: dpct::attach_image(tex42, d_data42, desc42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4));
+  // CHECK-NEXT: dpct::attach_image(tex42, d_data42, desc42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4));
   // CHECK-NEXT: dpct::attach_image(tex42, a42);
   float4 *d_data42;
   cudaArray_t a42;
@@ -73,7 +76,12 @@ int main() {
   tex42.addressMode[1] = cudaAddressModeClamp;
   tex42.addressMode[2] = cudaAddressModeClamp;
   tex42.filterMode = cudaFilterModePoint;
+  cudaBindTexture2D(0, tex42, d_data42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
+  cudaBindTexture2D(0, tex42, d_data42, desc42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
+  cudaBindTexture2D(0, &tex42, d_data42, &desc42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
   cudaBindTextureToArray(tex42, a42, desc42);
+
+  cudaGetChannelDesc(&desc42, a42);
 
   // CHECK: sycl::uint2 *d_data21;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data21, sizeof(sycl::uint2) * 32);

@@ -284,11 +284,11 @@ ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, false, NO_
 
 // low level texture reference management functions of runtime API
 ENTRY(cudaBindTexture, cudaBindTexture, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaBindTexture2D, cudaBindTexture2D, false, NO_FLAG, P0, "Successful")
+ENTRY(cudaBindTexture2D, cudaBindTexture2D, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTextureToArray, cudaBindTextureToArray, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaBindTextureToMipmappedArray, cudaBindTextureToMipmappedArray, false, NO_FLAG, P4, "comment")
 ENTRY(cudaCreateChannelDesc, cudaCreateChannelDesc, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaGetChannelDesc, cudaGetChannelDesc, false, NO_FLAG, P0, "comment")
+ENTRY(cudaGetChannelDesc, cudaGetChannelDesc, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetTextureAlignmentOffset, cudaGetTextureAlignmentOffset, false, NO_FLAG, P0, "comment")
 ENTRY(cudaGetTextureReference, cudaGetTextureReference, false, NO_FLAG, P0, "comment")
 ENTRY(cudaUnbindTexture, cudaUnbindTexture, true, NO_FLAG, P0, "Successful")
