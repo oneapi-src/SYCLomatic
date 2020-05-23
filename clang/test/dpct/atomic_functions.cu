@@ -352,3 +352,51 @@ extern __shared__ uint32_t share[];
     p_2 = p_3;
   atomicAdd(p_2, 1);
 }
+
+
+#define OFFSET 1
+
+// CHECK:void kernel(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
+// CHECK-NEXT:  sm[OFFSET] = data[0];
+// CHECK-NEXT:  unsigned* ptr = sm + OFFSET;
+// CHECK-NEXT:  dpct::atomic_fetch_or<unsigned int, sycl::access::address_space::local_space>(&ptr[0], data[1]);
+// CHECK-NEXT:  data[1] = ptr[0];
+// CHECK-NEXT:}
+__global__ void kernel(unsigned* data) {
+  extern __shared__ unsigned int sm[];
+  sm[OFFSET] = data[0];
+  unsigned* ptr = sm + OFFSET;
+  atomicOr(&ptr[0], data[1]);
+  data[1] = ptr[0];
+}
+
+// CHECK:void kernel_1(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
+// CHECK-NEXT:  sm[OFFSET] = data[0];
+// CHECK-NEXT:  unsigned* ptr = OFFSET + sm;
+// CHECK-NEXT:  dpct::atomic_fetch_or<unsigned int, sycl::access::address_space::local_space>(&ptr[0], data[1]);
+// CHECK-NEXT:  data[1] = ptr[0];
+// CHECK-NEXT:}
+__global__ void kernel_1(unsigned* data) {
+  extern __shared__ unsigned int sm[];
+  sm[OFFSET] = data[0];
+  unsigned* ptr = OFFSET + sm;
+  atomicOr(&ptr[0], data[1]);
+  data[1] = ptr[0];
+}
+
+// CHECK:void kernel_2(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
+// CHECK-NEXT:  sm[OFFSET] = data[0];
+// CHECK-NEXT:  unsigned* ptr = OFFSET + sm + (3 + 4) + 6;
+// CHECK-NEXT:  dpct::atomic_fetch_or<unsigned int, sycl::access::address_space::local_space>(&ptr[0], data[1]);
+// CHECK-NEXT:  data[1] = ptr[0];
+// CHECK-NEXT:}
+__global__ void kernel_2(unsigned* data) {
+  extern __shared__ unsigned int sm[];
+  sm[OFFSET] = data[0];
+  unsigned* ptr = OFFSET + sm + (3 + 4) + 6;
+  atomicOr(&ptr[0], data[1]);
+  data[1] = ptr[0];
+}

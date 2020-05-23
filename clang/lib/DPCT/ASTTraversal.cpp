@@ -1192,6 +1192,11 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
     }
   }
 
+  if (auto BO = dyn_cast<BinaryOperator>(Expr)) {
+    GetShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    GetShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
+  }
+
   if (auto ASE = dyn_cast<ArraySubscriptExpr>(Expr)) {
     Expr = ASE->getBase();
   }
@@ -1214,9 +1219,12 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
         for (auto const &Ref : Refs) {
           if (Ref == DRE)
             break;
-          if (auto BO = dyn_cast<BinaryOperator>(getParentStmt(Ref)))
-            if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign)
+
+          if (auto BO = dyn_cast<BinaryOperator>(getParentStmt(Ref))) {
+            if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+                !DpctGlobalInfo::checkSpecificBO(DRE, BO))
               AssignedExpr = BO->getRHS();
+          }
         }
       }
     }

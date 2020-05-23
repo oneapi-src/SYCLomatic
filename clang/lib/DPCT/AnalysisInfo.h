@@ -678,6 +678,15 @@ public:
     return nullptr;
   }
 
+  template <class NodeTy>
+  static inline bool checkSpecificBO(const NodeTy *Node,
+                                          const BinaryOperator *BO) {
+    return findAncestor<BinaryOperator>(
+        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
+          return Cur.get<BinaryOperator>() == BO;
+        });
+  }
+
   template <class TargetTy, class NodeTy>
   static const TargetTy *findAncestor(const NodeTy *Node) {
     return findAncestor<TargetTy>(
