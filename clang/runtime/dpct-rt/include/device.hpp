@@ -291,15 +291,24 @@ public:
 private:
   void get_version(int &major, int &minor) {
     // Version string has the following format:
-    // OpenCL<space><major.minor><space><vendor-specific-information>
-    std::stringstream ver;
-    ver << get_info<cl::sycl::info::device::version>();
-    std::string item;
-    std::getline(ver, item, ' '); // OpenCL
-    std::getline(ver, item, '.'); // major
-    major = std::stoi(item);
-    std::getline(ver, item, ' '); // minor
-    minor = std::stoi(item);
+    // a. OpenCL<space><major.minor><space><vendor-specific-information>
+    // b. <major.minor>
+    std::string ver;
+    ver = get_info<cl::sycl::info::device::version>();
+    int i=0;
+    while(i<ver.size()) {
+      if(isdigit(ver[i]))
+        break;
+      i++;
+    }
+    major=std::stoi(&(ver[i]));
+    while(i<ver.size()) {
+      if(ver[i]=='.')
+        break;
+      i++;
+    }
+    i++;
+    minor=std::stoi(&(ver[i]));
   }
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;
