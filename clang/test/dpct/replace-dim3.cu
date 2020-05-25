@@ -222,35 +222,40 @@ void test() {
 
     for (int32_t i = 0; i < 3; ++i)
     {
-        // CHECK: {
-        // CHECK: unsigned char x_ct1 = h_dst[i].x();
-        // CHECK: fwrite(&x_ct1, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].x() = x_ct1;
-        // CHECK: }
+        // CHECK: fwrite(&h_dst[i].x(), sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].x, sizeof(char), 1, dumpfile);
 
-        // CHECK: {
-        // CHECK: unsigned char y_ct1 = h_dst[i].y();
-        // CHECK: fwrite(&y_ct1, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].y() = y_ct1;
-        // CHECK: }
+        // CHECK: fwrite(&h_dst[i].y(), sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].y, sizeof(char), 1, dumpfile);
 
-        // CHECK: {
-        // CHECK: unsigned char z_ct1 = h_dst[i].z();
-        // CHECK: fwrite(&z_ct1, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].z() = z_ct1;
-        // CHECK: }
+        // CHECK: fwrite(&h_dst[i].z(), sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].z, sizeof(char), 1, dumpfile);
     }
 
     // CHECK: sycl::uchar4 data;
     uchar4 data;
 
-    // CHECK: {
-    // CHECK: unsigned char x_ct1 = data.x();
-    // CHECK: *(&x_ct1) = 'a';
-    // CHECK: data.x() = x_ct1;
-    // CHECK: }
+    // CHECK: *(&data.x()) = 'a';
     *(&data.x) = 'a';
+}
+
+// CHECK:struct wrap {
+// CHECK-NEXT:  sycl::float3 f3;
+// CHECK-NEXT:};
+struct wrap {
+  float3 f3;
+};
+
+
+// CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N, sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:   const unsigned int i = item_ct1.get_group(2)*item_ct1.get_local_range().get(2)+item_ct1.get_local_id(2);
+// CHECK-NEXT:   if (i<N) {
+// CHECK-NEXT:     dpct::atomic_fetch_add(&mt[i].f3.x(), a[i]);
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+__global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {
+  const unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
+  if (i<N) {
+    atomicAdd(&mt[i].f3.x, a[i]);
+  }
 }

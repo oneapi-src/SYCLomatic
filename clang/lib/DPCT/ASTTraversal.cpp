@@ -2336,57 +2336,7 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
     }
     auto *UO = Parents[0].get<clang::UnaryOperator>();
     if (UO && UO->getOpcode() == clang::UO_AddrOf) {
-      // As access to vector fields’ address is not supported in SYCL spec,
-      // Implementation here is by defining a local variable to migrate
-      // vector fields’ address.
-      // e.g:
-      //    uchar4 data;
-      //    *(&data.x) = 'a';
-      // =>
-      //    sycl::uchar4 data;
-      //    {
-      //    unsigned char x_ct = data.x();
-      //    *(&x_ct) = 'a';
-      //    data.x() = x_ct;
-      //    }
-      // TODO: Need to handle the situations below.
-      // 1. if/while condition stmt
-      // 2. macro stmt
-      // 3. vec field address assignment expr, such as int i=&a.x
-      // 4. one dimension vec, such as char1
-      SourceManager *SM = Result.SourceManager;
-      auto EndLoc = ME->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-          ME->getEndLoc(), *SM, Result.Context->getLangOpts()));
-
-      const char *Start = SM->getCharacterData(ME->getBeginLoc());
-      const char *End = SM->getCharacterData(EndLoc);
-      const std::string MExprStr(Start, End - Start);
-
-      std::string VecField = MExprStr + "()";
-      std::string VarType = ME->getType().getAsString();
-      std::string VarName =
-          ME->getMemberNameInfo().getAsString() + getCTFixedSuffix();
-
-      std::string LocalVarDecl =
-          VarType + " " + VarName + " = " + VecField + ";" + getNL();
-      std::string LocalVarDeclRef = VecField + " = " + VarName + ";";
-
-      auto SR = getScopeInsertRange(ME);
-      SourceLocation StmtBegin = SR.getBegin(), StmtEndAfterSemi = SR.getEnd();
-
-      std::string IndentStr = getIndent(StmtBegin, *SM).str();
-      std::string PrefixInsertStr = std::string("{") + getNL();
-      PrefixInsertStr += IndentStr + LocalVarDecl;
-
-      std::string SuffixInsertStr =
-          getNL() + IndentStr + LocalVarDeclRef + getNL() + IndentStr + "}";
-
-      emplaceTransformation(new ReplaceToken(
-          ME->getBeginLoc(), EndLoc.getLocWithOffset(-1), std::move(VarName)));
-
-      insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                        PrefixInsertStr + IndentStr,
-                        std::move(SuffixInsertStr));
+      renameMemberField(ME);
     } else {
       std::ostringstream CastPrefix;
       CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
