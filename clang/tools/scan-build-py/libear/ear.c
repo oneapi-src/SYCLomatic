@@ -953,10 +953,10 @@ int is_ubuntu_platform(void) {
   FILE *fp = NULL;
   char buffer[1024] = "";
 
-  fp = popen("cat /proc/version", "r");
+  fp = popen("lsb_release -ds", "r");
 
   if (fp == NULL) {
-    fp = popen("lsb_release -ds", "r");
+    fp = popen("cat /proc/version", "r");
     if (fp == NULL) {
       perror("bear: failed to get Linux distribution info\n");
       exit(EXIT_FAILURE);
