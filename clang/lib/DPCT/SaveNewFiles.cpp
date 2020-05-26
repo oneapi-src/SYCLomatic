@@ -67,31 +67,19 @@ static bool formatFile(StringRef FileName,
   }
 
   clang::Rewriter Rewrite(SM, clang::LangOptions());
-
+  clang::tooling::Replacements FormatChanges;
   if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
     std::vector<clang::tooling::Range> AllLineRanges;
     AllLineRanges.push_back(clang::tooling::Range(
         /*Offest*/ 0, /*Length*/ FileBuffer.get()->getBufferSize()));
-    clang::tooling::Replacements Replaces = clang::format::sortIncludes(
-        Style, FileBuffer->getBuffer(), AllLineRanges, FileName);
-    auto ChangedCode =
-        clang::tooling::applyAllReplacements(FileBuffer->getBuffer(), Replaces);
-    if (!ChangedCode) {
-      PrintMsg(llvm::toString(ChangedCode.takeError()) + "\n");
-      return false;
-    }
-    AllLineRanges = clang::tooling::calculateRangesAfterReplacements(
-        Replaces, AllLineRanges);
-    clang::tooling::Replacements FormatChanges = reformat(
-        Style, FileBuffer->getBuffer(), AllLineRanges, FileName, &Status);
-    Replaces = Replaces.merge(FormatChanges);
-    clang::tooling::applyAllReplacements(Replaces, Rewrite);
+    FormatChanges = reformat(Style, FileBuffer->getBuffer(), AllLineRanges,
+                             FileName, &Status);
   } else {
     // only format migrated lines
-    clang::tooling::Replacements FormatChanges =
+    FormatChanges =
         reformat(Style, FileBuffer->getBuffer(), Ranges, FileName, &Status);
-    clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
   }
+  clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
   Rewrite.overwriteChangedFiles();
   return true;
 }
