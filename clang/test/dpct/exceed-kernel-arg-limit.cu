@@ -51,7 +51,7 @@ int main() {
     // 8(global) + 13*80 = 1048
     //CHECK: int *global;
     //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1042:{{[0-9]+}}: Indicates that the size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.
+    //CHECK-NEXT: DPCT1042:{{[0-9]+}}: The size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.
     //CHECK-NEXT: */
     int *global;
     kernel<<<dim3(1, 1, 1), dim3(array_size, 1, 1)>>>(global);
@@ -60,7 +60,7 @@ int main() {
     //CHECK: sycl::int4 i4;
     //CHECK: int* ip = 0;
     //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1042:{{[0-9]+}}: Indicates that the size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.
+    //CHECK-NEXT: DPCT1042:{{[0-9]+}}: The size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.
     //CHECK-NEXT: */
     int4 i4;
     int* ip = 0;
