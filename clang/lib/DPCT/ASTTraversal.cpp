@@ -2865,6 +2865,13 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   bool NeedUseLambda = isConditionOfFlowControl(
       CE, OriginStmtType, CanAvoidUsingLambda, OuterInsertLoc);
   bool IsInReturnStmt = isInReturnStmt(CE, OuterInsertLoc);
+  bool CanAvoidBrace = false;
+  const CompoundStmt *CS = findImmediateBlock(CE);
+  if (CS && (CS->size() == 1)) {
+    const Stmt *S = *(CS->child_begin());
+    if (CE == S || dyn_cast<ReturnStmt>(S))
+      CanAvoidBrace = true;
+  }
 
   if (NeedUseLambda || IsMacroArg || IsInReturnStmt) {
     NeedUseLambda = true;
@@ -3221,7 +3228,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   if (NeedUseLambda) {
     if (CanAvoidUsingLambda && !IsMacroArg) {
       std::string InsertStr;
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace)
         InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
                     Repl + ";" + SuffixInsertStr + getNL() + IndentStr + "}" +
                     getNL() + IndentStr;
@@ -3253,7 +3260,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                             std::move(Repl), false, FuncName));
     }
   } else {
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace) {
       if (!PrefixInsertStr.empty()) {
         insertAroundRange(
             PrefixInsertLoc, SuffixInsertLoc,
@@ -3338,6 +3345,13 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   bool NeedUseLambda = isConditionOfFlowControl(
       CE, OriginStmtType, CanAvoidUsingLambda, OuterInsertLoc);
   bool IsInReturnStmt = isInReturnStmt(CE, OuterInsertLoc);
+  bool CanAvoidBrace = false;
+  const CompoundStmt *CS = findImmediateBlock(CE);
+  if (CS && (CS->size() == 1)) {
+    const Stmt *S = *(CS->child_begin());
+    if (CE == S || dyn_cast<ReturnStmt>(S))
+      CanAvoidBrace = true;
+  }
 
   if (NeedUseLambda) {
     PrefixInsertLoc = FuncNameBegin;
@@ -3587,7 +3601,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (NeedUseLambda) {
       if (CanAvoidUsingLambda) {
         std::string InsertStr;
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace)
           InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
                       ReplStr + ";" + "}" + getNL() + IndentStr;
         else
@@ -3615,7 +3629,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
       }
     } else {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace) {
         if (!PrefixInsertStr.empty()) {
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
@@ -3859,6 +3873,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   bool NeedUseLambda = isConditionOfFlowControl(
       CE, OriginStmtType, CanAvoidUsingLambda, OuterInsertLoc);
   bool IsInReturnStmt = isInReturnStmt(CE, OuterInsertLoc);
+  bool CanAvoidBrace = false;
+  const CompoundStmt *CS = findImmediateBlock(CE);
+  if (CS && (CS->size() == 1)) {
+    const Stmt *S = *(CS->child_begin());
+    if (CE == S || dyn_cast<ReturnStmt>(S))
+      CanAvoidBrace = true;
+  }
 
   if (NeedUseLambda) {
     PrefixInsertLoc = FuncNameBegin;
@@ -4077,11 +4098,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidUsingLambda,
-                       OriginStmtType, IsAssigned, OuterInsertLoc,
-                       PrefixInsertLoc, SuffixInsertLoc, FuncNameBegin,
-                       FuncCallEnd, FuncCallLength, IndentStr, PrefixInsertStr,
-                       SuffixInsertStr);
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2" ||
              FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
     std::string Replacement;
@@ -4239,11 +4260,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidUsingLambda,
-                       OriginStmtType, IsAssigned, OuterInsertLoc,
-                       PrefixInsertLoc, SuffixInsertLoc, FuncNameBegin,
-                       FuncCallEnd, FuncCallLength, IndentStr, PrefixInsertStr,
-                       SuffixInsertStr);
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
   } else if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
@@ -4354,11 +4375,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidUsingLambda,
-                       OriginStmtType, IsAssigned, OuterInsertLoc,
-                       PrefixInsertLoc, SuffixInsertLoc, FuncNameBegin,
-                       FuncCallEnd, FuncCallLength, IndentStr, PrefixInsertStr,
-                       SuffixInsertStr);
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
   } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncComplexReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
@@ -4498,11 +4519,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidUsingLambda,
-                       OriginStmtType, IsAssigned, OuterInsertLoc,
-                       PrefixInsertLoc, SuffixInsertLoc, FuncNameBegin,
-                       FuncCallEnd, FuncCallLength, IndentStr, PrefixInsertStr,
-                       SuffixInsertStr);
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
   } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
              MapNames::LegacyBLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
@@ -4897,11 +4918,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidUsingLambda,
-                       OriginStmtType, IsAssigned, OuterInsertLoc,
-                       PrefixInsertLoc, SuffixInsertLoc, FuncNameBegin,
-                       FuncCallEnd, FuncCallLength, IndentStr, PrefixInsertStr,
-                       SuffixInsertStr, true, FuncName);
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr, true, FuncName);
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2" ||
              FuncName == "cublasSetStream_v2" ||
              FuncName == "cublasGetStream_v2" ||

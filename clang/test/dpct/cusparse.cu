@@ -166,7 +166,26 @@ int main(){
 }
 
 //CHECK: int foo(mkl::index_base descrB) try {
-//CHECK-NEXT: {
+//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
+//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
+//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
+//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
+//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+//CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
+//CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
+//CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+//CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
+//CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+//CHECK-NEXT: /*
+//CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
+//CHECK-NEXT: */
+//CHECK-NEXT: return 0;
+//CHECK-NEXT: }
+int foo(cusparseMatDescr_t descrB){
+  return cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
+}
+
+//CHECK: void foo2(mkl::index_base descrB){
 //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
 //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
 //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
@@ -178,11 +197,6 @@ int main(){
 //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
 //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: }
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
-//CHECK-NEXT: */
-//CHECK-NEXT: return 0;
-//CHECK-NEXT: }
-int foo(cusparseMatDescr_t descrB){
-  return cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
+void foo2(cusparseMatDescr_t descrB){
+  cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }

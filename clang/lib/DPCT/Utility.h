@@ -299,6 +299,7 @@ const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
+const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
 const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E);
 const std::shared_ptr<clang::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::DynTypedNode> N);

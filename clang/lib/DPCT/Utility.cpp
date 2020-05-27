@@ -430,6 +430,20 @@ const clang::Stmt *getParentStmt(ast_type_traits::DynTypedNode Node) {
   return nullptr;
 }
 
+const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S) {
+  if (!S)
+    return nullptr;
+  const clang::Stmt *P = getParentStmt(S);
+  while (P) {
+    if (!dyn_cast<ImplicitCastExpr>(P)) {
+      return P;
+    } else {
+      P = getParentStmt(P);
+    }
+  }
+  return nullptr;
+}
+
 const clang::Stmt *getParentStmt(const clang::Stmt *S) {
   if (!S)
     return nullptr;
@@ -1719,7 +1733,7 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
 std::string getHashStrFromLoc(SourceLocation Loc) {
   auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
   std::stringstream CombinedStr;
-  CombinedStr << std::hex << std::hash<std::string>()(dpct::buildString(R.first,R.second));
+  CombinedStr << std::hex
+              << std::hash<std::string>()(dpct::buildString(R.first, R.second));
   return CombinedStr.str();
 }
-

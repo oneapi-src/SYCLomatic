@@ -732,7 +732,7 @@ public:
   }
 
   void
-  applyMigrationText(bool NeedUseLambda, bool IsMacroArg,
+  applyMigrationText(bool NeedUseLambda, bool IsMacroArg, bool CanAvoidBrace,
                      bool CanAvoidUsingLambda, std::string OriginStmtType,
                      bool IsAssigned, SourceLocation OuterInsertLoc,
                      SourceLocation PrefixInsertLoc,
@@ -744,7 +744,7 @@ public:
     if (NeedUseLambda) {
       if (CanAvoidUsingLambda && !IsMacroArg) {
         std::string InsertStr;
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace)
           InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
                       CallExprReplStr + ";" + SuffixInsertStr + getNL() +
                       IndentStr + "}" + getNL() + IndentStr;
@@ -787,7 +787,8 @@ public:
       }
     } else {
       if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
-        if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+        if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+            !CanAvoidBrace)
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("{") + getNL() + IndentStr + PrefixInsertStr,
