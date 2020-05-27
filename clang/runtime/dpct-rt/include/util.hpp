@@ -99,17 +99,11 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
 /// \param [in] use_high32 Cast the high 32 bits of the double if true;
 /// otherwise cast the low 32 bits.
 inline int cast_double_to_int(double d, bool use_high32 = true) {
-  union {
-    double d_val;
-    struct {
-      int high32_bits;
-      int low32_bits;
-    };
-  } u;
-  u.d_val = d;
+  cl::sycl::vec<double, 1> v0{d};
+  auto v1 = v0.as<cl::sycl::int2>();
   if (use_high32)
-    return u.high32_bits;
-  return u.low32_bits;
+    return v1[0];
+  return v1[1];
 }
 
 /// Combine two integers, the first as the high 32 bits and the second
@@ -117,18 +111,48 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
 /// \param [in] high32 The integer as the high 32 bits
 /// \param [in] low32 The integer as the low 32 bits
 inline double cast_ints_to_double(int high32, int low32) {
-  union {
-    double d_val;
-    struct {
-      int high32_bits;
-      int low32_bits;
-    };
-  } u;
-  u.high32_bits = high32;
-  u.low32_bits = low32;
-  return u.d_val;
+  cl::sycl::int2 v0{high32, low32};
+  auto v1 = v0.as<cl::sycl::vec<double, 1>>();
+  return v1;
 }
 
+/// Compute fast_length for variable-length array
+/// \param [in] a The array
+/// \param [in] len Length of the array
+/// \return The computed fast_length
+inline float fast_length(const float *a, int len) {
+  switch (len) {
+  case 1:
+    return cl::sycl::fast_length(a[0]);
+  case 2:
+    return cl::sycl::fast_length(cl::sycl::float2(a[0], a[1]));
+  case 3:
+    return cl::sycl::fast_length(cl::sycl::float3(a[0], a[1], a[2]));
+  case 4:
+    return cl::sycl::fast_length(cl::sycl::float4(a[0], a[1], a[2], a[3]));
+  case 0:
+    return 0;
+  default:
+    float f = 0;
+    for (int i = 0; i < len; ++i)
+      f += a[i] * a[i];
+    return cl::sycl::sqrt(f);
+  }
+}
+
+/// Compute bytewise max for two unsigned integers, each byte is treated
+/// as signed
+/// \param [in] a The first unsigned integer
+/// \param [in] b The second unsigned integer
+/// \return The bitwise max of the two unsigned integers
+inline unsigned bytewise_max_signed(unsigned a, unsigned b) {
+  cl::sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.as<cl::sycl::char4>();
+  auto v3 = v1.as<cl::sycl::char4>();
+  v2 = cl::sycl::max(v2, v3);
+  v0 = v2.as<cl::sycl::vec<unsigned, 1>>();
+  return v0;
+}
 
 } // namespace dpct
 

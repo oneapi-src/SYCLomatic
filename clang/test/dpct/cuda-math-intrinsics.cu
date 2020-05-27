@@ -2304,9 +2304,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   d = jn(i, d);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d = dpct::fast_length((float *)&d, i);
   d = norm(i, &d);
   // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
   d = norm3d(d, d, d);
@@ -3308,4 +3306,21 @@ __global__ void k2() {
   __umulhi(u, u2);
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
+
+  // CHECK: u = dpct::bytewise_max_signed(u, u2);
+  u = __vmaxs4(u, u2);
+
+  double *a_d;
+  // CHECK: 0;
+  norm(0, a_d);
+  // CHECK: sycl::fast_length((float)a_d[0]);
+  norm(1, a_d);
+  // CHECK: sycl::fast_length(sycl::float2(a_d[0], a_d[1]));
+  norm(2, a_d);
+  // CHECK: sycl::fast_length(sycl::float3(a_d[0], a_d[1], a_d[2]));
+  norm(3, a_d);
+  // CHECK: sycl::fast_length(sycl::float4(a_d[0], a_d[1], a_d[2], a_d[3]));
+  norm(4, a_d);
+  // CHECK: dpct::fast_length((float *)a_d, 5);
+  norm(5, a_d);
 }

@@ -915,6 +915,38 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     } else {
         OS << "(" << MigratedArg0 << ")";
     }
+  } else if (FuncName == "norm") {
+    Expr::EvalResult ER;
+    if (Call->getArg(0)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+      std::string MigratedArg1 = getMigratedArg(1);
+      int64_t Value = ER.Val.getInt().getExtValue();
+      switch (Value) {
+      case 0:
+        return std::string("0");
+      case 1:
+        OS << TargetCalleeName << "((float)" << MigratedArg1 << "[0])";
+        break;
+      case 2:
+        OS << TargetCalleeName << "(sycl::float2(" << MigratedArg1
+           << "[0], " << MigratedArg1 << "[1]))";
+        break;
+      case 3:
+        OS << TargetCalleeName << "(sycl::float3(" << MigratedArg1
+           << "[0], " << MigratedArg1 << "[1], " << MigratedArg1 << "[2]))";
+        break;
+      case 4:
+        OS << TargetCalleeName << "(sycl::float4(" << MigratedArg1
+           << "[0], " << MigratedArg1 << "[1], " << MigratedArg1 << "[2], "
+           << MigratedArg1 << "[3]))";
+        break;
+      default:
+        OS << "dpct::fast_length(" << "(float *)" << getMigratedArg(1) << ", "
+           << MigratedArg0 << ")";
+      }
+    } else {
+      OS << "dpct::fast_length(" << "(float *)" << getMigratedArg(1) << ", "
+         << MigratedArg0 << ")";
+    }
   }
 
   OS.flush();
