@@ -738,8 +738,12 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
   if (!ParmType->isDependentType())
     return;
 
-  if (TL)
+  if (TL) {
     TL = TL.getUnqualifiedLoc();
+    if (TL.getTypeLocClass() != ArgType->getTypeClass() ||
+        TL.getTypeLocClass() == TypeLoc::SubstTemplateTypeParm)
+      TL = TypeLoc();
+  }
 
   switch (ParmType->getTypeClass()) {
   case Type::TemplateTypeParm:
@@ -747,6 +751,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
     } else {
+      ArgType.removeLocalCVRQualifiers(ParmType.getCVRQualifiers());
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
     }
