@@ -492,34 +492,9 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  // A duplicate filter that filters out redundant replacements when
-  // serveral variable are declared in one statement
-  std::unordered_set<unsigned> DupFilter;
-};
-
-/// Migration rule for types replacements in template var. declarations
-class TemplateTypeInDeclRule
-    : public NamedMigrationRule<TemplateTypeInDeclRule> {
-public:
-  TemplateTypeInDeclRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-
-private:
-  // A duplicate filter that filters out redundant replacements when
-  // serveral variable are declared in one statement
-  std::unordered_set<unsigned> DupFilter;
-
-  SourceRange getTemplateArgRange(SourceManager *SM,
-                                  const TemplateArgumentLoc Arg,
-                                  unsigned &ArgLen);
-  SourceRange fixSourceRange(SourceManager *SM, SourceRange SR);
-  bool replaceCallExprTemplateTypes(SourceManager *SM, const CallExpr *CE);
-  bool
-  replaceNamedCastExprTemplateType(SourceManager *SM,
-                                   const CXXNamedCastExpr *NCE);
+  void processCudaStreamType(const DeclaratorDecl *DD, const SourceManager *SM,
+                             bool &SpecialCaseHappened);
+  void reportForNcclAndCudnn(const TypeLoc *TL, const SourceLocation BeginLoc);
 };
 
 /// Migration rule for inserting namespace for vector types
@@ -531,12 +506,6 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  bool isNamespaceInserted(SourceLocation SL);
-
-private:
-  void replaceElaboratedTypeName(TypeLoc TL);
-  void replaceTypeName(TypeLoc TL, bool isDeclType = false);
-  std::unordered_set<unsigned int> DupFilter;
 };
 
 /// Migration rule for vector type member access
@@ -1275,13 +1244,6 @@ public:
 class CXXNewExprRule : public NamedMigrationRule<CXXNewExprRule> {
 public:
   CXXNewExprRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-class ClassTemplateSpecializationRule : public NamedMigrationRule<ClassTemplateSpecializationRule> {
-public:
-  ClassTemplateSpecializationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

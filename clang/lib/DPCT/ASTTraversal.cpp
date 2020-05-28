@@ -1581,6 +1581,104 @@ void insertComplexHeader(SourceLocation SL,
   }
 }
 
+void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
+                                           const SourceManager *SM,
+                                           bool &SpecialCaseHappened) {
+
+  Token Tok;
+  Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
+  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
+
+  if (Tok2Ptr.hasValue()) {
+
+    auto Tok2 = Tok2Ptr.getValue();
+
+    SourceLocation InsertLoc;
+    auto PointerType = deducePointerType(DD, "CUstream_st");
+    std::string TypeStr = Tok.getRawIdentifier().str();
+    if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
+      SpecialCaseHappened = true;
+      SrcAPIStaticsMap[TypeStr]++;
+      // cudaStream_t const
+      if (Tok2.getKind() == tok::raw_identifier &&
+          Tok2.getRawIdentifier() == "const") {
+        emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+        emplaceTransformation(
+            new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+        InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+        emplaceTransformation(
+            new InsertText(InsertLoc, std::move(PointerType)));
+      }
+      // cudaStream_t
+      else {
+        emplaceTransformation(
+            new ReplaceToken(Tok.getLocation(), "sycl::queue"));
+        InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
+        emplaceTransformation(
+            new InsertText(InsertLoc, std::move(PointerType)));
+      }
+    } else if (Tok.getKind() == tok::raw_identifier &&
+               Tok.getRawIdentifier() == "const") {
+
+      // const cudaStream_t
+      TypeStr = Tok2.getRawIdentifier().str();
+      if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
+        SpecialCaseHappened = true;
+        SrcAPIStaticsMap[TypeStr]++;
+        emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+        emplaceTransformation(
+            new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+        InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+        emplaceTransformation(
+            new InsertText(InsertLoc, std::move(PointerType)));
+      }
+    }
+  }
+  auto SD = getSiblingDecls(DD);
+  for (auto It = SD.begin(); It != SD.end(); ++It) {
+    auto DD2 = *It;
+    auto L2 = DD2->getLocation();
+    auto P = SM->getCharacterData(L2);
+    // Find the first non-space char after previous semicolon
+    while (*P != ',')
+      --P;
+    ++P;
+    while (isspace(*P))
+      ++P;
+    // Insert "*" or "*const" right before it
+    auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
+    auto PointerType = deducePointerType(DD2, "CUstream_st");
+    emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+  }
+}
+
+void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
+                                           const SourceLocation BeginLoc) {
+  auto QT = TL->getType();
+  std::string TypeStrRemovePrefix = TL->getType().getAsString();
+
+  auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
+  auto IsCUDNNMatched = TypeStrRemovePrefix.find("cudnn") != std::string::npos;
+  if (IsNCCLMatched || IsCUDNNMatched) {
+    auto TP = QT.getTypePtr();
+    if (TP) {
+      SourceLocation SL;
+      if (getTypeDeclLocation(TP, SL)) {
+        std::string FilePath =
+            DpctGlobalInfo::getSourceManager().getFilename(SL).str();
+        if (!DpctGlobalInfo::isInRoot(FilePath)) {
+          if (IsNCCLMatched)
+            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
+                   "Intel(R) oneAPI Collective Communications Library");
+          else if (IsCUDNNMatched)
+            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
+                   "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+        }
+      }
+    }
+  }
+}
+
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
@@ -1596,31 +1694,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    auto QT = TL->getType();
-    std::string TypeStrRemovePrefix = TL->getType().getAsString();
-
-    auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
-    auto IsCUDNNMatched =
-        TypeStrRemovePrefix.find("cudnn") != std::string::npos;
-    if (IsNCCLMatched || IsCUDNNMatched) {
-      auto TP = QT.getTypePtr();
-      if (TP) {
-        SourceLocation SL;
-        if (getTypeDeclLocation(TP, SL)) {
-          std::string FilePath =
-              DpctGlobalInfo::getSourceManager().getFilename(SL).str();
-          if (!DpctGlobalInfo::isInRoot(FilePath)) {
-            if (IsNCCLMatched) {
-              report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                     "Intel(R) oneAPI Collective Communications Library");
-            } else if (IsCUDNNMatched) {
-              report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                     "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
-            }
-          }
-        }
-      }
-    }
+    reportForNcclAndCudnn(TL, BeginLoc);
 
     Token Tok;
     auto LOpts = Result.Context->getLangOpts();
@@ -1637,6 +1711,12 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           auto TSL =
               NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
           auto LAngleLoc = TSL.getLAngleLoc();
+
+          if (TypeStr == "typename") {
+            Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).getValue();
+            BeginLoc = Tok.getLocation();
+          }
+
           const char *Start = SM->getCharacterData(BeginLoc);
           const char *End = SM->getCharacterData(LAngleLoc);
           auto TyLen = End - Start;
@@ -1727,75 +1807,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       if (DD) {
         if (TL->getType().getAsString().find("cudaStream_t") !=
             std::string::npos) {
-          Token Tok;
-          Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
-          auto Tok2Ptr =
-              Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
-
-          if (Tok2Ptr.hasValue()) {
-
-            auto Tok2 = Tok2Ptr.getValue();
-
-            SourceLocation InsertLoc;
-            auto PointerType = deducePointerType(DD, "CUstream_st");
-            if (Tok.getKind() == tok::raw_identifier &&
-                Tok.getRawIdentifier() == "cudaStream_t") {
-              SpecialCaseHappened = true;
-              TypeStr = "cudaStream_t";
-              SrcAPIStaticsMap[TypeStr]++;
-              // cudaStream_t const
-              if (Tok2.getKind() == tok::raw_identifier &&
-                  Tok2.getRawIdentifier() == "const") {
-                emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-                emplaceTransformation(
-                    new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
-                InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-                emplaceTransformation(
-                    new InsertText(InsertLoc, std::move(PointerType)));
-              }
-              // cudaStream_t
-              else {
-                emplaceTransformation(
-                    new ReplaceToken(Tok.getLocation(), "sycl::queue"));
-                InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
-                emplaceTransformation(
-                    new InsertText(InsertLoc, std::move(PointerType)));
-              }
-            } else if (Tok.getKind() == tok::raw_identifier &&
-                       Tok.getRawIdentifier() == "const") {
-
-              // const cudaStream_t
-              if (Tok.getKind() == tok::raw_identifier &&
-                  Tok2.getRawIdentifier() == "cudaStream_t") {
-                SpecialCaseHappened = true;
-                TypeStr = "cudaStream_t";
-                SrcAPIStaticsMap[TypeStr]++;
-                emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-                emplaceTransformation(
-                    new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
-                InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-                emplaceTransformation(
-                    new InsertText(InsertLoc, std::move(PointerType)));
-              }
-            }
-          }
-          auto SD = getSiblingDecls(DD);
-          for (auto It = SD.begin(); It != SD.end(); ++It) {
-            auto DD2 = *It;
-            auto L2 = DD2->getLocation();
-            auto P = SM->getCharacterData(L2);
-            // Find the first non-space char after previous semicolon
-            while (*P != ',')
-              --P;
-            ++P;
-            while (isspace(*P))
-              ++P;
-            // Insert "*" or "*const" right before it
-            auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
-            auto PointerType = deducePointerType(DD2, "CUstream_st");
-            emplaceTransformation(
-                new InsertText(InsertLoc, std::move(PointerType)));
-          }
+          processCudaStreamType(DD, SM, SpecialCaseHappened);
         }
       }
       if (!Str.empty() && !SpecialCaseHappened) {
@@ -1809,353 +1821,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(TypeInDeclRule)
 
-// Rule for types replacements in:
-//   1. Template var declarations
-//   2. Template field var declarations
-//   3. Template function calls
-//   4. reinterpret_cast operations
-//   5. static_cast operations
-void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
-
-  auto VectorTypes =
-      recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())));
-
-  auto HasCudaTemplateType = hasType(
-      classTemplateSpecializationDecl(hasAnyTemplateArgument(refersToType(VectorTypes))));
-
-  MF.addMatcher(
-      varDecl(HasCudaTemplateType, unless(hasType(substTemplateTypeParmType())))
-          .bind("TemplateTypeInVarDecl"),
-      this);
-
-  MF.addMatcher(fieldDecl(HasCudaTemplateType,
-                          unless(hasType(substTemplateTypeParmType())))
-                    .bind("TemplateTypeInFieldDecl"),
-                this);
-
-  MF.addMatcher(typedefDecl().bind("typeDefDecl"), this);
-
-  MF.addMatcher(
-      typeLoc(loc(templateSpecializationType(hasAnyTemplateArgument(
-                  refersToType(typedefType(hasDeclaration(
-                               typedefDecl(vectorTypeName()))))))))
-          .bind("TypeInTemplateSpecialization"),
-      this);
-
-}
-
-SourceRange TemplateTypeInDeclRule::getTemplateArgRange(
-    SourceManager *SM, const TemplateArgumentLoc Arg, unsigned &ArgLen) {
-  SourceRange SR = Arg.getSourceRange();
-  auto B = SR.getBegin();
-  auto E = SR.getEnd();
-  if (!B.isMacroID() && E.isMacroID()) {
-    E = SM->getExpansionLoc(E);
-  }
-  ArgLen = SM->getFileOffset(E) - SM->getFileOffset(B);
-  const char *EndCharPtr = SM->getCharacterData(E);
-  if (*EndCharPtr == '>' && *(EndCharPtr + 1) == '>') {
-    // MeasureTokenLength will return 2 for last template parameter in
-    // this case: x<...,y<z>>, because '>>' is considered a token
-    ArgLen += 1;
-  } else {
-    ArgLen += Lexer::MeasureTokenLength(
-        E, *SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-  }
-  return SourceRange(B, E);
-}
-
-bool TemplateTypeInDeclRule::replaceCallExprTemplateTypes(SourceManager *SM,
-                                                          const CallExpr *CE) {
-  bool ReplacementsDone = false;
-  ArrayRef<TemplateArgumentLoc> Args;
-  auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
-  if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())) {
-    Args = DRE->template_arguments();
-  } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-    Args = Unresolved->template_arguments();
-  } else if (auto DependentScope =
-                 dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
-    Args = DependentScope->template_arguments();
-  }
-  for (auto Arg : Args) {
-    auto A = Arg.getArgument();
-    if (A.getKind() != clang::TemplateArgument::ArgKind::Type)
-      continue;
-    auto TypeStr = A.getAsType().getAsString();
-    auto Replacement = getReplacementForType(TypeStr, false);
-    if (Replacement.empty())
-      continue;
-
-    unsigned ArgLen;
-    auto SR = getTemplateArgRange(SM, Arg, ArgLen);
-    if (SR.isValid()) {
-      insertComplexHeader(SR.getBegin(), Replacement);
-      ReplacementsDone = true;
-      emplaceTransformation(
-          new ReplaceText(SR.getBegin(), ArgLen, std::move(Replacement)));
-    }
-  }
-  return ReplacementsDone;
-}
-
-SourceRange TemplateTypeInDeclRule::fixSourceRange(SourceManager *SM, SourceRange SR) {
-  auto B = SR.getBegin();
-  auto E = SR.getEnd();
-  if (!B.isMacroID() && E.isMacroID()) {
-    E = SM->getExpansionLoc(E);
-    return SourceRange(B, E);
-  } else {
-    return SR;
-  }
-}
-
-bool TemplateTypeInDeclRule::replaceNamedCastExprTemplateType(
-    SourceManager *SM, const CXXNamedCastExpr *NCE) {
-  auto TypeStr = NCE->getTypeAsWritten().getAsString();
-  auto Replacement = getReplacementForType(TypeStr, false);
-  if (Replacement.empty())
-    return false;
-  SourceRange SR = NCE->getTypeInfoAsWritten()->getTypeLoc().getSourceRange();
-  if (SR.isValid()) {
-    SR = fixSourceRange(SM, SR);
-    unsigned ParamLen = SM->getCharacterData(SR.getEnd()) -
-                        SM->getCharacterData(SR.getBegin()) + 1;
-    insertComplexHeader(SR.getBegin(), Replacement);
-    emplaceTransformation(
-        new ReplaceText(SR.getBegin(), ParamLen, std::move(Replacement)));
-    return true;
-  }
-  return false;
-}
-
-void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
-
-  SourceManager *SM = Result.SourceManager;
-  if (const TypedefDecl *TD =
-          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
-    // clang-format off
-    // E.g.:
-    // `-TypedefDecl 'typename If<bar<longlong2>::temp, int, int>::t3':'int'
-    //   `-ElaboratedType 'typename If<bar<longlong2>::temp, int, int>::t3' sugar
-    //     `-TypedefType 'If<false, int, int>::t3' sugar
-    //       |-Typedef 't3'
-    //       `-SubstTemplateTypeParmType 'int' sugar
-    //         |-TemplateTypeParmType 't1' dependent depth 0 index 1
-    //         | `-TemplateTypeParm 't1'
-    //         `-BuiltinType 'int'
-    // There is no source location for longlong2 in node TypedefType.
-    // Current solution is to get node value for ElaboratedType, retrieve type token by
-    // token.
-    // clang-format on
-
-    auto DTL = TD->getTypeSourceInfo()->getTypeLoc();
-    auto QT = TD->getTypeSourceInfo()->getType();
-    if (dyn_cast<ElaboratedType>(QT.getTypePtr())) {
-      auto ETC = DTL.getAs<ElaboratedTypeLoc>();
-      auto TokenBegin = ETC.getQualifierLoc().getBeginLoc();
-      auto ExprEndLoc = ETC.getQualifierLoc().getEndLoc();
-
-      Token Tok;
-      auto LOpts = Result.Context->getLangOpts();
-      while (SM->getCharacterData(TokenBegin) <=
-             SM->getCharacterData(ExprEndLoc)) {
-        if (Lexer::getRawToken(TokenBegin, Tok, *SM, LOpts, true)) {
-          break;
-        }
-
-        if (Tok.isAnyIdentifier()) {
-          std::string Str = MapNames::findReplacedName(
-              MapNames::TypeNamesMap, Tok.getRawIdentifier().str());
-          if (!Str.empty()) {
-            emplaceTransformation(new ReplaceToken(TokenBegin, std::move(Str)));
-          }
-        }
-        auto TokSharedPtr = Lexer::findNextToken(Tok.getEndLoc(), *(SM), LOpts);
-        TokenBegin = TokSharedPtr.getValue().getLastLoc();
-      }
-    }
-  }
-
-  // DD points to a VarDecl or a FieldDecl
-  const DeclaratorDecl *DD = nullptr;
-  const TypeLoc *TL = nullptr;
-  const CallExpr *CE = nullptr;
-  const CXXNamedCastExpr *NCE = nullptr;
-
-  QualType QT;
-  if (DD = getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl"))
-    QT = DD->getType();
-  else if ((DD = getNodeAsType<FieldDecl>(Result, "TemplateTypeInFieldDecl")))
-    QT = DD->getType();
-  else if (TL = getNodeAsType<TypeLoc>(Result, "TypeInTemplateSpecialization"))
-    QT = TL->getType();
-  else
-    return;
-
-  unsigned int Loc = 0;
-  if (DD) {
-    Loc = DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
-  } else if (TL) {
-    Loc = TL->getBeginLoc().getRawEncoding();
-  } else if (CE) {
-    Loc = CE->getBeginLoc().getRawEncoding();
-  } else if (NCE) {
-    Loc = NCE->getBeginLoc().getRawEncoding();
-  }
-
-  if (DupFilter.find(Loc) != DupFilter.end())
-    return;
-
-  // Handle template types in CallExpr separately
-  if (CE) {
-    if (replaceCallExprTemplateTypes(SM, CE)) {
-      DupFilter.insert(Loc);
-    }
-    return;
-  }
-
-  // Handle reinterpret_cast/static_cast expression
-  if (NCE) {
-    if (replaceNamedCastExprTemplateType(SM, NCE)) {
-      DupFilter.insert(Loc);
-    }
-    return;
-  }
-
-  // std::vector<stream type> is elaborated to
-  // std::vector<stream type *, std::allocator<stream type *>>
-  bool isElaboratedType = false;
-  if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
-    QT = ET->desugar();
-    isElaboratedType = true;
-  }
-  if (auto TST = dyn_cast<TemplateSpecializationType>(QT.getTypePtr())) {
-    for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
-      auto Args = TST->template_arguments();
-      auto Arg = Args[i];
-      if (Arg.getKind() != clang::TemplateArgument::ArgKind::Type)
-        continue;
-      QT = Arg.getAsType();
-      auto TypeStr = QT.getAsString();
-      auto Replacement = getReplacementForType(TypeStr, false);
-      if (Replacement.empty())
-        // TODO report migration error
-        continue;
-
-      TypeLoc DTL;
-      if (DD) {
-        DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
-      } else if (TL) {
-        DTL = TL->getUnqualifiedLoc();
-      } else {
-        return;
-      }
-
-      TemplateSpecializationTypeLoc TTTL;
-      if (isElaboratedType && !DTL.isNull()) {
-        auto ETL = DTL.getAs<ElaboratedTypeLoc>();
-        TTTL = ETL.getNamedTypeLoc().getAs<TemplateSpecializationTypeLoc>();
-      } else if (!DTL.isNull()) {
-        TTTL = DTL.getAs<TemplateSpecializationTypeLoc>();
-      }
-      // Replace each type in the template arguments one by one
-      if (DD) {
-        insertComplexHeader(DD->getBeginLoc(), Replacement);
-        emplaceTransformation(new ReplaceTypeInDecl(DD, TTTL.getArgLoc(i),
-                                                    std::move(Replacement)));
-      } else if (TL) {
-        insertComplexHeader(TL->getBeginLoc(), Replacement);
-        emplaceTransformation(new ReplaceTypeInDecl(
-            TL->getBeginLoc(), TTTL.getArgLoc(i), std::move(Replacement)));
-      }
-      DupFilter.insert(Loc);
-    }
-  }
-}
-
-REGISTER_RULE(TemplateTypeInDeclRule)
-
-namespace clang {
-namespace ast_matchers {
-
-AST_MATCHER(QualType, vectorType) {
-  return (MapNames::SupportedVectorTypes.find(Node.getAsString()) !=
-          MapNames::SupportedVectorTypes.end());
-}
-
-AST_MATCHER(TypedefDecl, typedefVecDecl) {
-  if (!Node.getUnderlyingType().getBaseTypeIdentifier())
-    return false;
-
-  const std::string BaseTypeName =
-      Node.getUnderlyingType().getBaseTypeIdentifier()->getName().str();
-  return (MapNames::SupportedVectorTypes.find(BaseTypeName) !=
-          MapNames::SupportedVectorTypes.end());
-}
-
-} // namespace ast_matchers
-} // namespace clang
-
 // Rule for types replacements in var. declarations.
 void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
-  auto unlessMemory =
-      unless(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-                   hasAttr(attr::CUDAShared)));
-
-  // basic: eg. int2 xx
-  auto basicType = [&]() {
-    return allOf(hasType(typedefDecl(vectorTypeName())),
-                 unless(hasType(substTemplateTypeParmType())), unlessMemory);
-  };
-
-  // pointer: eg. int2 * xx
-  auto ptrType = [&]() {
-    return allOf(hasType(pointsTo(typedefDecl(vectorTypeName()))),
-                 unlessMemory);
-  };
-
-  // array: eg. int2 array_[xx]
-  auto arrType = [&]() {
-    return allOf(hasType(arrayType(hasElementType(typedefType(
-                     hasDeclaration(typedefDecl(vectorTypeName())))))),
-                 unlessMemory);
-  };
-
-  // reference: eg int2 & xx
-  auto referenceType = [&]() {
-    return allOf(hasType(references(typedefDecl(vectorTypeName()))),
-                 unlessMemory);
-  };
-
-  MF.addMatcher(
-      varDecl(anyOf(basicType(), ptrType(), arrType(), referenceType()))
-          .bind("vecVarDecl"),
-      this);
-
-  MF.addMatcher(
-      fieldDecl(anyOf(basicType(), ptrType(), arrType(), referenceType()),
-                hasParent(cxxRecordDecl().bind("cxxRecordDeclParent")))
-          .bind("fieldvecVarDecl"),
-      this);
-
-  // typedef int2 xxx
-  MF.addMatcher(typedefDecl().bind("typeDefDecl"), this);
-
-
-  // using UT = int2;
-  MF.addMatcher(typeAliasDecl().bind("typeAliasDecl"), this);
-
-  auto vectorTypeAccess = [&]() {
-    return anyOf(vectorType(), references(vectorType()),
-                 pointsTo(vectorType()));
-  };
-
-  // int2 func() => sycl::int2 func()
-  MF.addMatcher(
-      functionDecl(returns(vectorTypeAccess())).bind("funcReturnsVectorType"),
-      this);
-
   MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
                             anyOf(namedDecl(vectorTypeName()),
                                   typedefDecl(vectorTypeName()))))))
@@ -2163,121 +1830,45 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
-  unsigned int Key = SL.getRawEncoding();
-  if (DupFilter.find(Key) == end(DupFilter)) {
-    DupFilter.insert(Key);
-    return false;
-  } else {
-    return true;
-  }
-}
-
-void VectorTypeNamespaceRule::replaceElaboratedTypeName(TypeLoc TL) {
-  // [typename] namespaceId::typenameId
-  // lookup by namespaceId::typenameId
-  auto LOpts = DpctGlobalInfo::getContext().getLangOpts();
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  Token Tok;
-  Lexer::getRawToken(TL.getBeginLoc(), Tok, SM, LOpts, true);
-  auto TokStr = Lexer::getSpelling(Tok, SM, LOpts);
-  auto B = TL.getBeginLoc();
-  if (TokStr == "typename") {
-    Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
-    TokStr = Lexer::getSpelling(Tok, SM, LOpts);
-    B = Tok.getLocation();
-  }
-  auto TypeName = TokStr;
-  Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
-  TokStr = Lexer::getSpelling(Tok, SM, LOpts);
-  if (Tok.is(tok::TokenKind::coloncolon)) {
-    Tok = Lexer::findNextToken(Tok.getLocation(), SM, LOpts).getValue();
-    TypeName += "::" + Lexer::getSpelling(Tok, SM, LOpts);
-  }
-  auto &NewName = MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
-  if (!NewName.empty()) {
-    auto Length = SM.getFileOffset(Tok.getEndLoc()) - SM.getFileOffset(B);
-    emplaceTransformation(new ReplaceText(B, Length, std::string(NewName)));
-  }
-}
-
-void VectorTypeNamespaceRule::replaceTypeName(TypeLoc TL, bool isDeclType) {
-  if (isNamespaceInserted(TL.getBeginLoc()))
-    return;
-
-  CtTypeInfo Ty(TL);
-  auto &TypeName = Ty.getOrginalBaseType();
-
-  if (isDeclType)
-    ++SrcAPIStaticsMap[TypeName];
-  auto &Str = MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
-  if (!Str.empty())
-    emplaceTransformation(new ReplaceToken(TL.getBeginLoc(), std::string(Str)));
-  else if (Ty.isElaborated()) {
-    replaceElaboratedTypeName(TL);
-  }
-}
-
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
-  // int2 => sycl::int2
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
-    replaceTypeName(D->getTypeSourceInfo()->getTypeLoc(), true);
-  }
-
-  // struct benchtype{
-  // ...;
-  // uint2 u32;
-  // };
-  // =>
-  // struct benchtype {
-  // ...;
-  // sycl::uint2 u32;
-  // };
-  if (const FieldDecl *FD =
-          getNodeAsType<FieldDecl>(Result, "fieldvecVarDecl")) {
-    auto D = getNodeAsType<CXXRecordDecl>(Result, "cxxRecordDeclParent");
-    if (D && D->isUnion()) {
-      // To add a default member initializer list "{}" to the
-      // vector variant member of the union, because a union contains a
-      // non-static data member with a non-trivial default constructor, the
-      // default constructor of the union will be deleted by default.
-      SourceManager *SM = Result.SourceManager;
-      auto Loc = FD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-          FD->getEndLoc(), *SM, Result.Context->getLangOpts()));
-      emplaceTransformation(new InsertText(Loc, "{}"));
-    }
-    replaceTypeName(FD->getTypeSourceInfo()->getTypeLoc(), true);
-  }
-
-  // typedef int2 xxx => typedef sycl::int2 xxx
-  if (const TypedefDecl *TD =
-          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
-    replaceTypeName(TD->getTypeSourceInfo()->getTypeLoc());
-  }
-
-  if (const TypeAliasDecl *TD =
-          getNodeAsType<TypeAliasDecl>(Result, "typeAliasDecl")) {
-    replaceTypeName(TD->getTypeSourceInfo()->getTypeLoc());
-  }
-
-
-  // int2 func() => sycl::int2 func()
-  if (const FunctionDecl *FD =
-          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
-    replaceTypeName(FD->getFunctionTypeLoc().getReturnLoc());
-  }
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
     auto BeginLoc = TL->getBeginLoc();
+    SourceManager *SM = Result.SourceManager;
+
+    if (BeginLoc.isMacroID()) {
+      auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
+      if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
+        BeginLoc = SM->getExpansionLoc(BeginLoc);
+      } else {
+        BeginLoc = SpellingLocation;
+      }
+    }
+
+    const FieldDecl *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
+    if (auto D = dyn_cast_or_null<CXXRecordDecl>(getParentDecl(FD))) {
+      // To process cases like "union struct_union {float2 data;};".
+      auto Type = FD->getType();
+      if (D && D->isUnion() && !Type->isPointerType() && !Type->isArrayType()) {
+        // To add a default member initializer list "{}" to the
+        // vector variant member of the union, because a union contains a
+        // non-static data member with a non-trivial default constructor, the
+        // default constructor of the union will be deleted by default.
+        auto Loc = FD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+            FD->getEndLoc(), *SM, Result.Context->getLangOpts()));
+        emplaceTransformation(new InsertText(Loc, "{}"));
+      }
+    }
 
     Token Tok;
     auto LOpts = Result.Context->getLangOpts();
-    SourceManager *SM = Result.SourceManager;
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
-      std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
-                                                  Tok.getRawIdentifier().str());
+      const std::string TypeStr = Tok.getRawIdentifier().str();
+      std::string Str =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
       if (!Str.empty()) {
+        SrcAPIStaticsMap[TypeStr]++;
         emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
       }
     }
@@ -2540,22 +2131,6 @@ void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(VectorTypeOperatorRule)
 
 void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
-  // Find sycl sytle vector:eg.int2 constructors which are part of different
-  // casts (representing different syntaxes). This includes copy constructors.
-  // All constructors will be visited once.
-  MF.addMatcher(
-      cxxConstructExpr(hasType(typedefDecl(vectorTypeName())),
-                       hasParent(cxxFunctionalCastExpr().bind("CtorFuncCast"))),
-      this);
-
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(vectorTypeName())),
-                                 hasParent(cStyleCastExpr().bind("CtorCCast"))),
-                this);
-
-  // (int2 *)&xxx;
-  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(vectorTypeName()))))
-                    .bind("PtrCast"),
-                this);
 
   // make_int2
   auto makeVectorFunc = [&]() {
@@ -2573,17 +2148,6 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
       callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
       this);
 
-  // sizeof(int2)
-  MF.addMatcher(
-      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(vectorType()),
-                                     has(qualType(hasCanonicalType(type())))))
-          .bind("Sizeof"),
-      this);
-
-  // (int2){a, b}
-  MF.addMatcher(compoundLiteralExpr(hasType(typedefDecl(vectorTypeName())))
-                    .bind("CompoundLiteral"),
-                this);
 }
 
 std::string
@@ -2596,25 +2160,6 @@ VectorTypeCtorRule::getReplaceTypeName(const std::string &TypeName) {
 // the syntax. Returns the constructor node and a boolean indicating if a
 // closed brace needs to be appended.
 void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
-  // Most commonly used syntax cases are checked first.
-  if (auto Cast =
-          getNodeAsType<CXXFunctionalCastExpr>(Result, "CtorFuncCast")) {
-    // int2 a = int2(1); // function style cast
-    // int2 b = int2(a); // copy constructor
-    // func(int(1), int2(a));
-    emplaceTransformation(
-        new ReplaceToken(Cast->getBeginLoc(),
-                         getReplaceTypeName(Cast->getType().getAsString())));
-  }
-
-  if (auto Cast = getNodeAsType<CStyleCastExpr>(Result, "CtorCCast")) {
-    // int2 a = (int2)1;
-    // int2 b = (int2)a; // copy constructor
-    // func((int2)1, (int2)a);
-    emplaceTransformation(new ReplaceCCast(
-        Cast, "(" + getReplaceTypeName(Cast->getType().getAsString()) + ")"));
-    return;
-  }
 
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
     if (!CE->getDirectCallee())
@@ -2624,41 +2169,6 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
            "Found non make_<vector type> function");
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), getReplaceTypeName(CE->getType().getAsString())));
-    return;
-  }
-
-  if (const CStyleCastExpr *CPtrCast =
-          getNodeAsType<CStyleCastExpr>(Result, "PtrCast")) {
-    auto TL = CPtrCast->getTypeInfoAsWritten()->getTypeLoc();
-    auto BeginLoc = TL.getSourceRange().getBegin();
-    auto QT = TL.getType();
-    QT = QT.getTypePtr()->getPointeeType();
-    QT = QT.getUnqualifiedType();
-    std::string TypeStr = QT.getAsString(Result.Context->getPrintingPolicy());
-
-    std::string Str = getReplaceTypeName(TypeStr);
-    if (!Str.empty())
-      emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-    return;
-  }
-
-  if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
-          getAssistNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "Sizeof")) {
-    if (ExprSizeof->isArgumentType()) {
-      emplaceTransformation(new ReplaceToken(
-          ExprSizeof->getArgumentTypeInfo()->getTypeLoc().getBeginLoc(),
-          getReplaceTypeName(ExprSizeof->getArgumentType().getAsString())));
-    }
-    return;
-  }
-
-  if (const CompoundLiteralExpr *CLE =
-          getNodeAsType<CompoundLiteralExpr>(Result, "CompoundLiteral")) {
-    if (auto TSI = CLE->getTypeSourceInfo()) {
-      emplaceTransformation(
-          new ReplaceToken(TSI->getTypeLoc().getBeginLoc(),
-                           getReplaceTypeName(TSI->getType().getAsString())));
-    }
     return;
   }
 }
@@ -9358,52 +8868,6 @@ void CXXNewExprRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(CXXNewExprRule)
-
-void ClassTemplateSpecializationRule::registerMatcher(MatchFinder &MF) {
-  auto VectorTypes =
-      recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())));
-  MF.addMatcher(classTemplateSpecializationDecl(
-                    hasAnyTemplateArgument(refersToType(
-                        anyOf(
-                              pointsTo(cxxRecordDecl(vectorTypeName())),
-                              references(cxxRecordDecl(vectorTypeName())),
-                              VectorTypes))))
-                    .bind("classTemplateSpecDecl"),
-                this);
-}
-
-void ClassTemplateSpecializationRule::run(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto CTSD = getAssistNodeAsType<ClassTemplateSpecializationDecl>(
-          Result, "classTemplateSpecDecl")) {
-    auto T = CTSD->getTypeAsWritten();
-    if (!T)
-      return;
-    if (std::string(T->getType()->getTypeClassName()) !=
-        "TemplateSpecialization")
-      return;
-    auto TL = T->getTypeLoc().getAs<TemplateSpecializationTypeLoc>();
-    auto &TArgs = CTSD->getTemplateArgs();
-    for (unsigned i = 0; i < TArgs.size(); ++i) {
-      auto BeginLoc =
-          TL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-
-      Token Tok;
-      auto LOpts = Result.Context->getLangOpts();
-      SourceManager *SM = Result.SourceManager;
-      Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-      if (Tok.isAnyIdentifier()) {
-        std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
-                                                    Tok.getRawIdentifier().str());
-        if (!Str.empty()) {
-          emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-        }
-      }
-    }
-  }
-}
-
-REGISTER_RULE(ClassTemplateSpecializationRule)
 
 void NamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(usingDirectiveDecl().bind("usingDirective"), this);
