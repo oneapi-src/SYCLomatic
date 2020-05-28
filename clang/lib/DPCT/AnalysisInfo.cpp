@@ -210,7 +210,7 @@ void KernelCallExpr::buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall) {
     if (auto *Parent = Parents[0].get<CompoundStmt>()) {
       NeedBraces = (Parent->size() > 1);
       return;
-    } else if (auto *EWC = Parents[0].get<ExprWithCleanups>()) {
+    } else if (Parents[0].get<ExprWithCleanups>()) {
       // treat ExprWithCleanups same as CUDAKernelCallExpr when they shows
       // up together
       Parents = Context.getParents(Parents[0]);
@@ -1484,6 +1484,8 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::TemplateSpecialization:
   case TypeLoc::DependentTemplateSpecialization:
     setTemplateInfo(TL);
+    setName(TL.getType());
+    break;
   default:
     setName(TL.getType());
   }
@@ -1533,7 +1535,6 @@ void CtTypeInfo::setName(QualType Ty) {
   OrginalBaseType = BaseNameWithoutQualifiers;
   if (!isTemplate())
     MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
-  auto Q = Ty.getLocalQualifiers();
   if (BaseName.empty())
     BaseName = BaseName = BaseNameWithoutQualifiers;
   else

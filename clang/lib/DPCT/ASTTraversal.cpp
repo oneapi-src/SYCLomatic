@@ -1181,7 +1181,7 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
   if (!Expr)
     return;
 
-  if (auto CE = dyn_cast<CallExpr>(Expr)) {
+  if (dyn_cast<CallExpr>(Expr)) {
     NeedReport = true;
     return;
   }
@@ -1628,7 +1628,6 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     if (Tok.isAnyIdentifier()) {
 
       std::string TypeStr = Tok.getRawIdentifier().str();
-      auto QT = TL->getType();
 
       if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
         auto ETC = TL->getAs<ElaboratedTypeLoc>();
@@ -1952,7 +1951,7 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
     auto DTL = TD->getTypeSourceInfo()->getTypeLoc();
     auto QT = TD->getTypeSourceInfo()->getType();
-    if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
+    if (dyn_cast<ElaboratedType>(QT.getTypePtr())) {
       auto ETC = DTL.getAs<ElaboratedTypeLoc>();
       auto TokenBegin = ETC.getQualifierLoc().getBeginLoc();
       auto ExprEndLoc = ETC.getQualifierLoc().getEndLoc();
@@ -9197,7 +9196,6 @@ void ClassTemplateSpecializationRule::run(
     auto TL = T->getTypeLoc().getAs<TemplateSpecializationTypeLoc>();
     auto &TArgs = CTSD->getTemplateArgs();
     for (unsigned i = 0; i < TArgs.size(); ++i) {
-      auto Arg = TArgs.get(i);
       auto BeginLoc =
           TL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getBeginLoc();
 
