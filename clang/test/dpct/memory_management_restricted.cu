@@ -17,8 +17,10 @@ int main(){
 
     float **data = NULL;
     float *d_A = NULL;
+    float *h_A = NULL;
     int* a;
     cudaStream_t stream;
+    cudaStream_t stream_array[10];
     int deviceID = 0;
     cudaError_t err;
 
@@ -83,6 +85,9 @@ int main(){
     // CHECK-NEXT: */
     // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
+
+    //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
+    cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
 }
 
 

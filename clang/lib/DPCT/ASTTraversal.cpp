@@ -7528,7 +7528,6 @@ void MemoryMigrationRule::memcpyMigration(
     }
   } else if (NameRef == "cudaMemcpy") {
     handleDirection(C, 3);
-    std::string AsyncQueue = handleAsync(C, 4, Result);
     replaceMemAPIArg(C->getArg(0), Result);
     replaceMemAPIArg(C->getArg(1), Result);
     if (USMLevel == UsmLevel::restricted) {
@@ -7537,6 +7536,10 @@ void MemoryMigrationRule::memcpyMigration(
         emplaceTransformation(removeArg(C, 4, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+      }
+      std::string AsyncQueue;
+      if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
+        AsyncQueue = ExprAnalysis::ref(C->getArg(4));
       }
       if (AsyncQueue.empty() || AsyncQueue == "0") {
         if (checkWhetherIsDuplicate(C, false))
@@ -7547,6 +7550,8 @@ void MemoryMigrationRule::memcpyMigration(
       } else {
         ReplaceStr = AsyncQueue + "->memcpy";
       }
+    } else {
+      handleAsync(C, 4, Result);
     }
   }
 
@@ -7856,13 +7861,16 @@ void MemoryMigrationRule::memsetMigration(
   } else if (NameRef == "cudaMemset3D") {
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
-    std::string AsyncQueue = handleAsync(C, 3, Result);
     replaceMemAPIArg(C->getArg(0), Result);
     if (USMLevel == UsmLevel::restricted) {
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+      }
+      std::string AsyncQueue;
+      if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+        AsyncQueue = ExprAnalysis::ref(C->getArg(3));
       }
       if (AsyncQueue.empty() || AsyncQueue == "0") {
         if (checkWhetherIsDuplicate(C, false))
@@ -7873,6 +7881,8 @@ void MemoryMigrationRule::memsetMigration(
       } else {
         ReplaceStr = AsyncQueue + "->memset";
       }
+    } else {
+      handleAsync(C, 3, Result);
     }
   }
 
@@ -8360,31 +8370,24 @@ void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
   }
 }
 
-std::string
+void
 MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
                                  const MatchFinder::MatchResult &Result) {
-  std::string Stream;
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     auto StreamExpr = C->getArg(i)->IgnoreImplicitAsWritten();
     emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
     if (auto IL = dyn_cast<IntegerLiteral>(StreamExpr)) {
       if (IL->getValue().getZExtValue() == 0) {
         emplaceTransformation(removeArg(C, i, *Result.SourceManager));
-        return Stream;
+        return;
       } else {
         emplaceTransformation(
             new InsertBeforeStmt(StreamExpr, "(cl::sycl::queue *)"));
       }
-    } else if (auto DRE = dyn_cast<DeclRefExpr>(StreamExpr)) {
-      Stream = DRE->getDecl()->getName().str();
-    } else {
-      ExprAnalysis EA(C->getArg(i));
-      EA.analyze();
-      Stream = EA.getReplacedString();
+    } else if (!isa<DeclRefExpr>(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
   }
-  return Stream;
 }
 
 REGISTER_RULE(MemoryMigrationRule)

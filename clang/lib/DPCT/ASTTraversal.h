@@ -1036,7 +1036,7 @@ private:
                      const CallExpr *C,
                      const UnresolvedLookupExpr *ULExpr = NULL,
                      bool IsAssigned = false);
-  std::string handleAsync(const CallExpr *C, unsigned i,
+  void handleAsync(const CallExpr *C, unsigned i,
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);
   void replaceMemAPIArg(
