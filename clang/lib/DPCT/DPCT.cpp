@@ -307,7 +307,8 @@ static opt<bool, true> NoClNamespaceInline(
 
 bool NoDRYPatternFlag = false;
 static opt<bool, true> NoDRYPattern(
-  "no-dry-pattern", llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct namespace are inserted. Default: off.\n"),
+  "no-dry-pattern", llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct\n"
+                                   "namespace are inserted. Default: off.\n"),
   cat(DPCTCat), llvm::cl::location(NoDRYPatternFlag));
 
 bool ProcessAllFlag = false;
