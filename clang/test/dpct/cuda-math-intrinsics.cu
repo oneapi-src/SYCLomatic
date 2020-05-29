@@ -1584,22 +1584,22 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h2 = f2.convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __float22half2_rn(f2);
 
-  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::automatic>().get_value(0);
+  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::automatic>()[0];
   h = __float2half(f);
 
   // CHECK: h2 = sycl::float2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __float2half2_rn(f);
 
-  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __float2half_rd(f);
 
-  // sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   __float2half_rn(f);
 
-  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __float2half_ru(f);
 
-  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __float2half_rz(f);
 
   // CHECK: h2 = sycl::float2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
@@ -1608,82 +1608,82 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f2 = h2.convert<float, sycl::rounding_mode::automatic>();
   f2 = __half22float2(h2);
 
-  // CHECK: f = sycl::vec<sycl::half, 1>{h}.convert<float, sycl::rounding_mode::automatic>().get_value(0);
+  // CHECK: f = sycl::vec<sycl::half, 1>{h}.convert<float, sycl::rounding_mode::automatic>()[0];
   f = __half2float(h);
 
   // CHECK: h2 = sycl::half2{h,h};
   h2 = __half2half2(h);
 
-  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtn>()[0];
   i = __half2int_rd(h);
 
-  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rte>()[0];
   i = __half2int_rn(h);
 
-  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtp>()[0];
   i = __half2int_ru(h);
 
-  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtz>()[0];
   i = __half2int_rz(h);
 
-  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtn>()[0];
   ll = __half2ll_rd(h);
 
-  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rte>()[0];
   ll = __half2ll_rn(h);
 
-  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtp>()[0];
   ll = __half2ll_ru(h);
 
-  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ll = sycl::vec<sycl::half, 1>{h}.convert<long long, sycl::rounding_mode::rtz>()[0];
   ll = __half2ll_rz(h);
 
-  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtn>()[0];
   s = __half2short_rd(h);
 
-  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rte>()[0];
   s = __half2short_rn(h);
 
-  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtp>()[0];
   s = __half2short_ru(h);
 
-  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: s = sycl::vec<sycl::half, 1>{h}.convert<short, sycl::rounding_mode::rtz>()[0];
   s = __half2short_rz(h);
 
-  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtn>()[0];
   ui = __half2uint_rd(h);
 
-  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rte>()[0];
   ui = __half2uint_rn(h);
 
-  // CHECK:ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK:ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtp>()[0];
   ui = __half2uint_ru(h);
 
-  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ui = sycl::vec<sycl::half, 1>{h}.convert<unsigned int, sycl::rounding_mode::rtz>()[0];
   ui = __half2uint_rz(h);
 
-  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
   ull = __half2ull_rd(h);
 
-  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rte>()[0];
   ull = __half2ull_rn(h);
 
-  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
   ull = __half2ull_ru(h);
 
-  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ull = sycl::vec<sycl::half, 1>{h}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __half2ull_rz(h);
 
-  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtn>()[0];
   us = __half2ushort_rd(h);
 
-  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rte>()[0];
   us = __half2ushort_rn(h);
 
-  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtp>()[0];
   us = __half2ushort_ru(h);
 
-  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtz>()[0];
   us = __half2ushort_rz(h);
 
   // CHECK: s = dpct::bit_cast<sycl::half, short>(h);
@@ -1695,220 +1695,220 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h2 = sycl::half2{h,h};
   h2 = __halves2half2(h, h);
 
-  // CHECK: f = h2.get_value(0);
+  // CHECK: f = h2[0];
   f = __high2float(h2);
 
-  // CHECK: h = h2.get_value(0);
+  // CHECK: h = h2[0];
   h = __high2half(h2);
 
-  // CHECK: h2 = sycl::half2{h2.get_value(0), h2.get_value(0)};
+  // CHECK: h2 = sycl::half2{h2[0], h2[0]};
   h2 = __high2half2(h2);
 
-  // CHECK: h2 = sycl::half2{h2.get_value(0), h2.get_value(0)};
+  // CHECK: h2 = sycl::half2{h2[0], h2[0]};
   h2 = __highs2half2(h2, h2);
 
-  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __int2half_rd(i);
 
-  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __int2half_rn(i);
 
-  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __int2half_ru(i);
 
-  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __int2half_rz(i);
 
-  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __ll2half_rd(ll);
 
-  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __ll2half_rn(ll);
 
-  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __ll2half_ru(ll);
 
-  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __ll2half_rz(ll);
 
-  // CHECK: f = h2.get_value(1);
+  // CHECK: f = h2[1];
   f = __low2float(h2);
 
-  // CHECK: h = h2.get_value(1);
+  // CHECK: h = h2[1];
   h = __low2half(h2);
 
-  // CHECK: h2 = sycl::half2{h2.get_value(1), h2.get_value(1)};
+  // CHECK: h2 = sycl::half2{h2[1], h2[1]};
   h2 = __low2half2(h2);
 
-  // CHECK: h2 = sycl::half2{h2.get_value(1), h2.get_value(0)};
+  // CHECK: h2 = sycl::half2{h2[1], h2[0]};
   h2 = __lowhigh2highlow(h2);
 
-  // CHECK: h2 = sycl::half2{h2.get_value(1), h2.get_value(1)};
+  // CHECK: h2 = sycl::half2{h2[1], h2[1]};
   h2 = __lows2half2(h2, h2);
 
-  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __short2half_rd(s);
 
-  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __short2half_rn(s);
 
-  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __short2half_ru(s);
 
-  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __short2half_rz(s);
 
   // CHECK: h = dpct::bit_cast<short, sycl::half>(s);
   h = __short_as_half(s);
 
-  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __uint2half_rd(ui);
 
-  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __uint2half_rn(ui);
 
-  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __uint2half_ru(ui);
 
-  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __uint2half_rz(ui);
 
-  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __ull2half_rd(ull);
 
-  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __ull2half_rn(ull);
 
-  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __ull2half_ru(ull);
 
-  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned long long, 1>{ull}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __ull2half_rz(ull);
 
-  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __ushort2half_rd(us);
 
-  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rte>()[0];
   h = __ushort2half_rn(us);
 
-  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtp>()[0];
   h = __ushort2half_ru(us);
 
-  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __ushort2half_rz(us);
 
   // CHECK: h = dpct::bit_cast<unsigned short, sycl::half>(us);
   h = __ushort_as_half(us);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtn>()[0];
   f = __double2float_rd(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rte>()[0];
   f = __double2float_rn(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtp>()[0];
   f = __double2float_ru(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __double2float_rz(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtn>()[0];
   i = __double2int_rd(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rte>()[0];
   i = __double2int_rn(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtp>()[0];
   i = __double2int_ru(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtz>()[0];
   i = __double2int_rz(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtn>()[0];
   ll = __double2ll_rd(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rte>()[0];
   ll = __double2ll_rn(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtp>()[0];
   ll = __double2ll_ru(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtz>()[0];
   ll = __double2ll_rz(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtn>()[0];
   ui = __double2uint_rd(d);
 
-  // CHECK:ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK:ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rte>()[0];
   ui = __double2uint_rn(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtp>()[0];
   ui = __double2uint_ru(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtz>()[0];
   ui = __double2uint_rz(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
   ull = __double2ull_rd(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rte>()[0];
   ull = __double2ull_rn(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
   ull = __double2ull_ru(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __double2ull_rz(d);
 
   // CHECK: ll = dpct::bit_cast<double, long long>(d);
   ll = __double_as_longlong(d);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtn>()[0];
   i = __float2int_rd(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rte>()[0];
   i = __float2int_rn(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtp>()[0];
   i = __float2int_ru(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtz>()[0];
   i = __float2int_rz(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtn>()[0];
   ll = __float2ll_rd(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rte>()[0];
   ll = __float2ll_rn(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtp>()[0];
   ll = __float2ll_ru(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtz>()[0];
   ll = __float2ll_rz(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtn>()[0];
   ui = __float2uint_rd(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rte>()[0];
   ui = __float2uint_rn(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtp>()[0];
   ui = __float2uint_ru(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtz>()[0];
   ui = __float2uint_rz(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
   ull = __float2ull_rd(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rte>()[0];
   ull = __float2ull_rn(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
   ull = __float2ull_ru(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __float2ull_rz(f);
 
   // CHECK: i = dpct::bit_cast<float, int>(f);
@@ -1917,91 +1917,91 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ui = dpct::bit_cast<float, unsigned int>(f);
   ui = __float_as_uint(f);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<double, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: d = sycl::vec<int, 1>{i}.convert<double, sycl::rounding_mode::rte>()[0];
   d = __int2double_rn(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtn>()[0];
   d = __int2float_rd(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rte>()[0];
   d = __int2float_rn(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtp>()[0];
   d = __int2float_ru(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtz>()[0];
   d = __int2float_rz(i);
 
   // CHECK: f = dpct::bit_cast<int, float>(i);
   f = __int_as_float(i);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtn>()[0];
   d = __ll2double_rd(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rte>()[0];
   d = __ll2double_rn(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtp>()[0];
   d = __ll2double_ru(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtz>()[0];
   d = __ll2double_rz(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtn>()[0];
   f = __ll2float_rd(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rte>()[0];
   f = __ll2float_rn(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtp>()[0];
   f = __ll2float_ru(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __ll2float_rz(ll);
 
   // CHECK: d = dpct::bit_cast<long long, double>(ll);
   d = __longlong_as_double(ll);
 
-  // CHECK: d = sycl::vec<unsigned int, 1>{ui}.convert<double, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: d = sycl::vec<unsigned int, 1>{ui}.convert<double, sycl::rounding_mode::rte>()[0];
   d = __uint2double_rn(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtn>()[0];
   f = __uint2float_rd(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rte>()[0];
   f = __uint2float_rn(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtp>()[0];
   f = __uint2float_ru(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __uint2float_rz(ui);
 
   // CHECK: f = dpct::bit_cast<unsigned int, float>(ui);
   f = __uint_as_float(ui);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtn>()[0];
   d = __ull2double_rd(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rte>()[0];
   d = __ull2double_rn(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtp>()[0];
   d = __ull2double_ru(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtz>()[0];
   d = __ull2double_rz(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtn>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtn>()[0];
   f = __ull2float_rd(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rte>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rte>()[0];
   f = __ull2float_rn(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtp>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtp>()[0];
   f = __ull2float_ru(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtz>().get_value(0);
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __ull2float_rz(ull);
 }
 

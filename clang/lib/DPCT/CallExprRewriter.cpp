@@ -512,30 +512,30 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0 << ","
        << MigratedArg1 << "}";
   } else if (FuncName == "__high2float") {
-    OS << MigratedArg0 << ".get_value(0)";
+    OS << MigratedArg0 << "[0]";
   } else if (FuncName == "__high2half") {
-    OS << MigratedArg0 << ".get_value(0)";
+    OS << MigratedArg0 << "[0]";
   } else if (FuncName == "__high2half2") {
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
-       << ".get_value(0), " << MigratedArg0 << ".get_value(0)}";
+       << "[0], " << MigratedArg0 << "[0]}";
   } else if (FuncName == "__highs2half2") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
-       << ".get_value(0), " << MigratedArg1 << ".get_value(0)}";
+       << "[0], " << MigratedArg1 << "[0]}";
   } else if (FuncName == "__low2float") {
-    OS << MigratedArg0 << ".get_value(1)";
+    OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half") {
-    OS << MigratedArg0 << ".get_value(1)";
+    OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half2") {
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
-       << ".get_value(1), " << MigratedArg0 << ".get_value(1)}";
+       << "[1], " << MigratedArg0 << "[1]}";
   } else if (FuncName == "__lowhigh2highlow") {
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
-       << ".get_value(1), " << MigratedArg0 << ".get_value(0)}";
+       << "[1], " << MigratedArg0 << "[0]}";
   } else if (FuncName == "__lows2half2") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
-       << ".get_value(1), " << MigratedArg1 << ".get_value(1)}";
+       << "[1], " << MigratedArg1 << "[1]}";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
@@ -554,7 +554,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     OS << MapNames::getClNamespace() + "::vec<" << Types[0] << ", 1>{"
        << MigratedArg0 << "}.convert<" << Types[1]
        << ", " + MapNames::getClNamespace() + "::rounding_mode::"
-       << RoundingModeMap[RoundingMode] << ">().get_value(0)";
+       << RoundingModeMap[RoundingMode] << ">()[0]";
   }
   OS.flush();
   return ReplStr;
