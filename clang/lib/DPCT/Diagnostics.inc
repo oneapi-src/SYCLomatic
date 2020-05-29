@@ -104,3 +104,5 @@ DEF_WARNING(EXCEED_MAX_PARAMETER_SIZE, 1042, "The size of the arguments passed t
 DEF_COMMENT(EXCEED_MAX_PARAMETER_SIZE, 1042, "The size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.")
 DEF_WARNING(TYPE_MISMATCH, 1043, "The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.")
 DEF_COMMENT(TYPE_MISMATCH, 1043, "The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.")
+DEF_WARNING(DEPRECATED_BASE_CLASS, 1044, "%0 was removed, because %1 has been deprecated in C++11. You may need to remove references to typedefs from %0 in the class definition.")
+DEF_COMMENT(DEPRECATED_BASE_CLASS, 1044, "{0} was removed, because {1} has been deprecated in C++11. You may need to remove references to typedefs from {0} in the class definition.")

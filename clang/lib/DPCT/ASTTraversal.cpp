@@ -8886,6 +8886,58 @@ void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(NamespaceRule)
 
+void RemoveBaseClassRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
+                                  "unary_function", "binary_function")))
+                    .bind("derivedFrom"),
+                this);
+}
+
+void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
+  auto SM = Result.SourceManager;
+  auto LOpts = Result.Context->getLangOpts();
+  auto findColon = [&](SourceRange SR) {
+    Token Tok;
+    auto E = SR.getEnd();
+    SourceLocation Loc = SR.getBegin();
+    Lexer::getRawToken(Loc, Tok, *SM, LOpts, true);
+    bool ColonFound = false;
+    while (Loc <= E) {
+      if (Tok.is(tok::TokenKind::colon)) {
+        ColonFound = true;
+        break;
+      }
+      Tok = Lexer::findNextToken(Tok.getLocation(), *SM, LOpts).getValue();
+      Loc = Tok.getLocation();
+    }
+    if (ColonFound)
+      return Loc;
+    else
+      return SourceLocation();
+  };
+
+  if (auto D = getNodeAsType<CXXRecordDecl>(Result, "derivedFrom")) {
+    if (D->getNumBases() != 1)
+      return;
+    auto SR =
+        SourceRange(D->getInnerLocStart(), D->getBraceRange().getBegin());
+    auto ColonLoc = findColon(SR);
+    if (ColonLoc.isValid()) {
+      auto QT = D->bases().begin()->getType();
+      auto BaseDecl = QT.getTypePtr()->getAsCXXRecordDecl();
+      auto BaseName = BaseDecl->getDeclName().getAsString();
+      auto ThrustName = "thrust::" + BaseName;
+      auto StdName = "std::" + BaseName;
+      report(ColonLoc, Diagnostics::DEPRECATED_BASE_CLASS, false, ThrustName, StdName);
+      auto Len = SM->getFileOffset(D->getBraceRange().getBegin()) -
+                 SM->getFileOffset(ColonLoc);
+      emplaceTransformation(new ReplaceText(ColonLoc, Len, ""));
+    }
+  }
+}
+
+REGISTER_RULE(RemoveBaseClassRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;
