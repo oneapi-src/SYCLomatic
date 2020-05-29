@@ -1076,6 +1076,43 @@ int main() {
   //level3
   int side0 = 0;
   int side1 = 1;
+  // cublas<T>gemmStridedBatched
+  // CHECK: {
+  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::trans, n, n, n, alpha_S, A_S_buf_ct{{[0-9]+}}, n, 16, B_S_buf_ct{{[0-9]+}}, n, 16, beta_S, C_S_buf_ct{{[0-9]+}}, n, 16, 10), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, n, n, n, alpha_S, A_S_buf_ct{{[0-9]+}}, n, 16, B_S_buf_ct{{[0-9]+}}, n, 16, beta_S, C_S_buf_ct{{[0-9]+}}, n, 16, 10);
+  // CHECK-NEXT: }
+  status = cublasSgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_T, n, n, n, &alpha_S, A_S, n, 16, B_S, n, 16, &beta_S, C_S, n, 16, 10);
+  cublasSgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_S, A_S, n, 16, B_S, n, 16, &beta_S, C_S, n, 16, 10);
+
+  // CHECK: {
+  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (mkl::blas::gemm_batch(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, n, n, n, alpha_D, A_D_buf_ct{{[0-9]+}}, n, 16, B_D_buf_ct{{[0-9]+}}, n, 16, beta_D, C_D_buf_ct{{[0-9]+}}, n, 16, 10), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, n, n, n, alpha_D, A_D_buf_ct{{[0-9]+}}, n, 16, B_D_buf_ct{{[0-9]+}}, n, 16, beta_D, C_D_buf_ct{{[0-9]+}}, n, 16, 10);
+  // CHECK-NEXT: }
+  status = cublasDgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
+  cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
+
   // cublas<T>symm
   // CHECK: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);

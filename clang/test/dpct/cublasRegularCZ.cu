@@ -1112,6 +1112,42 @@ int main(){
   status = cublasZgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
 
+  // CHECK: {
+  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
+  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
+  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::trans, N, N, N, std::complex<float>(alpha_c->x(),alpha_c->y()), x_c_buf_ct{{[0-9]+}}, N, 16, y_c_buf_ct{{[0-9]+}}, N, 16, std::complex<float>(beta_c->x(),beta_c->y()), result_c_buf_ct{{[0-9]+}}, N, 16, 10), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
+  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
+  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_c->x(),alpha_c->y()), x_c_buf_ct{{[0-9]+}}, N, 16, y_c_buf_ct{{[0-9]+}}, N, 16, std::complex<float>(beta_c->x(),beta_c->y()), result_c_buf_ct{{[0-9]+}}, N, 16, 10);
+  // CHECK-NEXT: }
+  status = cublasCgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_T, N, N, N, alpha_c, x_c, N, 16, y_c, N, 16, beta_c, result_c, N, 16, 10);
+  cublasCgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, alpha_c, x_c, N, 16, y_c, N, 16, beta_c, result_c, N, 16, 10);
+
+  // CHECK: {
+  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
+  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
+  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (mkl::blas::gemm_batch(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, std::complex<double>(alpha_z->x(),alpha_z->y()), x_z_buf_ct{{[0-9]+}}, N, 16, y_z_buf_ct{{[0-9]+}}, N, 16, std::complex<double>(beta_z->x(),beta_z->y()), result_z_buf_ct{{[0-9]+}}, N, 16, 10), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
+  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
+  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, std::complex<double>(alpha_z->x(),alpha_z->y()), x_z_buf_ct{{[0-9]+}}, N, 16, y_z_buf_ct{{[0-9]+}}, N, 16, std::complex<double>(beta_z->x(),beta_z->y()), result_z_buf_ct{{[0-9]+}}, N, 16, 10);
+  // CHECK-NEXT: }
+  status = cublasZgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
+  cublasZgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
+
   cuComplex* A_c = 0;
   cuDoubleComplex* A_z = 0;
   cuComplex* B_c = 0;

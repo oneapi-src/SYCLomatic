@@ -4122,7 +4122,10 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChpr2_v2", "cublasZhpr2_v2",
         /*Regular level 3*/
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasCgemm3m", "cublasZgemm3m", "cublasSsymm_v2", "cublasDsymm_v2",
+        "cublasHgemm", "cublasCgemm3m", "cublasZgemm3m",
+        "cublasSgemmStridedBatched", "cublasDgemmStridedBatched",
+        "cublasCgemmStridedBatched", "cublasZgemmStridedBatched",
+        "cublasSsymm_v2", "cublasDsymm_v2",
         "cublasCsymm_v2", "cublasZsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
         "cublasCsyrk_v2", "cublasZsyrk_v2", "cublasSsyr2k_v2",
         "cublasDsyr2k_v2", "cublasCsyr2k_v2", "cublasZsyr2k_v2",
@@ -4302,6 +4305,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // cannot move out and must use lambda.
     PrefixInsertLoc = FuncNameBegin;
     SuffixInsertLoc = FuncCallEnd;
+  }
+
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+      FuncName == "cublasHgemm") {
+    report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
+    return;
   }
 
   std::string IndentStr = getIndent(PrefixInsertLoc, *SM).str();
