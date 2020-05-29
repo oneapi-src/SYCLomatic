@@ -14,5 +14,6 @@ extern bool HasSDKIncludeOption;
 extern std::string RealSDKIncludePath;
 extern bool HasSDKPathOption;
 extern std::string RealSDKPath;
-
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 int run(int argc, const char **argv);

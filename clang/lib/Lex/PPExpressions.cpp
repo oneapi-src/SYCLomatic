@@ -271,10 +271,10 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         Result.Val = 0;
 #if INTEL_CUSTOMIZATION
         // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle
-        // it as defined '400'
+        // it as defined '600'
         if (II->getName() == "__CUDA_ARCH__" &&
             IsInRootFunc(PeekTok.getLocation())) {
-          Result.Val = 400;
+          Result.Val = 600;
         }
 #endif // INTEL_CUSTOMIZATION
         Result.Val.setIsUnsigned(false); // "0" is signed intmax_t 0.

@@ -207,6 +207,16 @@ MACRO_KC2(dim3(5,4,3),2,1,0)
 int *a;
 //CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, q_ct1));
 NESTMACRO3(cudaMalloc(&a,100));
+
+//test if parse error, no check
+int b;
+#if ( __CUDACC_VER_MAJOR__ >= 8 ) && (__CUDA_ARCH__ >= 600 )
+  // DPCT should visit this path
+#else
+  // If DPCT visit this path, b is redeclared.
+  int b;
+#endif
+
 }
 
 

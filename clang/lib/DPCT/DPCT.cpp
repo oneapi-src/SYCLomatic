@@ -45,6 +45,7 @@
 #include <unordered_map>
 #include <vector>
 
+
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
@@ -1008,6 +1009,15 @@ int run(int argc, const char **argv) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
   }
+
+  std::string CUDAVerMajor = "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+  Tool.appendArgumentsAdjuster(
+    getInsertArgumentAdjuster(CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+
+  std::string CUDAVerMinor = "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+  Tool.appendArgumentsAdjuster(
+    getInsertArgumentAdjuster(CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32

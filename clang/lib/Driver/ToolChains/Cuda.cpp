@@ -42,6 +42,8 @@ bool HasSDKIncludeOption = false;
 bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
 std::string RealSDKPath = "";
+int SDKVersionMajor=0;
+int SDKVersionMinor=0;
 
 static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
   CV = CudaVersion::UNKNOWN;
@@ -68,6 +70,9 @@ static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
 
+  SDKVersionMajor = Major;
+  SDKVersionMinor = Minor;
+
   if (Major == 8 && Minor == 0) {
     CV = CudaVersion::CUDA_80;
     return true;
@@ -87,12 +92,10 @@ static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
     CV = CudaVersion::CUDA_101;
     return true;
   }
-#ifdef INTEL_CUSTOMIZATION
   else if (Major == 10 && Minor == 2) {
     CV = CudaVersion::CUDA_102;
     return true;
   }
-#endif
   return false;
 }
 #else
