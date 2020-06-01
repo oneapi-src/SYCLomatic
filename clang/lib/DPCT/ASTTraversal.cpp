@@ -1459,7 +1459,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "cudaError_enum", "cudaDeviceProp",
                              "cudaPitchedPtr", "counting_iterator",
                              "transform_iterator", "permutation_iterator",
-                             "cusolverDnHandle_t"),
+                             "iterator_difference", "cusolverDnHandle_t"),
                   matchesName("cudnn.*|nccl.*"))),
               typedefDecl(anyOf(
                   hasAnyName("cudaError_t", "CUresult",
@@ -1478,9 +1478,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "host_vector", "CUcontext", "CUevent_st", "__half",
                              "half", "__half2", "half2", "cudaMemoryAdvise",
                              "cudaError_enum", "cudaDeviceProp",
-                             "cudaPitchedPtr", "counting_iterator",
-                             "transform_iterator", "permutation_iterator",
-                             "cusolverDnHandle_t"),
+                             "cudaPitchedPtr", "cusolverDnHandle_t"),
                   matchesName("cudnn.*|nccl.*"))))))))
           .bind("cudaTypeDef"),
       this);
@@ -1679,6 +1677,85 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
   }
 }
 
+bool TypeInDeclRule::replaceTemplateSpecialization(
+    SourceManager *SM, LangOptions &LOpts, SourceLocation BeginLoc,
+    const TemplateSpecializationTypeLoc TSL) {
+  Token Tok;
+  Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
+  if (!Tok.isAnyIdentifier()) {
+    return false;
+  }
+  auto TypeNameStr = Tok.getRawIdentifier().str();
+  // skip to the next identifier after keyword "typename"
+  if (TypeNameStr == "typename") {
+    Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).getValue();
+    BeginLoc = Tok.getLocation();
+  }
+  auto LAngleLoc = TSL.getLAngleLoc();
+  const char *Start = SM->getCharacterData(BeginLoc);
+  const char *End = SM->getCharacterData(LAngleLoc);
+  auto TyLen = End - Start;
+  assert(TyLen > 0);
+  const std::string RealTypeNameStr(Start, TyLen);
+  std::string Replacement =
+      MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+  if (!Replacement.empty()) {
+    insertComplexHeader(BeginLoc, Replacement);
+    emplaceTransformation(
+        new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
+    return true;
+  }
+  return false;
+}
+
+// There's no AST matcher for dealing with DependentNameTypeLocs so
+// it is handled 'manually'
+bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
+                                                 LangOptions &LOpts,
+                                                 const TypeLoc *TL) {
+  auto D = DpctGlobalInfo::findAncestor<Decl>(TL);
+  TypeSourceInfo *TSI = nullptr;
+  if (auto TD = dyn_cast<TypedefDecl>(D))
+    TSI = TD->getTypeSourceInfo();
+  else if (auto VD = dyn_cast<VarDecl>(D))
+    TSI = VD->getTypeSourceInfo();
+  else if (auto FD = dyn_cast<FieldDecl>(D))
+    TSI = FD->getTypeSourceInfo();
+  else
+    return false;
+
+  auto TTL = TSI->getTypeLoc();
+  auto SR = TTL.getSourceRange();
+  auto DTL = TTL.getAs<DependentNameTypeLoc>();
+  if (!DTL)
+    return false;
+
+  auto NNSL = DTL.getQualifierLoc();
+  auto NNTL = NNSL.getTypeLoc();
+
+  auto BeginLoc = SR.getBegin();
+  if (NNTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+    auto TSL = NNTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+    if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
+      // Check if "::type" needs replacement (only needed for
+      // thrust::iterator_difference)
+      Token Tok;
+      Lexer::getRawToken(SR.getEnd(), Tok, *SM, LOpts, true);
+      auto TypeNameStr =
+          Tok.isAnyIdentifier() ? Tok.getRawIdentifier().str() : "";
+      Lexer::getRawToken(TSL.getBeginLoc(), Tok, *SM, LOpts, true);
+      auto TemplateNameStr =
+          Tok.isAnyIdentifier() ? Tok.getRawIdentifier().str() : "";
+      if (TypeNameStr == "type" && TemplateNameStr == "iterator_difference") {
+        emplaceTransformation(
+            new ReplaceText(SR.getEnd(), 4, std::string("difference_type")));
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
@@ -1696,40 +1773,25 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
     reportForNcclAndCudnn(TL, BeginLoc);
 
-    Token Tok;
     auto LOpts = Result.Context->getLangOpts();
+
+    if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
+      return;
+    }
+
+    Token Tok;
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
 
       std::string TypeStr = Tok.getRawIdentifier().str();
-
       if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
         auto ETC = TL->getAs<ElaboratedTypeLoc>();
         auto NTL = ETC.getNamedTypeLoc();
 
         if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
           auto TSL =
-              NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
-          auto LAngleLoc = TSL.getLAngleLoc();
-
-          if (TypeStr == "typename") {
-            Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).getValue();
-            BeginLoc = Tok.getLocation();
-          }
-
-          const char *Start = SM->getCharacterData(BeginLoc);
-          const char *End = SM->getCharacterData(LAngleLoc);
-          auto TyLen = End - Start;
-          assert(TyLen > 0);
-          const std::string TyName(Start, TyLen);
-
-          std::string Replacement =
-              MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
-
-          if (!Replacement.empty()) {
-            insertComplexHeader(BeginLoc, Replacement);
-            emplaceTransformation(
-                new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
+            NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+          if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
             return;
           }
         } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
