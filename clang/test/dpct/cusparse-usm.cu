@@ -4,7 +4,7 @@
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
 
-int m, n, nnz;
+int m, n, nnz, k, ldb, ldc;
 double alpha;
 const double* csrValA;
 const int* csrRowPtrA;
@@ -41,6 +41,29 @@ int main(){
   cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
   cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
   cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
+
+  cuDoubleComplex alpha_Z, beta_Z, *csrValA_Z, *x_Z, *y_Z;
+
+  //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
+  //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
+  //CHECK-NEXT: mkl::sparse::gemv(*handle, transA, std::complex<double>(alpha_Z.x(),alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, std::complex<double>(beta_Z.x(),beta_Z.y()), y_Z);
+  //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  cusparseZcsrmv(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
+
+  //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
+  //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
+  //CHECK-NEXT: mkl::sparse::gemm(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), n, ldb, beta, y, ldc);
+  //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  cusparseDcsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
+
+  //CHECK: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
+  //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
+  //CHECK-NEXT: mkl::sparse::gemm(*handle, transA, std::complex<double>(alpha_Z.x(),alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, n, ldb, std::complex<double>(beta_Z.x(),beta_Z.y()), y_Z, ldc);
+  //CHECK-NEXT: mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
   //CHECK:int status;
   cusparseStatus_t status;
