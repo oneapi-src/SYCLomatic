@@ -6103,7 +6103,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
-        "cudaRuntimeGetVersion", "clock64");
+        "cudaRuntimeGetVersion", "clock64", "__ldg");
   };
 
   MF.addMatcher(
@@ -6356,6 +6356,12 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcCloseMemHandle") {
     report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
            MapNames::ITFName.at(FuncName));
+  } else if (FuncName == "__ldg") {
+    std::ostringstream OS;
+    printDerefOp(OS, CE->getArg(0));
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+    report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+           FuncName, "there is no correspoinding API in DPC++.");
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
