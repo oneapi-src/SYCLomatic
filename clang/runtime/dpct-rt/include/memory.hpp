@@ -117,6 +117,8 @@ public:
 
   // Allocate
   void *mem_alloc(size_t size) {
+    if (!size)
+      return nullptr;
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
       std::abort();
@@ -136,6 +138,8 @@ public:
 
   // Deallocate
   void mem_free(const void *ptr) {
+    if (!ptr)
+      return;
     std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     m_map.erase(it);
@@ -305,6 +309,8 @@ dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
                                    const void *from_ptr, size_t size,
                                    memcpy_direction direction) {
+  if (!size)
+    return cl::sycl::event{};
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   memcpy_direction real_direction = direction;
