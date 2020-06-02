@@ -107,6 +107,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cublasDiagType_t", "mkl::diag"},
       {"cublasSideMode_t", "mkl::side"},
       {"cublasOperation_t", "mkl::transpose"},
+      {"cublasPointerMode_t", "int"},
+      {"cusparsePointerMode_t", "int"},
       {"cusparseFillMode_t", "mkl::uplo"},
       {"cusparseDiagType_t", "mkl::diag"},
       {"cusparseIndexBase_t", "mkl::index_base"},
