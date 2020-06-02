@@ -3280,6 +3280,8 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   bool IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
                     SM.isMacroArgExpansion(CE->getEndLoc());
 
+  // Offset 1 is the length of the last token ")"
+  FuncCallEnd = SM.getExpansionLoc(FuncCallEnd).getLocWithOffset(1);
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
   SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
   bool CanAvoidUsingLambda = false;
@@ -3581,12 +3583,10 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // cover more cases.
   bool IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
                     SM.isMacroArgExpansion(CE->getEndLoc());
-
-  auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
-  SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
-
   // Offset 1 is the length of the last token ")"
   FuncCallEnd = SM.getExpansionLoc(FuncCallEnd).getLocWithOffset(1);
+  auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
+  SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
 
   bool CanAvoidUsingLambda = false;
   SourceLocation OuterInsertLoc;
@@ -4098,11 +4098,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
   }
 
+  // Offset 1 is the length of the last token ")"
+  FuncCallEnd = FuncCallEnd.getLocWithOffset(1);
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
   SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
 
-  FuncCallEnd =
-      FuncCallEnd.getLocWithOffset(1); // 1 is the length of the last token ")"
   auto FuncCallLength =
       SM->getCharacterData(FuncCallEnd) - SM->getCharacterData(FuncNameBegin);
 
@@ -5767,6 +5767,8 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
   if (FuncCallEnd.isMacroID())
     FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+  // Offset 1 is the length of the last token ")"
+  FuncCallEnd = FuncCallEnd.getLocWithOffset(1);
 
   // Collect sourceLocations for creating new scope
   std::string PrefixBeforeScope, PrefixInsertStr, SuffixInsertStr;
@@ -5963,7 +5965,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           PrefixInsertStr + IndentStr,
                       getNL() + IndentStr + SuffixInsertStr + std::string("}"));
     if (IsAssigned) {
-      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1),
+      insertAroundRange(FuncNameBegin, FuncCallEnd,
                         std::move(AssignPrefix), std::move(AssignPostfix));
       report(StmtBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
     }

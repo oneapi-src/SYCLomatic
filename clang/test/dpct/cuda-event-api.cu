@@ -324,6 +324,18 @@ void foo() {
 
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
+
+  {
+    // CHECK: auto start_ct1 = clock();
+    // CHECK-NEXT: int err = 0;
+    cudaError_t err = cudaEventRecord(start, 0);
+    // CHECK: auto stop_ct1 = clock();
+    // CHECK-NEXT: err = 0;
+    err = cudaEventRecord(stop, 0);
+    if (cudaSuccess != err) {
+      printf("%s\n", cudaGetErrorString( err));
+    }
+  }
 }
 
 void fun(int) {}

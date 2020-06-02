@@ -527,8 +527,10 @@ findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   ast_type_traits::DynTypedNode LastNode, ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
-    if (!ParentNode.get<Expr>() && !ParentNode.get<Decl>() &&
-        !ParentNode.getSourceRange().getBegin().isMacroID()) {
+    bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||
+                        ParentNode.get<IfStmt>() || ParentNode.get<ForStmt>() ||
+                        ParentNode.get<WhileStmt>() || ParentNode.get<DoStmt>();
+    if (!ParentNode.getSourceRange().getBegin().isMacroID() && IsSingleStmt) {
       break;
     }
     LastNode = ParentNode;
@@ -554,7 +556,7 @@ SourceRange getScopeInsertRange(const Expr *E,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ParentNode = Context.getParents(*E);
-  ast_type_traits::DynTypedNode LastNode;
+  ast_type_traits::DynTypedNode AncestorStmt;
   SourceLocation StmtEnd;
   if (ParentNode.empty()) {
     StmtBegin = FuncNameBegin;
@@ -563,7 +565,7 @@ SourceRange getScopeInsertRange(const Expr *E,
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
   } else {
-    auto AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
+    AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
     StmtBegin = AncestorStmt.getSourceRange().getBegin();
     StmtEnd = AncestorStmt.getSourceRange().getEnd();
     if (StmtBegin.isMacroID())
@@ -572,10 +574,15 @@ SourceRange getScopeInsertRange(const Expr *E,
       StmtEnd = SM.getExpansionLoc(StmtEnd);
   }
 
-  Optional<Token> TokSharedPtr;
-  TokSharedPtr = Lexer::findNextToken(StmtEnd, SM, LangOptions());
-  Token TokSemi = TokSharedPtr.getValue();
-  StmtEndAfterSemi = TokSemi.getEndLoc();
+  if (AncestorStmt.get<Expr>()) {
+    StmtEnd = StmtEnd.getLocWithOffset(Lexer::MeasureTokenLength(
+        SM.getExpansionLoc(StmtEnd), SM,
+        dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  }
+
+  StmtEndAfterSemi = StmtEnd.getLocWithOffset(Lexer::MeasureTokenLength(
+      SM.getExpansionLoc(StmtEnd), SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
   return {StmtBegin, StmtEndAfterSemi};
 }
 
