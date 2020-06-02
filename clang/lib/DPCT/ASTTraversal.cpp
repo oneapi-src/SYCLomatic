@@ -3810,6 +3810,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
         "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
         "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
+        "cublasSgemmBatched", "cublasDgemmBatched", "cublasCgemmBatched",
+        "cublasZgemmBatched",
         /*Extensions*/
         "cublasSgetrfBatched", "cublasDgetrfBatched", "cublasCgetrfBatched",
         "cublasZgetrfBatched", "cublasSgetrsBatched", "cublasDgetrsBatched",
@@ -3997,6 +3999,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+      (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched" ||
+       FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched")) {
+    report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
+    return;
+  }
+
   std::string IndentStr = getIndent(PrefixInsertLoc, *SM).str();
   // PrefixInsertStr: stmt + NL + indent
   // SuffixInsertStr: NL + indent + stmt
@@ -4005,7 +4014,122 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   CallExprReplStr = "";
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
-  if (FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") {
+  if (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched" ||
+      FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched") {
+    std::string Replacement;
+    BLASEnumInfo EnumInfo;
+    std::string BufferType;
+    if (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched") {
+      auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
+      auto ReplInfo = ReplInfoPair->second;
+      Replacement = ReplInfo.ReplName;
+      EnumInfo =
+          BLASEnumInfo(ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
+                       ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
+      BufferType = ReplInfo.BufferTypeInfo[0];
+    } else {
+      auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
+      auto ReplInfo = ReplInfoPair->second;
+      Replacement = ReplInfo.ReplName;
+      EnumInfo =
+          BLASEnumInfo(ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
+                       ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
+      BufferType = ReplInfo.BufferTypeInfo[0];
+    }
+
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
+             MapNames::ITFName.at(FuncName), Replacement);
+      return;
+    }
+
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(i));
+      CallExprArguReplVec.push_back(EA.getReplacedString());
+    }
+
+    // update the replacement of four enmu arguments
+    auto processEnumArgus = [&](const Expr *E, unsigned int Index,
+                                std::string &Argu) {
+      const CStyleCastExpr *CSCE = nullptr;
+      if (CSCE = dyn_cast<CStyleCastExpr>(E)) {
+        std::string CurrentArgumentRepl;
+        processParamIntCastToBLASEnum(E, CSCE, Index, IndentStr, EnumInfo,
+                                      PrefixInsertStr, CurrentArgumentRepl);
+        Argu = CurrentArgumentRepl;
+      }
+    };
+    processEnumArgus(CE->getArg(1), 1, CallExprArguReplVec[1]);
+    processEnumArgus(CE->getArg(2), 2, CallExprArguReplVec[2]);
+
+    // update the replacement of three buffers
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      std::string BufferDecl;
+      CallExprArguReplVec[7] = getBufferNameAndDeclStr(
+          CE->getArg(7), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[9] = getBufferNameAndDeclStr(
+          CE->getArg(10), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[12] = getBufferNameAndDeclStr(
+          CE->getArg(14), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+    }
+
+    // update the replacement of two scalar arguments
+    CallExprArguReplVec[6] = "dpct::get_value(" + CallExprArguReplVec[6] +
+                             ", *" + CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[11] = "dpct::get_value(" + CallExprArguReplVec[11] +
+                              ", *" + CallExprArguReplVec[0] + ")";
+
+    //Declare temp variables for m/n/k/lda/ldb/ldc/alpha/beta/transa/transb/groupsize
+    //These pointers are accessed on host only and the value will be saved before
+    //MKL API returns, so pass the addresses of the variables on stack directly.
+    auto declareTempVars = [&](const std::string &TempVarType,
+                               std::vector<std::string> Names,
+                               std::vector<int> Indexes) {
+      auto Num = Names.size();
+      PrefixInsertStr = PrefixInsertStr + TempVarType;
+      for (size_t i = 0; i < Num; i++) {
+        std::string DeclName =
+            Names[i] +
+            std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+        PrefixInsertStr = PrefixInsertStr + " " + DeclName +
+                          " = " + CallExprArguReplVec[Indexes[i]] + ",";
+        CallExprArguReplVec[Indexes[i]] = "&" + DeclName;
+      }
+      PrefixInsertStr[PrefixInsertStr.size() - 1] = ';';
+      PrefixInsertStr = PrefixInsertStr + getNL() + IndentStr;
+    };
+    if (dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImplicit()))
+      CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
+    else
+      declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {1});
+    if (dyn_cast<DeclRefExpr>(CE->getArg(2)->IgnoreImplicit()))
+      CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
+    else
+      declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {2});
+    declareTempVars(
+        "int64_t",
+        {"m_ct", "n_ct", "k_ct", "lda_ct", "ldb_ct", "ldc_ct", "group_size_ct"},
+        {3, 4, 5, 8, 10, 13, 14});
+    declareTempVars(BufferType, {"alpha_ct", "beta_ct"}, {6, 11});
+
+    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
+
+    if (NeedUseLambda) {
+      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
+        NeedUseLambda = false;
+      }
+    }
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
+  } else if (FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") {
     auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
     MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;

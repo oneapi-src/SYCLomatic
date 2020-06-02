@@ -1113,6 +1113,35 @@ int main() {
   status = cublasDgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
   cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
 
+  float** A_S_array;
+  float** B_S_array;
+  float** C_S_array;
+  double** A_D_array;
+  double** B_D_array;
+  double** C_D_array;
+  cublasOperation_t trans3 = CUBLAS_OP_N;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+  status = cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
+  cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
+  status = cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+  cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+
   // cublas<T>symm
   // CHECK: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
