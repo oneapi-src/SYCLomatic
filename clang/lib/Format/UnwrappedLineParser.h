@@ -143,7 +143,11 @@ private:
   bool tryToParsePropertyAccessor();
   void tryToParseJSFunction();
   bool tryToParseSimpleAttribute();
+#ifdef INTEL_CUSTOMIZATION
+  void addUnwrappedLine(bool MustAdd = false);
+#else
   void addUnwrappedLine();
+#endif
   bool eof() const;
   // LevelDifference is the difference of levels after and before the current
   // token. For example:

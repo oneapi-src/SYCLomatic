@@ -807,11 +807,6 @@ void parseFormatStyle() {
   } else {
     Style = StyleOrErr.get();
   }
-  if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
-      clang::format::FormatRange::migrated) {
-    Style.AllowShortFunctionsOnASingleLine =
-        clang::format::FormatStyle::SFS_None;
-  }
 
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }

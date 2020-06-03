@@ -57,7 +57,9 @@ void foo() {
   // CHECK-NEXT:                          GET_BLOCKS(outputThreadCount, outputThreadCount)) *
   // CHECK-NEXT:               sycl::range<3>(1, 1, 2),
   // CHECK-NEXT:           sycl::range<3>(1, 1, 2)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel();
+  // CHECK-NEXT:       });
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS(outputThreadCount, outputThreadCount), 2, 0>>>();
 
@@ -68,7 +70,9 @@ void foo() {
   // CHECK-NEXT:                          GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS)) *
   // CHECK-NEXT:               sycl::range<3>(1, 1, 0),
   // CHECK-NEXT:           sycl::range<3>(1, 1, 0)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel();
+  // CHECK-NEXT:       });
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS), 0, 0>>>();
 
@@ -79,7 +83,9 @@ void foo() {
   // CHECK-NEXT:                          GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount)) *
   // CHECK-NEXT:               sycl::range<3>(1, 1, 0),
   // CHECK-NEXT:           sycl::range<3>(1, 1, 0)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel();
+  // CHECK-NEXT:       });
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount), 0, 0>>>();
 
@@ -90,7 +96,9 @@ void foo() {
   // CHECK-NEXT:                          GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS)) *
   // CHECK-NEXT:               sycl::range<3>(1, 1, 2),
   // CHECK-NEXT:           sycl::range<3>(1, 1, 2)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel();
+  // CHECK-NEXT:       });
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS), 2, 0>>>();
 
@@ -136,8 +144,7 @@ NNBI(3.0);
 // CHECK: double cosine = cos(2 * PI);
 double cosine = cos(2 * PI);
 
-//CHECK: #define MACRO_KC                                                               \
-//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
+//CHECK: #define MACRO_KC    q_ct1.submit([&](sycl::handler &cgh) {                          \
 //CHECK-NEXT:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),   \
 //CHECK-NEXT:                           sycl::range<3>(1, 1, 2)),                            \
@@ -149,8 +156,7 @@ double cosine = cos(2 * PI);
 MACRO_KC
 
 
-//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
-//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
+//CHECK: #define HARD_KC(NAME, a, b, c, d)   q_ct1.submit([&](sycl::handler &cgh) {          \
 //CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
 //CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
@@ -173,8 +179,7 @@ MACRO_KC
 HARD_KC(foo3,3,2,1,0)
 
 
-// CHECK: #define MACRO_KC2(a, b, c, d)                                                  \
-// CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
+// CHECK: #define MACRO_KC2(a, b, c, d)     q_ct1.submit([&](sycl::handler &cgh) {            \
 // CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
 // CHECK-NEXT:                                                                                \
 // CHECK-NEXT:     auto c_ct0 = c;                                                            \

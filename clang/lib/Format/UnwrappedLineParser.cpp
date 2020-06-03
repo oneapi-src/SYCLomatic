@@ -46,6 +46,28 @@ static bool isAllSpaceUntilNL(const FormatToken *FormatTok,
   }
   return AllSpaceUntilNL;
 }
+static bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
+                         const SourceManager &SM) {
+  auto A = TokA->getStartOfNonWhitespace();
+  auto B = TokB->getStartOfNonWhitespace();
+  auto ALocInfo = SM.getDecomposedLoc(A);
+  auto BLocInfo = SM.getDecomposedLoc(B);
+  bool InValidFlag = false;
+  auto ALineNumber =
+      SM.getLineNumber(ALocInfo.first, ALocInfo.second, &InValidFlag);
+  if (InValidFlag) {
+    return false;
+  }
+  auto BLineNumber =
+      SM.getLineNumber(BLocInfo.first, BLocInfo.second, &InValidFlag);
+  if (InValidFlag) {
+    return false;
+  }
+  if (ALineNumber == BLineNumber)
+    return true;
+  else
+    return false;
+}
 #endif
 class FormatTokenSource {
 public:
@@ -175,7 +197,11 @@ public:
 
   ~ScopedLineState() {
     if (!Parser.Line->Tokens.empty()) {
+#ifdef INTEL_CUSTOMIZATION
+      Parser.addUnwrappedLine(true);
+#else
       Parser.addUnwrappedLine();
+#endif
     }
     assert(Parser.Line->Tokens.empty());
     Parser.Line = std::move(PreBlockLine);
@@ -1155,14 +1181,18 @@ void UnwrappedLineParser::parseStructuralElement() {
       if (FormatTok->Tok.is(tok::l_brace)) {
 
 #ifdef INTEL_CUSTOMIZATION
-        if ((formatRangeGetter() == FormatRange::all &&
-             Style.BraceWrapping.AfterExternBlock) ||
-            (formatRangeGetter() == FormatRange::migrated &&
-             isAllSpaceUntilNL(FormatTok, SourceMgr))) {
-          addUnwrappedLine();
-          parseBlock(/*MustBeDeclaration=*/true);
+        if (!Style.IndentExternBlock) {
+          if ((formatRangeGetter() == FormatRange::all &&
+               Style.BraceWrapping.AfterExternBlock) ||
+              (formatRangeGetter() == FormatRange::migrated &&
+               isAllSpaceUntilNL(FormatTok, SourceMgr)))
+            addUnwrappedLine();
+          parseBlock(/*MustBeDeclaration=*/true,
+                     /*AddLevel=*/Style.BraceWrapping.AfterExternBlock);
         } else {
-          parseBlock(/*MustBeDeclaration=*/true, /*AddLevel=*/false);
+          parseBlock(/*MustBeDeclaration=*/true,
+                     /*AddLevel=*/Style.IndentExternBlock ==
+                         FormatStyle::IEBS_Indent);
         }
 #else
         if (!Style.IndentExternBlock) {
@@ -2874,13 +2904,22 @@ LLVM_ATTRIBUTE_UNUSED static void printDebugInfo(const UnwrappedLine &Line,
   llvm::dbgs() << "\n";
 }
 
+#ifdef INTEL_CUSTOMIZATION
+void UnwrappedLineParser::addUnwrappedLine(bool MustAdd) {
+#else
 void UnwrappedLineParser::addUnwrappedLine() {
+#endif
   if (Line->Tokens.empty())
     return;
   LLVM_DEBUG({
     if (CurrentLines == &Lines)
       printDebugInfo(*Line);
   });
+#ifdef INTEL_CUSTOMIZATION
+  if (!MustAdd && FormatTok->Previous &&
+      isInSameLine(FormatTok->Previous, FormatTok, SourceMgr))
+    return;
+#endif
   CurrentLines->push_back(std::move(*Line));
   Line->Tokens.clear();
   Line->MatchingOpeningBlockLineIndex = UnwrappedLine::kInvalidIndex;

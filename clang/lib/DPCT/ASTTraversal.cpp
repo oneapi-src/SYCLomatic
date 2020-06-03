@@ -3710,7 +3710,8 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         std::string InsertStr;
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none && !CanAvoidBrace)
           InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
-                      ReplStr + ";" + "}" + getNL() + IndentStr;
+                      ReplStr + ";" + getNL() + IndentStr + "}" + getNL() +
+                      IndentStr;
         else
           InsertStr = PrefixInsertStr + ReplStr + ";" + getNL() + IndentStr;
         emplaceTransformation(

@@ -267,3 +267,50 @@ FFFFF(pos, q)
   __shared__ double la[8][0];
   const int tid = threadIdx.x;
 }
+
+float2* xx;
+
+//     CHECK:void foo4()
+//CHECK-NEXT:{
+//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:}
+void foo4()
+{
+  float2 a;
+}
+
+//     CHECK:void foo5() {
+//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:}
+void foo5() {
+  float2 a;
+}
+
+//     CHECK:void foo6() { cl::sycl::float2 a; }
+void foo6() { float2 a; }
+
+//     CHECK:void foo7(cl::sycl::float2 b) {
+//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:}
+void foo7(float2 b) {
+  float2 a;
+}
+
+//     CHECK:void foo8(cl::sycl::float2 b)
+//CHECK-NEXT:{
+//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:}
+void foo8(float2 b)
+{
+  float2 a;
+}
+
+//     CHECK:void foo9(cl::sycl::float2 b) { cl::sycl::float2 a; }
+void foo9(float2 b) { float2 a; }
+
+//     CHECK:void foo10(){
+//CHECK-NEXT:  if ((cl::sycl::float2 *)xx) {}
+//CHECK-NEXT:}
+void foo10(){
+  if ((float2*)xx) {}
+}

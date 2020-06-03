@@ -176,7 +176,8 @@ int main() {
   // CHECK-NEXT: codes. 0 is used instead of an error code in a switch statement. You may need
   // CHECK-NEXT: to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: switch (int stat = 0) {}
+  // CHECK-NEXT: switch (int stat = 0) {
+  // CHECK-NEXT: }
   switch (int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 

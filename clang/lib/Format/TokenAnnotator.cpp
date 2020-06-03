@@ -2383,6 +2383,12 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
     calculateFormattingInformation(**I);
   }
 
+#ifdef INTEL_CUSTOMIZATION
+  if (formatRangeGetter() == FormatRange::migrated) {
+    if (Line.First && !Line.InPPDirective)
+      Line.First->MustBreakBefore = true;
+  }
+#endif
   Line.First->TotalLength =
       Line.First->IsMultiline ? Style.ColumnLimit
                               : Line.FirstStartColumn + Line.First->ColumnWidth;
