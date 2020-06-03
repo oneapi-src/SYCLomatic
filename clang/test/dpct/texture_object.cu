@@ -92,6 +92,12 @@ int main() {
   // CHECK-NEXT: dpct::image_base_p tex42;
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::image_info texDesc42;
+  // CHECK-NEXT: res42.type = dpct::data_pitch;
+  // CHECK-NEXT: res42.data.pitched.data = d_data42;
+  // CHECK-NEXT: res42.data.pitched.chn = desc42;
+  // CHECK-NEXT: res42.data.pitched.x = sizeof(sycl::float4) * 32;
+  // CHECK-NEXT: res42.data.pitched.y = 32;
+  // CHECK-NEXT: res42.data.pitched.pitch = sizeof(sycl::float4) * 32;
   // CHECK-NEXT: res42.type = dpct::data_matrix;
   // CHECK-NEXT: res42.data.matrix = a42;
   // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -109,6 +115,12 @@ int main() {
   cudaTextureObject_t tex42;
   cudaResourceDesc res42;
   cudaTextureDesc texDesc42;
+  res42.resType = cudaResourceTypePitch2D;
+  res42.res.pitch2D.devPtr = d_data42;
+  res42.res.pitch2D.desc = desc42;
+  res42.res.pitch2D.width = sizeof(float4) * 32;
+  res42.res.pitch2D.height = 32;
+  res42.res.pitch2D.pitchInBytes = sizeof(float4) * 32;
   res42.resType = cudaResourceTypeArray;
   res42.res.array.array = a42;
   texDesc42.addressMode[0] = cudaAddressModeClamp;

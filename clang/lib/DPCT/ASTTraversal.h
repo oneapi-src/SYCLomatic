@@ -1228,6 +1228,7 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
     return DpctGlobalInfo::findAncestor<MemberExpr>(S);
   }
   static MapNames::MapTy LinearResourceTypeNames;
+  static MapNames::MapTy Pitched2DResourceTypeNames;
 
 public:
   TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

@@ -9242,11 +9242,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   if (ResName == "array") {
     if (auto ArrayMemberExpr = getParentMemberExpr(ME)) {
       emplaceTransformation(new ReplaceToken(
-          ME->getMemberLoc(),
-          Lexer::getLocForEndOfToken(ArrayMemberExpr->getEndLoc(), 0,
-                                     Context.getSourceManager(),
-                                     Context.getLangOpts()),
-          "matrix"));
+          ME->getMemberLoc(), ArrayMemberExpr->getEndLoc(), "matrix"));
     }
   } else if (ResName == "linear") {
     if (auto LinearMemberExpr = getParentMemberExpr(ME)) {
@@ -9255,6 +9251,15 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
           std::string(MapNames::findReplacedName(
               LinearResourceTypeNames,
               LinearMemberExpr->getMemberNameInfo().getAsString()))));
+    }
+  } else if (ResName == "pitch2D") {
+    emplaceTransformation(new RenameFieldInMemberExpr(ME, "pitched"));
+    if (auto Pitched2DMemberExpr = getParentMemberExpr(ME)) {
+      emplaceTransformation(new RenameFieldInMemberExpr(
+          Pitched2DMemberExpr,
+          std::string(MapNames::findReplacedName(
+              Pitched2DResourceTypeNames,
+              Pitched2DMemberExpr->getMemberNameInfo().getAsString()))));
     }
   } else {
     report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,

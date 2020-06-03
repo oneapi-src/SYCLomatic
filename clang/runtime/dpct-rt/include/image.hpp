@@ -228,7 +228,7 @@ public:
 };
 using image_matrix_p = image_matrix *;
 
-enum image_data_type { data_matrix, data_linear, data_unsupport };
+enum image_data_type { data_matrix, data_linear, data_pitch, data_unsupport };
 
 /// Image data info.
 class image_data {
@@ -241,6 +241,14 @@ public:
       image_channel chn;
       size_t size;
     } linear;
+    struct {
+      void *data;
+      size_t x, y, pitch;
+      image_channel chn;
+      dpct::pitched_data to_pitched_data() {
+        return dpct::pitched_data(data, pitch, x, y);
+      }
+    } pitched;
   } data;
 };
 
@@ -326,17 +334,17 @@ public:
         cl::sycl::range<1>(count / chn_desc.elem_size));
   }
   // Attach 2D data to this class.
-  void attach(dpct::pitched_data data_2D, const image_channel &chn_desc) {
+  void attach(dpct::pitched_data pitched, const image_channel &chn_desc) {
     detach();
-    auto ptr = data_2D.data;
+    auto ptr = pitched.data;
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
-    cl::sycl::range<1> pitch(data_2D.pitch);
+    cl::sycl::range<1> pitch(pitched.pitch);
     _image = new cl::sycl::image<Dimension>(
         ptr, chn_desc.get_channel_order(), chn_desc.type,
-        cl::sycl::range<2>(data_2D.x / chn_desc.elem_size, data_2D.y), pitch);
+        cl::sycl::range<2>(pitched.x / chn_desc.elem_size, pitched.y), pitch);
   }
   // Detach data.
   void detach() {
@@ -361,6 +369,15 @@ template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
                        data->data.linear.size);
     else if (data->type == data_matrix)
       in_image->attach(data->data.matrix);
+  }
+};
+template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
+  void operator()(image<T, 2, IsImageArray> *in_image, image_data *data) {
+    if (data->type == data_matrix)
+      in_image->attach(data->data.matrix);
+    else if (data->type == data_pitch)
+      in_image->attach(data->data.pitched.to_pitched_data(),
+                       data->data.pitched.chn);
   }
 };
 

@@ -178,7 +178,8 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaChannelFormatKindFloat", "dpct::channel_float"},
     // enum Resource Type
     {"cudaResourceTypeArray", "dpct::data_matrix"},
-    {"cudaResourceTypeLinear", "dpct::data_linear"}
+    {"cudaResourceTypeLinear", "dpct::data_linear"},
+    {"cudaResourceTypePitch2D", "dpct::data_pitch"},
     // ...
   };
 
@@ -2818,6 +2819,12 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   return AllAPINames;
 }
 
+MapNames::MapTy TextureRule::Pitched2DResourceTypeNames{
+    {"devPtr", "data"},
+    {"desc", "chn"},
+    {"width", "x"},
+    {"height", "y"},
+    {"pitchInBytes", "pitch"}};
 MapNames::MapTy TextureRule::LinearResourceTypeNames{
     {"devPtr", "data"}, {"sizeInBytes", "size"}, {"desc", "chn"}};
 
