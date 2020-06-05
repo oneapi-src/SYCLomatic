@@ -120,6 +120,7 @@ int main() {
   void *karg1 = 0;
   const int *karg2 = 0;
   int karg3 = 80;
+
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
@@ -147,15 +148,18 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
+  TestThis *args_p;
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto args_p_arg3_ct1 = args_p->arg3;
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 10) * cl::sycl::range<3>(1, 1, intvar), cl::sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, karg3int);
+  // CHECK-NEXT:           testKernel(karg1int, args_p_arg3_ct1, item_ct1, karg3int);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
+  testKernel<<<10, intvar>>>(karg1int, args_p->arg3, karg3int);
 
   struct KernelPointer {
     const int *arg1, *arg2;

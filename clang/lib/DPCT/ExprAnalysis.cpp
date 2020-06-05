@@ -334,6 +334,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
     }
   }
+  dispatch(ME->getBase());
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -491,18 +492,10 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
 
   if (ME->getBase()->isImplicitCXXThis()) {
     IsRedeclareRequired = true;
-  } else {
-    const MemberExpr *LastExpr = nullptr;
-    const MemberExpr *IterExpr =
-        dyn_cast_or_null<const MemberExpr>(ME->getBase());
-    while (IterExpr) {
-      LastExpr = IterExpr;
-      IterExpr = dyn_cast_or_null<const MemberExpr>(IterExpr->getBase());
-    }
+  }
 
-    if (LastExpr && LastExpr->getBase()->isImplicitCXXThis()) {
-      IsRedeclareRequired = true;
-    }
+  if (ME->isArrow()) {
+    IsRedeclareRequired = true;
   }
 
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
