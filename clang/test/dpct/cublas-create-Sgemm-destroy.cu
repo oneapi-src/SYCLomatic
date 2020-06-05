@@ -91,8 +91,8 @@ int main() {
   __half *d_A_H = 0;
   __half *d_B_H = 0;
   __half *d_C_H = 0;
-  __half alpha_H = 1.0;
-  __half beta_H = 0.0;
+  __half alpha_H;
+  __half beta_H;
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */

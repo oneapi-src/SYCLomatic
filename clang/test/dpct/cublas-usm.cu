@@ -252,8 +252,8 @@ int main() {
   __half *d_A_H = 0;
   __half *d_B_H = 0;
   __half *d_C_H = 0;
-  __half alpha_H = 1.0;
-  __half beta_H = 0.0;
+  __half alpha_H;
+  __half beta_H;
   cublasOperation_t trans3 = CUBLAS_OP_N;
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
