@@ -6571,7 +6571,7 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
-    if (!FD->isImplicitlyInstantiable())
+    if (!FD->isTemplateInstantiation())
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
 
     if (!FD)

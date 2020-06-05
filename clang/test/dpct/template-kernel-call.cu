@@ -5,6 +5,8 @@
 
 void printf(const char *format, unsigned char data);
 
+template<class T> void runTest();
+
 template <class TName, unsigned N, class TData>
 // CHECK: void testKernelPtr(const TData *L, const TData *M, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
@@ -70,7 +72,7 @@ void runTest() {
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const T *)karg1);
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg3_buf_ct1 = dpct::get_buffer_and_offset(karg3);
   // CHECK-NEXT:   size_t karg3_offset_ct1 = karg3_buf_ct1.second;
@@ -84,13 +86,13 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const void *karg1_ct0 = (const void *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           T *karg3_ct1 = (T *)(&karg3_acc_ct1[0] + karg3_offset_ct1);
   // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_ct0, karg3_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
-  testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
+  testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg3);
 
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg4_buf_ct0 = dpct::get_buffer_and_offset(karg4);
@@ -161,6 +163,9 @@ void runTest() {
   // CHECK-NEXT:     });
   testKernel<TT><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 }
+
+template void runTest<int>();
+template void runTest<float>();
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
