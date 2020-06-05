@@ -112,6 +112,67 @@ int main() {
   status = cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
   cublasHgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
+  void *alpha, *beta, *A, *B, *C;
+
+  // CHECK: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(C);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::half*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::half*)beta, *handle), C_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{dpct::get_value((float*)alpha, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, sycl::vec<float, 1>{dpct::get_value((float*)beta, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((double*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((double*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::float2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::float2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C);
+  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::double2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::double2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  status = cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_16F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_32F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_32F, N, B, CUDA_R_32F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_64F, N, B, CUDA_R_64F, N, beta, C, CUDA_R_64F, N, CUDA_R_64F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_C_32F, N, B, CUDA_C_32F, N, beta, C, CUDA_C_32F, N, CUDA_C_32F, CUBLAS_GEMM_DEFAULT);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_C_64F, N, B, CUDA_C_64F, N, beta, C, CUDA_C_64F, N, CUDA_C_64F, CUBLAS_GEMM_DEFAULT);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cublasGemmEx was not migrated, because the parameter CUDA_R_8I/CUDA_R_8I/CUDA_R_32I/CUDA_R_32I is unsupported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, 3, N, B, 3, N, beta, C, 10, N, 10, -1);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_8I, N, B, CUDA_R_8I, N, beta, C, CUDA_R_32I, N, CUDA_R_32I, CUBLAS_GEMM_DEFAULT);
+
   // CHECK: for (;;) {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);

@@ -101,6 +101,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cublasHandle_t", ClNamespace + "::queue*"},
       {"cublasStatus_t", "int"},
       {"cublasStatus", "int"},
+      {"cublasGemmAlgo_t", "int"},
+      {"cudaDataType_t", "int"},
       {"cuComplex", ClNamespace + "::float2"},
       {"cuDoubleComplex", ClNamespace + "::double2"},
       {"cublasFillMode_t", "mkl::uplo"},
@@ -2068,6 +2070,47 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{2},
           1, 0, 3, "mkl::blas::trmm"}},
     };
+
+// MKL API does not have computeType and algo parameters.
+// computeType(alpha/beta)   AType/BType     CType           IsSupportInMKL
+// CUDA_R_16F(2)             CUDA_R_16F(2)   CUDA_R_16F(2)   yes
+// CUDA_R_32I(10)            CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_16F(2)   no (but can emulate, cast alpha/beta to half)
+// CUDA_R_32F(0)             CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_32F(0)   yes
+// CUDA_R_32F(0)             CUDA_R_32F(0)   CUDA_R_32F(0)   yes
+// CUDA_R_64F(1)             CUDA_R_64F(1)   CUDA_R_64F(1)   yes
+// CUDA_C_32F(4)             CUDA_C_8I(7)    CUDA_C_32F(4)   no
+// CUDA_C_32F(4)             CUDA_C_32F(4)   CUDA_C_32F(4)   yes
+// CUDA_C_64F(5)             CUDA_C_64F(5)   CUDA_C_64F(5)   yes
+const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+    MapNames::BLASGemmExTypeInfoMap{
+        {"222",
+         {MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half"}},
+        {"022",
+         {"float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half"}},
+        {"020",
+         {"float", "float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half", "float", "float"}},
+        {"000", {"float", "float", "float", "float", "float", "float"}},
+        {"111", {"double", "double", "double", "double", "double", "double"}},
+        {"444",
+         {MapNames::getClNamespace() + "::float2", "std::complex<float>",
+          MapNames::getClNamespace() + "::float2", "std::complex<float>",
+          MapNames::getClNamespace() + "::float2", "std::complex<float>"}},
+        {"555",
+         {MapNames::getClNamespace() + "::double2", "std::complex<double>",
+          MapNames::getClNamespace() + "::double2", "std::complex<double>",
+          MapNames::getClNamespace() + "::double2", "std::complex<double>"}}};
 
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>

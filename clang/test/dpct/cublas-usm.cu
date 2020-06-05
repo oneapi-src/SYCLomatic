@@ -272,6 +272,14 @@ int main() {
   // CHECK: a = cublasHgemm(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
   a = cublasHgemm(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
+  void *alpha, *beta, *A, *B, *C;
+  cudaDataType_t type = CUDA_R_16F;
+  cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
 
   float** d_A_S_array;
   float** d_B_S_array;

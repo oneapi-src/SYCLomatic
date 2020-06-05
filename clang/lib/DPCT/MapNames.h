@@ -234,6 +234,15 @@ public:
     std::string DistributeType;
   };
 
+  struct BLASGemmExTypeInfo {
+    std::string OriginScalarType;
+    std::string ScalarType;
+    std::string OriginABType;
+    std::string ABType;
+    std::string OriginCType;
+    std::string CType;
+  };
+
   struct ThrustFuncReplInfo {
     std::string ReplName;
     std::string ExtraParam;
@@ -264,6 +273,9 @@ public:
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
+
+  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+      BLASGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
