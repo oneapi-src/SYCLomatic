@@ -167,8 +167,36 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   auto End = getOffset(EndLoc);
   auto LastTokenLength =
       Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+
+  // Find the begin/end location include prefix and postfix
+  // Set Prefix and Postfix strings
+  auto BeginLocWithoutPrefix = BeginLoc;
+  BeginLoc = getBeginLocOfPreviousEmptyMacro(BeginLoc);
+  auto RewritePrefixLength = SM.getCharacterData(BeginLocWithoutPrefix) -
+                             SM.getCharacterData(BeginLoc);
+
+  auto EndLocWithoutPostfix = EndLoc;
+  EndLoc = getEndLocOfFollowingEmptyMacro(EndLoc);
+  auto RewritePostfixLength =
+      SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
+
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
+
+  RewritePrefix =
+    std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
+
+  // Get the token end of EndLocWithoutPostfix and EndLoc for correct
+  // RewritePostfix
+  EndLocWithoutPostfix =
+    EndLocWithoutPostfix.getLocWithOffset(Lexer::MeasureTokenLength(
+      EndLocWithoutPostfix, SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
+      EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+
+  RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
+    RewritePostfixLength);
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;

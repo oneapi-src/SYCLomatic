@@ -159,6 +159,14 @@ private:
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
+  inline std::string getRewritePrefix() {
+    return RewritePrefix;
+  }
+
+  inline std::string getRewritePostfix() {
+    return RewritePostfix;
+  }
+
   static std::string ref(const Expr *Expression) {
     ExprAnalysis EA(Expression);
     return EA.getReplacedString();
@@ -372,6 +380,8 @@ private:
   size_t SrcLength;
   FileID FileId;
   StringReplacements ReplSet;
+  std::string RewritePrefix;
+  std::string RewritePostfix;
 };
 
 /// Analyze expression used as argument.

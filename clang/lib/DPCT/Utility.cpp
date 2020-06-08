@@ -1738,6 +1738,7 @@ std::string getHashStrFromLoc(SourceLocation Loc) {
   return CombinedStr.str();
 }
 
+
 bool IsTypeChangedToPointer(const DeclRefExpr * DRE) {
   auto D = DRE->getDecl();
   auto T = D->getType();
@@ -1747,3 +1748,40 @@ bool IsTypeChangedToPointer(const DeclRefExpr * DRE) {
                                  VD->hasAttr<CUDADeviceAttr>());
   return false;
 }
+
+SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Map = dpct::DpctGlobalInfo::getEndOfEmptyMacros();
+  auto It = Map.find(getHashStrFromLoc(Loc));
+  if (It != Map.end()) {
+    return It->second;
+  }
+  return Loc;
+}
+
+SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
+  Token Tok;
+  Lexer::getRawToken(
+    Loc.getLocWithOffset(Lexer::MeasureTokenLength(
+      Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+    Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+
+  SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
+  while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
+    Lexer::getRawToken(
+      EndOfToken.getLocWithOffset(Lexer::MeasureTokenLength(
+        EndOfToken, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+      Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+    EndOfToken = SM.getExpansionLoc(Tok.getEndLoc());;
+  }
+
+  auto It = Map.find(getHashStrFromLoc(EndOfToken));
+  if (It != Map.end()) {
+    return It->second;
+  }
+  return Loc;
+}
+
+

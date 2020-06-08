@@ -20,7 +20,8 @@ namespace dpct {
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
   Analyzer.analyze(Call->getArg(Idx));
-  return Analyzer.getReplacedString();
+  return Analyzer.getRewritePrefix() + Analyzer.getReplacedString() +
+         Analyzer.getRewritePostfix();
 }
 
 std::vector<std::string> CallExprRewriter::getMigratedArgs() {

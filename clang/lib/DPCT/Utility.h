@@ -404,4 +404,6 @@ std::string getHashStrFromLoc(clang::SourceLocation Loc);
 const clang::FunctionDecl *getFunctionDecl(const clang::Stmt *S);
 const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
 bool IsTypeChangedToPointer(const clang::DeclRefExpr * DRE);
+clang::SourceLocation getBeginLocOfPreviousEmptyMacro(clang::SourceLocation Loc);
+clang::SourceLocation getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
 #endif // DPCT_UTILITY_H

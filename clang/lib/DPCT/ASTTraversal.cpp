@@ -148,6 +148,23 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                 MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
       }
     }
+  } else {
+    // Extend the Range to include comments/whitespaces before next token
+    auto EndLoc = Range.getEnd();
+    Token Tok;
+    do {
+      EndLoc = SM.getExpansionLoc(EndLoc);
+      Lexer::getRawToken(
+          EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
+              EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+          Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+      EndLoc = Tok.getEndLoc();
+    } while (Tok.isNot(tok::eof) && Tok.is(tok::comment));
+
+    if (Tok.isNot(tok::eof)) {
+      dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(Tok.getLocation())] = Range.getBegin();
+      dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(Range.getBegin())] = Range.getEnd();
+    }
   }
 
   if (!IsInRoot) {

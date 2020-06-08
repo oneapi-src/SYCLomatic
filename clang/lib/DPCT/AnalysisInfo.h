@@ -917,6 +917,12 @@ public:
     return MacroTokenToMacroDefineLoc;
   }
 
+  static std::map<std::string, SourceLocation> &getBeginOfEmptyMacros() {
+    return BeginOfEmptyMacros;
+  }
+  static std::map<std::string, SourceLocation> &getEndOfEmptyMacros() {
+    return EndOfEmptyMacros;
+  }
   static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
@@ -1048,6 +1054,13 @@ private:
       ExpansionRangeToMacroRecord;
   static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
+  // key: The hash string of the first non-empty token after the end location of
+  // macro expansion
+  // value: begin location of macro expansion
+  static std::map<std::string, SourceLocation> EndOfEmptyMacros;
+  // key: The hash string of the begin location of the macro expansion
+  // value: The end location of the macro expansion
+  static std::map<std::string, SourceLocation> BeginOfEmptyMacros;
   static std::map<MacroInfo *, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
