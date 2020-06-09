@@ -37,6 +37,7 @@ set(files
   bmi2intrin.h
   bmiintrin.h
   __clang_cuda_builtin_vars.h
+  __clang_cuda_math.h
   __clang_cuda_cmath.h
   __clang_cuda_complex_builtins.h
   __clang_cuda_device_functions.h
@@ -46,6 +47,7 @@ set(files
   __clang_cuda_runtime_wrapper.h
   __clang_dpct_math.h
   cetintrin.h
+  cet.h
   cldemoteintrin.h
   clzerointrin.h
   cpuid.h
@@ -88,6 +90,7 @@ set(files
   ptwriteintrin.h
   rdseedintrin.h
   rtmintrin.h
+  serializeintrin.h
   sgxintrin.h
   s390intrin.h
   shaintrin.h
@@ -103,6 +106,7 @@ set(files
   tbmintrin.h
   tgmath.h
   tmmintrin.h
+  tsxldtrkintrin.h
   unwind.h
   vadefs.h
   vaesintrin.h
@@ -110,6 +114,7 @@ set(files
   vecintrin.h
   vpclmulqdqintrin.h
   waitpkgintrin.h
+  wasm_simd128.h
   wbnoinvdintrin.h
   wmmintrin.h
   __wmmintrin_aes.h
@@ -143,8 +148,7 @@ set(ppc_wrapper_files
 set(openmp_wrapper_files
   openmp_wrappers/math.h
   openmp_wrappers/cmath
-  openmp_wrappers/__clang_openmp_math.h
-  openmp_wrappers/__clang_openmp_math_declares.h
+  openmp_wrappers/__clang_openmp_device_functions.h
   openmp_wrappers/new
 )
 

@@ -468,7 +468,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (DRE->getType()->isReferenceType()) {
     IsRedeclareRequired = true;
-  } else if (!DRE->getDecl()->isLexicallyWithinFunctionOrMethod()) {
+  } else if (!DRE->getDecl()->isInLocalScope()) {
     IsRedeclareRequired = true;
   }
   // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches

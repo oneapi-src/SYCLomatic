@@ -590,6 +590,7 @@ public:
     Context = &C;
     SM = &(Context->getSourceManager());
     FM = &(SM->getFileManager());
+    Context->getParentMapContext().setTraversalKind(TK_AsIs);
   }
   static CompilerInstance &getCompilerInstance() {
     assert(CI);
@@ -1255,7 +1256,7 @@ public:
 
   MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var)
       : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
-        Scope((Var->isLexicallyWithinFunctionOrMethod())
+        Scope((Var->isInLocalScope())
                   ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                   : Global),
         PointerAsArray(false) {

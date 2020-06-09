@@ -24,9 +24,10 @@ config.name = 'SYCL'
 config.test_format = lit.formats.ShTest()
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = ['.c', '.cpp'] #add .spv. Currently not clear what to do with those
+config.suffixes = ['.c', '.cpp', '.dump'] #add .spv. Currently not clear what to do with those
 
-config.excludes = ['Inputs']
+# feature tests are considered not so lightweight, so, they are excluded by default
+config.excludes = ['Inputs', 'feature-tests']
 
 # test_source_root: The root path where tests are located.
 config.test_source_root = os.path.dirname(__file__)
@@ -57,19 +58,24 @@ elif platform.system() == "Darwin":
 
 llvm_config.with_environment('PATH', config.sycl_tools_dir, append_path=True)
 
+config.substitutions.append( ('%threads_lib', config.sycl_threads_lib) )
 config.substitutions.append( ('%sycl_libs_dir',  config.sycl_libs_dir ) )
 config.substitutions.append( ('%sycl_include',  config.sycl_include ) )
 config.substitutions.append( ('%sycl_source_dir', config.sycl_source_dir) )
 config.substitutions.append( ('%opencl_libs_dir',  config.opencl_libs_dir) )
 config.substitutions.append( ('%opencl_include_dir',  config.opencl_include_dir) )
 config.substitutions.append( ('%cuda_toolkit_include',  config.cuda_toolkit_include) )
+config.substitutions.append( ('%sycl_tools_src_dir',  config.sycl_tools_src_dir ) )
+config.substitutions.append( ('%llvm_build_lib_dir',  config.llvm_build_lib_dir ) )
+config.substitutions.append( ('%llvm_build_bin_dir',  config.llvm_build_bin_dir ) )
 
 llvm_config.use_clang()
 
 llvm_config.add_tool_substitutions(['llvm-spirv'], [config.sycl_tools_dir])
 
 backend=lit_config.params.get('SYCL_BE', "PI_OPENCL")
-lit_config.note("Backend: {BACKEND}".format(BACKEND=backend))
+lit_config.note("Backend (SYCL_BE): {}".format(backend))
+config.substitutions.append( ('%sycl_be', backend) )
 
 get_device_count_by_type_path = os.path.join(config.llvm_tools_dir, "get_device_count_by_type")
 
