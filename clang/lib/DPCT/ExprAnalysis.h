@@ -349,13 +349,11 @@ protected:
   void analyzeExpr(const CallExpr *CE);
   void analyzeExpr(const CXXNamedCastExpr *NCE);
 
-  void analyzeElaboratedType(const ElaboratedTypeLoc &TL, const Expr *CSCE);
-
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(const TypeLoc &TL, const Expr *E = nullptr);
+  void analyzeType(TypeLoc TL, const Expr *E = nullptr);
 
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}

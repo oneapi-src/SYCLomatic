@@ -406,4 +406,7 @@ const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
 bool IsTypeChangedToPointer(const clang::DeclRefExpr * DRE);
 clang::SourceLocation getBeginLocOfPreviousEmptyMacro(clang::SourceLocation Loc);
 clang::SourceLocation getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
+
+std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
+std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 #endif // DPCT_UTILITY_H

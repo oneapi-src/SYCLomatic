@@ -402,26 +402,23 @@ void ExprAnalysis::analyzeExpr(const CXXNamedCastExpr *NCE) {
   analyzeType(NCE->getTypeInfoAsWritten(), NCE);
 }
 
-void ExprAnalysis::analyzeElaboratedType(const ElaboratedTypeLoc &TL, const Expr *CSCE) {
-  // elaborated types are looked up with the namespace qualifier, but without
-  // potential template parameters
-  auto NTL = TL.getNamedTypeLoc();
-  auto TyName = TL.getType().getAsString();
-  if (NTL.getTypeLocClass() == TypeLoc::TemplateSpecialization) {
-    auto P = TyName.find('<');
-    if (P != std::string::npos) {
-      TyName = TyName.substr(0, P);
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+  SourceRange SR = TL.getSourceRange();
+  std::string TyName;
+
+  auto ETL = TL.getAs<ElaboratedTypeLoc>();
+  if (ETL) {
+    auto QualifierLoc = ETL.getQualifierLoc();
+    TL = ETL.getNamedTypeLoc();
+    TyName = getNestedNameSpecifierString(QualifierLoc);
+    if (ETL.getTypePtr()->getKeyword() == ETK_Typename) {
+      if (QualifierLoc)
+        SR.setBegin(QualifierLoc.getBeginLoc());
+      else
+        SR = TL.getSourceRange();
     }
   }
-  auto TyLen = TyName.length();
-  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
-    addReplacement(TL.getBeginLoc(), TyLen, TyName);
-  }
-  analyzeType(NTL, CSCE);
-}
 
-void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
-  std::string TyName;
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -429,33 +426,37 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   case TypeLoc::Pointer:
     return analyzeType(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:
-    TyName = TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
+    TyName +=
+        TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
   case TypeLoc::Record:
-    TyName = TL.getType().getAsString();
+    TyName += DpctGlobalInfo::getTypeName(TL.getType());
     break;
-  case TypeLoc::Elaborated: {
-    return analyzeElaboratedType(TYPELOC_CAST(ElaboratedTypeLoc), CSCE);
-  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
-      return addReplacement(TL.getBeginLoc(), TL.getEndLoc(),
-                            CSCE, D->getIndex());
+      return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                            D->getIndex());
     } else {
       return;
     }
-  case TypeLoc::TemplateSpecialization:
-    return analyzeTemplateSpecializationType(
-        TYPELOC_CAST(TemplateSpecializationTypeLoc));
+  case TypeLoc::TemplateSpecialization: {
+    llvm::raw_string_ostream OS(TyName);
+    auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
+    TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    SR.setEnd(TSTL.getTemplateNameLoc());
+    analyzeTemplateSpecializationType(TSTL);
+    break;
+  }
   case TypeLoc::DependentTemplateSpecialization:
-    return analyzeTemplateSpecializationType(
+    analyzeTemplateSpecializationType(
         TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
+    break;
   default:
     return;
   }
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName))
-    addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, TyName);
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
 }
 
 void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {

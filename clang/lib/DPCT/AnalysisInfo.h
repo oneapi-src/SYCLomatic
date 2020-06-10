@@ -768,9 +768,14 @@ public:
 
   static inline std::string getTypeName(QualType QT,
                                         const ASTContext &Context) {
-    if (QT->getTypeClass() == Type::Elaborated)
-      return getUnqualifiedTypeName(QT->getAs<ElaboratedType>()->getNamedType(),
-                                    Context);
+    if (auto ET = QT->getAs<ElaboratedType>()) {
+      if (ET->getQualifier())
+        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
+                                       ET->getNamedType(),
+                                       ET->getOwnedTagDecl());
+      else
+        QT = ET->getNamedType();
+    }
     return QT.getAsString(Context.getPrintingPolicy());
   }
   static inline std::string getTypeName(QualType QT) {
@@ -1118,7 +1123,6 @@ public:
     return getBaseName();
   }
 
-  inline const std::string &getOrginalBaseType() { return OrginalBaseType; }
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
   // false, otherwise "()" will be returned.
@@ -1127,7 +1131,6 @@ public:
   inline bool isTemplate() { return IsTemplate; }
   inline bool isPointer() { return IsPointer; }
   inline bool isReference() { return IsReference; }
-  inline bool isElaborated() { return IsElaborated; }
   inline void adjustAsMemType() {
     setPointerAsArray();
     removeQualifier();
@@ -1139,7 +1142,7 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
-  CtTypeInfo() : IsPointer(false), IsTemplate(false), IsElaborated(false) {}
+  CtTypeInfo() : IsPointer(false), IsTemplate(false) {}
 
   /// For ConstantArrayType, size in generated code is folded as an integer.
   /// If \p NeedSizeFold is true, original size expression will followed as
@@ -1183,8 +1186,7 @@ private:
   /// IncompleteArray is an array defined without size.
   /// e.g.: extern __shared__ int a[];
   void setArrayInfo(const IncompleteArrayTypeLoc &TL, bool NeedSizeFold);
-  void setTemplateInfo(const TypeLoc &TL);
-  void setName(QualType Type);
+  void setName(const TypeLoc &TL);
 
   void setPointerAsArray() {
     if (isPointer()) {
@@ -1197,12 +1199,10 @@ private:
 private:
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
-  std::string OrginalBaseType;
   std::vector<SizeInfo> Range;
   bool IsPointer;
   bool IsReference;
   bool IsTemplate;
-  bool IsElaborated;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };

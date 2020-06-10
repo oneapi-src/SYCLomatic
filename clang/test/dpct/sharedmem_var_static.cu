@@ -5,6 +5,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static.dp.cpp
 
 #include <stdio.h>
+#include <complex>
 #define SIZE 64
 
 class TestObject{
@@ -28,11 +29,12 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]], int *s) {
+// CHECK: void nonTypeTemplateReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT: std::complex<int> *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
-  __shared__ int s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
+  __shared__ std::complex<int> s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
   int t = threadIdx.x;
   if (t < 64) {
     s[t] = d[t];
@@ -164,7 +166,7 @@ int main(void) {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
+  // CHECK-NEXT:       sycl::accessor<std::complex<int>, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(

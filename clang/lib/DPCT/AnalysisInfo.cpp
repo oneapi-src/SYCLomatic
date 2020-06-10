@@ -1524,27 +1524,10 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
-  case TypeLoc::Elaborated: {
-    IsElaborated = true;
-    setTypeInfo(TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc());
-    return;
-  }
-  case TypeLoc::TemplateTypeParm:
-  case TypeLoc::TemplateSpecialization:
-  case TypeLoc::DependentTemplateSpecialization:
-    setTemplateInfo(TL);
-    setName(TL.getType());
-    break;
   default:
-    setName(TL.getType());
+    break;
   }
-}
-
-void CtTypeInfo::setTemplateInfo(const TypeLoc &TL) {
-  IsTemplate = true;
-  ExprAnalysis EA;
-  EA.analyze(TL);
-  TDSI = EA.getTemplateDependentStringInfo();
+  setName(TL);
 }
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
@@ -1577,17 +1560,19 @@ std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
   return A.getReplacedString();
 }
 
-void CtTypeInfo::setName(QualType Ty) {
-  auto &PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-  BaseNameWithoutQualifiers = Ty.getUnqualifiedType().getAsString(PP);
+void CtTypeInfo::setName(const TypeLoc &TL) {
+  ExprAnalysis EA;
+  EA.analyze(TL);
+  TDSI = EA.getTemplateDependentStringInfo();
 
-  OrginalBaseType = BaseNameWithoutQualifiers;
-  if (!isTemplate())
-    MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
+  BaseNameWithoutQualifiers = TDSI->getSourceString();
+
   if (BaseName.empty())
-    BaseName = BaseName = BaseNameWithoutQualifiers;
+    BaseName = BaseNameWithoutQualifiers;
   else
     BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+
+  IsTemplate = TL.getTypePtr()->isDependentType();
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(

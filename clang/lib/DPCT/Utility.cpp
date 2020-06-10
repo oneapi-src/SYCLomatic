@@ -1738,14 +1738,13 @@ std::string getHashStrFromLoc(SourceLocation Loc) {
   return CombinedStr.str();
 }
 
-
-bool IsTypeChangedToPointer(const DeclRefExpr * DRE) {
+bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
   auto D = DRE->getDecl();
   auto T = D->getType();
   if (auto VD = dyn_cast<VarDecl>(D))
-    return T->isScalarType() && (VD->hasAttr<CUDASharedAttr>() ||
-                                 VD->hasAttr<CUDAGlobalAttr>() ||
-                                 VD->hasAttr<CUDADeviceAttr>());
+    return T->isScalarType() &&
+           (VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<CUDAGlobalAttr>() ||
+            VD->hasAttr<CUDADeviceAttr>());
   return false;
 }
 
@@ -1784,4 +1783,19 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   return Loc;
 }
 
-
+std::string
+getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+  OS.flush();
+  if (StringRef(Result).startswith("::"))
+    Result = Result.substr(2);
+  return Result;
+}
+std::string
+getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &NNSL) {
+  if (NNSL)
+    return getNestedNameSpecifierString(NNSL.getNestedNameSpecifier());
+  return std::string();
+}
