@@ -48,9 +48,9 @@ int main() {
   thrust::complex<float> cf = foo(thrust::complex<float>(1.0));
 // CHECK:   std::complex<double> cd = foo(std::complex<double>(1.0));
   thrust::complex<double> cd = foo(thrust::complex<double>(1.0));
-// CHECK:   std::complex<float> log = sycl::log(cf);
+// CHECK:   std::complex<float> log = std::log(cf);
   thrust::complex<float> log = thrust::log(cf);
-// CHECK:   std::complex<double> exp = sycl::exp(cd);
+// CHECK:   std::complex<double> exp = std::exp(cd);
   thrust::complex<double> exp = thrust::exp(cd);
 // CHECK:   dpct::device_ptr<std::complex<double>> dc_ptr = dpct::device_malloc<std::complex<double>>(1);
   thrust::device_ptr<thrust::complex<double>> dc_ptr = thrust::device_malloc<thrust::complex<double>>(1);
