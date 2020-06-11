@@ -144,7 +144,7 @@ inline float fast_length(const float *a, int len) {
 /// as signed
 /// \param [in] a The first unsigned integer
 /// \param [in] b The second unsigned integer
-/// \return The bitwise max of the two unsigned integers
+/// \return The bytewise max of the two unsigned integers
 inline unsigned bytewise_max_signed(unsigned a, unsigned b) {
   cl::sycl::vec<unsigned, 1> v0{a}, v1{b};
   auto v2 = v0.as<cl::sycl::char4>();

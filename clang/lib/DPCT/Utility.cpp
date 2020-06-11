@@ -1737,3 +1737,13 @@ std::string getHashStrFromLoc(SourceLocation Loc) {
               << std::hash<std::string>()(dpct::buildString(R.first, R.second));
   return CombinedStr.str();
 }
+
+bool IsTypeChangedToPointer(const DeclRefExpr * DRE) {
+  auto D = DRE->getDecl();
+  auto T = D->getType();
+  if (auto VD = dyn_cast<VarDecl>(D))
+    return T->isScalarType() && (VD->hasAttr<CUDASharedAttr>() ||
+                                 VD->hasAttr<CUDAGlobalAttr>() ||
+                                 VD->hasAttr<CUDADeviceAttr>());
+  return false;
+}

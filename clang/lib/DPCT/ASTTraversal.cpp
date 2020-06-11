@@ -1267,7 +1267,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   const QualType PointeeType = Arg0Type->getPointeeType();
 
   std::string TypeName;
+  bool IsTemplateType = false;
   if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
+    IsTemplateType = true;
     // Type is substituted in template initialization, use the template
     // parameter name
     if (!SubstedType->getReplacedParameter()->getIdentifier()) {
@@ -1278,6 +1280,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   } else {
     TypeName = PointeeType.getAsString();
   }
+
   // add exceptions for atomic tranlastion:
   // eg. source code: atomicMin(double), don't migrate it, its user code.
   //     also: atomic_fetch_min<double> is not available in compute++.
@@ -1300,6 +1303,94 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     report(SL, Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
            getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
            ReplAtomicFuncNameWithSpace);
+
+  // Inline the code for ingeter types
+  static std::unordered_map<std::string, std::string> AtomicMap = {
+    {"atomicAdd", "atomic_fetch_add"},
+    {"atomicSub", "atomic_fetch_sub"},
+    {"atomicAnd", "atomic_fetch_and"},
+    {"atomicOr", "atomic_fetch_or"},
+    {"atomicXor", "atomic_fetch_xor"},
+    {"atomicMin", "atomic_fetch_min"},
+    {"atomicMax", "atomic_fetch_max"},
+  };
+
+  auto IsMacro = CE->getBeginLoc().isMacroID();
+  auto Iter = AtomicMap.find(AtomicFuncName);
+  if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
+      Iter != AtomicMap.end()) {
+    std::string ReplStr{MapNames::getClNamespace() + "::"};
+    ReplStr += Iter->second;
+    ReplStr += "(";
+    ReplStr += MapNames::getClNamespace();
+    ReplStr += "::atomic<";
+    ReplStr += TypeName;
+    if (HasSharedAttr) {
+      ReplStr += ", ";
+      ReplStr += MapNames::getClNamespace();
+      ReplStr += "::access::address_space::local_space";
+    }
+    ReplStr += ">(";
+    ReplStr += MapNames::getClNamespace();
+    if (HasSharedAttr)
+      ReplStr += "::local_ptr<";
+    else
+      ReplStr += "::global_ptr<";
+    ReplStr += TypeName;
+    ReplStr += ">(";
+    // Take care of __shared__ variables because their types are
+    // changed to pointers
+    bool Arg0NeedDeref = false;
+    auto *UO = dyn_cast<UnaryOperator>(CE->getArg(0));
+    if (UO && UO->getOpcode() == clang::UO_AddrOf) {
+      if (auto DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreImpCasts()))
+        Arg0NeedDeref = IsTypeChangedToPointer(DRE);
+    }
+    // Deref the expression if it is the unary operator of a shared simple
+    // variable
+    if (Arg0NeedDeref) {
+      std::ostringstream OS;
+      printDerefOp(OS, CE->getArg(0));
+      ReplStr += OS.str();
+    } else {
+      ReplStr += getStmtSpelling(CE->getArg(0));
+    }
+    ReplStr += ")), ";
+
+    auto Arg1 = CE->getArg(1)->IgnoreImpCasts();
+    bool NeedParens = false;
+    auto Arg1Type = Arg1->getType();
+    std::string Arg1TypeName = Arg1Type.getAsString();
+    if (Arg1TypeName != TypeName) {
+      NeedParens = true;
+      ReplStr += "(";
+      ReplStr += TypeName;
+      ReplStr += ")";
+      // Don't need parens for variables and literals
+      auto DRE = dyn_cast<DeclRefExpr>(Arg1);
+      auto IL = dyn_cast<IntegerLiteral>(Arg1);
+      if (DRE || IL)
+        NeedParens = false;
+    }
+    if (NeedParens)
+      ReplStr += "(";
+    bool Arg1NeedDeref = false;
+    if (auto DRE = dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImpCasts()))
+      Arg1NeedDeref = IsTypeChangedToPointer(DRE);
+    if (Arg1NeedDeref) {
+      std::ostringstream OS;
+      printDerefOp(OS, CE->getArg(1));
+      ReplStr += OS.str();
+    } else {
+      ReplStr += getStmtSpelling(CE->getArg(1));
+    }
+    if (NeedParens)
+      ReplStr += ")";
+    ReplStr += ")";
+
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    return;
+  }
 
   if (HasSharedAttr) {
     ReplacedAtomicFuncName = ReplAtomicFuncNameWithSpace;
@@ -1478,7 +1569,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "host_vector", "CUcontext", "CUevent_st", "__half",
                              "half", "__half2", "half2", "cudaMemoryAdvise",
                              "cudaError_enum", "cudaDeviceProp",
-                             "cudaPitchedPtr", "cusolverDnHandle_t"),
+                             "cudaPitchedPtr", "cusolverDnHandle_t",
+                             "cublasPointerMode_t", "cusparsePointerMode_t"),
                   matchesName("cudnn.*|nccl.*"))))))))
           .bind("cudaTypeDef"),
       this);
@@ -2707,10 +2799,10 @@ REGISTER_RULE(ManualMigrateEnumsRule)
 // Migrate BLAS status values to corresponding int values
 // Other BLAS named values are migrated to corresponding named values
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName("CUBLAS_STATUS.*"))))
-          .bind("BLASStatusConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
+                                "(CUBLAS_STATUS.*)|(CUBLAS_POINTER_MODE.*)"))))
+                    .bind("BLASStatusConstants"),
+                this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
                                 "MODE.*)|(CUBLAS_DIAG.*)"))))
@@ -2765,11 +2857,11 @@ REGISTER_RULE(RandomEnumsRule)
 // Migrate spBLAS status values to corresponding int values
 // Other spBLAS named values are migrated to corresponding named values
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_STATUS.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
-          .bind("SPBLASStatusConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
+                                "(CUSPARSE_STATUS.*)|(CUSPARSE_MATRIX_TYPE.*)|("
+                                "CUSPARSE_POINTER_MODE.*)"))))
+                    .bind("SPBLASStatusConstants"),
+                this);
   MF.addMatcher(
       declRefExpr(
           to(enumConstantDecl(matchesName(
@@ -2812,7 +2904,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
                       "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv",
                       "cusparseZcsrmv", "cusparseScsrmm", "cusparseDcsrmm",
                       "cusparseCcsrmm", "cusparseZcsrmm", "cusparseSetStream",
-                      "cusparseGetStream");
+                      "cusparseGetStream", "cusparseGetPointerMode",
+                      "cusparseSetPointerMode");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -2944,7 +3037,9 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     Repl = LHS + " = mkl::index_base::zero";
   } else if (FuncName == "cusparseSetMatType" ||
-             FuncName == "cusparseDestroyMatDescr") {
+             FuncName == "cusparseDestroyMatDescr" ||
+             FuncName == "cusparseGetPointerMode" ||
+             FuncName == "cusparseSetPointerMode") {
     if (IsAssigned) {
       report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false, FuncName,
              Msg);
@@ -3066,30 +3161,27 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    std::string Alpha = addIndirectionIfNecessary(CE->getArg(5));
-    std::string Beta = addIndirectionIfNecessary(CE->getArg(11));
-    if (FuncName == "cusparseCcsrmv") {
-      Alpha = "std::complex<float>(" + Alpha + ".x()," + Alpha + ".y())";
-      Beta = "std::complex<float>(" + Beta + ".x()," + Beta + ".y())";
-    } else if (FuncName == "cusparseZcsrmv") {
-      Alpha = "std::complex<double>(" + Alpha + ".x()," + Alpha + ".y())";
-      Beta = "std::complex<double>(" + Beta + ".x()," + Beta + ".y())";
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
-             ", " + Alpha + ", " + MatrixHandleName + ", " + X + ", " + Beta +
-             ", " + Y + ")";
+             ", " + "dpct::get_value(" + CallExprArguReplVec[5] + ", *" +
+             CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + X +
+             ", " + "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
+             CallExprArguReplVec[0] + "), " + Y + ")";
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + Alpha + ", " + MatrixHandleName +
-               ", const_cast<" + BufferType + "*>(" + X + "), " + Beta + ", " +
-               Y + ")";
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
+               ", const_cast<" + BufferType + "*>(" + X + "), " +
+               "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
+               CallExprArguReplVec[0] + "), " + Y + ")";
       else
         Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + Alpha + ", " + MatrixHandleName + ", (" +
-               BufferType + "*)" + X + ", " + Beta + ", " + Y + ")";
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
+               ", (" + BufferType + "*)" + X + ", " + "dpct::get_value(" +
+               CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] +
+               "), " + Y + ")";
     }
   } else if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm" ||
              FuncName == "cusparseCcsrmm" || FuncName == "cusparseZcsrmm") {
@@ -3186,34 +3278,32 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    std::string Alpha = addIndirectionIfNecessary(CE->getArg(6));
-    std::string Beta = addIndirectionIfNecessary(CE->getArg(13));
-    if (FuncName == "cusparseCcsrmm") {
-      Alpha = "std::complex<float>(" + Alpha + ".x()," + Alpha + ".y())";
-      Beta = "std::complex<float>(" + Beta + ".x()," + Beta + ".y())";
-    } else if (FuncName == "cusparseZcsrmm") {
-      Alpha = "std::complex<double>(" + Alpha + ".x()," + Alpha + ".y())";
-      Beta = "std::complex<double>(" + Beta + ".x()," + Beta + ".y())";
-    }
-
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " + TransStr +
-             ", " + Alpha + ", " + MatrixHandleName + ", " + B + ", " +
-             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] + ", " +
-             Beta + ", " + C + ", " + CallExprArguReplVec[15] + ")";
+             ", " + "dpct::get_value(" + CallExprArguReplVec[6] + ", *" +
+             CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + B +
+             ", " + CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] +
+             ", " + "dpct::get_value(" + CallExprArguReplVec[13] + ", *" +
+             CallExprArguReplVec[0] + "), " + C + ", " +
+             CallExprArguReplVec[15] + ")";
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + Alpha + ", " + MatrixHandleName  +
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[6] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
                ", const_cast<" + BufferType + "*>(" + B + "), " +
                CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] + ", " +
-               Beta + ", " + C + ", " + CallExprArguReplVec[15] + ")";
+               "dpct::get_value(" + CallExprArguReplVec[13] + ", *" +
+               CallExprArguReplVec[0] + "), " + C + ", " +
+               CallExprArguReplVec[15] + ")";
       else
         Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + Alpha + ", " + MatrixHandleName + ", (" +
-               BufferType + "*)" + B + ", " + CallExprArguReplVec[3] + ", " +
-               CallExprArguReplVec[12] + ", " + Beta + ", " + C + ", " +
-               CallExprArguReplVec[15] + ")";
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[6] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
+               ", (" + BufferType + "*)" + B + ", " + CallExprArguReplVec[3] +
+               ", " + CallExprArguReplVec[12] + ", " + "dpct::get_value(" +
+               CallExprArguReplVec[13] + ", *" + CallExprArguReplVec[0] +
+               "), " + C + ", " + CallExprArguReplVec[15] + ")";
     }
   }
 
@@ -3672,6 +3762,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetVector", "cublasSetVectorAsync", "cublasGetVectorAsync",
         "cublasSetMatrix", "cublasGetMatrix", "cublasSetMatrixAsync",
         "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
+        "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -3950,9 +4041,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr = PrefixInsertStr + BufferDecl;
     }
 
+
     // update the replacement of two scalar arguments
-    CallExprArguReplVec[5] = addIndirectionIfNecessary(CE->getArg(5));
-    CallExprArguReplVec[10] = addIndirectionIfNecessary(CE->getArg(10));
+    CallExprArguReplVec[5] = "dpct::get_value(" + CallExprArguReplVec[5] +
+                             ", *" + CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[10] = "dpct::get_value(" + CallExprArguReplVec[10] +
+                             ", *" + CallExprArguReplVec[0] + ")";
 
     // update the replacement of the fillmode enmu argument
     const CStyleCastExpr *CSCE = nullptr;
@@ -4232,16 +4326,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     // update the replacement of a scalar argument
-    std::string PointeeStr = addIndirectionIfNecessary(CE->getArg(7));
-    if (FuncName == "cublasCtrmm_v2")
-      CallExprArguReplVec[7] =
-          "std::complex<float>(" + PointeeStr + ".x()," + PointeeStr + ".y())";
-    else if (FuncName == "cublasZtrmm_v2")
-      CallExprArguReplVec[7] =
-          "std::complex<double>(" + PointeeStr + ".x()," + PointeeStr + ".y())";
-    else
-      CallExprArguReplVec[7] = PointeeStr;
-
+    CallExprArguReplVec[7] = "dpct::get_value(" + CallExprArguReplVec[7] +
+                             ", *" + CallExprArguReplVec[0] + ")";
 
     // Remove arguments ptrB and ldb from CallExprArguReplVec
     CallExprArguReplVec.erase(CallExprArguReplVec.begin() + 10,
@@ -4331,17 +4417,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
         }
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
-        if (isSimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-          CurrentArgumentRepl =
-              getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit());
-        } else if (isCOCESimpleAddrOf(CE->getArg(i))) {
-          CurrentArgumentRepl =
-              getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit(), true);
-        } else if (isAnIdentifierOrLiteral(CE->getArg(i))) {
-          CurrentArgumentRepl = "*" + getStmtSpelling(CE->getArg(i));
-        } else {
-          CurrentArgumentRepl = "*(" + getStmtSpelling(CE->getArg(i)) + ")";
-        }
+        ExprAnalysis EA(CE->getArg(i));
+        CurrentArgumentRepl = "dpct::get_value(" + EA.getReplacedString() +
+                              ", *" + CallExprArguReplVec[0] + ")";
       } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
@@ -4454,44 +4532,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           }
         }
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
-        if (ReplInfo.PointerTypeInfo[IndexTemp] == "float" ||
-            ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
-          if (isSimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CurrentArgumentRepl =
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit());
-          } else if (isCOCESimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CurrentArgumentRepl =
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit(), true);
-          } else if (isAnIdentifierOrLiteral(CE->getArg(i))) {
-            CurrentArgumentRepl = "*" + getStmtSpelling(CE->getArg(i));
-          } else {
-            CurrentArgumentRepl = "*(" + getStmtSpelling(CE->getArg(i)) + ")";
-          }
-        } else {
-          if (isSimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CurrentArgumentRepl =
-                ReplInfo.PointerTypeInfo[IndexTemp] + "(" +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit()) +
-                ".x()," +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit()) +
-                ".y())";
-          } else if (isCOCESimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CurrentArgumentRepl =
-                ReplInfo.PointerTypeInfo[IndexTemp] + "(" +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit(), true) +
-                ".x()," +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit(), true) +
-                ".y())";
-          } else if (isAnIdentifierOrLiteral(CE->getArg(i))) {
-            CurrentArgumentRepl = ReplInfo.PointerTypeInfo[IndexTemp] + "(" +
-                                  getStmtSpelling(CE->getArg(i)) + "->x()," +
-                                  getStmtSpelling(CE->getArg(i)) + "->y())";
-          } else {
-            CurrentArgumentRepl = ReplInfo.PointerTypeInfo[IndexTemp] + "((" +
-                                  getStmtSpelling(CE->getArg(i)) + ")->x(),(" +
-                                  getStmtSpelling(CE->getArg(i)) + ")->y())";
-          }
-        }
+        ExprAnalysis EA(CE->getArg(i));
+        CurrentArgumentRepl = "dpct::get_value(" + EA.getReplacedString() +
+                              ", *" + CallExprArguReplVec[0] + ")";
       } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
@@ -5027,6 +5070,36 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
                MapNames::ITFName.at(FuncName), Msg->second);
         emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
+      }
+    }
+  } else if (FuncName == "cublasGetPointerMode_v2" ||
+             FuncName == "cublasSetPointerMode_v2") {
+    std::string Msg = "the function call is redundant in DPC++.";
+    SourceRange SR = getFunctionRange(CE);
+    auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
+               SM->getDecomposedLoc(SR.getBegin()).second;
+    if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
+        SM->isMacroArgExpansion(CE->getEndLoc())) {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName), Msg);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName), Msg);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+      }
+    } else {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName), Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName), Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, ""));
       }
     }
   } else if (FuncName == "cublasSetVector" || FuncName == "cublasGetVector" ||

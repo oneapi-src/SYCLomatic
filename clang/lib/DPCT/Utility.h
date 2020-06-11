@@ -403,4 +403,5 @@ bool isInReturnStmt(const clang::Expr *E,
 std::string getHashStrFromLoc(clang::SourceLocation Loc);
 const clang::FunctionDecl *getFunctionDecl(const clang::Stmt *S);
 const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
+bool IsTypeChangedToPointer(const clang::DeclRefExpr * DRE);
 #endif // DPCT_UTILITY_H

@@ -38,6 +38,18 @@ inline mkl::transpose get_transpose(int t) {
   }
 }
 
+/// Get the value of \param s.
+/// Copy the data to host synchronously, then return the data.
+/// \param [in] p The pointer points the data.
+/// \param [in] q The queue where the memory copy should be executed.
+template <typename T>
+inline typename DataType<T>::T2 get_value(const T *s, cl::sycl::queue &q){
+  using Ty = typename DataType<T>::T2;
+  Ty s_h;
+  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
+  return s_h;
+}
+
 /// Cast \param vec data to int, then assign to \param ptr array.
 /// \param [out] ptr A data pointer.
 /// \param [in] vec Input vector with int64_t type elements.
