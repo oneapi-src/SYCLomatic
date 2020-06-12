@@ -119,6 +119,13 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusparseSolveAnalysisInfo_t", "int"},
       {"thrust::device_ptr", "dpct::device_ptr"},
       {"thrust::device_vector", "dpct::device_vector"},
+      {"thrust::device_malloc_allocator", "dpct::device_malloc_allocator"},
+      {"thrust::maximum", "dpstd::maximum"},
+      {"thrust::multiplies", "std::multiplies"},
+      {"thrust::plus", "std::plus"},
+      {"thrust::seq", "dpstd::execution::seq"},
+      {"thrust::divides", "std::divides"},
+      {"thrust::tuple", "std::tuple"},
       {"thrust::host_vector", "std::vector"},
       {"thrust::complex", "std::complex"},
       {"thrust::counting_iterator", "dpstd::counting_iterator"},
@@ -188,8 +195,8 @@ void MapNames::setClNamespace(bool Enable) {
   ThrustFuncNamesMap = {
 #define ENTRY(from, to, policy) { from, {to, policy} },
 #define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
-#define ENTRY_DEVICE(from, to) ENTRY(from, to, "")
-#define ENTRY_BOTH(from, to) ENTRY(from, to, "")
+#define ENTRY_DEVICE(from, to, policy) ENTRY(from, to, policy)
+#define ENTRY_BOTH(from, to, policy) ENTRY(from, to, policy)
 #include "APINamesMapThrust.inc"
 #undef ENTRY
 #undef ENTRY_HOST

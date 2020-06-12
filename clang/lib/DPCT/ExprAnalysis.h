@@ -414,8 +414,10 @@ protected:
   void initArgumentExpr(const Expr *Expression) {
     if (!Expression)
       initExpression(Expression);
-    if (auto Ctor = dyn_cast<CXXConstructExpr>(Expression))
-      Expression = Ctor->getArg(0);
+    if (auto Ctor = dyn_cast<CXXConstructExpr>(Expression)) {
+      if (Ctor->getConstructor()->isCopyConstructor() || Ctor->isElidable())
+        Expression = Ctor->getArg(0);
+    }
     initExpression(Expression);
     if (auto DAE = dyn_cast<CXXDefaultArgExpr>(Expression))
       addReplacement(std::string(getDefaultArgument(DAE->getExpr())));

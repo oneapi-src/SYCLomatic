@@ -1496,9 +1496,28 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     // handle the a regular call expr
     const std::string ThrustFuncName = CE->getDirectCallee()->getName().str();
+    const unsigned NumArgs = CE->getNumArgs();
+    auto QT= CE->getArg(0)->getType();
+    LangOptions LO;
+    std::string ArgT = QT.getAsString(PrintingPolicy(LO));
+
     auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
     assert(ReplInfo != MapNames::ThrustFuncNamesMap.end());
     auto NewName = ReplInfo->second.ReplName;
+
+    if (ThrustFuncName == "copy_if" &&
+        (ArgT.find("execution_policy_base") == std::string::npos &&
+             NumArgs == 5 ||
+         NumArgs > 5)) {
+      NewName = "dpct::" + ThrustFuncName;
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+    } else if (ArgT.find("execution_policy_base") != std::string::npos) {
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+      return;
+    }
+
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
     assert(CE->getNumArgs() > 0);
@@ -1568,41 +1587,32 @@ REGISTER_RULE(ThrustCtorExprRule)
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(anyOf(
-                      hasAnyName("cudaError", "cufftResult_t", "curandStatus",
-                                 "cublasStatus", "CUstream_st", "complex",
-                                 "device_vector", "device_ptr", "host_vector",
-                                 "cublasHandle_t", "CUevent_st", "__half",
-                                 "half", "__half2", "half2", "cudaMemoryAdvise",
-                                 "cudaError_enum", "cudaDeviceProp",
-                                 "cudaPitchedPtr", "counting_iterator",
-                                 "transform_iterator", "permutation_iterator",
-                                 "iterator_difference", "cusolverDnHandle_t",
-                                 "cudaDataType_t"),
-                      matchesName("cudnn.*|nccl.*"))),
-                  typedefDecl(anyOf(
-                      hasAnyName(
-                          "cudaError_t", "CUresult",
-                          "cudaEvent_t", "cublasHandle_t",
-                          "cublasStatus_t", "cuComplex", "cuDoubleComplex",
-                          "cublasFillMode_t", "cublasDiagType_t",
-                          "cublasSideMode_t", "cublasOperation_t",
-                          "cublasStatus", "cusolverStatus_t",
-                          "cusolverEigType_t", "cusolverEigMode_t",
-                          "curandStatus_t", "curandStatus", "cudaStream_t",
-                          "CUstream_st", "complex", "cusparseStatus_t",
-                          "cusparseDiagType_t", "cusparseFillMode_t",
-                          "cusparseIndexBase_t", "cusparseMatrixType_t",
-                          "cusparseOperation_t", "cusparseMatDescr_t",
-                          "cusparseHandle_t", "device_vector", "device_ptr",
-                          "host_vector", "CUcontext", "CUevent_st", "__half",
-                          "half", "__half2", "half2", "cudaMemoryAdvise",
-                          "cudaError_enum", "cudaDeviceProp", "cudaPitchedPtr",
-                          "cusolverDnHandle_t", "cublasPointerMode_t",
-                          "cusparsePointerMode_t", "cublasGemmAlgo_t",
-                          "cudaDataType_t", "cusparseSolveAnalysisInfo_t"),
-                      matchesName("cudnn.*|nccl.*"))))))))
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(anyOf(
+              hasAnyName(
+                  "cudaError", "cufftResult_t", "curandStatus", "cublasStatus",
+                  "CUstream_st", "complex", "device_vector", "device_ptr",
+                  "host_vector", "cublasHandle_t", "CUevent_st", "__half",
+                  "half", "__half2", "half2", "cudaMemoryAdvise",
+                  "cudaError_enum", "cudaDeviceProp", "cudaPitchedPtr",
+                  "counting_iterator", "transform_iterator",
+                  "permutation_iterator", "iterator_difference",
+                  "cusolverDnHandle_t", "device_malloc_allocator", "divides",
+                  "tuple", "maximum", "multiplies", "plus", "cudaDataType_t",
+                  "cudaError_t", "CUresult", "cudaEvent_t", "cublasStatus_t",
+                  "cuComplex", "cuDoubleComplex", "cublasFillMode_t",
+                  "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
+                  "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
+                  "curandStatus_t", "cudaStream_t", "cusparseStatus_t",
+                  "cusparseDiagType_t", "cusparseFillMode_t",
+                  "cusparseIndexBase_t", "cusparseMatrixType_t",
+                  "cusparseOperation_t", "cusparseMatDescr_t",
+                  "cusparseHandle_t", "CUcontext",
+                  "cublasPointerMode_t", "cusparsePointerMode_t",
+                  "cublasGemmAlgo_t",
+                  "cusparseSolveAnalysisInfo_t"
+                  ),
+              matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
 }
@@ -1803,6 +1813,44 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
 bool TypeInDeclRule::replaceTemplateSpecialization(
     SourceManager *SM, LangOptions &LOpts, SourceLocation BeginLoc,
     const TemplateSpecializationTypeLoc TSL) {
+
+  for (unsigned i = 0; i < TSL.getNumArgs(); ++i) {
+    auto UTL =
+        TSL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+
+    if (UTL.getTypeLocClass() == clang::TypeLoc::Elaborated) {
+      auto ETC = UTL.getAs<ElaboratedTypeLoc>();
+
+      auto ETBeginLoc = ETC.getQualifierLoc().getBeginLoc();
+      auto ETEndLoc = ETC.getQualifierLoc().getEndLoc();
+
+      if(ETBeginLoc.isInvalid() || ETEndLoc.isInvalid())
+        continue;
+
+      const char *Start = SM->getCharacterData(ETBeginLoc);
+      const char *End = SM->getCharacterData(ETEndLoc);
+      auto TyLen = End - Start;
+      assert(TyLen > 0);
+
+      std::string RealTypeNameStr(Start, TyLen);
+
+      auto Pos = RealTypeNameStr.find('<');
+      if (Pos != std::string::npos) {
+        RealTypeNameStr = RealTypeNameStr.substr(0, Pos);
+        TyLen = Pos;
+      }
+
+      std::string Replacement =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+
+      if (!Replacement.empty()) {
+        SrcAPIStaticsMap[RealTypeNameStr]++;
+        emplaceTransformation(
+            new ReplaceText(ETBeginLoc, TyLen, std::move(Replacement)));
+      }
+    }
+  }
+
   Token Tok;
   Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
   if (!Tok.isAnyIdentifier()) {
@@ -1815,6 +1863,8 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     BeginLoc = Tok.getLocation();
   }
   auto LAngleLoc = TSL.getLAngleLoc();
+  BeginLoc = SM->getExpansionLoc(BeginLoc);
+
   const char *Start = SM->getCharacterData(BeginLoc);
   const char *End = SM->getCharacterData(LAngleLoc);
   auto TyLen = End - Start;
@@ -1928,6 +1978,15 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           if (!Replacement.empty()) {
             emplaceTransformation(
                 new ReplaceToken(BeginLoc, TSL.getEndLoc(), std::move(Replacement)));
+            return;
+          }
+        }
+      } else if (TL->getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+        // To process the case like "typename thrust::device_vector<int>::iterator itr;".
+        auto ND = DpctGlobalInfo::findAncestor<NamedDecl>(TL);
+        if(ND){
+          auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
+          if (replaceTemplateSpecialization(SM, LOpts, ND->getBeginLoc(), TSL)) {
             return;
           }
         }
@@ -9675,6 +9734,42 @@ void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(RemoveBaseClassRule)
+
+void ThrustVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(declRefExpr(to(varDecl(hasName("seq")).bind("varDecl")))
+                    .bind("declRefExpr"),
+                this);
+}
+
+void ThrustVarRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
+    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+
+    if (DRE->hasQualifier()) {
+
+      auto Namespace = DRE->getQualifierLoc()
+                           .getNestedNameSpecifier()
+                           ->getAsNamespace()
+                           ->getNameAsString();
+
+      if (Namespace != "thrust")
+        return;
+
+      const std::string ThrustVarName = Namespace + "::" + VD->getName().str();
+
+      std::string Replacement =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
+
+      if (!Replacement.empty()) {
+        emplaceTransformation(new ReplaceToken(
+            DRE->getBeginLoc(), DRE->getEndLoc(), std::move(Replacement)));
+      }
+    }
+  }
+}
+
+REGISTER_RULE(ThrustVarRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
