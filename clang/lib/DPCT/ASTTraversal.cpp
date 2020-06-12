@@ -1556,41 +1556,41 @@ REGISTER_RULE(ThrustCtorExprRule)
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      typeLoc(
-          loc(qualType(hasDeclaration(anyOf(
-              namedDecl(anyOf(
-                  hasAnyName("cudaError", "cufftResult_t", "curandStatus",
-                             "cublasStatus", "CUstream_st", "complex",
-                             "device_vector", "device_ptr", "host_vector",
-                             "cublasHandle_t", "CUevent_st", "__half", "half",
-                             "__half2", "half2", "cudaMemoryAdvise",
-                             "cudaError_enum", "cudaDeviceProp",
-                             "cudaPitchedPtr", "counting_iterator",
-                             "transform_iterator", "permutation_iterator",
-                             "iterator_difference", "cusolverDnHandle_t",
-                             "cudaDataType_t"),
-                  matchesName("cudnn.*|nccl.*"))),
-              typedefDecl(anyOf(
-                  hasAnyName("cudaError_t", "CUresult",
-                             "cudaEvent_t", "cublasHandle_t", "cublasStatus_t",
-                             "cuComplex", "cuDoubleComplex", "cublasFillMode_t",
-                             "cublasDiagType_t", "cublasSideMode_t",
-                             "cublasOperation_t", "cublasStatus",
-                             "cusolverStatus_t", "cusolverEigType_t",
-                             "cusolverEigMode_t", "curandStatus_t",
-                             "curandStatus", "cudaStream_t", "CUstream_st",
-                             "complex", "cusparseStatus_t",
-                             "cusparseDiagType_t", "cusparseFillMode_t",
-                             "cusparseIndexBase_t", "cusparseMatrixType_t",
-                             "cusparseOperation_t", "cusparseMatDescr_t",
-                             "cusparseHandle_t", "device_vector", "device_ptr",
-                             "host_vector", "CUcontext", "CUevent_st", "__half",
-                             "half", "__half2", "half2", "cudaMemoryAdvise",
-                             "cudaError_enum", "cudaDeviceProp",
-                             "cudaPitchedPtr", "cusolverDnHandle_t",
-                             "cublasPointerMode_t", "cusparsePointerMode_t",
-                             "cublasGemmAlgo_t", "cudaDataType_t"),
-                  matchesName("cudnn.*|nccl.*"))))))))
+      typeLoc(loc(qualType(hasDeclaration(anyOf(
+                  namedDecl(anyOf(
+                      hasAnyName("cudaError", "cufftResult_t", "curandStatus",
+                                 "cublasStatus", "CUstream_st", "complex",
+                                 "device_vector", "device_ptr", "host_vector",
+                                 "cublasHandle_t", "CUevent_st", "__half",
+                                 "half", "__half2", "half2", "cudaMemoryAdvise",
+                                 "cudaError_enum", "cudaDeviceProp",
+                                 "cudaPitchedPtr", "counting_iterator",
+                                 "transform_iterator", "permutation_iterator",
+                                 "iterator_difference", "cusolverDnHandle_t",
+                                 "cudaDataType_t"),
+                      matchesName("cudnn.*|nccl.*"))),
+                  typedefDecl(anyOf(
+                      hasAnyName(
+                          "cudaError_t", "CUresult",
+                          "cudaEvent_t", "cublasHandle_t",
+                          "cublasStatus_t", "cuComplex", "cuDoubleComplex",
+                          "cublasFillMode_t", "cublasDiagType_t",
+                          "cublasSideMode_t", "cublasOperation_t",
+                          "cublasStatus", "cusolverStatus_t",
+                          "cusolverEigType_t", "cusolverEigMode_t",
+                          "curandStatus_t", "curandStatus", "cudaStream_t",
+                          "CUstream_st", "complex", "cusparseStatus_t",
+                          "cusparseDiagType_t", "cusparseFillMode_t",
+                          "cusparseIndexBase_t", "cusparseMatrixType_t",
+                          "cusparseOperation_t", "cusparseMatDescr_t",
+                          "cusparseHandle_t", "device_vector", "device_ptr",
+                          "host_vector", "CUcontext", "CUevent_st", "__half",
+                          "half", "__half2", "half2", "cudaMemoryAdvise",
+                          "cudaError_enum", "cudaDeviceProp", "cudaPitchedPtr",
+                          "cusolverDnHandle_t", "cublasPointerMode_t",
+                          "cusparsePointerMode_t", "cublasGemmAlgo_t",
+                          "cudaDataType_t", "cusparseSolveAnalysisInfo_t"),
+                      matchesName("cudnn.*|nccl.*"))))))))
           .bind("cudaTypeDef"),
       this);
 }
@@ -2877,16 +2877,16 @@ REGISTER_RULE(RandomEnumsRule)
 // Migrate spBLAS status values to corresponding int values
 // Other spBLAS named values are migrated to corresponding named values
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
-                                "(CUSPARSE_STATUS.*)|(CUSPARSE_MATRIX_TYPE.*)|("
-                                "CUSPARSE_POINTER_MODE.*)"))))
-                    .bind("SPBLASStatusConstants"),
-                this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("(CUSPARSE_STATUS.*)|("
+                                                  "CUSPARSE_POINTER_MODE.*)"))))
+          .bind("SPBLASStatusConstants"),
+      this);
   MF.addMatcher(
       declRefExpr(
           to(enumConstantDecl(matchesName(
               "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_DIAG_"
-              "TYPE.*)|(CUSPARSE_INDEX_BASE.*)"))))
+              "TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -2918,14 +2918,25 @@ REGISTER_RULE(SPBLASEnumsRule)
 // Rule for spBLAS function calls.
 void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cusparseCreate", "cusparseDestroy",
-                      "cusparseCreateMatDescr", "cusparseDestroyMatDescr",
-                      "cusparseSetMatType", "cusparseSetMatIndexBase",
-                      "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv",
-                      "cusparseZcsrmv", "cusparseScsrmm", "cusparseDcsrmm",
-                      "cusparseCcsrmm", "cusparseZcsrmm", "cusparseSetStream",
-                      "cusparseGetStream", "cusparseGetPointerMode",
-                      "cusparseSetPointerMode");
+    return hasAnyName(
+        /*management*/
+        "cusparseCreate", "cusparseDestroy", "cusparseSetStream",
+        "cusparseGetStream", "cusparseGetPointerMode", "cusparseSetPointerMode",
+        /*helper*/
+        "cusparseCreateMatDescr", "cusparseDestroyMatDescr",
+        "cusparseSetMatType", "cusparseGetMatType", "cusparseSetMatIndexBase",
+        "cusparseGetMatIndexBase", "cusparseSetMatDiagType",
+        "cusparseGetMatDiagType", "cusparseSetMatFillMode",
+        "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
+        "cusparseDestroySolveAnalysisInfo",
+        /*level 2*/
+        "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
+        "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
+        "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
+        "cusparseScsrsv_solve", "cusparseDcsrsv_solve", "cusparseCcsrsv_solve",
+        "cusparseZcsrsv_solve",
+        /*level 3*/
+        "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -2958,6 +2969,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  StringRef FuncNameRef(FuncName);
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
   // TODO: For case like:
@@ -3045,21 +3057,16 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
       Repl = LHS + " = " + EA0.getReplacedString();
     }
-  } else if (FuncName == "cusparseCreateMatDescr") {
-    NeedUseLambda = false;
-    std::string LHS;
-    if (isSimpleAddrOf(CE->getArg(0))) {
-      LHS = getNameStrRemovedAddrOf(CE->getArg(0));
-    } else {
-      dpct::ExprAnalysis EA;
-      EA.analyze(CE->getArg(0));
-      LHS = "*(" + EA.getReplacedString() + ")";
-    }
-    Repl = LHS + " = mkl::index_base::zero";
-  } else if (FuncName == "cusparseSetMatType" ||
+  } else if (FuncName == "cusparseCreateMatDescr" ||
              FuncName == "cusparseDestroyMatDescr" ||
              FuncName == "cusparseGetPointerMode" ||
-             FuncName == "cusparseSetPointerMode") {
+             FuncName == "cusparseSetPointerMode" ||
+             FuncName == "cusparseScsrsv_analysis" ||
+             FuncName == "cusparseDcsrsv_analysis" ||
+             FuncName == "cusparseCcsrsv_analysis" ||
+             FuncName == "cusparseZcsrsv_analysis" ||
+             FuncName == "cusparseCreateSolveAnalysisInfo" ||
+             FuncName == "cusparseDestroySolveAnalysisInfo") {
     if (IsAssigned) {
       report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false, FuncName,
              Msg);
@@ -3070,22 +3077,86 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
     return;
-  } else if (FuncName == "cusparseSetMatIndexBase") {
+  } else if (FuncName == "cusparseSetMatType" ||
+             FuncName == "cusparseGetMatType" ||
+             FuncName == "cusparseSetMatIndexBase" ||
+             FuncName == "cusparseGetMatIndexBase" ||
+             FuncName == "cusparseSetMatDiagType" ||
+             FuncName == "cusparseGetMatDiagType" ||
+             FuncName == "cusparseSetMatFillMode" ||
+             FuncName == "cusparseGetMatFillMode") {
     NeedUseLambda = false;
-    ExprAnalysis EA(CE->getArg(0));
-    Repl = EA.getReplacedString() + " = ";
-    Expr::EvalResult ER;
-    if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        Repl = Repl + "mkl::index_base::zero";
+    ExprAnalysis EA0(CE->getArg(0));
+    bool IsSet = FuncNameRef.startswith("cusparseSet");
+    ExprAnalysis EA1;
+    if (IsSet) {
+      Repl = EA0.getReplacedString() + ".";
+      EA1.analyze(CE->getArg(1));
+      Expr::EvalResult ER;
+      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
+        int64_t Value = ER.Val.getInt().getExtValue();
+        if (FuncNameRef.endswith("Type")) {
+          if (Value == 0)
+            Repl = Repl + "type = dpct::mat_type::ge";
+          else if (Value == 1)
+            Repl = Repl + "type = dpct::mat_type::sy";
+          else if (Value == 2)
+            Repl = Repl + "type = dpct::mat_type::he";
+          else
+            Repl = Repl + "type = dpct::mat_type::tr";
+        } else if (FuncNameRef.endswith("IndexBase")) {
+          if (Value == 0)
+            Repl = Repl + "index = mkl::index_base::zero";
+          else
+            Repl = Repl + "index = mkl::index_base::one";
+        } else if (FuncNameRef.endswith("DiagType")){
+          if (Value == 0)
+            Repl = Repl + "diag = mkl::diag::nonunit";
+          else
+            Repl = Repl + "diag = mkl::diag::unit";
+        } else {
+          if (Value == 0)
+            Repl = Repl + "uplo = mkl::uplo::lower";
+          else
+            Repl = Repl + "uplo = mkl::uplo::upper";
+        }
       } else {
-        Repl = Repl + "mkl::index_base::one";
+        if (FuncNameRef.endswith("Type"))
+          Repl = Repl + "type = " + EA1.getReplacedString();
+        else if (FuncNameRef.endswith("IndexBase"))
+          Repl = Repl + "index = " + EA1.getReplacedString();
+        else if (FuncNameRef.endswith("DiagType"))
+          Repl = Repl + "diag = " + EA1.getReplacedString();
+        else {
+          const CStyleCastExpr *CSCE = nullptr;
+          if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
+            ExprAnalysis EAS(CSCE->getSubExpr());
+            Repl = Repl + "uplo = " + "dpct::get_uplo(" +
+                   EAS.getReplacedString() + ")";
+          } else {
+            Repl = Repl + "uplo = " + EA1.getReplacedString();
+          }
+        }
       }
     } else {
-      ExprAnalysis EA(CE->getArg(1));
-      Repl = Repl + EA.getReplacedString();
+      Repl = EA0.getReplacedString() + ".";
+      if (FuncNameRef.endswith("Type"))
+        Repl = Repl + "type";
+      else if (FuncNameRef.endswith("IndexBase"))
+        Repl = Repl + "index";
+      else if (FuncNameRef.endswith("DiagType"))
+        Repl = Repl + "diag";
+      else
+        Repl = Repl + "uplo";
     }
+
+    // Get API do not return status, so return directly.
+    if (IsAssigned && IsSet) {
+      insertAroundStmt(CE, "(", ", 0)");
+      report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, Repl));
+    return;
   } else if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv" ||
              FuncName == "cusparseCcsrmv" || FuncName == "cusparseZcsrmv") {
     std::string BufferType;
@@ -3114,11 +3185,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr = PrefixInsertStr + Decl;
         return BufferName;
       };
+      // CSRValA, CSRRowPtrAa and CSRColIndA need declare buffers becasue these
+      // three arguments are used in set_csr_data() API.
       CSRValA = ProcessBuffer(CE->getArg(7), BufferType);
       CSRRowPtrA = ProcessBuffer(CE->getArg(8), "int");
       CSRColIndA = ProcessBuffer(CE->getArg(9), "int");
-      X = ProcessBuffer(CE->getArg(10), BufferType);
-      Y = ProcessBuffer(CE->getArg(12), BufferType);
+      // X and Y are used in wrapper function, so keep pointer style.
+      X = CallExprArguReplVec[10];
+      Y = CallExprArguReplVec[12];
     } else {
       CSRValA = CallExprArguReplVec[7];
       CSRRowPtrA = CallExprArguReplVec[8];
@@ -3138,22 +3212,23 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr =
           PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
-          CallExprArguReplVec[6] + ", " + CSRRowPtrA + ", " + CSRColIndA +
+          CallExprArguReplVec[6] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        PrefixInsertStr =
-            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
-            ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] +
-            ", " + CallExprArguReplVec[6] + ", const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
-            BufferType + "*>(" + CSRValA + "));" + getNL() + IndentStr;
+        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
+                          MatrixHandleName + ", " + CallExprArguReplVec[2] +
+                          ", " + CallExprArguReplVec[3] + ", " +
+                          CallExprArguReplVec[6] + ".index, const_cast<int*>(" +
+                          CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
+                          "), const_cast<" + BufferType + "*>(" + CSRValA +
+                          "));" + getNL() + IndentStr;
       else
         PrefixInsertStr =
             PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] +
-            ", " + CallExprArguReplVec[6] + ", const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), (" +
+            ", " + CallExprArguReplVec[6] + ".index, const_cast<int*>(" +
+            CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
             BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
     SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
@@ -3181,27 +3256,129 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    Repl = "dpct::sparse_csr_mv_wrapper(*" + CallExprArguReplVec[0] + ", " +
+           TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
+           ", *" + CallExprArguReplVec[0] + "), " + CallExprArguReplVec[6] +
+           ", " + MatrixHandleName + ", " + X + ", " + "dpct::get_value(" +
+           CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] + "), " +
+           Y + ")";
+  } else if (FuncName == "cusparseScsrsv_solve" || FuncName == "cusparseDcsrsv_solve" ||
+             FuncName == "cusparseCcsrsv_solve" || FuncName == "cusparseZcsrsv_solve") {
+    std::string BufferType;
+    if (FuncName == "cusparseScsrsv_solve")
+      BufferType = "float";
+    else if (FuncName == "cusparseDcsrsv_solve")
+      BufferType = "double";
+    else if (FuncName == "cusparseCcsrsv_solve")
+      BufferType = "std::complex<float>";
+    else
+      BufferType = "std::complex<double>";
+    int ArgNum = CE->getNumArgs();
+    std::vector<std::string> CallExprArguReplVec;
+    for (int i = 0; i < ArgNum; ++i) {
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(i));
+      CallExprArguReplVec.push_back(EA.getReplacedString());
+    }
+
+    std::string CSRValA, CSRRowPtrA, CSRColIndA, F, X;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
-             ", " + "dpct::get_value(" + CallExprArguReplVec[5] + ", *" +
-             CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + X +
-             ", " + "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
-             CallExprArguReplVec[0] + "), " + Y + ")";
+      auto ProcessBuffer = [&](const Expr *E, const std::string TypeStr) {
+        std::string Decl;
+        std::string BufferName =
+            getBufferNameAndDeclStr(E, TypeStr, IndentStr, Decl);
+        PrefixInsertStr = PrefixInsertStr + Decl;
+        return BufferName;
+      };
+      CSRValA = ProcessBuffer(CE->getArg(5), BufferType);
+      CSRRowPtrA = ProcessBuffer(CE->getArg(6), "int");
+      CSRColIndA = ProcessBuffer(CE->getArg(7), "int");
+      F = ProcessBuffer(CE->getArg(9), BufferType);
+      X = ProcessBuffer(CE->getArg(10), BufferType);
     } else {
-      if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
-               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
-               ", const_cast<" + BufferType + "*>(" + X + "), " +
-               "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
-               CallExprArguReplVec[0] + "), " + Y + ")";
+      CSRValA = CallExprArguReplVec[5];
+      CSRRowPtrA = CallExprArguReplVec[6];
+      CSRColIndA = CallExprArguReplVec[7];
+      F = CallExprArguReplVec[9];
+      X = CallExprArguReplVec[10];
+    }
+
+    std::string MatrixHandleName =
+        "mat_handle_ct" +
+        std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::matrix_handle_t " +
+                      MatrixHandleName + ";" + getNL() + IndentStr;
+    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::init_matrix_handle(&" +
+                      MatrixHandleName + ");" + getNL() + IndentStr;
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      PrefixInsertStr =
+          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+          ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[2] + ", " +
+          CallExprArguReplVec[4] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
+          ", " + CSRValA + ");" + getNL() + IndentStr;
+    } else {
+      if (BufferType == "float" || BufferType == "double")
+        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
+                          MatrixHandleName + ", " + CallExprArguReplVec[2] +
+                          ", " + CallExprArguReplVec[2] + ", " +
+                          CallExprArguReplVec[4] + ".index, const_cast<int*>(" +
+                          CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
+                          "), const_cast<" + BufferType + "*>(" + CSRValA +
+                          "));" + getNL() + IndentStr;
       else
-        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
-               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
-               ", (" + BufferType + "*)" + X + ", " + "dpct::get_value(" +
-               CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] +
-               "), " + Y + ")";
+        PrefixInsertStr =
+            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+            ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[2] +
+            ", " + CallExprArguReplVec[4] + ".index, const_cast<int*>(" +
+            CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
+            BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
+    }
+    SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
+                      "mkl::sparse::release_matrix_handle(&" +
+                      MatrixHandleName + ");";
+
+    std::string TransStr;
+    Expr::EvalResult ER;
+    if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
+      int64_t Value = ER.Val.getInt().getExtValue();
+      if (Value == 0) {
+        TransStr = "mkl::transpose::nontrans";
+      } else if (Value == 1) {
+        TransStr = "mkl::transpose::trans";
+      } else {
+        TransStr = "mkl::transpose::conjtrans";
+      }
+    } else {
+      const CStyleCastExpr *CSCE = nullptr;
+      if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
+        ExprAnalysis EA(CSCE->getSubExpr());
+        TransStr = "dpct::get_transpose(" + EA.getReplacedString() + ")";
+      } else {
+        TransStr = CallExprArguReplVec[1];
+      }
+    }
+    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::optimize_trsv(*" +
+                      CallExprArguReplVec[0] + ", " + CallExprArguReplVec[4] +
+                      ".uplo, " + TransStr + ", " + CallExprArguReplVec[4] +
+                      ".diag, " + MatrixHandleName + ");" + getNL() + IndentStr;
+
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
+             CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
+             CallExprArguReplVec[4] + ".diag, " + MatrixHandleName + ", " + F +
+             ", " + X + ")";
+    } else {
+      if (BufferType == "float" || BufferType == "double")
+        Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
+               CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
+               CallExprArguReplVec[4] + ".diag, " + MatrixHandleName +
+               ", const_cast<" + BufferType + "*>(" + F + "), " + X + ")";
+      else
+        Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
+               CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
+               CallExprArguReplVec[4] + ".diag, " + MatrixHandleName + ", (" +
+               BufferType + +"*)" + F + ", (" + BufferType + "*)" + X + ")";
+
     }
   } else if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm" ||
              FuncName == "cusparseCcsrmm" || FuncName == "cusparseZcsrmm") {
@@ -3255,23 +3432,24 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr =
           PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] + ", " +
-          CallExprArguReplVec[7] + ", " + CSRRowPtrA + ", " + CSRColIndA +
+          CallExprArguReplVec[7] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        PrefixInsertStr =
-            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
-            ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] +
-            ", " + CallExprArguReplVec[7] + ", const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
-            BufferType + "*>(" + CSRValA + "));" + getNL() + IndentStr;
+        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
+                          MatrixHandleName + ", " + CallExprArguReplVec[2] +
+                          ", " + CallExprArguReplVec[4] + ", " +
+                          CallExprArguReplVec[7] + ".index, const_cast<int*>(" +
+                          CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
+                          "), const_cast<" + BufferType + "*>(" + CSRValA +
+                          "));" + getNL() + IndentStr;
       else
         PrefixInsertStr =
             PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] +
-            ", " + CallExprArguReplVec[7] + ", const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
-            CSRValA + ");" + getNL() + IndentStr;
+            ", " + CallExprArguReplVec[7] + ".index, const_cast<int*>(" +
+            CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
+            BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
     SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
                       "mkl::sparse::release_matrix_handle(&" +
@@ -3323,7 +3501,8 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                ", (" + BufferType + "*)" + B + ", " + CallExprArguReplVec[3] +
                ", " + CallExprArguReplVec[12] + ", " + "dpct::get_value(" +
                CallExprArguReplVec[13] + ", *" + CallExprArguReplVec[0] +
-               "), " + C + ", " + CallExprArguReplVec[15] + ")";
+               "), (" + BufferType + "*)" + C + ", " + CallExprArguReplVec[15] +
+               ")";
     }
   }
 
@@ -3335,6 +3514,37 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   }
 
+  if (NeedUseLambda && CanAvoidUsingLambda && !IsMacroArg) {
+    if (FuncNameRef.endswith("mm")) {
+      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "symmetric/Hermitian/triangular",
+             "computing a sparse matrix-dense matrix product");
+    } else if (FuncNameRef.endswith("mv")) {
+      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "Hermitian", "computing a sparse matrix-dense vector product");
+    } else if (FuncNameRef.endswith("sv_solve")) {
+      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "general/symmetric/Hermitian",
+             "solveing a system of linear equations for the sparse matrix");
+      report(OuterInsertLoc, Diagnostics::UNSUPPORT_ALPHA_VALUE, true,
+             getStmtSpelling(CE->getArg(3)), "mkl::sparse::trsv");
+    }
+  } else {
+    if (FuncNameRef.endswith("mm")) {
+      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "symmetric/Hermitian/triangular",
+             "computing a sparse matrix-dense matrix product");
+    } else if (FuncNameRef.endswith("mv")) {
+      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "Hermitian", "computing a sparse matrix-dense vector product");
+    } else if (FuncNameRef.endswith("sv_solve")) {
+      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             "general/symmetric/Hermitian",
+             "solveing a system of linear equations for the sparse matrix");
+      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_ALPHA_VALUE, true,
+             getStmtSpelling(CE->getArg(3)), "mkl::sparse::trsv");
+    }
+  }
   if (NeedUseLambda) {
     if (CanAvoidUsingLambda && !IsMacroArg) {
       std::string InsertStr;
@@ -3385,6 +3595,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(CE, "(", ", 0)");
       report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
     }
+
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, Repl));
   }
 }
@@ -3527,8 +3738,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (!REInfo->isClassMember()) {
       if (IsAssigned) {
         report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-               FuncName,
-               Msg);
+               FuncName, Msg);
         emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
       } else {
         report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false, FuncName,

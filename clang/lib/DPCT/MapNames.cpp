@@ -114,8 +114,9 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusparseFillMode_t", "mkl::uplo"},
       {"cusparseDiagType_t", "mkl::diag"},
       {"cusparseIndexBase_t", "mkl::index_base"},
-      {"cusparseMatrixType_t", "int"},
+      {"cusparseMatrixType_t", "dpct::mat_type"},
       {"cusparseOperation_t", "mkl::transpose"},
+      {"cusparseSolveAnalysisInfo_t", "int"},
       {"thrust::device_ptr", "dpct::device_ptr"},
       {"thrust::device_vector", "dpct::device_vector"},
       {"thrust::host_vector", "std::vector"},
@@ -137,7 +138,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
       {"cusparseStatus_t", "int"},
-      {"cusparseMatDescr_t", "mkl::index_base"},
+      {"cusparseMatDescr_t", "dpct::mat_prop"},
       {"cusparseHandle_t", ClNamespace + "::queue*"},
       {"cudaMemoryAdvise", "pi_mem_advice"},
       {"cudaPos", ClNamespace + "::id<3>"},
@@ -302,6 +303,10 @@ const MapNames::MapTy MapNames::SPBLASEnumsMap{
     {"CUSPARSE_DIAG_TYPE_UNIT", "mkl::diag::unit"},
     {"CUSPARSE_INDEX_BASE_ZERO", "mkl::index_base::zero"},
     {"CUSPARSE_INDEX_BASE_ONE", "mkl::index_base::one"},
+    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::mat_type::ge"},
+    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::mat_type::sy"},
+    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::mat_type::he"},
+    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::mat_type::tr"},
 };
 
 // SOLVER enums mapping
