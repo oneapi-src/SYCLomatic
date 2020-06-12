@@ -58,6 +58,9 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+#ifdef INTEL_CUSTOMIZATION
+#include <setjmp.h>
+#endif
 
 #define DEBUG_TYPE "clang-tooling"
 
@@ -107,6 +110,8 @@ llvm::raw_ostream &DiagnosticsOS() {
 
 } // namespace tooling
 } // namespace clang
+jmp_buf ProcessingEnterCP;
+
 #endif
 
 ToolAction::~ToolAction() = default;
@@ -558,8 +563,15 @@ int ClangTool::run(ToolAction *Action) {
 
   for (llvm::StringRef File : AbsolutePaths) {
 #ifdef INTEL_CUSTOMIZATION
-    const std::string Msg = "Processing: " + File.str()  +  "\n";
-    DoPrintHandler(Msg, false);
+    int Ret=setjmp(ProcessingEnterCP);
+    if(Ret == 0) {
+      const std::string Msg = "Processing: " + File.str()  +  "\n";
+      DoPrintHandler(Msg, false);
+    } else {
+      const std::string Msg = "Skipping: " + File.str()  +  "\n";
+      DoPrintHandler(Msg, false);
+      continue;
+    }
 #endif
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so

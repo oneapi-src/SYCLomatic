@@ -43,6 +43,8 @@ std::string getFormatSearchPath();
 }
 } // namespace clang
 
+extern int FatalErrorCnt;
+
 static bool formatFile(StringRef FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
                        clang::SourceManager &SM) {
@@ -248,6 +250,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
                             " files in -in-root folder \"" + InRoot.str() + "\"\n";
+    if(FatalErrorCnt>0) {
+        ReportMsg += "  "+std::to_string(FatalErrorCnt) + " of " + std::to_string(ProcessedFileNumber) +
+                            " files are not fully migrated for " + std::to_string(FatalErrorCnt) +
+                            " fatal signal meet.\n";
+    }
     PrintMsg(ReportMsg);
 
     if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {

@@ -342,6 +342,7 @@ static opt<bool, true>
 std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
+int FatalErrorCnt=0;
 
 class DPCTConsumer : public ASTConsumer {
 public:

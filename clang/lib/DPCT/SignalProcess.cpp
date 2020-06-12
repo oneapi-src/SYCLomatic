@@ -13,6 +13,7 @@
 #include "SaveNewFiles.h"
 
 #include "clang/Basic/LangOptions.h"
+#include <setjmp.h>
 
 extern void PrintReportOnFault(std::string &FaultMsg);
 #if defined(__linux__) || defined(_WIN64)
@@ -39,14 +40,25 @@ static const std::string SigDescription(const int &Signo) {
   }
 }
 #endif
+extern jmp_buf ProcessingEnterCP;
+extern bool NoStopOnErrFlag;
+extern int FatalErrorCnt;
 
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
+  if( NoStopOnErrFlag && (Signo == SIGILL || Signo == SIGSEGV || Signo == SIGFPE ) ) {
+      std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
+                             "\nIntel(R) DPC++ Compatibility Tool trys to "
+                             "skip further process of current file\n";
+      PrintReportOnFault(FaultMsg);
+      FatalErrorCnt++;
+      longjmp(ProcessingEnterCP, 1);
+  }
   std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
                          "\nIntel(R) DPC++ Compatibility Tool tries to give "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
-  exit(1);
+  exit(MigrationError);
 }
 
 static void SetHandler(void (*Handler)(int)) {
@@ -61,6 +73,15 @@ static void SetHandler(void (*Handler)(int)) {
 
 #if defined(__linux__)
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
+
+  if( NoStopOnErrFlag && (Signo == SIGILL || Signo == SIGSEGV || Signo == SIGFPE ) ) {
+      std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
+                             "\nIntel(R) DPC++ Compatibility Tool trys to "
+                             "skip further process of current file\n";
+      PrintReportOnFault(FaultMsg);
+      FatalErrorCnt++;
+      longjmp(ProcessingEnterCP, 1);
+  }
   std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
                          "\nIntel(R) DPC++ Compatibility Tool trys to give "
                          "analysis reports and terminates...\n";
