@@ -1113,11 +1113,11 @@ int main() {
   status = cublasDgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
   cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
 
-  float** A_S_array;
-  float** B_S_array;
+  const float** A_S_array;
+  const float** B_S_array;
   float** C_S_array;
-  double** A_D_array;
-  double** B_D_array;
+  const double** A_D_array;
+  const double** B_D_array;
   double** C_D_array;
   cublasOperation_t trans3 = CUBLAS_OP_N;
 

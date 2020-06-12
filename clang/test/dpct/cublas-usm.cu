@@ -274,24 +274,24 @@ int main() {
 
   void *alpha, *beta, *A, *B, *C;
   cudaDataType_t type = CUDA_R_16F;
-  cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT;
+  cublasGemmAlgo_t algo = CUBLAS_GEMM_ALGO0;
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
 
-  float** d_A_S_array;
-  float** d_B_S_array;
+  const float** d_A_S_array;
+  const float** d_B_S_array;
   float** d_C_S_array;
-  double** d_A_D_array;
-  double** d_B_D_array;
+  const double** d_A_D_array;
+  const double** d_B_D_array;
   double** d_C_D_array;
-  cuComplex** d_A_C_array = 0;
-  cuComplex** d_B_C_array = 0;
+  const cuComplex** d_A_C_array = 0;
+  const cuComplex** d_B_C_array = 0;
   cuComplex** d_C_C_array = 0;
-  cuDoubleComplex** d_A_Z_array = 0;
-  cuDoubleComplex** d_B_Z_array = 0;
+  const cuDoubleComplex** d_A_Z_array = 0;
+  const cuDoubleComplex** d_B_Z_array = 0;
   cuDoubleComplex** d_C_Z_array = 0;
 
   // CHECK: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;

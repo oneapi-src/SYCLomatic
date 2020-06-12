@@ -1148,11 +1148,11 @@ int main(){
   status = cublasZgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
   cublasZgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
 
-  cuComplex** x_c_array = 0;
-  cuComplex** y_c_array = 0;
+  const cuComplex** x_c_array = 0;
+  const cuComplex** y_c_array = 0;
   cuComplex** result_c_array = 0;
-  cuDoubleComplex** x_z_array = 0;
-  cuDoubleComplex** y_z_array = 0;
+  const cuDoubleComplex** x_z_array = 0;
+  const cuDoubleComplex** y_z_array = 0;
   cuDoubleComplex** result_z_array = 0;
   cublasOperation_t trans3 = CUBLAS_OP_N;
 
