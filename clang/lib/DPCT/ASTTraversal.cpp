@@ -1334,13 +1334,13 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 
   // Inline the code for ingeter types
   static std::unordered_map<std::string, std::string> AtomicMap = {
-    {"atomicAdd", "atomic_fetch_add"},
-    {"atomicSub", "atomic_fetch_sub"},
-    {"atomicAnd", "atomic_fetch_and"},
-    {"atomicOr", "atomic_fetch_or"},
-    {"atomicXor", "atomic_fetch_xor"},
-    {"atomicMin", "atomic_fetch_min"},
-    {"atomicMax", "atomic_fetch_max"},
+    {"atomicAdd", "fetch_add"},
+    {"atomicSub", "fetch_sub"},
+    {"atomicAnd", "fetch_and"},
+    {"atomicOr", "fetch_or"},
+    {"atomicXor", "fetch_xor"},
+    {"atomicMin", "fetch_min"},
+    {"atomicMax", "fetch_max"},
   };
 
   auto IsMacro = CE->getBeginLoc().isMacroID();
@@ -1348,10 +1348,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
       Iter != AtomicMap.end()) {
     std::string ReplStr{MapNames::getClNamespace() + "::"};
-    ReplStr += Iter->second;
-    ReplStr += "(";
-    ReplStr += MapNames::getClNamespace();
-    ReplStr += "::atomic<";
+    ReplStr += "atomic<";
     ReplStr += TypeName;
     if (HasSharedAttr) {
       ReplStr += ", ";
@@ -1383,26 +1380,11 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     } else {
       ReplStr += getStmtSpelling(CE->getArg(0));
     }
-    ReplStr += ")), ";
+    ReplStr += ")).";
+    ReplStr += Iter->second;
+    ReplStr += "(";
 
-    auto Arg1 = CE->getArg(1)->IgnoreImpCasts();
-    bool NeedParens = false;
-    auto Arg1Type = Arg1->getType();
-    std::string Arg1TypeName = Arg1Type.getAsString();
-    if (Arg1TypeName != TypeName) {
-      NeedParens = true;
-      ReplStr += "(";
-      ReplStr += TypeName;
-      ReplStr += ")";
-      // Don't need parens for variables and literals
-      auto DRE = dyn_cast<DeclRefExpr>(Arg1);
-      auto IL = dyn_cast<IntegerLiteral>(Arg1);
-      if (DRE || IL)
-        NeedParens = false;
-    }
-    if (NeedParens)
-      ReplStr += "(";
-    bool Arg1NeedDeref = false;
+    auto Arg1NeedDeref = false;
     if (auto DRE = dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImpCasts()))
       Arg1NeedDeref = IsTypeChangedToPointer(DRE);
     if (Arg1NeedDeref) {
@@ -1412,8 +1394,6 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     } else {
       ReplStr += getStmtSpelling(CE->getArg(1));
     }
-    if (NeedParens)
-      ReplStr += ")";
     ReplStr += ")";
 
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));

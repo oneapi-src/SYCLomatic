@@ -61,7 +61,7 @@ template <>
 __global__ void test(unsigned long long int* data) {
   unsigned long long int tid = threadIdx.x;
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&data[0])), tid);
+  // CHECK: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&data[0])).fetch_add(tid);
   atomicAdd(&data[0], tid);
 
   // CHECK: dpct::atomic_exchange(&data[2], tid);
@@ -133,7 +133,7 @@ __device__ void fun(){
   // CHECK: dpct::atomic_fetch_add(a, (double)b);
   atomicAdd(a, b);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(d_error)), (uint32_t)1);
+  // CHECK: sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(d_error)).fetch_add(1);
   atomicAdd(d_error, 1);
 }
 
@@ -148,11 +148,11 @@ int main() {
 // CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
-// CHECK-NEXT:    sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(&share_array[b])), (uint32_t)1);
-// CHECK-NEXT:    sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(share_array)), (uint32_t)1);
+// CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(&share_array[b])).fetch_add(1);
+// CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(share_array)).fetch_add(1);
 // CHECK-NEXT:  }
 // CHECK-EMPTY:
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(share_v)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(share_v)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo() {
   extern __shared__ uint32_t share_array[];
@@ -170,17 +170,17 @@ __shared__ uint32_t share_v;
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
 // CHECK-NEXT:    uint32_t *p_2 = share_array;
 // CHECK-NEXT:    uint32_t *p_3 = p_2;
-// CHECK-NEXT:    sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_1)), (uint32_t)1);
-// CHECK-NEXT:    sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_2)), (uint32_t)1);
-// CHECK-NEXT:    sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_3)), (uint32_t)1);
+// CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_1)).fetch_add(1);
+// CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_2)).fetch_add(1);
+// CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_3)).fetch_add(1);
 // CHECK-NEXT:  }
 // CHECK-EMPTY:
 // CHECK-NEXT:  uint32_t *p_1 = share_v;
 // CHECK-NEXT:  uint32_t *p_2 = p_1;
 // CHECK-NEXT:  uint32_t *p_3 = p_2;
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_1)), (uint32_t)1);
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_2)), (uint32_t)1);
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_3)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_1)).fetch_add(1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_2)).fetch_add(1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_3)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo_2() {
   extern __shared__ uint32_t share_array[];
@@ -210,7 +210,7 @@ __shared__ uint32_t share_v;
 // CHECK-NEXT:  p_2 = p_1;
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  uint32_t *p_4 = p_3;
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo_3() {
 __shared__ uint32_t share_v;
@@ -234,13 +234,13 @@ __shared__ uint32_t share_v;
 // CHECK-NEXT:  p_2 = p_1;
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  uint32_t *p_4 = p_3;
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:  p_1 = share;
 // CHECK-NEXT:  p_2 = p_1;
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  p_3 = dmem;
 // CHECK-NEXT:  uint32_t *p_5 = p_3;
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_5)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_5)).fetch_add(1);
 // CHECK-NEXT:}
 __device__ uint32_t dmem[100];
 __global__ void foo_4() {
@@ -275,12 +275,12 @@ __device__ uint32_t* func(uint32_t *in){
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  uint32_t *p_4;
 // CHECK-NEXT:  p_4= p_4 + 1;
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:  p_4=func(p_3);
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_4" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo_5() {
 extern __shared__ uint32_t share[];
@@ -309,7 +309,7 @@ extern __shared__ uint32_t share[];
 // CHECK-NEXT:  uint32_t *p_4;
 // CHECK-NEXT:  p_4= p_4 + 1;
 // CHECK-NEXT:  p_4=FUNC(p_3);
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo_6() {
 extern __shared__ uint32_t share[];
@@ -338,7 +338,7 @@ extern __shared__ uint32_t share[];
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_2" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::atomic_fetch_add(sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_2)), (uint32_t)1);
+// CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_2)).fetch_add(1);
 // CHECK-NEXT:}
 __global__ void foo_7(int a) {
 extern __shared__ uint32_t share[];
@@ -359,7 +359,7 @@ extern __shared__ uint32_t share[];
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = sm + OFFSET;
-// CHECK-NEXT:  sycl::atomic_fetch_or(sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])), data[1]);
+// CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
 // CHECK-NEXT:  data[1] = ptr[0];
 // CHECK-NEXT:}
 __global__ void kernel(unsigned* data) {
@@ -374,7 +374,7 @@ __global__ void kernel(unsigned* data) {
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = OFFSET + sm;
-// CHECK-NEXT:  sycl::atomic_fetch_or(sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])), data[1]);
+// CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
 // CHECK-NEXT:  data[1] = ptr[0];
 // CHECK-NEXT:}
 __global__ void kernel_1(unsigned* data) {
@@ -389,7 +389,7 @@ __global__ void kernel_1(unsigned* data) {
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = OFFSET + sm + (3 + 4) + 6;
-// CHECK-NEXT:  sycl::atomic_fetch_or(sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])), data[1]);
+// CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
 // CHECK-NEXT:  data[1] = ptr[0];
 // CHECK-NEXT:}
 __global__ void kernel_2(unsigned* data) {
@@ -408,13 +408,13 @@ __global__ void k() {
   float f;
   __shared__ uint32_t u32;
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_sub(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_and(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_or(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_xor(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_min(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
-  // CHECK-NEXT: sycl::atomic_fetch_max(sycl::atomic<int>(sycl::global_ptr<int>(&i)), i);
+  // CHECK: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_add(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_sub(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_and(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_or(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_xor(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_min(i);
+  // CHECK-NEXT: sycl::atomic<int>(sycl::global_ptr<int>(&i)).fetch_max(i);
   atomicAdd(&i, i);
   atomicSub(&i, i);
   atomicAnd(&i, i);
@@ -423,13 +423,13 @@ __global__ void k() {
   atomicMin(&i, i);
   atomicMax(&i, i);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_sub(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_and(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_or(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_xor(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_min(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
-  // CHECK-NEXT: sycl::atomic_fetch_max(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), ui);
+  // CHECK: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_add(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_sub(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_and(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_or(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_xor(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_min(ui);
+  // CHECK-NEXT: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_max(ui);
   atomicAdd(&ui, ui);
   atomicSub(&ui, ui);
   atomicAnd(&ui, ui);
@@ -438,12 +438,12 @@ __global__ void k() {
   atomicMin(&ui, ui);
   atomicMax(&ui, ui);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
-  // CHECK-NEXT: sycl::atomic_fetch_and(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
-  // CHECK-NEXT: sycl::atomic_fetch_or(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
-  // CHECK-NEXT: sycl::atomic_fetch_xor(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
-  // CHECK-NEXT: sycl::atomic_fetch_min(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
-  // CHECK-NEXT: sycl::atomic_fetch_max(sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)), ull);
+  // CHECK: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_add(ull);
+  // CHECK-NEXT: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_and(ull);
+  // CHECK-NEXT: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_or(ull);
+  // CHECK-NEXT: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_xor(ull);
+  // CHECK-NEXT: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_min(ull);
+  // CHECK-NEXT: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&ull)).fetch_max(ull);
   atomicAdd(&ull, ull);
   atomicAnd(&ull, ull);
   atomicOr(&ull, ull);
@@ -451,13 +451,13 @@ __global__ void k() {
   atomicMin(&ull, ull);
   atomicMax(&ull, ull);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), (unsigned int)i);
+  // CHECK: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_add(i);
   atomicAdd(&ui, i);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)), (unsigned int)(i + i));
+  // CHECK: sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&ui)).fetch_add(i + i);
   atomicAdd(&ui, i + i);
 
-  // CHECK: sycl::atomic_fetch_add(sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(u32)), *u32);
+  // CHECK: sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(u32)).fetch_add(*u32);
   atomicAdd(&u32, u32);
 
   // CHECK: dpct::atomic_fetch_add(&f, f);
