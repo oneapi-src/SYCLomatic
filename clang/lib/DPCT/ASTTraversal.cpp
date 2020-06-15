@@ -1567,7 +1567,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                              "cudaError_enum", "cudaDeviceProp",
                              "cudaPitchedPtr", "counting_iterator",
                              "transform_iterator", "permutation_iterator",
-                             "iterator_difference", "cusolverDnHandle_t"),
+                             "iterator_difference", "cusolverDnHandle_t",
+                             "cudaDataType_t"),
                   matchesName("cudnn.*|nccl.*"))),
               typedefDecl(anyOf(
                   hasAnyName("cudaError_t", "CUresult",
@@ -4090,11 +4091,21 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           CE->getArg(7), BufferType, IndentStr, BufferDecl);
       PrefixInsertStr = PrefixInsertStr + BufferDecl;
       CallExprArguReplVec[9] = getBufferNameAndDeclStr(
-          CE->getArg(10), BufferType, IndentStr, BufferDecl);
+          CE->getArg(9), BufferType, IndentStr, BufferDecl);
       PrefixInsertStr = PrefixInsertStr + BufferDecl;
       CallExprArguReplVec[12] = getBufferNameAndDeclStr(
-          CE->getArg(14), BufferType, IndentStr, BufferDecl);
+          CE->getArg(12), BufferType, IndentStr, BufferDecl);
       PrefixInsertStr = PrefixInsertStr + BufferDecl;
+    } else {
+      if (BufferType == "std::complex<float>" ||
+          BufferType == "std::complex<double>") {
+        CallExprArguReplVec[7] =
+            "(const " + BufferType + "**)" + CallExprArguReplVec[7];
+        CallExprArguReplVec[9] =
+            "(const " + BufferType + "**)" + CallExprArguReplVec[9];
+        CallExprArguReplVec[12] =
+            "(" + BufferType + "**)" + CallExprArguReplVec[12];
+      }
     }
 
     // update the replacement of two scalar arguments
@@ -4136,6 +4147,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         {3, 4, 5, 8, 10, 13, 14});
     declareTempVars(BufferType, {"alpha_ct", "beta_ct"}, {6, 11});
 
+    // insert the group_count to CallExprArguReplVec
+    auto InsertIter = CallExprArguReplVec.begin();
+    std::advance(InsertIter, 14);
+    CallExprArguReplVec.insert(InsertIter, "1");
+
+    // add an empty event vector as the last argument
+    CallExprArguReplVec.push_back("{}");
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
     if (NeedUseLambda) {
