@@ -78,6 +78,7 @@ public:
 class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
+  bool IsDependOnWrittenArgument = false;
 
 public:
   TemplateDependentStringInfo() = default;
@@ -98,10 +99,8 @@ public:
   /// X<Y<T1>> with template dependent replacement {4, 2, 0}.
   std::shared_ptr<TemplateDependentStringInfo>
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
-  inline std::string
-  getReplacedString(const std::vector<TemplateArgumentInfo> &TemplateList) {
-    return applyTemplateArguments(TemplateList)->getSourceString();
-  }
+
+  bool isDependOnWritten() const { return IsDependOnWrittenArgument; }
 };
 
 /// Store a expr source string which may need replaced and its replacements

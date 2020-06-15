@@ -56,6 +56,7 @@ TemplateDependentStringInfo::applyTemplateArguments(
   int OffsetShift = 0;
   auto &Repls = Result->TDRs;
   auto &Str = Result->SourceStr;
+  Result->IsDependOnWrittenArgument = true;
   for (auto &R : TDRs) {
     size_t ReplsSize = Repls.size();
     size_t ApplyOffset = R->getOffset() + OffsetShift;
@@ -73,6 +74,7 @@ TemplateDependentStringInfo::applyTemplateArguments(
                      return Repl;
                    });
     OffsetShift += TargetArg.getString().length() - R->getLength();
+    Result->IsDependOnWrittenArgument &= TargetArg.isWritten();
   }
   return Result;
 }

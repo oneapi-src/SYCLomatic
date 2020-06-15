@@ -1128,9 +1128,9 @@ public:
   // false, otherwise "()" will be returned.
   std::string getRangeArgument(const std::string &MemSize, bool MustArguments);
 
-  inline bool isTemplate() { return IsTemplate; }
-  inline bool isPointer() { return IsPointer; }
-  inline bool isReference() { return IsReference; }
+  inline bool isTemplate() const { return IsTemplate; }
+  inline bool isPointer() const { return IsPointer; }
+  inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
     removeQualifier();
@@ -1140,6 +1140,10 @@ public:
   /// e.g. X<T>, with T = int, result type will be X<int>.
   std::shared_ptr<CtTypeInfo>
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
+
+  bool isWritten() const {
+    return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
+  }
 
 private:
   CtTypeInfo() : IsPointer(false), IsTemplate(false) {}
@@ -1377,6 +1381,8 @@ public:
         }
         PS << ")";
       } else if (AccMode == Pointer) {
+        if (!getType()->isWritten())
+          PS << "(" << getAccessorDataType(true) << " *)";
         PS << getAccessorName() << ".get_pointer()";
       } else {
         PS << getAccessorName();
@@ -1718,6 +1724,7 @@ private:
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
   bool IsWritten = true;
+  bool IsTemplateDependent = false;
 };
 
 // memory variable map includes memory variable used in __global__/__device__
