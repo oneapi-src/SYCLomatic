@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <cassert>
+#include <vector>
 
 // CHECK: void testDevice(const int *K) {
 // CHECK-NEXT: int t = K[0];
@@ -155,4 +156,46 @@ int run_foo8() {
   in = 42;
   my_kernel2<<<4, 8>>>(in, &out);
   printf("%f ", out);
+}
+
+struct A{
+  int a;
+  int* get_pointer(){
+    return &a;
+  }
+};
+
+__global__ void k(int *p){}
+
+// CHECK:int run_foo9() {
+// CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK-NEXT:  std::vector<A> vec(10);
+// CHECK-NEXT:  A aa;
+// CHECK-NEXT:  q_ct1.submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto aa_get_pointer_ct0 = aa.get_pointer();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          k(aa_get_pointer_ct0);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:  q_ct1.submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto vec_get_pointer_ct0 = vec[2].get_pointer();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          k(vec_get_pointer_ct0);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+int run_foo9() {
+  std::vector<A> vec(10);
+  A aa;
+  k<<<1,1>>>(aa.get_pointer());
+  k<<<1,1>>>(vec[2].get_pointer());
 }

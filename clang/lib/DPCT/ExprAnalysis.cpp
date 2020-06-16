@@ -485,6 +485,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(DeclRefExpr)
     ANALYZE_EXPR(MemberExpr)
+    ANALYZE_EXPR(CXXMemberCallExpr)
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)

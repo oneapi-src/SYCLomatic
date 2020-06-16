@@ -2,6 +2,7 @@
 // RUN: FileCheck --input-file %T/kernel-call.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
+#include <vector>
 
 // CHECK: void helloFromGPUDDefaultArgs(int i, int j, int k,
 // CHECK-NEXT:   cl::sycl::nd_item<3> item_ct1,
@@ -577,4 +578,56 @@ __device__ void deviceFoo2(int i = 0, int j = 0){
 __global__ void callDeviceFoo(){
   deviceFoo(1,2,3,4,5,6);
   deviceFoo2(1,2);
+}
+
+struct A{
+  int a;
+  int* get_pointer(){
+    return &a;
+  }
+};
+
+__global__ void k(int *p){}
+
+//CHECK:int run_foo9() {
+//CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:  std::vector<A> vec(10);
+//CHECK-NEXT:  A aa;
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> aa_get_pointer_buf_ct0 = dpct::get_buffer_and_offset(aa.get_pointer());
+//CHECK-NEXT:    size_t aa_get_pointer_offset_ct0 = aa_get_pointer_buf_ct0.second;
+//CHECK-NEXT:    q_ct1.submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        auto aa_get_pointer_acc_ct0 = aa_get_pointer_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            int *aa_get_pointer_ct0 = (int *)(&aa_get_pointer_acc_ct0[0] + aa_get_pointer_offset_ct0);
+//CHECK-NEXT:            k(aa_get_pointer_ct0);
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> vec_get_pointer_buf_ct0 = dpct::get_buffer_and_offset(vec[2].get_pointer());
+//CHECK-NEXT:    size_t vec_get_pointer_offset_ct0 = vec_get_pointer_buf_ct0.second;
+//CHECK-NEXT:    q_ct1.submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        auto vec_get_pointer_acc_ct0 = vec_get_pointer_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            int *vec_get_pointer_ct0 = (int *)(&vec_get_pointer_acc_ct0[0] + vec_get_pointer_offset_ct0);
+//CHECK-NEXT:            k(vec_get_pointer_ct0);
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:}
+int run_foo9() {
+  std::vector<A> vec(10);
+  A aa;
+  k<<<1,1>>>(aa.get_pointer());
+  k<<<1,1>>>(vec[2].get_pointer());
 }
