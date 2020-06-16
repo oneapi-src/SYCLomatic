@@ -636,13 +636,18 @@ void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
 }
 
 /// Return true if Ty is TypedefType.
-bool getTypedefNameType(QualType &Ty, TypeLoc &TL) {
+bool getInnerType(QualType &Ty, TypeLoc &TL) {
   if (auto TypedefTy = dyn_cast<TypedefType>(Ty)) {
     if (!TemplateArgumentInfo::isPlaceholderType(TypedefTy->desugar())) {
       Ty = TypedefTy->desugar();
       TL = TypedefTy->getDecl()->getTypeSourceInfo()->getTypeLoc();
       return true;
     }
+  } else if (auto ElaboratedTy = dyn_cast<ElaboratedType>(Ty)) {
+    Ty = ElaboratedTy->getNamedType();
+    if (TL)
+      TL = TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    return true;
   }
   return false;
 }
@@ -745,11 +750,6 @@ void deduceTemplateArgumentFromTemplateSpecialization(
   default:
     break;
   }
-
-  if (getTypedefNameType(ArgType, TL)) {
-    deduceTemplateArgumentFromTemplateSpecialization(TAIList, ParmType, ArgType,
-                                                     TL);
-  }
 }
 
 TypeLoc getPointeeTypeLoc(TypeLoc TL) {
@@ -789,7 +789,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
 
   if (TL) {
     TL = TL.getUnqualifiedLoc();
-    if (TL.getTypeLocClass() != ArgType->getTypeClass() ||
+    if (TL.getTypePtr()->getTypeClass() != ArgType->getTypeClass() ||
         TL.getTypeLocClass() == TypeLoc::SubstTemplateTypeParm)
       TL = TypeLoc();
   }
@@ -806,8 +806,9 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
     }
     break;
   case Type::TemplateSpecialization:
-    return deduceTemplateArgumentFromTemplateSpecialization(
+    deduceTemplateArgumentFromTemplateSpecialization(
         TAIList, PARM_TYPE_CAST(TemplateSpecializationType), ArgType, TL);
+    break;
   case Type::Pointer:
     if (auto ArgPointer = ARG_TYPE_CAST(PointerType)) {
       deduceTemplateArgumentFromType(TAIList, ParmType->getPointeeType(),
@@ -869,7 +870,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
     break;
   }
 
-  if (getTypedefNameType(ArgType, TL)) {
+  if (getInnerType(ArgType, TL)) {
     deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
   }
 }

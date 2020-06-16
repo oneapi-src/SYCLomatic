@@ -2,6 +2,8 @@
 // RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce.dp.cpp
 
+#include <complex>
+
 template<class T1, class T2> class TemplateClass { using type = T1; };
 
 // CHECK: template<class T, size_t S> void template_device(T *a) {
@@ -205,6 +207,9 @@ __global__ void kernel_class(TemplateClass<T1, T2> b) {
 }
 template<class T>
 __global__ void kernel_ref(const T &b) { __shared__ T a[10]; }
+template<class T> __global__ void kernel_dependent(std::complex<T> *d) {
+  __shared__ std::complex<T> a[10];
+}
 
 template<class T1, class T2, size_t S> void implicit_host() {
     typedef typename TemplateClass<T1, T2>::type typedef_1;
@@ -375,4 +380,24 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_class(c_e, (int *)a1_acc_ct1.get_pointer(), (double *)a2_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_class<<<1,1>>>(c_e);
+
+    using typedef_2 = std::complex<double>;
+    std::complex<int> *h_cpx;
+    typedef_2 *h_cpx_2;
+    // CHECK:  sycl::accessor<std::complex<int>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_dependent(h_cpx, (std::complex<int> *)a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_dependent<<<1,1>>>(h_cpx);
+    // CHECK:  sycl::accessor<std::complex<double>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-EMPTY:
+    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:      kernel_dependent(h_cpx_2, (std::complex<double> *)a_acc_ct1.get_pointer());
+    // CHECK-NEXT:    });
+    kernel_dependent<<<1,1>>>(h_cpx_2);
 }
