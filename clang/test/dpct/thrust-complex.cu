@@ -28,6 +28,12 @@ __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c) {
   __shared__ thrust::complex<struct double2> s[10];
 }
 
+// CHECK: void template_kernel(T *, std::complex<T> *s) {
+template<class T>
+__global__ void template_kernel(T *) {
+  __shared__ thrust::complex<T> s[10];
+}
+
 template<typename T>
 class C {
   T data;
@@ -92,7 +98,7 @@ int main() {
   thrust::complex<double> cd2 = static_cast<thrust::complex<double>>(*cdp);
 // CHECK:   bar(reinterpret_cast<std::complex<double> *>(cdp));
   bar(reinterpret_cast<thrust::complex<double> *>(cdp));
-// CHECK:   dpct::get_default_queue().submit(
+// CHECK:   q_ct1.submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       sycl::accessor<std::complex<sycl::double2>, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
@@ -103,6 +109,19 @@ int main() {
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp));
+
+  int *d_i;
+// CHECK:   q_ct1.submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::accessor<std::complex<int>, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           template_kernel<int>(d_i, s_acc_ct1.get_pointer());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+  template_kernel<int><<<1, 256>>>(d_i);
 
   return 0;
 }

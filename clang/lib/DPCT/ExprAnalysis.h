@@ -116,7 +116,6 @@ public:
   // Add a template dependent replacement
   inline void addTemplateDependentReplacement(size_t Offset, size_t Length,
                                               unsigned TemplateIndex) {
-    Offset += ShiftLength;
     TDRs.insert(
         std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
                                    SourceStr, Offset, Length, TemplateIndex)));
@@ -126,8 +125,15 @@ public:
     auto Result = ReplMap.insert(std::make_pair(
         Offset,
         std::make_shared<StringReplacement>(SourceStr, Offset, Length, Text)));
-    if (Result.second)
-      ShiftLength += Result.first->second->getReplacedText().length() - Length;
+    if (Result.second) {
+      auto Shift = Result.first->second->getReplacedText().length() - Length;
+      ShiftLength += Shift;
+      auto TDRItr = TDRs.upper_bound(Result.first->first);
+      while (TDRItr != TDRs.end()) {
+        TDRItr->second->shift(Shift);
+        ++TDRItr;
+      }
+    }
   }
 
   // Generate replacement text info which dependent on template args.
