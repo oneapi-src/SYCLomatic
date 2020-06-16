@@ -49,7 +49,11 @@
 #include <utility>
 
 using namespace clang;
-
+#if INTEL_CUSTOMIZATION
+namespace clang {
+  extern std::function<bool(SourceLocation)> IsInRootFunc;
+}
+#endif
 //===----------------------------------------------------------------------===//
 // Token Class Implementation
 //===----------------------------------------------------------------------===//
@@ -1692,7 +1696,13 @@ FinishIdentifier:
       BufferPtr = CurPtr;
       return true;
     }
-
+#ifdef INTEL_CUSTOMIZATION
+    // if __CUDA_ARCH__ in in-root, perfrom HandleIdentifier anyway
+    if (!II->isHandleIdentifierCase() && II->getName() == "__CUDA_ARCH__" &&
+      IsInRootFunc(Result.getLocation())) {
+      return PP->HandleIdentifier(Result);
+    }
+#endif
     // Finally, now that we know we have an identifier, pass this off to the
     // preprocessor, which may macro expand it or something.
     if (II->isHandleIdentifierCase())

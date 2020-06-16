@@ -39,6 +39,13 @@ void foo() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   DDD d3;
 
+// CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP
+#ifdef __CUDA_ARCH__
+  // CHECK: int CA = DPCPP_COMPATIBILITY_TEMP;
+  int CA = __CUDA_ARCH__;
+#endif
+
+
   // CHECK: (*d3.A)[0] = 3;
   // CHECK-NEXT: d3.B[0] = 2;
   // CHECK-NEXT: EMPTY_MACRO(d3.B[0]);
