@@ -85,3 +85,12 @@ int main() {
 #define AAA __CUDA_ARCH__
 #define BBB __CUDACC__
 #define CCC __NVCC__
+
+//CHECK: #ifdef __DPCT_HPP__
+//CHECK-NEXT:#endif
+//CHECK-NEXT:#ifdef __DPCT_HPP__
+//CHECK-NEXT:#endif
+#ifdef __DRIVER_TYPES_H__
+#endif
+#ifdef __CUDA_RUNTIME_H__
+#endif

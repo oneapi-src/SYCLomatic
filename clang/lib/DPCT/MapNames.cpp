@@ -2737,6 +2737,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
     {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"},      /**/
     {"__CUDACC__", "CL_SYCL_LANGUAGE_VERSION"},
+    {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
+    {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
     //...
 };
 
