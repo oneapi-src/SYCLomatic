@@ -1567,6 +1567,11 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
+    if (ThrustFuncName == "exclusive_scan") {
+      DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Numeric);
+      emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
+    }
+
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
     if(CE->getNumArgs()<=0)
@@ -1660,16 +1665,21 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cusparseDiagType_t", "cusparseFillMode_t",
                   "cusparseIndexBase_t", "cusparseMatrixType_t",
                   "cusparseOperation_t", "cusparseMatDescr_t",
-                  "cusparseHandle_t", "CUcontext",
-                  "cublasPointerMode_t", "cusparsePointerMode_t",
-                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
-                  "cudaDataType", "cublasDataType_t",
-                  "curandState_t", "curandState", "curandStateXORWOW_t",
-                  "curandStatePhilox4_32_10_t", "curandStateMRG32k3a_t"
-                  ),
+                  "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
+                  "cusparsePointerMode_t", "cublasGemmAlgo_t",
+                  "cusparseSolveAnalysisInfo_t", "cudaDataType",
+                  "cublasDataType_t", "curandState_t", "curandState",
+                  "curandStateXORWOW_t", "curandStatePhilox4_32_10_t",
+                  "curandStateMRG32k3a_t", "minus", "negate", "logical_or",
+                  "identity"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
+  MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
+                            hasAnyTemplateArgument(refersToType(hasDeclaration(
+                                namedDecl(hasName("use_default"))))))))))
+                    .bind("useDefaultVarDeclInTemplateArg"),
+                this);
 }
 
 std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
@@ -2083,6 +2093,14 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
       }
 
+      if (TypeStr == "identity") {
+        emplaceTransformation(new ReplaceToken(
+            TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
+                dpct::DpctGlobalInfo::getContext().getLangOpts())),
+            TL->getEndLoc(), ""));
+      }
+
       const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
       if (TypeStr == "cusparseMatDescr_t" && DS) {
         for (auto I : DS->decls()) {
@@ -2142,6 +2160,32 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
         SrcAPIStaticsMap[TypeStr]++;
         emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
         return;
+      }
+    }
+  }
+  if (auto VD = getNodeAsType<VarDecl>(
+          Result, "useDefaultVarDeclInTemplateArg")) {
+    auto TL = VD->getTypeSourceInfo()->getTypeLoc();
+
+    auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>();
+    if (!TSTL)
+      return;
+    auto TST = dyn_cast<TemplateSpecializationType>(VD->getType().getUnqualifiedType());
+    if (!TST)
+      return;
+
+    bool HasUnremovedPreviousArg = 0;
+    for (unsigned i = 0; i < TST->getNumArgs(); i++) {
+      if (!dpct::DpctGlobalInfo::getTypeName(TST->getArg(0).getAsType())
+               .compare("thrust::use_default")) {
+        auto ArgBeginLoc = TSTL.getArgLoc(i).getSourceRange().getBegin();
+        auto ArgEndLoc = TSTL.getArgLoc(i).getSourceRange().getEnd();
+        if (HasUnremovedPreviousArg && i < TST->getNumArgs() - 1) {
+          ArgEndLoc = TSTL.getArgLoc(i - 1).getSourceRange().getBegin();
+        }
+        emplaceTransformation(new ReplaceToken(ArgBeginLoc, ArgEndLoc, ""));
+      } else {
+        HasUnremovedPreviousArg = 1;
       }
     }
   }

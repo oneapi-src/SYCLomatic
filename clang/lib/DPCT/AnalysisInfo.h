@@ -250,6 +250,7 @@ enum HeaderType {
   Complex,
   Future,
   Thread,
+  Numeric,
   MKL_BLAS_Solver,
   MKL_RNG,
   MKL_RNG_DEVICE,
@@ -393,6 +394,9 @@ public:
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
                           "<mkl_spblas_sycl.hpp>", "<dpct/blas_utils.hpp>");
+    case Numeric:
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
+        "<numeric>");
     }
   }
 

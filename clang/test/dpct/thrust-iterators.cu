@@ -21,13 +21,13 @@ public:
   typedef typename thrust::counting_iterator<difference_type>                   CountingIterator;
 // CHECK:  typedef typename dpstd::transform_iterator<StrideFunctor, CountingIterator>  TransformIterator;
   typedef typename thrust::transform_iterator<StrideFunctor, CountingIterator>  TransformIterator;
-// CHECK:  typedef typename dpct::permutation_iterator<Iterator,TransformIterator>     PermutationIterator;
+// CHECK:  typedef typename dpstd::permutation_iterator<Iterator,TransformIterator>     PermutationIterator;
   typedef typename thrust::permutation_iterator<Iterator,TransformIterator>     PermutationIterator;
 
 // CHECK:  dpstd::counting_iterator<difference_type> cIt;
   thrust::counting_iterator<difference_type> cIt;
 // CHECK:  dpstd::transform_iterator<StrideFunctor, CountingIterator>  tIt;
   thrust::transform_iterator<StrideFunctor, CountingIterator>  tIt;
-// CHECK:  dpct::permutation_iterator<Iterator,TransformIterator> pIt;
+// CHECK:  dpstd::permutation_iterator<Iterator,TransformIterator> pIt;
   thrust::permutation_iterator<Iterator,TransformIterator> pIt;
 };
