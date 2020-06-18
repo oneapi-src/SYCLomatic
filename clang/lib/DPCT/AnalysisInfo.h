@@ -1111,7 +1111,8 @@ public:
   // If NeedSizeFold is true, array size will be folded, but orginal expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
-  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
+  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false,
+             bool IsShared = false);
 
   inline const std::string &getBaseName() { return BaseName; }
 
@@ -1207,6 +1208,7 @@ private:
   bool IsPointer;
   bool IsReference;
   bool IsTemplate;
+  bool IsShared = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
@@ -1278,7 +1280,7 @@ public:
                   : Global),
         PointerAsArray(false) {
     setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                         isLocal()));
+                                         isLocal(), isShared()));
     if (getType()->isPointer()) {
       Attr = Device;
       getType()->adjustAsMemType();

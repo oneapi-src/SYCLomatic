@@ -1481,7 +1481,8 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam) c
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
 }
 
-CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold, bool IsShared)
+    : IsPointer(false), IsTemplate(false), IsShared(IsShared) {
   setTypeInfo(TL, NeedSizeFold);
 }
 
@@ -1518,6 +1519,8 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::IncompleteArray:
     return setArrayInfo(TYPELOC_CAST(IncompleteArrayTypeLoc), NeedSizeFold);
   case TypeLoc::Pointer:
+    if (IsShared)
+      break;
     IsPointer = true;
     return setTypeInfo(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc());
   case TypeLoc::LValueReference:

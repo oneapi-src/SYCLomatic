@@ -199,3 +199,25 @@ int run_foo9() {
   k<<<1,1>>>(aa.get_pointer());
   k<<<1,1>>>(vec[2].get_pointer());
 }
+
+// CHECK:void cuda_pme_forces_dev(float * *afn_s) {
+// CHECK-NEXT:  // __shared__ variable
+// CHECK-NEXT:}
+// CHECK-NEXT:int run_foo10() {
+// CHECK-NEXT: dpct::get_default_queue().submit(
+// CHECK-NEXT:   [&](sycl::handler &cgh) {
+// CHECK-NEXT:     sycl::accessor<float *, 1, sycl::access::mode::read_write, sycl::access::target::local> afn_s_acc_ct1(sycl::range<1>(3), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:         cuda_pme_forces_dev(afn_s_acc_ct1.get_pointer());
+// CHECK-NEXT:       });
+// CHECK-NEXT:   });
+// CHECK-NEXT:}
+__global__ void cuda_pme_forces_dev() {
+  __shared__ float *afn_s[3]; // __shared__ variable
+}
+int run_foo10() {
+  cuda_pme_forces_dev<<<1,1>>>();
+}
