@@ -15,6 +15,7 @@
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
+#include "Checkpoint.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/CharInfo.h"
@@ -611,6 +612,7 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
 }
 
 void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
   const VarDecl *VD = nullptr;
   const DeclRefExpr *DRE = nullptr;
@@ -755,6 +757,7 @@ static bool isCudaFailureCheck(const DeclRefExpr *E) {
 }
 
 void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   static std::vector<std::string> NameList = {"errIf", "errIfSpecial"};
   const IfStmt *If = getNodeAsType<IfStmt>(Result, "errIf");
   if (!If)
@@ -973,6 +976,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   // if host api call in the condition session of flow control
   // or host api call whose return value used inside flow control or return
   // then add try catch.
@@ -1055,6 +1059,7 @@ void AlignAttrsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto C = getNodeAsType<CXXRecordDecl>(Result, "classDecl");
   if (!C)
     return;
@@ -1078,6 +1083,7 @@ void FuncAttrsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void FuncAttrsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto FD = getNodeAsType<FunctionDecl>(Result, "funcDecl");
   auto SM = Result.SourceManager;
   if (!FD)
@@ -1448,6 +1454,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 }
 
 void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   ReportUnsupportedAtomicFunc(
       getNodeAsType<CallExpr>(Result, "unsupportedAtomicFuncCall"));
 
@@ -1479,7 +1486,7 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto UniqueName = [](const Stmt *S) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Loc = S->getBeginLoc();
@@ -1531,7 +1538,7 @@ void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ThrustCtorExprRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const CXXConstructExpr *CE =
           getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
     // handle constructor expressions
@@ -1873,7 +1880,7 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
 }
 
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     auto BeginLoc = TL->getBeginLoc();
     SourceManager *SM = Result.SourceManager;
@@ -2009,7 +2016,7 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
     auto BeginLoc = TL->getBeginLoc();
     SourceManager *SM = Result.SourceManager;
@@ -2095,6 +2102,7 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
 }
 
 void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   // xxx = int2.x => xxx = static_cast<int>(int2.x())
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
@@ -2297,6 +2305,7 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
 }
 
 void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   // Add namespace to user overloaded operator declaration
   MigrateOverloadedOperatorDecl(
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
@@ -2338,7 +2347,7 @@ VectorTypeCtorRule::getReplaceTypeName(const std::string &TypeName) {
 // the syntax. Returns the constructor node and a boolean indicating if a
 // closed brace needs to be appended.
 void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
     if (!CE->getDirectCallee())
       return;
@@ -2419,6 +2428,7 @@ ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
 }
 
 void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   ReplaceDim3Ctor *R = getReplaceDim3Modification(Result);
   if (R) {
     // add a transformation that will filter out all nested transformations
@@ -2544,6 +2554,7 @@ void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "Dim3MemberPointerExpr")) {
     // E.g.
@@ -2575,6 +2586,7 @@ void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
 }
 
 void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "DevicePropVar");
   if (!ME)
     return;
@@ -2682,6 +2694,7 @@ void EnumConstantRule::handleComputeMode(std::string EnumName,
 }
 
 void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
   if (!E)
     return;
@@ -2714,6 +2727,7 @@ void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const DeclRefExpr *DE = getNodeAsType<DeclRefExpr>(Result, "ErrorConstants");
   if (!DE)
     return;
@@ -2788,6 +2802,7 @@ void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ManualMigrateEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "NCCLConstants")) {
     auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
@@ -2836,6 +2851,7 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "BLASStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
@@ -2869,6 +2885,7 @@ void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void RandomEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
@@ -2897,6 +2914,7 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SPBLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "SPBLASStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
@@ -2954,6 +2972,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
@@ -3630,6 +3649,7 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
@@ -4130,6 +4150,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
@@ -5983,6 +6004,7 @@ void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SOLVEREnumsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "SOLVERStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
@@ -6092,6 +6114,7 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
@@ -6480,6 +6503,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
@@ -6753,6 +6777,7 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "eventAPICall");
   if (!CE) {
@@ -7005,6 +7030,7 @@ std::string getNewQueue(int Index) {
 }
 
 void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "streamAPICall");
   if (!CE) {
@@ -7167,6 +7193,7 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 }
 
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
@@ -7263,6 +7290,7 @@ void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void DeviceFunctionCallRule::run(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
   if (FD) {
@@ -7344,6 +7372,7 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
 }
 
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto MemVar = getNodeAsType<VarDecl>(Result, "var")) {
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
         MemVar,
@@ -8514,6 +8543,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto MigrateCallExpr = [&](const CallExpr *C, const bool IsAssigned,
                              const UnresolvedLookupExpr *ULExpr = NULL) {
     if (!C)
@@ -8810,6 +8840,7 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto VD = getNodeAsType<VarDecl>(Result, "decl")) {
     emplaceMemcpy3DDeclarations(VD);
   } else if (auto ME = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
@@ -8886,6 +8917,7 @@ void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
 }
 
 void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto D = getNodeAsType<CXXRecordDecl>(Result, "unnamedType");
   if (D && D->getName().empty())
     emplaceTransformation(new InsertClassName(D));
@@ -8911,6 +8943,7 @@ void GuessIndentWidthRule::registerMatcher(MatchFinder &MF) {
 }
 
 void GuessIndentWidthRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
     return;
   SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -9001,6 +9034,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
     // Make sure all args in CE are not straddle nodes.
     // (partially in function-like macro)
@@ -9038,6 +9072,7 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void WarpFunctionsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "ancestor"))
     DeviceFunctionDecl::LinkRedecls(FD)->setItem();
 
@@ -9065,6 +9100,7 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall");
   const FunctionDecl *FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
@@ -9150,6 +9186,7 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 }
 
 void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto V = getNodeAsType<VarDecl>(Result, "decl"))
     emplaceTransformation(
         new ReplaceTypeInDecl(V, "dpct::kernel_function_info"));
@@ -9183,7 +9220,7 @@ void TypeCastRule::registerMatcher(MatchFinder &MF) {
 }
 
 void TypeCastRule::run(const MatchFinder::MatchResult &Result) {
-
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const DeclRefExpr *E =
           getNodeAsType<DeclRefExpr>(Result, "Double2CastExpr")) {
     std::string Name = E->getNameInfo().getName().getAsString();
@@ -9234,6 +9271,7 @@ RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
 }
 
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
   if (!C) {
     C = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI");
@@ -9392,6 +9430,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
 }
 
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
     auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
@@ -9517,6 +9556,7 @@ void CXXNewExprRule::registerMatcher(MatchFinder &MF) {
 }
 
 void CXXNewExprRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto CNE = getAssistNodeAsType<CXXNewExpr>(Result, "newExpr")) {
     // E.g. new cudaEvent_t *()
     Token Tok;
@@ -9557,6 +9597,7 @@ void NamespaceRule::registerMatcher(MatchFinder &MF) {
 }
 
 void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto UDD = getAssistNodeAsType<UsingDirectiveDecl>(Result, "usingDirective")) {
     if (UDD->getNominatedNamespace()->getNameAsString() == "cooperative_groups")
       emplaceTransformation(new ReplaceDecl(UDD, ""));
@@ -9576,6 +9617,7 @@ void RemoveBaseClassRule::registerMatcher(MatchFinder &MF) {
 }
 
 void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
   auto findColon = [&](SourceRange SR) {
@@ -9650,6 +9692,7 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
   Matchers.matchAST(Context);
 
   DebugInfo::printMatchedRules(Storage);
+  CHECKPOINT_ASTMATCHER_RUN_EXIT();
 }
 
 void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {

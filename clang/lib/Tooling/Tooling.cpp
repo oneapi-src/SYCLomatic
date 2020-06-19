@@ -110,7 +110,22 @@ llvm::raw_ostream &DiagnosticsOS() {
 
 } // namespace tooling
 } // namespace clang
-jmp_buf ProcessingEnterCP;
+#if defined(__linux__)
+#define JMP_BUF   sigjmp_buf
+#define SETJMP(x)       sigsetjmp(x, 1)
+#define LONGJMP      siglongjmp
+
+#else
+#define JMP_BUF   jmp_buf
+#define SETJMP(x)       setjmp(x)
+#define LONGJMP      longjmp
+#endif
+
+
+JMP_BUF CPFileEnter;
+
+int CheckPointStage=0;
+bool CurFileMeetErr=false;
 
 #endif
 
@@ -563,7 +578,10 @@ int ClangTool::run(ToolAction *Action) {
 
   for (llvm::StringRef File : AbsolutePaths) {
 #ifdef INTEL_CUSTOMIZATION
-    int Ret=setjmp(ProcessingEnterCP);
+    //enter point for the file processing.
+    CheckPointStage = 1;
+    CurFileMeetErr= false;
+    int Ret=SETJMP(CPFileEnter);
     if(Ret == 0) {
       const std::string Msg = "Processing: " + File.str()  +  "\n";
       DoPrintHandler(Msg, false);
@@ -694,7 +712,10 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
   }
-
+  #ifdef  INTEL_CUSTOMIZATION
+  //exit point for the file processing.
+  CheckPointStage = 0;
+  #endif
   if (!InitialWorkingDir.empty()) {
     if (auto EC =
             OverlayFileSystem->setCurrentWorkingDirectory(InitialWorkingDir))

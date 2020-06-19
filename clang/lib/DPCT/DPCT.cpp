@@ -20,6 +20,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
+#include "Checkpoint.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
@@ -45,13 +46,14 @@
 #include <unordered_map>
 #include <vector>
 
-
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+
+#include <signal.h>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -343,6 +345,8 @@ std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 int FatalErrorCnt=0;
+JMP_BUF CPFileASTMaterEnter;
+JMP_BUF CPRepPostprocessEnter;
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -1052,9 +1056,14 @@ int run(int argc, const char **argv) {
     }
   }
 
-  auto &Global = DpctGlobalInfo::getInstance();
-  Global.buildReplacements();
-  Global.emplaceReplacements(Tool.getReplacements());
+  int RetJmp=0;
+  CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
+  if(RetJmp==0) {
+    auto &Global = DpctGlobalInfo::getInstance();
+    Global.buildReplacements();
+    Global.emplaceReplacements(Tool.getReplacements());
+  }
+  CHECKPOINT_ReplacementPostProcess_EXIT();
 
   if (GenReport) {
     // report: apis, stats, all, diags
