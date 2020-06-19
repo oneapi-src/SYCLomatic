@@ -850,15 +850,35 @@ public:
   using dpct_accessor_t = dpct::accessor<T, Memory, Dimension>;
 
   global_memory() : global_memory(cl::sycl::range<Dimension>(1)) {}
-  /// Constructor of 1-D array with inlitializer list
-  global_memory(const cl::sycl::range<Dimension> &in_range,
-                std::initializer_list<value_t> &&init_list)
+
+  /// Constructor of 1-D array with initializer list
+  template <size_t D = Dimension>
+  global_memory(
+      const typename std::enable_if<D == 1, cl::sycl::range<1>>::type &in_range,
+      std::initializer_list<value_t> &&init_list)
       : global_memory(in_range) {
-    static_assert(Dimension == 1,
-                  "only 1-D array can be inited with intialization list");
     assert(init_list.size() <= in_range.size());
     dpct_memcpy(memory_ptr, init_list.begin(), init_list.size() * sizeof(T),
                 host_to_device);
+  }
+
+  /// Constructor of 2-D array with initializer list
+  template <size_t D = Dimension>
+  global_memory(
+      const typename std::enable_if<D == 2, cl::sycl::range<2>>::type &in_range,
+      std::initializer_list<std::initializer_list<value_t>> &&init_list)
+      : global_memory(in_range) {
+    assert(init_list.size() <= in_range[0]);
+    auto data = (byte_t *)std::malloc(size);
+    auto tmp_data = data;
+    std::memset(data, 0, size);
+    for (auto sub_list : init_list) {
+      assert(sub_list.size() <= in_range[1]);
+      std::memcpy(tmp_data, sub_list.begin(), sub_list.size() * sizeof(T));
+      tmp_data += in_range[1] * sizeof(T);
+    }
+    dpct_memcpy(memory_ptr, data, size, host_to_device);
+    free(data);
   }
 
   /// Constructor with range

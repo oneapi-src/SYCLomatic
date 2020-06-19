@@ -1,25 +1,5 @@
-//===--- dpct_device.hpp ------------------------------*- C++ -*---===//
-//
-// Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
-//
-// The information and source code contained herein is the exclusive
-// property of Intel Corporation and may not be disclosed, examined
-// or reproduced in whole or in part without explicit written authorization
-// from the company.
-//
-//===-----------------------------------------------------------------===//
-//
-// Here's a example of bash script, which can compile and run this example
-// as regular SYCL program using ComputeCpp SDK:
-//
-// #!/bin/bash
-// NAME=memory_management_test1
-// #GCC_ABI_HACK=-D_GLIBCXX_USE_CXX11_ABI=0
-// compute++ -std=c++14 -O2 -mllvm -inline-threshold=1000 -sycl -intelspirmetadata -emit-llvm -isystem /include/ -I/include/ -I/opt/intel/opencl/include -o $NAME.cpp.sycl -c $NAME.cpp $GCC_ABI_HACK &&
-// c++ -isystem /include -isystem /opt/intel/opencl/include -Wall -include $NAME.cpp.sycl -std=gnu++14 -o $NAME.cpp.o -c $NAME.cpp  $GCC_ABI_HACK &&
-// c++ -Wall $NAME.cpp.o  -o $NAME -rdynamic /lib/libComputeCpp.so -lOpenCL -Wl,-rpath,/lib: $GCC_ABI_HACK &&
-// ./$NAME
-//
+// RUN: dpcpp global_memory.cpp -o global_memory
+
 #define DPCT_NAMED_LAMBDA
 #define DPCT_USM_LEVEL_NONE
 #include <CL/sycl.hpp>
@@ -46,6 +26,45 @@ dpct::constant_memory<int, 1> c1_a(16);
 dpct::constant_memory<int, 0> c2_a;
 dpct::constant_memory<TemplateStuct<int>, 0> c3_a;
 dpct::constant_memory<TestStruct, 0> c4_a;
+
+dpct::constant_memory<int, 2> c_2d_a(sycl::range<2>(5, 3),
+{{0, 10, 20},
+{30, 40, 50},
+{60, 70, 80},
+{90, 100, 110},
+{120, 130, 140}});
+dpct::constant_memory<int, 2> c_2d_b(sycl::range<2>(3, 5),
+{{0, 10, 20, 30, 40},
+{50, 60, 70, 80, 90},
+{100, 110, 120, 130, 140}});
+dpct::constant_memory<int, 1> c_1d(sycl::range<1>(15),
+                                   {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
+                                    110, 120, 130, 140});
+
+bool verify_init(int *data) {  
+  for(auto i = 0; i < 15; ++i) {
+    if (data[i] != i * 10)
+      return false;
+  }
+  return true;
+}
+
+bool verify() {
+  const int size = 15;
+  auto size_bytes = 15 * sizeof(int);
+
+  int h_result[15];
+  dpct::dpct_memcpy(h_result, c_2d_a.get_ptr(), size_bytes);
+  if (!verify_init(h_result))
+    return false;
+  dpct::dpct_memcpy(h_result, c_2d_b.get_ptr(), size_bytes);
+  if (!verify_init(h_result))
+    return false;
+  dpct::dpct_memcpy(h_result, c_1d.get_ptr(), size_bytes);
+  if (!verify_init(h_result))
+    return false;
+  return true;
+}
 
 void test4(TemplateStuct<int> *d3, TestStruct *d4) {
   d3->test();
@@ -110,6 +129,11 @@ int main() try {
         });
     });
 
+  if (verify()) {
+    printf("Init Constant Memory Success!\n");
+  } else {
+    printf("Init Constant Memory Fail!\n");
+  }
   return 0;
 }
 catch(cl::sycl::exception const &exc){}

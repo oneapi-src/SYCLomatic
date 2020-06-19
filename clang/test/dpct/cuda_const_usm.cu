@@ -25,8 +25,14 @@ __global__ void member_acc() {
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
 // CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
+
 // CHECK: dpct::device_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
+
+// CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+__constant__ int const_init[5] = {1, 2, 3, 7, 8};
+// CHECK: dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
+__constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
 
 // CHECK: struct FuncObj {
