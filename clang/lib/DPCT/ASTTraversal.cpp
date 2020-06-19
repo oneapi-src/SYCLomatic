@@ -9593,6 +9593,18 @@ void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
       return SourceLocation();
   };
 
+  auto getBaseDecl = [](QualType QT) {
+    const Type *T = QT.getTypePtr();
+    const NamedDecl *ND = nullptr;
+    if (const auto *E = dyn_cast<ElaboratedType>(T)) {
+      T = E->desugar().getTypePtr();
+      if (const auto *TT = dyn_cast<TemplateSpecializationType>(T))
+        ND = TT->getTemplateName().getAsTemplateDecl();
+    } else
+      ND = T->getAsCXXRecordDecl();
+    return ND;
+  };
+
   if (auto D = getNodeAsType<CXXRecordDecl>(Result, "derivedFrom")) {
     if (D->getNumBases() != 1)
       return;
@@ -9601,14 +9613,16 @@ void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
     auto ColonLoc = findColon(SR);
     if (ColonLoc.isValid()) {
       auto QT = D->bases().begin()->getType();
-      auto BaseDecl = QT.getTypePtr()->getAsCXXRecordDecl();
-      auto BaseName = BaseDecl->getDeclName().getAsString();
-      auto ThrustName = "thrust::" + BaseName;
-      auto StdName = "std::" + BaseName;
-      report(ColonLoc, Diagnostics::DEPRECATED_BASE_CLASS, false, ThrustName, StdName);
-      auto Len = SM->getFileOffset(D->getBraceRange().getBegin()) -
-                 SM->getFileOffset(ColonLoc);
-      emplaceTransformation(new ReplaceText(ColonLoc, Len, ""));
+      const NamedDecl *BaseDecl = getBaseDecl(QT);
+      if (BaseDecl) {
+        auto BaseName = BaseDecl->getDeclName().getAsString();
+        auto ThrustName = "thrust::" + BaseName;
+        auto StdName = "std::" + BaseName;
+        report(ColonLoc, Diagnostics::DEPRECATED_BASE_CLASS, false, ThrustName, StdName);
+        auto Len = SM->getFileOffset(D->getBraceRange().getBegin()) -
+          SM->getFileOffset(ColonLoc);
+        emplaceTransformation(new ReplaceText(ColonLoc, Len, ""));
+      }
     }
   }
 }
