@@ -37,8 +37,8 @@ template<typename T>
 inline double2 &operator*=(double2 &v, const double2 &v2)          ;
 
 // CHECK: inline sycl::double2 &copy(sycl::double2 &v, const sycl::double2 &v2) {
-// CHECK:   v.x() = static_cast<const double>(v2.x());
-// CHECK:   v.y() = static_cast<const double>(v2.y());
+// CHECK:   v.x() = v2.x();
+// CHECK:   v.y() = v2.y();
 // CHECK:   return v;
 // CHECK: }
 __host__ __device__ inline double2 &copy(double2 &v, const double2 &v2) {
@@ -51,8 +51,8 @@ __host__ __device__ inline double2 &copy(double2 &v, const double2 &v2) {
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 &operator+=(sycl::double2 &v, const sycl::double2 &v2) {
-// CHECK:   v.x() += static_cast<const double>(v2.x());
-// CHECK:   v.y() += static_cast<const double>(v2.y());
+// CHECK:   v.x() += v2.x();
+// CHECK:   v.y() += v2.y();
 // CHECK:   return v;
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
@@ -68,8 +68,8 @@ __host__ __device__ inline double2 &operator+=(double2 &v, const double2 &v2) {
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 &operator+=(sycl::double2 &v, const sycl::double2 &v2) {
-// CHECK:   v.x() += static_cast<const double>(v2.x());
-// CHECK:   v.y() += static_cast<const double>(v2.y());
+// CHECK:   v.x() += v2.x();
+// CHECK:   v.y() += v2.y();
 // CHECK:   return v;
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
@@ -85,8 +85,8 @@ __host__ __device__ inline double2 &operator+=(double2 &v, const double2 &v2) {
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 &operator-=(sycl::double2 &v, const sycl::double2 &v2) {
-// CHECK:   v.x() -= static_cast<const double>(v2.x());
-// CHECK:   v.y() -= static_cast<const double>(v2.y());
+// CHECK:   v.x() -= v2.x();
+// CHECK:   v.y() -= v2.y();
 // CHECK:   return v;
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 &operator-=(double2 &v, const double2 &v2) {
@@ -101,8 +101,8 @@ __host__ __device__ inline double2 &operator-=(double2 &v, const double2 &v2) {
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 &operator-=(sycl::double2 &v, const sycl::double2 &v2) {
-// CHECK:   v.x() -= static_cast<const double>(v2.x());
-// CHECK:   v.y() -= static_cast<const double>(v2.y());
+// CHECK:   v.x() -= v2.x();
+// CHECK:   v.y() -= v2.y();
 // CHECK:   return v;
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -182,7 +182,7 @@ __host__ __device__ inline double2 &operator/=(double2 &v, const double &r) {
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline bool operator==(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return ((static_cast<const double>(v1.x()) == static_cast<const double>(v2.x())) && (static_cast<const double>(v1.y()) == static_cast<const double>(v2.y())));
+// CHECK:   return ((v1.x() == v2.x()) && (v1.y() == v2.y()));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline bool operator==(const double2 &v1,
@@ -197,7 +197,7 @@ __host__ __device__ inline bool operator==(const double2 &v1,
 // CHECK: template<typename T>
 // CHECK: inline bool operator==(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return ((static_cast<const double>(v1.x()) == static_cast<const double>(v2.x())) && (static_cast<const double>(v1.y()) == static_cast<const double>(v2.y())));
+// CHECK:   return ((v1.x() == v2.x()) && (v1.y() == v2.y()));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -256,7 +256,7 @@ __host__ __device__ inline double2 operator+(const double2 &v) { return v; }
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: inline sycl::double2 operator-(const sycl::double2 &v) {
-// CHECK:   return sycl::double2(-static_cast<const double>(v.x()), -static_cast<const double>(v.y()));
+// CHECK:   return sycl::double2(-v.x(), -v.y());
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator-(const double2 &v) {
@@ -268,7 +268,7 @@ __host__ __device__ inline double2 operator-(const double2 &v) {
 // CHECK-NEXT:*/
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 operator-(const sycl::double2 &v) {
-// CHECK:   return sycl::double2(-static_cast<const double>(v.x()), -static_cast<const double>(v.y()));
+// CHECK:   return sycl::double2(-v.x(), -v.y());
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -282,7 +282,7 @@ __host__ __device__ inline double2 operator-(const double2 &v) {
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 operator+(const sycl::double2 &v1,
 // CHECK:                                              const sycl::double2 &v2) {
-// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) + static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) + static_cast<const double>(v2.y()));
+// CHECK:   return sycl::double2(v1.x() + v2.x(), v1.y() + v2.y());
 // CHECK: }
 // CHECK:}  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator+(const double2 &v1,
@@ -297,7 +297,7 @@ __host__ __device__ inline double2 operator+(const double2 &v1,
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 operator+(const sycl::double2 &v1,
 // CHECK:                                              const sycl::double2 &v2) {
-// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) + static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) + static_cast<const double>(v2.y()));
+// CHECK:   return sycl::double2(v1.x() + v2.x(), v1.y() + v2.y());
 // CHECK: }
 // CHECK:}  // namespace dpct_operator_overloading
 template<typename T>
@@ -311,7 +311,7 @@ __host__ __device__ inline double2 operator+(const double2 &v1,
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 operator-(const sycl::double2 &v1,
 // CHECK:                                              const sycl::double2 &v2) {
-// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) - static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) - static_cast<const double>(v2.y()));
+// CHECK:   return sycl::double2(v1.x() - v2.x(), v1.y() - v2.y());
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator-(const double2 &v1,
@@ -326,7 +326,7 @@ __host__ __device__ inline double2 operator-(const double2 &v1,
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 operator-(const sycl::double2 &v1,
 // CHECK:                                              const sycl::double2 &v2) {
-// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) - static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) - static_cast<const double>(v2.y()));
+// CHECK:   return sycl::double2(v1.x() - v2.x(), v1.y() - v2.y());
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -341,7 +341,7 @@ __host__ __device__ inline double2 operator-(const double2 &v1,
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 operator*(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK:   return sycl::double2(v.x() * r, v.y() * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator*(const double2 &v,
@@ -356,7 +356,7 @@ __host__ __device__ inline double2 operator*(const double2 &v,
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 operator*(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK:   return sycl::double2(v.x() * r, v.y() * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -371,7 +371,7 @@ __host__ __device__ inline double2 operator*(const double2 &v,
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline sycl::double2 operator*(const double &r,
 // CHECK:                                              const sycl::double2 &v) {
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK:   return sycl::double2(v.x() * r, v.y() * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator*(const double &r,
@@ -386,7 +386,7 @@ __host__ __device__ inline double2 operator*(const double &r,
 // CHECK: template<typename T>
 // CHECK: inline sycl::double2 operator*(const double &r,
 // CHECK:                                              const sycl::double2 &v) {
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK:   return sycl::double2(v.x() * r, v.y() * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -402,7 +402,7 @@ __host__ __device__ inline double2 operator*(const double &r,
 // CHECK: inline sycl::double2 operator/(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
 // CHECK:   double rinv = (double)1. / r;
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * rinv, static_cast<const double>(v.y()) * rinv);
+// CHECK:   return sycl::double2(v.x() * rinv, v.y() * rinv);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator/(const double2 &v,
@@ -419,7 +419,7 @@ __host__ __device__ inline double2 operator/(const double2 &v,
 // CHECK: inline sycl::double2 operator/(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
 // CHECK:   double rinv = (double)1. / r;
-// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * rinv, static_cast<const double>(v.y()) * rinv);
+// CHECK:   return sycl::double2(v.x() * rinv, v.y() * rinv);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -430,42 +430,42 @@ __host__ __device__ inline double2 operator/(const double2 &v,
 }
 
 // CHECK: inline double dot(const sycl::double2 &v1, const sycl::double2 &v2) {
-// CHECK:   return (static_cast<const double>(v1.x()) * static_cast<const double>(v2.x()) + static_cast<const double>(v1.y()) * static_cast<const double>(v2.y()));
+// CHECK:   return (v1.x() * v2.x() + v1.y() * v2.y());
 // CHECK: }
 __host__ __device__ inline double dot(const double2 &v1, const double2 &v2) {
   return (v1.x * v2.x + v1.y * v2.y);
 }
 
 // CHECK: inline double cross(const sycl::double2 &v1, const sycl::double2 &v2) {
-// CHECK:   return (static_cast<const double>(v1.x()) * static_cast<const double>(v2.y()) - static_cast<const double>(v1.y()) * static_cast<const double>(v2.x()));
+// CHECK:   return (v1.x() * v2.y() - v1.y() * v2.x());
 // CHECK: }
 __host__ __device__ inline double cross(const double2 &v1, const double2 &v2) {
   return (v1.x * v2.y - v1.y * v2.x);
 }
 
 // CHECK: inline double length(const sycl::double2 &v) {
-// CHECK:   return (sycl::sqrt(static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y())));
+// CHECK:   return (sycl::sqrt(v.x() * v.x() + v.y() * v.y()));
 // CHECK: }
 __host__ __device__ inline double length(const double2 &v) {
   return (std::sqrt(v.x * v.x + v.y * v.y));
 }
 
 // CHECK: inline double length2(const sycl::double2 &v) {
-// CHECK:   return (static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y()));
+// CHECK:   return (v.x() * v.x() + v.y() * v.y());
 // CHECK: }
 __host__ __device__ inline double length2(const double2 &v) {
   return (v.x * v.x + v.y * v.y);
 }
 
 // CHECK: inline sycl::double2 rotateCCW(const sycl::double2 &v) {
-// CHECK:   return sycl::double2(-static_cast<const double>(v.y()), static_cast<const double>(v.x()));
+// CHECK:   return sycl::double2(-v.y(), v.x());
 // CHECK: }
 __host__ __device__ inline double2 rotateCCW(const double2 &v) {
   return make_double2(-v.y, v.x);
 }
 
 // CHECK: inline sycl::double2 rotateCW(const sycl::double2 &v) {
-// CHECK:   return sycl::double2(static_cast<const double>(v.y()), -static_cast<const double>(v.x()));
+// CHECK:   return sycl::double2(v.y(), -v.x());
 // CHECK: }
 __host__ __device__ inline double2 rotateCW(const double2 &v) {
   return make_double2(v.y, -v.x);

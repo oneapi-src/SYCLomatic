@@ -2130,7 +2130,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
         recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())))))));
   };
 
-  // int2.x => static_cast<int>(int2.x())
+  // int2.x => int2.x()
   MF.addMatcher(
       memberExpr(allOf(memberAccess(), unless(hasParent(binaryOperator(allOf(
                                            hasLHS(memberExpr(memberAccess())),
@@ -2138,7 +2138,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
           .bind("VecMemberExpr"),
       this);
 
-  // int2.x += xxx => int2.x() += static_cast<int>(xxx)
+  // int2.x += xxx => int2.x() += xxx
   MF.addMatcher(
       binaryOperator(allOf(hasLHS(memberExpr(memberAccess())
                                       .bind("VecMemberExprAssignmentLHS")),
@@ -2165,22 +2165,13 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
 
 void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-  // xxx = int2.x => xxx = static_cast<int>(int2.x())
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
     auto Parents = Result.Context->getParents(*ME);
     if (Parents.size() == 0) {
       return;
     }
-    auto *UO = Parents[0].get<clang::UnaryOperator>();
-    if (UO && UO->getOpcode() == clang::UO_AddrOf) {
-      renameMemberField(ME);
-    } else {
-      std::ostringstream CastPrefix;
-      CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
-      insertAroundStmt(ME, CastPrefix.str(), ")");
-      renameMemberField(ME);
-    }
+    renameMemberField(ME);
   }
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS"))

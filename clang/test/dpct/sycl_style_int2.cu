@@ -37,18 +37,18 @@ int main() {
   int2 i6;
   // CHECK: sycl::int2 i7;
   int2 i7;
-  // CHECK: int i = static_cast<int>(i6.x());
+  // CHECK: int i = i6.x();
   int i = i6.x;
-  // CHECK: i6.x() = static_cast<int>(i7.x());
+  // CHECK: i6.x() = i7.x();
   i6.x = i7.x;
-  // CHECK: if (static_cast<int>(i6.x()) == static_cast<int>(i7.x())) {
+  // CHECK: if (i6.x() == i7.x()) {
   if (i6.x == i7.x) {
   }
   // CHECK: sycl::int2 i2_array[10];
   int2 i2_array[10];
   // CHECK: sycl::int2 i2_array2[10];
   int2 i2_array2[10];
-  // CHECK: if (static_cast<int>(i2_array[1].x()) == static_cast<int>(i2_array2[1].x())) {
+  // CHECK: if (i2_array[1].x() == i2_array2[1].x()) {
   if (i2_array[1].x == i2_array2[1].x) {
   }
   // CHECK: sycl::int2 x = sycl::int2(1, 2);

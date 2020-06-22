@@ -41,30 +41,30 @@ void test_00() {
 void test_01() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
-  // CHECK:size_t tix = static_cast<unsigned int>(threadIdx.x());
-  // CHECK:size_t tiy = static_cast<unsigned int>(threadIdx.y());
-  // CHECK:size_t tiz = static_cast<unsigned int>(threadIdx.z());
+  // CHECK:size_t tix = threadIdx.x();
+  // CHECK:size_t tiy = threadIdx.y();
+  // CHECK:size_t tiz = threadIdx.z();
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // CHECK: size_t bix = static_cast<unsigned int>(blockIdx.x());
-  // CHECK: size_t biy = static_cast<unsigned int>(blockIdx.y());
-  // CHECK: size_t biz = static_cast<unsigned int>(blockIdx.z());
+  // CHECK: size_t bix = blockIdx.x();
+  // CHECK: size_t biy = blockIdx.y();
+  // CHECK: size_t biz = blockIdx.z();
   size_t bix = blockIdx.x;
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK:  size_t bdx = static_cast<unsigned int>(blockDim.x());
-  // CHECK:  size_t bdy = static_cast<unsigned int>(blockDim.y());
-  // CHECK:  size_t bdz = static_cast<unsigned int>(blockDim.z());
+  // CHECK:  size_t bdx = blockDim.x();
+  // CHECK:  size_t bdy = blockDim.y();
+  // CHECK:  size_t bdz = blockDim.z();
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK:  size_t gdx = static_cast<unsigned int>(gridDim.x());
-  // CHECK:  size_t gdy = static_cast<unsigned int>(gridDim.y());
-  // CHECK:  size_t gdz = static_cast<unsigned int>(gridDim.z());
+  // CHECK:  size_t gdx = gridDim.x();
+  // CHECK:  size_t gdy = gridDim.y();
+  // CHECK:  size_t gdz = gridDim.z();
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;
   size_t gdz = gridDim.z;
@@ -75,30 +75,30 @@ void test_01() {
 __global__ void test_02() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
-  // CHECK:size_t tix = static_cast<unsigned int>(threadIdx.x());
-  // CHECK:size_t tiy = static_cast<unsigned int>(threadIdx.y());
-  // CHECK:size_t tiz = static_cast<unsigned int>(threadIdx.z());
+  // CHECK:size_t tix = threadIdx.x();
+  // CHECK:size_t tiy = threadIdx.y();
+  // CHECK:size_t tiz = threadIdx.z();
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // CHECK: size_t bix = static_cast<unsigned int>(blockIdx.x());
-  // CHECK: size_t biy = static_cast<unsigned int>(blockIdx.y());
-  // CHECK: size_t biz = static_cast<unsigned int>(blockIdx.z());
+  // CHECK: size_t bix = blockIdx.x();
+  // CHECK: size_t biy = blockIdx.y();
+  // CHECK: size_t biz = blockIdx.z();
   size_t bix = blockIdx.x;
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK:  size_t bdx = static_cast<unsigned int>(blockDim.x());
-  // CHECK:  size_t bdy = static_cast<unsigned int>(blockDim.y());
-  // CHECK:  size_t bdz = static_cast<unsigned int>(blockDim.z());
+  // CHECK:  size_t bdx = blockDim.x();
+  // CHECK:  size_t bdy = blockDim.y();
+  // CHECK:  size_t bdz = blockDim.z();
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK:  size_t gdx = static_cast<unsigned int>(gridDim.x());
-  // CHECK:  size_t gdy = static_cast<unsigned int>(gridDim.y());
-  // CHECK:  size_t gdz = static_cast<unsigned int>(gridDim.z());
+  // CHECK:  size_t gdx = gridDim.x();
+  // CHECK:  size_t gdy = gridDim.y();
+  // CHECK:  size_t gdz = gridDim.z();
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;
   size_t gdz = gridDim.z;

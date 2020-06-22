@@ -356,9 +356,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
         std::ostringstream Repl;
-        Repl << "static_cast<" << ME->getType().getAsString() << ">("
-             << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
-             << MemberName << ")";
+        Repl << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
+             << MemberName;
         addReplacement(ME, Repl.str());
       }
     }

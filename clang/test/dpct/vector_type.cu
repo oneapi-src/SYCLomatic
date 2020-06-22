@@ -29,17 +29,17 @@ int main_char1() {
   char1 *char1_e;
   // CHECK: char *char1_f;
   char1 *char1_f;
-  // CHECK: signed char char1_g = static_cast<signed char>(char1_c);
+  // CHECK: signed char char1_g = char1_c;
   signed char char1_g = char1_c.x;
-  // CHECK: char1_a = static_cast<signed char>(char1_d);
+  // CHECK: char1_a = char1_d;
   char1_a.x = char1_d.x;
-  // CHECK: if (static_cast<signed char>(char1_b) == static_cast<signed char>(char1_d)) {}
+  // CHECK: if (char1_b == char1_d) {}
   if (char1_b.x == char1_d.x) {}
   // CHECK: char char1_h[16];
   char1 char1_h[16];
   // CHECK: char char1_i[32];
   char1 char1_i[32];
-  // CHECK: if (static_cast<signed char>(char1_h[12]) == static_cast<signed char>(char1_i[12])) {}
+  // CHECK: if (char1_h[12] == char1_i[12]) {}
   if (char1_h[12].x == char1_i[12].x) {}
   // CHECK: char1_f = (char *)char1_i;
   char1_f = (char1 *)char1_i;
@@ -109,17 +109,17 @@ int main_char2() {
   char2 *char2_e;
   // CHECK: sycl::char2 *char2_f;
   char2 *char2_f;
-  // CHECK: signed char char2_g = static_cast<signed char>(char2_c.x());
+  // CHECK: signed char char2_g = char2_c.x();
   signed char char2_g = char2_c.x;
-  // CHECK: char2_a.x() = static_cast<signed char>(char2_d.x());
+  // CHECK: char2_a.x() = char2_d.x();
   char2_a.x = char2_d.x;
-  // CHECK: if (static_cast<signed char>(char2_b.x()) == static_cast<signed char>(char2_d.x())) {}
+  // CHECK: if (char2_b.x() == char2_d.x()) {}
   if (char2_b.x == char2_d.x) {}
   // CHECK: sycl::char2 char2_h[16];
   char2 char2_h[16];
   // CHECK: sycl::char2 char2_i[32];
   char2 char2_i[32];
-  // CHECK: if (static_cast<signed char>(char2_h[12].x()) == static_cast<signed char>(char2_i[12].x())) {}
+  // CHECK: if (char2_h[12].x() == char2_i[12].x()) {}
   if (char2_h[12].x == char2_i[12].x) {}
   // CHECK: char2_f = (sycl::char2 *)char2_i;
   char2_f = (char2 *)char2_i;
@@ -189,17 +189,17 @@ int main_char3() {
   char3 *char3_e;
   // CHECK: sycl::char3 *char3_f;
   char3 *char3_f;
-  // CHECK: signed char char3_g = static_cast<signed char>(char3_c.x());
+  // CHECK: signed char char3_g = char3_c.x();
   signed char char3_g = char3_c.x;
-  // CHECK: char3_a.x() = static_cast<signed char>(char3_d.x());
+  // CHECK: char3_a.x() = char3_d.x();
   char3_a.x = char3_d.x;
-  // CHECK: if (static_cast<signed char>(char3_b.x()) == static_cast<signed char>(char3_d.x())) {}
+  // CHECK: if (char3_b.x() == char3_d.x()) {}
   if (char3_b.x == char3_d.x) {}
   // CHECK: sycl::char3 char3_h[16];
   char3 char3_h[16];
   // CHECK: sycl::char3 char3_i[32];
   char3 char3_i[32];
-  // CHECK: if (static_cast<signed char>(char3_h[12].x()) == static_cast<signed char>(char3_i[12].x())) {}
+  // CHECK: if (char3_h[12].x() == char3_i[12].x()) {}
   if (char3_h[12].x == char3_i[12].x) {}
   // CHECK: char3_f = (sycl::char3 *)char3_i;
   char3_f = (char3 *)char3_i;
@@ -269,17 +269,17 @@ int main_char4() {
   char4 *char4_e;
   // CHECK: sycl::char4 *char4_f;
   char4 *char4_f;
-  // CHECK: signed char char4_g = static_cast<signed char>(char4_c.x());
+  // CHECK: signed char char4_g = char4_c.x();
   signed char char4_g = char4_c.x;
-  // CHECK: char4_a.x() = static_cast<signed char>(char4_d.x());
+  // CHECK: char4_a.x() = char4_d.x();
   char4_a.x = char4_d.x;
-  // CHECK: if (static_cast<signed char>(char4_b.x()) == static_cast<signed char>(char4_d.x())) {}
+  // CHECK: if (char4_b.x() == char4_d.x()) {}
   if (char4_b.x == char4_d.x) {}
   // CHECK: sycl::char4 char4_h[16];
   char4 char4_h[16];
   // CHECK: sycl::char4 char4_i[32];
   char4 char4_i[32];
-  // CHECK: if (static_cast<signed char>(char4_h[12].x()) == static_cast<signed char>(char4_i[12].x())) {}
+  // CHECK: if (char4_h[12].x() == char4_i[12].x()) {}
   if (char4_h[12].x == char4_i[12].x) {}
   // CHECK: char4_f = (sycl::char4 *)char4_i;
   char4_f = (char4 *)char4_i;
@@ -349,17 +349,17 @@ int main_double1() {
   double1 *double1_e;
   // CHECK: double *double1_f;
   double1 *double1_f;
-  // CHECK: double double1_g = static_cast<double>(double1_c);
+  // CHECK: double double1_g = double1_c;
   double double1_g = double1_c.x;
-  // CHECK: double1_a = static_cast<double>(double1_d);
+  // CHECK: double1_a = double1_d;
   double1_a.x = double1_d.x;
-  // CHECK: if (static_cast<double>(double1_b) == static_cast<double>(double1_d)) {}
+  // CHECK: if (double1_b == double1_d) {}
   if (double1_b.x == double1_d.x) {}
   // CHECK: double double1_h[16];
   double1 double1_h[16];
   // CHECK: double double1_i[32];
   double1 double1_i[32];
-  // CHECK: if (static_cast<double>(double1_h[12]) == static_cast<double>(double1_i[12])) {}
+  // CHECK: if (double1_h[12] == double1_i[12]) {}
   if (double1_h[12].x == double1_i[12].x) {}
   // CHECK: double1_f = (double *)double1_i;
   double1_f = (double1 *)double1_i;
@@ -429,17 +429,17 @@ int main_double2() {
   double2 *double2_e;
   // CHECK: sycl::double2 *double2_f;
   double2 *double2_f;
-  // CHECK: double double2_g = static_cast<double>(double2_c.x());
+  // CHECK: double double2_g = double2_c.x();
   double double2_g = double2_c.x;
-  // CHECK: double2_a.x() = static_cast<double>(double2_d.x());
+  // CHECK: double2_a.x() = double2_d.x();
   double2_a.x = double2_d.x;
-  // CHECK: if (static_cast<double>(double2_b.x()) == static_cast<double>(double2_d.x())) {}
+  // CHECK: if (double2_b.x() == double2_d.x()) {}
   if (double2_b.x == double2_d.x) {}
   // CHECK: sycl::double2 double2_h[16];
   double2 double2_h[16];
   // CHECK: sycl::double2 double2_i[32];
   double2 double2_i[32];
-  // CHECK: if (static_cast<double>(double2_h[12].x()) == static_cast<double>(double2_i[12].x())) {}
+  // CHECK: if (double2_h[12].x() == double2_i[12].x()) {}
   if (double2_h[12].x == double2_i[12].x) {}
   // CHECK: double2_f = (sycl::double2 *)double2_i;
   double2_f = (double2 *)double2_i;
@@ -509,17 +509,17 @@ int main_double3() {
   double3 *double3_e;
   // CHECK: sycl::double3 *double3_f;
   double3 *double3_f;
-  // CHECK: double double3_g = static_cast<double>(double3_c.x());
+  // CHECK: double double3_g = double3_c.x();
   double double3_g = double3_c.x;
-  // CHECK: double3_a.x() = static_cast<double>(double3_d.x());
+  // CHECK: double3_a.x() = double3_d.x();
   double3_a.x = double3_d.x;
-  // CHECK: if (static_cast<double>(double3_b.x()) == static_cast<double>(double3_d.x())) {}
+  // CHECK: if (double3_b.x() == double3_d.x()) {}
   if (double3_b.x == double3_d.x) {}
   // CHECK: sycl::double3 double3_h[16];
   double3 double3_h[16];
   // CHECK: sycl::double3 double3_i[32];
   double3 double3_i[32];
-  // CHECK: if (static_cast<double>(double3_h[12].x()) == static_cast<double>(double3_i[12].x())) {}
+  // CHECK: if (double3_h[12].x() == double3_i[12].x()) {}
   if (double3_h[12].x == double3_i[12].x) {}
   // CHECK: double3_f = (sycl::double3 *)double3_i;
   double3_f = (double3 *)double3_i;
@@ -589,17 +589,17 @@ int main_double4() {
   double4 *double4_e;
   // CHECK: sycl::double4 *double4_f;
   double4 *double4_f;
-  // CHECK: double double4_g = static_cast<double>(double4_c.x());
+  // CHECK: double double4_g = double4_c.x();
   double double4_g = double4_c.x;
-  // CHECK: double4_a.x() = static_cast<double>(double4_d.x());
+  // CHECK: double4_a.x() = double4_d.x();
   double4_a.x = double4_d.x;
-  // CHECK: if (static_cast<double>(double4_b.x()) == static_cast<double>(double4_d.x())) {}
+  // CHECK: if (double4_b.x() == double4_d.x()) {}
   if (double4_b.x == double4_d.x) {}
   // CHECK: sycl::double4 double4_h[16];
   double4 double4_h[16];
   // CHECK: sycl::double4 double4_i[32];
   double4 double4_i[32];
-  // CHECK: if (static_cast<double>(double4_h[12].x()) == static_cast<double>(double4_i[12].x())) {}
+  // CHECK: if (double4_h[12].x() == double4_i[12].x()) {}
   if (double4_h[12].x == double4_i[12].x) {}
   // CHECK: double4_f = (sycl::double4 *)double4_i;
   double4_f = (double4 *)double4_i;
@@ -669,17 +669,17 @@ int main_float1() {
   float1 *float1_e;
   // CHECK: float *float1_f;
   float1 *float1_f;
-  // CHECK: float float1_g = static_cast<float>(float1_c);
+  // CHECK: float float1_g = float1_c;
   float float1_g = float1_c.x;
-  // CHECK: float1_a = static_cast<float>(float1_d);
+  // CHECK: float1_a = float1_d;
   float1_a.x = float1_d.x;
-  // CHECK: if (static_cast<float>(float1_b) == static_cast<float>(float1_d)) {}
+  // CHECK: if (float1_b == float1_d) {}
   if (float1_b.x == float1_d.x) {}
   // CHECK: float float1_h[16];
   float1 float1_h[16];
   // CHECK: float float1_i[32];
   float1 float1_i[32];
-  // CHECK: if (static_cast<float>(float1_h[12]) == static_cast<float>(float1_i[12])) {}
+  // CHECK: if (float1_h[12] == float1_i[12]) {}
   if (float1_h[12].x == float1_i[12].x) {}
   // CHECK: float1_f = (float *)float1_i;
   float1_f = (float1 *)float1_i;
@@ -749,17 +749,17 @@ int main_float2() {
   float2 *float2_e;
   // CHECK: sycl::float2 *float2_f;
   float2 *float2_f;
-  // CHECK: float float2_g = static_cast<float>(float2_c.x());
+  // CHECK: float float2_g = float2_c.x();
   float float2_g = float2_c.x;
-  // CHECK: float2_a.x() = static_cast<float>(float2_d.x());
+  // CHECK: float2_a.x() = float2_d.x();
   float2_a.x = float2_d.x;
-  // CHECK: if (static_cast<float>(float2_b.x()) == static_cast<float>(float2_d.x())) {}
+  // CHECK: if (float2_b.x() == float2_d.x()) {}
   if (float2_b.x == float2_d.x) {}
   // CHECK: sycl::float2 float2_h[16];
   float2 float2_h[16];
   // CHECK: sycl::float2 float2_i[32];
   float2 float2_i[32];
-  // CHECK: if (static_cast<float>(float2_h[12].x()) == static_cast<float>(float2_i[12].x())) {}
+  // CHECK: if (float2_h[12].x() == float2_i[12].x()) {}
   if (float2_h[12].x == float2_i[12].x) {}
   // CHECK: float2_f = (sycl::float2 *)float2_i;
   float2_f = (float2 *)float2_i;
@@ -829,17 +829,17 @@ int main_float3() {
   float3 *float3_e;
   // CHECK: sycl::float3 *float3_f;
   float3 *float3_f;
-  // CHECK: float float3_g = static_cast<float>(float3_c.x());
+  // CHECK: float float3_g = float3_c.x();
   float float3_g = float3_c.x;
-  // CHECK: float3_a.x() = static_cast<float>(float3_d.x());
+  // CHECK: float3_a.x() = float3_d.x();
   float3_a.x = float3_d.x;
-  // CHECK: if (static_cast<float>(float3_b.x()) == static_cast<float>(float3_d.x())) {}
+  // CHECK: if (float3_b.x() == float3_d.x()) {}
   if (float3_b.x == float3_d.x) {}
   // CHECK: sycl::float3 float3_h[16];
   float3 float3_h[16];
   // CHECK: sycl::float3 float3_i[32];
   float3 float3_i[32];
-  // CHECK: if (static_cast<float>(float3_h[12].x()) == static_cast<float>(float3_i[12].x())) {}
+  // CHECK: if (float3_h[12].x() == float3_i[12].x()) {}
   if (float3_h[12].x == float3_i[12].x) {}
   // CHECK: float3_f = (sycl::float3 *)float3_i;
   float3_f = (float3 *)float3_i;
@@ -909,17 +909,17 @@ int main_float4() {
   float4 *float4_e;
   // CHECK: sycl::float4 *float4_f;
   float4 *float4_f;
-  // CHECK: float float4_g = static_cast<float>(float4_c.x());
+  // CHECK: float float4_g = float4_c.x();
   float float4_g = float4_c.x;
-  // CHECK: float4_a.x() = static_cast<float>(float4_d.x());
+  // CHECK: float4_a.x() = float4_d.x();
   float4_a.x = float4_d.x;
-  // CHECK: if (static_cast<float>(float4_b.x()) == static_cast<float>(float4_d.x())) {}
+  // CHECK: if (float4_b.x() == float4_d.x()) {}
   if (float4_b.x == float4_d.x) {}
   // CHECK: sycl::float4 float4_h[16];
   float4 float4_h[16];
   // CHECK: sycl::float4 float4_i[32];
   float4 float4_i[32];
-  // CHECK: if (static_cast<float>(float4_h[12].x()) == static_cast<float>(float4_i[12].x())) {}
+  // CHECK: if (float4_h[12].x() == float4_i[12].x()) {}
   if (float4_h[12].x == float4_i[12].x) {}
   // CHECK: float4_f = (sycl::float4 *)float4_i;
   float4_f = (float4 *)float4_i;
@@ -989,17 +989,17 @@ int main_int1() {
   int1 *int1_e;
   // CHECK: int *int1_f;
   int1 *int1_f;
-  // CHECK: int int1_g = static_cast<int>(int1_c);
+  // CHECK: int int1_g = int1_c;
   int int1_g = int1_c.x;
-  // CHECK: int1_a = static_cast<int>(int1_d);
+  // CHECK: int1_a = int1_d;
   int1_a.x = int1_d.x;
-  // CHECK: if (static_cast<int>(int1_b) == static_cast<int>(int1_d)) {}
+  // CHECK: if (int1_b == int1_d) {}
   if (int1_b.x == int1_d.x) {}
   // CHECK: int int1_h[16];
   int1 int1_h[16];
   // CHECK: int int1_i[32];
   int1 int1_i[32];
-  // CHECK: if (static_cast<int>(int1_h[12]) == static_cast<int>(int1_i[12])) {}
+  // CHECK: if (int1_h[12] == int1_i[12]) {}
   if (int1_h[12].x == int1_i[12].x) {}
   // CHECK: int1_f = (int *)int1_i;
   int1_f = (int1 *)int1_i;
@@ -1069,17 +1069,17 @@ int main_int2() {
   int2 *int2_e;
   // CHECK: sycl::int2 *int2_f;
   int2 *int2_f;
-  // CHECK: int int2_g = static_cast<int>(int2_c.x());
+  // CHECK: int int2_g = int2_c.x();
   int int2_g = int2_c.x;
-  // CHECK: int2_a.x() = static_cast<int>(int2_d.x());
+  // CHECK: int2_a.x() = int2_d.x();
   int2_a.x = int2_d.x;
-  // CHECK: if (static_cast<int>(int2_b.x()) == static_cast<int>(int2_d.x())) {}
+  // CHECK: if (int2_b.x() == int2_d.x()) {}
   if (int2_b.x == int2_d.x) {}
   // CHECK: sycl::int2 int2_h[16];
   int2 int2_h[16];
   // CHECK: sycl::int2 int2_i[32];
   int2 int2_i[32];
-  // CHECK: if (static_cast<int>(int2_h[12].x()) == static_cast<int>(int2_i[12].x())) {}
+  // CHECK: if (int2_h[12].x() == int2_i[12].x()) {}
   if (int2_h[12].x == int2_i[12].x) {}
   // CHECK: int2_f = (sycl::int2 *)int2_i;
   int2_f = (int2 *)int2_i;
@@ -1149,17 +1149,17 @@ int main_int3() {
   int3 *int3_e;
   // CHECK: sycl::int3 *int3_f;
   int3 *int3_f;
-  // CHECK: int int3_g = static_cast<int>(int3_c.x());
+  // CHECK: int int3_g = int3_c.x();
   int int3_g = int3_c.x;
-  // CHECK: int3_a.x() = static_cast<int>(int3_d.x());
+  // CHECK: int3_a.x() = int3_d.x();
   int3_a.x = int3_d.x;
-  // CHECK: if (static_cast<int>(int3_b.x()) == static_cast<int>(int3_d.x())) {}
+  // CHECK: if (int3_b.x() == int3_d.x()) {}
   if (int3_b.x == int3_d.x) {}
   // CHECK: sycl::int3 int3_h[16];
   int3 int3_h[16];
   // CHECK: sycl::int3 int3_i[32];
   int3 int3_i[32];
-  // CHECK: if (static_cast<int>(int3_h[12].x()) == static_cast<int>(int3_i[12].x())) {}
+  // CHECK: if (int3_h[12].x() == int3_i[12].x()) {}
   if (int3_h[12].x == int3_i[12].x) {}
   // CHECK: int3_f = (sycl::int3 *)int3_i;
   int3_f = (int3 *)int3_i;
@@ -1229,17 +1229,17 @@ int main_int4() {
   int4 *int4_e;
   // CHECK: sycl::int4 *int4_f;
   int4 *int4_f;
-  // CHECK: int int4_g = static_cast<int>(int4_c.x());
+  // CHECK: int int4_g = int4_c.x();
   int int4_g = int4_c.x;
-  // CHECK: int4_a.x() = static_cast<int>(int4_d.x());
+  // CHECK: int4_a.x() = int4_d.x();
   int4_a.x = int4_d.x;
-  // CHECK: if (static_cast<int>(int4_b.x()) == static_cast<int>(int4_d.x())) {}
+  // CHECK: if (int4_b.x() == int4_d.x()) {}
   if (int4_b.x == int4_d.x) {}
   // CHECK: sycl::int4 int4_h[16];
   int4 int4_h[16];
   // CHECK: sycl::int4 int4_i[32];
   int4 int4_i[32];
-  // CHECK: if (static_cast<int>(int4_h[12].x()) == static_cast<int>(int4_i[12].x())) {}
+  // CHECK: if (int4_h[12].x() == int4_i[12].x()) {}
   if (int4_h[12].x == int4_i[12].x) {}
   // CHECK: int4_f = (sycl::int4 *)int4_i;
   int4_f = (int4 *)int4_i;
@@ -1309,17 +1309,17 @@ int main_long1() {
   long1 *long1_e;
   // CHECK: long *long1_f;
   long1 *long1_f;
-  // CHECK: long long1_g = static_cast<long>(long1_c);
+  // CHECK: long long1_g = long1_c;
   long long1_g = long1_c.x;
-  // CHECK: long1_a = static_cast<long>(long1_d);
+  // CHECK: long1_a = long1_d;
   long1_a.x = long1_d.x;
-  // CHECK: if (static_cast<long>(long1_b) == static_cast<long>(long1_d)) {}
+  // CHECK: if (long1_b == long1_d) {}
   if (long1_b.x == long1_d.x) {}
   // CHECK: long long1_h[16];
   long1 long1_h[16];
   // CHECK: long long1_i[32];
   long1 long1_i[32];
-  // CHECK: if (static_cast<long>(long1_h[12]) == static_cast<long>(long1_i[12])) {}
+  // CHECK: if (long1_h[12] == long1_i[12]) {}
   if (long1_h[12].x == long1_i[12].x) {}
   // CHECK: long1_f = (long *)long1_i;
   long1_f = (long1 *)long1_i;
@@ -1389,17 +1389,17 @@ int main_long2() {
   long2 *long2_e;
   // CHECK: sycl::long2 *long2_f;
   long2 *long2_f;
-  // CHECK: long long2_g = static_cast<long>(long2_c.x());
+  // CHECK: long long2_g = long2_c.x();
   long long2_g = long2_c.x;
-  // CHECK: long2_a.x() = static_cast<long>(long2_d.x());
+  // CHECK: long2_a.x() = long2_d.x();
   long2_a.x = long2_d.x;
-  // CHECK: if (static_cast<long>(long2_b.x()) == static_cast<long>(long2_d.x())) {}
+  // CHECK: if (long2_b.x() == long2_d.x()) {}
   if (long2_b.x == long2_d.x) {}
   // CHECK: sycl::long2 long2_h[16];
   long2 long2_h[16];
   // CHECK: sycl::long2 long2_i[32];
   long2 long2_i[32];
-  // CHECK: if (static_cast<long>(long2_h[12].x()) == static_cast<long>(long2_i[12].x())) {}
+  // CHECK: if (long2_h[12].x() == long2_i[12].x()) {}
   if (long2_h[12].x == long2_i[12].x) {}
   // CHECK: long2_f = (sycl::long2 *)long2_i;
   long2_f = (long2 *)long2_i;
@@ -1469,17 +1469,17 @@ int main_long3() {
   long3 *long3_e;
   // CHECK: sycl::long3 *long3_f;
   long3 *long3_f;
-  // CHECK: long long3_g = static_cast<long>(long3_c.x());
+  // CHECK: long long3_g = long3_c.x();
   long long3_g = long3_c.x;
-  // CHECK: long3_a.x() = static_cast<long>(long3_d.x());
+  // CHECK: long3_a.x() = long3_d.x();
   long3_a.x = long3_d.x;
-  // CHECK: if (static_cast<long>(long3_b.x()) == static_cast<long>(long3_d.x())) {}
+  // CHECK: if (long3_b.x() == long3_d.x()) {}
   if (long3_b.x == long3_d.x) {}
   // CHECK: sycl::long3 long3_h[16];
   long3 long3_h[16];
   // CHECK: sycl::long3 long3_i[32];
   long3 long3_i[32];
-  // CHECK: if (static_cast<long>(long3_h[12].x()) == static_cast<long>(long3_i[12].x())) {}
+  // CHECK: if (long3_h[12].x() == long3_i[12].x()) {}
   if (long3_h[12].x == long3_i[12].x) {}
   // CHECK: long3_f = (sycl::long3 *)long3_i;
   long3_f = (long3 *)long3_i;
@@ -1549,17 +1549,17 @@ int main_long4() {
   long4 *long4_e;
   // CHECK: sycl::long4 *long4_f;
   long4 *long4_f;
-  // CHECK: long long4_g = static_cast<long>(long4_c.x());
+  // CHECK: long long4_g = long4_c.x();
   long long4_g = long4_c.x;
-  // CHECK: long4_a.x() = static_cast<long>(long4_d.x());
+  // CHECK: long4_a.x() = long4_d.x();
   long4_a.x = long4_d.x;
-  // CHECK: if (static_cast<long>(long4_b.x()) == static_cast<long>(long4_d.x())) {}
+  // CHECK: if (long4_b.x() == long4_d.x()) {}
   if (long4_b.x == long4_d.x) {}
   // CHECK: sycl::long4 long4_h[16];
   long4 long4_h[16];
   // CHECK: sycl::long4 long4_i[32];
   long4 long4_i[32];
-  // CHECK: if (static_cast<long>(long4_h[12].x()) == static_cast<long>(long4_i[12].x())) {}
+  // CHECK: if (long4_h[12].x() == long4_i[12].x()) {}
   if (long4_h[12].x == long4_i[12].x) {}
   // CHECK: long4_f = (sycl::long4 *)long4_i;
   long4_f = (long4 *)long4_i;
@@ -1629,17 +1629,17 @@ int main_longlong1() {
   longlong1 *longlong1_e;
   // CHECK: long long *longlong1_f;
   longlong1 *longlong1_f;
-  // CHECK: long long longlong1_g = static_cast<long long>(longlong1_c);
+  // CHECK: long long longlong1_g = longlong1_c;
   long long longlong1_g = longlong1_c.x;
-  // CHECK: longlong1_a = static_cast<long long>(longlong1_d);
+  // CHECK: longlong1_a = longlong1_d;
   longlong1_a.x = longlong1_d.x;
-  // CHECK: if (static_cast<long long>(longlong1_b) == static_cast<long long>(longlong1_d)) {}
+  // CHECK: if (longlong1_b == longlong1_d) {}
   if (longlong1_b.x == longlong1_d.x) {}
   // CHECK: long long longlong1_h[16];
   longlong1 longlong1_h[16];
   // CHECK: long long longlong1_i[32];
   longlong1 longlong1_i[32];
-  // CHECK: if (static_cast<long long>(longlong1_h[12]) == static_cast<long long>(longlong1_i[12])) {}
+  // CHECK: if (longlong1_h[12] == longlong1_i[12]) {}
   if (longlong1_h[12].x == longlong1_i[12].x) {}
   // CHECK: longlong1_f = (long long *)longlong1_i;
   longlong1_f = (longlong1 *)longlong1_i;
@@ -1709,17 +1709,17 @@ int main_longlong2() {
   longlong2 *longlong2_e;
   // CHECK: sycl::longlong2 *longlong2_f;
   longlong2 *longlong2_f;
-  // CHECK: long long longlong2_g = static_cast<long long>(longlong2_c.x());
+  // CHECK: long long longlong2_g = longlong2_c.x();
   long long longlong2_g = longlong2_c.x;
-  // CHECK: longlong2_a.x() = static_cast<long long>(longlong2_d.x());
+  // CHECK: longlong2_a.x() = longlong2_d.x();
   longlong2_a.x = longlong2_d.x;
-  // CHECK: if (static_cast<long long>(longlong2_b.x()) == static_cast<long long>(longlong2_d.x())) {}
+  // CHECK: if (longlong2_b.x() == longlong2_d.x()) {}
   if (longlong2_b.x == longlong2_d.x) {}
   // CHECK: sycl::longlong2 longlong2_h[16];
   longlong2 longlong2_h[16];
   // CHECK: sycl::longlong2 longlong2_i[32];
   longlong2 longlong2_i[32];
-  // CHECK: if (static_cast<long long>(longlong2_h[12].x()) == static_cast<long long>(longlong2_i[12].x())) {}
+  // CHECK: if (longlong2_h[12].x() == longlong2_i[12].x()) {}
   if (longlong2_h[12].x == longlong2_i[12].x) {}
   // CHECK: longlong2_f = (sycl::longlong2 *)longlong2_i;
   longlong2_f = (longlong2 *)longlong2_i;
@@ -1789,17 +1789,17 @@ int main_longlong3() {
   longlong3 *longlong3_e;
   // CHECK: sycl::longlong3 *longlong3_f;
   longlong3 *longlong3_f;
-  // CHECK: long long longlong3_g = static_cast<long long>(longlong3_c.x());
+  // CHECK: long long longlong3_g = longlong3_c.x();
   long long longlong3_g = longlong3_c.x;
-  // CHECK: longlong3_a.x() = static_cast<long long>(longlong3_d.x());
+  // CHECK: longlong3_a.x() = longlong3_d.x();
   longlong3_a.x = longlong3_d.x;
-  // CHECK: if (static_cast<long long>(longlong3_b.x()) == static_cast<long long>(longlong3_d.x())) {}
+  // CHECK: if (longlong3_b.x() == longlong3_d.x()) {}
   if (longlong3_b.x == longlong3_d.x) {}
   // CHECK: sycl::longlong3 longlong3_h[16];
   longlong3 longlong3_h[16];
   // CHECK: sycl::longlong3 longlong3_i[32];
   longlong3 longlong3_i[32];
-  // CHECK: if (static_cast<long long>(longlong3_h[12].x()) == static_cast<long long>(longlong3_i[12].x())) {}
+  // CHECK: if (longlong3_h[12].x() == longlong3_i[12].x()) {}
   if (longlong3_h[12].x == longlong3_i[12].x) {}
   // CHECK: longlong3_f = (sycl::longlong3 *)longlong3_i;
   longlong3_f = (longlong3 *)longlong3_i;
@@ -1869,17 +1869,17 @@ int main_longlong4() {
   longlong4 *longlong4_e;
   // CHECK: sycl::longlong4 *longlong4_f;
   longlong4 *longlong4_f;
-  // CHECK: long long longlong4_g = static_cast<long long>(longlong4_c.x());
+  // CHECK: long long longlong4_g = longlong4_c.x();
   long long longlong4_g = longlong4_c.x;
-  // CHECK: longlong4_a.x() = static_cast<long long>(longlong4_d.x());
+  // CHECK: longlong4_a.x() = longlong4_d.x();
   longlong4_a.x = longlong4_d.x;
-  // CHECK: if (static_cast<long long>(longlong4_b.x()) == static_cast<long long>(longlong4_d.x())) {}
+  // CHECK: if (longlong4_b.x() == longlong4_d.x()) {}
   if (longlong4_b.x == longlong4_d.x) {}
   // CHECK: sycl::longlong4 longlong4_h[16];
   longlong4 longlong4_h[16];
   // CHECK: sycl::longlong4 longlong4_i[32];
   longlong4 longlong4_i[32];
-  // CHECK: if (static_cast<long long>(longlong4_h[12].x()) == static_cast<long long>(longlong4_i[12].x())) {}
+  // CHECK: if (longlong4_h[12].x() == longlong4_i[12].x()) {}
   if (longlong4_h[12].x == longlong4_i[12].x) {}
   // CHECK: longlong4_f = (sycl::longlong4 *)longlong4_i;
   longlong4_f = (longlong4 *)longlong4_i;
@@ -1949,17 +1949,17 @@ int main_short1() {
   short1 *short1_e;
   // CHECK: short *short1_f;
   short1 *short1_f;
-  // CHECK: short short1_g = static_cast<short>(short1_c);
+  // CHECK: short short1_g = short1_c;
   short short1_g = short1_c.x;
-  // CHECK: short1_a = static_cast<short>(short1_d);
+  // CHECK: short1_a = short1_d;
   short1_a.x = short1_d.x;
-  // CHECK: if (static_cast<short>(short1_b) == static_cast<short>(short1_d)) {}
+  // CHECK: if (short1_b == short1_d) {}
   if (short1_b.x == short1_d.x) {}
   // CHECK: short short1_h[16];
   short1 short1_h[16];
   // CHECK: short short1_i[32];
   short1 short1_i[32];
-  // CHECK: if (static_cast<short>(short1_h[12]) == static_cast<short>(short1_i[12])) {}
+  // CHECK: if (short1_h[12] == short1_i[12]) {}
   if (short1_h[12].x == short1_i[12].x) {}
   // CHECK: short1_f = (short *)short1_i;
   short1_f = (short1 *)short1_i;
@@ -2029,17 +2029,17 @@ int main_short2() {
   short2 *short2_e;
   // CHECK: sycl::short2 *short2_f;
   short2 *short2_f;
-  // CHECK: short short2_g = static_cast<short>(short2_c.x());
+  // CHECK: short short2_g = short2_c.x();
   short short2_g = short2_c.x;
-  // CHECK: short2_a.x() = static_cast<short>(short2_d.x());
+  // CHECK: short2_a.x() = short2_d.x();
   short2_a.x = short2_d.x;
-  // CHECK: if (static_cast<short>(short2_b.x()) == static_cast<short>(short2_d.x())) {}
+  // CHECK: if (short2_b.x() == short2_d.x()) {}
   if (short2_b.x == short2_d.x) {}
   // CHECK: sycl::short2 short2_h[16];
   short2 short2_h[16];
   // CHECK: sycl::short2 short2_i[32];
   short2 short2_i[32];
-  // CHECK: if (static_cast<short>(short2_h[12].x()) == static_cast<short>(short2_i[12].x())) {}
+  // CHECK: if (short2_h[12].x() == short2_i[12].x()) {}
   if (short2_h[12].x == short2_i[12].x) {}
   // CHECK: short2_f = (sycl::short2 *)short2_i;
   short2_f = (short2 *)short2_i;
@@ -2109,17 +2109,17 @@ int main_short3() {
   short3 *short3_e;
   // CHECK: sycl::short3 *short3_f;
   short3 *short3_f;
-  // CHECK: short short3_g = static_cast<short>(short3_c.x());
+  // CHECK: short short3_g = short3_c.x();
   short short3_g = short3_c.x;
-  // CHECK: short3_a.x() = static_cast<short>(short3_d.x());
+  // CHECK: short3_a.x() = short3_d.x();
   short3_a.x = short3_d.x;
-  // CHECK: if (static_cast<short>(short3_b.x()) == static_cast<short>(short3_d.x())) {}
+  // CHECK: if (short3_b.x() == short3_d.x()) {}
   if (short3_b.x == short3_d.x) {}
   // CHECK: sycl::short3 short3_h[16];
   short3 short3_h[16];
   // CHECK: sycl::short3 short3_i[32];
   short3 short3_i[32];
-  // CHECK: if (static_cast<short>(short3_h[12].x()) == static_cast<short>(short3_i[12].x())) {}
+  // CHECK: if (short3_h[12].x() == short3_i[12].x()) {}
   if (short3_h[12].x == short3_i[12].x) {}
   // CHECK: short3_f = (sycl::short3 *)short3_i;
   short3_f = (short3 *)short3_i;
@@ -2189,17 +2189,17 @@ int main_short4() {
   short4 *short4_e;
   // CHECK: sycl::short4 *short4_f;
   short4 *short4_f;
-  // CHECK: short short4_g = static_cast<short>(short4_c.x());
+  // CHECK: short short4_g = short4_c.x();
   short short4_g = short4_c.x;
-  // CHECK: short4_a.x() = static_cast<short>(short4_d.x());
+  // CHECK: short4_a.x() = short4_d.x();
   short4_a.x = short4_d.x;
-  // CHECK: if (static_cast<short>(short4_b.x()) == static_cast<short>(short4_d.x())) {}
+  // CHECK: if (short4_b.x() == short4_d.x()) {}
   if (short4_b.x == short4_d.x) {}
   // CHECK: sycl::short4 short4_h[16];
   short4 short4_h[16];
   // CHECK: sycl::short4 short4_i[32];
   short4 short4_i[32];
-  // CHECK: if (static_cast<short>(short4_h[12].x()) == static_cast<short>(short4_i[12].x())) {}
+  // CHECK: if (short4_h[12].x() == short4_i[12].x()) {}
   if (short4_h[12].x == short4_i[12].x) {}
   // CHECK: short4_f = (sycl::short4 *)short4_i;
   short4_f = (short4 *)short4_i;
@@ -2269,17 +2269,17 @@ int main_uchar1() {
   uchar1 *uchar1_e;
   // CHECK: unsigned char *uchar1_f;
   uchar1 *uchar1_f;
-  // CHECK: unsigned char uchar1_g = static_cast<unsigned char>(uchar1_c);
+  // CHECK: unsigned char uchar1_g = uchar1_c;
   unsigned char uchar1_g = uchar1_c.x;
-  // CHECK: uchar1_a = static_cast<unsigned char>(uchar1_d);
+  // CHECK: uchar1_a = uchar1_d;
   uchar1_a.x = uchar1_d.x;
-  // CHECK: if (static_cast<unsigned char>(uchar1_b) == static_cast<unsigned char>(uchar1_d)) {}
+  // CHECK: if (uchar1_b == uchar1_d) {}
   if (uchar1_b.x == uchar1_d.x) {}
   // CHECK: unsigned char uchar1_h[16];
   uchar1 uchar1_h[16];
   // CHECK: unsigned char uchar1_i[32];
   uchar1 uchar1_i[32];
-  // CHECK: if (static_cast<unsigned char>(uchar1_h[12]) == static_cast<unsigned char>(uchar1_i[12])) {}
+  // CHECK: if (uchar1_h[12] == uchar1_i[12]) {}
   if (uchar1_h[12].x == uchar1_i[12].x) {}
   // CHECK: uchar1_f = (unsigned char *)uchar1_i;
   uchar1_f = (uchar1 *)uchar1_i;
@@ -2349,17 +2349,17 @@ int main_uchar2() {
   uchar2 *uchar2_e;
   // CHECK: sycl::uchar2 *uchar2_f;
   uchar2 *uchar2_f;
-  // CHECK: unsigned char uchar2_g = static_cast<unsigned char>(uchar2_c.x());
+  // CHECK: unsigned char uchar2_g = uchar2_c.x();
   unsigned char uchar2_g = uchar2_c.x;
-  // CHECK: uchar2_a.x() = static_cast<unsigned char>(uchar2_d.x());
+  // CHECK: uchar2_a.x() = uchar2_d.x();
   uchar2_a.x = uchar2_d.x;
-  // CHECK: if (static_cast<unsigned char>(uchar2_b.x()) == static_cast<unsigned char>(uchar2_d.x())) {}
+  // CHECK: if (uchar2_b.x() == uchar2_d.x()) {}
   if (uchar2_b.x == uchar2_d.x) {}
   // CHECK: sycl::uchar2 uchar2_h[16];
   uchar2 uchar2_h[16];
   // CHECK: sycl::uchar2 uchar2_i[32];
   uchar2 uchar2_i[32];
-  // CHECK: if (static_cast<unsigned char>(uchar2_h[12].x()) == static_cast<unsigned char>(uchar2_i[12].x())) {}
+  // CHECK: if (uchar2_h[12].x() == uchar2_i[12].x()) {}
   if (uchar2_h[12].x == uchar2_i[12].x) {}
   // CHECK: uchar2_f = (sycl::uchar2 *)uchar2_i;
   uchar2_f = (uchar2 *)uchar2_i;
@@ -2429,17 +2429,17 @@ int main_uchar3() {
   uchar3 *uchar3_e;
   // CHECK: sycl::uchar3 *uchar3_f;
   uchar3 *uchar3_f;
-  // CHECK: unsigned char uchar3_g = static_cast<unsigned char>(uchar3_c.x());
+  // CHECK: unsigned char uchar3_g = uchar3_c.x();
   unsigned char uchar3_g = uchar3_c.x;
-  // CHECK: uchar3_a.x() = static_cast<unsigned char>(uchar3_d.x());
+  // CHECK: uchar3_a.x() = uchar3_d.x();
   uchar3_a.x = uchar3_d.x;
-  // CHECK: if (static_cast<unsigned char>(uchar3_b.x()) == static_cast<unsigned char>(uchar3_d.x())) {}
+  // CHECK: if (uchar3_b.x() == uchar3_d.x()) {}
   if (uchar3_b.x == uchar3_d.x) {}
   // CHECK: sycl::uchar3 uchar3_h[16];
   uchar3 uchar3_h[16];
   // CHECK: sycl::uchar3 uchar3_i[32];
   uchar3 uchar3_i[32];
-  // CHECK: if (static_cast<unsigned char>(uchar3_h[12].x()) == static_cast<unsigned char>(uchar3_i[12].x())) {}
+  // CHECK: if (uchar3_h[12].x() == uchar3_i[12].x()) {}
   if (uchar3_h[12].x == uchar3_i[12].x) {}
   // CHECK: uchar3_f = (sycl::uchar3 *)uchar3_i;
   uchar3_f = (uchar3 *)uchar3_i;
@@ -2509,17 +2509,17 @@ int main_uchar4() {
   uchar4 *uchar4_e;
   // CHECK: sycl::uchar4 *uchar4_f;
   uchar4 *uchar4_f;
-  // CHECK: unsigned char uchar4_g = static_cast<unsigned char>(uchar4_c.x());
+  // CHECK: unsigned char uchar4_g = uchar4_c.x();
   unsigned char uchar4_g = uchar4_c.x;
-  // CHECK: uchar4_a.x() = static_cast<unsigned char>(uchar4_d.x());
+  // CHECK: uchar4_a.x() = uchar4_d.x();
   uchar4_a.x = uchar4_d.x;
-  // CHECK: if (static_cast<unsigned char>(uchar4_b.x()) == static_cast<unsigned char>(uchar4_d.x())) {}
+  // CHECK: if (uchar4_b.x() == uchar4_d.x()) {}
   if (uchar4_b.x == uchar4_d.x) {}
   // CHECK: sycl::uchar4 uchar4_h[16];
   uchar4 uchar4_h[16];
   // CHECK: sycl::uchar4 uchar4_i[32];
   uchar4 uchar4_i[32];
-  // CHECK: if (static_cast<unsigned char>(uchar4_h[12].x()) == static_cast<unsigned char>(uchar4_i[12].x())) {}
+  // CHECK: if (uchar4_h[12].x() == uchar4_i[12].x()) {}
   if (uchar4_h[12].x == uchar4_i[12].x) {}
   // CHECK: uchar4_f = (sycl::uchar4 *)uchar4_i;
   uchar4_f = (uchar4 *)uchar4_i;
@@ -2589,17 +2589,17 @@ int main_uint1() {
   uint1 *uint1_e;
   // CHECK: unsigned int *uint1_f;
   uint1 *uint1_f;
-  // CHECK: unsigned int uint1_g = static_cast<unsigned int>(uint1_c);
+  // CHECK: unsigned int uint1_g = uint1_c;
   unsigned int uint1_g = uint1_c.x;
-  // CHECK: uint1_a = static_cast<unsigned int>(uint1_d);
+  // CHECK: uint1_a = uint1_d;
   uint1_a.x = uint1_d.x;
-  // CHECK: if (static_cast<unsigned int>(uint1_b) == static_cast<unsigned int>(uint1_d)) {}
+  // CHECK: if (uint1_b == uint1_d) {}
   if (uint1_b.x == uint1_d.x) {}
   // CHECK: unsigned int uint1_h[16];
   uint1 uint1_h[16];
   // CHECK: unsigned int uint1_i[32];
   uint1 uint1_i[32];
-  // CHECK: if (static_cast<unsigned int>(uint1_h[12]) == static_cast<unsigned int>(uint1_i[12])) {}
+  // CHECK: if (uint1_h[12] == uint1_i[12]) {}
   if (uint1_h[12].x == uint1_i[12].x) {}
   // CHECK: uint1_f = (unsigned int *)uint1_i;
   uint1_f = (uint1 *)uint1_i;
@@ -2669,17 +2669,17 @@ int main_uint2() {
   uint2 *uint2_e;
   // CHECK: sycl::uint2 *uint2_f;
   uint2 *uint2_f;
-  // CHECK: unsigned int uint2_g = static_cast<unsigned int>(uint2_c.x());
+  // CHECK: unsigned int uint2_g = uint2_c.x();
   unsigned int uint2_g = uint2_c.x;
-  // CHECK: uint2_a.x() = static_cast<unsigned int>(uint2_d.x());
+  // CHECK: uint2_a.x() = uint2_d.x();
   uint2_a.x = uint2_d.x;
-  // CHECK: if (static_cast<unsigned int>(uint2_b.x()) == static_cast<unsigned int>(uint2_d.x())) {}
+  // CHECK: if (uint2_b.x() == uint2_d.x()) {}
   if (uint2_b.x == uint2_d.x) {}
   // CHECK: sycl::uint2 uint2_h[16];
   uint2 uint2_h[16];
   // CHECK: sycl::uint2 uint2_i[32];
   uint2 uint2_i[32];
-  // CHECK: if (static_cast<unsigned int>(uint2_h[12].x()) == static_cast<unsigned int>(uint2_i[12].x())) {}
+  // CHECK: if (uint2_h[12].x() == uint2_i[12].x()) {}
   if (uint2_h[12].x == uint2_i[12].x) {}
   // CHECK: uint2_f = (sycl::uint2 *)uint2_i;
   uint2_f = (uint2 *)uint2_i;
@@ -2749,17 +2749,17 @@ int main_uint3() {
   uint3 *uint3_e;
   // CHECK: sycl::uint3 *uint3_f;
   uint3 *uint3_f;
-  // CHECK: unsigned int uint3_g = static_cast<unsigned int>(uint3_c.x());
+  // CHECK: unsigned int uint3_g = uint3_c.x();
   unsigned int uint3_g = uint3_c.x;
-  // CHECK: uint3_a.x() = static_cast<unsigned int>(uint3_d.x());
+  // CHECK: uint3_a.x() = uint3_d.x();
   uint3_a.x = uint3_d.x;
-  // CHECK: if (static_cast<unsigned int>(uint3_b.x()) == static_cast<unsigned int>(uint3_d.x())) {}
+  // CHECK: if (uint3_b.x() == uint3_d.x()) {}
   if (uint3_b.x == uint3_d.x) {}
   // CHECK: sycl::uint3 uint3_h[16];
   uint3 uint3_h[16];
   // CHECK: sycl::uint3 uint3_i[32];
   uint3 uint3_i[32];
-  // CHECK: if (static_cast<unsigned int>(uint3_h[12].x()) == static_cast<unsigned int>(uint3_i[12].x())) {}
+  // CHECK: if (uint3_h[12].x() == uint3_i[12].x()) {}
   if (uint3_h[12].x == uint3_i[12].x) {}
   // CHECK: uint3_f = (sycl::uint3 *)uint3_i;
   uint3_f = (uint3 *)uint3_i;
@@ -2829,17 +2829,17 @@ int main_uint4() {
   uint4 *uint4_e;
   // CHECK: sycl::uint4 *uint4_f;
   uint4 *uint4_f;
-  // CHECK: unsigned int uint4_g = static_cast<unsigned int>(uint4_c.x());
+  // CHECK: unsigned int uint4_g = uint4_c.x();
   unsigned int uint4_g = uint4_c.x;
-  // CHECK: uint4_a.x() = static_cast<unsigned int>(uint4_d.x());
+  // CHECK: uint4_a.x() = uint4_d.x();
   uint4_a.x = uint4_d.x;
-  // CHECK: if (static_cast<unsigned int>(uint4_b.x()) == static_cast<unsigned int>(uint4_d.x())) {}
+  // CHECK: if (uint4_b.x() == uint4_d.x()) {}
   if (uint4_b.x == uint4_d.x) {}
   // CHECK: sycl::uint4 uint4_h[16];
   uint4 uint4_h[16];
   // CHECK: sycl::uint4 uint4_i[32];
   uint4 uint4_i[32];
-  // CHECK: if (static_cast<unsigned int>(uint4_h[12].x()) == static_cast<unsigned int>(uint4_i[12].x())) {}
+  // CHECK: if (uint4_h[12].x() == uint4_i[12].x()) {}
   if (uint4_h[12].x == uint4_i[12].x) {}
   // CHECK: uint4_f = (sycl::uint4 *)uint4_i;
   uint4_f = (uint4 *)uint4_i;
@@ -2909,17 +2909,17 @@ int main_ulong1() {
   ulong1 *ulong1_e;
   // CHECK: unsigned long *ulong1_f;
   ulong1 *ulong1_f;
-  // CHECK: unsigned long ulong1_g = static_cast<unsigned long>(ulong1_c);
+  // CHECK: unsigned long ulong1_g = ulong1_c;
   unsigned long ulong1_g = ulong1_c.x;
-  // CHECK: ulong1_a = static_cast<unsigned long>(ulong1_d);
+  // CHECK: ulong1_a = ulong1_d;
   ulong1_a.x = ulong1_d.x;
-  // CHECK: if (static_cast<unsigned long>(ulong1_b) == static_cast<unsigned long>(ulong1_d)) {}
+  // CHECK: if (ulong1_b == ulong1_d) {}
   if (ulong1_b.x == ulong1_d.x) {}
   // CHECK: unsigned long ulong1_h[16];
   ulong1 ulong1_h[16];
   // CHECK: unsigned long ulong1_i[32];
   ulong1 ulong1_i[32];
-  // CHECK: if (static_cast<unsigned long>(ulong1_h[12]) == static_cast<unsigned long>(ulong1_i[12])) {}
+  // CHECK: if (ulong1_h[12] == ulong1_i[12]) {}
   if (ulong1_h[12].x == ulong1_i[12].x) {}
   // CHECK: ulong1_f = (unsigned long *)ulong1_i;
   ulong1_f = (ulong1 *)ulong1_i;
@@ -2989,17 +2989,17 @@ int main_ulong2() {
   ulong2 *ulong2_e;
   // CHECK: sycl::ulong2 *ulong2_f;
   ulong2 *ulong2_f;
-  // CHECK: unsigned long ulong2_g = static_cast<unsigned long>(ulong2_c.x());
+  // CHECK: unsigned long ulong2_g = ulong2_c.x();
   unsigned long ulong2_g = ulong2_c.x;
-  // CHECK: ulong2_a.x() = static_cast<unsigned long>(ulong2_d.x());
+  // CHECK: ulong2_a.x() = ulong2_d.x();
   ulong2_a.x = ulong2_d.x;
-  // CHECK: if (static_cast<unsigned long>(ulong2_b.x()) == static_cast<unsigned long>(ulong2_d.x())) {}
+  // CHECK: if (ulong2_b.x() == ulong2_d.x()) {}
   if (ulong2_b.x == ulong2_d.x) {}
   // CHECK: sycl::ulong2 ulong2_h[16];
   ulong2 ulong2_h[16];
   // CHECK: sycl::ulong2 ulong2_i[32];
   ulong2 ulong2_i[32];
-  // CHECK: if (static_cast<unsigned long>(ulong2_h[12].x()) == static_cast<unsigned long>(ulong2_i[12].x())) {}
+  // CHECK: if (ulong2_h[12].x() == ulong2_i[12].x()) {}
   if (ulong2_h[12].x == ulong2_i[12].x) {}
   // CHECK: ulong2_f = (sycl::ulong2 *)ulong2_i;
   ulong2_f = (ulong2 *)ulong2_i;
@@ -3069,17 +3069,17 @@ int main_ulong3() {
   ulong3 *ulong3_e;
   // CHECK: sycl::ulong3 *ulong3_f;
   ulong3 *ulong3_f;
-  // CHECK: unsigned long ulong3_g = static_cast<unsigned long>(ulong3_c.x());
+  // CHECK: unsigned long ulong3_g = ulong3_c.x();
   unsigned long ulong3_g = ulong3_c.x;
-  // CHECK: ulong3_a.x() = static_cast<unsigned long>(ulong3_d.x());
+  // CHECK: ulong3_a.x() = ulong3_d.x();
   ulong3_a.x = ulong3_d.x;
-  // CHECK: if (static_cast<unsigned long>(ulong3_b.x()) == static_cast<unsigned long>(ulong3_d.x())) {}
+  // CHECK: if (ulong3_b.x() == ulong3_d.x()) {}
   if (ulong3_b.x == ulong3_d.x) {}
   // CHECK: sycl::ulong3 ulong3_h[16];
   ulong3 ulong3_h[16];
   // CHECK: sycl::ulong3 ulong3_i[32];
   ulong3 ulong3_i[32];
-  // CHECK: if (static_cast<unsigned long>(ulong3_h[12].x()) == static_cast<unsigned long>(ulong3_i[12].x())) {}
+  // CHECK: if (ulong3_h[12].x() == ulong3_i[12].x()) {}
   if (ulong3_h[12].x == ulong3_i[12].x) {}
   // CHECK: ulong3_f = (sycl::ulong3 *)ulong3_i;
   ulong3_f = (ulong3 *)ulong3_i;
@@ -3149,17 +3149,17 @@ int main_ulong4() {
   ulong4 *ulong4_e;
   // CHECK: sycl::ulong4 *ulong4_f;
   ulong4 *ulong4_f;
-  // CHECK: unsigned long ulong4_g = static_cast<unsigned long>(ulong4_c.x());
+  // CHECK: unsigned long ulong4_g = ulong4_c.x();
   unsigned long ulong4_g = ulong4_c.x;
-  // CHECK: ulong4_a.x() = static_cast<unsigned long>(ulong4_d.x());
+  // CHECK: ulong4_a.x() = ulong4_d.x();
   ulong4_a.x = ulong4_d.x;
-  // CHECK: if (static_cast<unsigned long>(ulong4_b.x()) == static_cast<unsigned long>(ulong4_d.x())) {}
+  // CHECK: if (ulong4_b.x() == ulong4_d.x()) {}
   if (ulong4_b.x == ulong4_d.x) {}
   // CHECK: sycl::ulong4 ulong4_h[16];
   ulong4 ulong4_h[16];
   // CHECK: sycl::ulong4 ulong4_i[32];
   ulong4 ulong4_i[32];
-  // CHECK: if (static_cast<unsigned long>(ulong4_h[12].x()) == static_cast<unsigned long>(ulong4_i[12].x())) {}
+  // CHECK: if (ulong4_h[12].x() == ulong4_i[12].x()) {}
   if (ulong4_h[12].x == ulong4_i[12].x) {}
   // CHECK: ulong4_f = (sycl::ulong4 *)ulong4_i;
   ulong4_f = (ulong4 *)ulong4_i;
@@ -3229,17 +3229,17 @@ int main_ulonglong1() {
   ulonglong1 *ulonglong1_e;
   // CHECK: unsigned long long *ulonglong1_f;
   ulonglong1 *ulonglong1_f;
-  // CHECK: unsigned long long ulonglong1_g = static_cast<unsigned long long>(ulonglong1_c);
+  // CHECK: unsigned long long ulonglong1_g = ulonglong1_c;
   unsigned long long ulonglong1_g = ulonglong1_c.x;
-  // CHECK: ulonglong1_a = static_cast<unsigned long long>(ulonglong1_d);
+  // CHECK: ulonglong1_a = ulonglong1_d;
   ulonglong1_a.x = ulonglong1_d.x;
-  // CHECK: if (static_cast<unsigned long long>(ulonglong1_b) == static_cast<unsigned long long>(ulonglong1_d)) {}
+  // CHECK: if (ulonglong1_b == ulonglong1_d) {}
   if (ulonglong1_b.x == ulonglong1_d.x) {}
   // CHECK: unsigned long long ulonglong1_h[16];
   ulonglong1 ulonglong1_h[16];
   // CHECK: unsigned long long ulonglong1_i[32];
   ulonglong1 ulonglong1_i[32];
-  // CHECK: if (static_cast<unsigned long long>(ulonglong1_h[12]) == static_cast<unsigned long long>(ulonglong1_i[12])) {}
+  // CHECK: if (ulonglong1_h[12] == ulonglong1_i[12]) {}
   if (ulonglong1_h[12].x == ulonglong1_i[12].x) {}
   // CHECK: ulonglong1_f = (unsigned long long *)ulonglong1_i;
   ulonglong1_f = (ulonglong1 *)ulonglong1_i;
@@ -3309,17 +3309,17 @@ int main_ulonglong2() {
   ulonglong2 *ulonglong2_e;
   // CHECK: sycl::ulonglong2 *ulonglong2_f;
   ulonglong2 *ulonglong2_f;
-  // CHECK: unsigned long long ulonglong2_g = static_cast<unsigned long long>(ulonglong2_c.x());
+  // CHECK: unsigned long long ulonglong2_g = ulonglong2_c.x();
   unsigned long long ulonglong2_g = ulonglong2_c.x;
-  // CHECK: ulonglong2_a.x() = static_cast<unsigned long long>(ulonglong2_d.x());
+  // CHECK: ulonglong2_a.x() = ulonglong2_d.x();
   ulonglong2_a.x = ulonglong2_d.x;
-  // CHECK: if (static_cast<unsigned long long>(ulonglong2_b.x()) == static_cast<unsigned long long>(ulonglong2_d.x())) {}
+  // CHECK: if (ulonglong2_b.x() == ulonglong2_d.x()) {}
   if (ulonglong2_b.x == ulonglong2_d.x) {}
   // CHECK: sycl::ulonglong2 ulonglong2_h[16];
   ulonglong2 ulonglong2_h[16];
   // CHECK: sycl::ulonglong2 ulonglong2_i[32];
   ulonglong2 ulonglong2_i[32];
-  // CHECK: if (static_cast<unsigned long long>(ulonglong2_h[12].x()) == static_cast<unsigned long long>(ulonglong2_i[12].x())) {}
+  // CHECK: if (ulonglong2_h[12].x() == ulonglong2_i[12].x()) {}
   if (ulonglong2_h[12].x == ulonglong2_i[12].x) {}
   // CHECK: ulonglong2_f = (sycl::ulonglong2 *)ulonglong2_i;
   ulonglong2_f = (ulonglong2 *)ulonglong2_i;
@@ -3389,17 +3389,17 @@ int main_ulonglong3() {
   ulonglong3 *ulonglong3_e;
   // CHECK: sycl::ulonglong3 *ulonglong3_f;
   ulonglong3 *ulonglong3_f;
-  // CHECK: unsigned long long ulonglong3_g = static_cast<unsigned long long>(ulonglong3_c.x());
+  // CHECK: unsigned long long ulonglong3_g = ulonglong3_c.x();
   unsigned long long ulonglong3_g = ulonglong3_c.x;
-  // CHECK: ulonglong3_a.x() = static_cast<unsigned long long>(ulonglong3_d.x());
+  // CHECK: ulonglong3_a.x() = ulonglong3_d.x();
   ulonglong3_a.x = ulonglong3_d.x;
-  // CHECK: if (static_cast<unsigned long long>(ulonglong3_b.x()) == static_cast<unsigned long long>(ulonglong3_d.x())) {}
+  // CHECK: if (ulonglong3_b.x() == ulonglong3_d.x()) {}
   if (ulonglong3_b.x == ulonglong3_d.x) {}
   // CHECK: sycl::ulonglong3 ulonglong3_h[16];
   ulonglong3 ulonglong3_h[16];
   // CHECK: sycl::ulonglong3 ulonglong3_i[32];
   ulonglong3 ulonglong3_i[32];
-  // CHECK: if (static_cast<unsigned long long>(ulonglong3_h[12].x()) == static_cast<unsigned long long>(ulonglong3_i[12].x())) {}
+  // CHECK: if (ulonglong3_h[12].x() == ulonglong3_i[12].x()) {}
   if (ulonglong3_h[12].x == ulonglong3_i[12].x) {}
   // CHECK: ulonglong3_f = (sycl::ulonglong3 *)ulonglong3_i;
   ulonglong3_f = (ulonglong3 *)ulonglong3_i;
@@ -3469,17 +3469,17 @@ int main_ulonglong4() {
   ulonglong4 *ulonglong4_e;
   // CHECK: sycl::ulonglong4 *ulonglong4_f;
   ulonglong4 *ulonglong4_f;
-  // CHECK: unsigned long long ulonglong4_g = static_cast<unsigned long long>(ulonglong4_c.x());
+  // CHECK: unsigned long long ulonglong4_g = ulonglong4_c.x();
   unsigned long long ulonglong4_g = ulonglong4_c.x;
-  // CHECK: ulonglong4_a.x() = static_cast<unsigned long long>(ulonglong4_d.x());
+  // CHECK: ulonglong4_a.x() = ulonglong4_d.x();
   ulonglong4_a.x = ulonglong4_d.x;
-  // CHECK: if (static_cast<unsigned long long>(ulonglong4_b.x()) == static_cast<unsigned long long>(ulonglong4_d.x())) {}
+  // CHECK: if (ulonglong4_b.x() == ulonglong4_d.x()) {}
   if (ulonglong4_b.x == ulonglong4_d.x) {}
   // CHECK: sycl::ulonglong4 ulonglong4_h[16];
   ulonglong4 ulonglong4_h[16];
   // CHECK: sycl::ulonglong4 ulonglong4_i[32];
   ulonglong4 ulonglong4_i[32];
-  // CHECK: if (static_cast<unsigned long long>(ulonglong4_h[12].x()) == static_cast<unsigned long long>(ulonglong4_i[12].x())) {}
+  // CHECK: if (ulonglong4_h[12].x() == ulonglong4_i[12].x()) {}
   if (ulonglong4_h[12].x == ulonglong4_i[12].x) {}
   // CHECK: ulonglong4_f = (sycl::ulonglong4 *)ulonglong4_i;
   ulonglong4_f = (ulonglong4 *)ulonglong4_i;
@@ -3549,17 +3549,17 @@ int main_ushort1() {
   ushort1 *ushort1_e;
   // CHECK: unsigned short *ushort1_f;
   ushort1 *ushort1_f;
-  // CHECK: unsigned short ushort1_g = static_cast<unsigned short>(ushort1_c);
+  // CHECK: unsigned short ushort1_g = ushort1_c;
   unsigned short ushort1_g = ushort1_c.x;
-  // CHECK: ushort1_a = static_cast<unsigned short>(ushort1_d);
+  // CHECK: ushort1_a = ushort1_d;
   ushort1_a.x = ushort1_d.x;
-  // CHECK: if (static_cast<unsigned short>(ushort1_b) == static_cast<unsigned short>(ushort1_d)) {}
+  // CHECK: if (ushort1_b == ushort1_d) {}
   if (ushort1_b.x == ushort1_d.x) {}
   // CHECK: unsigned short ushort1_h[16];
   ushort1 ushort1_h[16];
   // CHECK: unsigned short ushort1_i[32];
   ushort1 ushort1_i[32];
-  // CHECK: if (static_cast<unsigned short>(ushort1_h[12]) == static_cast<unsigned short>(ushort1_i[12])) {}
+  // CHECK: if (ushort1_h[12] == ushort1_i[12]) {}
   if (ushort1_h[12].x == ushort1_i[12].x) {}
   // CHECK: ushort1_f = (unsigned short *)ushort1_i;
   ushort1_f = (ushort1 *)ushort1_i;
@@ -3629,17 +3629,17 @@ int main_ushort2() {
   ushort2 *ushort2_e;
   // CHECK: sycl::ushort2 *ushort2_f;
   ushort2 *ushort2_f;
-  // CHECK: unsigned short ushort2_g = static_cast<unsigned short>(ushort2_c.x());
+  // CHECK: unsigned short ushort2_g = ushort2_c.x();
   unsigned short ushort2_g = ushort2_c.x;
-  // CHECK: ushort2_a.x() = static_cast<unsigned short>(ushort2_d.x());
+  // CHECK: ushort2_a.x() = ushort2_d.x();
   ushort2_a.x = ushort2_d.x;
-  // CHECK: if (static_cast<unsigned short>(ushort2_b.x()) == static_cast<unsigned short>(ushort2_d.x())) {}
+  // CHECK: if (ushort2_b.x() == ushort2_d.x()) {}
   if (ushort2_b.x == ushort2_d.x) {}
   // CHECK: sycl::ushort2 ushort2_h[16];
   ushort2 ushort2_h[16];
   // CHECK: sycl::ushort2 ushort2_i[32];
   ushort2 ushort2_i[32];
-  // CHECK: if (static_cast<unsigned short>(ushort2_h[12].x()) == static_cast<unsigned short>(ushort2_i[12].x())) {}
+  // CHECK: if (ushort2_h[12].x() == ushort2_i[12].x()) {}
   if (ushort2_h[12].x == ushort2_i[12].x) {}
   // CHECK: ushort2_f = (sycl::ushort2 *)ushort2_i;
   ushort2_f = (ushort2 *)ushort2_i;
@@ -3709,17 +3709,17 @@ int main_ushort3() {
   ushort3 *ushort3_e;
   // CHECK: sycl::ushort3 *ushort3_f;
   ushort3 *ushort3_f;
-  // CHECK: unsigned short ushort3_g = static_cast<unsigned short>(ushort3_c.x());
+  // CHECK: unsigned short ushort3_g = ushort3_c.x();
   unsigned short ushort3_g = ushort3_c.x;
-  // CHECK: ushort3_a.x() = static_cast<unsigned short>(ushort3_d.x());
+  // CHECK: ushort3_a.x() = ushort3_d.x();
   ushort3_a.x = ushort3_d.x;
-  // CHECK: if (static_cast<unsigned short>(ushort3_b.x()) == static_cast<unsigned short>(ushort3_d.x())) {}
+  // CHECK: if (ushort3_b.x() == ushort3_d.x()) {}
   if (ushort3_b.x == ushort3_d.x) {}
   // CHECK: sycl::ushort3 ushort3_h[16];
   ushort3 ushort3_h[16];
   // CHECK: sycl::ushort3 ushort3_i[32];
   ushort3 ushort3_i[32];
-  // CHECK: if (static_cast<unsigned short>(ushort3_h[12].x()) == static_cast<unsigned short>(ushort3_i[12].x())) {}
+  // CHECK: if (ushort3_h[12].x() == ushort3_i[12].x()) {}
   if (ushort3_h[12].x == ushort3_i[12].x) {}
   // CHECK: ushort3_f = (sycl::ushort3 *)ushort3_i;
   ushort3_f = (ushort3 *)ushort3_i;
@@ -3789,17 +3789,17 @@ int main_ushort4() {
   ushort4 *ushort4_e;
   // CHECK: sycl::ushort4 *ushort4_f;
   ushort4 *ushort4_f;
-  // CHECK: unsigned short ushort4_g = static_cast<unsigned short>(ushort4_c.x());
+  // CHECK: unsigned short ushort4_g = ushort4_c.x();
   unsigned short ushort4_g = ushort4_c.x;
-  // CHECK: ushort4_a.x() = static_cast<unsigned short>(ushort4_d.x());
+  // CHECK: ushort4_a.x() = ushort4_d.x();
   ushort4_a.x = ushort4_d.x;
-  // CHECK: if (static_cast<unsigned short>(ushort4_b.x()) == static_cast<unsigned short>(ushort4_d.x())) {}
+  // CHECK: if (ushort4_b.x() == ushort4_d.x()) {}
   if (ushort4_b.x == ushort4_d.x) {}
   // CHECK: sycl::ushort4 ushort4_h[16];
   ushort4 ushort4_h[16];
   // CHECK: sycl::ushort4 ushort4_i[32];
   ushort4 ushort4_i[32];
-  // CHECK: if (static_cast<unsigned short>(ushort4_h[12].x()) == static_cast<unsigned short>(ushort4_i[12].x())) {}
+  // CHECK: if (ushort4_h[12].x() == ushort4_i[12].x()) {}
   if (ushort4_h[12].x == ushort4_i[12].x) {}
   // CHECK: ushort4_f = (sycl::ushort4 *)ushort4_i;
   ushort4_f = (ushort4 *)ushort4_i;
@@ -3863,7 +3863,7 @@ union struct_union {
 
 int foo() {
   struct_union temp;
-  // CHECK: int x = static_cast<float>(temp.data.x()) + 2;
+  // CHECK: int x = temp.data.x() + 2;
   int x = temp.data.x + 2;
 }
 

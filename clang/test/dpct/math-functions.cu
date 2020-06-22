@@ -26,9 +26,9 @@
 
 __device__ float4 fun() {
   float4 a, b, c;
-  // CHECK: sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x()));
+  // CHECK: sycl::fma(a.x(), b.x(), c.x());
   __fmaf_rn(a.x, b.x, c.x);
-  // CHECK: return sycl::float4(sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x())), sycl::fma(static_cast<float>(a.y()), static_cast<float>(b.y()), static_cast<float>(c.y())), sycl::fma(static_cast<float>(a.z()), static_cast<float>(b.z()), static_cast<float>(c.z())), sycl::fma(static_cast<float>(a.w()), static_cast<float>(b.w()), static_cast<float>(c.w())));
+  // CHECK: return sycl::float4(sycl::fma(a.x(), b.x(), c.x()), sycl::fma(a.y(), b.y(), c.y()), sycl::fma(a.z(), b.z(), c.z()), sycl::fma(a.w(), b.w(), c.w()));
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
 

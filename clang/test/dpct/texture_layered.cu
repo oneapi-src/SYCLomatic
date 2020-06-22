@@ -25,7 +25,7 @@ static texture<uint2, cudaTextureType1DLayered> tex21;
 
 // CHECK: void device01(sycl::float4 *out, dpct::image_accessor<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = dpct::read_image_array(tex21, 1.0f, 12);
-// CHECK-NEXT: out[0].x() =  static_cast<unsigned int>(u21.x());
+// CHECK-NEXT: out[0].x() =  u21.x();
 __device__ void device01(float4 *out) {
   uint2 u21 = tex1DLayered(tex21, 1.0f, 12);
   out[0].x = u21.x;
