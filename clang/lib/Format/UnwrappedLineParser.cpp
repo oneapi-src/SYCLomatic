@@ -946,7 +946,11 @@ void UnwrappedLineParser::parsePPDefine() {
   }
   if (Style.IndentPPDirectives != FormatStyle::PPDIS_None)
     Line->Level += PPBranchLevel + 1;
+#ifdef INTEL_CUSTOMIZATION
+  addUnwrappedLine(true);
+#else
   addUnwrappedLine();
+#endif
   ++Line->Level;
 
   // Errors during a preprocessor directive can only affect the layout of the
@@ -963,7 +967,11 @@ void UnwrappedLineParser::parsePPUnknown() {
   } while (!eof());
   if (Style.IndentPPDirectives != FormatStyle::PPDIS_None)
     Line->Level += PPBranchLevel + 1;
+#ifdef INTEL_CUSTOMIZATION
+  addUnwrappedLine(true);
+#else
   addUnwrappedLine();
+#endif
 }
 
 // Here we blacklist certain tokens that are not usually the first token in an

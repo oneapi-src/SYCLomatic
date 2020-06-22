@@ -5,6 +5,7 @@
 
 #include <cuda_runtime.h>
 #include <cassert>
+#include "cublas_v2.h"
 
      //CHECK:void testDevice(const int *K) { int t = K[0]; }
 __device__ void testDevice(const int *K) {
@@ -91,3 +92,8 @@ typedef struct
   int SM;
   int Cores;
 } sSMtoCores;
+
+     //CHECK:#define macro_a (mkl::transpose)1
+//CHECK-NEXT:void foo7(){ mkl::transpose a = macro_a; }
+#define macro_a (cublasOperation_t)1
+void foo7(){ cublasOperation_t a = macro_a; }

@@ -5,6 +5,7 @@
 
 #include <cuda_runtime.h>
 #include <cassert>
+#include "cublas_v2.h"
 
      //CHECK:void testDevice(const int *K) {
 //CHECK-NEXT:  int t = K[0];
@@ -314,3 +315,8 @@ void foo9(float2 b) { float2 a; }
 void foo10(){
   if ((float2*)xx) {}
 }
+
+     //CHECK:#define macro_a (mkl::transpose)1
+//CHECK-NEXT:void foo11(){ mkl::transpose a = macro_a; }
+#define macro_a (cublasOperation_t)1
+void foo11(){ cublasOperation_t a = macro_a; }
