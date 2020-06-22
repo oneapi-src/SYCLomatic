@@ -26,12 +26,15 @@
 #define LONGJMP      longjmp
 #endif
 
-extern bool NoStopOnErrFlag;
+extern bool EnableErrorRecover;
 
 extern JMP_BUF CPFileEnter;
 extern JMP_BUF CPFileASTMaterEnter;
 extern JMP_BUF CPRepPostprocessEnter;
+extern JMP_BUF CPApplyReps;
+
 extern int CheckPointStage;
+extern int CheckPointStageCore;
 
 extern int FatalErrorCnt;
 extern int FatalErrorASTCnt;
@@ -49,6 +52,7 @@ enum {
  CHECKPOINT_PROCESSING_FILE=1,
  CHECKPOINT_PROCESSING_FILE_ASTMATCHER=2,
  CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS=3,
+ CHECKPOINT_WRITE_OUT=4,
 };
 
 class AstCPStageMaintainer{
@@ -62,7 +66,7 @@ class AstCPStageMaintainer{
 	CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()
 
 #define CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()  do{\
-  if(NoStopOnErrFlag){\
+  if(EnableErrorRecover){\
     int SetJmpRet=SETJMP(CPFileASTMaterEnter);\
     CheckPointStage = CHECKPOINT_PROCESSING_FILE_ASTMATCHER;\
     if(SetJmpRet != 0) {\
@@ -71,18 +75,18 @@ class AstCPStageMaintainer{
   }\
 }while(0);
 #define CHECKPOINT_ASTMATCHER_RUN_EXIT()  do{\
-  if(NoStopOnErrFlag)\
+  if(EnableErrorRecover)\
     CheckPointStage = CHECKPOINT_PROCESSING_FILE;\
 }while(0);
 
 #define CHECKPOINT_ReplacementPostProcess_ENTRY(Ret)  do{\
-  if(NoStopOnErrFlag){\
+  if(EnableErrorRecover){\
     Ret=SETJMP(CPRepPostprocessEnter);\
     CheckPointStage = CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS;\
    }\
 }while(0);
 #define CHECKPOINT_ReplacementPostProcess_EXIT()  do{\
-  if(NoStopOnErrFlag)\
+  if(EnableErrorRecover)\
     CheckPointStage = CHECKPOINT_UNKNOWN;\
 }while(0);
 

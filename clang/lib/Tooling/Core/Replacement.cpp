@@ -583,18 +583,47 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
   return Position + Offset;
 }
 
+#ifdef INTEL_CUSTOMIZATION
+#include <setjmp.h>
+
+#if defined(__linux__)
+#define JMP_BUF   sigjmp_buf
+#define SETJMP(x)       sigsetjmp(x, 1)
+#define LONGJMP      siglongjmp
+#else
+#define JMP_BUF   jmp_buf
+#define SETJMP(x)       setjmp(x)
+#define LONGJMP      longjmp
+#endif
+
+JMP_BUF CPApplyReps;
+int CheckPointStageCore=0;
+#endif
+
 namespace clang {
 namespace tooling {
 
 bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
   bool Result = true;
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
+#ifdef INTEL_CUSTOMIZATION
+    CheckPointStageCore = 4;
+    int Ret=SETJMP(CPApplyReps);
+    if(Ret != 0) {
+       //skip the a replacement, as meet fatal error when apply the replacement.
+       continue;
+    }
+#endif
     if (I->isApplicable()) {
       Result = I->apply(Rewrite) && Result;
     } else {
       Result = false;
     }
   }
+#ifdef INTEL_CUSTOMIZATION
+  //tag the checkpoint is invalid now.
+  CheckPointStageCore = 0;
+#endif
   return Result;
 }
 

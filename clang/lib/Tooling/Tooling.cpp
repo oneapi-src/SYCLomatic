@@ -123,7 +123,7 @@ llvm::raw_ostream &DiagnosticsOS() {
 
 
 JMP_BUF CPFileEnter;
-
+bool EnableErrorRecover=true;
 int CheckPointStage=0;
 bool CurFileMeetErr=false;
 

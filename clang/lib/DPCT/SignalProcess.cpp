@@ -13,9 +13,7 @@
 #include "SignalProcess.h"
 #include "SaveNewFiles.h"
 
-
 #include "clang/Basic/LangOptions.h"
-
 
 extern void PrintReportOnFault(std::string &FaultMsg);
 #if defined(__linux__) || defined(_WIN64)
@@ -44,7 +42,7 @@ static const std::string SigDescription(const int &Signo) {
 #endif
 
 void recoverCheckpoint(int Signo){
-  if( NoStopOnErrFlag && (Signo == SIGILL || Signo == SIGSEGV || Signo == SIGFPE ) ) {
+  if( EnableErrorRecover && (Signo == SIGILL || Signo == SIGSEGV || Signo == SIGFPE ) ) {
       if(CheckPointStage==CHECKPOINT_PROCESSING_FILE) {
         std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
                              "\nIntel(R) DPC++ Compatibility Tool trys to "
@@ -75,14 +73,22 @@ void recoverCheckpoint(int Signo){
           CurFileMeetErr=true;
         }
         LONGJMP(CPRepPostprocessEnter, 1);
+      } else if(CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
+          std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
+                                 "\nIntel(R) DPC++ Compatibility Tool trys to "
+                                 "recover and write out the migration result\n";
+          PrintReportOnFault(FaultMsg);
+          if(!CurFileMeetErr) {
+            FatalErrorCnt++;
+            CurFileMeetErr=true;
+          }
+          LONGJMP(CPApplyReps, 1);
       }
   }
 }
 
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
-  recoverCheckpoint(Signo);
-
   std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
                          "\nIntel(R) DPC++ Compatibility Tool tries to give "
                          "analysis reports and terminates...\n";
@@ -90,7 +96,7 @@ void FaultHandler(int Signo) {
   exit(MigrationError);
 }
 
-static void SetHandler(void (*Handler)(int)) {
+static void SetSignalHandler(void (*Handler)(int)) {
   signal(SIGABRT, Handler);
   signal(SIGSEGV, Handler);
   signal(SIGILL, Handler);
@@ -98,6 +104,30 @@ static void SetHandler(void (*Handler)(int)) {
   signal(SIGTERM, Handler);
   signal(SIGFPE, Handler);
 }
+
+#include "llvm/Support/Windows/WindowsSupport.h"
+
+static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
+{
+  switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
+  {
+    case STATUS_ACCESS_VIOLATION:
+        recoverCheckpoint(SIGSEGV);
+    default:
+       return EXCEPTION_CONTINUE_EXECUTION;
+  }
+  llvm_unreachable("Handled the crash, should have longjmp'ed out of here");
+}
+
+// Here set both exception handler and signal handler.
+// The reason use exception handler: in windows there is no function have
+//    siglongjmp/sigprocmask.
+// The reason use singal hander: keep same output msg in both win and linux.
+static void SetHandler(){
+  ::AddVectoredExceptionHandler(1, ExceptionHandler);
+  SetSignalHandler(FaultHandler);
+}
+
 #endif
 
 #if defined(__linux__)
@@ -147,6 +177,10 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 #endif
 
 #include <stdio.h>
-#if defined(_WIN64) || defined(__linux__)
-void InstallSignalHandle(void) { SetHandler(FaultHandler); }
+void InstallSignalHandle(void) {
+#if  defined(__linux__)
+  SetHandler(FaultHandler);
+#elif defined(_WIN64);
+  SetHandler();
 #endif
+}
