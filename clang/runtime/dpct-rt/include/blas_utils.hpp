@@ -23,31 +23,10 @@
 #include "util.hpp"
 #include <CL/sycl.hpp>
 #include <mkl_lapack_sycl.hpp>
-#include <mkl_spblas_sycl.hpp>
 #include <utility>
 #include <vector>
 
 namespace dpct {
-
-enum mat_type { ge = 0, sy = 1, he = 2, tr = 3 };
-
-struct mat_prop {
-  mat_prop()
-      : index(mkl::index_base::zero), type(mat_type::ge),
-        uplo(mkl::uplo::lower), diag(mkl::diag::nonunit) {}
-  mkl::index_base index;
-  mat_type type;
-  mkl::uplo uplo;
-  mkl::diag diag;
-};
-
-inline mkl::uplo get_uplo(int uplo) {
-  if (uplo == 0) {
-    return mkl::uplo::lower;
-  } else {
-    return mkl::uplo::upper;
-  }
-}
 
 inline mkl::transpose get_transpose(int t) {
   if (t == 0) {
@@ -288,40 +267,6 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   // Copy back to the original buffers while casting variables from int64_t to
   // int
   copy_back(info, info_vec);
-}
-
-template <typename T, typename value_T>
-inline void sparse_csr_mv_wrapper(cl::sycl::queue &queue,
-                                  mkl::transpose transpose_flag,
-                                  const value_T alpha, const mat_prop prop,
-                                  mkl::sparse::matrix_handle_t handle,
-                                  const T *x, const value_T beta, T *y) {
-#ifdef DPCT_USM_LEVEL_NONE
-  using Ty = typename DataType<T>::T2;
-  auto x_buf = dpct::get_buffer<Ty>(x);
-  auto y_buf = dpct::get_buffer<Ty>(y);
-  if (prop.type == mat_type::ge)
-    mkl::sparse::gemv(queue, transpose_flag, alpha, handle, x_buf, beta, y_buf);
-  else if (prop.type == mat_type::sy)
-    mkl::sparse::symv(queue, prop.uplo, alpha, handle, x_buf, beta, y_buf);
-  else if (prop.type == mat_type::tr)
-    mkl::sparse::trmv(queue, prop.uplo, transpose_flag, prop.diag, alpha,
-                      handle, x_buf, beta, y_buf);
-#else
-  using Ty = typename DataType<T>::T2;
-  if (prop.type == mat_type::ge)
-    mkl::sparse::gemv(queue, transpose_flag, alpha, handle, (Ty *)x, beta,
-                      (Ty *)y);
-  else if (prop.type == mat_type::sy)
-    mkl::sparse::symv(queue, prop.uplo, alpha, handle, (Ty *)x, beta, (Ty *)y);
-  else if (prop.type == mat_type::tr)
-    mkl::sparse::trmv(queue, prop.uplo, transpose_flag, prop.diag, alpha,
-                      handle, (Ty *)x, beta, (Ty *)y);
-#endif
-  else
-    throw std::runtime_error("The oneMKL library does not support Hermitian "
-                             "sparse matrix for computing sparse matrix-dense "
-                             "vector product. You need adjust the code.");
 }
 
 } // namespace dpct

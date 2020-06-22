@@ -65,6 +65,7 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
+bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
@@ -130,6 +131,13 @@ void DpctFileInfo::buildReplacements() {
   // call, then can migrate them to MKL API.
   for (auto &RandomEngine : RandomEngineMap)
     RandomEngine.second->buildInfo();
+
+  if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
+    for (auto &SpBLASWarningLocOffset : SpBLASSet) {
+      DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
+                               Diagnostics::UNSUPPORT_MATRIX_TYPE);
+    }
+  }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {

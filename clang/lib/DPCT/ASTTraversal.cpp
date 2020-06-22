@@ -2935,15 +2935,15 @@ REGISTER_RULE(RandomEnumsRule)
 // Other spBLAS named values are migrated to corresponding named values
 void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName("(CUSPARSE_STATUS.*)|("
-                                                  "CUSPARSE_POINTER_MODE.*)"))))
+      declRefExpr(to(enumConstantDecl(matchesName(
+                      "(CUSPARSE_STATUS.*)|("
+                      "CUSPARSE_POINTER_MODE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
           .bind("SPBLASStatusConstants"),
       this);
   MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(matchesName(
-              "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_DIAG_"
-              "TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+      declRefExpr(to(enumConstantDecl(matchesName(
+                      "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
+                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -2991,8 +2991,6 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
-        "cusparseScsrsv_solve", "cusparseDcsrsv_solve", "cusparseCcsrsv_solve",
-        "cusparseZcsrsv_solve",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm");
   };
@@ -3116,8 +3114,18 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
       Repl = LHS + " = " + EA0.getReplacedString();
     }
-  } else if (FuncName == "cusparseCreateMatDescr" ||
-             FuncName == "cusparseDestroyMatDescr" ||
+  } else if (FuncName == "cusparseCreateMatDescr") {
+    NeedUseLambda = false;
+    std::string LHS;
+    if (isSimpleAddrOf(CE->getArg(0))) {
+      LHS = getNameStrRemovedAddrOf(CE->getArg(0));
+    } else {
+      dpct::ExprAnalysis EA;
+      EA.analyze(CE->getArg(0));
+      LHS = "*(" + EA.getReplacedString() + ")";
+    }
+    Repl = LHS + " = mkl::index_base::zero";
+  } else if (FuncName == "cusparseDestroyMatDescr" ||
              FuncName == "cusparseGetPointerMode" ||
              FuncName == "cusparseSetPointerMode" ||
              FuncName == "cusparseScsrsv_analysis" ||
@@ -3125,88 +3133,63 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cusparseCcsrsv_analysis" ||
              FuncName == "cusparseZcsrsv_analysis" ||
              FuncName == "cusparseCreateSolveAnalysisInfo" ||
-             FuncName == "cusparseDestroySolveAnalysisInfo") {
+             FuncName == "cusparseDestroySolveAnalysisInfo" ||
+             FuncName == "cusparseSetMatType" ||
+             FuncName == "cusparseGetMatType" ||
+             FuncName == "cusparseSetMatDiagType" ||
+             FuncName == "cusparseGetMatDiagType" ||
+             FuncName == "cusparseSetMatFillMode" ||
+             FuncName == "cusparseGetMatFillMode") {
+    if (FuncName == "cusparseSetMatType") {
+      Expr::EvalResult ER;
+      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
+        int64_t Value = ER.Val.getInt().getExtValue();
+        if (Value != 0) {
+          DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
+        }
+      } else {
+        DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
+      }
+    }
+
     if (IsAssigned) {
       report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false, FuncName,
              Msg);
-      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
+      if (FuncName == "cusparseGetMatDiagType")
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, false, "(mkl::diag)0"));
+      else if (FuncName == "cusparseGetMatFillMode")
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, false, "(mkl::uplo)0"));
+      else
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
     } else {
       report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
              Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
     return;
-  } else if (FuncName == "cusparseSetMatType" ||
-             FuncName == "cusparseGetMatType" ||
-             FuncName == "cusparseSetMatIndexBase" ||
-             FuncName == "cusparseGetMatIndexBase" ||
-             FuncName == "cusparseSetMatDiagType" ||
-             FuncName == "cusparseGetMatDiagType" ||
-             FuncName == "cusparseSetMatFillMode" ||
-             FuncName == "cusparseGetMatFillMode") {
+  } else if (FuncName == "cusparseSetMatIndexBase" ||
+             FuncName == "cusparseGetMatIndexBase") {
     NeedUseLambda = false;
     ExprAnalysis EA0(CE->getArg(0));
     bool IsSet = FuncNameRef.startswith("cusparseSet");
     ExprAnalysis EA1;
     if (IsSet) {
-      Repl = EA0.getReplacedString() + ".";
+      Repl = EA0.getReplacedString() + " = ";
       EA1.analyze(CE->getArg(1));
       Expr::EvalResult ER;
       if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
         int64_t Value = ER.Val.getInt().getExtValue();
-        if (FuncNameRef.endswith("Type")) {
-          if (Value == 0)
-            Repl = Repl + "type = dpct::mat_type::ge";
-          else if (Value == 1)
-            Repl = Repl + "type = dpct::mat_type::sy";
-          else if (Value == 2)
-            Repl = Repl + "type = dpct::mat_type::he";
-          else
-            Repl = Repl + "type = dpct::mat_type::tr";
-        } else if (FuncNameRef.endswith("IndexBase")) {
-          if (Value == 0)
-            Repl = Repl + "index = mkl::index_base::zero";
-          else
-            Repl = Repl + "index = mkl::index_base::one";
-        } else if (FuncNameRef.endswith("DiagType")){
-          if (Value == 0)
-            Repl = Repl + "diag = mkl::diag::nonunit";
-          else
-            Repl = Repl + "diag = mkl::diag::unit";
-        } else {
-          if (Value == 0)
-            Repl = Repl + "uplo = mkl::uplo::lower";
-          else
-            Repl = Repl + "uplo = mkl::uplo::upper";
-        }
+        if (Value == 0)
+          Repl = Repl + "mkl::index_base::zero";
+        else
+          Repl = Repl + "mkl::index_base::one";
       } else {
-        if (FuncNameRef.endswith("Type"))
-          Repl = Repl + "type = " + EA1.getReplacedString();
-        else if (FuncNameRef.endswith("IndexBase"))
-          Repl = Repl + "index = " + EA1.getReplacedString();
-        else if (FuncNameRef.endswith("DiagType"))
-          Repl = Repl + "diag = " + EA1.getReplacedString();
-        else {
-          const CStyleCastExpr *CSCE = nullptr;
-          if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-            ExprAnalysis EAS(CSCE->getSubExpr());
-            Repl = Repl + "uplo = " + "dpct::get_uplo(" +
-                   EAS.getReplacedString() + ")";
-          } else {
-            Repl = Repl + "uplo = " + EA1.getReplacedString();
-          }
-        }
+        Repl = Repl + EA1.getReplacedString();
       }
     } else {
-      Repl = EA0.getReplacedString() + ".";
-      if (FuncNameRef.endswith("Type"))
-        Repl = Repl + "type";
-      else if (FuncNameRef.endswith("IndexBase"))
-        Repl = Repl + "index";
-      else if (FuncNameRef.endswith("DiagType"))
-        Repl = Repl + "diag";
-      else
-        Repl = Repl + "uplo";
+      Repl = EA0.getReplacedString();
     }
 
     // Get API do not return status, so return directly.
@@ -3244,14 +3227,11 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr = PrefixInsertStr + Decl;
         return BufferName;
       };
-      // CSRValA, CSRRowPtrAa and CSRColIndA need declare buffers becasue these
-      // three arguments are used in set_csr_data() API.
       CSRValA = ProcessBuffer(CE->getArg(7), BufferType);
       CSRRowPtrA = ProcessBuffer(CE->getArg(8), "int");
       CSRColIndA = ProcessBuffer(CE->getArg(9), "int");
-      // X and Y are used in wrapper function, so keep pointer style.
-      X = CallExprArguReplVec[10];
-      Y = CallExprArguReplVec[12];
+      X = ProcessBuffer(CE->getArg(10), BufferType);
+      Y = ProcessBuffer(CE->getArg(12), BufferType);
     } else {
       CSRValA = CallExprArguReplVec[7];
       CSRRowPtrA = CallExprArguReplVec[8];
@@ -3271,14 +3251,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr =
           PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
-          CallExprArguReplVec[6] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
+          CallExprArguReplVec[6] + ", " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
                           MatrixHandleName + ", " + CallExprArguReplVec[2] +
                           ", " + CallExprArguReplVec[3] + ", " +
-                          CallExprArguReplVec[6] + ".index, const_cast<int*>(" +
+                          CallExprArguReplVec[6] + ", const_cast<int*>(" +
                           CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
                           "), const_cast<" + BufferType + "*>(" + CSRValA +
                           "));" + getNL() + IndentStr;
@@ -3286,7 +3266,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr =
             PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] +
-            ", " + CallExprArguReplVec[6] + ".index, const_cast<int*>(" +
+            ", " + CallExprArguReplVec[6] + ", const_cast<int*>(" +
             CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
             BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
@@ -3315,129 +3295,27 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    Repl = "dpct::sparse_csr_mv_wrapper(*" + CallExprArguReplVec[0] + ", " +
-           TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
-           ", *" + CallExprArguReplVec[0] + "), " + CallExprArguReplVec[6] +
-           ", " + MatrixHandleName + ", " + X + ", " + "dpct::get_value(" +
-           CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] + "), " +
-           Y + ")";
-  } else if (FuncName == "cusparseScsrsv_solve" || FuncName == "cusparseDcsrsv_solve" ||
-             FuncName == "cusparseCcsrsv_solve" || FuncName == "cusparseZcsrsv_solve") {
-    std::string BufferType;
-    if (FuncName == "cusparseScsrsv_solve")
-      BufferType = "float";
-    else if (FuncName == "cusparseDcsrsv_solve")
-      BufferType = "double";
-    else if (FuncName == "cusparseCcsrsv_solve")
-      BufferType = "std::complex<float>";
-    else
-      BufferType = "std::complex<double>";
-    int ArgNum = CE->getNumArgs();
-    std::vector<std::string> CallExprArguReplVec;
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    std::string CSRValA, CSRRowPtrA, CSRColIndA, F, X;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      auto ProcessBuffer = [&](const Expr *E, const std::string TypeStr) {
-        std::string Decl;
-        std::string BufferName =
-            getBufferNameAndDeclStr(E, TypeStr, IndentStr, Decl);
-        PrefixInsertStr = PrefixInsertStr + Decl;
-        return BufferName;
-      };
-      CSRValA = ProcessBuffer(CE->getArg(5), BufferType);
-      CSRRowPtrA = ProcessBuffer(CE->getArg(6), "int");
-      CSRColIndA = ProcessBuffer(CE->getArg(7), "int");
-      F = ProcessBuffer(CE->getArg(9), BufferType);
-      X = ProcessBuffer(CE->getArg(10), BufferType);
+      Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
+             ", " + "dpct::get_value(" + CallExprArguReplVec[5] + ", *" +
+             CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + X +
+             ", " + "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
+             CallExprArguReplVec[0] + "), " + Y + ")";
     } else {
-      CSRValA = CallExprArguReplVec[5];
-      CSRRowPtrA = CallExprArguReplVec[6];
-      CSRColIndA = CallExprArguReplVec[7];
-      F = CallExprArguReplVec[9];
-      X = CallExprArguReplVec[10];
-    }
-
-    std::string MatrixHandleName =
-        "mat_handle_ct" +
-        std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::matrix_handle_t " +
-                      MatrixHandleName + ";" + getNL() + IndentStr;
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::init_matrix_handle(&" +
-                      MatrixHandleName + ");" + getNL() + IndentStr;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      PrefixInsertStr =
-          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
-          ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[4] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
-          ", " + CSRValA + ");" + getNL() + IndentStr;
-    } else {
-      if (BufferType == "float" || BufferType == "double")
-        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
-                          MatrixHandleName + ", " + CallExprArguReplVec[2] +
-                          ", " + CallExprArguReplVec[2] + ", " +
-                          CallExprArguReplVec[4] + ".index, const_cast<int*>(" +
-                          CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
-                          "), const_cast<" + BufferType + "*>(" + CSRValA +
-                          "));" + getNL() + IndentStr;
+      if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
+        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
+               ", const_cast<" + BufferType + "*>(" + X + "), " +
+               "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
+               CallExprArguReplVec[0] + "), " + Y + ")";
       else
-        PrefixInsertStr =
-            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
-            ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[2] +
-            ", " + CallExprArguReplVec[4] + ".index, const_cast<int*>(" +
-            CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
-            BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
-    }
-    SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
-                      "mkl::sparse::release_matrix_handle(&" +
-                      MatrixHandleName + ");";
-
-    std::string TransStr;
-    Expr::EvalResult ER;
-    if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        TransStr = "mkl::transpose::nontrans";
-      } else if (Value == 1) {
-        TransStr = "mkl::transpose::trans";
-      } else {
-        TransStr = "mkl::transpose::conjtrans";
-      }
-    } else {
-      const CStyleCastExpr *CSCE = nullptr;
-      if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-        ExprAnalysis EA(CSCE->getSubExpr());
-        TransStr = "dpct::get_transpose(" + EA.getReplacedString() + ")";
-      } else {
-        TransStr = CallExprArguReplVec[1];
-      }
-    }
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::optimize_trsv(*" +
-                      CallExprArguReplVec[0] + ", " + CallExprArguReplVec[4] +
-                      ".uplo, " + TransStr + ", " + CallExprArguReplVec[4] +
-                      ".diag, " + MatrixHandleName + ");" + getNL() + IndentStr;
-
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
-             CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
-             CallExprArguReplVec[4] + ".diag, " + MatrixHandleName + ", " + F +
-             ", " + X + ")";
-    } else {
-      if (BufferType == "float" || BufferType == "double")
-        Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
-               CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
-               CallExprArguReplVec[4] + ".diag, " + MatrixHandleName +
-               ", const_cast<" + BufferType + "*>(" + F + "), " + X + ")";
-      else
-        Repl = "mkl::sparse::trsv(*" + CallExprArguReplVec[0] + ", " +
-               CallExprArguReplVec[4] + ".uplo, " + TransStr + ", " +
-               CallExprArguReplVec[4] + ".diag, " + MatrixHandleName + ", (" +
-               BufferType + +"*)" + F + ", (" + BufferType + "*)" + X + ")";
-
+        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
+               TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
+               ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
+               ", (" + BufferType + "*)" + X + ", " + "dpct::get_value(" +
+               CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] +
+               "), (" + BufferType + "*)" + Y + ")";
     }
   } else if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm" ||
              FuncName == "cusparseCcsrmm" || FuncName == "cusparseZcsrmm") {
@@ -3491,14 +3369,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr =
           PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] + ", " +
-          CallExprArguReplVec[7] + ".index, " + CSRRowPtrA + ", " + CSRColIndA +
+          CallExprArguReplVec[7] + ", " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
                           MatrixHandleName + ", " + CallExprArguReplVec[2] +
                           ", " + CallExprArguReplVec[4] + ", " +
-                          CallExprArguReplVec[7] + ".index, const_cast<int*>(" +
+                          CallExprArguReplVec[7] + ", const_cast<int*>(" +
                           CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA +
                           "), const_cast<" + BufferType + "*>(" + CSRValA +
                           "));" + getNL() + IndentStr;
@@ -3506,7 +3384,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr =
             PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] +
-            ", " + CallExprArguReplVec[7] + ".index, const_cast<int*>(" +
+            ", " + CallExprArguReplVec[7] + ", const_cast<int*>(" +
             CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
             BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
@@ -3573,37 +3451,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  if (NeedUseLambda && CanAvoidUsingLambda && !IsMacroArg) {
-    if (FuncNameRef.endswith("mm")) {
-      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "symmetric/Hermitian/triangular",
-             "computing a sparse matrix-dense matrix product");
-    } else if (FuncNameRef.endswith("mv")) {
-      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "Hermitian", "computing a sparse matrix-dense vector product");
-    } else if (FuncNameRef.endswith("sv_solve")) {
-      report(OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "general/symmetric/Hermitian",
-             "solveing a system of linear equations for the sparse matrix");
-      report(OuterInsertLoc, Diagnostics::UNSUPPORT_ALPHA_VALUE, true,
-             getStmtSpelling(CE->getArg(3)), "mkl::sparse::trsv");
-    }
-  } else {
-    if (FuncNameRef.endswith("mm")) {
-      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "symmetric/Hermitian/triangular",
-             "computing a sparse matrix-dense matrix product");
-    } else if (FuncNameRef.endswith("mv")) {
-      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "Hermitian", "computing a sparse matrix-dense vector product");
-    } else if (FuncNameRef.endswith("sv_solve")) {
-      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             "general/symmetric/Hermitian",
-             "solveing a system of linear equations for the sparse matrix");
-      report(PrefixInsertLoc, Diagnostics::UNSUPPORT_ALPHA_VALUE, true,
-             getStmtSpelling(CE->getArg(3)), "mkl::sparse::trsv");
+  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
+    if (NeedUseLambda && CanAvoidUsingLambda && !IsMacroArg) {
+      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(OuterInsertLoc);
+    } else {
+      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(PrefixInsertLoc);
     }
   }
+
   if (NeedUseLambda) {
     if (CanAvoidUsingLambda && !IsMacroArg) {
       std::string InsertStr;

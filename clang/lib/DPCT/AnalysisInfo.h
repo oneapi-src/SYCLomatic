@@ -379,6 +379,9 @@ public:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
+  std::set<unsigned int> &getSpBLASSet() {
+  return SpBLASSet;
+}
 
 private:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
@@ -408,6 +411,7 @@ private:
   GlobalMap<CudaMallocInfo> CudaMallocMap;
   GlobalMap<RandomEngineInfo> RandomEngineMap;
   GlobalMap<TextureInfo> TextureMap;
+  std::set<unsigned int> SpBLASSet;
 
   ExtReplacements Repls;
   std::vector<SourceLineInfo> Lines;
@@ -877,6 +881,12 @@ public:
   void insertRandomEngine(const Expr *E);
   std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
 
+  void insertSpBLASWarningLocOffset(SourceLocation SL) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    FileInfo->getSpBLASSet().insert(LocInfo.second);
+  }
+
   void setFileEnterLocation(SourceLocation Loc) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
@@ -951,6 +961,13 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
+
+  static bool getSpBLASUnsupportedMatrixTypeFlag() {
+    return SpBLASUnsupportedMatrixTypeFlag;
+  }
+  static void setSpBLASUnsupportedMatrixTypeFlag(bool Flag) {
+    SpBLASUnsupportedMatrixTypeFlag = Flag;
+  }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1079,6 +1096,7 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_set<std::string> TempVariableHandledSet;
   static bool UsingDRYPattern;
+  static bool SpBLASUnsupportedMatrixTypeFlag;
 };
 
 class TemplateArgumentInfo;

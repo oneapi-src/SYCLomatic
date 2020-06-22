@@ -26,11 +26,11 @@ int main(){
   a3 = CUSPARSE_INDEX_BASE_ZERO;
   a3 = CUSPARSE_INDEX_BASE_ONE;
 
-  //CHECK: dpct::mat_type a4;
-  //CHECK-NEXT: a4 = dpct::mat_type::ge;
-  //CHECK-NEXT: a4 = dpct::mat_type::sy;
-  //CHECK-NEXT: a4 = dpct::mat_type::he;
-  //CHECK-NEXT: a4 = dpct::mat_type::tr;
+  //CHECK: int a4;
+  //CHECK-NEXT: a4 = 0;
+  //CHECK-NEXT: a4 = 1;
+  //CHECK-NEXT: a4 = 2;
+  //CHECK-NEXT: a4 = 3;
   cusparseMatrixType_t a4;
   a4 = CUSPARSE_MATRIX_TYPE_GENERAL;
   a4 = CUSPARSE_MATRIX_TYPE_SYMMETRIC;
@@ -69,7 +69,7 @@ int main(){
   a6 = CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED;
   a6 = CUSPARSE_STATUS_ZERO_PIVOT;
 
-  //CHECK: dpct::mat_prop a7;
+  //CHECK: mkl::index_base a7;
   cusparseMatDescr_t a7;
 
   //CHECK: sycl::queue* a8;
@@ -79,10 +79,10 @@ int main(){
 //CHECK: void foo(mkl::uplo a1,
 //CHECK-NEXT:     mkl::diag a2,
 //CHECK-NEXT:     mkl::index_base a3,
-//CHECK-NEXT:     dpct::mat_type a4,
+//CHECK-NEXT:     int a4,
 //CHECK-NEXT:     mkl::transpose a5,
 //CHECK-NEXT:     int a6,
-//CHECK-NEXT:     dpct::mat_prop a7,
+//CHECK-NEXT:     mkl::index_base a7,
 //CHECK-NEXT:     sycl::queue* a8);
 void foo(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
@@ -96,10 +96,10 @@ void foo(cusparseFillMode_t a1,
 //CHECK:mkl::uplo foo1();
 //CHECK-NEXT:mkl::diag foo2();
 //CHECK-NEXT:mkl::index_base foo3();
-//CHECK-NEXT:dpct::mat_type foo4();
+//CHECK-NEXT:int foo4();
 //CHECK-NEXT:mkl::transpose foo5();
 //CHECK-NEXT:int foo6();
-//CHECK-NEXT:dpct::mat_prop foo7();
+//CHECK-NEXT:mkl::index_base foo7();
 //CHECK-NEXT:sycl::queue* foo8();
 cusparseFillMode_t foo1();
 cusparseDiagType_t foo2();
@@ -114,10 +114,10 @@ cusparseHandle_t foo8();
 //CHECK-NEXT:void bar1(mkl::uplo a1,
 //CHECK-NEXT:          mkl::diag a2,
 //CHECK-NEXT:          mkl::index_base a3,
-//CHECK-NEXT:          dpct::mat_type a4,
+//CHECK-NEXT:          int a4,
 //CHECK-NEXT:          mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          dpct::mat_prop a7,
+//CHECK-NEXT:          mkl::index_base a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar1(cusparseFillMode_t a1,
@@ -133,10 +133,10 @@ void bar1(cusparseFillMode_t a1,
 //CHECK-NEXT:void bar2(mkl::uplo a1,
 //CHECK-NEXT:          mkl::diag a2,
 //CHECK-NEXT:          mkl::index_base a3,
-//CHECK-NEXT:          dpct::mat_type a4,
+//CHECK-NEXT:          int a4,
 //CHECK-NEXT:          mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          dpct::mat_prop a7,
+//CHECK-NEXT:          mkl::index_base a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar2(cusparseFillMode_t a1,
@@ -153,10 +153,10 @@ void bar2(cusparseFillMode_t a1,
 //CHECK-NEXT:void bar2<double>(mkl::uplo a1,
 //CHECK-NEXT:             mkl::diag a2,
 //CHECK-NEXT:             mkl::index_base a3,
-//CHECK-NEXT:             dpct::mat_type a4,
+//CHECK-NEXT:             int a4,
 //CHECK-NEXT:             mkl::transpose a5,
 //CHECK-NEXT:             int a6,
-//CHECK-NEXT:             dpct::mat_prop a7,
+//CHECK-NEXT:             mkl::index_base a7,
 //CHECK-NEXT:             sycl::queue* a8){}
 template<>
 void bar2<double>(cusparseFillMode_t a1,
