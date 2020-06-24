@@ -108,6 +108,7 @@ void DpctFileInfo::buildLinesInfo() {
     SM.getLineNumber(FID, 0);
   auto LineCache = Content->SourceLineCache;
   auto NumLines = Content->NumLines;
+  FileSize = Content->getSize();
   const char *Buffer = nullptr;
   if (!LineCache) {
     return;
@@ -117,8 +118,7 @@ void DpctFileInfo::buildLinesInfo() {
                  ->getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
     Lines.emplace_back(L, LineCache, Buffer);
-  Lines.emplace_back(NumLines, LineCache[NumLines - 1], Content->getSize(),
-                     Buffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, Buffer);
 }
 
 void DpctFileInfo::buildReplacements() {

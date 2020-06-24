@@ -14,6 +14,7 @@
 #include "AnalysisInfo.h"
 #include "Debug.h"
 
+#include <assert.h>
 #include <regex>
 
 namespace clang {
@@ -24,10 +25,19 @@ ExtReplacements::ExtReplacements(DpctFileInfo *FileInfo)
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
   if (!Repl)
     return true;
-  if (Repl->getFilePath().empty())
+  if (Repl->getFilePath() != FilePath)
     return true;
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
     return true;
+  auto EndOffset = Repl->getOffset() + Repl->getLength();
+  if (EndOffset < Repl->getOffset() || EndOffset > FileInfo->getFileSize()) {
+#ifdef DPCT_DEBUG_BUILD
+    llvm::errs() << "Abandon Illegal Replacement:\n"
+                 << Repl->toString() << "\n";
+    assert(0 && "Find illegal replacement!");
+#endif
+    return true;
+  }
   return false;
 }
 

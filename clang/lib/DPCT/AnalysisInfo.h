@@ -314,6 +314,8 @@ public:
     Repls.addReplacement(Repl);
   }
 
+  size_t getFileSize() const { return FileSize; }
+
   // Header inclusion directive insertion functions
   void setFileEnterOffset(unsigned Offset) {
     if (!HasInclusionDirective) {
@@ -539,6 +541,7 @@ private:
   std::set<unsigned int> SpBLASSet;
 
   ExtReplacements Repls;
+  size_t FileSize;
   std::vector<SourceLineInfo> Lines;
 
   std::string FilePath;
