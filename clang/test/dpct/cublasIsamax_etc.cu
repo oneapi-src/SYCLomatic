@@ -1113,12 +1113,25 @@ int main() {
   status = cublasDgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
   cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_D, A_D, n, 16, B_D, n, 16, &beta_D, C_D, n, 16, 10);
 
+  __half alpha_H, beta_H;
+  __half* A_H, *B_H, *C_H;
+  // CHECK: {
+  // CHECK-NEXT: auto A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A_H);
+  // CHECK-NEXT: auto B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B_H);
+  // CHECK-NEXT: auto C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(C_H);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, n, n, n, dpct::get_value(&alpha_H, *handle), A_H_buf_ct{{[0-9]+}}, n, 16, B_H_buf_ct{{[0-9]+}}, n, 16, dpct::get_value(&beta_H, *handle), C_H_buf_ct{{[0-9]+}}, n, 16, 10);
+  // CHECK-NEXT: }
+  cublasHgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, n, n, n, &alpha_H, A_H, n, 16, B_H, n, 16, &beta_H, C_H, n, 16, 10);
+
   const float** A_S_array;
   const float** B_S_array;
   float** C_S_array;
   const double** A_D_array;
   const double** B_D_array;
   double** C_D_array;
+  const __half** A_H_array;
+  const __half** B_H_array;
+  __half** C_H_array;
   cublasOperation_t trans3 = CUBLAS_OP_N;
 
   // CHECK: /*
@@ -1141,6 +1154,10 @@ int main() {
   cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
   status = cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
   cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  cublasHgemmBatched(handle, trans3, trans3, n, n, n, &alpha_H, A_H_array, n, B_H_array, n, &beta_H, C_H_array, n, 10);
 
   // cublas<T>symm
   // CHECK: {

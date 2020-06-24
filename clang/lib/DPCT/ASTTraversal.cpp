@@ -1652,8 +1652,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cusparseOperation_t", "cusparseMatDescr_t",
                   "cusparseHandle_t", "CUcontext",
                   "cublasPointerMode_t", "cusparsePointerMode_t",
-                  "cublasGemmAlgo_t",
-                  "cusparseSolveAnalysisInfo_t"
+                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
+                  "cudaDataType", "cublasDataType_t"
                   ),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
@@ -3999,6 +3999,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         /*Regular level 3*/
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
         "cublasHgemm", "cublasCgemm3m", "cublasZgemm3m",
+        "cublasHgemmStridedBatched",
         "cublasSgemmStridedBatched", "cublasDgemmStridedBatched",
         "cublasCgemmStridedBatched", "cublasZgemmStridedBatched",
         "cublasSsymm_v2", "cublasDsymm_v2",
@@ -4009,15 +4010,17 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
         "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
         "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
-        "cublasSgemmBatched", "cublasDgemmBatched", "cublasCgemmBatched",
-        "cublasZgemmBatched",
+        "cublasHgemmBatched", "cublasSgemmBatched", "cublasDgemmBatched",
+        "cublasCgemmBatched",
+        "cublasZgemmBatched", "cublasStrsmBatched", "cublasDtrsmBatched",
+        "cublasCtrsmBatched", "cublasZtrsmBatched",
         /*Extensions*/
         "cublasSgetrfBatched", "cublasDgetrfBatched", "cublasCgetrfBatched",
         "cublasZgetrfBatched", "cublasSgetrsBatched", "cublasDgetrsBatched",
         "cublasCgetrsBatched", "cublasZgetrsBatched", "cublasSgetriBatched",
         "cublasDgetriBatched", "cublasCgetriBatched", "cublasZgetriBatched",
         "cublasSgeqrfBatched", "cublasDgeqrfBatched", "cublasCgeqrfBatched",
-        "cublasZgeqrfBatched", "cublasGemmEx",
+        "cublasZgeqrfBatched", "cublasGemmEx", "cublasSgemmEx", "cublasCgemmEx",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream",
@@ -4191,15 +4194,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     SuffixInsertLoc = FuncCallEnd;
   }
 
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
-      (FuncName == "cublasHgemm"|| FuncName == "cublasGemmEx")) {
-    report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
-    return;
-  }
-
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
-      (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched" ||
-       FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched")) {
+      (FuncName == "cublasHgemmBatched" || FuncName == "cublasSgemmBatched" ||
+       FuncName == "cublasDgemmBatched" ||
+       FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched" ||
+       FuncName == "cublasStrsmBatched" || FuncName == "cublasDtrsmBatched" ||
+       FuncName == "cublasCtrsmBatched" || FuncName == "cublasZtrsmBatched")) {
     report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }
@@ -4212,40 +4212,21 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   CallExprReplStr = "";
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
-  if (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched" ||
-      FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched") {
-    std::string Replacement;
-    BLASEnumInfo EnumInfo;
-    std::string BufferType;
-    if (FuncName == "cublasSgemmBatched" || FuncName == "cublasDgemmBatched") {
-      auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
-      auto ReplInfo = ReplInfoPair->second;
-      Replacement = ReplInfo.ReplName;
-      EnumInfo =
-          BLASEnumInfo(ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-                       ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-      BufferType = ReplInfo.BufferTypeInfo[0];
-    } else {
-      auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
-      auto ReplInfo = ReplInfoPair->second;
-      Replacement = ReplInfo.ReplName;
-      EnumInfo =
-          BLASEnumInfo(ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-                       ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-      BufferType = ReplInfo.BufferTypeInfo[0];
-    }
+  if (MapNames::BatchedBLASFuncReplInfoMap.find(FuncName) !=
+      MapNames::BatchedBLASFuncReplInfoMap.end()) {
+    auto ReplInfoPair = MapNames::BatchedBLASFuncReplInfoMap.find(FuncName);
+    auto ReplInfo = ReplInfoPair->second;
+    std::string Replacement = ReplInfo.ReplName;
+    BLASEnumInfo EnumInfo =
+        BLASEnumInfo(ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
+                     ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
+    std::string BufferType = ReplInfo.BufferTypeInfo[0];
+
 
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
       return;
-    }
-
-    int ArgNum = CE->getNumArgs();
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
     }
 
     // update the replacement of four enmu arguments
@@ -4259,38 +4240,43 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         Argu = CurrentArgumentRepl;
       }
     };
-    processEnumArgus(CE->getArg(1), 1, CallExprArguReplVec[1]);
-    processEnumArgus(CE->getArg(2), 2, CallExprArguReplVec[2]);
 
-    // update the replacement of three buffers
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      std::string BufferDecl;
-      CallExprArguReplVec[7] = getBufferNameAndDeclStr(
-          CE->getArg(7), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[9] = getBufferNameAndDeclStr(
-          CE->getArg(9), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[12] = getBufferNameAndDeclStr(
-          CE->getArg(12), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-    } else {
-      if (BufferType == "std::complex<float>" ||
-          BufferType == "std::complex<double>") {
-        CallExprArguReplVec[7] =
-            "(const " + BufferType + "**)" + CallExprArguReplVec[7];
-        CallExprArguReplVec[9] =
-            "(const " + BufferType + "**)" + CallExprArguReplVec[9];
-        CallExprArguReplVec[12] =
-            "(" + BufferType + "**)" + CallExprArguReplVec[12];
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(i));
+      CallExprArguReplVec.push_back(EA.getReplacedString());
+      processEnumArgus(CE->getArg(i), i, CallExprArguReplVec[i]);
+    }
+
+    // update the replacement of buffers
+    for (size_t i = 0; i < ReplInfo.BufferIndexInfo.size(); ++i) {
+      int BufferIndex = ReplInfo.BufferIndexInfo[i];
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+        std::string BufferDecl;
+        CallExprArguReplVec[BufferIndex] = getBufferNameAndDeclStr(
+            CE->getArg(BufferIndex), BufferType, IndentStr, BufferDecl);
+        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      } else {
+        if (BufferType == "std::complex<float>" ||
+            BufferType == "std::complex<double>") {
+          if (i == ReplInfo.BufferIndexInfo.size() - 1)
+            CallExprArguReplVec[BufferIndex] =
+                "(" + BufferType + "**)" + CallExprArguReplVec[BufferIndex];
+          else
+            CallExprArguReplVec[BufferIndex] = "(const " + BufferType + "**)" +
+                                               CallExprArguReplVec[BufferIndex];
+        }
       }
     }
 
-    // update the replacement of two scalar arguments
-    CallExprArguReplVec[6] = "dpct::get_value(" + CallExprArguReplVec[6] +
-                             ", *" + CallExprArguReplVec[0] + ")";
-    CallExprArguReplVec[11] = "dpct::get_value(" + CallExprArguReplVec[11] +
-                              ", *" + CallExprArguReplVec[0] + ")";
+    // update the replacement of scalar arguments
+    for (size_t i = 0; i < ReplInfo.PointerIndexInfo.size(); ++i) {
+      int ScalarIndex = ReplInfo.PointerIndexInfo[i];
+      CallExprArguReplVec[ScalarIndex] = "dpct::get_value(" +
+                                         CallExprArguReplVec[ScalarIndex] +
+                                         ", *" + CallExprArguReplVec[0] + ")";
+    }
 
     //Declare temp variables for m/n/k/lda/ldb/ldc/alpha/beta/transa/transb/groupsize
     //These pointers are accessed on host only and the value will be saved before
@@ -4311,25 +4297,57 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr[PrefixInsertStr.size() - 1] = ';';
       PrefixInsertStr = PrefixInsertStr + getNL() + IndentStr;
     };
-    if (dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImplicit()))
-      CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
-    else
-      declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {1});
-    if (dyn_cast<DeclRefExpr>(CE->getArg(2)->IgnoreImplicit()))
-      CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
-    else
-      declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {2});
-    declareTempVars(
-        "int64_t",
-        {"m_ct", "n_ct", "k_ct", "lda_ct", "ldb_ct", "ldc_ct", "group_size_ct"},
-        {3, 4, 5, 8, 10, 13, 14});
-    declareTempVars(BufferType, {"alpha_ct", "beta_ct"}, {6, 11});
 
-    // insert the group_count to CallExprArguReplVec
-    auto InsertIter = CallExprArguReplVec.begin();
-    std::advance(InsertIter, 14);
-    CallExprArguReplVec.insert(InsertIter, "1");
+    if (FuncName == "cublasHgemmBatched" || FuncName == "cublasSgemmBatched" ||
+        FuncName == "cublasDgemmBatched" ||
+        FuncName == "cublasCgemmBatched" || FuncName == "cublasZgemmBatched") {
+      if (CE->getArg(1)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
+      else
+        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {1});
+      if (CE->getArg(2)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
+      else
+        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {2});
 
+      declareTempVars("int64_t",
+                      {"m_ct", "n_ct", "k_ct", "lda_ct", "ldb_ct", "ldc_ct",
+                       "group_size_ct"},
+                      {3, 4, 5, 8, 10, 13, 14});
+      declareTempVars(BufferType, {"alpha_ct", "beta_ct"}, {6, 11});
+
+      // insert the group_count to CallExprArguReplVec
+      auto InsertIter = CallExprArguReplVec.begin();
+      std::advance(InsertIter, 14);
+      CallExprArguReplVec.insert(InsertIter, "1");
+    } else {
+      if (CE->getArg(1)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
+      else
+        declareTempVars({"mkl::side"}, {"side_ct"}, {1});
+      if (CE->getArg(2)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
+      else
+        declareTempVars({"mkl::uplo"}, {"uplo_ct"}, {2});
+      if (CE->getArg(3)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[3] = "&" + CallExprArguReplVec[3];
+      else
+        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {3});
+      if (CE->getArg(4)->IgnoreImplicit()->isLValue())
+        CallExprArguReplVec[2] = "&" + CallExprArguReplVec[4];
+      else
+        declareTempVars({"mkl::diag"}, {"diag_ct"}, {4});
+
+      declareTempVars("int64_t",
+                      {"m_ct", "n_ct", "lda_ct", "ldb_ct", "group_size_ct"},
+                      {5, 6, 9, 11, 12});
+      declareTempVars(BufferType, {"alpha_ct"}, {7});
+
+      // insert the group_count to CallExprArguReplVec
+      auto InsertIter = CallExprArguReplVec.begin();
+      std::advance(InsertIter, 12);
+      CallExprArguReplVec.insert(InsertIter, "1");
+    }
     // add an empty event vector as the last argument
     CallExprArguReplVec.push_back("{}");
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
@@ -4684,26 +4702,148 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                        OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr);
+  } else if (FuncName == "cublasSgemmEx" || FuncName == "cublasCgemmEx") {
+    std::string Replacement = "mkl::blas::gemm";
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
+             MapNames::ITFName.at(FuncName), Replacement);
+      return;
+    }
+
+    auto AType = CE->getArg(8);
+    auto BType = CE->getArg(11);
+    auto CType = CE->getArg(15);
+
+    Expr::EvalResult ATypeER, BTypeER, CTypeER;
+    bool CanATypeBeEval =
+        AType->EvaluateAsInt(ATypeER, DpctGlobalInfo::getContext());
+    bool CanBTypeBeEval =
+        BType->EvaluateAsInt(BTypeER, DpctGlobalInfo::getContext());
+    bool CanCTypeBeEval =
+        CType->EvaluateAsInt(CTypeER, DpctGlobalInfo::getContext());
+
+    int64_t ABTypeValue, CTypeValue;
+    if (CanCTypeBeEval && (CanATypeBeEval || CanBTypeBeEval)) {
+      CTypeValue = CTypeER.Val.getInt().getExtValue();
+      if (CanATypeBeEval)
+        ABTypeValue = ATypeER.Val.getInt().getExtValue();
+      else
+        ABTypeValue = BTypeER.Val.getInt().getExtValue();
+    } else {
+      report(FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
+             MapNames::ITFName.at(FuncName),
+             "not all values of parameters could be evaluated in migration");
+      return;
+    }
+
+    MapNames::BLASGemmExTypeInfo TypeInfo;
+    std::string Key = std::to_string(ABTypeValue) + ":" +
+                      std::to_string(CTypeValue);
+    if (MapNames::BLASTGemmExTypeInfoMap.find(Key) !=
+        MapNames::BLASTGemmExTypeInfoMap.end()) {
+      TypeInfo = MapNames::BLASTGemmExTypeInfoMap.find(Key)->second;
+    } else {
+      report(
+          FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
+          MapNames::ITFName.at(FuncName),
+          "the combination of matrix data type and scalar type is unsupported");
+      return;
+    }
+
+    std::vector<int> ArgsIndex{0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16};
+    // initialize the replacement of each arguments
+    for (auto I : ArgsIndex) {
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(I));
+      CallExprArguReplVec.push_back(EA.getReplacedString());
+    }
+
+    // update the replacement of four enmu arguments
+    BLASEnumInfo EnumInfo = BLASEnumInfo({1, 2}, -1, -1, -1);
+    auto processEnumArgus = [&](const Expr *E, unsigned int Index,
+                                std::string &Argu) {
+      const CStyleCastExpr *CSCE = nullptr;
+      if (CSCE = dyn_cast<CStyleCastExpr>(E)) {
+        std::string CurrentArgumentRepl;
+        processParamIntCastToBLASEnum(E, CSCE, Index, IndentStr, EnumInfo,
+                                      PrefixInsertStr, CurrentArgumentRepl);
+        Argu = CurrentArgumentRepl;
+      }
+    };
+    processEnumArgus(CE->getArg(1), 1, CallExprArguReplVec[1]);
+    processEnumArgus(CE->getArg(2), 2, CallExprArguReplVec[2]);
+
+    // update the replacement of three buffers
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      std::string BufferDecl;
+      CallExprArguReplVec[7] = getBufferNameAndDeclStr(
+          CE->getArg(7), TypeInfo.ABType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[9] = getBufferNameAndDeclStr(
+          CE->getArg(10), TypeInfo.ABType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[12] = getBufferNameAndDeclStr(
+          CE->getArg(14), TypeInfo.CType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+    } else {
+      CallExprArguReplVec[7] =
+          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[7];
+      CallExprArguReplVec[9] =
+          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[9];
+      CallExprArguReplVec[12] =
+          "(" + TypeInfo.CType + "*)" + CallExprArguReplVec[12];
+    }
+
+    // update the replacement of two scalar arguments
+    CallExprArguReplVec[6] = "dpct::get_value(" + CallExprArguReplVec[6] +
+                             ", *" + CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[11] = "dpct::get_value(" + CallExprArguReplVec[11] +
+                              ", *" + CallExprArguReplVec[0] + ")";
+    if (Key == "2:2") {
+      CallExprArguReplVec[6] = MapNames::getClNamespace() + "::vec<float, 1>{" +
+                               CallExprArguReplVec[6] + "}.convert<" +
+                               MapNames::getClNamespace() + "::half, " +
+                               MapNames::getClNamespace() +
+                               "::rounding_mode::automatic>()[0]";
+      CallExprArguReplVec[11] = MapNames::getClNamespace() +
+                                "::vec<float, 1>{" + CallExprArguReplVec[11] +
+                                "}.convert<" + MapNames::getClNamespace() +
+                                "::half, " + MapNames::getClNamespace() +
+                                "::rounding_mode::automatic>()[0]";
+    }
+
+    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
+
+    if (NeedUseLambda) {
+      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
+        NeedUseLambda = false;
+      }
+    }
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasGemmEx") {
-    std::string Replacement = "mkl::blas::gemm_ext";
+    std::string Replacement = "mkl::blas::gemm";
      if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
 
-    // MKL API does not have computeType and algo parameters.
-    // computeType(alpha/beta)   AType/BType     CType           IsSupportInMKL
-    // CUDA_R_16F(2)             CUDA_R_16F(2)   CUDA_R_16F(2)   yes
-    // CUDA_R_32I(10)            CUDA_R_8I(3)    CUDA_R_32I(10)  no
-    // CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_16F(2)   no (but can emulate, cast alpha/beta to half)
-    // CUDA_R_32F(0)             CUDA_R_8I(3)    CUDA_R_32I(10)  no
-    // CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_32F(0)   yes
-    // CUDA_R_32F(0)             CUDA_R_32F(0)   CUDA_R_32F(0)   yes
-    // CUDA_R_64F(1)             CUDA_R_64F(1)   CUDA_R_64F(1)   yes
-    // CUDA_C_32F(4)             CUDA_C_8I(7)    CUDA_C_32F(4)   no
-    // CUDA_C_32F(4)             CUDA_C_32F(4)   CUDA_C_32F(4)   yes
-    // CUDA_C_64F(5)             CUDA_C_64F(5)   CUDA_C_64F(5)   yes
+// MKL API does not have computeType and algo parameters.
+// computeType(alpha/beta)               AType/BType     CType           IsSupportInMKL
+// CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)   CUDA_R_16F(2)   yes
+// CUDA_R_32I(10)                        CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_16F(2)   no (can cast alpha/beta to half)
+// CUDA_R_32F(0)                         CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_32F(0)   yes
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_32F(0)   CUDA_R_32F(0)   yes
+// CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)  CUDA_R_64F(1)   CUDA_R_64F(1)   yes
+// CUDA_C_32F(4)                         CUDA_C_8I(7)    CUDA_C_32F(4)   no
+// CUDA_C_32F(4)                         CUDA_C_32F(4)   CUDA_C_32F(4)   yes
+// CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
 
     auto AType = CE->getArg(8);
     auto BType = CE->getArg(11);
@@ -4730,26 +4870,24 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       else
         ABTypeValue = BTypeER.Val.getInt().getExtValue();
     } else {
-      report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+      report(FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
              MapNames::ITFName.at(FuncName),
-             "the parameter " + getStmtSpelling(AType) + "/" +
-                 getStmtSpelling(BType) + "/" + getStmtSpelling(CType) + "/" +
-                 getStmtSpelling(ComputeType) + " is unsupported");
+             "not all values of parameters could be evaluated in migration");
       return;
     }
 
     MapNames::BLASGemmExTypeInfo TypeInfo;
-    std::string Key = std::to_string(ComputeTypeValue) +
-                      std::to_string(ABTypeValue) + std::to_string(CTypeValue);
+    std::string Key = std::to_string(ComputeTypeValue) + ":" +
+                      std::to_string(ABTypeValue) + ":" +
+                      std::to_string(CTypeValue);
     if(MapNames::BLASGemmExTypeInfoMap.find(Key) !=
         MapNames::BLASGemmExTypeInfoMap.end()){
       TypeInfo = MapNames::BLASGemmExTypeInfoMap.find(Key)->second;
     } else {
-      report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
-             MapNames::ITFName.at(FuncName),
-             "the parameter " + getStmtSpelling(AType) + "/" +
-                 getStmtSpelling(BType) + "/" + getStmtSpelling(CType) + "/" +
-                 getStmtSpelling(ComputeType) + " is unsupported");
+      report(
+          FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
+          MapNames::ITFName.at(FuncName),
+          "the combination of matrix data type and scalar type is unsupported");
       return;
     }
 
@@ -4804,7 +4942,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     CallExprArguReplVec[11] = "dpct::get_value((" + TypeInfo.OriginScalarType +
                               "*)" + CallExprArguReplVec[11] + ", *" +
                               CallExprArguReplVec[0] + ")";
-    if (Key == "022") {
+    if (Key == "0:2:2" || Key == "68:2:2") {
       CallExprArguReplVec[6] = MapNames::getClNamespace() + "::vec<float, 1>{" +
                                CallExprArguReplVec[6] + "}.convert<" +
                                MapNames::getClNamespace() + "::half, " +

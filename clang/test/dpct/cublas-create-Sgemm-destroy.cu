@@ -19,7 +19,8 @@ cublasStatus_t bar (cublasStatus_t s){
 // CHECK: extern sycl::queue* handle2;
 extern cublasHandle_t handle2;
 
-int main() {
+// CHECK: int foo2(int DT)  try {
+int foo2(cudaDataType DT) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: int status;
@@ -46,9 +47,13 @@ int main() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed, because the function call is redundant in DPC++.
   //CHECK-NEXT: */
+  //CHECK-NEXT: int cdt;
+  //CHECK-NEXT: int cbdt;
   cublasPointerMode_t mode = CUBLAS_POINTER_MODE_HOST;
   cublasGetPointerMode(handle, &mode);
   cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+  cudaDataType_t cdt;
+  cublasDataType_t cbdt;
 
   // CHECK: sycl::queue *stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
@@ -121,43 +126,43 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::half*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::half*)beta, *handle), C_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::half*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::half*)beta, *handle), C_buf_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{dpct::get_value((float*)alpha, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, sycl::vec<float, 1>{dpct::get_value((float*)beta, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{dpct::get_value((float*)alpha, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, sycl::vec<float, 1>{dpct::get_value((float*)beta, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((double*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((double*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((double*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((double*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::float2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::float2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::float2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::float2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C);
-  // CHECK-NEXT: mkl::blas::gemm_ext(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::double2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::double2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((sycl::double2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value((sycl::double2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   status = cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_16F, CUBLAS_GEMM_ALGO0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_32F, CUBLAS_GEMM_ALGO0);
@@ -168,10 +173,45 @@ int main() {
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_C_64F, N, B, CUDA_C_64F, N, beta, C, CUDA_C_64F, N, CUDA_C_64F, CUBLAS_GEMM_ALGO0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cublasGemmEx was not migrated, because the parameter CUDA_R_8I/CUDA_R_8I/CUDA_R_32I/CUDA_R_32I is unsupported.
+  // CHECK-NEXT: DPCT1046:{{[0-9]+}}: The cublasGemmEx was not migrated, because the combination of matrix data type and scalar type is unsupported. You need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, 3, N, B, 3, N, beta, C, 10, N, 10, 0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_8I, N, B, CUDA_R_8I, N, beta, C, CUDA_R_32I, N, CUDA_R_32I, CUBLAS_GEMM_ALGO0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1046:{{[0-9]+}}: The cublasGemmEx was not migrated, because not all values of parameters could be evaluated in migration. You need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, DT, N, B, DT, N, beta, C, DT, N, DT, 0);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, DT, N, B, DT, N, beta, C, DT, N, DT, CUBLAS_GEMM_ALGO0);
+
+  float2 alpha_C, beta_C;
+  // CHECK: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(C);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{dpct::get_value(&alpha_S, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, sycl::vec<float, 1>{dpct::get_value(&beta_S, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_S, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_S, *handle), A_buf_ct34, N, B_buf_ct35, N, dpct::get_value(&beta_S, *handle), C_buf_ct36, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_C, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_C, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_16F, N);
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_32F, N);
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_32F, N, B, CUDA_R_32F, N, &beta_S, C, CUDA_R_32F, N);
+  cublasCgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_C, A, CUDA_C_32F, N, B, CUDA_C_32F, N, &beta_C, C, CUDA_C_32F, N);
 
   // CHECK: for (;;) {
   // CHECK-NEXT: {

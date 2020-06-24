@@ -237,6 +237,12 @@ int main() {
 
   //level 3
 
+  __half *d_A_H = 0;
+  __half *d_B_H = 0;
+  __half *d_C_H = 0;
+  __half alpha_H;
+  __half beta_H;
+
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -266,30 +272,32 @@ int main() {
   a = cublasCgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_C, d_A_C, N, 16, d_B_C, N, 16, &beta_C, d_C_C, N, 16, 10);
   //CHECK:mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_Z, *handle), (std::complex<double>*)d_A_Z, N, 16, (std::complex<double>*)d_B_Z, N, 16, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)d_C_Z, N, 16, 10);
   cublasZgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, 16, d_B_Z, N, 16, &beta_Z, d_C_Z, N, 16, 10);
+  //CHECK:mkl::blas::gemm_batch(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_H, *handle), d_A_H, N, 16, d_B_H, N, 16, dpct::get_value(&beta_H, *handle), d_C_H, N, 16, 10);
+  cublasHgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, 16, d_B_H, N, 16, &beta_H, d_C_H, N, 16, 10);
 
-  __half *d_A_H = 0;
-  __half *d_B_H = 0;
-  __half *d_C_H = 0;
-  __half alpha_H;
-  __half beta_H;
   cublasOperation_t trans3 = CUBLAS_OP_N;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT: */
-  // CHECK: a = cublasHgemm(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:a = (mkl::blas::gemm(*handle, trans3, trans3, N, N, N, dpct::get_value(&alpha_H, *handle), d_A_H, N, d_B_H, N, dpct::get_value(&beta_H, *handle), d_C_H, N), 0);
   a = cublasHgemm(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
   // CHECK: void *alpha, *beta, *A, *B, *C;
-  // CHECK-NEXT: int type = 2;
   // CHECK-NEXT: int algo = 0;
   void *alpha, *beta, *A, *B, *C;
-  cudaDataType_t type = CUDA_R_16F;
   cublasGemmAlgo_t algo = CUBLAS_GEMM_ALGO0;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cublasGemmEx(handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
-  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, type, N, B, type, N, beta, C, type, N, type, algo);
+  // CHECK: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), (float*)A, N, (float*)B, N, dpct::get_value((float*)beta, *handle), (float*)C, N);
+  cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_32F, N, B, CUDA_R_32F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, algo);
+
+  float2 alpha_C, beta_C;
+  // CHECK: mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{dpct::get_value(&alpha_S, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], (sycl::half*)A, N, (sycl::half*)B, N, sycl::vec<float, 1>{dpct::get_value(&beta_S, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], (sycl::half*)C, N);
+  //CHECK-NEXT:mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_S, *handle), (sycl::half*)A, N, (sycl::half*)B, N, dpct::get_value(&beta_S, *handle), (float*)C, N);
+  //CHECK-NEXT:mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_S, *handle), (float*)A, N, (float*)B, N, dpct::get_value(&beta_S, *handle), (float*)C, N);
+  //CHECK-NEXT:mkl::blas::gemm(*handle, mkl::transpose::conjtrans, mkl::transpose::conjtrans, N, N, N, dpct::get_value(&alpha_C, *handle), (std::complex<float>*)A, N, (std::complex<float>*)B, N, dpct::get_value(&beta_C, *handle), (std::complex<float>*)C, N);
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_16F, N);
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_32F, N);
+  cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_32F, N, B, CUDA_R_32F, N, &beta_S, C, CUDA_R_32F, N);
+  cublasCgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_C, A, CUDA_C_32F, N, B, CUDA_C_32F, N, &beta_C, C, CUDA_C_32F, N);
 
   const float** d_A_S_array;
   const float** d_B_S_array;
@@ -303,6 +311,9 @@ int main() {
   const cuDoubleComplex** d_A_Z_array = 0;
   const cuDoubleComplex** d_B_Z_array = 0;
   cuDoubleComplex** d_C_Z_array = 0;
+  const __half** d_A_H_array = 0;
+  const __half** d_B_H_array = 0;
+  __half** d_C_H_array = 0;
 
   // CHECK: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
   // CHECK-NEXT: float alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_S, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_S, *handle);
@@ -319,11 +330,46 @@ int main() {
   // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
   // CHECK-NEXT: std::complex<double> alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_Z, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_Z, *handle);
   // CHECK-NEXT: mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, (const std::complex<double>**)d_A_Z_array, &lda_ct{{[0-9]+}}, (const std::complex<double>**)d_B_Z_array, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, (std::complex<double>**)d_C_Z_array, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
+  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
+  // CHECK-NEXT: sycl::half alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_H, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_H, *handle);
+  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_H_array, &lda_ct{{[0-9]+}}, d_B_H_array, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, d_C_H_array, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
   a = cublasSgemmBatched(handle, trans3, trans3, N, N, N, &alpha_S, d_A_S_array, N, d_B_S_array, N, &beta_S, d_C_S_array, N, 10);
   cublasDgemmBatched(handle, trans3, trans3, N, N, N, &alpha_D, d_A_D_array, N, d_B_D_array, N, &beta_D, d_C_D_array, N, 10);
   cublasCgemmBatched(handle, trans3, trans3, N, N, N, &alpha_C, d_A_C_array, N, d_B_C_array, N, &beta_C, d_C_C_array, N, 10);
   cublasZgemmBatched(handle, trans3, trans3, N, N, N, &alpha_Z, d_A_Z_array, N, d_B_Z_array, N, &beta_Z, d_C_Z_array, N, 10);
+  cublasHgemmBatched(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H_array, N, d_B_H_array, N, &beta_H, d_C_H_array, N, 10);
 
+  // CHECK: mkl::side side_ct{{[0-9]+}} = mkl::side::left;
+  // CHECK-NEXT: mkl::uplo uplo_ct{{[0-9]+}} = mkl::uplo::lower;
+  // CHECK-NEXT: mkl::diag diag_ct{{[0-9]+}} = mkl::diag::unit;
+  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
+  // CHECK-NEXT: float alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_S, *handle);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: a = (mkl::blas::trsm_batch(*handle, &side_ct{{[0-9]+}}, &uplo_ct{{[0-9]+}}, &trans3, &diag_ct{{[0-9]+}}, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_S_array, &lda_ct{{[0-9]+}}, d_C_S_array, &ldb_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {}), 0);
+  // CHECK-NEXT: mkl::side side_ct{{[0-9]+}} = mkl::side::left;
+  // CHECK-NEXT: mkl::uplo uplo_ct{{[0-9]+}} = mkl::uplo::lower;
+  // CHECK-NEXT: mkl::diag diag_ct{{[0-9]+}} = mkl::diag::unit;
+  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
+  // CHECK-NEXT: double alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_D, *handle);
+  // CHECK-NEXT: mkl::blas::trsm_batch(*handle, &side_ct{{[0-9]+}}, &uplo_ct{{[0-9]+}}, &trans3, &diag_ct{{[0-9]+}}, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_D_array, &lda_ct{{[0-9]+}}, d_C_D_array, &ldb_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
+  // CHECK-NEXT: mkl::side side_ct{{[0-9]+}} = mkl::side::left;
+  // CHECK-NEXT: mkl::uplo uplo_ct{{[0-9]+}} = mkl::uplo::lower;
+  // CHECK-NEXT: mkl::diag diag_ct{{[0-9]+}} = mkl::diag::unit;
+  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
+  // CHECK-NEXT: std::complex<float> alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_C, *handle);
+  // CHECK-NEXT: mkl::blas::trsm_batch(*handle, &side_ct{{[0-9]+}}, &uplo_ct{{[0-9]+}}, &trans3, &diag_ct{{[0-9]+}}, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, (const std::complex<float>**)d_A_C_array, &lda_ct{{[0-9]+}}, (std::complex<float>**)d_C_C_array, &ldb_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
+  // CHECK-NEXT: mkl::side side_ct{{[0-9]+}} = mkl::side::left;
+  // CHECK-NEXT: mkl::uplo uplo_ct{{[0-9]+}} = mkl::uplo::lower;
+  // CHECK-NEXT: mkl::diag diag_ct{{[0-9]+}} = mkl::diag::unit;
+  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
+  // CHECK-NEXT: std::complex<double> alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_Z, *handle);
+  // CHECK-NEXT: mkl::blas::trsm_batch(*handle, &side_ct{{[0-9]+}}, &uplo_ct{{[0-9]+}}, &trans3, &diag_ct{{[0-9]+}}, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, (const std::complex<double>**)d_A_Z_array, &lda_ct{{[0-9]+}}, (std::complex<double>**)d_C_Z_array, &ldb_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
+  a = cublasStrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_S, d_A_S_array, N, d_C_S_array, N, 10);
+  cublasDtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_D, d_A_D_array, N, d_C_D_array, N, 10);
+  cublasCtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C_array, N, d_C_C_array, N, 10);
+  cublasZtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z_array, N, d_C_Z_array, N, 10);
 
   //CHECK:dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:/*

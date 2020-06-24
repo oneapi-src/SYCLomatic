@@ -103,6 +103,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cublasStatus", "int"},
       {"cublasGemmAlgo_t", "int"},
       {"cudaDataType_t", "int"},
+      {"cudaDataType", "int"},
+      {"cublasDataType_t", "int"},
       {"cuComplex", ClNamespace + "::float2"},
       {"cuDoubleComplex", ClNamespace + "::double2"},
       {"cublasFillMode_t", "mkl::uplo"},
@@ -573,13 +575,11 @@ const std::map<std::string, MapNames::BLASFuncReplInfo>
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"double", "double", "double"},
           std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm"}},
-        {"cublasSgemmBatched",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"float", "float", "float"},
-          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
-        {"cublasDgemmBatched",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"double", "double", "double"},
+        {"cublasHgemmStridedBatched",
+         {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
+          std::vector<std::string>{MapNames::getClNamespace() + "::half",
+                                   MapNames::getClNamespace() + "::half",
+                                   MapNames::getClNamespace() + "::half"},
           std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
         {"cublasSgemmStridedBatched",
          {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
@@ -1085,28 +1085,13 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
           std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm"}},
-        {"cublasCgemmBatched",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
-        {"cublasZgemmBatched",
-         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
         {"cublasCgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::cgemm3m"}},
+          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm"}},
         {"cublasZgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<double>",
@@ -1114,7 +1099,7 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::zgemm3m"}},
+          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm"}},
         {"cublasCgemmStridedBatched",
          {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -1240,6 +1225,64 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{3},
           2, 1, 4, "mkl::blas::trmm"}},
+    };
+
+const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+    MapNames::BatchedBLASFuncReplInfoMap{
+        {"cublasHgemmBatched",
+         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
+          std::vector<std::string>{MapNames::getClNamespace() + "::half",
+                                   MapNames::getClNamespace() + "::half",
+                                   MapNames::getClNamespace() + "::half"},
+          std::vector<std::string>{MapNames::getClNamespace() + "::half",
+                                   MapNames::getClNamespace() + "::half"},
+          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
+        {"cublasSgemmBatched",
+         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
+          std::vector<std::string>{"float", "float", "float"},
+          std::vector<std::string>{"float", "float"}, std::vector<int>{1, 2},
+          -1, -1, -1, "mkl::blas::gemm_batch"}},
+        {"cublasDgemmBatched",
+         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
+          std::vector<std::string>{"double", "double", "double"},
+          std::vector<std::string>{"double", "double"}, std::vector<int>{1, 2},
+          -1, -1, -1, "mkl::blas::gemm_batch"}},
+        {"cublasCgemmBatched",
+         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
+                                   "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>",
+                                   "std::complex<float>"},
+          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
+        {"cublasZgemmBatched",
+         {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<int>{1, 2}, -1, -1, -1, "mkl::blas::gemm_batch"}},
+        {"cublasStrsmBatched",
+         {std::vector<int>{8, 10}, std::vector<int>{7},
+          std::vector<std::string>{"float", "float"},
+          std::vector<std::string>{"float"}, std::vector<int>{3},
+         2, 1, 4, "mkl::blas::trsm_batch"}},
+        {"cublasDtrsmBatched",
+         {std::vector<int>{8, 10}, std::vector<int>{7},
+          std::vector<std::string>{"double", "double"},
+          std::vector<std::string>{"double"}, std::vector<int>{3},
+          2, 1, 4, "mkl::blas::trsm_batch"}},
+        {"cublasCtrsmBatched",
+         {std::vector<int>{8, 10}, std::vector<int>{7},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>"},
+          std::vector<int>{3}, 2, 1, 4, "mkl::blas::trsm_batch"}},
+        {"cublasZtrsmBatched",
+         {std::vector<int>{8, 10}, std::vector<int>{7},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>"},
+          std::vector<int>{3},2, 1, 4, "mkl::blas::trsm_batch"}},
     };
 
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
@@ -2081,45 +2124,80 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
     };
 
 // MKL API does not have computeType and algo parameters.
-// computeType(alpha/beta)   AType/BType     CType           IsSupportInMKL
-// CUDA_R_16F(2)             CUDA_R_16F(2)   CUDA_R_16F(2)   yes
-// CUDA_R_32I(10)            CUDA_R_8I(3)    CUDA_R_32I(10)  no
-// CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_16F(2)   no (but can emulate, cast alpha/beta to half)
-// CUDA_R_32F(0)             CUDA_R_8I(3)    CUDA_R_32I(10)  no
-// CUDA_R_32F(0)             CUDA_R_16F(2)   CUDA_R_32F(0)   yes
-// CUDA_R_32F(0)             CUDA_R_32F(0)   CUDA_R_32F(0)   yes
-// CUDA_R_64F(1)             CUDA_R_64F(1)   CUDA_R_64F(1)   yes
-// CUDA_C_32F(4)             CUDA_C_8I(7)    CUDA_C_32F(4)   no
-// CUDA_C_32F(4)             CUDA_C_32F(4)   CUDA_C_32F(4)   yes
-// CUDA_C_64F(5)             CUDA_C_64F(5)   CUDA_C_64F(5)   yes
+// computeType(alpha/beta)               AType/BType     CType           IsSupportInMKL
+// CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)   CUDA_R_16F(2)   yes
+// CUDA_R_32I(10)                        CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_16F(2)   no (can cast alpha/beta to half)
+// CUDA_R_32F(0)                         CUDA_R_8I(3)    CUDA_R_32I(10)  no
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_32F(0)   yes
+// CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_32F(0)   CUDA_R_32F(0)   yes
+// CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)  CUDA_R_64F(1)   CUDA_R_64F(1)   yes
+// CUDA_C_32F(4)                         CUDA_C_8I(7)    CUDA_C_32F(4)   no
+// CUDA_C_32F(4)                         CUDA_C_32F(4)   CUDA_C_32F(4)   yes
+// CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
 const std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASGemmExTypeInfoMap{
-        {"222",
+        {"2:2:2",
          {MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half"}},
-        {"022",
+        {"64:2:2",
+         {MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half"}},
+        {"0:2:2",
          {"float", MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half"}},
-        {"020",
+        {"68:2:2",
+         {"float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half"}},
+        {"0:2:0",
          {"float", "float", MapNames::getClNamespace() + "::half",
           MapNames::getClNamespace() + "::half", "float", "float"}},
-        {"000", {"float", "float", "float", "float", "float", "float"}},
-        {"111", {"double", "double", "double", "double", "double", "double"}},
-        {"444",
+        {"68:2:0",
+         {"float", "float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half", "float", "float"}},
+        {"0:0:0", {"float", "float", "float", "float", "float", "float"}},
+        {"68:0:0", {"float", "float", "float", "float", "float", "float"}},
+        {"1:1:1", {"double", "double", "double", "double", "double", "double"}},
+        {"70:1:1", {"double", "double", "double", "double", "double", "double"}},
+        {"4:4:4",
          {MapNames::getClNamespace() + "::float2", "std::complex<float>",
           MapNames::getClNamespace() + "::float2", "std::complex<float>",
           MapNames::getClNamespace() + "::float2", "std::complex<float>"}},
-        {"555",
+        {"5:5:5",
          {MapNames::getClNamespace() + "::double2", "std::complex<double>",
           MapNames::getClNamespace() + "::double2", "std::complex<double>",
           MapNames::getClNamespace() + "::double2", "std::complex<double>"}}};
+
+const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+    MapNames::BLASTGemmExTypeInfoMap{
+        {"2:2",
+         {"float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half"}},
+        {"2:0",
+         {"float", "float", MapNames::getClNamespace() + "::half",
+          MapNames::getClNamespace() + "::half", "float", "float"}},
+        {"0:0", {"float", "float", "float", "float", "float", "float"}},
+        {"4:4",
+         {"std::complex<float>", "std::complex<float>",
+          MapNames::getClNamespace() + "::float2", "std::complex<float>",
+          MapNames::getClNamespace() + "::float2", "std::complex<float>"}}};
 
 const std::map<std::string, int> MapNames::SyncBLASFunc{
     {"cublasIsamax_v2", 4}, {"cublasIdamax_v2", 4}, {"cublasIcamax_v2", 4},

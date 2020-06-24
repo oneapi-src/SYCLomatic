@@ -273,10 +273,15 @@ public:
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
+  static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+      BatchedBLASFuncReplInfoMap;
   static const std::map<std::string, int> SyncBLASFunc;
 
   static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASGemmExTypeInfoMap;
+
+  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+      BLASTGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>

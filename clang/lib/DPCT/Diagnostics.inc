@@ -108,3 +108,5 @@ DEF_WARNING(DEPRECATED_BASE_CLASS, 1044, "%0 was removed, because %1 has been de
 DEF_COMMENT(DEPRECATED_BASE_CLASS, 1044, "{0} was removed, because {1} has been deprecated in C++11. You may need to remove references to typedefs from {0} in the class definition.")
 DEF_WARNING(UNSUPPORT_MATRIX_TYPE, 1045, "The Intel(R) DPC++ Compatibility Tool only supports to migrate general sparse matrix type for this API. If the sparse matrix is other type, you need adjust the code.")
 DEF_COMMENT(UNSUPPORT_MATRIX_TYPE, 1045, "The Intel(R) DPC++ Compatibility Tool only supports to migrate general sparse matrix type for this API. If the sparse matrix is other type, you need adjust the code.")
+DEF_WARNING(UNSUPPORT_PARAM_COMBINATION, 1046, "The %0 was not migrated, because %1. You need to adjust the code.")
+DEF_COMMENT(UNSUPPORT_PARAM_COMBINATION, 1046, "The {0} was not migrated, because {1}. You need to adjust the code.")
