@@ -569,9 +569,10 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
-    if (ProcessAllFlag || GetSourceFileType(InFile) & TypeCudaSource) {
+    if (IsFileInCmd || ProcessAllFlag || GetSourceFileType(InFile) & TypeCudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(), InFile)] = false;
     }
+    IsFileInCmd = false;
   }
 }
 
@@ -1352,7 +1353,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     {"atomicAdd", "fetch_add"},
     {"atomicSub", "fetch_sub"},
     {"atomicAnd", "fetch_and"},
-    {"atomicOr", "fetch_or"},
+    {"atomicOr",  "fetch_or"},
     {"atomicXor", "fetch_xor"},
     {"atomicMin", "fetch_min"},
     {"atomicMax", "fetch_max"},

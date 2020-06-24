@@ -52,6 +52,7 @@ class IncludesCallbacks : public PPCallbacks {
   std::unordered_set<std::string> SeenFiles;
   bool DpstdHeaderInserted;
   ASTTraversalManager &ATM;
+  bool IsFileInCmd = true;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet,

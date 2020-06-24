@@ -189,8 +189,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       OutPath = StringRef(
           DpctGlobalInfo::removeSymlinks(Rewrite.getSourceMgr().getFileManager(), Entry.first));
       makeCanonical(OutPath);
+      bool HasRealReplacements = true;
+      auto Repls = Entry.second;
+      if (Repls.size() == 1) {
+        auto Repl = *Repls.begin();
+        if(Repl.getLength() == 0 && Repl.getReplacementText().empty())
+          HasRealReplacements = false;
+      }
       auto Find = IncludeFileMap.find(OutPath.c_str());
-      if (Find != IncludeFileMap.end()) {
+      if (HasRealReplacements && Find != IncludeFileMap.end()) {
         IncludeFileMap[OutPath.c_str()] = true;
       }
 
