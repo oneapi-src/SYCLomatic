@@ -1467,6 +1467,9 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
                this);
 }
 
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM);
+
 void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   auto UniqueName = [](const Stmt *S) {
@@ -1495,6 +1498,59 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
       NewName = "dpct::" + ThrustFuncName;
       emplaceTransformation(
           new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+    } else if (ThrustFuncName == "transform_reduce") {
+      // The initial value and the reduce functor are provided before the
+      // transform functor in std::transform_reduce, which differs from
+      // thrust::transform_reduce.
+      if (NumArgs == 5) {
+        emplaceTransformation(removeArg(CE, 2, *Result.SourceManager));
+
+        dpct::ExprAnalysis EA;
+        EA.analyze(CE->getArg(2));
+        std::string Str = ", " + EA.getReplacedString();
+        emplaceTransformation(
+            new InsertAfterStmt(CE->getArg(4), std::move(Str)));
+
+      } else if (NumArgs == 6) {
+        emplaceTransformation(removeArg(CE, 3, *Result.SourceManager));
+        dpct::ExprAnalysis EA;
+        EA.analyze(CE->getArg(3));
+        std::string Str = ", " + EA.getReplacedString();
+        emplaceTransformation(
+            new InsertAfterStmt(CE->getArg(5), std::move(Str)));
+      }
+
+      if (ArgT.find("execution_policy_base") != std::string::npos) {
+        emplaceTransformation(
+            new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+        return;
+      }
+
+    } else if (ThrustFuncName == "make_zip_iterator") {
+      // dpstd::make_zip_iterator expects the component iterators to be passed
+      // directly instead of being wrapped in a tuple as
+      // thrust::make_zip_iterator requires.
+      std::string NewArg;
+      if (auto CCE = dyn_cast<CXXConstructExpr>(CE->getArg(0)))
+        if (const CallExpr *SubCE =
+                dyn_cast<CallExpr>(CCE->getArg(0)->IgnoreImplicit())) {
+          std::string Arg0 = getStmtSpelling(SubCE->getArg(0));
+          std::string Arg1 = getStmtSpelling(SubCE->getArg(1));
+          NewArg = Arg0 + ", " + Arg1;
+        }
+
+      if (NewArg.empty()) {
+        std::string Arg0 =
+            "std::get<0>(" + getStmtSpelling(CE->getArg(0)) + ")";
+        std::string Arg1 =
+            "std::get<1>(" + getStmtSpelling(CE->getArg(0)) + ")";
+        NewArg = Arg0 + ", " + Arg1;
+      }
+
+      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      emplaceTransformation(
+          new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
+
     } else if (ArgT.find("execution_policy_base") != std::string::npos) {
       emplaceTransformation(
           new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
