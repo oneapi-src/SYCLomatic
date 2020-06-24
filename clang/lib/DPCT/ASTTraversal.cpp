@@ -1532,8 +1532,11 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
-        ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
-                     UniqueName(CE) + ">({{NEEDREPLACEQ" +
+        std::string TemplateArg = "";
+        if (DpctGlobalInfo::isSyclNamedLambda())
+          TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
+        ExtraParam = "dpstd::execution::make_device_policy" +
+                      TemplateArg + "({{NEEDREPLACEQ" +
                      std::to_string(Index) + "}})";
       }
       emplaceTransformation(

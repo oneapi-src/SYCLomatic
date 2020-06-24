@@ -15,6 +15,6 @@ int main() {
   double *p;
 // CHECK:  dpct::device_ptr<double> dp(p);
   thrust::device_ptr<double> dp(p);
-// CHECK:  sum = std::reduce(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), dp, dp + 10);
+// CHECK:  sum = std::reduce(dpstd::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
 }

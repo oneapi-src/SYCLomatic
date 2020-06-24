@@ -150,9 +150,9 @@ void foo() {
   //CHECK: dpct::device_vector<float> t1(N);
   //CHECK-NEXT: dpct::device_vector<float> t2(N);
   //CHECK-NEXT: dpct::device_vector<float> t3(N);
-  //CHECK-NEXT: std::transform(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::divides<float>());
-  //CHECK-NEXT: std::transform(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::multiplies<float>());
-  //CHECK-NEXT: std::transform(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::plus<float>());
+  //CHECK-NEXT: std::transform(dpstd::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::divides<float>());
+  //CHECK-NEXT: std::transform(dpstd::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::multiplies<float>());
+  //CHECK-NEXT: std::transform(dpstd::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::plus<float>());
   thrust::device_vector<float> t1(N);
   thrust::device_vector<float> t2(N);
   thrust::device_vector<float> t3(N);
@@ -163,7 +163,7 @@ void foo() {
 
  {
     //CHECK: dpct::device_vector<int> data(4);
-    //CHECK-NEXT: std::transform(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), data.begin(), data.end(), dpct::make_constant_iterator(10), data.begin(), std::divides<int>());
+    //CHECK-NEXT: std::transform(dpstd::execution::make_device_policy(q_ct1), data.begin(), data.end(), dpct::make_constant_iterator(10), data.begin(), std::divides<int>());
     thrust::device_vector<int> data(4);
     thrust::transform(data.begin(), data.end(), thrust::make_constant_iterator(10), data.begin(), thrust::divides<int>());
  }

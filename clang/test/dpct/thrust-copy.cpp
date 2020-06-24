@@ -33,9 +33,9 @@ int main(void) {
   thrust::device_vector<char> input(data, data + N);
 
   std::cout << "input data:" << std::endl;
-// CHECK:  std::copy(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
+// CHECK:  std::copy(dpstd::execution::make_device_policy(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
-// CHECK:  std::copy_n(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
+// CHECK:  std::copy_n(dpstd::execution::make_device_policy(q_ct1), input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
 // CHECK:  copy<char>(dst_data, const_cast<char *>(data), N);
   copy<char>(dst_data, const_cast<char *>(data), N);
