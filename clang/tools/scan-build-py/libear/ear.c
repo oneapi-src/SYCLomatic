@@ -614,7 +614,7 @@ char *skip_value(char *working){
 // check if string is end
 int is_finished(char *working){
 
-    if(working == NULL || *working == '\0')
+    if(working == NULL || *working == '\0'|| *working == '|')
         return 1;
     else
         return 0;

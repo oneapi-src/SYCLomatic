@@ -191,6 +191,9 @@ IGNORED_FLAGS = {
     '-Xllc' : 0,
     '--Xllc' : 0,
     '-Xcicc' : 1,
+    'sed' : 1,
+    '2>&1' : 0,
+    '|' : 0
 }
 
 MAP_FLAGS = {
