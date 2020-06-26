@@ -62,6 +62,77 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 
+// Below four structs are all used for device RNG library API migration.
+// In the origin code, the returned random number vector size is decided when
+// the generate API is called.
+// In MKL side, the vec_size is need when generator is declared.
+// So we collect these info and then build replacement.
+
+// This struct saves the generator's type.
+struct DeviceRandomStateTypeInfo {
+  DeviceRandomStateTypeInfo(unsigned int Length, std::string GeneratorType)
+      : Length(Length), GeneratorType(GeneratorType) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string GeneratorType;
+};
+
+// This struct saves all arguments info of the init API.
+struct DeviceRandomInitAPIInfo {
+  DeviceRandomInitAPIInfo(unsigned int Length, std::string GeneratorType,
+                          std::string RNGSeed, std::string RNGSubseq,
+                          std::string RNGOffset, std::string RNGStateName,
+                          std::string IndentStr)
+      : Length(Length), GeneratorType(GeneratorType), RNGSeed(RNGSeed),
+        RNGSubseq(RNGSubseq), RNGOffset(RNGOffset), RNGStateName(RNGStateName),
+        IndentStr(IndentStr) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string GeneratorType;
+  std::string RNGSeed;
+  std::string RNGSubseq;
+  std::string RNGOffset;
+  std::string RNGStateName;
+  std::string IndentStr;
+};
+
+// This struct saves all argument info of the generate API.
+struct DeviceRandomGenerateAPIInfo {
+  DeviceRandomGenerateAPIInfo(unsigned int Length, unsigned int DistrDeclOffset,
+                              std::string DistrType, std::string ValueType,
+                              std::string DistrIndentStr,
+                              std::string RNGStateName, std::string IndentStr)
+      : Length(Length), DistrDeclOffset(DistrDeclOffset), DistrType(DistrType),
+        ValueType(ValueType), DistrIndentStr(DistrIndentStr),
+        RNGStateName(RNGStateName), IndentStr(IndentStr) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  unsigned int DistrDeclOffset;
+  std::string DistrType;
+  std::string ValueType;
+  std::string DistrIndentStr;
+  std::string RNGStateName;
+  std::string IndentStr;
+  std::string DistrName;
+};
+
+// This struct saves the info for building the definition of distr variables.
+struct DeviceRandomDistrInfo {
+  DeviceRandomDistrInfo(std::string DistrType, std::string ValueType,
+                        std::string DistrName, std::string IndentStr)
+      : DistrType(DistrType), ValueType(ValueType), DistrName(DistrName),
+        IndentStr(IndentStr) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  std::string DistrType;
+  std::string ValueType;
+  std::string DistrName;
+  std::string IndentStr;
+};
+
 struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
@@ -180,6 +251,7 @@ enum HeaderType {
   Future,
   MKL_BLAS_Solver,
   MKL_RNG,
+  MKL_RNG_DEVICE,
   MKL_SPBLAS,
 };
 
@@ -312,6 +384,9 @@ public:
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<mkl_rng_sycl.hpp>");
+    case MKL_RNG_DEVICE:
+      return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
+                          "<mkl_rng_sycl_device.hpp>");
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
                           "<mkl_spblas_sycl.hpp>", "<dpct/blas_utils.hpp>");
@@ -376,6 +451,44 @@ public:
     }
   }
 
+  // The key of below three maps are the offset of the replacement.
+  std::map<unsigned int, DeviceRandomStateTypeInfo> &
+  getDeviceRandomStateTypeMap() {
+    return DeviceRandomStateTypeMap;
+  }
+  std::map<unsigned int, DeviceRandomInitAPIInfo> &getDeviceRandomInitAPIMap() {
+    return DeviceRandomInitAPIMap;
+  }
+  std::map<unsigned int, DeviceRandomGenerateAPIInfo> &
+  getDeviceRandomGenerateAPIMap() {
+    return DeviceRandomGenerateAPIMap;
+  }
+  // Since multi generate API can share one distr variable, so this function
+  // merges different distr variables if possible.
+  void buildDeviceDistrDeclInfo() {
+    std::unordered_map<std::string, std::string> NameMap;
+    std::string Key;
+    std::string Name;
+    int ID = 1;
+    for (auto &Info : DeviceRandomGenerateAPIMap) {
+      Key = std::to_string(Info.second.DistrDeclOffset) + ":" +
+            Info.second.DistrType + ":" + Info.second.ValueType;
+      auto Iter = NameMap.find(Key);
+      if (Iter == NameMap.end()) {
+        Name = "distr_ct" + std::to_string(ID);
+        NameMap.insert(std::make_pair(Key, Name));
+        Info.second.DistrName = Name;
+        DeviceRandomDistrDeclMap.insert(std::make_pair(
+            Info.second.DistrDeclOffset,
+            DeviceRandomDistrInfo(Info.second.DistrType, Info.second.ValueType,
+                                  Name, Info.second.DistrIndentStr)));
+        ID++;
+      } else {
+        Info.second.DistrName = Iter->second;
+      }
+    }
+  }
+
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
@@ -405,6 +518,11 @@ private:
              1);
   }
 
+  std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
+  std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
+  std::map<unsigned int, DeviceRandomGenerateAPIInfo>
+      DeviceRandomGenerateAPIMap;
+  std::map<unsigned int, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
@@ -639,6 +757,13 @@ public:
   inline static bool isCommentsEnabled() { return EnableComments; }
   inline static void setCommentsEnabled(bool Enable = true) {
     EnableComments = Enable;
+  }
+
+  // This set collects all the different vector size of the return value of the
+  // generate API. If the size of this set is 1, than we can use this vec_size
+  // in all generator types. Otherwise, a placeholder will be inserted.
+  inline static std::unordered_set<int> &getDeviceRNGReturnNumSet() {
+    return DeviceRNGReturnNumSet;
   }
 
   inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
@@ -877,6 +1002,48 @@ public:
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
   }
+  void insertDeviceRandomStateTypeInfo(SourceLocation SL, unsigned int Length,
+                                       std::string GeneratorType) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getDeviceRandomStateTypeMap();
+    if (M.find(LocInfo.second) == M.end()) {
+      M.insert(std::make_pair(
+          LocInfo.second, DeviceRandomStateTypeInfo(Length, GeneratorType)));
+    }
+  }
+  void insertDeviceRandomInitAPIInfo(SourceLocation SL, unsigned int Length,
+                                     std::string GeneratorType,
+                                     std::string RNGSeed, std::string RNGSubseq,
+                                     std::string RNGOffset,
+                                     std::string StateName,
+                                     std::string IndentStr) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getDeviceRandomInitAPIMap();
+    if (M.find(LocInfo.second) == M.end()) {
+      M.insert(std::make_pair(
+          LocInfo.second,
+          DeviceRandomInitAPIInfo(Length, GeneratorType, RNGSeed, RNGSubseq,
+                                  RNGOffset, StateName, IndentStr)));
+    }
+  }
+  void insertDeviceRandomGenerateAPIInfo(
+      SourceLocation SL, unsigned int Length, SourceLocation DistrInsetLoc,
+      std::string DistrType, std::string ValueType, std::string DistrIndentStr,
+      std::string RNGStateName, std::string IndentStr) {
+    auto LocInfo = getLocInfo(SL);
+    auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getDeviceRandomGenerateAPIMap();
+    if (M.find(LocInfo.second) == M.end()) {
+      M.insert(std::make_pair(
+          LocInfo.second,
+          DeviceRandomGenerateAPIInfo(Length, DistrInsetLocInfo.second,
+                                      DistrType, ValueType, DistrIndentStr,
+                                      RNGStateName, IndentStr)));
+    }
+  }
 
   void insertRandomEngine(const Expr *E);
   std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
@@ -1057,6 +1224,7 @@ private:
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
+  static std::unordered_set<int> DeviceRNGReturnNumSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
@@ -2336,6 +2504,19 @@ private:
         }
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
         ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Default);
+
+        // Currently, all the device RNG state struct are passed to kernel by
+        // pointer. So we check the pointee type, if it is in the type map, we
+        // replace the TypeString with the MKL generator type.
+        std::string PointeeTypeStr =
+            Arg->getType()->getPointeeType().getUnqualifiedType().getAsString();
+        auto Iter = MapNames::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
+        if (Iter != MapNames::DeviceRandomGeneratorTypeMap.end()) {
+          // Here the "*" is not added in the TypeString, the "*" will be added
+          // in function buildKernelArgsStmt
+          TypeString = Iter->second;
+          IsDeviceRandomGeneratorType = true;
+        }
       } else {
         auto QT = Arg->getType();
         QT = QT.getUnqualifiedType();
@@ -2407,6 +2588,7 @@ private:
     std::string IdString;
     int Index;
     int ArgSize = 0;
+    bool IsDeviceRandomGeneratorType = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };

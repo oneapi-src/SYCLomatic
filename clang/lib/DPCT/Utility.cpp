@@ -1532,6 +1532,22 @@ std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
   }
 }
 
+/// Get the dereference name of the expression \p E.
+std::string getDrefName(const Expr *E) {
+  if (isSimpleAddrOf(E)) {
+    return getNameStrRemovedAddrOf(E, false);
+  } else if (isCOCESimpleAddrOf(E)) {
+    return getNameStrRemovedAddrOf(E, true);
+  } else {
+    dpct::ExprAnalysis EA(E);
+    if (isAnIdentifierOrLiteral(E)) {
+      return "*" + EA.getReplacedString();
+    } else {
+      return "*(" + EA.getReplacedString() + ")";
+    }
+  }
+}
+
 const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
   if (!DD)
     return nullptr;

@@ -30,6 +30,7 @@ std::string DpctGlobalInfo::InRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
+std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
 bool DpctGlobalInfo::EnableCtad = false;
@@ -125,6 +126,19 @@ void DpctFileInfo::buildReplacements() {
     return;
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+
+  // Below four maps are used for device RNG API migration
+  for (auto &StateTypeInfo : DeviceRandomStateTypeMap)
+    StateTypeInfo.second.buildInfo(FilePath, StateTypeInfo.first);
+
+  for (auto &InitAPIInfo : DeviceRandomInitAPIMap)
+    InitAPIInfo.second.buildInfo(FilePath, InitAPIInfo.first);
+
+  buildDeviceDistrDeclInfo();
+  for (auto &Info : DeviceRandomGenerateAPIMap)
+    Info.second.buildInfo(FilePath, Info.first);
+  for (auto &Info : DeviceRandomDistrDeclMap)
+    Info.second.buildInfo(FilePath, Info.first);
 
   // DPCT need collect the information in curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
@@ -323,9 +337,22 @@ void KernelCallExpr::buildKernelArgsStmt() {
         OuterStmts.emplace_back(buildString("size_t ",
                                             Arg.getIdStringWithSuffix("offset"),
                                             " = ", BufferName, ".second;"));
+
+        // If we found this is a RNG state type, we add the vec_size here.
+        std::string TypeStr = Arg.getTypeString();
+        if (Arg.IsDeviceRandomGeneratorType) {
+          if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1)
+            TypeStr = TypeStr + "<" +
+                      std::to_string(
+                          *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
+                      "> *";
+          else
+            TypeStr = TypeStr + "<PlaceHolder/*Fix the vec_size mannually*/> *";
+        }
+
         KernelStmts.emplace_back(buildString(
-            Arg.getTypeString(), Arg.getIdStringWithIndex(), " = (",
-            Arg.getTypeString(), ")(&", Arg.getIdStringWithSuffix("acc"),
+            TypeStr, Arg.getIdStringWithIndex(), " = (", TypeStr,
+                        ")(&", Arg.getIdStringWithSuffix("acc"),
             "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
         KernelArgs += Arg.getIdStringWithIndex();
       } else {
@@ -1646,6 +1673,65 @@ void RandomEngineInfo::buildInfo() {
               "(" + QueueStr + ", " + SeedExpr + ")", nullptr));
     }
   }
+}
+
+void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
+                                          unsigned int Offset) {
+  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            GeneratorType + "<" +
+                std::to_string(
+                    *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
+                ">",
+            nullptr));
+  } else {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length,
+                                         GeneratorType +
+                                             "<PlaceHolder/*Fix the vec_size "
+                                             "mannually*/>",
+                                         nullptr));
+  }
+}
+
+void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
+                                        unsigned int Offset) {
+  std::string VecSizeStr;
+  bool IsOneNUmber = false;
+  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
+    int VecSize = *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin();
+    if (VecSize == 1)
+      IsOneNUmber = true;
+    VecSizeStr = std::to_string(VecSize);
+  } else {
+    VecSizeStr = "PlaceHolder/*Fix the vec_size mannually*/";
+  }
+
+  std::string ReplStr = RNGStateName + " = " + GeneratorType + "<" +
+                        VecSizeStr + ">(" + RNGSeed + ", {" + RNGOffset +
+                        (IsOneNUmber ? "" : " * " + VecSizeStr) + ", " +
+                        RNGSubseq + " * 8})";
+
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, Length, ReplStr, nullptr));
+}
+
+void DeviceRandomGenerateAPIInfo::buildInfo(std::string FilePath,
+                                            unsigned int Offset) {
+  std::string ReplStr =
+      "mkl::rng::device::generate(" + DistrName + ", " + RNGStateName + ")";
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, Length, ReplStr, nullptr));
+}
+
+void DeviceRandomDistrInfo::buildInfo(std::string FilePath,
+                                      unsigned int Offset) {
+  std::string InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" +
+                          getNL() + IndentStr;
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, 0, InsertStr, nullptr));
 }
 
 bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }

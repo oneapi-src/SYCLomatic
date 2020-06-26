@@ -390,6 +390,7 @@ bool isExprStraddle(const clang::Stmt *S, ExprSpellingStatus *SpellingStatus);
 bool isSimpleAddrOf(const clang::Expr *E);
 bool isCOCESimpleAddrOf(const clang::Expr *E);
 std::string getNameStrRemovedAddrOf(const clang::Expr *E, bool isCOCE = false);
+std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
 getSiblingDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,

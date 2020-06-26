@@ -411,6 +411,16 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
+  // Replace with <mkl_rng_sycl_device.hpp>
+  if ((FileName.compare(StringRef("curand_kernel.h")) == 0)) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_RNG_DEVICE);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
   // Replace with <mkl_spblas_sycl.hpp>
   if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
       (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
@@ -1653,7 +1663,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cusparseHandle_t", "CUcontext",
                   "cublasPointerMode_t", "cusparsePointerMode_t",
                   "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
-                  "cudaDataType", "cublasDataType_t"
+                  "cudaDataType", "cublasDataType_t",
+                  "curandState_t", "curandState", "curandStateXORWOW_t",
+                  "curandStatePhilox4_32_10_t", "curandStateMRG32k3a_t"
                   ),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
@@ -1974,6 +1986,22 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
   return false;
 }
 
+bool TypeInDeclRule::isDeviceRandomStateType(const TypeLoc *TL,
+                                             const SourceLocation &SL) {
+  std::string TypeStr = TL->getType().getAsString();
+
+  if (MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr) !=
+      MapNames::DeviceRandomGeneratorTypeMap.end()) {
+    if (TypeStr == "curandState_t" || TypeStr == "curandState" ||
+        TypeStr == "curandStateXORWOW_t") {
+      report(SL, Diagnostics::DIFFERENT_GENERATOR, false);
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
@@ -1987,6 +2015,17 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       } else {
         BeginLoc = SpellingLocation;
       }
+    }
+
+    if (isDeviceRandomStateType(TL, BeginLoc)) {
+      std::string TypeStr = TL->getType().getAsString();
+      auto P = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
+      DpctGlobalInfo::getInstance().insertDeviceRandomStateTypeInfo(
+          BeginLoc,
+          Lexer::MeasureTokenLength(BeginLoc, *SM,
+                                    DpctGlobalInfo::getContext().getLangOpts()),
+          P->second);
+      return;
     }
 
     reportForNcclAndCudnn(TL, BeginLoc);
@@ -3950,6 +3989,120 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(RandomFunctionCallRule)
+
+// Rule for device Random function calls.
+void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("curand_init", "curand_normal2", "curand_normal2_double",
+                      "curand_normal_double", "curand_uniform");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
+}
+
+void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  if (!CE)
+    return;
+  if (!CE->getDirectCallee())
+    return;
+
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
+  std::string Key =
+      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
+  DpctGlobalInfo::updateInitSuffixIndexInRule(
+      DpctGlobalInfo::getSuffixIndexInitValue(Key));
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  SourceLocation FuncNameBegin(CE->getBeginLoc());
+  SourceLocation FuncCallEnd(CE->getEndLoc());
+  // Offset 1 is the length of the last token ")"
+  FuncCallEnd = SM.getExpansionLoc(FuncCallEnd).getLocWithOffset(1);
+  auto FuncCallLength =
+      SM.getCharacterData(FuncCallEnd) - SM.getCharacterData(FuncNameBegin);
+  std::string IndentStr = getIndent(FuncNameBegin, SM).str();
+
+  if (FuncName == "curand_init") {
+    if (CE->getNumArgs() < 4) {
+      report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
+      return;
+    }
+
+    std::string Arg0Type = CE->getArg(0)->getType().getAsString();
+    std::string Arg1Type = CE->getArg(1)->getType().getAsString();
+    std::string Arg2Type = CE->getArg(2)->getType().getAsString();
+    std::string DRefArg3Type;
+
+    if (Arg0Type == "unsigned long long" && Arg1Type == "unsigned long long" &&
+        Arg2Type == "unsigned long long" &&
+        CE->getArg(3)->getType()->isPointerType()) {
+      DRefArg3Type = CE->getArg(3)->getType()->getPointeeType().getAsString();
+      if (MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type) ==
+          MapNames::DeviceRandomGeneratorTypeMap.end()) {
+        report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+               FuncName,
+               "parameter " + getStmtSpelling(CE->getArg(3)) +
+                   " is unsupported");
+        return;
+      }
+    } else {
+      report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
+      return;
+    }
+
+    ExprAnalysis EARNGSeed(CE->getArg(0));
+    ExprAnalysis EARNGSubseq(CE->getArg(1));
+    ExprAnalysis EARNGOffset(CE->getArg(2));
+
+    DpctGlobalInfo::getInstance().insertDeviceRandomInitAPIInfo(
+        FuncNameBegin, FuncCallLength,
+        MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second,
+        EARNGSeed.getReplacedString(), EARNGSubseq.getReplacedString(),
+        EARNGOffset.getReplacedString(), getDrefName(CE->getArg(3)), IndentStr);
+  } else {
+    const CompoundStmt *CS = findImmediateBlock(CE);
+    if (!CS)
+      return;
+
+    SourceLocation DistrInsertLoc =
+        SM.getExpansionLoc(CS->body_front()->getBeginLoc());
+    std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
+    std::string DrefedStateName = getDrefName(CE->getArg(0));
+
+    if (FuncName == "curand_uniform") {
+      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
+      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
+          FuncNameBegin, FuncCallLength, DistrInsertLoc,
+          "mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
+          IndentStr);
+    } else if (FuncName == "curand_normal2") {
+      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
+      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
+          FuncNameBegin, FuncCallLength, DistrInsertLoc,
+          "mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
+          IndentStr);
+    } else if (FuncName == "curand_normal2_double") {
+      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
+      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
+          FuncNameBegin, FuncCallLength, DistrInsertLoc,
+          "mkl::rng::device::uniform", "double", DistrIndentStr,
+          DrefedStateName, IndentStr);
+    } else if (FuncName == "curand_normal_double") {
+      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
+      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
+          FuncNameBegin, FuncCallLength, DistrInsertLoc,
+          "mkl::rng::device::uniform", "double", DistrIndentStr,
+          DrefedStateName, IndentStr);
+    }
+  }
+}
+
+REGISTER_RULE(DeviceRandomFunctionCallRule)
+
 
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {

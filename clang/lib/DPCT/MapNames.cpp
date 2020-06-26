@@ -2782,6 +2782,15 @@ const MapNames::MapTy MapNames::RandomEngineTypeMap{
     {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "mkl::rng::sobol"},
 };
 
+// Device Random Generator Type mapping
+const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
+    {"curandStateXORWOW_t", "mkl::rng::device::philox4x32x10"},
+    {"curandState_t", "mkl::rng::device::philox4x32x10"},
+    {"curandState", "mkl::rng::device::philox4x32x10"},
+    {"curandStatePhilox4_32_10_t", "mkl::rng::device::philox4x32x10"},
+    {"curandStateMRG32k3a_t", "mkl::rng::device::mrg32k3a"},
+};
+
 const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
     MapNames::RandomGenerateFuncReplInfoMap{
         {"curandGenerate", {"uint32_t", "mkl::rng::uniform_bits", "uint32_t"}},

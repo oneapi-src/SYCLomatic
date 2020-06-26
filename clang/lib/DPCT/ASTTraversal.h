@@ -500,6 +500,7 @@ private:
                                      const TemplateSpecializationTypeLoc TSL);
   bool replaceDependentNameTypeLoc(SourceManager *SM, LangOptions &LOpts,
                                    const TypeLoc *TL);
+  bool isDeviceRandomStateType(const TypeLoc *TL, const SourceLocation &SL);
 };
 
 /// Migration rule for inserting namespace for vector types
@@ -836,6 +837,17 @@ class RandomFunctionCallRule
     : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
   RandomFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Migration rule for device Random function calls.
+class DeviceRandomFunctionCallRule
+    : public NamedMigrationRule<DeviceRandomFunctionCallRule> {
+public:
+  DeviceRandomFunctionCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

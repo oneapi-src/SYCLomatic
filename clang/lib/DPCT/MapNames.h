@@ -292,6 +292,8 @@ public:
   static const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
       RandomGenerateFuncReplInfoMap;
 
+  static const MapTy DeviceRandomGeneratorTypeMap;
+
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
     static const std::string EmptyString;
