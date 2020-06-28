@@ -54,6 +54,20 @@ def intercept_build():
     args = parse_args_for_intercept_build()
     return capture(args)
 
+def get_outfile(command):
+    """ Get output filepath from compilation command. """
+    pos = command.find("-o")
+    pos = pos + 2
+    while(command[pos] == ' ' or command[pos] == '\t'):
+        pos = pos + 1
+    start = pos
+    while(command[pos] != ' ' and command[pos] != '\t' and pos < len(command)-1):
+        pos = pos + 1
+    end = pos
+    if(pos == len(command)-1):
+        end = len(command)
+    outfile = command[start:end]
+    return outfile
 
 def capture(args):
     """ The entry point of build command interception. """
@@ -86,7 +100,26 @@ def capture(args):
                 entries.append(entry)
             elif 'file' in entry and os.path.exists(entry['file']) and not duplicate(entry):
                 entries.append(entry)
-        return entries
+
+        entries.reverse()
+        entries_post = []
+        occur_set = set()
+        for entry in entries:
+            if not ('file' in entry):
+                key = entry['directory']
+            else:
+                if "-o" in entry['command']:
+                    outfile = get_outfile(entry['command'])
+                    key = entry['file'] + entry['directory'] + outfile
+                else:
+                    key = entry['file'] + entry['directory']
+            if key not in occur_set:
+                occur_set.add(key)
+                entries_post.append(entry)
+
+        entries_post.reverse()
+
+        return entries_post
 
 
     with TemporaryDirectory(prefix='intercept-') as tmp_dir:
