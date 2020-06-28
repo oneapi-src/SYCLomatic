@@ -2817,6 +2817,11 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                                 "cudaComputeMode", "cudaMemcpyKind"))))))
                     .bind("EnumConstant"),
                 this);
+
+  MF.addMatcher(parmVarDecl(hasType(namedDecl(hasAnyName("cudaMemcpyKind",
+                                                         "cudaComputeMode"))))
+                    .bind("parmVarDecl"),
+                this);
 }
 
 void EnumConstantRule::handleComputeMode(std::string EnumName,
@@ -2871,6 +2876,47 @@ void EnumConstantRule::handleComputeMode(std::string EnumName,
 
 void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+
+  if (const auto PVD = getNodeAsType<ParmVarDecl>(Result, "parmVarDecl")) {
+
+    SourceManager *SM = Result.SourceManager;
+    auto LOpts = Result.Context->getLangOpts();
+    auto BeginLoc = PVD->getBeginLoc();
+    std::string TypeName = PVD->getType().getAsString();
+
+    Token Tok;
+    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
+    if (!Tok.isAnyIdentifier()) {
+      return;
+    }
+
+    const IdentifierInfo *IdInfo =
+        PVD->getOriginalType().getBaseTypeIdentifier();
+
+    if (!IdInfo)
+      return;
+
+    std::string BaseTypeName = IdInfo->getName().str();
+
+    auto TypeNameStr = Tok.getRawIdentifier().str();
+    int Length = BaseTypeName.length();
+
+    if (TypeNameStr == "enum") {
+      const char *startBuf = SM->getCharacterData(BeginLoc);
+      auto TypeSpecEnd = PVD->getTypeSpecEndLoc();
+      const char *EndBuf = SM->getCharacterData(TypeSpecEnd);
+      Length += (EndBuf - startBuf);
+    }
+
+    std::string Replacement =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, BaseTypeName);
+
+    if (!Replacement.empty()) {
+      emplaceTransformation(
+          new ReplaceText(BeginLoc, Length, std::move(Replacement)));
+    }
+  }
+
   const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
   if (!E)
     return;

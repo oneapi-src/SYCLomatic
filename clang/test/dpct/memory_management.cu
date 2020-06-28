@@ -1031,3 +1031,17 @@ void foobar() {
   // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 }
+
+// CHECK: void copy_dir_1 (dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_2 (dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_3 (dpct::memcpy_direction kind) {}
+void copy_dir_1 (cudaMemcpyKind kind) {}
+void copy_dir_2 (enum cudaMemcpyKind kind) {}
+void copy_dir_3 (enum    cudaMemcpyKind kind) {}
+
+// CHECK: void copy_dir_1 (int kind) {}
+// CHECK-NEXT: void copy_dir_2 (int kind) {}
+// CHECK-NEXT: void copy_dir_3 (int kind) {}
+void copy_dir_1 (cudaComputeMode kind) {}
+void copy_dir_2 (enum cudaComputeMode kind) {}
+void copy_dir_3 (enum    cudaComputeMode kind) {}

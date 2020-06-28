@@ -157,6 +157,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaPos", ClNamespace + "::id<3>"},
       {"cudaExtent", ClNamespace + "::range<3>"},
       {"cudaPitchedPtr", "dpct::pitched_data"},
+      {"cudaMemcpyKind", "dpct::memcpy_direction"},
+      {"cudaComputeMode", "int"},
       // ...
 
   };
