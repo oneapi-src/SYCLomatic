@@ -2214,554 +2214,668 @@ const std::map<std::string, int> MapNames::SyncBLASFunc{
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>
     MapNames::SOLVERFuncReplInfoMap{
+        {"cusolverDnSpotrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potrf_scratchpad_size<float>")},
+        {"cusolverDnDpotrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potrf_scratchpad_size<double>")},
+        {"cusolverDnCpotrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potrf_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZpotrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potrf_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSgetrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::getrf_scratchpad_size<float>")},
+        {"cusolverDnDgetrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::getrf_scratchpad_size<double>")},
+        {"cusolverDnCgetrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::getrf_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZgetrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::getrf_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSgeqrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5}, "mkl::lapack::geqrf_scratchpad_size<float>")},
+        {"cusolverDnDgeqrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::geqrf_scratchpad_size<double>")},
+        {"cusolverDnCgeqrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::geqrf_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZgeqrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::geqrf_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSormqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::ormqr_scratchpad_size<float>")},
+        {"cusolverDnDormqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::ormqr_scratchpad_size<double>")},
+        {"cusolverDnCunmqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::unmqr_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZunmqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::unmqr_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSorgqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{4, 6, 7},
+             "mkl::lapack::orgqr_scratchpad_size<float>")},
+        {"cusolverDnDorgqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{4, 6, 7},
+             "mkl::lapack::orgqr_scratchpad_size<double>")},
+        {"cusolverDnCungqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{4, 6, 7},
+             "mkl::lapack::ungqr_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZungqr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{4, 6, 7},
+             "mkl::lapack::ungqr_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSsytrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6, 7, 8},
+             "mkl::lapack::sytrd_scratchpad_size<float>")},
+        {"cusolverDnDsytrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6, 7, 8},
+             "mkl::lapack::sytrd_scratchpad_size<double>")},
+        {"cusolverDnChetrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6, 7, 8},
+             "mkl::lapack::hetrd_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZhetrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6, 7, 8},
+             "mkl::lapack::hetrd_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSsytrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{2, 4}, std::vector<int>{1},
+             std::vector<int>{1}, std::vector<bool>{false},
+             std::vector<std::string>{"mkl::uplo"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
+             "mkl::lapack::sytrf_scratchpad_size<float>")},
+        {"cusolverDnDsytrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{2, 4}, std::vector<int>{1},
+             std::vector<int>{1}, std::vector<bool>{false},
+             std::vector<std::string>{"mkl::uplo"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
+             "mkl::lapack::sytrf_scratchpad_size<double>")},
+        {"cusolverDnCsytrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{2, 4}, std::vector<int>{1},
+             std::vector<int>{1}, std::vector<bool>{false},
+             std::vector<std::string>{"mkl::uplo"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
+             "mkl::lapack::sytrf_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZsytrf_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{2, 4}, std::vector<int>{1},
+             std::vector<int>{1}, std::vector<bool>{false},
+             std::vector<std::string>{"mkl::uplo"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
+             "mkl::lapack::sytrf_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSgebrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{3},
+             std::vector<int>{3},
+             std::vector<int>{3}, std::vector<bool>{false},
+             std::vector<std::string>{"std::int64_t"},
+             std::vector<std::string>{"lda_ct"},
+             "mkl::lapack::gebrd_scratchpad_size<float>")},
+        {"cusolverDnDgebrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{3},
+             std::vector<int>{3},
+             std::vector<int>{3}, std::vector<bool>{false},
+             std::vector<std::string>{"std::int64_t"},
+             std::vector<std::string>{"lda_ct"},
+             "mkl::lapack::gebrd_scratchpad_size<double>")},
+        {"cusolverDnCgebrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{3},
+             std::vector<int>{3},
+             std::vector<int>{3}, std::vector<bool>{false},
+             std::vector<std::string>{"std::int64_t"},
+             std::vector<std::string>{"lda_ct"},
+             "mkl::lapack::gebrd_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZgebrd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
+             true, std::vector<int>{3},
+             std::vector<int>{3},
+             std::vector<int>{3}, std::vector<bool>{false},
+             std::vector<std::string>{"std::int64_t"},
+             std::vector<std::string>{"lda_ct"},
+             "mkl::lapack::gebrd_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSorgbr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
+             true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"},
+             "mkl::lapack::orgbr_scratchpad_size<float>")},
+        {"cusolverDnDorgbr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
+             true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"},
+             "mkl::lapack::orgbr_scratchpad_size<double>")},
+        {"cusolverDnCungbr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
+             true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"},
+             "mkl::lapack::ungbr_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZungbr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
+             true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"},
+             "mkl::lapack::ungbr_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSormtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::ormtr_scratchpad_size<float>")},
+        {"cusolverDnDormtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::ormtr_scratchpad_size<double>")},
+        {"cusolverDnCunmtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::unmtr_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZunmtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{6, 8, 9, 11},
+             "mkl::lapack::unmtr_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSorgtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6},
+             "mkl::lapack::orgtr_scratchpad_size<float>")},
+        {"cusolverDnDorgtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6},
+             "mkl::lapack::orgtr_scratchpad_size<double>")},
+        {"cusolverDnCungtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6},
+             "mkl::lapack::ungtr_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZungtr_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5, 6},
+             "mkl::lapack::ungtr_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSgesvd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
+             true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
+             std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
+             std::vector<int>{1, 1}, std::vector<bool>{false, false},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
+             "mkl::lapack::gesvd_scratchpad_size<float>")},
+        {"cusolverDnDgesvd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
+             true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
+             std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
+             std::vector<int>{1, 1}, std::vector<bool>{false, false},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
+             "mkl::lapack::gesvd_scratchpad_size<double>")},
+        {"cusolverDnCgesvd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
+             true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
+             std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
+             std::vector<int>{1, 1}, std::vector<bool>{false, false},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
+             "mkl::lapack::gesvd_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZgesvd_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
+             true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
+             std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
+             std::vector<int>{1, 1}, std::vector<bool>{false, false},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
+             "mkl::lapack::gesvd_scratchpad_size<std::complex<double>>")},
+        {"cusolverDnSpotri_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potri_scratchpad_size<float>")},
+        {"cusolverDnDpotri_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potri_scratchpad_size<double>")},
+        {"cusolverDnCpotri_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potri_scratchpad_size<std::complex<float>>")},
+        {"cusolverDnZpotri_bufferSize",
+         MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
+             true, std::vector<int>{3, 5},
+             "mkl::lapack::potri_scratchpad_size<std::complex<double>>")},
         {"cusolverDnSpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7}, std::vector<std::string>{"float", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potrf")},
+             std::vector<int>{3, 5}, std::vector<std::string>{"float", "float"},
+             std::vector<int>{7}, "mkl::lapack::potrf")},
         {"cusolverDnDpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7}, std::vector<std::string>{"double", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potrf")},
+             std::vector<int>{3, 5}, std::vector<std::string>{"double", "double"},
+             std::vector<int>{7}, "mkl::lapack::potrf")},
         {"cusolverDnCpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7},
-             std::vector<std::string>{"std::complex<float>", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potrf")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+             std::vector<int>{7}, "mkl::lapack::potrf")},
         {"cusolverDnZpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7},
-             std::vector<std::string>{"std::complex<double>", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potrf")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"std::complex<double>", "std::complex<double>"},
+             std::vector<int>{7}, "mkl::lapack::potrf")},
         {"cusolverDnSpotrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 8},
-             std::vector<std::string>{"float", "float", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6}, std::vector<std::string>{"float", "float"},
+             std::vector<int>{8}, std::vector<int>{7},
+             std::vector<int>{0, 1, 2, 3, 5, 7},
+             "mkl::lapack::potrs_scratchpad_size<float>",
              "mkl::lapack::potrs")},
         {"cusolverDnDpotrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 8},
-             std::vector<std::string>{"double", "double", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6},
+             std::vector<std::string>{"double", "double"}, std::vector<int>{8},
+             std::vector<int>{7}, std::vector<int>{0, 1, 2, 3, 5, 7},
+             "mkl::lapack::potrs_scratchpad_size<double>",
              "mkl::lapack::potrs")},
         {"cusolverDnCpotrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6},
              std::vector<std::string>{"std::complex<float>",
-                                      "std::complex<float>", "int"},
+                                      "std::complex<float>"},
+             std::vector<int>{8}, std::vector<int>{7},
+             std::vector<int>{0, 1, 2, 3, 5, 7},
+             "mkl::lapack::potrs_scratchpad_size<std::complex<float>>",
              "mkl::lapack::potrs")},
         {"cusolverDnZpotrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6},
              std::vector<std::string>{"std::complex<double>",
-                                      "std::complex<double>", "int"},
+                                      "std::complex<double>"},
+             std::vector<int>{8}, std::vector<int>{7},
+             std::vector<int>{0, 1, 2, 3, 5, 7},
+             "mkl::lapack::potrs_scratchpad_size<std::complex<double>>",
              "mkl::lapack::potrs")},
         {"cusolverDnSpotri",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7}, std::vector<std::string>{"float", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potri")},
+             std::vector<int>{3, 5}, std::vector<std::string>{"float", "float"},
+             std::vector<int>{7}, "mkl::lapack::potri")},
         {"cusolverDnDpotri",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7}, std::vector<std::string>{"double", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potri")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"double", "double"}, std::vector<int>{7},
+             "mkl::lapack::potri")},
         {"cusolverDnCpotri",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7},
-             std::vector<std::string>{"std::complex<float>", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potri")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"std::complex<float>",
+                                      "std::complex<float>"},
+             std::vector<int>{7}, "mkl::lapack::potri")},
         {"cusolverDnZpotri",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 7},
-             std::vector<std::string>{"std::complex<double>", "int"},
-             std::vector<int>{5, 6}, "mkl::lapack::potri")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"std::complex<double>",
+                                      "std::complex<double>"},
+             std::vector<int>{7}, "mkl::lapack::potri")},
         {"cusolverDnSgetrf",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 6, 7},
-             std::vector<std::string>{"float", "int", "int"},
-             std::vector<int>{5}, "mkl::lapack::getrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferMoveRedundantAndWSS(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"float", "float", "int"},
+             std::vector<int>{7}, std::vector<int>{6}, std::vector<int>{5},
+             std::vector<int>{5}, std::vector<int>{0, 1, 2, 4},
+             "mkl::lapack::getrf_scratchpad_size<float>",
+             "mkl::lapack::getrf")},
         {"cusolverDnDgetrf",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 6, 7},
-             std::vector<std::string>{"double", "int", "int"},
-             std::vector<int>{5}, "mkl::lapack::getrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferMoveRedundantAndWSS(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"double", "double", "int"},
+             std::vector<int>{7}, std::vector<int>{6}, std::vector<int>{5},
+             std::vector<int>{5}, std::vector<int>{0, 1, 2, 4},
+             "mkl::lapack::getrf_scratchpad_size<double>",
+             "mkl::lapack::getrf")},
         {"cusolverDnCgetrf",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 6, 7},
-             std::vector<std::string>{"std::complex<float>", "int", "int"},
-             std::vector<int>{5}, "mkl::lapack::getrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferMoveRedundantAndWSS(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"std::complex<float>",
+                                      "std::complex<float>", "int"},
+             std::vector<int>{7}, std::vector<int>{6}, std::vector<int>{5},
+             std::vector<int>{5}, std::vector<int>{0, 1, 2, 4},
+             "mkl::lapack::getrf_scratchpad_size<std::complex<float>>",
+             "mkl::lapack::getrf")},
         {"cusolverDnZgetrf",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 6, 7},
-             std::vector<std::string>{"std::complex<double>", "int", "int"},
-             std::vector<int>{5}, "mkl::lapack::getrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferMoveRedundantAndWSS(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"std::complex<double>",
+                                      "std::complex<double>", "int"},
+             std::vector<int>{7}, std::vector<int>{6}, std::vector<int>{5},
+             std::vector<int>{5}, std::vector<int>{0, 1, 2, 4},
+             "mkl::lapack::getrf_scratchpad_size<std::complex<double>>",
+             "mkl::lapack::getrf")},
         {"cusolverDnSgetrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
-             std::vector<std::string>{"float", "int", "float", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6, 7},
+             std::vector<std::string>{"float", "int", "float"},
+             std::vector<int>{9}, std::vector<int>{8},
+             std::vector<int>{0, 1, 2, 3, 5, 8},
+             "mkl::lapack::getrs_scratchpad_size<float>",
              "mkl::lapack::getrs")},
         {"cusolverDnDgetrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
-             std::vector<std::string>{"double", "int", "double", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6, 7},
+             std::vector<std::string>{"double", "int", "double"},
+             std::vector<int>{9}, std::vector<int>{8},
+             std::vector<int>{0, 1, 2, 3, 5, 8},
+             "mkl::lapack::getrs_scratchpad_size<double>",
              "mkl::lapack::getrs")},
         {"cusolverDnCgetrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<float>", "int",
-                                      "std::complex<float>", "int"},
+                                      "std::complex<float>"},
+             std::vector<int>{9}, std::vector<int>{8},
+             std::vector<int>{0, 1, 2, 3, 5, 8},
+             "mkl::lapack::getrs_scratchpad_size<std::complex<float>>",
              "mkl::lapack::getrs")},
         {"cusolverDnZgetrs",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
+             std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<double>", "int",
-                                      "std::complex<double>", "int"},
+                                      "std::complex<double>"},
+             std::vector<int>{9}, std::vector<int>{8},
+             std::vector<int>{0, 1, 2, 3, 5, 8},
+             "mkl::lapack::getrs_scratchpad_size<std::complex<double>>",
              "mkl::lapack::getrs")},
-        {"cusolverDnSgeqrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3}, "mkl::lapack::geqrf_get_lwork<float>")},
-        {"cusolverDnDgeqrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3},
-             "mkl::lapack::geqrf_get_lwork<double>")},
-        {"cusolverDnCgeqrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3},
-             "mkl::lapack::geqrf_get_lwork<std::complex<float>>")},
-        {"cusolverDnZgeqrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3},
-             "mkl::lapack::geqrf_get_lwork<std::complex<double>>")},
         {"cusolverDnSgeqrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"float", "float", "float", "int"},
+             std::vector<int>{8},
              "mkl::lapack::geqrf")},
         {"cusolverDnDgeqrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"double", "double", "double", "int"},
+             std::vector<int>{8},
              "mkl::lapack::geqrf")},
         {"cusolverDnCgeqrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
                                       "std::complex<float>", "int"},
+             std::vector<int>{8},
              "mkl::lapack::geqrf")},
         {"cusolverDnZgeqrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
                                       "std::complex<double>", "int"},
+             std::vector<int>{8},
              "mkl::lapack::geqrf")},
-        {"cusolverDnSormqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::ormqr_get_lwork<float>")},
-        {"cusolverDnDormqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::ormqr_get_lwork<double>")},
-        {"cusolverDnCunmqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::unmqr_get_lwork<std::complex<float>>")},
-        {"cusolverDnZunmqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::unmqr_get_lwork<std::complex<double>>")},
-        {"cusolverDnSormqr", MapNames::SOLVERFuncReplInfo::migrateBuffer(
-                                 std::vector<int>{6, 8, 9, 11, 13},
-                                 std::vector<std::string>{
-                                     "float", "float", "float", "float", "int"},
-                                 "mkl::lapack::ormqr")},
+        {"cusolverDnSormqr",
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
+             std::vector<std::string>{"float", "float", "float", "float"},
+             std::vector<int>{13}, "mkl::lapack::ormqr")},
         {"cusolverDnDormqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
-             std::vector<std::string>{"double", "double", "double", "double",
-                                      "int"},
-             "mkl::lapack::ormqr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
+             std::vector<std::string>{
+                 "double",
+                 "double",
+                 "double",
+                 "double",
+             },
+             std::vector<int>{13}, "mkl::lapack::ormqr")},
         {"cusolverDnCunmqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
              std::vector<std::string>{
                  "std::complex<float>", "std::complex<float>",
-                 "std::complex<float>", "std::complex<float>", "int"},
-             "mkl::lapack::unmqr")},
+                 "std::complex<float>", "std::complex<float>"},
+             std::vector<int>{13}, "mkl::lapack::unmqr")},
         {"cusolverDnZunmqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
              std::vector<std::string>{
                  "std::complex<double>", "std::complex<double>",
-                 "std::complex<double>", "std::complex<double>", "int"},
-             "mkl::lapack::unmqr")},
-        {"cusolverDnSorgqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{4, 6},
-             "mkl::lapack::orgqr_get_lwork<float>")},
-        {"cusolverDnDorgqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{4, 6},
-             "mkl::lapack::orgqr_get_lwork<double>")},
-        {"cusolverDnCungqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{4, 6},
-             "mkl::lapack::ungqr_get_lwork<std::complex<float>>")},
-        {"cusolverDnZungqr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{4, 6},
-             "mkl::lapack::ungqr_get_lwork<std::complex<double>>")},
+                 "std::complex<double>", "std::complex<double>"},
+             std::vector<int>{13}, "mkl::lapack::unmqr")},
         {"cusolverDnSorgqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
-             std::vector<std::string>{"float", "float", "float", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{4, 6, 7},
+             std::vector<std::string>{"float", "float", "float"},
+             std::vector<int>{9},
              "mkl::lapack::orgqr")},
         {"cusolverDnDorgqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
-             std::vector<std::string>{"double", "double", "double", "int"},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{4, 6, 7},
+             std::vector<std::string>{"double", "double", "double"},
+             std::vector<int>{9},
              "mkl::lapack::orgqr")},
         {"cusolverDnCungqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
-                                      "std::complex<float>", "int"},
+                                      "std::complex<float>"},
+             std::vector<int>{9},
              "mkl::lapack::ungqr")},
         {"cusolverDnZungqr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{4, 6, 7, 9},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
-                                      "std::complex<double>", "int"},
+                                      "std::complex<double>"},
+             std::vector<int>{9},
              "mkl::lapack::ungqr")},
-        {"cusolverDnSsytrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndMissed(
-             true, std::vector<int>{2}, std::vector<int>{1},
-             std::vector<int>{1}, std::vector<bool>{false},
-             std::vector<std::string>{"mkl::uplo"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "mkl::lapack::sytrf_get_lwork<float>")},
-        {"cusolverDnDsytrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndMissed(
-             true, std::vector<int>{2}, std::vector<int>{1},
-             std::vector<int>{1}, std::vector<bool>{false},
-             std::vector<std::string>{"mkl::uplo"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "mkl::lapack::sytrf_get_lwork<double>")},
-        {"cusolverDnCsytrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndMissed(
-             true, std::vector<int>{2}, std::vector<int>{1},
-             std::vector<int>{1}, std::vector<bool>{false},
-             std::vector<std::string>{"mkl::uplo"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "mkl::lapack::sytrf_get_lwork<std::complex<float>>")},
-        {"cusolverDnZsytrf_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndMissed(
-             true, std::vector<int>{2}, std::vector<int>{1},
-             std::vector<int>{1}, std::vector<bool>{false},
-             std::vector<std::string>{"mkl::uplo"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "mkl::lapack::sytrf_get_lwork<std::complex<double>>")},
         {"cusolverDnSsytrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
-             std::vector<std::string>{"float", "int", "float", "int"},
-             "mkl::lapack::sytrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"float", "int", "float"},
+             std::vector<int>{8}, "mkl::lapack::sytrf")},
         {"cusolverDnDsytrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
-             std::vector<std::string>{"double", "int", "double", "int"},
-             "mkl::lapack::sytrf")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"double", "int", "double"},
+             std::vector<int>{8}, "mkl::lapack::sytrf")},
         {"cusolverDnCsytrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<float>", "int",
-                                      "std::complex<float>", "int"},
-             "mkl::lapack::sytrf")},
+                                      "std::complex<float>"},
+             std::vector<int>{8}, "mkl::lapack::sytrf")},
         {"cusolverDnZsytrf",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<double>", "int",
-                                      "std::complex<double>", "int"},
-             "mkl::lapack::sytrf")},
-        {"cusolverDnSgebrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndCopy(
-             true, std::vector<int>{1}, std::vector<int>{3},
-             "mkl::lapack::gebrd_get_lwork<float>")},
-        {"cusolverDnDgebrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndCopy(
-             true, std::vector<int>{1}, std::vector<int>{3},
-             "mkl::lapack::gebrd_get_lwork<double>")},
-        {"cusolverDnCgebrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndCopy(
-             true, std::vector<int>{1}, std::vector<int>{3},
-             "mkl::lapack::gebrd_get_lwork<std::complex<float>>")},
-        {"cusolverDnZgebrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndCopy(
-             true, std::vector<int>{1}, std::vector<int>{3},
-             "mkl::lapack::gebrd_get_lwork<std::complex<double>>")},
+                                      "std::complex<double>"},
+             std::vector<int>{8}, "mkl::lapack::sytrf")},
         {"cusolverDnSgebrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 9, 11},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8, 9},
              std::vector<std::string>{"float", "float", "float", "float",
-                                      "float", "float", "int"},
-             "mkl::lapack::gebrd")},
+                                      "float", "float"},
+             std::vector<int>{11}, "mkl::lapack::gebrd")},
         {"cusolverDnDgebrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 9, 11},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8, 9},
              std::vector<std::string>{"double", "double", "double", "double",
-                                      "double", "double", "int"},
-             "mkl::lapack::gebrd")},
+                                      "double", "double"},
+             std::vector<int>{11}, "mkl::lapack::gebrd")},
         {"cusolverDnCgebrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 9, 11},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8, 9},
              std::vector<std::string>{
                  "std::complex<float>", "float", "float", "std::complex<float>",
-                 "std::complex<float>", "std::complex<float>", "int"},
-             "mkl::lapack::gebrd")},
+                 "std::complex<float>", "std::complex<float>"},
+             std::vector<int>{11}, "mkl::lapack::gebrd")},
         {"cusolverDnZgebrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 9, 11},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8, 9},
              std::vector<std::string>{"std::complex<double>", "double",
                                       "double", "std::complex<double>",
                                       "std::complex<double>",
-                                      "std::complex<double>", "int"},
-             "mkl::lapack::gebrd")},
-        {"cusolverDnSorgbr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndCast(
-             true, std::vector<int>{5, 7}, std::vector<int>{1},
-             std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::orgbr_get_lwork<float>")},
-        {"cusolverDnDorgbr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndCast(
-             true, std::vector<int>{5, 7}, std::vector<int>{1},
-             std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::orgbr_get_lwork<double>")},
-        {"cusolverDnCungbr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndCast(
-             true, std::vector<int>{5, 7}, std::vector<int>{1},
-             std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::ungbr_get_lwork<std::complex<float>>")},
-        {"cusolverDnZungbr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceRedundantAndCast(
-             true, std::vector<int>{5, 7}, std::vector<int>{1},
-             std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::ungbr_get_lwork<std::complex<double>>")},
+                                      "std::complex<double>"},
+             std::vector<int>{11}, "mkl::lapack::gebrd")},
         {"cusolverDnSorgbr",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10},
-             std::vector<std::string>{"float", "float", "float", "int"},
-             std::vector<int>{1}, std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::orgbr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8},
+             std::vector<std::string>{"float", "float", "float"},
+             std::vector<int>{10}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"}, "mkl::lapack::orgbr")},
         {"cusolverDnDorgbr",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10},
-             std::vector<std::string>{"double", "double", "double", "int"},
-             std::vector<int>{1}, std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::orgbr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8},
+             std::vector<std::string>{"double", "double", "double"},
+             std::vector<int>{10}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"}, "mkl::lapack::orgbr")},
         {"cusolverDnCungbr",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
-                                      "std::complex<float>", "int"},
-             std::vector<int>{1}, std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::ungbr")},
+                                      "std::complex<float>"},
+             std::vector<int>{10}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"}, "mkl::lapack::ungbr")},
         {"cusolverDnZungbr",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
-                                      "std::complex<double>", "int"},
-             std::vector<int>{1}, std::vector<std::string>{"mkl::generate"},
-             "mkl::lapack::ungbr")},
-        {"cusolverDnSsytrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5, 6, 7},
-             "mkl::lapack::sytrd_get_lwork<float>")},
-        {"cusolverDnDsytrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5, 6, 7},
-             "mkl::lapack::sytrd_get_lwork<double>")},
-        {"cusolverDnChetrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5, 6, 7},
-             "mkl::lapack::hetrd_get_lwork<std::complex<float>>")},
-        {"cusolverDnZhetrd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5, 6, 7},
-             "mkl::lapack::hetrd_get_lwork<std::complex<double>>")},
+                                      "std::complex<double>"},
+             std::vector<int>{10}, std::vector<int>{1},
+             std::vector<std::string>{"mkl::generate"}, "mkl::lapack::ungbr")},
         {"cusolverDnSsytrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"float", "float", "float", "float",
-                                      "float", "int"},
+                                      "float"}, std::vector<int>{10},
              "mkl::lapack::sytrd")},
         {"cusolverDnDsytrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"double", "double", "double", "double",
-                                      "double", "int"},
+                                      "double"}, std::vector<int>{10},
              "mkl::lapack::sytrd")},
         {"cusolverDnChetrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"std::complex<float>", "float", "float",
                                       "std::complex<float>",
-                                      "std::complex<float>", "int"},
+                                      "std::complex<float>"}, std::vector<int>{10},
              "mkl::lapack::hetrd")},
         {"cusolverDnZhetrd",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 7, 8, 10},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"std::complex<double>", "double",
                                       "double", "std::complex<double>",
-                                      "std::complex<double>", "int"},
+                                      "std::complex<double>"}, std::vector<int>{10},
              "mkl::lapack::hetrd")},
-        {"cusolverDnSormtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::ormtr_get_lwork<float>")},
-        {"cusolverDnDormtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::ormtr_get_lwork<double>")},
-        {"cusolverDnCunmtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::unmtr_get_lwork<std::complex<float>>")},
-        {"cusolverDnZunmtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{6, 8, 9},
-             "mkl::lapack::unmtr_get_lwork<std::complex<double>>")},
-        {"cusolverDnSormtr", MapNames::SOLVERFuncReplInfo::migrateBuffer(
-                                 std::vector<int>{6, 8, 9, 11, 13},
-                                 std::vector<std::string>{
-                                     "float", "float", "float", "float", "int"},
-                                 "mkl::lapack::ormtr")},
+        {"cusolverDnSormtr",
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
+             std::vector<std::string>{"float", "float", "float", "float"},
+             std::vector<int>{13}, "mkl::lapack::ormtr")},
         {"cusolverDnDormtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
-             std::vector<std::string>{"double", "double", "double", "double",
-                                      "int"},
-             "mkl::lapack::ormtr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
+             std::vector<std::string>{"double", "double", "double", "double"},
+             std::vector<int>{13}, "mkl::lapack::ormtr")},
         {"cusolverDnCunmtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
              std::vector<std::string>{
                  "std::complex<float>", "std::complex<float>",
-                 "std::complex<float>", "std::complex<float>", "int"},
-             "mkl::lapack::unmtr")},
+                 "std::complex<float>", "std::complex<float>"},
+             std::vector<int>{13}, "mkl::lapack::unmtr")},
         {"cusolverDnZunmtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{6, 8, 9, 11, 13},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{6, 8, 9, 11},
              std::vector<std::string>{
                  "std::complex<double>", "std::complex<double>",
-                 "std::complex<double>", "std::complex<double>", "int"},
-             "mkl::lapack::unmtr")},
-        {"cusolverDnSorgtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5},
-             "mkl::lapack::orgtr_get_lwork<float>")},
-        {"cusolverDnDorgtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5},
-             "mkl::lapack::orgtr_get_lwork<double>")},
-        {"cusolverDnCungtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5},
-             "mkl::lapack::ungtr_get_lwork<std::complex<float>>")},
-        {"cusolverDnZungtr_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceAndRedundant(
-             true, std::vector<int>{3, 5},
-             "mkl::lapack::ungtr_get_lwork<std::complex<double>>")},
+                 "std::complex<double>", "std::complex<double>"},
+             std::vector<int>{13}, "mkl::lapack::unmtr")},
         {"cusolverDnSorgtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
-             std::vector<std::string>{"float", "float", "float", "int"},
-             "mkl::lapack::orgtr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"float", "float", "float"},
+             std::vector<int>{8}, "mkl::lapack::orgtr")},
         {"cusolverDnDorgtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
-             std::vector<std::string>{"double", "double", "double", "int"},
-             "mkl::lapack::orgtr")},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
+             std::vector<std::string>{"double", "double", "double"},
+             std::vector<int>{8}, "mkl::lapack::orgtr")},
         {"cusolverDnCungtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
-                                      "std::complex<float>", "int"},
-             "mkl::lapack::ungtr")},
+                                      "std::complex<float>"},
+             std::vector<int>{8}, "mkl::lapack::ungtr")},
         {"cusolverDnZungtr",
-         MapNames::SOLVERFuncReplInfo::migrateBuffer(
-             std::vector<int>{3, 5, 6, 8},
+         MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
+             std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
-                                      "std::complex<double>", "int"},
-             "mkl::lapack::ungtr")},
-        {"cusolverDnSgesvd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceCopyAndMissed(
-             true, std::vector<int>{1, 1, 2}, std::vector<int>{3, 3, 3},
-             std::vector<int>{1, 2}, std::vector<int>{1, 1},
-             std::vector<bool>{false, false},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "mkl::lapack::gesvd_get_lwork<float>")},
-        {"cusolverDnDgesvd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceCopyAndMissed(
-             true, std::vector<int>{1, 1, 2}, std::vector<int>{3, 3, 3},
-             std::vector<int>{1, 2}, std::vector<int>{1, 1},
-             std::vector<bool>{false, false},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "mkl::lapack::gesvd_get_lwork<double>")},
-        {"cusolverDnCgesvd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceCopyAndMissed(
-             true, std::vector<int>{1, 1, 2}, std::vector<int>{3, 3, 3},
-             std::vector<int>{1, 2}, std::vector<int>{1, 1},
-             std::vector<bool>{false, false},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "mkl::lapack::gesvd_get_lwork<std::complex<float>>")},
-        {"cusolverDnZgesvd_bufferSize",
-         MapNames::SOLVERFuncReplInfo::migrateDeviceCopyAndMissed(
-             true, std::vector<int>{1, 1, 2}, std::vector<int>{3, 3, 3},
-             std::vector<int>{1, 2}, std::vector<int>{1, 1},
-             std::vector<bool>{false, false},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "mkl::lapack::gesvd_get_lwork<std::complex<double>>")},
+                                      "std::complex<double>"},
+             std::vector<int>{8}, "mkl::lapack::ungtr")},
         {"cusolverDnSgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
-             std::vector<int>{5, 7, 8, 10, 12, 15},
+             std::vector<int>{5, 7, 8, 10, 12},
              std::vector<std::string>{"float", "float", "float", "float",
-                                      "float", "int"},
-             std::vector<int>{14}, std::vector<int>{1, 2},
+                                      "float"},
+             std::vector<int>{14, 15}, std::vector<int>{1, 2},
              std::vector<std::string>{"mkl::job", "mkl::job"},
              "mkl::lapack::gesvd")},
         {"cusolverDnDgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
-             std::vector<int>{5, 7, 8, 10, 12, 15},
+             std::vector<int>{5, 7, 8, 10, 12},
              std::vector<std::string>{"double", "double", "double", "double",
-                                      "double", "int"},
-             std::vector<int>{14}, std::vector<int>{1, 2},
+                                      "double"},
+             std::vector<int>{14, 15}, std::vector<int>{1, 2},
              std::vector<std::string>{"mkl::job", "mkl::job"},
              "mkl::lapack::gesvd")},
         {"cusolverDnCgesvd",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10, 12, 14, 15},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8, 10, 12},
              std::vector<std::string>{
                  "std::complex<float>", "float", "std::complex<float>",
-                 "std::complex<float>", "std::complex<float>", "float", "int"},
+                 "std::complex<float>", "std::complex<float>"}, std::vector<int>{14, 15},
              std::vector<int>{1, 2},
              std::vector<std::string>{"mkl::job", "mkl::job"},
              "mkl::lapack::gesvd")},
         {"cusolverDnZgesvd",
-         MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
-             std::vector<int>{5, 7, 8, 10, 12, 14, 15},
+         MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
+             std::vector<int>{5, 7, 8, 10, 12},
              std::vector<std::string>{"std::complex<double>", "double",
                                       "std::complex<double>",
                                       "std::complex<double>",
-                                      "std::complex<double>", "double", "int"},
+                                      "std::complex<double>"},std::vector<int>{14, 15},
              std::vector<int>{1, 2},
              std::vector<std::string>{"mkl::job", "mkl::job"},
              "mkl::lapack::gesvd")},

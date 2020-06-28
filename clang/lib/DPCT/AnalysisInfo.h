@@ -249,6 +249,7 @@ enum HeaderType {
   Time,
   Complex,
   Future,
+  Thread,
   MKL_BLAS_Solver,
   MKL_RNG,
   MKL_RNG_DEVICE,
@@ -373,6 +374,8 @@ public:
                           "<algorithm>");
     case Complex:
       return insertHeader(HeaderType::Complex, LastIncludeOffset, "<complex>");
+    case Thread:
+      return insertHeader(HeaderType::Thread, LastIncludeOffset, "<thread>");
     case Future:
       return insertHeader(HeaderType::Future, LastIncludeOffset, "<future>");
     case Time:

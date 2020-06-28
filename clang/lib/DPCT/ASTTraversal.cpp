@@ -6459,75 +6459,125 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
+      // MyFunction(float* a);
+      // In usm: Keep it and type cast if needed.
+      // In non-usm: Create a buffer, pass the buffer
+      // If type is int: MKL takes int64_t, so need to create a temp
+      //                 buffer/variable and copy the value back
+      //                 after the function call.
+      // Some API migration requires MoveFrom and MoveTo.
+      // e.g. move arg#1 to arg#0
+      // MyFunction(float* a, float* b);
+      // ---> MyFunction(float* b, float*a);
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl;
-        std::string BufferName = getBufferNameAndDeclStr(
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+          std::string BufferDecl;
+          std::string BufferName = getBufferNameAndDeclStr(
             CE->getArg(i), *(Result.Context),
             ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
-        PrefixInsertStr = PrefixInsertStr + BufferDecl;
-        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr =
+          PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr =
               PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
               "::buffer<int64_t> "
               "result_temp_buffer" +
               std::to_string(i) + "(" + MapNames::getClNamespace() +
               "::range<1>(1));" + getNL();
-          SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
-                            MapNames::getClNamespace() +
-                            "::access::mode::write>()[0] = "
-                            "(int)result_temp_buffer" +
-                            std::to_string(i) + ".get_access<" +
-                            MapNames::getClNamespace() +
-                            "::access::mode::read>()[0];" +
-                            getNL() + IndentStr;
-          emplaceTransformation(new ReplaceStmt(
-              CE->getArg(i), "result_temp_buffer" + std::to_string(i)));
-          continue;
+            SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
+              MapNames::getClNamespace() +
+              "::access::mode::write>()[0] = "
+              "(int)result_temp_buffer" +
+              std::to_string(i) + ".get_access<" +
+              MapNames::getClNamespace() +
+              "::access::mode::read>()[0];" +
+              getNL() + IndentStr;
+            BufferName = "result_temp_buffer" + std::to_string(i);
+          }
+          bool Moved = false;
+          for (int j = 0; j < ReplInfo.MoveFrom.size();j++) {
+            if (ReplInfo.MoveFrom[j] == i) {
+              Moved = true;
+              if (CE->getArg(ReplInfo.MoveTo[j]) > 0) {
+                emplaceTransformation(new InsertAfterStmt(
+                    CE->getArg(ReplInfo.MoveTo[j] - 1),
+                    ", result_temp_buffer" + std::to_string(i)));
+              }
+              ReplInfo.RedundantIndexInfo.push_back(i);
+              break;
+            }
+          }
+          if (!Moved) {
+            emplaceTransformation(
+              new ReplaceStmt(CE->getArg(i), BufferName));
+          }
+        } else {
+          std::string ArgName = getStmtSpelling(CE->getArg(i));
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr = IndentStr + "int64_t result_temp_pointer" +
+                              std::to_string(i) + ";" + getNL();
+            SuffixInsertStr = SuffixInsertStr + " *" +
+                              getStmtSpelling(CE->getArg(i)) +
+                              " = result_temp_pointer" + std::to_string(i) +
+                              ";" + getNL() + IndentStr;
+            ArgName = "&result_temp_pointer" + std::to_string(i);
+          }
+          bool Moved = false;
+          for (int j = 0; j < ReplInfo.MoveFrom.size(); j++) {
+            if (ReplInfo.MoveFrom[j] == i) {
+              Moved = true;
+              if (CE->getArg(ReplInfo.MoveTo[j]) > 0) {
+                emplaceTransformation(new InsertAfterStmt(
+                    CE->getArg(ReplInfo.MoveTo[j] - 1), ", " + ArgName));
+              }
+              ReplInfo.RedundantIndexInfo.push_back(i);
+              break;
+            }
+          }
+          if (!Moved) {
+            std::string TypeStr =
+                ReplInfo.BufferTypeInfo[IndexTemp].compare("int")
+                    ? "(" + ReplInfo.BufferTypeInfo[IndexTemp] + "*)"
+                    : "";
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), TypeStr + ArgName));
+          }
         }
-        emplaceTransformation(
-            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
       }
+      // Remove the redundant args including the leading ","
       if (isReplIndex(i, ReplInfo.RedundantIndexInfo, IndexTemp)) {
-        SourceLocation ParameterEndAfterSemi;
-        getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
-                        Result);
-        auto ParameterLength =
-            SM->getCharacterData(ParameterEndAfterSemi) -
-            SM->getCharacterData(CE->getArg(i)->getBeginLoc());
-        emplaceTransformation(
-            new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
-      }
-      if (ReplInfo.ToDevice) {
+        SourceLocation RemoveBegin, RemoveEnd;
         if (i == 0) {
-          emplaceTransformation(
-              new InsertBeforeStmt(CE->getArg(i), std::move("(")));
-          emplaceTransformation(
-              new InsertAfterStmt(CE->getArg(i), std::move(").get_device()")));
+          RemoveBegin = CE->getArg(i)->getBeginLoc();
+        } else {
+          RemoveBegin = CE->getArg(i - 1)->getEndLoc().getLocWithOffset(
+              Lexer::MeasureTokenLength(
+                  CE->getArg(i - 1)->getEndLoc(), *SM,
+                  dpct::DpctGlobalInfo::getContext().getLangOpts()));
         }
-        if (i == ArgNum - 1) {
-          PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "int64_t lwork64 = *(" +
-                            getStmtSpelling(CE->getArg(i)) + ");" + getNL();
-          SourceLocation ParameterEndAfterSemi;
-          getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
-                          Result);
-          auto ParameterLength =
-              SM->getCharacterData(ParameterEndAfterSemi) -
-              SM->getCharacterData(CE->getArg(i)->getBeginLoc()) - 1;
-          emplaceTransformation(new ReplaceText(CE->getArg(i)->getBeginLoc(),
-                                                ParameterLength, "lwork64"));
-          SuffixInsertStr = SuffixInsertStr + "*(" +
-                            getStmtSpelling(CE->getArg(i)) + ") = lwork64;" +
-                            getNL() + IndentStr;
-        }
+        RemoveEnd = CE->getArg(i)->getEndLoc().getLocWithOffset(
+            Lexer::MeasureTokenLength(
+                CE->getArg(i)->getEndLoc(), *SM,
+                dpct::DpctGlobalInfo::getContext().getLangOpts()));
+        auto ParameterLength =
+            SM->getCharacterData(RemoveEnd) -
+            SM->getCharacterData(RemoveBegin);
+        emplaceTransformation(
+            new ReplaceText(RemoveBegin, ParameterLength, ""));
       }
+      // OldFoo(float* out); --> *(out) = NewFoo();
+      // In current case, return value is always the last arg
+      if (ReplInfo.ReturnValue && i == ArgNum - 1) {
+        Replacement = "*(" + getStmtSpelling(CE->getArg(CE->getNumArgs() - 1)) +
+                      ") = " + Replacement;
+      }
+      // The arg#0 is always the handler and will always be migrated to queue.
       if (i == 0) {
         // process handle argument
         emplaceTransformation(new ReplaceStmt(
             CE->getArg(i), "*" + getStmtSpelling(CE->getArg(i))));
       }
     }
-
+    // Declare new args if it is used in MKL
     if (!ReplInfo.MissedArgumentFinalLocation.empty()) {
       std::string ReplStr;
       for (size_t i = 0; i < ReplInfo.MissedArgumentFinalLocation.size(); ++i) {
@@ -6542,32 +6592,36 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                             ReplInfo.MissedArgumentType[i] + " " +
                             ReplInfo.MissedArgumentName[i] + ";" + getNL();
         }
-        ReplStr = ReplStr + ReplInfo.MissedArgumentName[i] + ", ";
+        ReplStr = ReplStr + ", " + ReplInfo.MissedArgumentName[i];
         if (i == ReplInfo.MissedArgumentFinalLocation.size() - 1 ||
             ReplInfo.MissedArgumentInsertBefore[i + 1] !=
                 ReplInfo.MissedArgumentInsertBefore[i]) {
-          emplaceTransformation(new InsertBeforeStmt(
-              CE->getArg(ReplInfo.MissedArgumentInsertBefore[i]),
+          if (ReplInfo.MissedArgumentInsertBefore[i] > 0) {
+            emplaceTransformation(new InsertAfterStmt(
+              CE->getArg(ReplInfo.MissedArgumentInsertBefore[i] - 1),
               std::move(ReplStr)));
+          }
           ReplStr = "";
         }
       }
     }
 
+    // Copy an arg. e.g. copy arg#0 to arg#2
+    // OldFoo(int m, int n); --> NewFoo(int m, int n, int m)
     if (!ReplInfo.CopyFrom.empty()) {
       std::string InsStr = "";
       for (size_t i = 0; i < ReplInfo.CopyFrom.size(); ++i) {
         InsStr =
-            InsStr + getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i])) + ", ";
+            InsStr + ", " + getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]));
         if (i == ReplInfo.CopyTo.size() - 1 ||
             ReplInfo.CopyTo[i + 1] != ReplInfo.CopyTo[i]) {
-          emplaceTransformation(new InsertBeforeStmt(
-              CE->getArg(ReplInfo.CopyTo[i]), std::move(InsStr)));
+          emplaceTransformation(new InsertAfterStmt(
+              CE->getArg(ReplInfo.CopyTo[i-1]), std::move(InsStr)));
           InsStr = "";
         }
       }
     }
-
+    // Type cast, for enum type migration
     if (!ReplInfo.CastIndexInfo.empty()) {
       for (size_t i = 0; i < ReplInfo.CastIndexInfo.size(); ++i) {
         std::string CastStr = "(" + ReplInfo.CastTypeInfo[i] + ")";
@@ -6575,13 +6629,102 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             CE->getArg(ReplInfo.CastIndexInfo[i]), std::move(CastStr)));
       }
     }
+    // Create scratchpad and scratchpad_size if required in MKL
+    if (!ReplInfo.WorkspaceIndexInfo.empty()) {
+      std::string BufferSizeArgStr = "";
+      for (int i = 0; i < ReplInfo.WorkspaceSizeInfo.size(); ++i) {
+        BufferSizeArgStr += i ? " ," : "";
+        BufferSizeArgStr +=
+            getStmtSpelling(CE->getArg(ReplInfo.WorkspaceSizeInfo[i]));
+      }
+      std::string ScratchpadSizeNameStr =
+          "scratchpad_size_ct" +
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+      std::string ScratchpadNameStr =
+          "scratchpad_ct" +
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+      std::string EventNameStr =
+          "event_ct" +
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+      std::string WSVectorNameStr =
+        "ws_vec_ct" +
+        std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+      PrefixInsertStr +=
+          IndentStr + "std::int64_t " + ScratchpadSizeNameStr +
+          " = " + ReplInfo.WorkspaceSizeFuncName + "(*" + BufferSizeArgStr +
+          ");" + getNL();
+      std::string BufferTypeStr = "float";
+      if (ReplInfo.BufferTypeInfo.size() > 0) {
+        BufferTypeStr = ReplInfo.BufferTypeInfo[0];
+      }
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+        DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Thread);
+
+        PrefixInsertStr += IndentStr + BufferTypeStr + " *" +
+                           ScratchpadNameStr + " = cl::sycl::malloc_device<" +
+                           BufferTypeStr + ">(" + ScratchpadSizeNameStr +
+                           ", *" + getStmtSpelling(CE->getArg(0)) + ");" + getNL();
+        PrefixInsertStr += IndentStr + "cl::sycl::event " +
+                           EventNameStr + ";" + getNL();
+
+        Replacement = EventNameStr + " = " + Replacement;
+
+        SuffixInsertStr += "std::vector<void *> " + WSVectorNameStr + "{" +
+                           ScratchpadNameStr + "};" + getNL() + IndentStr;
+        SuffixInsertStr +=
+            "std::thread mem_free_thread(dpct::detail::mem_free, " +
+            getStmtSpelling(CE->getArg(0)) + ", " + WSVectorNameStr + ", " +
+            EventNameStr + ");" + getNL() + IndentStr;
+        SuffixInsertStr +=
+            "mem_free_thread.detach();" + std::string(getNL()) + IndentStr;
+      } else {
+        PrefixInsertStr += IndentStr + "cl::sycl::buffer<" + BufferTypeStr +
+                           ", 1> " + ScratchpadNameStr +
+                           "{cl::sycl::range<1>(" + ScratchpadSizeNameStr +
+                           ")};" + getNL();
+      }
+      if (ReplInfo.WorkspaceIndexInfo[0] > 0) {
+        emplaceTransformation(new InsertAfterStmt(
+            CE->getArg(ReplInfo.WorkspaceIndexInfo[0]),
+            ", " + ScratchpadNameStr + ", " + ScratchpadSizeNameStr));
+      }
+    }
+
+    // Create scratchpad_size if only scratchpad_size is required in MKL
+    if (!ReplInfo.WSSizeInsertAfter.empty()) {
+      std::string BufferSizeArgStr = "";
+      for (int i = 0; i < ReplInfo.WSSizeInfo.size(); ++i) {
+        BufferSizeArgStr += i ? " ," : "";
+        BufferSizeArgStr +=
+          getStmtSpelling(CE->getArg(ReplInfo.WSSizeInfo[i]));
+      }
+      std::string ScratchpadSizeNameStr =
+        "scratchpad_size_ct" +
+        std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+      PrefixInsertStr +=
+        IndentStr + "std::int64_t " + ScratchpadSizeNameStr +
+        " = " + ReplInfo.WSSFuncName + "(*" + BufferSizeArgStr +
+        ");" + getNL();
+      if (ReplInfo.WSSizeInsertAfter[0] > 0) {
+        emplaceTransformation(new InsertAfterStmt(
+          CE->getArg(ReplInfo.WSSizeInsertAfter[0]),
+          ", " + ScratchpadSizeNameStr));
+      }
+    }
+
+    // Check PrefixInsertStr and SuffixInsertStr to decide whether to add bracket
+    std::string PrefixWithBracket = "";
+    std::string SuffixWithBracket = "";
+    if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
+      PrefixWithBracket = "{" + std::string(getNL()) + PrefixInsertStr + IndentStr;
+      SuffixWithBracket = getNL() + IndentStr + SuffixInsertStr + "}";
+    }
 
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
     insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                      PrefixBeforeScope + std::string("{") + getNL() +
-                          PrefixInsertStr + IndentStr,
-                      getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+                      PrefixBeforeScope + PrefixWithBracket,
+                      std::move(SuffixWithBracket));
     if (IsAssigned) {
       insertAroundRange(FuncNameBegin, FuncCallEnd,
                         std::move(AssignPrefix), std::move(AssignPostfix));
@@ -6622,32 +6765,6 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, Repl));
     }
-  } else if (FuncName == "cusolverDnSpotrf_bufferSize" ||
-             FuncName == "cusolverDnDpotrf_bufferSize" ||
-             FuncName == "cusolverDnCpotrf_bufferSize" ||
-             FuncName == "cusolverDnZpotrf_bufferSize" ||
-             FuncName == "cusolverDnSpotri_bufferSize" ||
-             FuncName == "cusolverDnDpotri_bufferSize" ||
-             FuncName == "cusolverDnCpotri_bufferSize" ||
-             FuncName == "cusolverDnZpotri_bufferSize" ||
-             FuncName == "cusolverDnSgetrf_bufferSize" ||
-             FuncName == "cusolverDnDgetrf_bufferSize" ||
-             FuncName == "cusolverDnCgetrf_bufferSize" ||
-             FuncName == "cusolverDnZgetrf_bufferSize") {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE, Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ true, "0"));
-    } else {
-      report(CE, Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ true, ""));
-    }
   }
 }
 
@@ -6658,8 +6775,11 @@ void SOLVERFunctionCallRule::getParameterEnd(
   TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
                                       LangOptions());
   Token TokComma = TokSharedPtr.getValue();
-  ParameterEndAfterComma = TokComma.getEndLoc();
-  // TODO: Check if TokComma is real comma
+  if (TokComma.getKind() == tok::comma) {
+    ParameterEndAfterComma = TokComma.getEndLoc();
+  } else {
+    ParameterEndAfterComma = TokComma.getLocation();
+  }
 }
 
 bool SOLVERFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
