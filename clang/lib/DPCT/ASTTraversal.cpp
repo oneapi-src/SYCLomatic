@@ -640,7 +640,6 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   } else {
     return;
   }
-  assert((ME || DRE) && VD && "Unknown result");
 
   std::string Replacement = getItemName();
   StringRef BuiltinName = VD->getName();
@@ -1168,7 +1167,9 @@ bool AtomicFunctionRule::IsStmtInStatement(const clang::Stmt *S, const clang::De
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
-  assert(Parents.size() >= 1);
+
+  if(Parents.size()<1)
+    return false;
   const clang::Decl *Parent = Parents[0].get<Decl>();
   auto ParentStmtClass = ParentStmt->getStmtClass();
   bool Ret = ParentStmtClass == Stmt::StmtClass::IfStmtClass ||
@@ -1283,13 +1284,13 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   if (!CE->getDirectCallee())
     return;
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
-  assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
+  if(AtomicFuncNamesMap.find(AtomicFuncName) == AtomicFuncNamesMap.end())
+    return;
   std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
 
   // Explicitly cast all arguments except first argument
   const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
   // Atomic operation's first argument is always pointer type
-  assert(Arg0Type && Arg0Type->isPointerType());
   if (!Arg0Type || !Arg0Type->isPointerType()) {
     return;
   }
@@ -1483,7 +1484,8 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
     std::string ArgT = QT.getAsString(PrintingPolicy(LO));
 
     auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
-    assert(ReplInfo != MapNames::ThrustFuncNamesMap.end());
+    if(ReplInfo == MapNames::ThrustFuncNamesMap.end())
+        return;
     auto NewName = ReplInfo->second.ReplName;
 
     if (ThrustFuncName == "copy_if" &&
@@ -1501,7 +1503,8 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-    assert(CE->getNumArgs() > 0);
+    if(CE->getNumArgs()<=0)
+        return;
     auto ExtraParam = ReplInfo->second.ExtraParam;
     if (!ExtraParam.empty()) {
       // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
@@ -1634,7 +1637,9 @@ std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
     return "";
 
   std::string Replacement = TypeStr;
-  assert(Replacement.find(TypeName) != std::string::npos);
+  if(Replacement.find(TypeName) == std::string::npos)
+    return "";
+
   Replacement = Replacement.substr(Replacement.find(TypeName));
   if (IsVarDecl) {
     return Replacement.replace(0, TypeName.length(), Search->second);
@@ -2182,7 +2187,8 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
 
   // Check parameter is vector type
   auto SupportedParamType = [&](const ParmVarDecl *PD) {
-    assert(PD != nullptr);
+    if(!PD)
+        return false;
     const IdentifierInfo *IDInfo =
         PD->getOriginalType().getBaseTypeIdentifier();
     if (!IDInfo)
@@ -2193,7 +2199,6 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
             MapNames::SupportedVectorTypes.end());
   };
 
-  assert(Node.getNumParams() < 3);
   // As long as one parameter is vector type
   for (unsigned i = 0, End = Node.getNumParams(); i != End; ++i) {
     if (SupportedParamType(Node.getParamDecl(i))) {
@@ -2625,10 +2630,8 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   if (!ME)
     return;
   auto Parents = Result.Context->getParents(*ME);
-  //assert(Parents.size() == 1);
-  //if (Parents.size() != 1) {
-  //  return;
-  //}
+  if (Parents.size() < 1)
+    return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
   if (MemberName == "sharedMemPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false);
@@ -2732,7 +2735,6 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
   const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
   if (!E)
     return;
-  assert(E && "Unknown result");
   std::string EnumName = E->getNameInfo().getName().getAsString();
   if (EnumName == "cudaComputeModeDefault" ||
       EnumName == "cudaComputeModeExclusive" ||
@@ -2765,7 +2767,6 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
   const DeclRefExpr *DE = getNodeAsType<DeclRefExpr>(Result, "ErrorConstants");
   if (!DE)
     return;
-  assert(DE && "Unknown result");
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
   std::string Repl = EC->getInitVal().toString(10);
 
@@ -4203,8 +4204,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
   }
-
-  assert(CE && "Unknown result");
 
   if (!CE->getDirectCallee())
     return;
@@ -6168,7 +6167,6 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  assert(CE && "Unknown result");
   const SourceManager *SM = Result.SourceManager;
   auto SL = SM->getExpansionLoc(CE->getBeginLoc());
   std::string Key = SM->getFilename(SL).str() +
@@ -6545,8 +6543,6 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     IsAssigned = true;
   }
-  assert(CE && "Unknown result");
-
   if (!CE->getDirectCallee())
     return;
   std::string FuncName =
@@ -6819,7 +6815,6 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     IsAssigned = true;
   }
-  assert(CE && "Unknown result");
 
   if (!CE->getDirectCallee())
     return;
@@ -6973,7 +6968,8 @@ void EventAPICallRule::handleTimeMeasurement(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   auto CELoc = CE->getBeginLoc().getRawEncoding();
   auto Parents = Result.Context->getParents(*CE);
-  assert(Parents.size() == 1);
+  if(Parents.size() < 1)
+    return;
   auto *Parent = Parents[0].get<Stmt>();
   if (!Parent) {
     return;
@@ -7072,7 +7068,6 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     IsAssigned = true;
   }
-  assert(CE && "Unknown result");
 
   if (!CE->getDirectCallee())
     return;
@@ -7285,8 +7280,8 @@ void KernelCallRule::removeTrailingSemicolon(
     KELoc = SM.getImmediateSpellingLoc(KELoc);
   }
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
-  assert(Tok.is(tok::TokenKind::semi));
-  emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+  if(Tok.is(tok::TokenKind::semi))
+      emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
 }
 
 REGISTER_RULE(KernelCallRule)
@@ -8095,7 +8090,8 @@ void MemoryMigrationRule::memcpySymbolMigration(
     if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
       DirectionName = DD->getNameInfo().getName().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
-      assert(Search != EnumConstantRule::EnumNamesMap.end());
+      if(Search == EnumConstantRule::EnumNamesMap.end())
+        return;
       Direction = nullptr;
       DirectionName = "dpct::" + Search->second;
     }
@@ -8589,7 +8585,8 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
     }
-    assert(MigrationDispatcher.find(Name) != MigrationDispatcher.end());
+    if(MigrationDispatcher.find(Name) == MigrationDispatcher.end())
+        return;
 
     // If there is a malloc function call in a template function, and the
     // template function is implicitly instantiated with two types. Then there

@@ -1754,7 +1754,6 @@ bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
 }
 
 SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Map = dpct::DpctGlobalInfo::getEndOfEmptyMacros();
   auto It = Map.find(getHashStrFromLoc(Loc));
   if (It != Map.end()) {
