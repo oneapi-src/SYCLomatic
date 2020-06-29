@@ -55,7 +55,7 @@ void recoverCheckpoint(int Signo){
         LONGJMP(CPFileEnter, 1);
       } else if(CheckPointStage==CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
         std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                               "\nIntel(R) DPC++ Compatibility Tool trys to "
+                               "\nIntel(R) DPC++ Compatibility Tool tries to "
                                "recover and do further process of current file\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
@@ -65,7 +65,7 @@ void recoverCheckpoint(int Signo){
         LONGJMP(CPFileASTMaterEnter, 1);
       } else if(CheckPointStage==CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
         std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                               "\nIntel(R) DPC++ Compatibility Tool trys to "
+                               "\nIntel(R) DPC++ Compatibility Tool tries to "
                                "recover and write out the migration result\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
@@ -75,7 +75,7 @@ void recoverCheckpoint(int Signo){
         LONGJMP(CPRepPostprocessEnter, 1);
       } else if(CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
           std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                                 "\nIntel(R) DPC++ Compatibility Tool trys to "
+                                 "\nIntel(R) DPC++ Compatibility Tool tries to "
                                  "recover and write out the migration result\n";
           PrintReportOnFault(FaultMsg);
           if(!CurFileMeetErr) {
