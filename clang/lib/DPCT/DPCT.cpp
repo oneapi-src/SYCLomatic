@@ -1018,6 +1018,8 @@ int run(int argc, const char **argv) {
   std::string CUDAVerMinor = "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
   Tool.appendArgumentsAdjuster(
     getInsertArgumentAdjuster(CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+  Tool.appendArgumentsAdjuster(
+    getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
 
   SetSDKIncludePath(CudaPath);
 
