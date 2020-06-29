@@ -113,12 +113,18 @@ template <typename Policy, typename NewName> struct rebind_policy {
   using type = Policy;
 };
 
-template <typename DevicePolicy, typename KernelName, typename NewName>
-
-struct rebind_policy<dpstd::execution::sycl_policy<DevicePolicy, KernelName>,
-                     NewName> {
-  using type = dpstd::execution::sycl_policy<DevicePolicy, NewName>;
+template <typename KernelName, typename NewName>
+struct rebind_policy<dpstd::execution::device_policy<KernelName>, NewName> {
+  using type = dpstd::execution::device_policy<NewName>;
 };
+
+#if _PSTL_FPGA_DEVICE
+template <unsigned int factor, typename KernelName, typename NewName>
+struct rebind_policy<dpstd::execution::fpga_policy<factor, KernelName>,
+                     NewName> {
+  using type = dpstd::execution::fpga_policy<factor, NewName>;
+};
+#endif
 
 template <typename T1, typename T2,
           typename R1 = typename std::iterator_traits<T1>::reference,

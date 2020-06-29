@@ -122,132 +122,77 @@ constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
   return constant_iterator<_Tp>(__value);
 }
 
-template <typename _Ip> class discard_iterator {
+class discard_iterator {
 public:
   typedef std::ptrdiff_t difference_type;
-  typedef _Ip value_type;
-  typedef _Ip *pointer;
-  typedef _Ip &reference;
-  typedef const _Ip &const_reference;
+  typedef decltype(std::ignore) value_type;
+  typedef void *pointer;
+  typedef value_type reference;
   typedef std::random_access_iterator_tag iterator_category;
+  using is_passed_directly = std::true_type;
 
-  // const variants of access operators are not provided so unintended reads are
-  // caught at compile time.
-  reference operator*() { return __my_placeholder_; }
-  reference operator[](difference_type) { return __my_placeholder_; }
+  discard_iterator() : __my_position_() {}
+  explicit discard_iterator(difference_type __init) : __my_position_(__init) {}
 
-  constexpr bool operator==(const discard_iterator &) const { return true; }
-  constexpr bool operator!=(const discard_iterator &) const { return false; }
+  auto operator*() const -> decltype(std::ignore) { return std::ignore; }
+  auto operator[](difference_type) const -> decltype(std::ignore) {
+    return std::ignore;
+  }
+
+  constexpr bool operator==(const discard_iterator &__it) const {
+    return __my_position_ - __it.__my_position_ == 0;
+  }
+  constexpr bool operator!=(const discard_iterator &__it) const {
+    return !(*this == __it);
+  }
+
+  bool operator<(const discard_iterator &__it) const {
+    return __my_position_ - __it.__my_position_ < 0;
+  }
+  bool operator>(const discard_iterator &__it) const {
+    return __my_position_ - __it.__my_position_ > 0;
+  }
 
   difference_type operator-(const discard_iterator &__it) const {
-    return difference_type{};
+    return __my_position_ - __it.__my_position_;
   }
 
-  discard_iterator &operator++() { return *this; }
-  discard_iterator &operator--() { return *this; }
-  discard_iterator operator++(int) { return *this; }
-  discard_iterator operator--(int) { return *this; }
-  discard_iterator &operator+=(difference_type) { return *this; }
-  discard_iterator &operator-=(difference_type) { return *this; }
-
-  discard_iterator operator+(difference_type) const { return *this; }
-  discard_iterator operator-(difference_type) const { return *this; }
-
-private:
-  _Ip __my_placeholder_;
-};
-
-template <typename Iter1, typename Iter2> class permutation_iterator {
-public:
-  typedef typename std::iterator_traits<Iter1>::difference_type difference_type;
-  typedef typename std::iterator_traits<Iter1>::value_type value_type;
-  typedef typename std::iterator_traits<Iter1>::pointer pointer;
-  typedef typename std::iterator_traits<Iter1>::reference reference;
-  typedef std::random_access_iterator_tag iterator_category;
-
-  permutation_iterator(const Iter1 &input1, const Iter2 &input2)
-      : my_source(input1), my_map(input2) {}
-
-  reference operator*() const {
-    return *(my_source + difference_type(*my_map));
+  discard_iterator &operator++() {
+    ++__my_position_;
+    return *this;
   }
-
-  reference operator[](difference_type i) const { return *(*this + i); }
-
-  permutation_iterator &operator++() {
-    ++my_map;
+  discard_iterator &operator--() {
+    --__my_position_;
+    return *this;
+  }
+  discard_iterator operator++(int) {
+    discard_iterator __it(__my_position_);
+    ++__my_position_;
+    return __it;
+  }
+  discard_iterator operator--(int) {
+    discard_iterator __it(__my_position_);
+    --__my_position_;
+    return __it;
+  }
+  discard_iterator &operator+=(difference_type __forward) {
+    __my_position_ += __forward;
+    return *this;
+  }
+  discard_iterator &operator-=(difference_type __backward) {
+    __my_position_ += __backward;
     return *this;
   }
 
-  permutation_iterator operator++(int) {
-    permutation_iterator it(*this);
-    ++(*this);
-    return it;
+  discard_iterator operator+(difference_type __forward) const {
+    return discard_iterator(__my_position_ + __forward);
   }
-
-  permutation_iterator &operator--() {
-    --my_map;
-    return *this;
-  }
-
-  permutation_iterator operator--(int) {
-    permutation_iterator it(*this);
-    --(*this);
-    return it;
-  }
-
-  permutation_iterator operator+(difference_type forward) const {
-    return permutation_iterator(my_source, my_map + forward);
-  }
-
-  permutation_iterator operator-(difference_type backward) {
-    return permutation_iterator(my_source, my_map - backward);
-  }
-
-  permutation_iterator &operator+=(difference_type forward) {
-    my_map += forward;
-    return *this;
-  }
-
-  permutation_iterator &operator-=(difference_type forward) {
-    my_map -= forward;
-    return *this;
-  }
-
-  difference_type operator-(const permutation_iterator &it) const {
-    return my_map - it.my_map;
-  }
-
-  bool operator==(const permutation_iterator &it) const {
-    return *this - it == 0;
-  }
-  bool operator!=(const permutation_iterator &it) const {
-    return !(*this == it);
-  }
-  bool operator<(const permutation_iterator &it) const {
-    return *this - it < 0;
-  }
-  bool operator>(const permutation_iterator &it) const { return it < *this; }
-  bool operator<=(const permutation_iterator &it) const {
-    return !(*this > it);
-  }
-  bool operator>=(const permutation_iterator &it) const {
-    return !(*this < it);
+  discard_iterator operator-(difference_type __backward) const {
+    return discard_iterator(__my_position_ - __backward);
   }
 
 private:
-  Iter1 my_source;
-  Iter2 my_map;
-};
-
-template <typename Iter1, typename Iter2>
-permutation_iterator<Iter1, Iter2> make_permutation_iterator(Iter1 source,
-                                                             Iter2 map) {
-  return permutation_iterator<Iter1, Iter2>(source, map);
-}
-
-template <typename Iterator> struct iterator_difference {
-  using type = typename std::iterator_traits<Iterator>::difference_type;
+  difference_type __my_position_;
 };
 } // end namespace dpct
 

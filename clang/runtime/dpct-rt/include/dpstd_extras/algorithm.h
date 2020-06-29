@@ -52,7 +52,6 @@ ForwardIt remove_if(Policy &&policy, ForwardIt first, ForwardIt last,
   using policy_type = typename std::decay<Policy>::type;
   using internal::__buffer;
   using ValueType = typename std::iterator_traits<ForwardIt>::value_type;
-  using DiscardType = typename std::iterator_traits<InputIt>::value_type;
 
   __buffer<ValueType> _tmp(std::distance(first, last));
 
@@ -61,7 +60,7 @@ ForwardIt remove_if(Policy &&policy, ForwardIt first, ForwardIt last,
   auto end = std::copy_if(
       policy1, make_zip_iterator(first, stencil),
       make_zip_iterator(last, stencil + std::distance(first, last)),
-      make_zip_iterator(_tmp.get(), discard_iterator<DiscardType>()),
+      make_zip_iterator(_tmp.get(), discard_iterator()),
       internal::negate_predicate_key_fun<Predicate>(p));
   typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
       policy);
@@ -73,11 +72,10 @@ template <typename Policy, typename InputIt1, typename InputIt2,
 OutputIt remove_copy_if(Policy &&policy, InputIt1 first, InputIt1 last,
                         InputIt2 stencil, OutputIt result, Predicate p) {
   using dpstd::make_zip_iterator;
-  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::remove_copy_if(
       std::forward<Policy>(policy), make_zip_iterator(first, stencil),
       make_zip_iterator(last, stencil + std::distance(first, last)),
-      make_zip_iterator(result, discard_iterator<DiscardType>()),
+      make_zip_iterator(result, discard_iterator()),
       internal::predicate_key_fun<Predicate>(p));
   return std::get<0>(ret_val.base());
 }
@@ -151,11 +149,10 @@ template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt, typename Predicate>
 OutputIt copy_if(Policy &&policy, InputIt1 first, InputIt1 last,
                  InputIt2 stencil, OutputIt result, Predicate pred) {
-  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::copy_if(
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, stencil),
       dpstd::make_zip_iterator(last, stencil + std::distance(first, last)),
-      dpstd::make_zip_iterator(result, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(result, discard_iterator()),
       internal::predicate_key_fun<Predicate>(pred));
   return std::get<0>(ret_val.base());
 }
@@ -331,14 +328,13 @@ set_intersection_by_key(Policy &&policy, InputIter1 keys_first1,
                         InputIter1 keys_last1, InputIter2 keys_first2,
                         InputIter2 keys_last2, InputIter3 values_first1,
                         OutputIter1 keys_result, OutputIter2 values_result) {
-  using DiscardType = typename std::iterator_traits<InputIter2>::value_type;
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       dpstd::make_zip_iterator(keys_first1, values_first1),
       dpstd::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      dpstd::make_zip_iterator(keys_first2, discard_iterator<DiscardType>()),
-      dpstd::make_zip_iterator(keys_last2, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(keys_first2, discard_iterator()),
+      dpstd::make_zip_iterator(keys_last2, discard_iterator()),
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),
@@ -352,14 +348,13 @@ std::pair<OutputIter1, OutputIter2> set_intersection_by_key(
     Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
     InputIter2 keys_first2, InputIter2 keys_last2, InputIter3 values_first1,
     OutputIter1 keys_result, OutputIter2 values_result, Compare comp) {
-  using DiscardType = typename std::iterator_traits<InputIter2>::value_type;
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       dpstd::make_zip_iterator(keys_first1, values_first1),
       dpstd::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      dpstd::make_zip_iterator(keys_first2, discard_iterator<DiscardType>()),
-      dpstd::make_zip_iterator(keys_last2, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(keys_first2, discard_iterator()),
+      dpstd::make_zip_iterator(keys_last2, discard_iterator()),
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Compare>(comp));
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),
@@ -510,12 +505,11 @@ internal::enable_if_execution_policy<Policy, std::pair<OutputIt1, OutputIt2>>
 stable_partition_copy(Policy &&policy, InputIt1 first, InputIt1 last,
                       InputIt2 stencil, OutputIt1 out_true, OutputIt2 out_false,
                       Predicate p) {
-  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::partition_copy(
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, stencil),
       dpstd::make_zip_iterator(last, stencil + std::distance(first, last)),
-      dpstd::make_zip_iterator(out_true, discard_iterator<DiscardType>()),
-      dpstd::make_zip_iterator(out_false, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(out_true, discard_iterator()),
+      dpstd::make_zip_iterator(out_false, discard_iterator()),
       internal::predicate_key_fun<Predicate>(p));
   return std::make_pair(std::get<0>(ret_val.first.base()),
                         std::get<0>(ret_val.second.base()));
@@ -555,7 +549,7 @@ stable_partition(Policy &&policy, ForwardIt first, ForwardIt last,
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, _tmp.get()),
       dpstd::make_zip_iterator(last, _tmp.get() + std::distance(first, last)),
       internal::predicate_key_fun<Predicate>(p));
-  return dpstd::internal::get<0>(ret_val.base());
+  return std::get<0>(ret_val.base());
 }
 
 template <typename Policy, typename ForwardIt, typename InputIt,

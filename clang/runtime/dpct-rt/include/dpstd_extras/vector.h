@@ -341,7 +341,7 @@ private:
 public:
   template <typename OtherA> operator const std::vector<T, OtherA>() & {
     auto __tmp = std::vector<T, OtherA>(this->size());
-    std::copy(dpstd::execution::default_policy, this->begin(), this->end(),
+    std::copy(dpstd::execution::dpcpp_default, this->begin(), this->end(),
               __tmp.begin());
     return __tmp;
   }
@@ -351,7 +351,7 @@ public:
       : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {}
   explicit device_vector(size_type n, const T &value)
       : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {
-    std::fill(dpstd::execution::default_policy, dpstd::begin(_buffer),
+    std::fill(dpstd::execution::dpcpp_default, dpstd::begin(_buffer),
               dpstd::begin(_buffer) + n, T(value));
   }
   device_vector(const device_vector &other)
@@ -377,9 +377,9 @@ public:
   device_vector &operator=(const device_vector &other) {
     _size = other.size();
     Buffer tmp{Range(_size)};
-    std::copy(dpstd::execution::default_policy,
-              dpstd::begin(other.get_buffer()), dpstd::end(other.get_buffer()),
-              dpstd::begin(tmp));
+    std::copy(dpstd::execution::dpcpp_default,
+              dpstd::begin(other.get_buffer()),
+              dpstd::end(other.get_buffer()), dpstd::begin(tmp));
     _buffer = tmp;
     return *this;
   }
@@ -426,7 +426,7 @@ public:
       // create new buffer (allocate for new size)
       Buffer tmp{Range(n)};
       // copy content (old buffer to new buffer)
-      std::copy(dpstd::execution::default_policy, dpstd::begin(_buffer),
+      std::copy(dpstd::execution::dpcpp_default, dpstd::begin(_buffer),
                 dpstd::end(_buffer), dpstd::begin(tmp));
       // deallocate old memory
       _buffer = tmp;
@@ -456,14 +456,14 @@ public:
   void shrink_to_fit(void) {
     if (_size != capacity()) {
       Buffer tmp{Range(_size)};
-      std::copy(dpstd::execution::default_policy, dpstd::begin(_buffer),
+      std::copy(dpstd::execution::dpcpp_default, dpstd::begin(_buffer),
                 dpstd::end(_buffer), dpstd::begin(tmp));
       _buffer = tmp;
     }
   }
   void assign(size_type n, const T &x) {
     resize(n);
-    std::fill(dpstd::execution::default_policy, begin(), begin() + n, x);
+    std::fill(dpstd::execution::dpcpp_default, begin(), begin() + n, x);
   }
   template <typename InputIterator>
   void
@@ -472,7 +472,7 @@ public:
                                  InputIterator>::type last) {
     auto n = std::distance(first, last);
     resize(n);
-    std::copy(dpstd::execution::default_policy, first, last, begin());
+    std::copy(dpstd::execution::dpcpp_default, first, last, begin());
   }
   void clear(void) { _size = 0; }
   bool empty(void) const { return (size() == 0); }
@@ -489,9 +489,9 @@ public:
     }
     Buffer tmp{Range(std::distance(last, end()))};
     // copy remainder to temporary buffer.
-    std::copy(dpstd::execution::default_policy, last, end(), dpstd::begin(tmp));
+    std::copy(dpstd::execution::dpcpp_default, last, end(), dpstd::begin(tmp));
     // override (erase) subsequence in storage.
-    std::copy(dpstd::execution::default_policy, dpstd::begin(tmp),
+    std::copy(dpstd::execution::dpcpp_default, dpstd::begin(tmp),
               dpstd::end(tmp), first);
     resize(_size - n);
     return begin() + first.get_idx() + n;
@@ -505,22 +505,22 @@ public:
   void insert(iterator position, size_type n, const T &x) {
     if (position == end()) {
       resize(size() + n);
-      std::fill(dpstd::execution::default_policy, end() - n, end(), x);
+      std::fill(dpstd::execution::dpcpp_default, end() - n, end(), x);
     } else {
       auto i_n = std::distance(begin(), position);
       // allocate temporary storage
       Buffer tmp{Range(std::distance(position, end()))};
       // copy remainder
-      std::copy(dpstd::execution::default_policy, position, end(),
+      std::copy(dpstd::execution::dpcpp_default, position, end(),
                 dpstd::begin(tmp));
 
       resize(size() + n);
       // resizing might invalidate position
       position = begin() + position.get_idx();
 
-      std::fill(dpstd::execution::default_policy, position, position + n, x);
+      std::fill(dpstd::execution::dpcpp_default, position, position + n, x);
 
-      std::copy(dpstd::execution::default_policy, dpstd::begin(tmp),
+      std::copy(dpstd::execution::dpcpp_default, dpstd::begin(tmp),
                 dpstd::end(tmp), position + n);
     }
   }
@@ -532,19 +532,19 @@ public:
     auto n = std::distance(first, last);
     if (position == end()) {
       resize(size() + n);
-      std::copy(dpstd::execution::default_policy, first, last, end());
+      std::copy(dpstd::execution::dpcpp_default, first, last, end());
     } else {
       Buffer tmp{Range(std::distance(position, end()))};
 
-      std::copy(dpstd::execution::default_policy, position, end(),
+      std::copy(dpstd::execution::dpcpp_default, position, end(),
                 dpstd::begin(tmp));
 
       resize(size() + n);
       // resizing might invalidate position
       position = begin() + position.get_idx();
 
-      std::copy(dpstd::execution::default_policy, first, last, position);
-      std::copy(dpstd::execution::default_policy, dpstd::begin(tmp),
+      std::copy(dpstd::execution::dpcpp_default, first, last, position);
+      std::copy(dpstd::execution::dpcpp_default, dpstd::begin(tmp),
                 dpstd::end(tmp), position + n);
     }
   }
