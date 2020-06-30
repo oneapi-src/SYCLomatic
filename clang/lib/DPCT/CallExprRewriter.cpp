@@ -240,7 +240,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           auto PVD = FD->getParamDecl(i);
           if (PVD)
             ParamType = PVD->getType().getAsString();
-          if (ArgT != ParamType) {
+          // Since isnan is overloaded for both float and double, so there is no
+          // need to add type conversions for isnan.
+          if (ArgT != ParamType && SourceCalleeName != "isnan") {
             if (DRE || IL)
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
             else
