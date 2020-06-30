@@ -330,14 +330,10 @@ int main() {
   // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
   // CHECK-NEXT: std::complex<double> alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_Z, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_Z, *handle);
   // CHECK-NEXT: mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, (const std::complex<double>**)d_A_Z_array, &lda_ct{{[0-9]+}}, (const std::complex<double>**)d_B_Z_array, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, (std::complex<double>**)d_C_Z_array, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
-  // CHECK-NEXT: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
-  // CHECK-NEXT: sycl::half alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_H, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_H, *handle);
-  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_H_array, &lda_ct{{[0-9]+}}, d_B_H_array, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, d_C_H_array, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
   a = cublasSgemmBatched(handle, trans3, trans3, N, N, N, &alpha_S, d_A_S_array, N, d_B_S_array, N, &beta_S, d_C_S_array, N, 10);
   cublasDgemmBatched(handle, trans3, trans3, N, N, N, &alpha_D, d_A_D_array, N, d_B_D_array, N, &beta_D, d_C_D_array, N, 10);
   cublasCgemmBatched(handle, trans3, trans3, N, N, N, &alpha_C, d_A_C_array, N, d_B_C_array, N, &beta_C, d_C_C_array, N, 10);
   cublasZgemmBatched(handle, trans3, trans3, N, N, N, &alpha_Z, d_A_Z_array, N, d_B_Z_array, N, &beta_Z, d_C_Z_array, N, 10);
-  cublasHgemmBatched(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H_array, N, d_B_H_array, N, &beta_H, d_C_H_array, N, 10);
 
   // CHECK: mkl::side side_ct{{[0-9]+}} = mkl::side::left;
   // CHECK-NEXT: mkl::uplo uplo_ct{{[0-9]+}} = mkl::uplo::lower;
