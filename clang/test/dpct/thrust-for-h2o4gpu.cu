@@ -73,10 +73,8 @@ void copy_if_device(ExecutionPolicy exec)
 }
 
 template<typename T>
-struct isnan_test {
-    __host__ __device__ bool operator()(const T a) const {
-        return isnan(a) || isinf(a);
-    }
+struct isfoo_test {
+    __host__ __device__ bool operator()(const T a) const { return true; }
 };
 
 void foo() {
@@ -204,12 +202,12 @@ void foo() {
  {
   //CHECK: dpct::device_ptr<int> begin;
   //CHECK-NEXT: dpct::device_ptr<int> end;
-  //CHECK-NEXT: bool h_result = std::transform_reduce(dpstd::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isnan_test<int>());
-  //CHECK-NEXT: bool h_result_1 = std::transform_reduce(dpstd::execution::seq, begin, end, 0, std::plus<bool>(), isnan_test<int>());
+  //CHECK-NEXT: bool h_result = std::transform_reduce(dpstd::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
+  //CHECK-NEXT: bool h_result_1 = std::transform_reduce(dpstd::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   thrust::device_ptr<int> begin;
   thrust::device_ptr<int> end;
-  bool h_result = thrust::transform_reduce(begin, end, isnan_test<int>(), 0, thrust::plus<bool>());
-  bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isnan_test<int>(), 0, thrust::plus<bool>());
+  bool h_result = thrust::transform_reduce(begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
+  bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
 
  }
 }
