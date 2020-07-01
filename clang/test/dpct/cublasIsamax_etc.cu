@@ -1154,6 +1154,10 @@ int main() {
   cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
   status = cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
   cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: */
+  cublasHgemmBatched(handle, trans3, trans3, n, n, n, &alpha_H, A_H_array, n, B_H_array, n, &beta_H, C_H_array, n, 10);
 
   // cublas<T>symm
   // CHECK: {
