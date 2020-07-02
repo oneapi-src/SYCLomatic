@@ -401,6 +401,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
 void ExprAnalysis::analyzeExpr(const CXXNamedCastExpr *NCE) {
   analyzeType(NCE->getTypeInfoAsWritten(), NCE);
+  dispatch(NCE->getSubExprAsWritten());
 }
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {

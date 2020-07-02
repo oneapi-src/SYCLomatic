@@ -102,10 +102,12 @@ int main() {
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       sycl::accessor<std::complex<sycl::double2>, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
+// CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
+// CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast<std::complex<double>>(*cdp), s_acc_ct1.get_pointer());
+// CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast_thrust_complex_double_cdp_ct1, s_acc_ct1.get_pointer());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp));

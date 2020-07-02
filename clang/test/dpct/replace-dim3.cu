@@ -142,8 +142,8 @@ int main() {
   dim3 d3_1(test.x);
   // CHECK: sycl::range<3> d3_2(test[0] + 1, 1, 1);
   dim3 d3_2(test.x + 1);
-  // CHECK: sycl::range<3> d3_2_1(test[0] + 32, 1, 1);
-  dim3 d3_2_1(test.x + 32);
+  // CHECK: sycl::range<3> d3_2_1(static_cast<unsigned>(test[0] + 32), 1, 1);
+  dim3 d3_2_1(static_cast<unsigned>(test.x + 32));
   // CHECK: sycl::range<3> d3_2_2(test[0] + NUM, 1, 1);
   dim3 d3_2_2(test.x + NUM);
   // CHECK: sycl::range<3> d3_3(2 + test[0] + 1, 1, 1);
