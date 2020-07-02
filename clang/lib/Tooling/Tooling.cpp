@@ -126,6 +126,14 @@ JMP_BUF CPFileEnter;
 bool EnableErrorRecover=true;
 int CheckPointStage=0;
 bool CurFileMeetErr=false;
+bool StopOnParseErrTooling=false;
+std::string InRootTooling;
+
+// filename, error#
+//  error: high32:processed sig error, low32: parse error
+std::map<std::string, unsigned long> ErrorCnt;
+unsigned long CurFileSigErrCnt=0;
+unsigned long CurFileParseErrCnt=0;
 
 #endif
 
@@ -474,7 +482,9 @@ bool FrontendActionFactory::runInvocation(
   Compiler.createSourceManager(*Files);
 
   const bool Success = Compiler.ExecuteAction(*ScopedToolAction);
-
+  #ifdef INTEL_CUSTOMIZATION
+  CurFileParseErrCnt = DiagConsumer -> getNumErrors();
+  #endif
   Files->clearStatCache();
   return Success;
 }
@@ -581,6 +591,9 @@ int ClangTool::run(ToolAction *Action) {
     //enter point for the file processing.
     CheckPointStage = 1;
     CurFileMeetErr= false;
+    //clear error# counter
+    CurFileParseErrCnt=0;
+    CurFileSigErrCnt=0;
     int Ret=SETJMP(CPFileEnter);
     if(Ret == 0) {
       const std::string Msg = "Processing: " + File.str()  +  "\n";
@@ -705,12 +718,30 @@ int ClangTool::run(ToolAction *Action) {
       Invocation.setDiagnosticConsumer(DiagConsumer);
 
       if (!Invocation.run()) {
+        #ifdef INTEL_CUSTOMIZATION
+        // FIXME: Diagnostics should be used instead.
+        if (PrintErrorMessage && StopOnParseErrTooling) {
+          std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
+                   + InRootTooling + "\":\n"
+                   "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
+                   + " parsing error(s)\n";
+          llvm::errs() << ErrMsg;
+        }
+        ProcessingFailed = true;
+        if(StopOnParseErrTooling)
+            break;
+        #else
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage)
           llvm::errs() << "Error while processing " << File << ".\n";
         ProcessingFailed = true;
+        #endif
       }
     }
+    #ifdef INTEL_CUSTOMIZATION
+    //collect the errror counter info.
+    ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
+    #endif
   }
   #ifdef  INTEL_CUSTOMIZATION
   //exit point for the file processing.

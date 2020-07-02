@@ -229,13 +229,13 @@ static std::string WarningAllDesc("Suppresses all migration warnings. Default: o
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(DPCTCat),
                                     location(SuppressWarningsAllFlag));
-
-bool NoStopOnErrFlag = false;
+bool StopOnParseErr = false;
 static opt<bool, true>
-    NoStopOnErr("no-stop-on-err",
-                llvm::cl::desc("Continue migration and generation of reports "
-                               "after possible errors. Default: off.\n"),
-                cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
+    StopOnParseErrOption("stop-on-parse-err",
+                llvm::cl::desc("Stop migration and generation of reports if "
+                               "parsing errors happened. Default: off. \n"),
+                cat(DPCTCat), llvm::cl::location(StopOnParseErr));
+
 
 bool SyclNamedLambdaFlag = false;
 static opt<bool, true>
@@ -345,6 +345,8 @@ std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 int FatalErrorCnt=0;
+extern bool StopOnParseErrTooling;
+extern std::string InRootTooling;
 JMP_BUF CPFileASTMaterEnter;
 JMP_BUF CPRepPostprocessEnter;
 
@@ -403,6 +405,10 @@ public:
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
+    if(StopOnParseErr && Context.getDiagnostics().getClient()&&
+        Context.getDiagnostics().getClient()->getNumErrors()>0){
+        return;
+    }
     // The migration process is separated into two stages:
     // 1) Analysis of AST and identification of applicable migration rules
     // 2) Generation of actual textual Replacements
@@ -1038,6 +1044,8 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  StopOnParseErrTooling = StopOnParseErr;
+  InRootTooling=InRoot;
 
   MapNames::setClNamespace(ExplicitClNamespace);
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
@@ -1045,7 +1053,7 @@ int run(int argc, const char **argv) {
   }
 
   DPCTActionFactory Factory(Tool.getReplacements());
-  if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {
+  if (int RunResult = Tool.run(&Factory) && StopOnParseErr) {
     DumpOutputFile();
     if (RunResult == 1) {
       DebugInfo::ShowStatus(MigrationErrorFileParseError);

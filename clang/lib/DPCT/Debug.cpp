@@ -159,6 +159,9 @@ void DebugInfo::ShowStatus(int Status) {
 
   std::string StatusString;
   switch (Status) {
+  case MigrationSuccessExpParingOrRuntimeErr:
+    StatusString = "Migration process completed, except parsing/runtime error(s)";
+    break;
   case MigrationSucceeded:
     StatusString = "Migration process completed";
     break;

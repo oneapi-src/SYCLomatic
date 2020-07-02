@@ -979,7 +979,10 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
 
   // Notify the diagnostic client that all files were processed.
   getDiagnostics().getClient()->finish();
-
+#ifdef INTEL_CUSTOMIZATION
+// don't show the message "3 errors generated during parsing".
+// it's duplicate with dpct summary in command line msg.
+#else
   if (getDiagnosticOpts().ShowCarets) {
     // We can have multiple diagnostics sharing one diagnostic client.
     // Get the total number of warnings/errors from the client.
@@ -1012,6 +1015,7 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
     llvm::PrintStatistics(OS);
   }
+#endif
   StringRef StatsFile = getFrontendOpts().StatsFile;
   if (!StatsFile.empty()) {
     std::error_code EC;

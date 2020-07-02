@@ -44,6 +44,7 @@ std::string getFormatSearchPath();
 } // namespace clang
 
 extern int FatalErrorCnt;
+extern std::map<std::string, unsigned long> ErrorCnt;
 
 static bool formatFile(StringRef FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
@@ -249,12 +250,31 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       ProcessedFileNumber = GroupResult.size();
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
-                            " files in -in-root folder \"" + InRoot.str() + "\"\n";
-    if(FatalErrorCnt>0) {
-        ReportMsg += "  "+std::to_string(FatalErrorCnt) + " of " + std::to_string(ProcessedFileNumber) +
-                            " files are not fully migrated for " + std::to_string(FatalErrorCnt) +
-                            " fatal signal meet.\n";
+                            " file(s) in -in-root folder \"" + InRoot.str() + "\"";
+    std::string ErrorFileMsg;
+    int ErrNum=0;
+    for (const auto& KV : ErrorCnt) {
+      if(KV.second!=0) {
+        ErrNum++;
+        ErrorFileMsg += "  " + KV.first + ": ";
+        if(KV.second & 0xffffffff) {
+           ErrorFileMsg += std::to_string(KV.second & 0xffffffff) + " parsing error(s)";
+        }
+        if((KV.second & 0xffffffff) && ((KV.second>>32) & 0xffffffff))
+            ErrorFileMsg += ", ";
+        if((KV.second>>32) & 0xffffffff) {
+            ErrorFileMsg += std::to_string((KV.second>>32) & 0xffffffff) + " segmentation fault(s) ";
+        }
+        ErrorFileMsg += "\n";
+      }
     }
+    if(ErrNum) {
+        ReportMsg += ", " + std::to_string(ErrNum) + " file(s) with error(s):\n";
+        ReportMsg +=ErrorFileMsg;
+    } else {
+        ReportMsg +="\n";
+    }
+
     PrintMsg(ReportMsg);
 
     if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {

@@ -40,13 +40,14 @@ static const std::string SigDescription(const int &Signo) {
   }
 }
 #endif
-
+extern unsigned long CurFileSigErrCnt;
 void recoverCheckpoint(int Signo){
-  if( EnableErrorRecover && (Signo == SIGILL || Signo == SIGSEGV || Signo == SIGFPE ) ) {
+  CurFileSigErrCnt++;
+  if( EnableErrorRecover && Signo == SIGSEGV) {
       if(CheckPointStage==CHECKPOINT_PROCESSING_FILE) {
-        std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                             "\nIntel(R) DPC++ Compatibility Tool trys to "
-                             "skip further process of current file\n";
+        std::string FaultMsg = "dpct error: segmentation fault."
+                             " Intel(R) DPC++ Compatibility Tool trys to recover by"
+                             "skipping current file.\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
           FatalErrorCnt++;
@@ -54,9 +55,9 @@ void recoverCheckpoint(int Signo){
         }
         LONGJMP(CPFileEnter, 1);
       } else if(CheckPointStage==CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
-        std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                               "\nIntel(R) DPC++ Compatibility Tool tries to "
-                               "recover and do further process of current file\n";
+        std::string FaultMsg = "dpct error: segmentation fault."
+                               " Intel(R) DPC++ Compatibility Tool tries to "
+                               "recover by skipping the migration rule causing error.\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
           FatalErrorCnt++;
@@ -64,9 +65,9 @@ void recoverCheckpoint(int Signo){
         }
         LONGJMP(CPFileASTMaterEnter, 1);
       } else if(CheckPointStage==CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
-        std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                               "\nIntel(R) DPC++ Compatibility Tool tries to "
-                               "recover and write out the migration result\n";
+        std::string FaultMsg = "dpct error: segmentation fault."
+                               " Intel(R) DPC++ Compatibility Tool tries to "
+                               "recover and write the migration result.\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
           FatalErrorCnt++;
@@ -74,9 +75,9 @@ void recoverCheckpoint(int Signo){
         }
         LONGJMP(CPRepPostprocessEnter, 1);
       } else if(CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
-          std::string FaultMsg = "Error: Meet signal:" + SigDescription(Signo) +
-                                 "\nIntel(R) DPC++ Compatibility Tool tries to "
-                                 "recover and write out the migration result\n";
+          std::string FaultMsg = "dpct error: segmentation fault."
+                                 " Intel(R) DPC++ Compatibility Tool tries to "
+                                 "recover and write the migration result.\n";
           PrintReportOnFault(FaultMsg);
           if(!CurFileMeetErr) {
             FatalErrorCnt++;
@@ -89,8 +90,8 @@ void recoverCheckpoint(int Signo){
 
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
-  std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
-                         "\nIntel(R) DPC++ Compatibility Tool tries to give "
+  std::string FaultMsg = "\ndpct error:" + SigDescription(Signo) +
+                         " Intel(R) DPC++ Compatibility Tool tries to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   exit(MigrationError);
@@ -133,8 +134,8 @@ static void SetHandler(){
 #if defined(__linux__)
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
   recoverCheckpoint(Signo);
-  std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
-                         "\nIntel(R) DPC++ Compatibility Tool trys to give "
+  std::string FaultMsg = "\dpct error: meet signal:" + SigDescription(Signo) +
+                         " Intel(R) DPC++ Compatibility Tool trys to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   exit(MigrationError);
@@ -176,7 +177,6 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 }
 #endif
 
-#include <stdio.h>
 void InstallSignalHandle(void) {
 #if  defined(__linux__)
   SetHandler(FaultHandler);
