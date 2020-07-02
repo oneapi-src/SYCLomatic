@@ -19,6 +19,8 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
+#include <assert.h>
+
 namespace clang {
 namespace dpct {
 
@@ -28,7 +30,18 @@ public:
   StringReplacement(std::string &Src, size_t Off, size_t Len, std::string Txt)
       : SourceStr(Src), Offset(Off), Length(Len), Text(std::move(Txt)) {}
 
-  inline void replaceString() { SourceStr.replace(Offset, Length, Text); }
+  inline void replaceString() {
+    if (Offset <= SourceStr.length())
+      SourceStr.replace(Offset, Length, Text);
+#ifdef DPCT_DEBUG_BUILD
+    else {
+      llvm::errs() << "Encounter wrong replacement in ExprAnalysis:\n\""
+                   << SourceStr << "\": " << Offset << ": +" << Length << ": \""
+                   << Text << "\"\n";
+      assert(0 && "ExprAnalysis try to apply an illegal replacement!");
+    }
+#endif
+  }
 
   inline const std::string &getReplacedText() { return Text; }
 
