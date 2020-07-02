@@ -607,6 +607,8 @@ void KernelCallExpr::buildInfo() {
 }
 
 void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
+  if (!TL)
+    return;
   switch (TL.getTypeLocClass()) {
   /// e.g. X<T>;
   case TypeLoc::TemplateSpecialization:
@@ -1390,6 +1392,7 @@ void DeviceFunctionDecl::LinkDecl(const FunctionTemplateDecl *FTD,
 void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
   switch (ND->getKind()) {
+  case Decl::CXXMethod:
   case Decl::Function:
     return LinkRedecls(static_cast<const FunctionDecl *>(ND), List, Info);
   case Decl::FunctionTemplate:
@@ -1400,8 +1403,8 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
         Info);
     break;
   default:
-    llvm::dbgs() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
-                 << ND->getDeclKindName();
+    DpctDiags() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
+      << ND->getDeclKindName() << "\n";
     return;
   }
 }

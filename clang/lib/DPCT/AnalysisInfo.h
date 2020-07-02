@@ -2261,7 +2261,8 @@ private:
   }
 
   void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);
-  template <class TyLoc> void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL) {
+  template <class TyLoc>
+  void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL) {
     for (size_t i = 0; i < TL.getNumArgs(); ++i) {
       TemplateArgs.emplace_back(TL.getArgLoc(i));
     }
