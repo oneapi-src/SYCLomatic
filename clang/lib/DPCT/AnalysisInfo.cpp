@@ -1699,20 +1699,21 @@ void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
 void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
                                         unsigned int Offset) {
   std::string VecSizeStr;
-  bool IsOneNUmber = false;
+  bool IsOneNumber = false;
   if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
     int VecSize = *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin();
     if (VecSize == 1)
-      IsOneNUmber = true;
+      IsOneNumber = true;
     VecSizeStr = std::to_string(VecSize);
   } else {
     VecSizeStr = "PlaceHolder/*Fix the vec_size mannually*/";
   }
 
-  std::string ReplStr = RNGStateName + " = " + GeneratorType + "<" +
-                        VecSizeStr + ">(" + RNGSeed + ", {" + RNGOffset +
-                        (IsOneNUmber ? "" : " * " + VecSizeStr) + ", " +
-                        RNGSubseq + " * 8})";
+  std::string ReplStr =
+      RNGStateName + " = " + GeneratorType + "<" + VecSizeStr + ">(" + RNGSeed +
+      ", {static_cast<std::uint64_t>(" + RNGOffset +
+      (IsOneNumber ? "" : " * " + VecSizeStr) +
+      "), static_cast<std::uint64_t>(" + RNGSubseq + " * 8)})";
 
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Length, ReplStr, nullptr));

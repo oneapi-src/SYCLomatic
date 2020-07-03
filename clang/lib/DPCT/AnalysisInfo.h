@@ -389,7 +389,7 @@ public:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<mkl_rng_sycl.hpp>");
     case MKL_RNG_DEVICE:
-      return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
+      return insertHeader(HeaderType::MKL_RNG_DEVICE, LastIncludeOffset,
                           "<mkl_rng_sycl_device.hpp>");
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
