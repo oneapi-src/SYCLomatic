@@ -110,3 +110,5 @@ DEF_WARNING(UNSUPPORT_MATRIX_TYPE, 1045, "The Intel(R) DPC++ Compatibility Tool 
 DEF_COMMENT(UNSUPPORT_MATRIX_TYPE, 1045, "The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.")
 DEF_WARNING(UNSUPPORT_PARAM_COMBINATION, 1046, "The %0 was not migrated, because %1. You need to adjust the code.")
 DEF_COMMENT(UNSUPPORT_PARAM_COMBINATION, 1046, "The {0} was not migrated, because {1}. You need to adjust the code.")
+DEF_WARNING(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of %0 in the %1 is different from the %2. You need to check the migrated code.")
+DEF_COMMENT(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of {0} in the {1} is different from the {2}. You need to check the migrated code.")

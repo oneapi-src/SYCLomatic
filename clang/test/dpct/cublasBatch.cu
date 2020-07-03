@@ -48,33 +48,57 @@ int main() {
 
   // getrf_batch
   // CHECK: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(*handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::getrf_batch_wrapper(*handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
   status = cublasSgetrfBatched(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
   cublasSgetrfBatched(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasDgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(*handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasDgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::getrf_batch_wrapper(*handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
   status = cublasDgetrfBatched(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
   cublasDgetrfBatched(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasCgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(*handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasCgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::getrf_batch_wrapper(*handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
   status = cublasCgetrfBatched(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
   cublasCgetrfBatched(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasZgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(*handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasZgetrfBatched. You need to check the migrated code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::getrf_batch_wrapper(*handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
   status = cublasZgetrfBatched(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
   cublasZgetrfBatched(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);

@@ -5750,6 +5750,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
+    StringRef FuncNameRef(FuncName);
+    if (FuncNameRef.endswith("getrfBatched")) {
+      report(FuncNameBegin, Diagnostics::DIFFERENT_LU_FACTORIZATION, false,
+             getStmtSpelling(CE->getArg(4)), Replacement,
+             MapNames::ITFName.at(FuncName));
+    }
+
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
       const CStyleCastExpr *CSCE = nullptr;
@@ -6764,11 +6771,19 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       SuffixWithBracket = getNL() + IndentStr + SuffixInsertStr + "}";
     }
 
+    std::string ReplaceFuncName = Replacement;
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
     insertAroundRange(StmtBegin, StmtEndAfterSemi,
                       PrefixBeforeScope + PrefixWithBracket,
                       std::move(SuffixWithBracket));
+
+    StringRef FuncNameRef(FuncName);
+    if (FuncNameRef.endswith("getrf")) {
+      report(StmtBegin, Diagnostics::DIFFERENT_LU_FACTORIZATION, true,
+             getStmtSpelling(CE->getArg(6)), ReplaceFuncName,
+             MapNames::ITFName.at(FuncName));
+    }
     if (IsAssigned) {
       insertAroundRange(FuncNameBegin, FuncCallEnd,
                         std::move(AssignPrefix), std::move(AssignPostfix));

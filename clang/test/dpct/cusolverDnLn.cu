@@ -240,6 +240,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<float>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnSgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (mkl::lapack::getrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_f_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
@@ -251,6 +254,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<float>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnSgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_f_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
     //CHECK-NEXT: }
@@ -264,6 +270,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<double>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnDgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (mkl::lapack::getrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_d_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
@@ -275,6 +284,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<double>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnDgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_d_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
     //CHECK-NEXT: }
@@ -288,6 +300,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<float>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnCgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (mkl::lapack::getrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_c_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
@@ -299,6 +314,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<float>>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnCgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_c_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
     //CHECK-NEXT: }
@@ -312,6 +330,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<double>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnZgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (mkl::lapack::getrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_z_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
@@ -323,6 +344,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<double>>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnZgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_z_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
     //CHECK-NEXT: }

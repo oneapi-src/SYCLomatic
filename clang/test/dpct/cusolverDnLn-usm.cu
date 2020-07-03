@@ -133,28 +133,39 @@ int main(int argc, char *argv[])
     cusolverDnCpotrs(*cusolverH, uplo, n, nrhs, &C_c, lda, &B_c, ldb, &devInfo);
     cusolverDnZpotrs(*cusolverH, uplo, n, nrhs, &C_z, lda, &B_z, ldb, &devInfo);
 
-
-    //CHECK: {
+    //CHECK:  {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<float>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnSgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, (float*)&A_f, lda, &result_temp_pointer6, (float*)&workspace_f, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<double>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnDgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, (double*)&A_d, lda, &result_temp_pointer6, (double*)&workspace_d, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<float>>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnCgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, (std::complex<float>*)&A_c, lda, &result_temp_pointer6, (std::complex<float>*)&workspace_c, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = mkl::lapack::getrf_scratchpad_size<std::complex<double>>(**cusolverH ,m ,n ,lda);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the mkl::lapack::getrf is different from the cusolverDnZgetrf. You need to check the migrated code.
+    //CHECK-NEXT: */
     //CHECK-NEXT: mkl::lapack::getrf(**cusolverH, m, n, (std::complex<double>*)&A_z, lda, &result_temp_pointer6, (std::complex<double>*)&workspace_z, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: }
