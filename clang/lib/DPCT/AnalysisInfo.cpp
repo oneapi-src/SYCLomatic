@@ -1638,7 +1638,7 @@ void RandomEngineInfo::buildInfo() {
     return;
 
   // insert engine arguments
-  if (IsClassMember) {
+  if (IsClassMember || IsArray) {
     // replace type
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffset,
@@ -1648,15 +1648,15 @@ void RandomEngineInfo::buildInfo() {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = new " + TypeReplacement + "(" +
-                  QueueStr + ", " + DimExpr + ")",
+              (IsArray ? GeneratorName : DeclaratorDeclName) + " = new " +
+                  TypeReplacement + "(" + QueueStr + ", " + DimExpr + ")",
               nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = new " + TypeReplacement + "(" +
-                  QueueStr + ", " + SeedExpr + ")",
+              (IsArray ? GeneratorName : DeclaratorDeclName) + " = new " +
+                  TypeReplacement + "(" + QueueStr + ", " + SeedExpr + ")",
               nullptr));
     }
   } else {

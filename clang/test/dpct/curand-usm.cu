@@ -314,3 +314,22 @@ int bar5(){
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   return curandGenerateUniform(rng2, d_data, 100*100);
 }
+
+void bar6(float *x_gpu, size_t n) {
+  //CHECK: static mkl::rng::philox4x32x10* gen[16];
+  static curandGenerator_t gen[16];
+  static int init[16] = {0};
+  int i = 0;
+  if(!init[i]) {
+    //CHECK: gen[i] = new mkl::rng::philox4x32x10(dpct::get_default_queue(), 1234);
+    //CHECK-NEXT: /*
+    //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed, because the function call is redundant in DPC++.
+    //CHECK-NEXT: */
+    curandCreateGenerator(&gen[i], CURAND_RNG_PSEUDO_DEFAULT);
+    curandSetPseudoRandomGeneratorSeed(gen[i], 1234);
+    init[i] = 1;
+  }
+  //CHECK: mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+  //CHECK-NEXT: mkl::rng::generate(distr_ct{{[0-9]+}}, *gen[i], n, x_gpu);
+  curandGenerateUniform(gen[i], x_gpu, n);
+}

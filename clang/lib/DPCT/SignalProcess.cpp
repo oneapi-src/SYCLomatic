@@ -134,7 +134,7 @@ static void SetHandler(){
 #if defined(__linux__)
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
   recoverCheckpoint(Signo);
-  std::string FaultMsg = "\dpct error: meet signal:" + SigDescription(Signo) +
+  std::string FaultMsg = "\ndpct error: meet signal:" + SigDescription(Signo) +
                          " Intel(R) DPC++ Compatibility Tool trys to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);

@@ -3834,7 +3834,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
     }
 
-    if (!REInfo->isClassMember()) {
+    if (!REInfo->isClassMember() && !REInfo->isArray()) {
       if (IsAssigned) {
         report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
                FuncName, Msg);
@@ -3846,6 +3846,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    REInfo->setGeneratorName(getDrefName(CE->getArg(0)));
     REInfo->setEngineTypeReplacement(
         MapNames::RandomEngineTypeMap.find(EnumStr)->second);
 
@@ -3862,7 +3863,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             .second);
     REInfo->setTypeLength(Lexer::MeasureTokenLength(
         SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()), SM,
-                                  DpctGlobalInfo::getContext().getLangOpts()));
+        DpctGlobalInfo::getContext().getLangOpts()));
 
     unsigned int FuncCallLen =
         SM.getDecomposedLoc(FuncCallEnd).second -
@@ -3876,7 +3877,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     REInfo->setIdentifierEndOffset(SM.getDecomposedLoc(EndLoc).second);
     REInfo->setCreateCallFilePath(SM.getFilename(FuncNameBegin).str());
 
-    if (REInfo->isClassMember()) {
+    if (REInfo->isClassMember() || REInfo->isArray()) {
       if (checkWhetherIsDuplicate(CE->getArg(0), false))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -3897,14 +3898,14 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
       REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     }
-    if (REInfo->isClassMember()) {
+    if (REInfo->isClassMember() || REInfo->isArray()) {
       if (IsAssigned) {
         report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
         insertAroundStmt(CE, "(", ", 0)");
       }
       emplaceTransformation(
           new ReplaceStmt(CE, false, FuncName, false,
-                          "delete " + REInfo->getDeclaratorDeclName()));
+                          "delete " + getStmtSpelling(CE->getArg(0))));
     } else {
       if (IsAssigned) {
         report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -3933,6 +3934,11 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     REInfo->setDimExpr(CE->getArg(1));
   } else if (MapNames::RandomGenerateFuncReplInfoMap.find(FuncName) !=
              MapNames::RandomGenerateFuncReplInfoMap.end()) {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    }
     auto ReplInfoPair = MapNames::RandomGenerateFuncReplInfoMap.find(FuncName);
     MapNames::RandomGenerateFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string BufferDecl;
@@ -3995,8 +4001,8 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA;
     EA.analyze(CE->getArg(2));
     std::string ReplStr;
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (REInfo && REInfo->isClassMember()) {
+
+    if (REInfo && (REInfo->isClassMember() || REInfo->isArray())) {
       ReplStr = "mkl::rng::generate(" + DistrName + ", *" +
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
                 ", " + Data + ")";

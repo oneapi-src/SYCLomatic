@@ -2938,19 +2938,22 @@ public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
       : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false), IsClassMember(false),
-        NeedPrint(true) {
+        NeedPrint(true), IsArray(false) {
     if (dyn_cast<FieldDecl>(DD))
       IsClassMember = true;
-    else
-      IsClassMember = false;
+    if (DD->getType()->isArrayType()) {
+      IsArray = true;
+    }
 
     DeclaratorDeclName = DD->getNameAsString();
     DeclFilePath =
         DpctGlobalInfo::getSourceManager().getFilename(DD->getBeginLoc()).str();
 
-    DeclaratorDeclBeginOffset = DpctGlobalInfo::getSourceManager()
-                                    .getDecomposedLoc(DD->getBeginLoc())
-                                    .second;
+    DeclaratorDeclTypeBeginOffset =
+        DpctGlobalInfo::getSourceManager()
+            .getDecomposedLoc(
+                DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc())
+            .second;
     DeclaratorDeclEndOffset = DpctGlobalInfo::getSourceManager()
                                   .getDecomposedLoc(DD->getEndLoc())
                                   .second;
@@ -2971,10 +2974,15 @@ public:
     return D;
   }
   static const DeclaratorDecl *getDecl(const Expr *E) {
-    if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
+    const Expr *NoImpCastE = E->IgnoreImpCasts();
+
+    if (auto ASE = dyn_cast<ArraySubscriptExpr>(NoImpCastE))
+      NoImpCastE = ASE->getBase()->IgnoreImpCasts();
+
+    if (auto DeclRef = dyn_cast<DeclRefExpr>(NoImpCastE)) {
       if (dyn_cast<VarDecl>(DeclRef->getDecl()))
         return dyn_cast<DeclaratorDecl>(DeclRef->getDecl());
-    } else if (auto Member = dyn_cast<MemberExpr>(E->IgnoreImpCasts())) {
+    } else if (auto Member = dyn_cast<MemberExpr>(NoImpCastE)) {
       if (dyn_cast<FieldDecl>(Member->getMemberDecl()))
         return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
     }
@@ -3011,14 +3019,16 @@ public:
   }
   void buildInfo();
   bool isClassMember() { return IsClassMember; }
+  bool isArray() { return IsArray; }
   std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
+  void setGeneratorName(std::string Name) { GeneratorName = Name; }
   SourceLocation getDeclaratorDeclBeginLoc() {
     auto &SM = DpctGlobalInfo::getSourceManager();
     auto FE = SM.getFileManager().getFile(DeclFilePath);
     if (std::error_code ec = FE.getError())
       return SourceLocation();
     auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclBeginOffset);
+    return SM.getComposedLoc(FID, DeclaratorDeclTypeBeginOffset);
   }
   SourceLocation getDeclaratorDeclEndLoc() {
     auto &SM = DpctGlobalInfo::getSourceManager();
@@ -3053,10 +3063,12 @@ private:
   bool IsClassMember;               // Whether curandGenerator_t handle is a
                                     // class member.
   std::string DeclaratorDeclName;   // Name of declarator declaration.
-  unsigned int DeclaratorDeclBeginOffset;
+  unsigned int DeclaratorDeclTypeBeginOffset;
   unsigned int DeclaratorDeclEndOffset;
   bool NeedPrint;
   std::string QueueStr;
+  bool IsArray;
+  std::string GeneratorName;
 };
 
 template <class... T>
