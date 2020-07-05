@@ -1215,13 +1215,26 @@ private:
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
     }
-    // if the BeginLoc of CKC is in macro arg expansion, use
-    // getImmediateExpansionRange.
-    if (CKC->getBeginLoc().isMacroID() &&
-        SM->isMacroArgExpansion(CKC->getBeginLoc())) {
-      return SM->getImmediateSpellingLoc(
-          SM->getImmediateExpansionRange(CKC->getBeginLoc()).getBegin());
+
+    if (CKC->getBeginLoc().isMacroID()) {
+      // if only the BeginLoc of CKC is in macro arg expansion,
+      // use getImmediateExpansionRange.
+      // #define CALL(Name, ...) NAME<<<...>>>(...)
+      if (SM->isMacroArgExpansion(CKC->getBeginLoc()) &&
+          !SM->isMacroArgExpansion(CKC->getEndLoc())) {
+        return SM->getImmediateSpellingLoc(
+            SM->getImmediateExpansionRange(CKC->getBeginLoc()).getBegin());
+      }
+      // if both BeginLoc/EndLoc of CKC is in macro arg expansion,
+      // use getImmediateExpansionRange.
+      // #define CALL(call) call
+      // CALL(NAME<<<...>>>(...))
+      if (SM->isMacroArgExpansion(CKC->getBeginLoc()) &&
+          SM->isMacroArgExpansion(CKC->getEndLoc())) {
+        return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
+      }
     }
+
     return CKC->getBeginLoc();
   }
 

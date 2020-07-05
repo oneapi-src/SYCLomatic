@@ -78,7 +78,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
 
   if (IsProcessMacro) {
     if (Begin.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      if (SM.isMacroArgExpansion(Begin)) {
+      if (SM.isMacroArgExpansion(Begin) && !SM.isMacroArgExpansion(TheStmt->getEndLoc())) {
         Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
       }
       else {
@@ -97,7 +97,8 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     }
 
     if (End.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      if (SM.isMacroArgExpansion(Begin)) {
+      if (SM.isMacroArgExpansion(TheStmt->getEndLoc()) &&
+        !SM.isMacroArgExpansion(TheStmt->getBeginLoc())) {
         End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
       }
       else {

@@ -18,6 +18,7 @@ public:
   dim3* A;
   dim3 B;
 };
+#define CALL(x) x;
 
 #define EMPTY_MACRO(x) x
 //CHECK:#define GET_MEMBER_MACRO(x) x[1] = 5
@@ -56,6 +57,25 @@ void foo() {
   GET_MEMBER_MACRO(d3.B);
 
   int outputThreadCount = 512;
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
+  //CHECK-NEXT: migration result may be incorrect. You need to verify the definition of the
+  //CHECK-NEXT: macro.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: CALL((q_ct1.submit([&](sycl::handler &cgh) {
+  //CHECK-NEXT:   auto dpct_global_range = x * x;
+  //CHECK:   cgh.parallel_for(
+  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),
+  //CHECK-NEXT:                                        dpct_global_range.get(1),
+  //CHECK-NEXT:                                        dpct_global_range.get(0)),
+  //CHECK-NEXT:                         sycl::range<3>(x.get(2), x.get(1), x.get(0))),
+  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:         foo_kernel();
+  //CHECK-NEXT:       });
+  //CHECK-NEXT: });))
+  CALL( (foo_kernel<<<1, 2, 0>>>()) )
+
 
   // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
@@ -179,7 +199,7 @@ MACRO_KC
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
 //CHECK-NEXT:   });
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1038:0: When the kernel function name is used as a macro argument, the
+//CHECK-NEXT:   DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
 //CHECK-NEXT:   migration result may be incorrect. You need to verify the definition of the
 //CHECK-NEXT:   macro.
 //CHECK-NEXT:   */
