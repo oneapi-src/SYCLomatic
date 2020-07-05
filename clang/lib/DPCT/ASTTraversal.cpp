@@ -915,7 +915,6 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
 #undef ENTRY
 
   auto isMigratedHostAPI = [&]() {

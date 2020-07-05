@@ -739,22 +739,51 @@ class ClassA
   }
 };
 
-// CHECK: __dpct_inline__ int foo(int error, const char *filename, int line) {
+// CHECK: __dpct_inline__ int foo13(int error, const char *filename, int line) {
 // CHECK-NEXT:  int error_1 = 0;
 // CHECK-NEXT:  return error_1;
 // CHECK-NEXT: }
-__host__ __device__ __forceinline__ cudaError_t foo(cudaError_t error,
+__host__ __device__ __forceinline__ cudaError_t foo13(cudaError_t error,
                                                     const char *filename,
                                                     int line) {
   cudaError_t error_1 = cudaSuccess;
   return error_1;
 }
 
-// CHECK: __dpct_inline__ int *foo_1(int error, const char *filename, int line) {
+// CHECK: __dpct_inline__ int *foo14(int error, const char *filename, int line) {
 // CHECK-NEXT:  return &error;
 // CHECK-NEXT: }
-__host__ __device__ __forceinline__ cudaError_t *foo_1(cudaError_t error,
+__host__ __device__ __forceinline__ cudaError_t *foo14(cudaError_t error,
                                                     const char *filename,
                                                     int line) {
   return &error;
+}
+
+
+
+
+#include <thrust/device_ptr.h>
+#include <thrust/reduce.h>
+#include <thrust/complex.h>
+//CHECK: int foo15(){
+//CHECK-NEXT:   double *p;
+//CHECK-NEXT:   dpct::device_ptr<double> dp(p);
+//CHECK-NEXT:   double sum = std::reduce(
+//CHECK-NEXT:       dpstd::execution::make_device_policy(dpct::get_default_queue()), dp,
+//CHECK-NEXT:       dp + 10);
+//CHECK-NEXT:   printf("sum = %f\n", sum);
+//CHECK-NEXT:   std::complex<float> c1(1.0);
+//CHECK-NEXT:   std::complex<float> c2(2.0);
+//CHECK-NEXT:   std::complex<float> c3 = c1 + c2;
+//CHECK-NEXT:   printf("c1 + c2 = (%f, %f)\n", c3.real(), c3.imag());
+//CHECK-NEXT: }
+int foo15(){
+  double *p;
+  thrust::device_ptr<double> dp(p);
+  double sum=thrust::reduce(dp, dp + 10);
+  printf("sum = %f\n", sum);
+  thrust::complex<float> c1(1.0);
+  thrust::complex<float> c2(2.0);
+  thrust::complex<float> c3 = c1 + c2;
+  printf("c1 + c2 = (%f, %f)\n", c3.real(), c3.imag());
 }
