@@ -1,7 +1,8 @@
 // RUN: dpcpp image_wrapper.cpp -o image_wrapper
 
 #define DPCT_NAMED_LAMBDA
-#include <dpct/dpct.hpp>
+//#include <dpct/dpct.hpp>
+#include "../include/dpct.hpp"
 
 dpct::image<cl::sycl::float4, 2> tex42;
 dpct::image<cl::sycl::float2, 1> tex21;
@@ -10,9 +11,9 @@ dpct::image<unsigned short, 3> tex13;
 void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2> acc42,
                   dpct::image_accessor<cl::sycl::float2, 1> acc21,
                   dpct::image_accessor<unsigned short, 3> acc13) {
-  out[0] = dpct::read_image(acc42, 0.5f, 0.5f);
-  unsigned short data13 = dpct::read_image(acc13, 0.5f, 0.5f, 0.5f);
-  cl::sycl::float2 data21 = dpct::read_image(acc21, 0.5f);
+  out[0] = acc42.read(0.5f, 0.5f);
+  unsigned short data13 = acc13.read(0.5f, 0.5f, 0.5f);
+  cl::sycl::float2 data21 = acc21.read(0.5f);
   out[1].x() = data21.x();
   out[1].y() = data13;
 }
@@ -49,9 +50,9 @@ int main() {
   dpct::dpct_memcpy(dpct::pitched_data(image_data2, 650 * sizeof(cl::sycl::float4), 640 * sizeof(cl::sycl::float4*), 480), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float4), 640 * 480 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float4), 1, 1));
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(unsigned short), 640 * 480 * 24 * sizeof(unsigned short), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(unsigned short), 1, 1));
 
-  dpct::attach_image(tex42, image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
-  dpct::attach_image(tex21, array1);
-  dpct::attach_image(tex13, array3);
+  tex42.attach(image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
+  tex21.attach(array1);
+  tex13.attach(array3);
 
   tex42.addr_mode()=cl::sycl::addressing_mode::clamp;
   tex21.addr_mode()=cl::sycl::addressing_mode::clamp;
@@ -93,9 +94,9 @@ int main() {
   printf("d[0]: x[%f] y[%f] z[%f] w[%f]\n", d[0].x(), d[0].y(), d[0].z(), d[0].w());
   printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
-  dpct::detach_image(tex42);
-  dpct::detach_image(tex21);
-  dpct::detach_image(tex13);
+  tex42.detach();
+  tex21.detach();
+  tex13.detach();
 
   sycl::free(device_buffer, dpct::get_default_queue());
   std::free(host_buffer);

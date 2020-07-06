@@ -8208,7 +8208,7 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
     }
   }
 
-  std::unique_ptr<ParensPrinter> PP;
+  std::unique_ptr<ParensPrinter<std::ostream>> PP;
   if (NeedDerefOp) {
     OS << "*";
     switch (E->getStmtClass()) {
@@ -8218,7 +8218,7 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
     case Stmt::CallExprClass:
       break;
     default:
-      PP = std::make_unique<ParensPrinter>(OS);
+      PP = std::make_unique<ParensPrinter<std::ostream>>(OS);
       break;
     }
   }
@@ -9916,7 +9916,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaResourceDesc") {
       if (MemberName == "res") {
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "data"));
+        emplaceTransformation(new ReplaceToken(ME->getMemberLoc(), ""));
         replaceResourceDataExpr(getParentMemberExpr(ME), *Result.Context);
       } else if (MemberName == "resType") {
         emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
@@ -9993,29 +9993,31 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
                                           const ASTContext &Context) {
   if (!ME)
     return;
+  auto TopMember = getParentMemberExpr(ME);
+  if (!ME)
+    return;
   auto ResName = ME->getMemberNameInfo().getAsString();
   if (ResName == "array") {
-    if (auto ArrayMemberExpr = getParentMemberExpr(ME)) {
-      emplaceTransformation(new ReplaceToken(
-          ME->getMemberLoc(), ArrayMemberExpr->getEndLoc(), "matrix"));
+    emplaceTransformation(
+        new ReplaceToken(ME->getOperatorLoc(), TopMember->getEndLoc(), "data"));
+    if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(TopMember)) {
+      if (BO->getRHS()->IgnoreImplicitAsWritten() == TopMember) {
+        emplaceTransformation(
+            new InsertBeforeStmt(TopMember, "(dpct::image_matrix_p)"));
+      }
     }
   } else if (ResName == "linear") {
-    if (auto LinearMemberExpr = getParentMemberExpr(ME)) {
-      emplaceTransformation(new RenameFieldInMemberExpr(
-          LinearMemberExpr,
-          std::string(MapNames::findReplacedName(
-              LinearResourceTypeNames,
-              LinearMemberExpr->getMemberNameInfo().getAsString()))));
-    }
+    emplaceTransformation(new ReplaceToken(
+      ME->getOperatorLoc(), TopMember->getEndLoc(),
+      std::string(MapNames::findReplacedName(
+        LinearResourceTypeNames,
+        TopMember->getMemberNameInfo().getAsString()))));
   } else if (ResName == "pitch2D") {
-    emplaceTransformation(new RenameFieldInMemberExpr(ME, "pitched"));
-    if (auto Pitched2DMemberExpr = getParentMemberExpr(ME)) {
-      emplaceTransformation(new RenameFieldInMemberExpr(
-          Pitched2DMemberExpr,
-          std::string(MapNames::findReplacedName(
-              Pitched2DResourceTypeNames,
-              Pitched2DMemberExpr->getMemberNameInfo().getAsString()))));
-    }
+    emplaceTransformation(new ReplaceToken(
+      ME->getOperatorLoc(), TopMember->getEndLoc(),
+      std::string(MapNames::findReplacedName(
+        Pitched2DResourceTypeNames,
+        TopMember->getMemberNameInfo().getAsString()))));
   } else {
     report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
            ME->getMemberDecl()->getName());

@@ -80,11 +80,11 @@ private:
   MapTy Map;
 };
 
-class ParensPrinter {
-  std::ostream &OS;
+template <class StreamT> class ParensPrinter {
+  StreamT &OS;
 
 public:
-  ParensPrinter(std::ostream &OS) : OS(OS) { OS << "("; }
+  ParensPrinter(StreamT &OS) : OS(OS) { OS << "("; }
   ~ParensPrinter() { OS << ")"; }
 };
 
@@ -410,4 +410,6 @@ clang::SourceLocation getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
 
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
+
+bool needExtraParens(const clang::Expr *);
 #endif // DPCT_UTILITY_H

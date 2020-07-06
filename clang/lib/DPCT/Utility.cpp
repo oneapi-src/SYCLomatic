@@ -1819,3 +1819,22 @@ getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &NNSL) {
     return getNestedNameSpecifierString(NNSL.getNestedNameSpecifier());
   return std::string();
 }
+
+bool needExtraParens(const Expr *E) {
+  switch (E->IgnoreImplicitAsWritten()->getStmtClass()) {
+  case Stmt::DeclRefExprClass:
+  case Stmt::MemberExprClass:
+  case Stmt::ParenExprClass:
+  case Stmt::CallExprClass:
+    return false;
+  case Stmt::CXXConstructExprClass: {
+    auto Ctor = static_cast<const CXXConstructExpr *>(E);
+    if (Ctor->getParenOrBraceRange().isInvalid() && Ctor->getNumArgs() == 1)
+      return needExtraParens(Ctor->getArg(0));
+    else
+      return true;
+  }
+  default:
+    return true;
+  }
+}

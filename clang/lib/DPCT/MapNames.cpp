@@ -3055,7 +3055,7 @@ MapNames::MapTy TextureRule::Pitched2DResourceTypeNames{
     {"height", "y"},
     {"pitchInBytes", "pitch"}};
 MapNames::MapTy TextureRule::LinearResourceTypeNames{
-    {"devPtr", "data"}, {"sizeInBytes", "size"}, {"desc", "chn"}};
+    {"devPtr", "data"}, {"sizeInBytes", "x"}, {"desc", "chn"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data"}, {"xsize", "x"}, {"ysize", "y"}};

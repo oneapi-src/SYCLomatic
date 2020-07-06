@@ -19,7 +19,6 @@ namespace dpct {
 
 class CallExprRewriter;
 class FuncCallExprRewriter;
-class FuncNameRewriter;
 class MathCallExprRewriter;
 class MathFuncNameRewriter;
 class MathSimulatedRewriter;
@@ -28,8 +27,6 @@ class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
 class ReorderFunctionRewriter;
-class ReorderFunctionIsAssignedRewriter;
-class TexFunctionRewriter;
 class UnsupportFunctionRewriter;
 class TemplatedCallExprRewriter;
 
@@ -63,8 +60,8 @@ private:
   }
 
 public:
-  CallExprRewriterFactory(StringRef SourceCalleeName, Args &&... Arguments)
-      : Initializer(SourceCalleeName.str(), std::move(Arguments)...) {}
+  CallExprRewriterFactory(StringRef SourceCalleeName, Args... Arguments)
+      : Initializer(SourceCalleeName.str(), std::forward<Args>(Arguments)...) {}
   // Create a meaningful rewriter only if the CallExpr is not nullptr
   std::shared_ptr<CallExprRewriter> create(const CallExpr *Call) override {
     if (!Call)
@@ -91,15 +88,8 @@ using WarpFunctionRewriterFactory =
 using ReorderFunctionRewriterFactory = CallExprRewriterFactory<
     ReorderFunctionRewriter, std::string,
     std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
-using ReorderFunctionIsAssignedRewriterFactory = CallExprRewriterFactory<
-    ReorderFunctionIsAssignedRewriter, std::string,
-    std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
-using TexFunctionRewriterFactory =
-    CallExprRewriterFactory<TexFunctionRewriter, std::string, int>;
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
-using FuncNameRewriterFactory =
-    CallExprRewriterFactory<FuncNameRewriter, std::string>;
 using TemplatedCallExprRewriterFactory =
     CallExprRewriterFactory<TemplatedCallExprRewriter, std::string>;
 
@@ -144,6 +134,56 @@ protected:
   }
 };
 
+class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {
+  std::function<bool(const CallExpr *)> Pred;
+  std::shared_ptr<CallExprRewriterFactoryBase> First, Second;
+
+public:
+  template <class InputPred>
+  ConditionalRewriterFactory(
+      InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory,
+      std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory)
+      : Pred(std::forward<InputPred>(P)), First(FirstFactory),
+        Second(SecondFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) override {
+    if (Pred(C))
+      return First->create(C);
+    else
+      return Second->create(C);
+  }
+};
+
+class AssignableRewriter : public CallExprRewriter {
+  std::shared_ptr<CallExprRewriter> Inner;
+  bool IsAssigned;
+
+public:
+  template <class... InitArgs>
+  AssignableRewriter(const CallExpr *C,
+                     std::shared_ptr<CallExprRewriter> InnerRewriter)
+      : CallExprRewriter(C, ""), Inner(InnerRewriter),
+        IsAssigned(isAssigned(C)) {}
+
+  Optional<std::string> rewrite() override {
+    Optional<std::string> &&Result = Inner->rewrite();
+    if (Result.hasValue() && IsAssigned)
+      return "(" + Result.getValue() + ", 0)";
+    return Result;
+  }
+};
+
+class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+
+public:
+  AssignableRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) override {
+    return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+  }
+};
+
 /// Base class for rewriting function calls
 class FuncCallExprRewriter : public CallExprRewriter {
 protected:
@@ -172,21 +212,6 @@ protected:
   Optional<std::string> buildRewriteString();
 
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
-};
-
-// A function name rewriter that also takes IsAssigned into account
-class FuncNameRewriter : public FuncCallExprRewriter {
-protected:
-  FuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                   StringRef TargetCalleeName)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
-
-public:
-  virtual Optional<std::string> rewrite() override;
-
-protected:
-  Optional<std::string> buildRewriteString();
-  friend FuncNameRewriterFactory;
 };
 
 /// Base class for rewriting math function calls
@@ -329,32 +354,6 @@ public:
   friend ReorderFunctionRewriterFactory;
 };
 
-// A reordering rewriter that also takes IsAssigned into account
-class ReorderFunctionIsAssignedRewriter : public ReorderFunctionRewriter {
-public:
-  ReorderFunctionIsAssignedRewriter(const CallExpr *Call,
-                                    StringRef SourceCalleeName,
-                                    StringRef TargetCalleeName,
-                                    const std::vector<unsigned> &ArgsIdx)
-      : ReorderFunctionRewriter(Call, SourceCalleeName, TargetCalleeName,
-                                ArgsIdx) {}
-  virtual Optional<std::string> rewrite() override;
-  friend ReorderFunctionIsAssignedRewriterFactory;
-};
-
-class TexFunctionRewriter : public FuncCallExprRewriter {
-  void setTextureInfo(int TexType);
-
-public:
-  TexFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                      StringRef TargetCalleeName,int TexType)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {
-    setTextureInfo(TexType);
-  }
-
-  friend TexFunctionRewriterFactory;
-};
-
 class TemplatedCallExprRewriter : public FuncCallExprRewriter {
   std::vector<std::string> TemplateArgs;
   void buildTemplateArgsList();
@@ -368,6 +367,228 @@ public:
   virtual Optional<std::string> rewrite() override;
 
   friend TemplatedCallExprRewriterFactory;
+};
+
+template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
+  Val.print(Stream);
+}
+template <class StreamT> void print(StreamT &Stream, const Expr *E) {
+  ExprAnalysis EA;
+  print(Stream, EA, E);
+}
+template <class StreamT>
+void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
+  EA.analyze(E);
+  Stream << EA.getRewritePrefix() << EA.getReplacedString()
+         << EA.getRewritePostfix();
+}
+template <class StreamT>
+void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
+  std::unique_ptr<ParensPrinter<StreamT>> Paren;
+  E = E->IgnoreImplicitAsWritten();
+  if (needExtraParens(E))
+    Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+  print(Stream, EA, E);
+}
+template <class StreamT> void printWithParens(StreamT &Stream, const Expr *E) {
+  ExprAnalysis EA;
+  printWithParens(Stream, EA, E);
+}
+
+template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
+  if (IsArrow)
+    Stream << "->";
+  else
+    Stream << ".";
+}
+
+class DerefExpr {
+  bool AddrOfRemoved = false, NeedParens = false;
+  const Expr *E = nullptr;
+
+  template <class StreamT>
+  void print(StreamT &Stream, ExprAnalysis &EA, bool IgnoreDerefOp) const {
+    std::unique_ptr<ParensPrinter<StreamT>> Parens;
+    if (!AddrOfRemoved && !IgnoreDerefOp)
+      Stream << "*";
+
+    printWithParens(Stream, EA, E);
+  }
+
+  DerefExpr() = default;
+
+public:
+  template <class StreamT>
+  void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
+    print(Stream, A, false);
+  }
+  template <class StreamT> void printMemberBase(StreamT &Stream) const {
+    ExprAnalysis EA;
+    print(Stream, EA, true);
+    printMemberOp(Stream, !AddrOfRemoved);
+  }
+  template <class StreamT> void print(StreamT &Stream) const {
+    ExprAnalysis EA;
+    print(Stream, EA, false);
+  }
+
+  static DerefExpr create(const Expr *E);
+};
+
+template <bool HasPrefixArg, class... ArgsT> class ArgsPrinter;
+template <bool HasPrefixArg> class ArgsPrinter<HasPrefixArg> {
+  mutable ArgumentAnalysis A;
+
+public:
+  template <class StreamT> void print(StreamT &) const {}
+  template <class StreamT> void printArg(StreamT &Stream, const Expr *E) const {
+    dpct::print(Stream, A, E);
+  }
+  template <class StreamT, class ArgT>
+  void printArg(StreamT &Stream, const ArgT &Arg) const {
+    Arg.printArg(Stream, A);
+  }
+  template <class StreamT>
+  void printComma(StreamT &Stream, std::true_type) const {
+    Stream << ", ";
+  }
+  template <class StreamT>
+  void printComma(StreamT &Stream, std::false_type) const {}
+
+  ArgsPrinter() = default;
+  ArgsPrinter(const ArgsPrinter &) {}
+};
+template <bool HasPrefixArg, class FirstArgT, class... RestArgsT>
+class ArgsPrinter<HasPrefixArg, FirstArgT, RestArgsT...>
+    : public ArgsPrinter<true, RestArgsT...> {
+  using Base = ArgsPrinter<true, RestArgsT...>;
+  FirstArgT First;
+
+public:
+  template <class InputFirstArgT, class... InputRestArgsT>
+  ArgsPrinter(InputFirstArgT &&FirstArg, InputRestArgsT &&... RestArgs)
+      : Base(std::forward<InputRestArgsT>(RestArgs)...),
+        First(std::forward<InputFirstArgT>(FirstArg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Base::printComma(Stream, std::integral_constant<bool, HasPrefixArg>());
+    Base::printArg(Stream, First);
+    Base::print(Stream);
+  }
+};
+
+template <class... ArgsExtratorT>
+class CallArgsPrinter : public ArgsPrinter<false, ArgsExtratorT...> {
+  using Base = ArgsPrinter<false, ArgsExtratorT...>;
+
+public:
+  template <class... InputArgsT>
+  CallArgsPrinter(InputArgsT &&... Args)
+      : Base(std::forward<InputArgsT>(Args)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    ParensPrinter<StreamT> Parens(Stream);
+    Base::print(Stream);
+  }
+};
+
+template <class StreamT>
+void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
+  printWithParens(Stream, E);
+  printMemberOp(Stream, IsArrow);
+}
+template <class StreamT>
+void printBase(StreamT &Stream, const DerefExpr &D, bool) {
+  D.printMemberBase(Stream);
+}
+template <class StreamT, class T>
+void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
+  print(Stream, Val);
+  printMemberOp(Stream, IsArrow);
+}
+
+template <class BaseT, class... CallArgsT> class MemberCallPrinter {
+  BaseT Base;
+  bool IsArrow;
+  StringRef MemberName;
+  CallArgsPrinter<CallArgsT...> Args;
+
+public:
+  MemberCallPrinter(BaseT &&Base, bool IsArrow, StringRef MemberName,
+                    CallArgsT &&... Args)
+      : Base(std::forward<BaseT>(Base)), IsArrow(IsArrow),
+        MemberName(MemberName), Args(std::forward<CallArgsT>(Args)...) {}
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    printBase(Stream, Base, IsArrow);
+    Stream << MemberName;
+    Args.print(Stream);
+  }
+};
+
+template <class LValueT, class RValueT> class AssignExprPrinter {
+  LValueT LVal;
+  RValueT RVal;
+
+public:
+  AssignExprPrinter(LValueT &&L, RValueT &&R)
+      : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
+  template <class StreamT> void print(StreamT &Stream) {
+    dpct::print(Stream, LVal);
+    Stream << " = ";
+    dpct::print(Stream, RVal);
+  }
+};
+
+template <class ArgT> class DeleterCallExprRewriter : public CallExprRewriter {
+  ArgT Arg;
+
+public:
+  DeleterCallExprRewriter(const CallExpr *C, StringRef Source,
+                          std::function<ArgT(const CallExpr *)> ArgCreator)
+      : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
+  Optional<std::string> rewrite() override {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    OS << "delete ";
+    printWithParens(OS, Arg);
+    return Result;
+  }
+};
+
+template <class Printer>
+class PrinterRewriter : public Printer, public CallExprRewriter {
+public:
+  template <class... ArgsT>
+  PrinterRewriter(const CallExpr *C, StringRef Source, ArgsT &&... Args)
+      : Printer(std::forward<ArgsT>(Args)...), CallExprRewriter(C, Source) {}
+  Optional<std::string> rewrite() override {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    Printer::print(OS);
+    return Result;
+  }
+};
+
+template <class BaseT, class... ArgsT>
+class MemberCallExprRewriter
+    : public PrinterRewriter<MemberCallPrinter<BaseT, ArgsT...>> {
+public:
+  MemberCallExprRewriter(
+      const CallExpr *C, StringRef Source,
+      std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
+      StringRef Member, std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
+      : PrinterRewriter<MemberCallPrinter<BaseT, ArgsT...>>(
+            C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
+};
+
+template <class LValueT, class RValueT>
+class AssignExprRewriter
+    : public PrinterRewriter<AssignExprPrinter<LValueT, RValueT>> {
+public:
+  AssignExprRewriter(const CallExpr *C, StringRef Source,
+                     std::function<LValueT(const CallExpr *)> &LCreator,
+                     std::function<RValueT(const CallExpr *)> &RCreator)
+      : PrinterRewriter<AssignExprPrinter<LValueT, RValueT>>(
+            C, Source, LCreator(C), RCreator(C)) {}
 };
 
 class UnsupportFunctionRewriter : public CallExprRewriter {

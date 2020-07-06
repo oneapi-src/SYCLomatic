@@ -8,8 +8,8 @@ dpct::image<cl::sycl::float2, 2, true> tex22;
 
 void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2,true> acc42,
                   dpct::image_accessor<cl::sycl::float2, 1,true> acc21) {
-  out[0] = dpct::read_image_array(acc42, 0.5f, 0.5f, 16);
-  cl::sycl::float2 data32 = dpct::read_image_array(acc21, 0.5f, 16);
+  out[0] = acc42.read(16, 0.5f, 0.5f);
+  cl::sycl::float2 data32 = acc21.read(16, 0.5f);
   out[1].x() = data32.x();
   out[1].y() = data32.y();
 }
@@ -42,8 +42,8 @@ int main() {
   dpct::dpct_memcpy(array2->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float2), 640 * 480 * sizeof(cl::sycl::float2), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float2), 1, 1));
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4), 640 * 480 * 24 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(cl::sycl::float4), 1, 1));
 
-  dpct::attach_image(tex43, array3);
-  dpct::attach_image(tex22, array2);
+  tex43.attach(array3);
+  tex22.attach(array2);
 
   tex43.addr_mode()=cl::sycl::addressing_mode::clamp;
   tex22.addr_mode()=cl::sycl::addressing_mode::clamp;
@@ -79,6 +79,6 @@ int main() {
   printf("d[0]: x[%f] y[%f] z[%f] w[%f]\n", d[0].x(), d[0].y(), d[0].z(), d[0].w());
   printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
-  dpct::detach_image(tex43);
-  dpct::detach_image(tex22);
+  tex43.detach();
+  tex22.detach();
 }

@@ -259,8 +259,7 @@ texture<float4, 1, cudaReadModeElementType> table;
 __global__ void foo4(){
   float r2 = 2.0;
   MMM( float rsqrtfr2; );
-  // CHECK: sycl::float4 f4 =
-  // CHECK-NEXT: dpct::read_image(table, MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
+  // CHECK: sycl::float4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
   float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
 }
 

@@ -32,6 +32,46 @@ enum channel_data_kind {
   channel_float,
 };
 
+/// Image channel info, include channel number, order, data width and type
+struct image_channel {
+  cl::sycl::image_channel_type type;
+  /// Channels number.
+  unsigned channel_nums;
+  /// Total size of all channels in bytes.
+  unsigned elem_size;
+
+  cl::sycl::image_channel_order get_channel_order() const {
+    switch (channel_nums) {
+    case 1:
+      return cl::sycl::image_channel_order::r;
+    case 2:
+      return cl::sycl::image_channel_order::rg;
+    case 3:
+      return cl::sycl::image_channel_order::rgb;
+    case 4:
+      return cl::sycl::image_channel_order::rgba;
+    default:
+      return cl::sycl::image_channel_order::r;
+    }
+  }
+  /// Get the size for each channel in bits.
+  unsigned get_channel_size() const { return elem_size * 8 / channel_nums; }
+
+  /// Set channel size.
+  /// \param in_channel_nums Channels number to set.
+  /// \param channel_size Size for each channel in bits.
+  void set_channel_size(unsigned in_channel_nums,
+                        unsigned channel_size) {
+    if (in_channel_nums < channel_nums)
+      return;
+    channel_nums = in_channel_nums;
+    elem_size = channel_size * channel_nums / 8;
+  }
+};
+
+class image_base;
+
+namespace detail {
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
 /// cl_float4 and cl_half4. The data type of accessors with 8bits/16bits channel
@@ -129,42 +169,78 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
   }
 };
 
-/// Image channel info, include channel number, order, data width and type
-struct image_channel {
-  cl::sycl::image_channel_type type;
-  /// Channels number.
-  unsigned channel_nums;
-  /// Total size of all channels in bytes.
-  unsigned elem_size;
-
-  cl::sycl::image_channel_order get_channel_order() const {
-    switch (channel_nums) {
-    case 1:
-      return cl::sycl::image_channel_order::r;
-    case 2:
-      return cl::sycl::image_channel_order::rg;
-    case 3:
-      return cl::sycl::image_channel_order::rgb;
-    case 4:
-      return cl::sycl::image_channel_order::rgba;
-    default:
-      return cl::sycl::image_channel_order::r;
-    }
+static inline image_channel
+create_image_channel(int elem_size, int channel_nums,
+                     channel_data_kind channel_kind) {
+  image_channel channel;
+  channel.elem_size = elem_size;
+  if (elem_size == 4) {
+    if (channel_kind == channel_signed)
+      channel.type = cl::sycl::image_channel_type::signed_int32;
+    else if (channel_kind == channel_unsigned)
+      channel.type = cl::sycl::image_channel_type::unsigned_int32;
+    else if (channel_kind == channel_float)
+      channel.type = cl::sycl::image_channel_type::fp32;
+  } else if (elem_size == 2) {
+    if (channel_kind == channel_signed)
+      channel.type = cl::sycl::image_channel_type::signed_int16;
+    else if (channel_kind == channel_unsigned)
+      channel.type = cl::sycl::image_channel_type::unsigned_int16;
+    else if (channel_kind == channel_float)
+      channel.type = cl::sycl::image_channel_type::fp16;
+  } else {
+    if (channel_kind == channel_signed)
+      channel.type = cl::sycl::image_channel_type::signed_int8;
+    else if (channel_kind == channel_unsigned)
+      channel.type = cl::sycl::image_channel_type::unsigned_int8;
   }
-  /// Get the size for each channel in bits.
-  unsigned get_channel_size() const { return elem_size * 8 / channel_nums; }
+  channel.elem_size *= channel_nums;
+  channel.channel_nums = channel_nums;
+  return channel;
+}
 
-  /// Set channel size.
-  /// \param in_channel_nums Channels number to set.
-  /// \param channel_size Size for each channel in bits.
-  void set_channel_size(unsigned in_channel_nums,
-                        unsigned channel_size) {
-    if (in_channel_nums < channel_nums)
-      return;
-    channel_nums = in_channel_nums;
-    elem_size = channel_size * channel_nums / 8;
+/// Create image according with given type \p T and \p dims.
+template <class T> static image_base *create_image(int dims);
+
+/// Create image with given data type \p T, channel order and dims
+template <class T>
+static image_base *create_image(unsigned channel_nums, int dims);
+
+/// Create image with channel info and specified dimensions.
+static image_base *create_image(image_channel chn, int dims);
+
+// Functor for attaching data to image class.
+template <class T, int Dimension, bool IsImageArray> struct attach_data;
+
+} // namespace detail
+
+/// Create image channel info.
+/// \param r Channel r width in bits.
+/// \param g Channel g width in bits. Should be same with \p r, or zero.
+/// \param b Channel b width in bits. Should be same with \p g, or zero.
+/// \param a Channel a width in bits. Should be same with \p b, or zero.
+/// \channel_kind Channel data type kind: signed int, unsigned int or float.
+static inline image_channel
+create_image_channel(int r, int g, int b, int a,
+                     channel_data_kind channel_kind) {
+  if (a) {
+    return detail::create_image_channel(r / 8, 4, channel_kind);
+  } else if (b) {
+    return detail::create_image_channel(r / 8, 3, channel_kind);
+  } else if (g) {
+    return detail::create_image_channel(r / 8, 2, channel_kind);
+  } else {
+    return detail::create_image_channel(r / 8, 1, channel_kind);
   }
-};
+}
+
+/// Create image channel info according to template argument \p T.
+template <class T> static inline image_channel create_image_channel() {
+  return detail::create_image_channel(sizeof(typename detail::image_trait<T>::elem_t),
+                              detail::image_trait<T>::channel_nums,
+                              detail::image_trait<T>::channel_kind);
+}
+
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
@@ -193,8 +269,13 @@ public:
   }
   /// Construct a new image class with the matrix data.
   template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
+    return allocate_image<Dimension>(_channel);
+  }
+  /// Construct a new image class with the matrix data.
+  template <int Dimension>
+  cl::sycl::image<Dimension> *allocate_image(image_channel chn) {
     return new cl::sycl::image<Dimension>(
-        _src, _channel.get_channel_order(), _channel.type,
+        _src, chn.get_channel_order(), chn.type,
         get_range(make_index_sequence<Dimension>()),
         cl::sycl::property::image::use_host_ptr());
   }
@@ -234,22 +315,9 @@ enum image_data_type { data_matrix, data_linear, data_pitch, data_unsupport };
 class image_data {
 public:
   image_data_type type;
-  union {
-    image_matrix *matrix;
-    struct {
-      void *data;
-      image_channel chn;
-      size_t size;
-    } linear;
-    struct {
-      void *data;
-      size_t x, y, pitch;
-      image_channel chn;
-      dpct::pitched_data to_pitched_data() {
-        return dpct::pitched_data(data, pitch, x, y);
-      }
-    } pitched;
-  } data;
+  void *data;
+  size_t x, y, pitch;
+  image_channel chn;
 };
 
 /// Image sampling info, include addressing mode, filtering mode and
@@ -286,9 +354,9 @@ public:
     *(static_cast<image_info *>(this)) = *info;
   }
   // Set data info.
-  virtual void set_data(image_data *data) { _data = *data; }
-  const image_info *get_info() { return this; }
-  const image_data *get_data() { return &_data; }
+  virtual void attach(image_data *data) { _data = *data; }
+  image_info get_info() { return *this; }
+  image_data get_data() { return _data; }
 };
 inline image_base::~image_base() {}
 using image_base_p = image_base *;
@@ -299,31 +367,44 @@ template <class T, int Dimension, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
 template <class T, int Dimension, bool IsImageArray = false> class image : public image_base {
   cl::sycl::image<Dimension> *_image = nullptr;
+  image_channel _chn;
 
 public:
   ~image() { detach(); }
 
 public:
-  using acc_data_t = typename image_trait<T>::acc_data_t;
+  using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
       typename image_accessor<T, IsImageArray ? (Dimension - 1) : Dimension,
                               IsImageArray>::accessor_t;
+
+  image() : _chn(create_image_channel<T>()) {}
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return accessor_t(*_image, cgh);
   }
+  image_channel &channel() { return _chn; }
   // Set data info, attach the data to this class.
-  void set_data(image_data *data) override {
-    image_base::set_data(data);
-    attach_data<T, Dimension, IsImageArray>()(this, data);
+  void attach(image_data *data) override {
+    image_base::attach(data);
+    detail::attach_data<T, Dimension, IsImageArray>()(this, data);
   }
   // Attach matrix data to this class.
   void attach(image_matrix *data) {
     detach();
     _image = data->allocate_image<Dimension>();
   }
+  // Attach matrix data to this class.
+  void attach(image_matrix *data, image_channel chn_desc) {
+    detach();
+    _image = data->allocate_image<Dimension>(chn_desc);
+  }
   // Attach linear data to this class.
-  void attach(void *ptr, const image_channel &chn_desc, size_t count) {
+  void attach(void *ptr, size_t count) {
+    attach(ptr, count, _chn);
+  }
+  // Attach linear data to this class.
+  void attach(void *ptr, size_t count, image_channel chn_desc) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
@@ -334,17 +415,20 @@ public:
         cl::sycl::range<1>(count / chn_desc.elem_size));
   }
   // Attach 2D data to this class.
-  void attach(dpct::pitched_data pitched, const image_channel &chn_desc) {
+  void attach(void *data, size_t x, size_t y, size_t pitch) {
+    attach(data, x, y, pitch, _chn);
+  }
+  // Attach 2D data to this class.
+  void attach(void *data, size_t x, size_t y, size_t pitch, const image_channel &chn_desc) {
     detach();
-    auto ptr = pitched.data;
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
+    if (detail::mem_mgr::instance().is_device_ptr(data))
+      data = get_buffer(data)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
-    cl::sycl::range<1> pitch(pitched.pitch);
+    cl::sycl::range<1> pitch_range(pitch);
     _image = new cl::sycl::image<Dimension>(
-        ptr, chn_desc.get_channel_order(), chn_desc.type,
-        cl::sycl::range<2>(pitched.x / chn_desc.elem_size, pitched.y), pitch);
+        data, chn_desc.get_channel_order(), chn_desc.type,
+        cl::sycl::range<2>(x / chn_desc.elem_size, y), pitch_range);
   }
   // Detach data.
   void detach() {
@@ -354,302 +438,144 @@ public:
   }
 };
 
+/// Wrap sampler and image accessor together.
+template <class T, int Dimension, bool IsImageArray = false>
+class image_accessor {
+public:
+  using accessor_t =
+      typename detail::image_trait<T>::template accessor_t<Dimension>;
+  using data_t = typename detail::image_trait<T>::data_t;
+  cl::sycl::sampler _sampler;
+  accessor_t _img_acc;
+
+public:
+  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+      : _sampler(sampler), _img_acc(acc) {}
+
+  // Read data from accessor.
+  template <bool Available = Dimension == 3>
+  typename std::enable_if<Available, data_t>::type read(float x, float y,
+                                                        float z) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(cl::sycl::float4(x, y, z, 0), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 3>
+  typename std::enable_if<Available, data_t>::type read(int x, int y, int z) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(cl::sycl::int4(x, y, z, 0), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 2>
+  typename std::enable_if<Available, data_t>::type read(float x, float y) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(cl::sycl::float2(x, y), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 2>
+  typename std::enable_if<Available, data_t>::type read(int x, int y) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(cl::sycl::int2(x, y), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 1>
+  typename std::enable_if<Available, data_t>::type read(float x) {
+    return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 1>
+  typename std::enable_if<Available, data_t>::type read(int x) {
+    return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
+  }
+};
+
+template <class T, int Dimension> class image_accessor<T, Dimension, true> {
+public:
+  using accessor_t =
+      typename detail::image_trait<T>::template array_accessor_t<Dimension>;
+  using data_t = typename detail::image_trait<T>::data_t;
+  cl::sycl::sampler _sampler;
+  accessor_t _img_acc;
+
+public:
+  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+      : _sampler(sampler), _img_acc(acc) {}
+
+  // Read data from accessor.
+  template <bool Available = Dimension == 2>
+  typename std::enable_if<Available, data_t>::type read(int index, float x,
+                                                        float y) {
+    return detail::fetch_data<T>()(
+        _img_acc[index].read(cl::sycl::float2(x, y), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 2>
+  typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
+    return detail::fetch_data<T>()(
+        _img_acc[index].read(cl::sycl::int2(x, y), _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 1>
+  typename std::enable_if<Available, data_t>::type read(int index, float x) {
+    return detail::fetch_data<T>()(
+        _img_acc[index].read(x, _sampler));
+  }
+  // Read data from accessor.
+  template <bool Available = Dimension == 1>
+  typename std::enable_if<Available, data_t>::type read(int index, int x) {
+    return detail::fetch_data<T>()(
+        _img_acc[index].read(x, _sampler));
+  }
+};
+
+/// Create image according to image data and image info.
+/// \param [out] image_p Point to a pointer of image base class.
+/// \param data Pointer to image data.
+/// \param info Pointer to image info.
+inline void create_image(image_base **image_p, image_data *data,
+                              image_info *info) {
+  image_channel channel;
+  int dims = 1;
+  if (data->type == dpct::data_matrix) {
+    auto matrix = (image_matrix_p)data->data;
+    channel = matrix->get_channel();
+    dims = matrix->get_dims();
+  } else {
+    channel = data->chn;
+  }
+
+  if (auto _image = detail::create_image(channel, dims)) {
+    _image->set_info(info);
+    _image->attach(data);
+    *image_p = _image;
+  }
+}
+
+namespace detail {
 // Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data {
   void operator()(image<T, Dimension, IsImageArray> *in_image,
                   image_data *data) {
     assert(data->type == data_matrix);
-    in_image->attach(data->data.matrix);
+    in_image->attach((image_matrix_p)data->data);
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
   void operator()(image<T, 1, IsImageArray> *in_image, image_data *data) {
     if (data->type == data_linear)
-      in_image->attach(data->data.linear.data, data->data.linear.chn,
-                       data->data.linear.size);
+      in_image->attach(data->data, data->x, data->chn);
     else if (data->type == data_matrix)
-      in_image->attach(data->data.matrix);
+      in_image->attach((image_matrix_p)data->data);
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
   void operator()(image<T, 2, IsImageArray> *in_image, image_data *data) {
     if (data->type == data_matrix)
-      in_image->attach(data->data.matrix);
+      in_image->attach((image_matrix_p)data->data);
     else if (data->type == data_pitch)
-      in_image->attach(data->data.pitched.to_pitched_data(),
-                       data->data.pitched.chn);
+      in_image->attach(data->data, data->x, data->y, data->pitch, data->chn);
   }
 };
-
-/// Wrap sampler and image accessor together.
-template <class T, int Dimension, bool IsImageArray = false>
-class image_accessor {
-public:
-  using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
-  using data_t = typename image_trait<T>::data_t;
-  cl::sycl::sampler _sampler;
-  accessor_t _img_acc;
-
-public:
-  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
-      : _sampler(sampler), _img_acc(acc) {}
-
-  // Read data from accessor.
-  template <class Coords> data_t read(const Coords &coords) {
-    return fetch_data<T>()(_img_acc.read(coords, _sampler));
-  }
-};
-template <class T, int Dimension> class image_accessor<T, Dimension, true> {
-public:
-  using accessor_t =
-      typename image_trait<T>::template array_accessor_t<Dimension>;
-  using data_t = typename image_trait<T>::data_t;
-  cl::sycl::sampler _sampler;
-  accessor_t _img_acc;
-
-public:
-  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
-      : _sampler(sampler), _img_acc(acc) {}
-
-  // Read data from accessor.
-  template <class Coords> data_t read(int index, const Coords &coords) {
-    return fetch_data<T>()(_img_acc[index].read(coords, _sampler));
-  }
-};
-
-static inline image_channel
-create_image_channel(int elem_size, int channel_nums,
-                     channel_data_kind channel_kind) {
-  image_channel channel;
-  channel.elem_size = elem_size;
-  if (elem_size == 4) {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int32;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int32;
-    else if (channel_kind == channel_float)
-      channel.type = cl::sycl::image_channel_type::fp32;
-  } else if (elem_size == 2) {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int16;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int16;
-    else if (channel_kind == channel_float)
-      channel.type = cl::sycl::image_channel_type::fp16;
-  } else {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int8;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int8;
-  }
-  channel.elem_size *= channel_nums;
-  channel.channel_nums = channel_nums;
-  return channel;
-}
-
-/// Create image channel info.
-/// \param r Channel r width in bits.
-/// \param g Channel g width in bits. Should be same with \p r, or zero.
-/// \param b Channel b width in bits. Should be same with \p g, or zero.
-/// \param a Channel a width in bits. Should be same with \p b, or zero.
-/// \channel_kind Channel data type kind: signed int, unsigned int or float.
-static inline image_channel
-create_image_channel(int r, int g, int b, int a,
-                     channel_data_kind channel_kind) {
-  if (a) {
-    return create_image_channel(r / 8, 4, channel_kind);
-  } else if (b) {
-    return create_image_channel(r / 8, 3, channel_kind);
-  } else if (g) {
-    return create_image_channel(r / 8, 2, channel_kind);
-  } else {
-    return create_image_channel(r / 8, 1, channel_kind);
-  }
-}
-
-/// Create image channel info according to template argument \p T.
-template <class T> static inline image_channel create_image_channel() {
-  return create_image_channel(sizeof(typename image_trait<T>::elem_t),
-                              image_trait<T>::channel_nums,
-                              image_trait<T>::channel_kind);
-}
-
-/// Attach a matrix to an image class.
-/// \param image The image class to be attached.
-/// \param a The matrix data class pointer.
-template <class T, int Dimension, bool IsImageArray>
-inline void attach_image(image<T, Dimension, IsImageArray> &in_image,
-                              image_matrix *a) {
-  in_image.attach(a);
-}
-
-/// Attach a memory block to an image class.
-/// \param image The image class to be attached.
-/// \param ptr The pointer that point to the memory block.
-/// \param desc Channel info.
-/// \param size Memory block size in bytes.
-template <class T, bool IsImageArray>
-inline void attach_image(image<T, 1, IsImageArray> &in_image, void *ptr,
-                              const image_channel &chn, size_t size) {
-  in_image.attach(ptr, chn, size);
-}
-
-/// Attach a memory block to an image class.
-/// \param image The image class to be attached.
-/// \param ptr The pointer that point to the memory block.
-/// \param size Memory block size in bytes.
-template <class T, bool IsImageArray>
-inline void attach_image(image<T, 1, IsImageArray> &in_image, void *ptr, size_t size) {
-  in_image.attach(ptr, create_image_channel<T>(), size);
-}
-
-/// Attach a memory block to an image class.
-/// \param image The image class to be attached.
-/// \param ptr The pointer that point to the memory block.
-/// \param desc Channel info.
-/// \param x Memory block size in dimension x.
-/// \param y Memory block size in dimension y.
-/// \param pitch Memory block pitch in bytes.
-template <class T, bool IsImageArray>
-inline void attach_image(image<T, 2, IsImageArray> &in_image, void *ptr,
-                         const image_channel &desc, size_t x, size_t y,
-                         size_t pitch) {
-  in_image.attach(dpct::pitched_data(ptr, pitch, x, y), desc);
-}
-/// Attach a memory block to an image class.
-/// \param image The image class to be attached.
-/// \param ptr The pointer that point to the memory block.
-/// \param x Memory block size in dimension x.
-/// \param y Memory block size in dimension y.
-/// \param pitch Memory block pitch in bytes.
-template <class T, bool IsImageArray>
-inline void attach_image(image<T, 2, IsImageArray> &in_image, void *ptr, size_t x,
-                         size_t y, size_t pitch) {
-  attach_image(in_image, ptr, create_image_channel<T>(), x, y, pitch);
-}
-
-/// Detach data from an image class.
-/// \param image The image class to be detached.
-template <class T, int Dimension, bool IsImageArray>
-inline void detach_image(image<T, Dimension, IsImageArray> *in_image) {
-  in_image->detach();
-}
-
-/// Detach data from an image class.
-/// \param image The image class to be detached.
-template <class T, int Dimension, bool IsImageArray>
-inline void detach_image(image<T, Dimension, IsImageArray> &in_image) {
-  return detach_image(&in_image);
-}
-
-/// Read data from image accessor.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-template <class T, class CoordT>
-inline typename image_trait<T>::data_t
-read_image(image_accessor<T, 1> &acc, CoordT x) {
-  return acc.read(x);
-}
-
-/// Read data from image accessor.
-/// \param [out] data Point to the memory that expect to have the read value.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-template <class T, class CoordT>
-inline void read_image(typename image_trait<T>::data_t *data,
-                            image_accessor<T, 1> &acc, CoordT x) {
-  *data = read_image(acc, x);
-}
-
-/// Read data from image accessor.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-template <class T, class CoordT>
-inline typename image_trait<T>::data_t
-read_image(image_accessor<T, 2> &acc, CoordT x, CoordT y) {
-  return acc.read(cl::sycl::vec<CoordT, 2>(x, y));
-}
-
-/// Read data from image accessor.
-/// \param [out] data Point to the memory that expect to have the read value.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-template <class T, class CoordT>
-inline void read_image(typename image_trait<T>::data_t *data,
-                            image_accessor<T, 2> &acc, CoordT x,
-                            CoordT y) {
-  *data = read_image(acc, x, y);
-}
-
-/// Read data from image accessor.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-/// \param z Coordinate.
-template <class T, class CoordT>
-inline typename image_trait<T>::data_t
-read_image(image_accessor<T, 3> &acc, CoordT x, CoordT y, CoordT z) {
-  return acc.read(cl::sycl::vec<CoordT, 4>(x, y, z, 0));
-}
-
-/// Read data from image accessor.
-/// \param [out] data Point to the memory that expect to have the read value.
-/// \param acc Image accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-/// \param z Coordinate.
-template <class T, class CoordT>
-inline void read_image(typename image_trait<T>::data_t *data,
-                            image_accessor<T, 4> &acc, CoordT x, CoordT y,
-                            CoordT z) {
-  *data = read_image(acc, x, y, z);
-}
-
-/// Read data from image array accessor.
-/// \param acc Image array accessor.
-/// \param x Coordinate.
-/// \param index Image array index.
-template <class T, class CoordT>
-inline typename image_trait<T>::data_t
-read_image_array(image_accessor<T, 1, true> &acc, CoordT x, int index) {
-  return acc.read(index, x);
-}
-
-/// Read data from image array accessor.
-/// \param acc Image array accessor.
-/// \param x Coordinate.
-/// \param index Image array index.
-template <class T, class CoordT>
-inline void read_image_array(typename image_trait<T>::data_t *data,
-                             image_accessor<T, 1, true> &acc, CoordT x,
-                             int index) {
-  *data = read_image(acc, x, index);
-}
-
-/// Read data from image array accessor.
-/// \param acc Image array accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-/// \param index Image array index.
-template <class T, class CoordT>
-inline typename image_trait<T>::data_t
-read_image_array(image_accessor<T, 2, true> &acc, CoordT x, CoordT y, int index) {
-  return acc.read(index, cl::sycl::vec<CoordT, 2>(x, y));
-}
-
-/// Read data from image array accessor.
-/// \param acc Image array accessor.
-/// \param x Coordinate.
-/// \param y Coordinate.
-/// \param index Image array index.
-template <class T, class CoordT>
-inline void read_image_array(typename image_trait<T>::data_t *data,
-                             image_accessor<T, 2, true> &acc, CoordT x,
-                             CoordT y, int index) {
-  *data = read_image(acc, x, y, index);
-}
 
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_base *create_image(int dims) {
@@ -664,7 +590,6 @@ template <class T> static image_base *create_image(int dims) {
     return nullptr;
   }
 }
-
 /// Create image with given data type \p T, channel order and dims
 template <class T>
 static image_base *create_image(unsigned channel_nums, int dims) {
@@ -705,48 +630,8 @@ static image_base *create_image(image_channel chn, int dims) {
     return nullptr;
   }
 }
+} // namespace detail
 
-/// Create image according to image data and image info.
-/// \param [out] image_p Point to a pointer of image base class.
-/// \param data Pointer to image data.
-/// \param info Pointer to image info.
-inline void create_image(image_base **image_p, image_data *data,
-                              image_info *info) {
-  image_channel channel;
-  int dims = 1;
-  if (data->type == dpct::data_matrix) {
-    channel = data->data.matrix->get_channel();
-    dims = data->data.matrix->get_dims();
-  } else if (data->type == dpct::data_linear) {
-    channel = data->data.linear.chn;
-  } else {
-    assert(data->type != dpct::data_unsupport);
-  }
-
-  if (auto _image = create_image(channel, dims)) {
-    _image->set_info(info);
-    _image->set_data(data);
-    *image_p = _image;
-  }
-}
-
-/// Free an image class.
-/// \param image Pointer of an Image base class.
-inline void dpct_free(image_base *in_image) { delete in_image; }
-
-/// Get image info from an image class.
-/// \param [out] info Point to image info.
-/// \param image Point to image class.
-inline void get_image_info(image_info *info, image_base *in_image) {
-  *info = *in_image->get_info();
-}
-
-/// Get image data from an image class.
-/// \param [out] info Point to image data.
-/// \param image Point to image class.
-inline void get_image_data(image_data *data, image_base *in_image) {
-  *data = *in_image->get_data();
-}
 } // namespace dpct
 
 #endif // !__DPCT_IMAGE_HPP__

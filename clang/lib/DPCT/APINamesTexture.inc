@@ -10,27 +10,40 @@
 //===-----------------------------------------------------------------===//
 ENTRY_TEMPLATED("cudaCreateChannelDesc", "dpct::create_image_channel")
 ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<" + MapNames::getClNamespace() + "::cl_half>")
-ENTRY_RENAMED_ISASSIGNED("cudaUnbindTexture", "dpct::detach_image")
-ENTRY_RENAMED_ISASSIGNED("cudaDestroyTextureObject", "dpct::dpct_free")
-ENTRY_RENAMED_ISASSIGNED("cudaGetTextureObjectResourceDesc", "dpct::get_image_data")
-ENTRY_RENAMED_ISASSIGNED("cudaGetTextureObjectTextureDesc", "dpct::get_image_info")
-ENTRY_TEXTURE("tex1D", "dpct::read_image", 0x01)
-ENTRY_TEXTURE("tex2D", "dpct::read_image", 0x02)
-ENTRY_TEXTURE("tex3D", "dpct::read_image", 0x03)
-ENTRY_TEXTURE("tex1Dfetch", "dpct::read_image", 0x01)
-ENTRY_TEXTURE("tex1DLayered", "dpct::read_image_array", 0xF1)
-ENTRY_TEXTURE("tex2DLayered", "dpct::read_image_array", 0xF2)
-ENTRY_REORDER_ISASSIGNED("cudaBindTexture", "dpct::attach_image",
-              1 /*ref to tex object*/, 2 /*source pointer*/,
-              3 /*ref to channel desc*/, 4 /*size in bytes*/)
-ENTRY_REORDER_ISASSIGNED("cudaBindTexture2D", "dpct::attach_image",
-                         1 /*ref to tex object*/, 2 /*source pointer*/,
-                         3 /*ref to channel desc*/, 4 /*size in dimension x*/,
-                         5 /*size in dimension y*/, 6 /*pitch*/)
-ENTRY_REORDER_ISASSIGNED("cudaBindTextureToArray", "dpct::attach_image",
-              0 /*ref of texture object*/, 1 /*ref of array*/)
-ENTRY_REORDER_ISASSIGNED("cudaCreateTextureObject", "dpct::create_image",
-              0 /*ref of texture object*/, 1 /*ref of data desc*/,
-              2 /*ref of info desc*/)
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+	POINTER_CHECKER(0),
+    MEMBER_CALL_FACTORY_ENTRY("cudaUnbindTexture", DEREF(0), true, "detach"),
+    MEMBER_CALL_FACTORY_ENTRY("cudaUnbindTexture", ARG(0), false, "detach")))
+
+ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0)))
+
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectResourceDesc", DEREF(0),
+                         MEMBER_CALL(ARG(1), true, "get_data")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc",
+                                        DEREF(0),
+                                        MEMBER_CALL(ARG(1), true, "get_info")))
+
+ENTRY_TEXTURE("tex1D", 0x01, 1)
+ENTRY_TEXTURE("tex2D", 0x02, 1, 2)
+ENTRY_TEXTURE("tex3D", 0x03, 1, 2, 3)
+ENTRY_TEXTURE("tex1Dfetch", 0x01, 1)
+ENTRY_TEXTURE("tex1DLayered", 0xF1, 2, 1)
+ENTRY_TEXTURE("tex2DLayered", 0xF2, 3, 1, 2)
+
+ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture", 1 /*start arg idx*/,
+                              2 /*size in bytes*/))
+ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
+                              2 /*size in dimension x*/,
+                              3 /*size in dimension y*/, 4 /*pitch*/))
+ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray", 0 /*start arg idx*/))
+
+ASSIGNABLE_FACTORY(ENTRY_REORDER("cudaCreateTextureObject",
+                                 "dpct::create_image",
+                                 0 /*ref of texture object*/,
+                                 1 /*ref of data desc*/,
+                                 2 /*ref of info desc*/))
+
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::NOTSUPPORTED)

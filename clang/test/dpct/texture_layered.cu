@@ -24,7 +24,7 @@ static texture<float4, cudaTextureType2DLayered> tex42;
 static texture<uint2, cudaTextureType1DLayered> tex21;
 
 // CHECK: void device01(sycl::float4 *out, dpct::image_accessor<sycl::uint2, 1, true> tex21) {
-// CHECK-NEXT: sycl::uint2 u21 = dpct::read_image_array(tex21, 1.0f, 12);
+// CHECK-NEXT: sycl::uint2 u21 = tex21.read(12, 1.0f);
 // CHECK-NEXT: out[0].x() =  u21.x();
 __device__ void device01(float4 *out) {
   uint2 u21 = tex1DLayered(tex21, 1.0f, 12);
@@ -34,7 +34,7 @@ __device__ void device01(float4 *out) {
 // CHECK: void kernel(sycl::float4 *out, dpct::image_accessor<sycl::float4, 2, true> tex42,
 // CHECK-NEXT:        dpct::image_accessor<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: device01(out, tex21);
-// CHECK-NEXT: out[1] = dpct::read_image_array(tex42, 1.0f, 1.0f, 12);
+// CHECK-NEXT: out[1] = tex42.read(12, 1.0f, 1.0f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.
 __global__ void kernel(float4 *out) {
   device01(out);
@@ -56,7 +56,7 @@ int main() {
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.filter_mode() = sycl::filtering_mode::nearest;
-  // CHECK-NEXT: dpct::attach_image(tex42, a42);
+  // CHECK-NEXT: tex42.attach(a42, desc42);
   float4 *d_data42;
   cudaArray_t a42;
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
@@ -76,9 +76,9 @@ int main() {
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.filter_mode() = sycl::filtering_mode::linear;
-  // CHECK-NEXT: dpct::attach_image(tex21, d_data21, desc21, 32 * sizeof(sycl::uint2));
-  // CHECK-NEXT: dpct::attach_image(tex21, d_data21, 32 * sizeof(sycl::uint2));
-  // CHECK-NEXT: dpct::attach_image(tex21, d_data21, desc21, 32 * sizeof(sycl::uint2));
+  // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2), desc21);
+  // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2));
+  // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2), desc21);
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
   cudaChannelFormatDesc desc21 = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindUnsigned);
@@ -111,8 +111,8 @@ int main() {
   // CHECK-NEXT:       });
   kernel<<<1, 1>>>(d);
 
-  // CHECK: dpct::detach_image(tex42);
-  // CHECK-NEXT: dpct::detach_image(&tex21);
+  // CHECK: tex42.detach();
+  // CHECK-NEXT: tex21.detach();
   cudaUnbindTexture(tex42);
   cudaUnbindTexture(&tex21);
 

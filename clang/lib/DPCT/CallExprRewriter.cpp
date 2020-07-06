@@ -47,18 +47,6 @@ Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
                                 : Result.replace(Result.length() - 2, 2, ")");
 }
 
-Optional<std::string> FuncNameRewriter::rewrite() {
-  RewriteArgList = getMigratedArgs();
-  return buildRewriteString();
-}
-
-Optional<std::string> FuncNameRewriter::buildRewriteString() {
-  auto S = FuncCallExprRewriter::buildRewriteString();
-  if (S.hasValue() && isAssigned(Call))
-    return "(" + S.getValue() + ", 0)";
-  return S;
-}
-
 Optional<std::string> MathCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(SourceCalleeName.str());
@@ -1022,41 +1010,6 @@ Optional<std::string> ReorderFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
-Optional<std::string> ReorderFunctionIsAssignedRewriter::rewrite() {
-  auto S = ReorderFunctionRewriter::rewrite();
-  if (S.hasValue() && isAssigned(Call))
-    return "(" + S.getValue() + ", 0)";
-  return S;
-}
-
-void TexFunctionRewriter::setTextureInfo(int TexType) {
-  const Expr *Obj = nullptr;
-  std::string DataTy;
-  int Idx = 0;
-  auto &Global = DpctGlobalInfo::getInstance();
-  if (Call->getArg(0)->getType()->isPointerType()) {
-    DataTy = Global.getUnqualifiedTypeName(
-        Call->getArg(0)->getType()->getPointeeType());
-    Obj = Call->getArg(1);
-    Idx = 1;
-  } else {
-    DataTy =
-        Global.getUnqualifiedTypeName(Call->getType().getUnqualifiedType());
-    Obj = Call->getArg(0);
-    Idx = 0;
-  }
-
-  if (auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Call)) {
-    if (auto ObjInfo =
-            DeviceFunctionDecl::LinkRedecls(FD)
-                ->addCallee(Call)
-                ->addTextureObjectArg(
-                    Idx, dyn_cast<DeclRefExpr>(Obj->IgnoreImpCasts()))) {
-      ObjInfo->setType(std::move(DataTy), TexType);
-    }
-  }
-}
-
 void TemplatedCallExprRewriter::buildTemplateArgsList() {
   auto Callee = Call->getCallee()->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
@@ -1100,12 +1053,328 @@ Optional<std::string> TemplatedCallExprRewriter::rewrite() {
   return OS.str();
 }
 
-#define REWRITER_FACTORY_ENTRY(FuncName, RewriterTy, ...)                      \
-  {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
+DerefExpr DerefExpr::create(const Expr *E) {
+  DerefExpr D;
+  E = E->IgnoreImplicitAsWritten();
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == clang::UO_AddrOf) {
+      E = UO->getSubExpr()->IgnoreImplicitAsWritten();
+      D.AddrOfRemoved = true;
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
+      E = COCE->getArg(0)->IgnoreImplicitAsWritten();
+      D.AddrOfRemoved = true;
+    }
+  }
+
+  D.E = E;
+  D.NeedParens = needExtraParens(E);
+  return D;
+}
+
+std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> DerefExpr {
+    return DerefExpr::create(C->getArg(Idx));
+  };
+}
+
+std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
+}
+
+template <class Printer, class... Ts> class PrinterCreator {
+  std::tuple<Ts...> Creators;
+
+  template <class T> T create(T Val, const CallExpr *) { return Val; }
+  StringRef create(const std::string &Val, const CallExpr *) { return Val; }
+  template <class T>
+  T create(std::function<T(const CallExpr *)> &Func, const CallExpr *C) {
+    return Func(C);
+  }
+  template <size_t... Idx>
+  Printer createPrinter(const CallExpr *C, std::index_sequence<Idx...>) {
+    return Printer(create(std::get<Idx>(Creators), C)...);
+  }
+
+public:
+  PrinterCreator(Ts... Args) : Creators(Args...) {}
+  Printer operator()(const CallExpr *C) {
+    return createPrinter(C, std::index_sequence_for<Ts...>());
+  }
+};
+
+template <class BaseT, class... CallArgsT>
+using MemberCallPrinterCreator =
+    PrinterCreator<MemberCallPrinter<BaseT, CallArgsT...>,
+                   std::function<BaseT(const CallExpr *)>, bool, std::string,
+                   std::function<CallArgsT(const CallExpr *)>...>;
+
+template <class BaseT, class... CallArgsT>
+std::function<MemberCallPrinter<BaseT, CallArgsT...>(const CallExpr *)>
+makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
+                      bool IsArrow, std::string Member,
+                      std::function<CallArgsT(const CallExpr *)>... Args) {
+  return MemberCallPrinterCreator<BaseT, CallArgsT...>(
+      std::forward<std::function<BaseT(const CallExpr *)>>(BaseFunc), IsArrow,
+      Member,
+      std::forward<std::function<CallArgsT(const CallExpr *)>>(Args)...);
+}
+
+/// Create AssignExprRewriterFactory with given argumens.
+/// \p SourceName the source callee name of original call expr.
+/// \p LValueCreator use to get lhs from original call expr.
+/// \p RValueCreator use to get rhs from original call expr.
+template <class LValue, class RValue>
+std::shared_ptr<CallExprRewriterFactoryBase>
+creatAssignExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<LValue(const CallExpr *)> &&LValueCreator,
+    std::function<RValue(const CallExpr *)> &&RValueCreator) {
+  return std::make_shared<CallExprRewriterFactory<AssignExprRewriter<LValue, RValue>,
+                                 std::function<LValue(const CallExpr *)>,
+                                 std::function<RValue(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<LValue(const CallExpr *)>>(LValueCreator),
+      std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
+}
+
+/// Create MemberCallExprRewriterFactory with given argumens.
+/// \p SourceName the source callee name of original call expr.
+/// \p BaseCreator use to get base expr from original call expr.
+/// \p IsArrow the member operator is arrow or dot as default.
+/// \p ArgsCreator use to get call args from original call expr.
+template <class BaseT, class... ArgsT>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createMemberCallExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<BaseT(const CallExpr *)> BaseCreator, bool IsArrow,
+    std::string MemberName,
+    std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+      MemberCallExprRewriter<BaseT, ArgsT...>,
+      std::function<BaseT(const CallExpr *)>, bool, std::string,
+      std::function<ArgsT(const CallExpr *)>...>>(
+      SourceName,
+      std::forward<std::function<BaseT(const CallExpr *)>>(BaseCreator),
+      IsArrow, MemberName,
+      std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
+}
+
+template <class ArgT>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createDeleterCallExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<ArgT(const CallExpr *)> &&ArgCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+      DeleterCallExprRewriter<ArgT>, std::function<ArgT(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
+}
+
+/// Create AssignableRewriterFactory key-value pair with inner key-value.
+/// If the call expr's return value is used, will insert around "(" and ", 0)".
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<AssignableRewriterFactory>(Input.second));
+}
+/// Create AssignableRewriterFactory key-value pair with inner key-value.
+/// If the call expr's return value is used, will insert around "(" and ", 0)".
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createAssignableFactory(std::move(Input));
+}
+
+/// Create ConditonalRewriterFactory key-value pair with two key-value
+/// candidates and predicate.
+/// If predicate result is true, \p First will be used, else \p Second will be
+/// used.
+/// Also check the key of \p First and \p Second is same in debug build.
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createConditionalFactory(
+    std::function<bool(const CallExpr *)> Pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&First,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Second) {
+#ifdef DPCT_DEBUG_BUILD
+  if (First.first != Second.first) {
+    llvm::errs() << "Condtional factory has different name: [" << First.first
+                 << "] : [" << Second.first << "]\n";
+    assert(0 && "Condtional factory has different name");
+  }
+#endif // DPCT_DEBUG_BUILD
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(First.first), std::make_shared<ConditionalRewriterFactory>(
+                                  Pred, First.second, Second.second));
+}
+
+/// Create ConditonalRewriterFactory key-value pair with two key-value
+/// candidates and predicate.
+/// If predicate result is true, \p First will be used, else \p Second will be
+/// used.
+/// Also check the key of \p First and \p Second is same in debug build.
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createConditionalFactory(
+    std::function<bool(const CallExpr *)> Pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&First,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Second,
+    T) {
+  return createConditionalFactory(std::move(Pred), std::move(First),
+                                  std::move(Second));
+}
+
+std::function<bool(const CallExpr *)> makePointerChecker(unsigned Idx) {
+  return [=](const CallExpr *C) -> bool {
+    return C->getArg(Idx)->getType()->isPointerType();
+  };
+}
+
+/// Create rewriter factory for migration of cudaBindTexture APIs.
+/// \p StartIdx is represent the first availbe argument's index.
+/// For cudaBindTexture and cudaBindTexture2D, it is 1.
+/// For  cudaBindTextureToArray, it is 0.
+/// The first predicate will check the \p StartIdx 'th argument whether is pointer.
+/// If it is true, the call expr will be migrated to member call expr.
+/// e.g.: cudaBindTexture(0, &tex, data, &desc, size) -> tex.attach(data, size, desc)
+/// with template arguments: <1, 2>.
+/// Else will check the second predicate:
+/// If \p Start + 2 'th argument's type whether is cudaChannelFormatDesc.
+/// If it is true, e.g.: cudaBindTexture(0, tex, data, desc, size) ->
+/// tex.attach(data, size, desc).
+/// Else, e.g.: cudaBindTexture(0, tex, data, size) ->tex.attach(data, size, desc).
+template <size_t StartIdx, size_t... Idx>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createBindTextureRewriterFactory(const std::string &Source) {
+  std::function<bool(const CallExpr *)> TypeChecker =
+      [=](const CallExpr *C) -> bool {
+    if (C->getNumArgs() > StartIdx + 2)
+      return DpctGlobalInfo::getUnqualifiedTypeName(
+                 C->getArg(StartIdx + 2)->getType()) == "cudaChannelFormatDesc";
+    return false;
+  };
+
+  return std::make_shared<ConditionalRewriterFactory>(
+      makePointerChecker(StartIdx + 0),
+      createMemberCallExprRewriterFactory(
+          Source, makeDerefExprCreator(StartIdx + 0), true, "attach",
+          makeCallArgCreator(StartIdx + 1),
+          makeCallArgCreator(StartIdx + Idx + 1)...,
+          makeDerefExprCreator(StartIdx + 2)),
+      std::make_shared<ConditionalRewriterFactory>(
+          TypeChecker,
+          createMemberCallExprRewriterFactory(
+              Source, makeCallArgCreator(StartIdx + 0), false, "attach",
+              makeCallArgCreator(StartIdx + 1),
+              makeCallArgCreator(StartIdx + Idx + 1)...,
+              makeCallArgCreator(StartIdx + 2)),
+          createMemberCallExprRewriterFactory(
+              Source, makeCallArgCreator(StartIdx + 0), false, "attach",
+              makeCallArgCreator(StartIdx + 1),
+              makeCallArgCreator(StartIdx + Idx)...)));
+}
+
+void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {
+  if (auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(C)) {
+    if (auto ObjInfo =
+            DeviceFunctionDecl::LinkRedecls(FD)
+                ->addCallee(C)
+                ->addTextureObjectArg(
+                    ObjIdx, dyn_cast<DeclRefExpr>(
+                                C->getArg(ObjIdx)->IgnoreImpCasts()))) {
+      ObjInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(QT), TexType);
+    }
+  }
+}
+
+/// Create rewriter factory for texture reader APIs.
+/// Predicate: check the first arg if is pointer and set texture info with corresponding
+/// data.
+/// Migrate the call expr to an assign expr if Pred result is true;
+/// e.g.: tex1D(&u, tex, 1.0f) -> u = tex.read(1.0f)
+/// Migrate the call expr to an assign expr if Pred result is false;
+/// e.g.: tex1D(tex, 1.0f) -> tex.read(1.0f)
+/// The template arguments is the member call arguments' index in original call expr.
+template <size_t... Idx>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
+  std::function<bool(const CallExpr *)> Pred = [=](const CallExpr *C) -> bool {
+    if (C->getArg(0)->getType()->isPointerType()) {
+      setTextureInfo(C, TextureType, 1,
+                     C->getArg(0)->getType()->getPointeeType());
+      return true;
+    } else {
+      setTextureInfo(C, TextureType, 0, C->getType());
+      return false;
+    }
+  };
+  return std::make_shared<ConditionalRewriterFactory>(
+      Pred,
+      creatAssignExprRewriterFactory(
+          Source, makeDerefExprCreator(0),
+          makeMemberCallCreator(makeCallArgCreator(1),
+                                              false, "read",
+                                              makeCallArgCreator(Idx + 1)...)),
+      createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0), false,
+                                          "read", makeCallArgCreator(Idx)...));
+}
+
+#define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
+#define DEREF(x) makeDerefExprCreator(x)
+#define ARG(x) makeCallArgCreator(x)
+#define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define POINTER_CHECKER(x) makePointerChecker(x)
+#define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
+  createConditionalFactory(Pred, First Second 0),
+#define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
+  {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
+#define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
+  {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+#define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
+  {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
+
+///***************************************************************
+/// Examples:
+/// cudaBindTexture(0, &tex21, d_data21, &desc21, 32 * sizeof(uint2))
+/// -> tex21.attach(d_data21, 32 * sizeof(uint32)
+/// using: MEMBER_CALL_FACTORY_ENTRY("cudaBindTexture", DEREF(1), true/* member
+/// operator default is arrow*/, "attach", ARG(2), ARG(4), DEREF(3))
+///
+/// tex2DLayered(&data, tex, 2.0f, 2.0f, 10) -> data = tex.read(10, 2.0f, 2.0f)
+/// using: ASSIGN_FACTORY_ENTRY("tex2DLayered", DEREF(0), MEMBER_ALL(ARG(1),
+/// false/* member operator default is dot */, "read", ARG(4), ARG(2), ARG(3))
+///
+/// Macro ASSIGNABLE_FACTORY(x) is used for migration of call expr that has
+/// valid return value.
+///
+/// Macro CONDITIONAL_FACTORY_ENTRY(pred, first, second) is used for conditonal
+/// migration. \p pred is expr that can convert to std::function<bool(const
+/// CallExpr *)>. \p first and \p second is two candidates factory. If \p pred
+/// result is true, \p first will be used to create rewrite, else \p second will
+/// be used.
+///***************************************************************
+
+#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, TexType, ...)                     \
+  {FuncName,                                                                   \
+   createTextureReaderRewriterFactory<__VA_ARGS__>(FuncName, TexType)},
+#define BIND_TEXTURE_FACTORY_ENTRY(FuncName, ...)                              \
+  {FuncName, createBindTextureRewriterFactory<__VA_ARGS__>(FuncName)},
+
+#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
+  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
-#define FUNC_NAME_ISASSIGNED_FACTORY_ENTRY(FuncName, RewriterName)             \
-  REWRITER_FACTORY_ENTRY(FuncName, FuncNameRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
@@ -1121,19 +1390,14 @@ Optional<std::string> TemplatedCallExprRewriter::rewrite() {
 #define REORDER_FUNC_FACTORY_ENTRY(FuncName, RewriterName, ...)                \
   REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionRewriterFactory,             \
                          RewriterName, std::vector<unsigned>{__VA_ARGS__})
-#define REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(FuncName, RewriterName, ...)     \
-  REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionIsAssignedRewriterFactory,   \
-                         RewriterName, std::vector<unsigned>{__VA_ARGS__})
-#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, RewriterName, TexType)                     \
-  REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName, TexType)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, RewriterName)                     \
   REWRITER_FACTORY_ENTRY(FuncName, TemplatedCallExprRewriterFactory, RewriterName)
 
 const std::unordered_map<std::string,
-                         std::shared_ptr<CallExprRewriterFactoryBase>>
-    CallExprRewriterFactoryBase::RewriterMap = {
+	std::shared_ptr<CallExprRewriterFactoryBase>>
+	CallExprRewriterFactoryBase::RewriterMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
@@ -1161,14 +1425,14 @@ const std::unordered_map<std::string,
 
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_RENAMED_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME)                 \
-  FUNC_NAME_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TEXTURE(SOURCEAPINAME, TARGETAPINAME, TEXTYPE)                            \
-  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, TEXTYPE)
+#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, ...)                            \
+  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, __VA_ARGS__)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
-#define ENTRY_REORDER_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME, ...)            \
-  REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
+#define ENTRY_BIND(SOURCEAPINAME, ...)            \
+  BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#define ENTRY_REORDER(SOURCEAPINAME, TARGETAPINAME, ...)            \
+  REORDER_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, TARGETAPINAME)                            \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #include "APINamesTexture.inc"
