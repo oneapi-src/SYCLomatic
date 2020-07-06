@@ -586,28 +586,16 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
       "(1, 1, 1)";
   if (ExecutionConfig.DeclGlobalRange) {
-    printReverseRange(Printer, "dpct_global_range");
+    Printer << "dpct_global_range";
   } else if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
-    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                     ExecutionConfig.DeclLocalRange,
-                     ExecutionConfig.LocalDirectRef);
+    Printer << ExecutionConfig.LocalSize;
   } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr) {
-    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
-                     ExecutionConfig.DeclGroupRange,
-                     ExecutionConfig.GroupDirectRef);
+    Printer << ExecutionConfig.GroupSize;
   } else {
-    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
-                     ExecutionConfig.DeclGroupRange,
-                     ExecutionConfig.GroupDirectRef);
-    Printer << " * ";
-    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                     ExecutionConfig.DeclLocalRange,
-                     ExecutionConfig.LocalDirectRef);
+    Printer << ExecutionConfig.GroupSize << " * " << ExecutionConfig.LocalSize;
   }
   Printer << ", ";
-  printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                   ExecutionConfig.DeclLocalRange,
-                   ExecutionConfig.LocalDirectRef);
+  Printer << ExecutionConfig.LocalSize;
   (Printer << "), ").newLine();
   Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
                DpctGlobalInfo::getItemName(), ") {");

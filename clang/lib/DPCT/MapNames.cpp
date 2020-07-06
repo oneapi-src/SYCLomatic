@@ -2935,7 +2935,7 @@ const std::unordered_map<std::string, std::string>
     };
 
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{
-    {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},
+    {"x", "[2]"}, {"y", "[1]"}, {"z", "[0]"},
     // ...
 };
 

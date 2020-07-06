@@ -79,7 +79,7 @@ void testReference(const int &i) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
   // CHECK-NEXT:         });
@@ -109,7 +109,7 @@ struct TestThis {
     // CHECK-NEXT:       auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-    // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+    // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
     // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           testKernel(args_arg1_ct0, args_arg2_ct1, item_ct1, arg3_ct2);
     // CHECK-NEXT:         });
@@ -145,7 +145,7 @@ int main() {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
@@ -217,7 +217,7 @@ int main() {
   // CHECK-NEXT:       auto arr_karg3int_ct2 = arr[karg3int];
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, griddim[0]) * cl::sycl::range<3>(1, 1, griddim[1] + 2), cl::sycl::range<3>(1, 1, griddim[1] + 2)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, griddim[2]) * cl::sycl::range<3>(1, 1, griddim[1] + 2), cl::sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, arr_karg3int_ct2);
   // CHECK-NEXT:         });
@@ -260,7 +260,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
@@ -270,7 +270,7 @@ int main() {
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(griddim.get(2), griddim.get(1), griddim.get(0)) * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
@@ -339,7 +339,7 @@ __global__ void foo_kernel3(int *d) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -368,7 +368,7 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(d.get(2), d.get(1), d.get(0))),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(dpct_global_range, d),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -384,7 +384,7 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -413,7 +413,7 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(d.get(2), d.get(1), d.get(0))),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(dpct_global_range, d),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -435,7 +435,7 @@ void run_foo3(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:           cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:             int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:             foo_kernel3(g_a_ct0);

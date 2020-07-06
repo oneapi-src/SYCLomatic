@@ -2995,23 +2995,6 @@ private:
   }
 
   void buildKernelArgsStmt();
-  void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
-    DpctGlobalInfo::printCtadClass(Printer,
-                                   MapNames::getClNamespace() + "::range", 3)
-        << "(" << RangeName << ".get(2), " << RangeName << ".get(1), "
-        << RangeName << ".get(0))";
-  }
-  void printKernelRange(KernelPrinter &Printer, const std::string &RangeStr,
-                        const std::string &DeclName, bool DeclRange,
-                        bool DirectRef) {
-    if (DeclRange) {
-      printReverseRange(Printer, DeclName);
-    } else if (DirectRef) {
-      printReverseRange(Printer, RangeStr);
-    } else {
-      Printer << RangeStr;
-    }
-  }
 
   struct {
     std::string LocHash;

@@ -27,12 +27,12 @@ int main() {
   cudaExtent deflt_1;
   cudaPos deflt_2;
 
-  // CHECK: sycl::range round1_1(NUM, 1, 1);
+  // CHECK: sycl::range round1_1(1, 1, NUM);
   dim3 round1_1(NUM);
 
   cudaExtent exten = make_cudaExtent(1,1,1);;
 
-  // CHECK: sycl::range castini = sycl::range(4, 1, 1);
+  // CHECK: sycl::range castini = sycl::range(1, 1, 4);
   dim3 castini = (dim3)4;
 
   // CHECK:   sycl::range castini_1 = exten;
@@ -40,7 +40,7 @@ int main() {
   cudaExtent castini_1 = exten;
   cudaPos castini_2 = deflt_2;
 
-  // CHECK: sycl::range copyctor1 = sycl::range(sycl::range(33, 1, 1));
+  // CHECK: sycl::range copyctor1 = sycl::range(sycl::range(1, 1, 33));
   dim3 copyctor1 = dim3((dim3)33);
 
 
@@ -55,9 +55,9 @@ int main() {
   cudaExtent copyctor31(exten);
   cudaPos copyctor32(deflt_2);
 
-  // CHECK: func(sycl::range(1, 1, 1), sycl::range(1, 1, 1), sycl::range(2, 1, 1), sycl::range(3, 2, 1));
+  // CHECK: func(sycl::range(1, 1, 1), sycl::range(1, 1, 1), sycl::range(1, 1, 2), sycl::range(1, 2, 3));
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
-  // CHECK: func(deflt, sycl::range(deflt), sycl::range(deflt), sycl::range(2 + 3 * 3, 1, 1));
+  // CHECK: func(deflt, sycl::range(deflt), sycl::range(deflt), sycl::range(1, 1, 2 + 3 * 3));
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
 
 
@@ -82,7 +82,7 @@ int main() {
     dim3 **ppw;
   };
 
-  // CHECK: sycl::range gpu_blocks(1 / (castini[0] * 200), 1, 1);
+  // CHECK: sycl::range gpu_blocks(1, 1, 1 / (castini[2] * 200));
   dim3 gpu_blocks(1 / (castini.x * 200));
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {

@@ -16,7 +16,7 @@ void foo(){
 //CHECK:void foo1(){
 //CHECK-NEXT:                  //some comments
 //CHECK-NEXT:    //some comments
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
+//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:}
 void foo1(){
                   //some comments
@@ -26,7 +26,7 @@ void foo1(){
 
 //CHECK:void foo2(){
 //CHECK-NEXT:                //some comments
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
+//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:}
 void foo2(){
                 //some comments
@@ -35,7 +35,7 @@ void foo2(){
 
 //CHECK:void foo3(){
 //CHECK-NEXT:                  int test;
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
+//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:}
 void foo3(){
                   int test;

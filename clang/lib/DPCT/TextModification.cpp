@@ -576,17 +576,18 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
     std::string ReplacedString;
     llvm::raw_string_ostream OS(ReplacedString);
     ArgumentAnalysis AA;
+    std::string ArgStr = "";
     for (auto Arg : Ctor->arguments()) {
       AA.analyze(Arg);
-      OS << AA.getReplacedString() << ", ";
+      ArgStr = ", " + AA.getReplacedString() + ArgStr;
     }
+    ArgStr.replace(0, 2, "");
+    OS << ArgStr;
     OS.flush();
     if (Ctor->getParenOrBraceRange().isInvalid()) {
       // dim3 = a;
       ReplacedString =
-          "(" + ReplacedString.replace(ReplacedString.length() - 2, 2, ")");
-    } else {
-      ReplacedString.erase(ReplacedString.length() - 2, 2);
+          "(" + ReplacedString + ")";
     }
     return ReplacedString;
   } else {
