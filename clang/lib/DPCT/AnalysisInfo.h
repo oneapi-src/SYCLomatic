@@ -82,18 +82,22 @@ struct DeviceRandomStateTypeInfo {
 struct DeviceRandomInitAPIInfo {
   DeviceRandomInitAPIInfo(unsigned int Length, std::string GeneratorType,
                           std::string RNGSeed, std::string RNGSubseq,
-                          std::string RNGOffset, std::string RNGStateName,
+                          bool IsRNGSubseqLiteral, std::string RNGOffset,
+                          bool IsRNGOffsetLiteral, std::string RNGStateName,
                           std::string IndentStr)
       : Length(Length), GeneratorType(GeneratorType), RNGSeed(RNGSeed),
-        RNGSubseq(RNGSubseq), RNGOffset(RNGOffset), RNGStateName(RNGStateName),
-        IndentStr(IndentStr) {}
+        RNGSubseq(RNGSubseq), IsRNGSubseqLiteral(IsRNGSubseqLiteral),
+        RNGOffset(RNGOffset), IsRNGOffsetLiteral(IsRNGOffsetLiteral),
+        RNGStateName(RNGStateName), IndentStr(IndentStr) {}
   void buildInfo(std::string FilePath, unsigned int Offset);
 
   unsigned int Length;
   std::string GeneratorType;
   std::string RNGSeed;
   std::string RNGSubseq;
+  bool IsRNGSubseqLiteral = false;
   std::string RNGOffset;
+  bool IsRNGOffsetLiteral = false;
   std::string RNGStateName;
   std::string IndentStr;
 };
@@ -1022,12 +1026,12 @@ public:
           LocInfo.second, DeviceRandomStateTypeInfo(Length, GeneratorType)));
     }
   }
-  void insertDeviceRandomInitAPIInfo(SourceLocation SL, unsigned int Length,
-                                     std::string GeneratorType,
-                                     std::string RNGSeed, std::string RNGSubseq,
-                                     std::string RNGOffset,
-                                     std::string StateName,
-                                     std::string IndentStr) {
+  void
+  insertDeviceRandomInitAPIInfo(SourceLocation SL, unsigned int Length,
+                                std::string GeneratorType, std::string RNGSeed,
+                                std::string RNGSubseq, bool IsRNGSubseqLiteral,
+                                std::string RNGOffset, bool IsRNGOffsetLiteral,
+                                std::string StateName, std::string IndentStr) {
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &M = FileInfo->getDeviceRandomInitAPIMap();
@@ -1035,7 +1039,8 @@ public:
       M.insert(std::make_pair(
           LocInfo.second,
           DeviceRandomInitAPIInfo(Length, GeneratorType, RNGSeed, RNGSubseq,
-                                  RNGOffset, StateName, IndentStr)));
+                                  IsRNGSubseqLiteral, RNGOffset,
+                                  IsRNGOffsetLiteral, StateName, IndentStr)));
     }
   }
   void insertDeviceRandomGenerateAPIInfo(

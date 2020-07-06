@@ -15,7 +15,7 @@ __global__ void picount(int *totals) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   //CHECK: mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/> rng;
-  //CHECK: rng = mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/>(clock64(), {static_cast<std::uint64_t>(1234 * PlaceHolder/*Fix the vec_size mannually*/), static_cast<std::uint64_t>(tid * 8)});
+  //CHECK: rng = mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/>(clock64(), {1234 * PlaceHolder/*Fix the vec_size mannually*/, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 

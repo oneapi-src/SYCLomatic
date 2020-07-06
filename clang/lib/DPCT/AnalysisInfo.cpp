@@ -1712,11 +1712,22 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
     VecSizeStr = "PlaceHolder/*Fix the vec_size mannually*/";
   }
 
-  std::string ReplStr =
-      RNGStateName + " = " + GeneratorType + "<" + VecSizeStr + ">(" + RNGSeed +
-      ", {static_cast<std::uint64_t>(" + RNGOffset +
-      (IsOneNumber ? "" : " * " + VecSizeStr) +
-      "), static_cast<std::uint64_t>(" + RNGSubseq + " * 8)})";
+  std::string FirstOffsetArg, SecondOffsetArg;
+  if (IsRNGOffsetLiteral) {
+    FirstOffsetArg = RNGOffset + (IsOneNumber ? "" : " * " + VecSizeStr);
+  } else {
+    FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset +
+                     (IsOneNumber ? "" : " * " + VecSizeStr) + ")";
+  }
+  if (IsRNGSubseqLiteral) {
+    SecondOffsetArg = RNGSubseq + " * 8";
+  } else {
+    SecondOffsetArg = "static_cast<std::uint64_t>(" + RNGSubseq + " * 8)";
+  }
+
+  std::string ReplStr = RNGStateName + " = " + GeneratorType + "<" +
+                        VecSizeStr + ">(" + RNGSeed + ", {" + FirstOffsetArg +
+                        ", " + SecondOffsetArg + "})";
 
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Length, ReplStr, nullptr));

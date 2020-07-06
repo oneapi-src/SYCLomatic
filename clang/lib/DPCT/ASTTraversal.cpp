@@ -4153,11 +4153,21 @@ void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EARNGSubseq(CE->getArg(1));
     ExprAnalysis EARNGOffset(CE->getArg(2));
 
+    auto IsLiteral = [=](const Expr *E) {
+      if (dyn_cast<IntegerLiteral>(E->IgnoreCasts()) ||
+          dyn_cast<FloatingLiteral>(E->IgnoreCasts()) ||
+          dyn_cast<FixedPointLiteral>(E->IgnoreCasts())) {
+        return true;
+      }
+      return false;
+    };
+
     DpctGlobalInfo::getInstance().insertDeviceRandomInitAPIInfo(
         FuncNameBegin, FuncCallLength,
         MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second,
         EARNGSeed.getReplacedString(), EARNGSubseq.getReplacedString(),
-        EARNGOffset.getReplacedString(), getDrefName(CE->getArg(3)), IndentStr);
+        IsLiteral(CE->getArg(1)), EARNGOffset.getReplacedString(),
+        IsLiteral(CE->getArg(2)), getDrefName(CE->getArg(3)), IndentStr);
   } else {
     const CompoundStmt *CS = findImmediateBlock(CE);
     if (!CS)
