@@ -140,17 +140,72 @@ inline float fast_length(const float *a, int len) {
   }
 }
 
-/// Compute bytewise max for two unsigned integers, each byte is treated
-/// as signed
-/// \param [in] a The first unsigned integer
-/// \param [in] b The second unsigned integer
-/// \return The bytewise max of the two unsigned integers
-inline unsigned bytewise_max_signed(unsigned a, unsigned b) {
-  cl::sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.as<cl::sycl::char4>();
-  auto v3 = v1.as<cl::sycl::char4>();
+/// Compute vectorized max for two values, with each value treated as a vector
+/// type S
+/// \param [in] S The type of the vector
+/// \param [in] T The type of the original values
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \return The vectorize max of the two values
+template <typename S, typename T>
+inline T vectorized_max(T a, T b) {
+  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<S>();
+  auto v3 = v1.template as<S>();
   v2 = cl::sycl::max(v2, v3);
-  v0 = v2.as<cl::sycl::vec<unsigned, 1>>();
+  v0 = v2.template as<cl::sycl::vec<T, 1>>();
+  return v0;
+}
+
+/// Compute vectorized min for two values, with each value treated as a vector
+/// type S
+/// \param [in] S The type of the vector
+/// \param [in] T The type of the original values
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \return The vectorized min of the two values
+template <typename S, typename T>
+inline T vectorized_min(T a, T b) {
+  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<S>();
+  auto v3 = v1.template as<S>();
+  v2 = cl::sycl::min(v2, v3);
+  v0 = v2.template as<cl::sycl::vec<T, 1>>();
+  return v0;
+}
+
+/// Compute vectorized greater than for two values, with each value treated as a
+/// vector type S
+/// \param [in] S The type of the vector
+/// \param [in] T The type of the original values
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \return The vectorized greater than of the two values
+template <typename S, typename T>
+inline T vectorized_isgreater(T a, T b) {
+  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<S>();
+  auto v3 = v1.template as<S>();
+  auto v4 = cl::sycl::isgreater(v2, v3);
+  v0 = v4.template as<cl::sycl::vec<T, 1>>();
+  return v0;
+}
+
+/// Compute vectorized greater than for two unsigned int values, with each
+/// value treated as a vector of two unsigned short
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \return The vectorized greater than of the two values
+template<>
+inline unsigned
+vectorized_isgreater<cl::sycl::ushort2, unsigned>(unsigned a, unsigned b) {
+  cl::sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<cl::sycl::ushort2>();
+  auto v3 = v1.template as<cl::sycl::ushort2>();
+  cl::sycl::ushort2 v4;
+  v4[0] = v2[0] > v3[0];
+  v4[1] = v2[1] > v3[1];
+  v0 = v4.template as<cl::sycl::vec<unsigned, 1>>();
   return v0;
 }
 

@@ -3307,8 +3307,17 @@ __global__ void k2() {
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
 
-  // CHECK: u = dpct::bytewise_max_signed(u, u2);
+  // CHECK: u = dpct::vectorized_max<sycl::char4>(u, u2);
   u = __vmaxs4(u, u2);
+
+  // CHECK: u = dpct::vectorized_max<sycl::ushort2>(u, u2);
+  u = __vmaxu2(u, u2);
+
+  // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
+  u = __vminu2(u, u2);
+
+  // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
+  u = __vcmpgtu2(u, u2);
 
   double *a_d;
   // CHECK: 0;

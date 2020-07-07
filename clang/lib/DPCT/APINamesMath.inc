@@ -243,7 +243,10 @@ ENTRY_RENAMED("__umul24", MapNames::getClNamespace() + "::mul24")
 ENTRY_RENAMED("__umul64hi", MapNames::getClNamespace() + "::mul_hi")
 ENTRY_RENAMED("__umulhi", MapNames::getClNamespace() + "::mul_hi")
 ENTRY_RENAMED("__urhadd", MapNames::getClNamespace() + "::rhadd")
-ENTRY_RENAMED("__vmaxs4", "dpct::bytewise_max_signed")
+ENTRY_RENAMED("__vmaxs4", "dpct::vectorized_max<sycl::char4>")
+ENTRY_RENAMED("__vmaxu2", "dpct::vectorized_max<sycl::ushort2>")
+ENTRY_RENAMED("__vminu2", "dpct::vectorized_min<sycl::ushort2>")
+ENTRY_RENAMED("__vcmpgtu2", "dpct::vectorized_isgreater<sycl::ushort2, unsigned>")
 
 // Single Precision Mathematical Functions
 ENTRY_EMULATED("frexpf", MapNames::getClNamespace() + "::frexp")
