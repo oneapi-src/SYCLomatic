@@ -63,6 +63,41 @@ class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
 
+// This struct saves the engine's type.
+// These rules determine the engine's type:
+//   1. Tool can detect the related info, then using that engine type.
+//   2. Tool cannot detect the related info, but there is only one gerentate
+//       API used, then use that info.
+//   3. Tool cannot detect the related info, and there are more than one
+//       gerentate APIs used, then use placeholder and emit warning.
+struct HostRandomEngineTypeInfo {
+  HostRandomEngineTypeInfo(unsigned int Length) : Length(Length) {}
+  HostRandomEngineTypeInfo(unsigned int Length, std::string EngineType,
+                           bool UnsupportEngineFlag = false)
+      : Length(Length), EngineType(EngineType) {
+    HasValue = true;
+    IsUnsupportEngine = UnsupportEngineFlag;
+  }
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string EngineType;
+  bool HasValue = false;
+  bool IsUnsupportEngine = false;
+};
+
+// This struct saves the info for building the definition of distr variables.
+struct HostRandomDistrInfo {
+  HostRandomDistrInfo(std::string DistrName, std::string IndentStr)
+      : DistrName(DistrName), IndentStr(IndentStr) {}
+  void buildInfo(std::string FilePath, unsigned int Offset,
+                 std::string DistrType, std::string ValueType,
+                 std::string DistrArg);
+
+  std::string DistrName;
+  std::string IndentStr;
+};
+
 // Below four structs are all used for device RNG library API migration.
 // In the origin code, the returned random number vector size is decided when
 // the generate API is called.
@@ -481,6 +516,9 @@ public:
     }
   }
 
+  std::map<unsigned int, HostRandomEngineTypeInfo> &
+  getHostRandomEngineTypeMap() { return HostRandomEngineTypeMap; }
+
   // The key of below three maps are the offset of the replacement.
   std::map<unsigned int, DeviceRandomStateTypeInfo> &
   getDeviceRandomStateTypeMap() {
@@ -492,6 +530,11 @@ public:
   std::map<unsigned int, DeviceRandomGenerateAPIInfo> &
   getDeviceRandomGenerateAPIMap() {
     return DeviceRandomGenerateAPIMap;
+  }
+  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
+           HostRandomDistrInfo> &
+  getHostRandomDistrMap() {
+    return HostRandomDistrMap;
   }
   // Since multi generate API can share one distr variable, so this function
   // merges different distr variables if possible.
@@ -548,6 +591,10 @@ private:
              1);
   }
 
+  std::map<unsigned int, HostRandomEngineTypeInfo> HostRandomEngineTypeMap;
+  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
+           HostRandomDistrInfo>
+      HostRandomDistrMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
@@ -562,7 +609,7 @@ private:
   std::set<unsigned int> SpBLASSet;
 
   ExtReplacements Repls;
-  size_t FileSize;
+  size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
   std::string FilePath;
@@ -791,10 +838,17 @@ public:
   }
 
   // This set collects all the different vector size of the return value of the
-  // generate API. If the size of this set is 1, than we can use this vec_size
+  // generate API. If the size of this set is 1, then we can use this vec_size
   // in all generator types. Otherwise, a placeholder will be inserted.
   inline static std::unordered_set<int> &getDeviceRNGReturnNumSet() {
     return DeviceRNGReturnNumSet;
+  }
+
+  // This set collects all the host RNG engine type from the generator create API.
+  // If the size of this set is 1, then we can use this engine type
+  // in all generator types. Otherwise, a placeholder will be inserted.
+  inline static std::unordered_set<std::string> &getHostRNGEngineTypeSet() {
+    return HostRNGEngineTypeSet;
   }
 
   inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
@@ -1047,6 +1101,17 @@ public:
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
   }
+
+  void insertHostRandomEngineTypeInfo(SourceLocation SL, unsigned int Length) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getHostRandomEngineTypeMap();
+    if (M.find(LocInfo.second) == M.end()) {
+      M.insert(std::make_pair(LocInfo.second,
+                              HostRandomEngineTypeInfo(Length)));
+    }
+  }
+
   void insertDeviceRandomStateTypeInfo(SourceLocation SL, unsigned int Length,
                                        std::string GeneratorType) {
     auto LocInfo = getLocInfo(SL);
@@ -1089,6 +1154,29 @@ public:
                                       DistrType, ValueType, DistrIndentStr,
                                       RNGStateName, IndentStr)));
     }
+  }
+
+  std::string insertHostRandomDistrInfo(SourceLocation DistrInsetLoc,
+                                 std::string DistrType, std::string ValueType,
+                                 std::string DistrArg,
+                                 std::string DistrIndentStr) {
+    auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
+    auto FileInfo = insertFile(DistrInsetLocInfo.first);
+    auto &M = FileInfo->getHostRandomDistrMap();
+    std::tuple<unsigned int, std::string, std::string, std::string> T(
+        DistrInsetLocInfo.second, DistrType, ValueType, DistrArg);
+    auto Iter = M.find(T);
+    std::string Name;
+    if (Iter == M.end()) {
+      // Since device RNG APIs are only used in device function and host RNG
+      // APIs are only used in host function. So we can use independent id in
+      // host distr and device distr.
+      Name = "distr_ct" + std::to_string(M.size() + 1);
+      M.insert(std::make_pair(T, HostRandomDistrInfo(Name, DistrIndentStr)));
+    } else {
+      Name = Iter->second.DistrName;
+    }
+    return Name;
   }
 
   void insertRandomEngine(const Expr *E);
@@ -1285,6 +1373,7 @@ private:
   static std::string CudaPath;
   static UsmLevel UsmLvl;
   static std::unordered_set<int> DeviceRNGReturnNumSet;
+  static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
@@ -2987,26 +3076,19 @@ class RandomEngineInfo {
 public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false), IsClassMember(false),
-        NeedPrint(true), IsArray(false) {
-    if (dyn_cast<FieldDecl>(DD))
-      IsClassMember = true;
-    if (DD->getType()->isArrayType()) {
-      IsArray = true;
-    }
-
+      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
     DeclaratorDeclName = DD->getNameAsString();
-    DeclFilePath =
-        DpctGlobalInfo::getSourceManager().getFilename(DD->getBeginLoc()).str();
 
-    DeclaratorDeclTypeBeginOffset =
-        DpctGlobalInfo::getSourceManager()
-            .getDecomposedLoc(
-                DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc())
-            .second;
-    DeclaratorDeclEndOffset = DpctGlobalInfo::getSourceManager()
-                                  .getDecomposedLoc(DD->getEndLoc())
-                                  .second;
+    auto LocInfo = DpctGlobalInfo::getLocInfo(
+        DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
+    DeclFilePath = LocInfo.first;
+    DeclaratorDeclTypeBeginOffset = LocInfo.second;
+
+    DeclaratorDeclEndOffset = SM.getDecomposedLoc(DD->getEndLoc()).second;
+    TypeLength = Lexer::MeasureTokenLength(
+        SM.getExpansionLoc(DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
+        SM, DpctGlobalInfo::getContext().getLangOpts());
   }
   // Seed is an unsigned long long type value in origin code, if it is not set,
   // use 0 as default.
@@ -3055,24 +3137,24 @@ public:
   std::string getSeedExpr() { return SeedExpr; }
   std::string getDimExpr() { return DimExpr; }
 
-  void setCreateCallFilePath(std::string Path) { CreateCallFilePath = Path; }
-  void setTypeBeginOffset(unsigned int Offset) { TypeBeginOffset = Offset; }
-  void setTypeLength(unsigned int Len) { TypeLength = Len; }
-  void setCreateAPIBegin(unsigned int Offset) { CreateAPIBegin = Offset; }
-  void setCreateAPILength(unsigned int Len) { CreateAPILength = Len; }
+  void setCreateAPIInfo(SourceLocation Begin, SourceLocation End) {
+    auto BeginInfo = DpctGlobalInfo::getLocInfo(Begin);
+    auto EndInfo = DpctGlobalInfo::getLocInfo(End);
+    CreateAPILength.push_back(EndInfo.second - BeginInfo.second);
+    CreateAPIBegin.push_back(BeginInfo.second);
+    CreateCallFilePath.push_back(BeginInfo.first);
+    CreateAPINum++;
+  }
 
   void setTypeReplacement(std::string Repl) { TypeReplacement = Repl; }
   void setQuasiEngineFlag() { IsQuasiEngine = true; }
 
-  void setIdentifierEndOffset(unsigned int Offset) {
-    IdentifierEndOffset = Offset;
-  }
   void buildInfo();
-  bool isClassMember() { return IsClassMember; }
-  bool isArray() { return IsArray; }
+  void updateEngineType();
+  void setAssigned() { IsAssigned = true; }
   std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
   void setGeneratorName(std::string Name) { GeneratorName = Name; }
-  SourceLocation getDeclaratorDeclBeginLoc() {
+  SourceLocation getDeclaratorDeclTypeBeginLoc() {
     auto &SM = DpctGlobalInfo::getSourceManager();
     auto FE = SM.getFileManager().getFile(DeclFilePath);
     if (std::error_code ec = FE.getError())
@@ -3088,8 +3170,9 @@ public:
     auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
     return SM.getComposedLoc(FID, DeclaratorDeclEndOffset);
   }
-  void setNeedPrint(bool Flag){ NeedPrint = Flag; }
+  void setUnsupportEngineFlag(bool Flag) { IsUnsupportEngine = Flag; }
   void setQueueStr(std::string Q) { QueueStr = Q; }
+  std::string getEngineType() { return TypeReplacement; }
 
 private:
   std::string SeedExpr;     // Replaced Seed variable string
@@ -3097,28 +3180,23 @@ private:
   bool IsQuasiEngine; // If origin code used a quasirandom number generator,
                       // this flag need be set as true.
   std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
-  std::string
+  std::vector<std::string>
       CreateCallFilePath; // Where the curandCreateGenerator API is called.
-  unsigned int
-      TypeBeginOffset; // The offset of the begin of curandGenerator_t handle.
   unsigned int TypeLength; // The length of the curandGenerator_t handle type.
-  unsigned int
+  std::vector <unsigned int>
       CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
-  unsigned int
+  std::vector <unsigned int>
       CreateAPILength; // The length of the begin of curandCreateGenerator API.
-  unsigned int IdentifierEndOffset; // The offset at the end of
-                                    // curandGenerator_t handle declaration.
   std::string TypeReplacement;      // The replcaement string of the type of
                                     // curandGenerator_t handle.
-  bool IsClassMember;               // Whether curandGenerator_t handle is a
-                                    // class member.
   std::string DeclaratorDeclName;   // Name of declarator declaration.
   unsigned int DeclaratorDeclTypeBeginOffset;
   unsigned int DeclaratorDeclEndOffset;
-  bool NeedPrint;
+  bool IsUnsupportEngine = true;
   std::string QueueStr;
-  bool IsArray;
   std::string GeneratorName;
+  bool IsAssigned = false;
+  unsigned int CreateAPINum = 0;
 };
 
 template <class... T>

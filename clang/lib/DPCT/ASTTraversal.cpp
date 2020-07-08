@@ -1675,7 +1675,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasDataType_t", "curandState_t", "curandState",
                   "curandStateXORWOW_t", "curandStatePhilox4_32_10_t",
                   "curandStateMRG32k3a_t", "minus", "negate", "logical_or",
-                  "identity", "cudaSharedMemConfig"),
+                  "identity", "cudaSharedMemConfig", "curandGenerator_t"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -2039,6 +2039,14 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           Lexer::MeasureTokenLength(BeginLoc, *SM,
                                     DpctGlobalInfo::getContext().getLangOpts()),
           P->second);
+      return;
+    }
+
+    if (TL->getType().getAsString() == "curandGenerator_t") {
+      DpctGlobalInfo::getInstance().insertHostRandomEngineTypeInfo(
+          BeginLoc,
+          Lexer::MeasureTokenLength(
+              BeginLoc, *SM, DpctGlobalInfo::getContext().getLangOpts()));
       return;
     }
 
@@ -3813,6 +3821,21 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // cover more cases.
   bool IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
                     SM.isMacroArgExpansion(CE->getEndLoc());
+
+  if (FuncNameBegin.isMacroID() && IsMacroArg) {
+    FuncNameBegin = SM.getImmediateSpellingLoc(FuncNameBegin);
+    FuncNameBegin = SM.getExpansionLoc(FuncNameBegin);
+  } else if (FuncNameBegin.isMacroID()) {
+    FuncNameBegin = SM.getExpansionLoc(FuncNameBegin);
+  }
+
+  if (FuncCallEnd.isMacroID() && IsMacroArg) {
+    FuncCallEnd = SM.getImmediateSpellingLoc(FuncCallEnd);
+    FuncCallEnd = SM.getExpansionLoc(FuncCallEnd);
+  } else if (FuncCallEnd.isMacroID()) {
+    FuncCallEnd = SM.getExpansionLoc(FuncCallEnd);
+  }
+
   // Offset 1 is the length of the last token ")"
   FuncCallEnd = SM.getExpansionLoc(FuncCallEnd).getLocWithOffset(1);
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
@@ -3832,18 +3855,15 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       CanAvoidBrace = true;
   }
 
-  if (NeedUseLambda) {
-    PrefixInsertLoc = FuncNameBegin;
-    SuffixInsertLoc = FuncCallEnd;
-  } else if (IsMacroArg) {
+  if (NeedUseLambda || IsMacroArg || IsInReturnStmt) {
     NeedUseLambda = true;
     SourceRange SR = getFunctionRange(CE);
     PrefixInsertLoc = SR.getBegin();
     SuffixInsertLoc = SR.getEnd();
-  } else if (IsInReturnStmt) {
-    NeedUseLambda = true;
-    CanAvoidUsingLambda = true;
-    OriginStmtType = "return";
+    if (IsInReturnStmt) {
+      CanAvoidUsingLambda = true;
+      OriginStmtType = "return";
+    }
   }
 
   std::string IndentStr = getIndent(PrefixInsertLoc, SM).str();
@@ -3864,49 +3884,48 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (FuncName == "curandCreateGenerator") {
+    bool IsDuplicated = true;
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (!REInfo) {
       DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
       REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+      IsDuplicated = false;
     }
 
     std::string EnumStr = ExprAnalysis::ref(CE->getArg(1));
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
         MapNames::RandomEngineTypeMap.end()) {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()),
+      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
              Diagnostics::UNMIGRATED_TYPE, false, "curandGenerator_t",
              "the migration depends on the second argument of "
              "curandCreateGenerator");
       report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
              FuncName,
              "parameter " + EnumStr + " is unsupported");
-      REInfo->setNeedPrint(false);
       return;
     }
+    REInfo->setUnsupportEngineFlag(false);
+
     if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
         EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
         EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()),
+      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
              Diagnostics::DIFFERENT_GENERATOR, false);
     } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()),
+      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
              Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
     }
 
-    if (!REInfo->isClassMember() && !REInfo->isArray()) {
-      if (IsAssigned) {
-        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-               FuncName, Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
-      } else {
-        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-               Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
-      }
-    }
-
     REInfo->setGeneratorName(getDrefName(CE->getArg(0)));
-    REInfo->setEngineTypeReplacement(
+
+    std::string EngineType =
+        MapNames::RandomEngineTypeMap.find(EnumStr)->second;
+    if (IsDuplicated && (REInfo->getEngineType() != EngineType)) {
+      REInfo->setEngineTypeReplacement("");
+    } else {
+      REInfo->setEngineTypeReplacement(EngineType);
+    }
+    DpctGlobalInfo::getHostRNGEngineTypeSet().insert(
         MapNames::RandomEngineTypeMap.find(EnumStr)->second);
 
     if (EnumStr == "CURAND_RNG_QUASI_DEFAULT" ||
@@ -3916,67 +3935,25 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64")
       REInfo->setQuasiEngineFlag();
 
-    REInfo->setTypeBeginOffset(
-        SM.getDecomposedLoc(
-              SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()))
-            .second);
-    REInfo->setTypeLength(Lexer::MeasureTokenLength(
-        SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()), SM,
-        DpctGlobalInfo::getContext().getLangOpts()));
+    REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd);
 
-    unsigned int FuncCallLen =
-        SM.getDecomposedLoc(FuncCallEnd).second -
-        SM.getDecomposedLoc(FuncNameBegin).second;
-    REInfo->setCreateAPILength(FuncCallLen);
-    REInfo->setCreateAPIBegin(SM.getDecomposedLoc(FuncNameBegin).second);
-    auto EndLoc = REInfo->getDeclaratorDeclEndLoc();
-    EndLoc = EndLoc.getLocWithOffset(
-        Lexer::MeasureTokenLength(SM.getExpansionLoc(EndLoc), SM,
-                                  DpctGlobalInfo::getContext().getLangOpts()));
-    REInfo->setIdentifierEndOffset(SM.getDecomposedLoc(EndLoc).second);
-    REInfo->setCreateCallFilePath(SM.getFilename(FuncNameBegin).str());
+    if (checkWhetherIsDuplicate(CE->getArg(0), false))
+      return;
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
+    buildTempVariableMap(Index, CE->getArg(0), HelperFuncType::DefaultQueue);
 
-    if (REInfo->isClassMember() || REInfo->isArray()) {
-      if (checkWhetherIsDuplicate(CE->getArg(0), false))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-      buildTempVariableMap(Index, CE->getArg(0), HelperFuncType::DefaultQueue);
-    } else {
-      if (checkWhetherIsDuplicate(RandomEngineInfo::getHandleVar(CE->getArg(0)),
-                                  false))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-      buildTempVariableMap(Index, RandomEngineInfo::getHandleVar(CE->getArg(0)),
-                           HelperFuncType::DefaultQueue);
+    if (IsAssigned) {
+      REInfo->setAssigned();
     }
   } else if (FuncName == "curandDestroyGenerator") {
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (IsAssigned) {
+      report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      insertAroundStmt(CE, "(", ", 0)");
     }
-    if (REInfo->isClassMember() || REInfo->isArray()) {
-      if (IsAssigned) {
-        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-        insertAroundStmt(CE, "(", ", 0)");
-      }
-      emplaceTransformation(
-          new ReplaceStmt(CE, false, FuncName, false,
-                          "delete " + ExprAnalysis::ref(CE->getArg(0))));
-    } else {
-      if (IsAssigned) {
-        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-               FuncName,
-               Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
-      } else {
-        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-               Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
-      }
-    }
+    emplaceTransformation(
+        new ReplaceStmt(CE, false, FuncName, false,
+                        "delete " + ExprAnalysis::ref(CE->getArg(0))));
   } else if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (!REInfo) {
@@ -3993,11 +3970,6 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     REInfo->setDimExpr(CE->getArg(1));
   } else if (MapNames::RandomGenerateFuncReplInfoMap.find(FuncName) !=
              MapNames::RandomGenerateFuncReplInfoMap.end()) {
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    }
     auto ReplInfoPair = MapNames::RandomGenerateFuncReplInfoMap.find(FuncName);
     MapNames::RandomGenerateFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string BufferDecl;
@@ -4006,70 +3978,61 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       BufferName = getBufferNameAndDeclStr(
           CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
     }
-    std::string DistributeDecl;
-    std::string DistrName =
-        "distr_ct" +
-        std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+
+    SourceLocation DistrInsertLoc =
+        SM.getExpansionLoc(CS->body_front()->getBeginLoc());
+    std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
+    std::string DistrName;
     if (FuncName == "curandGenerateLogNormal" ||
         FuncName == "curandGenerateLogNormalDouble") {
-      ExprAnalysis EMean, EDev;
-      EMean.analyze(CE->getArg(3));
-      EDev.analyze(CE->getArg(4));
-      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
-                       "> " + DistrName + "(" + EMean.getReplacedString() +
-                       ", " +
-                       EDev.getReplacedString() + ", 0.0, 1.0);";
+      ExprAnalysis EMean(CE->getArg(3)), EDev(CE->getArg(4));
+      std::string DistrArg = EMean.getReplacedString() + ", " +
+                             EDev.getReplacedString() + ", 0.0, 1.0";
+      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
+          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType,
+          DistrArg, DistrIndentStr);
     } else if (FuncName == "curandGenerateNormal" ||
                FuncName == "curandGenerateNormalDouble") {
-      ExprAnalysis EMean, EDev;
-      EMean.analyze(CE->getArg(3));
-      EDev.analyze(CE->getArg(4));
-      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
-                       "> " + DistrName + "(" + EMean.getReplacedString() +
-                       ", " +
-                       EDev.getReplacedString() + ");";
+      ExprAnalysis EMean(CE->getArg(3)), EDev(CE->getArg(4));
+      std::string DistrArg =
+          EMean.getReplacedString() + ", " + EDev.getReplacedString();
+      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
+          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType,
+          DistrArg, DistrIndentStr);
     } else if (FuncName == "curandGeneratePoisson") {
-      ExprAnalysis ELambda;
-      ELambda.analyze(CE->getArg(3));
-      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
-                       "> " + DistrName + "(" + ELambda.getReplacedString() +
-                       ");";
+      ExprAnalysis ELambda(CE->getArg(3));
+      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
+          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType,
+          ELambda.getReplacedString(), DistrIndentStr);
     } else {
-      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
-                       "> " + DistrName + ";";
+      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
+          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType,
+          "", DistrIndentStr);
     }
     std::string Data;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      PrefixInsertStr = DistributeDecl + getNL() + IndentStr;
-
       auto TypePtr = CE->getArg(1)->getType().getTypePtr();
       if (!TypePtr || !TypePtr->isPointerType()) {
-        Data = "(" + ReplInfo.DistributeType + "*)" +
-               ExprAnalysis::ref(CE->getArg(1));
+        Data =
+            "(" + ReplInfo.ValueType + "*)" + ExprAnalysis::ref(CE->getArg(1));
       } else if (TypePtr->getPointeeType().getAsString() ==
-                 ReplInfo.DistributeType) {
+                 ReplInfo.ValueType) {
         Data = ExprAnalysis::ref(CE->getArg(1));
       } else {
-        Data = "(" + ReplInfo.DistributeType + "*)" +
-               ExprAnalysis::ref(CE->getArg(1));
+        Data =
+            "(" + ReplInfo.ValueType + "*)" + ExprAnalysis::ref(CE->getArg(1));
       }
     } else {
-      PrefixInsertStr = BufferDecl + DistributeDecl + getNL() + IndentStr;
+      PrefixInsertStr = BufferDecl;
       Data = BufferName;
     }
     ExprAnalysis EA;
     EA.analyze(CE->getArg(2));
     std::string ReplStr;
 
-    if (REInfo && (REInfo->isClassMember() || REInfo->isArray())) {
-      ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", *" +
-                ExprAnalysis::ref(CE->getArg(0)) + ", " +
-                EA.getReplacedString() + ", " + Data + ")";
-    } else {
-      ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
-                ExprAnalysis::ref(CE->getArg(0)) + ", " +
-                EA.getReplacedString() + ", " + Data + ")";
-    }
+    ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
+              getDrefName(CE->getArg(0)) + ", " + EA.getReplacedString() +
+              ", " + Data + ")";
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty()) {
@@ -4131,10 +4094,10 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "curandSetGeneratorOffset") {
     if (IsAssigned) {
       insertAroundStmt(CE, "(", ", 0)");
-      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    std::string Repl = "oneapi::mkl::rng::skip_ahead(" +
-                       ExprAnalysis::ref(CE->getArg(0)) + ", ";
+    std::string Repl =
+        "oneapi::mkl::rng::skip_ahead(" + getDrefName(CE->getArg(0)) + ", ";
     ExprAnalysis EO;
     EO.analyze(CE->getArg(1));
     Repl = Repl + EO.getReplacedString() + ")";
@@ -6671,7 +6634,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             BufferName = "result_temp_buffer" + std::to_string(i);
           }
           bool Moved = false;
-          for (size_t j = 0; j < ReplInfo.MoveFrom.size();j++) {
+          for (size_t j = 0; j < ReplInfo.MoveFrom.size(); j++) {
             if (ReplInfo.MoveFrom[j] == i) {
               Moved = true;
               if (CE->getArg(ReplInfo.MoveTo[j])) {

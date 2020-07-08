@@ -31,6 +31,7 @@ std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
+std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
 bool DpctGlobalInfo::EnableCtad = false;
@@ -174,8 +175,19 @@ void DpctFileInfo::buildReplacements() {
   // DPCT need collect the information in curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
   // call, then can migrate them to MKL API.
-  for (auto &RandomEngine : RandomEngineMap)
+  for (auto &RandomEngine : RandomEngineMap) {
+    RandomEngine.second->updateEngineType();
     RandomEngine.second->buildInfo();
+  }
+
+  for (auto &EngineType : HostRandomEngineTypeMap)
+    EngineType.second.buildInfo(FilePath, EngineType.first);
+
+  for (auto &DistrInfo : HostRandomDistrMap) {
+    DistrInfo.second.buildInfo(
+        FilePath, std::get<0>(DistrInfo.first), std::get<1>(DistrInfo.first),
+        std::get<2>(DistrInfo.first), std::get<3>(DistrInfo.first));
+  }
 
   if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
     for (auto &SpBLASWarningLocOffset : SpBLASSet) {
@@ -1854,49 +1866,48 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 
+// In the type migration rule, only location has been recorded. So in this
+// function, other info from generator creation API is added.
+void RandomEngineInfo::updateEngineType() {
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(DeclFilePath);
+  auto &M = FileInfo->getHostRandomEngineTypeMap();
+
+  auto Iter = M.find(DeclaratorDeclTypeBeginOffset);
+  if (Iter != M.end()) {
+    Iter->second.EngineType = TypeReplacement;
+    Iter->second.HasValue = true;
+    Iter->second.IsUnsupportEngine = IsUnsupportEngine;
+  } else {
+    M.insert(
+        std::make_pair(DeclaratorDeclTypeBeginOffset,
+                       HostRandomEngineTypeInfo(TypeLength, TypeReplacement,
+                                                IsUnsupportEngine)));
+  }
+}
+
 void RandomEngineInfo::buildInfo() {
-  if (!NeedPrint)
+  if (IsUnsupportEngine)
     return;
 
-  // insert engine arguments
-  if (IsClassMember || IsArray) {
-    // replace type
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffset,
-                                         TypeLength, TypeReplacement + "*",
-                                         nullptr));
-    if (IsQuasiEngine) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(
-              CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              (IsArray ? GeneratorName : DeclaratorDeclName) + " = new " +
-                  TypeReplacement + "(" + QueueStr + ", " + DimExpr + ")",
-              nullptr));
-    } else {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(
-              CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              (IsArray ? GeneratorName : DeclaratorDeclName) + " = new " +
-                  TypeReplacement + "(" + QueueStr + ", " + SeedExpr + ")",
-              nullptr));
-    }
-  } else {
-    // replace type
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffset,
-                                         TypeLength, TypeReplacement, nullptr));
-    if (IsQuasiEngine) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(
-              DeclFilePath, IdentifierEndOffset, 0,
-              "(" + QueueStr + ", " + DimExpr + ")", nullptr));
-    } else {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(
-              DeclFilePath, IdentifierEndOffset, 0,
-              "(" + QueueStr + ", " + SeedExpr + ")", nullptr));
-    }
+  if (TypeReplacement.empty()) {
+    TypeReplacement= "dpct_placeholder/*Fix the engine type manually*/";
+    for (unsigned int i = 0; i < CreateAPINum; ++i)
+      DiagnosticsUtils::report(CreateCallFilePath[i], CreateAPIBegin[i],
+                               Diagnostics::UNDEDUCED_TYPE, "RNG engine");
   }
+
+  std::string Repl = GeneratorName + " = new " + TypeReplacement + "(" +
+                     QueueStr + ", " + (IsQuasiEngine ? DimExpr : SeedExpr) +
+                     ")";
+  if (IsAssigned) {
+    Repl = "(" + Repl + ", 0)";
+  }
+
+  for (unsigned int i = 0; i < CreateAPINum; ++i)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(CreateCallFilePath[i],
+                                         CreateAPIBegin[i], CreateAPILength[i],
+                                         Repl, nullptr));
 }
 
 void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
@@ -1969,6 +1980,47 @@ void DeviceRandomDistrInfo::buildInfo(std::string FilePath,
                                       unsigned int Offset) {
   std::string InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" +
                           getNL() + IndentStr;
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, 0, InsertStr, nullptr));
+}
+
+void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
+                                         unsigned int Offset) {
+  // The warning of unsupported engine type is emitted in the genreator creation
+  // API migration rule. So do not emit undeduced type warning again.
+  if (IsUnsupportEngine)
+    return;
+
+  if (HasValue && !EngineType.empty()) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length,
+                                         EngineType + "*", nullptr));
+  } else if (DpctGlobalInfo::getHostRNGEngineTypeSet().size() == 1) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            *DpctGlobalInfo::getHostRNGEngineTypeSet().begin() + "*", nullptr));
+  } else {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            "dpct_placeholder/*Fix the engine type manually*/*", nullptr));
+    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
+                             "RNG engine");
+  }
+}
+
+void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
+                                    std::string DistrType,
+                                    std::string ValueType,
+                                    std::string DistrArg) {
+  std::string InsertStr;
+  if (DistrArg.empty())
+    InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" + getNL() +
+                IndentStr;
+  else
+    InsertStr = DistrType + "<" + ValueType + "> " + DistrName + "(" +
+                DistrArg + ");" + getNL() + IndentStr;
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, 0, InsertStr, nullptr));
 }

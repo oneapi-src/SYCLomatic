@@ -272,8 +272,8 @@ public:
 
   struct RandomGenerateFuncReplInfo {
     std::string BufferTypeInfo;
-    std::string DistributeName;
     std::string DistributeType;
+    std::string ValueType;
   };
 
   struct BLASGemmExTypeInfo {

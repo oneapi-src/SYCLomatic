@@ -41,18 +41,16 @@ void sgemm() {
 }
 
 // CHECK: void randomGen(){
-// CHECK-NEXT:   oneapi::mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
-// CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the function call is redundant in DPC++.
-// CHECK-NEXT:   */
+// CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+// CHECK-NEXT:   oneapi::mkl::rng::philox4x32x10* rng;
+// CHECK-NEXT:   rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_default_queue(), 1337ull);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed, because the function call is redundant in DPC++.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   float *d_data;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-// CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-// CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_buf_ct4);
+// CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data_buf_ct4);
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 void randomGen(){
