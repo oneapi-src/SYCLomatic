@@ -229,6 +229,48 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 
+
+
+template <class ArgsRange>
+void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
+  int Idx = 0;
+  bool LocalReversed = false, GroupReversed = false;
+  for (auto Arg : ConfigArgs) {
+    KernelConfigAnalysis A(IsInMacroDefine);
+    A.analyze(Arg, Idx, Idx < 2);
+    ExecutionConfig.Config[Idx] = A.getReplacedString();
+    if (Idx == 0) {
+      GroupReversed = A.reversed();
+      ExecutionConfig.GroupDirectRef = A.isDirectRef();
+    } else if (Idx == 1) {
+      LocalReversed = A.reversed();
+      ExecutionConfig.LocalDirectRef = A.isDirectRef();
+
+      // Using another analysis because previous analysis may return directly
+      // when in macro is true.
+      // Here set the argument of KFA as false, so it will not return directly.
+      KernelConfigAnalysis KFA(false);
+      KFA.analyze(Arg, 1, true);
+      if (KFA.isNeedEmitWGSizeWarning())
+        DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE);
+    }
+    ++Idx;
+  }
+  ExecutionConfig.DeclLocalRange =
+      !LocalReversed && !ExecutionConfig.LocalDirectRef;
+  ExecutionConfig.DeclGroupRange =
+      LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
+  ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
+
+  if (ExecutionConfig.Stream == "0") {
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    buildTempVariableMap(Index, *ConfigArgs.begin(),
+                         HelperFuncType::DefaultQueue);
+  }
+}
+
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildLocationInfo(KernelCall);
   buildExecutionConfig(KernelCall->getConfig()->arguments());

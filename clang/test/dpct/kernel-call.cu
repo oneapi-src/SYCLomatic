@@ -70,7 +70,10 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
@@ -93,7 +96,10 @@ struct TestThis {
   void test() {
     /// Kernel function is called in method declaration, and fields are used as arguments.
     /// Check the miggration of implicit "this" pointer.
-    // CHECK:  dpct::get_default_queue().submit(
+    // CHECK:  /*
+    // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+    // CHECK-NEXT:  */
+    // CHECK-NEXT:  dpct::get_default_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
     // CHECK-EMPTY:
@@ -122,7 +128,10 @@ int main() {
   const int *karg2 = 0;
   int karg3 = 80;
 
-  // CHECK: {
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
@@ -150,7 +159,10 @@ int main() {
   int karg3int = 3;
   int intvar = 20;
   TestThis *args_p;
-  // CHECK:   q_ct1.submit(
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto args_p_arg3_ct1 = args_p->arg3;
   // CHECK-EMPTY:
@@ -196,7 +208,10 @@ int main() {
   // CHECK-NEXT:     });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   q_ct1.submit(
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto arr_karg3int_ct2 = arr[karg3int];
   // CHECK-EMPTY:
@@ -238,7 +253,10 @@ int main() {
   // CHECK-NEXT:     });
   helloFromGPU2 <<<2, 3>>>();
 
-  // CHECK:   q_ct1.submit(
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
@@ -334,6 +352,9 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:  if (1)
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+//CHECK-NEXT:  */
 //CHECK-NEXT:    {
 //CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> buf_ct0 = dpct::get_buffer_and_offset(0);
 //CHECK-NEXT:      size_t offset_ct0 = buf_ct0.second;
@@ -376,6 +397,9 @@ void run_foo2(dim3 c, dim3 d) {
 }
 //CHECK:void run_foo3(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  for (;;)
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+//CHECK-NEXT:  */
 //CHECK-NEXT:    {
 //CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> buf_ct0 = dpct::get_buffer_and_offset(0);
 //CHECK-NEXT:      size_t offset_ct0 = buf_ct0.second;

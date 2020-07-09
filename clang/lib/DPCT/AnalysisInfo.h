@@ -2819,35 +2819,7 @@ private:
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr*KernelCall);
   template <class ArgsRange>
-  void buildExecutionConfig(const ArgsRange &ConfigArgs) {
-    int Idx = 0;
-    bool LocalReversed = false, GroupReversed = false;
-    for (auto Arg : ConfigArgs) {
-      KernelConfigAnalysis A(IsInMacroDefine);
-      A.analyze(Arg, Idx, Idx < 2);
-      ExecutionConfig.Config[Idx] = A.getReplacedString();
-      if (Idx == 0) {
-        GroupReversed = A.reversed();
-        ExecutionConfig.GroupDirectRef = A.isDirectRef();
-      } else if (Idx == 1) {
-        LocalReversed = A.reversed();
-        ExecutionConfig.LocalDirectRef = A.isDirectRef();
-      }
-      ++Idx;
-    }
-    ExecutionConfig.DeclLocalRange =
-        !LocalReversed && !ExecutionConfig.LocalDirectRef;
-    ExecutionConfig.DeclGroupRange =
-        LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
-    ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
-
-    if (ExecutionConfig.Stream == "0") {
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-      buildTempVariableMap(Index, *ConfigArgs.begin(),
-                           HelperFuncType::DefaultQueue);
-    }
-  }
+  void buildExecutionConfig(const ArgsRange &ConfigArgs);
 
   void removeExtraIndent() {
     DpctGlobalInfo::getInstance().addReplacement(

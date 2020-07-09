@@ -482,6 +482,8 @@ private:
   bool Reversed = false;
   bool DirectRef = false;
   bool MustDim3 = false;
+  unsigned int ArgIndex = 0;
+  bool NeedEmitWGSizeWarning = true;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
 
@@ -490,6 +492,7 @@ private:
     KCA.analyze(Arg);
     return KCA.getReplacedString();
   }
+  int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
 
 protected:
   void dispatch(const Stmt *Expression) override;
@@ -501,6 +504,7 @@ public:
 
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }
+  inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
 };
 
 } // namespace dpct

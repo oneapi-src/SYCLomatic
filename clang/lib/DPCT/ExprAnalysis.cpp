@@ -557,8 +557,35 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
   }
 }
 
+int64_t
+KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
+  int64_t Size = 1;
+  auto Num = Ctor->getNumArgs();
+  for (size_t i = 0; i < Num; ++i) {
+    if (Ctor->getArg(i)->isDefaultArgument()) {
+      return Size;
+    }
+
+    Expr::EvalResult ER;
+    if (Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+      int64_t Value = ER.Val.getInt().getExtValue();
+      Size = Size * Value;
+    } else {
+      // Not all args can be evaluated, so return a value larger than 256 to
+      // emit warning.
+      return 265 + 1;
+    }
+  }
+  return Size;
+}
+
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
+    if (ArgIndex == 1) {
+      if (calculateWorkgroupSize(Ctor) <= 256)
+        NeedEmitWGSizeWarning = false;
+    }
+
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
     DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
@@ -592,12 +619,13 @@ KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                                    bool ReverseIfNeed) {
-  MustDim3 = Idx < 2;
+  ArgIndex = Idx;
+  MustDim3 = ArgIndex < 2;
 
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
     DirectRef = true;
-    if (Idx == 3 && isPredefinedStreamHandle(E)) {
+    if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
       addReplacement("0");
       return;
     }
@@ -606,7 +634,7 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   }
 
   DoReverse = ReverseIfNeed;
-  if (Idx == 3 && isPredefinedStreamHandle(E)) {
+  if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
     addReplacement("0");
     return;
   }

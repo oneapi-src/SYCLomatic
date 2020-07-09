@@ -71,6 +71,9 @@ int main() {
   int karg3 = 80;
   // CHECK:  /* DPCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
   // CHECK-NEXT:  karg2, karg3);*/
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
@@ -102,6 +105,9 @@ int main() {
   int intvar = 20;
   // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, 
   // CHECK:  karg3int);*/
+  // CHECK:   /*
+  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:   */
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
@@ -147,6 +153,9 @@ int main() {
 	  karg2int, /* comments */karg3int/* comments */); // comments
 
   // CHECK: /* DPCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
+  // CHECK:   /*
+  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:   */
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
