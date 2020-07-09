@@ -155,7 +155,7 @@ int main() {
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You need to check the migrated code.
+    // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You may need to check the migrated code.
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.

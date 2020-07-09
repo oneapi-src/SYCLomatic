@@ -83,7 +83,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: */
   //CHECK-NEXT: descrA = mkl::index_base::zero;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -99,7 +99,7 @@ int foo(int aaaaa){
   cuDoubleComplex alpha_Z, beta_Z, *csrValA_Z, *x_Z, *y_Z;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -109,7 +109,7 @@ int foo(int aaaaa){
   cusparseZcsrmv(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -119,7 +119,7 @@ int foo(int aaaaa){
   cusparseDcsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -132,7 +132,7 @@ int foo(int aaaaa){
   cusparseStatus_t status;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -146,7 +146,7 @@ int foo(int aaaaa){
   if(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -160,7 +160,7 @@ int foo(int aaaaa){
   for(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);;){}
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
@@ -203,7 +203,7 @@ int foo(int aaaaa){
 
 //CHECK: int foo(mkl::index_base descrB) try {
 //CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1045:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool supports migration of only general sparse matrix type for this API currently. You may need to adjust the code.
+//CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for general sparse matrix type. You may need to adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
