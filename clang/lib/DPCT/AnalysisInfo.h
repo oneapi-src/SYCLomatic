@@ -259,6 +259,7 @@ enum HeaderType {
   MKL_RNG,
   MKL_RNG_DEVICE,
   MKL_SPBLAS,
+  Chrono,
 };
 
 enum UsingType {
@@ -403,6 +404,9 @@ public:
     case Numeric:
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
         "<numeric>");
+    case Chrono:
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
+        "<chrono>");
     }
   }
 

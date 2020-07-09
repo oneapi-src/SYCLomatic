@@ -7308,6 +7308,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
                                          const MatchFinder::MatchResult &Result,
                                          bool IsAssigned) {
   report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+  DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Chrono);
   std::ostringstream Repl;
 
   std::string StmtStr;
@@ -7336,7 +7337,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::string InsertStr = getNL();
       InsertStr += getIndent(MD->getBeginLoc(), SM).str();
-      InsertStr += "clock_t ";
+      InsertStr += "std::chrono::time_point<std::chrono::high_resolution_clock> ";
       InsertStr += StmtStr;
       InsertStr += getCTFixedSuffix();
       InsertStr += ";";
@@ -7356,7 +7357,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     }
   }
 
-  Repl << StmtStr << getCTFixedSuffix() << " = clock()";
+  Repl << StmtStr << getCTFixedSuffix() << " = std::chrono::high_resolution_clock::now()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
@@ -7390,9 +7391,9 @@ void EventAPICallRule::handleEventElapsedTime(
     if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
       Assginee = getStmtSpelling(UO->getSubExpr());
   }
-  Repl << Assginee << " = (float)(" << StmtStrArg2 << getCTFixedSuffix()
-       << " - " << StmtStrArg1 << getCTFixedSuffix()
-       << ") / CLOCKS_PER_SEC * 1000";
+  Repl << Assginee << " = std::chrono::duration<float, std::milli>("
+       << StmtStrArg2 << getCTFixedSuffix() << " - " << StmtStrArg1
+       << getCTFixedSuffix() << ").count()";
   if (IsAssigned) {
     std::ostringstream Temp;
     Temp << "(" << Repl.str() << ", 0)";

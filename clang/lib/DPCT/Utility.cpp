@@ -285,6 +285,7 @@ std::vector<std::string> split(const std::string &Str, char Delim) {
 }
 
 /// Find the innermost (closest) block (CompoundStmt) where S is located
+/// TODO: Go across macros
 const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S) {
   if (!S)
     return nullptr;
@@ -294,7 +295,8 @@ const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S) {
   while (Parents.size() == 1) {
     auto *Parent = Parents[0].get<Stmt>();
     if (Parent) {
-      if (Parent->getStmtClass() == Stmt::StmtClass::CompoundStmtClass)
+      if (Parent->getStmtClass() == Stmt::StmtClass::CompoundStmtClass &&
+          !Parent->getBeginLoc().isMacroID())
         return dyn_cast<CompoundStmt>(Parent);
       Parents = Context.getParents(*Parent);
     } else {
