@@ -635,7 +635,7 @@ int main() {
 
 
 // Because the return value of origin API is the result value, not the status, so keep using lambda here.
-//CHECK:int bar() try {
+//CHECK:int bar(){
 //CHECK-NEXT:  return [&](){
 //CHECK-NEXT:  auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
 //CHECK-NEXT:  sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));

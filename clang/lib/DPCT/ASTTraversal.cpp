@@ -875,51 +875,16 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(ErrorHandlingIfStmtRule)
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
-  std::vector<StringRef> RemovedAPINAME{};
-  std::vector<StringRef> MathAPI{};
-  std::vector<StringRef> MigratedAPIName{};
-// Collect Removed APIs(FUNC_CALL_REMOVED_0/FUNC_CALL_REMOVED)
-#define ENTRY(APINAME, MSG) RemovedAPINAME.push_back(#APINAME);
-#include "APINames_removed.inc"
-#undef ENTRY
-
-// Collect Math APIs because the return value is not the status
-#define ENTRY_RENAMED(NAME, VALUE) MathAPI.push_back(NAME);
-#define ENTRY_RENAMED_SINGLE(NAME, VALUE) MathAPI.push_back(NAME);
-#define ENTRY_RENAMED_DOUBLE(NAME, VALUE) MathAPI.push_back(NAME);
-#define ENTRY_EMULATED(NAME, VALUE) MathAPI.push_back(NAME);
-#define ENTRY_OPERATOR(NAME, VALUE) MathAPI.push_back(NAME);
-#define ENTRY_TYPECAST(NAME) MathAPI.push_back(NAME);
-#define ENTRY_UNSUPPORTED(NAME) MathAPI.push_back(NAME);
-#include "APINamesMath.inc"
-#undef ENTRY_RENAMED
-#undef ENTRY_RENAMED_SINGLE
-#undef ENTRY_RENAMED_DOUBLE
-#undef ENTRY_EMULATED
-#undef ENTRY_OPERATOR
-#undef ENTRY_TYPECAST
-#undef ENTRY_UNSUPPORTED
-
-// Target FunCall = All Migrated APIs - RemovedAPIs - MathAPIs
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
-  if (VALUE &&                                                                 \
-      std::find(RemovedAPINAME.begin(), RemovedAPINAME.end(), #APINAME) ==     \
-          RemovedAPINAME.end() &&                                              \
-      std::find(MathAPI.begin(), MathAPI.end(), #APINAME) == MathAPI.end())    \
-    MigratedAPIName.push_back(#APINAME);
-#include "APINames.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_nvJPEG.inc"
-#undef ENTRY
-
   auto isMigratedHostAPI = [&]() {
     return allOf(
-        hasAnyName(MigratedAPIName),
+        anyOf(returns(asString("cudaError_t")),
+              returns(asString("cublasStatus_t")),
+              returns(asString("nvgraphStatus_t")),
+              returns(asString("cusparseStatus_t")),
+              returns(asString("cusolverStatus_t")),
+              returns(asString("curandStatus_t"))),
+        // cudaGetLastError returns cudaError_t but won't fail in the call
+        unless(hasName("cudaGetLastError")),
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
   };
 
@@ -927,6 +892,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(
           allOf(
+              unless(hasDescendant(functionDecl())),
               unless(
                   anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))),
               anyOf(
@@ -947,7 +913,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
   // Match host api call whose return value used inside flow control or return
   MF.addMatcher(
       functionDecl(
-          allOf(unless(anyOf(hasAttr(attr::CUDADevice),
+          allOf(unless(hasDescendant(functionDecl())),
+                unless(anyOf(hasAttr(attr::CUDADevice),
                              hasAttr(attr::CUDAGlobal))),
                 hasDescendant(callExpr(allOf(
                     callee(functionDecl(isMigratedHostAPI())),
@@ -961,11 +928,14 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      functionDecl(allOf(unless(anyOf(hasAttr(attr::CUDADevice),
-                                      hasAttr(attr::CUDAGlobal))),
-                         hasDescendant(callExpr(
-                             allOf(callee(functionDecl(isMigratedHostAPI())),
-                                   hasAncestor(returnStmt()))))))
+      functionDecl(
+          allOf(unless(hasDescendant(functionDecl())),
+                unless(anyOf(hasAttr(attr::CUDADevice),
+                             hasAttr(attr::CUDAGlobal))),
+                hasDescendant(
+                    callExpr(allOf(callee(functionDecl(isMigratedHostAPI())),
+                                   hasAncestor(returnStmt())))
+                        .bind("cccc"))))
           .bind("inReturnHostAPI"),
       this);
 
@@ -976,6 +946,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
                                allOf(hasLHS(declRefExpr().bind("targetLHS")),
                                      isAssignmentOperator()))),
                            hasAncestor(varDecl().bind("targetVarDecl"))),
+                     unless(hasDescendant(functionDecl())),
                      hasAncestor(
                          functionDecl(unless(anyOf(hasAttr(attr::CUDADevice),
                                                    hasAttr(attr::CUDAGlobal))))
@@ -1039,13 +1010,29 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
-  if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
+  SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  bool IsLambda = false;
+  if (auto CMD = dyn_cast<CXXMethodDecl>(FD)) {
+    if (CMD->getParent()->isLambda()) {
+      IsLambda = true;
+    }
+  }
+
+  std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
+
+  if (IsLambda) {
+    if (auto CSM = dyn_cast<CompoundStmt>(FD->getBody())) {
+      //IndentStr = getIndent((*(CSM->body_begin()))->getBeginLoc(), SM).str();
+      std::string TryStr = "try{ " + std::string(getNL()) + IndentStr;
+      emplaceTransformation(
+          new InsertBeforeStmt(*(CSM->body_begin()), std::move(TryStr)));
+    }
+  } else if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
     emplaceTransformation(new InsertBeforeCtrInitList(CDecl, " try "));
   } else {
     emplaceTransformation(new InsertBeforeStmt(FD->getBody(), " try "));
   }
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
+
   std::string ReplaceStr =
       getNL() + IndentStr +
       std::string("catch (" + MapNames::getClNamespace() +
@@ -1056,7 +1043,9 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
                   "\", line:\" << __LINE__ << std::endl;") +
       getNL() + IndentStr + IndentStr + std::string("std::exit(1);") + getNL() +
       IndentStr + "}";
-
+  if (IsLambda) {
+    ReplaceStr += getNL() + IndentStr + "}";
+  }
   emplaceTransformation(
       new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
 }

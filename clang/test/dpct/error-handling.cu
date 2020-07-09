@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/error-handling.cu
 // RUN: cd %T
-// RUN: dpct --usm-level=none -out-root %T error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling.dp.cpp
 
 #include <stdexcept>
@@ -760,4 +760,38 @@ __host__ __device__ __forceinline__ cudaError_t *foo14(cudaError_t error,
 }
 
 
+//CHECK: int foo15(){
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+//CHECK-NEXT:   codes. The call was replaced with 0. You need to rewrite this code.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   return 0;
+//CHECK-NEXT: }
+int foo15(){
+  return cudaGetLastError();
+}
+
+//CHECK: int foo16(){
+//CHECK-NEXT:   int *a;
+//CHECK-NEXT:   return [&]() {
+//CHECK-NEXT:     /*
+//CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted.
+//CHECK-NEXT:     You may need to rewrite this code.
+//CHECK-NEXT:     */
+//CHECK-NEXT:     try {
+//CHECK-NEXT:       return (dpct::dpct_malloc((void **)&a, 0), 0);
+//CHECK-NEXT:     }
+//CHECK-NEXT:     catch (sycl::exception const &exc) {
+//CHECK-NEXT:       std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+//CHECK-NEXT:                 << ", line:" << __LINE__ << std::endl;
+//CHECK-NEXT:       std::exit(1);
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }();
+//CHECK-NEXT: }
+int foo16(){
+  int *a;
+  return [&](){
+    return cudaMalloc((void**)&a,0);
+    }();
+}
 

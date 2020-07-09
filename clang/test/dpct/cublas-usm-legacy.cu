@@ -227,7 +227,7 @@ int main() {
 }
 
 // Because the return value of origin API is the result value, not the status, so keep using lambda here.
-//CHECK:int foo() try {
+//CHECK:int foo(){
 //CHECK-NEXT:  return [&](){
 //CHECK-NEXT:  int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
 //CHECK-NEXT:  mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
