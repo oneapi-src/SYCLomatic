@@ -109,7 +109,7 @@ llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
 #ifdef INTEL_CUSTOMIZATION
-  IsCudaFile = false;
+  bool IsCudaFile = false;
   int OriArgc = argc;
   static cl::opt<std::string> BuildPath(
       "p",
@@ -322,6 +322,21 @@ llvm::Error CommonOptionsParser::init(
   Adjuster = combineAdjusters(
       std::move(Adjuster),
       getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
+#ifdef INTEL_CUSTOMIZATION
+  for (auto I : ArgsAfter) {
+    if (I.size() > 2 && I.substr(0, 2) == "-x") {
+      IsCudaFile = false;
+      Adjuster = combineAdjusters(
+          std::move(Adjuster),
+          getInsertArgumentAdjuster(I.c_str(), ArgumentInsertPosition::BEGIN));
+    }
+  }
+  if (IsCudaFile) {
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
+  }
+#endif
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
   Compilations = std::move(AdjustingCompilations);
   return llvm::Error::success();

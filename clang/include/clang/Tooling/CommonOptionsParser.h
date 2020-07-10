@@ -101,7 +101,6 @@ public:
 
 #ifdef INTEL_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
-  bool IsCudaFile;
 #endif
   /// Returns a reference to the loaded compilations database.
   CompilationDatabase &getCompilations() {

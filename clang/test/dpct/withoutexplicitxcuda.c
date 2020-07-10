@@ -17,3 +17,23 @@ __global__ void simple_kernel(float *d_array) {
   d_array[0] = const_angle[0];
   return;
 }
+
+// CHECK: void k(){}
+// CHECK-NEXT: int main(int argc, char** argv) {
+// CHECK-NEXT:   const int N = 4;
+// CHECK-NEXT:   dpct::get_default_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           k();
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT:   return 0;
+// CHECK-NEXT: }
+__global__ void k(){}
+int main(int argc, char** argv) {
+  const int N = 4;
+  k<<<1,1>>>();
+  return 0;
+}

@@ -1009,14 +1009,6 @@ int run(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  if (OptParser->IsCudaFile) {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-  }
-
   std::string CUDAVerMajor = "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
   Tool.appendArgumentsAdjuster(
     getInsertArgumentAdjuster(CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
