@@ -872,7 +872,8 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
 
 /// Find command "nvcc" in \p str, and return the position of the character behind "nvcc".
 /// e.g: str could be: "/usr/local/bin/nvcc  -Xcompiler ...",
-///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...".
+///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...",
+///                    "cd /home/user && /usr/local/cuda/bin/nvcc  -ccbin=".
 /// \returns the position of the character behind "nvcc" in str,
 ///          or NULL if no command "nvcc" found in str.
 const char *find_nvcc(const char *str) {
@@ -882,21 +883,25 @@ const char *find_nvcc(const char *str) {
   for (const char *ptr = str; *ptr != '\0'; ptr++) {
     if (isspace(*ptr)) {
       pos = ptr;
-      break;
+
+      int len = pos - str;
+      if (len >= 4 && *(pos - 1) == 'c' && *(pos - 2) == 'c' &&
+        *(pos - 3) == 'v' && *(pos - 4) == 'n') {
+        ret = pos;
+        return ret;
+      }
+    } else {
+      continue;
     }
   }
+
 
   if (pos == NULL) {
     int len = strlen(str);
     if (len >= 4 && str[len - 1] == 'c' && str[len - 2] == 'c' &&
         str[len - 3] == 'v' && str[len - 4] == 'n') {
-      ret = str + len;
-    }
-  } else {
-    int len = pos - str;
-    if (len >= 4 && *(pos - 1) == 'c' && *(pos - 2) == 'c' &&
-        *(pos - 3) == 'v' && *(pos - 4) == 'n') {
-      ret = pos;
+    ret = str + len;
+    return ret;
     }
   }
 
@@ -949,42 +954,11 @@ char * replace_binary_name(const char *src, const char *pos){
     return buffer;
 }
 
-int is_ubuntu_platform(void) {
-  FILE *fp = NULL;
-  char buffer[1024] = "";
-
-  fp = popen("lsb_release -ds", "r");
-
-  if (fp == NULL) {
-    fp = popen("cat /proc/version", "r");
-    if (fp == NULL) {
-      perror("bear: failed to get Linux distribution info\n");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  if (fgets(buffer, 1024, fp) == NULL) {
-    perror("bear: fgets\n");
-    exit(EXIT_FAILURE);
-  }
-  pclose(fp);
-
-  if (strstr(buffer, "Ubuntu")) {
-    return 1;
-  }
-  return 0;
-}
-
 #endif
 
 /* this method is to write log about the process creation. */
 #ifdef INTEL_CUSTOMIZATION
-// To indicate whether current OS is a Ubuntu system or other system.
-// Value: 1 ubuntu system, Value: 0 other system.
-static int ubuntu_platform = 0;
 
-// To make sure global ubuntu_platform is only initialized once.
-static int platform_initialized = 0;
 
 static void bear_report_call(char const *fun, char const *argv[]) {
 #else
@@ -1051,10 +1025,6 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // (CPATH=;command  args), need remove () around the command
     int has_parenthesis=0;
 
-    if(strstr(argv[0], "nvcc") && !platform_initialized) {
-        ubuntu_platform = is_ubuntu_platform();
-        platform_initialized = 1;
-    }
     // try to parse out nvcc and generate obj_file.
     for (size_t it = 0; it < argc; ++it) {
         const char *tail=argv[it];
@@ -1096,6 +1066,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 }
             }
         }
+
         if(flag_optval==1){
           char ofilename[512];
           int olen=strlen(argv[it]);
@@ -1211,11 +1182,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     const char *pos = find_nvcc(argv[it_cp]);
 
     int is_stub_need = 0;
-    if (ubuntu_platform) {
-        is_stub_need = (pos != NULL && *pos != '\0');
-    } else {
-        is_stub_need = (pos != NULL);
-    }
+    is_stub_need = (pos != NULL);
 
     if(is_stub_need)
     {
