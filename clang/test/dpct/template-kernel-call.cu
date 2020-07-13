@@ -246,3 +246,37 @@ void convert(){
   T b;
   convert_kernel<<<128, 128>>>(b);
 }
+
+
+// CHECK:template <typename T>
+// CHECK-NEXT:class Image {
+// CHECK-NEXT:public:
+// CHECK-NEXT:  T* dPtr;
+// CHECK-NEXT:  sycl::queue *s;
+// CHECK-NEXT:};
+// CHECK-NEXT:template <typename T>
+// CHECK-NEXT:void my_kernel(T *A) {}
+template <typename T>
+class Image {
+public:
+  T* dPtr;
+  cudaStream_t s;
+};
+template <typename T>
+__global__ void my_kernel(T *A) {}
+
+// CHECK:template <typename T>
+// CHECK-NEXT:static void multiply(int block_size, Image<T> &ptr, T value) {
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, block_size), sycl::range<3>(0, 0, block_size)), 
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+template <typename T>
+static void multiply(int block_size, Image<T> &ptr, T value) {
+  my_kernel<T><<<8, block_size, 0, ptr.s>>>(ptr.dPtr);
+}

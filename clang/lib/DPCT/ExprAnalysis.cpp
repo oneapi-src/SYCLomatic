@@ -591,5 +591,36 @@ KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
   return Args;
 }
 
+void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
+                                   bool ReverseIfNeed) {
+  MustDim3 = Idx < 2;
+  if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
+    Reversed = false;
+    DirectRef = true;
+    initArgumentExpr(E);
+    return;
+  }
+  DoReverse = ReverseIfNeed;
+  ArgumentAnalysis::analyze(E);
+
+  if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
+          Stmt::DeclRefExprClass ||
+      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
+          Stmt::MemberExprClass ||
+      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
+          Stmt::IntegerLiteralClass) {
+    if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
+                        DpctGlobalInfo::getContext())) {
+      addReplacement(buildString(DpctGlobalInfo::getCtadClass(
+                                     MapNames::getClNamespace() + "::range", 3),
+                                 "(0, 0, ", getReplacedString(), ")"));
+      Reversed = true;
+      return;
+    }
+
+    DirectRef = true;
+  }
+}
+
 } // namespace dpct
 } // namespace clang

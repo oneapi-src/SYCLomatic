@@ -1589,7 +1589,8 @@ std::vector<const DeclaratorDecl *> getSiblingDecls(const DeclaratorDecl *DD) {
     for (auto It = P->decls_begin(); It != P->decls_end(); ++It) {
       if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
         if (DD2->getBeginLoc() == DD->getBeginLoc())
-          Decls.push_back(DD2);
+          if (DD2 != DD)
+            Decls.push_back(DD2);
     }
   }
   return Decls;

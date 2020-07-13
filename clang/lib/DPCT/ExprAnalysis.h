@@ -306,7 +306,7 @@ protected:
 
   // Replace total string
   template <class TextData> inline void addReplacement(TextData Text) {
-    addReplacement(SrcBegin, SrcLength, std::move(Text));
+    addReplacement(0, SrcLength, std::move(Text));
   }
   // Replace string with relative offset to the stored string and length
   inline void addReplacement(size_t Offset, size_t Length, std::string Text) {
@@ -428,7 +428,7 @@ protected:
     if (!Expression)
       initExpression(Expression);
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Expression)) {
-      if (Ctor->getConstructor()->isCopyConstructor() || Ctor->isElidable())
+      if (Ctor->getParenOrBraceRange().isInvalid() && Ctor->getNumArgs() == 1)
         Expression = Ctor->getArg(0);
     }
     initExpression(Expression);
@@ -481,6 +481,7 @@ private:
   bool DoReverse = false;
   bool Reversed = false;
   bool DirectRef = false;
+  bool MustDim3 = false;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
 
@@ -496,22 +497,7 @@ protected:
 public:
   KernelConfigAnalysis(bool IsInMacroDefine)
       : ArgumentAnalysis(IsInMacroDefine) {}
-  void analyze(const Expr *E, bool ReverseIfNeed = false) {
-    if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
-      Reversed = false;
-      DirectRef = true;
-      initArgumentExpr(E);
-      return;
-    }
-    DoReverse = ReverseIfNeed;
-    ArgumentAnalysis::analyze(E);
-    if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
-            Stmt::DeclRefExprClass ||
-        getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
-            Stmt::MemberExprClass) {
-      DirectRef = true;
-    }
-  }
+  void analyze(const Expr *E, unsigned int Idx, bool ReverseIfNeed = false);
 
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }

@@ -2758,7 +2758,7 @@ private:
     bool LocalReversed = false, GroupReversed = false;
     for (auto Arg : ConfigArgs) {
       KernelConfigAnalysis A(IsInMacroDefine);
-      A.analyze(Arg, Idx < 2);
+      A.analyze(Arg, Idx, Idx < 2);
       ExecutionConfig.Config[Idx] = A.getReplacedString();
       if (Idx == 0) {
         GroupReversed = A.reversed();
