@@ -44,7 +44,7 @@ std::string getFormatSearchPath();
 } // namespace clang
 
 extern int FatalErrorCnt;
-extern std::map<std::string, unsigned long> ErrorCnt;
+extern std::map<std::string, uint64_t> ErrorCnt;
 
 static bool formatFile(StringRef FileName,
                        const std::vector<clang::tooling::Range> &Ranges,

@@ -40,7 +40,7 @@ static const std::string SigDescription(const int &Signo) {
   }
 }
 #endif
-extern unsigned long CurFileSigErrCnt;
+extern uint64_t CurFileSigErrCnt;
 void recoverCheckpoint(int Signo){
   CurFileSigErrCnt++;
   if( EnableErrorRecover && Signo == SIGSEGV) {

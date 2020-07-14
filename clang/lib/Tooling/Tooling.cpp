@@ -131,9 +131,9 @@ std::string InRootTooling;
 
 // filename, error#
 //  error: high32:processed sig error, low32: parse error
-std::map<std::string, unsigned long> ErrorCnt;
-unsigned long CurFileSigErrCnt=0;
-unsigned long CurFileParseErrCnt=0;
+std::map<std::string, uint64_t> ErrorCnt;
+uint64_t CurFileSigErrCnt=0;
+uint64_t CurFileParseErrCnt=0;
 
 #endif
 
