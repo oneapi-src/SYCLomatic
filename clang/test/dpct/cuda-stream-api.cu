@@ -68,7 +68,7 @@ static void func()
   for (; 0; )
     cudaStreamCreate(&s0);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -277,6 +277,28 @@ static void func()
   // CHECK: checkCudaErrors((s1->wait(), 0));
   // CHECK-EMPTY:
   checkCudaErrors(cudaStreamSynchronize(s1));
+
+  // CHECK: q_ct1.wait();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((q_ct1.wait(), 0));
+  // CHECK-NEXT: q_ct1.wait();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((q_ct1.wait(), 0));
+  // CHECK-NEXT: q_ct1.wait();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((q_ct1.wait(), 0));
+  cudaStreamSynchronize(cudaStreamDefault);
+  checkCudaErrors(cudaStreamSynchronize(cudaStreamDefault));
+  cudaStreamSynchronize(cudaStreamLegacy);
+  checkCudaErrors(cudaStreamSynchronize(cudaStreamLegacy));
+  cudaStreamSynchronize(cudaStreamPerThread);
+  checkCudaErrors(cudaStreamSynchronize(cudaStreamPerThread));
 
   // CHECK: dev_ct1.destroy_queue(s0);
   cudaStreamDestroy(s0);

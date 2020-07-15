@@ -594,13 +594,24 @@ KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                                    bool ReverseIfNeed) {
   MustDim3 = Idx < 2;
+
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
     DirectRef = true;
+    if (Idx == 3 && isPredefinedStreamHandle(E)) {
+      addReplacement("0");
+      return;
+    }
     initArgumentExpr(E);
     return;
   }
+
   DoReverse = ReverseIfNeed;
+  if (Idx == 3 && isPredefinedStreamHandle(E)) {
+    addReplacement("0");
+    return;
+  }
+
   ArgumentAnalysis::analyze(E);
 
   if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==

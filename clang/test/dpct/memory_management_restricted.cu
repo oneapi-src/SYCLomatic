@@ -88,6 +88,28 @@ int main(){
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
+
+    // CHECK: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault);
+    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault));
+    cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread);
+    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread));
+    cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy);
+    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy));
 }
 
 

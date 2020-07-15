@@ -7547,8 +7547,18 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else if (FuncName == "cudaStreamSynchronize") {
     auto StmtStr = getStmtSpelling(CE->getArg(0));
-    std::string ReplStr{StmtStr};
-    ReplStr += "->wait()";
+    std::string ReplStr;
+    if (StmtStr == "0" || StmtStr == "cudaStreamDefault" ||
+        StmtStr == "cudaStreamPerThread" || StmtStr == "cudaStreamLegacy") {
+      if (checkWhetherIsDuplicate(CE, false))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+      ReplStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+    } else {
+      ReplStr = StmtStr + "->";
+    }
+    ReplStr += "wait()";
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     if (IsAssigned) {
@@ -8028,9 +8038,13 @@ void MemoryMigrationRule::replaceMemAPIArg(
 // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
 // and SM.getSpellingLoc will return the macro definition in this case.
 CharSourceRange getAccurateExpansionRange(SourceLocation Loc,
-                                         const SourceManager &SM) {
+                                          const SourceManager &SM) {
   while (Loc.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Loc)) {
-    Loc = SM.getImmediateSpellingLoc(Loc);
+    auto ISL = SM.getImmediateSpellingLoc(Loc);
+    if (!DpctGlobalInfo::isInRoot(
+            SM.getFilename(SM.getExpansionLoc(ISL)).str()))
+      break;
+    Loc = ISL;
   }
   return SM.getExpansionRange(Loc);
 }
@@ -8404,9 +8418,10 @@ void MemoryMigrationRule::memcpyMigration(
       }
       std::string AsyncQueue;
       if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
-        AsyncQueue = ExprAnalysis::ref(C->getArg(4));
+        if (!isPredefinedStreamHandle(C->getArg(4)))
+          AsyncQueue = ExprAnalysis::ref(C->getArg(4));
       }
-      if (AsyncQueue.empty() || AsyncQueue == "0") {
+      if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -8565,13 +8580,11 @@ void MemoryMigrationRule::memcpySymbolMigration(
       if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
         const Expr *Stream = C->getArg(5);
         if (Stream) {
-          ExprAnalysis EA;
-          EA.analyze(Stream);
-          auto StreamStr = EA.getReplacedString();
-          if (StreamStr.empty() || StreamStr == "0") {
+          if (isPredefinedStreamHandle(C->getArg(5))) {
             buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
             ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
           } else {
+            auto StreamStr = ExprAnalysis::ref(Stream);
             ReplaceStr = StreamStr + "->memcpy";
           }
         }
@@ -8736,9 +8749,10 @@ void MemoryMigrationRule::memsetMigration(
       }
       std::string AsyncQueue;
       if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
-        AsyncQueue = ExprAnalysis::ref(C->getArg(3));
+        if (!isPredefinedStreamHandle(C->getArg(3)))
+          AsyncQueue = ExprAnalysis::ref(C->getArg(3));
       }
-      if (AsyncQueue.empty() || AsyncQueue == "0") {
+      if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -8792,15 +8806,14 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg2 = EA.getReplacedString();
     std::string StmtStrArg3;
     if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
-      EA.analyze(C->getArg(3));
-      StmtStrArg3 = EA.getReplacedString();
+      if (!isPredefinedStreamHandle(C->getArg(3)))
+        StmtStrArg3 = ExprAnalysis::ref(C->getArg(3));
     } else {
       StmtStrArg3 = "0";
     }
 
     // In clang "define NULL __null"
-    if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" || StmtStrArg3 == "__null" ||
-        StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
+    if (StmtStrArg3 == "0"|| StmtStrArg3 == "") {
       Replacement = "dpct::dev_mgr::instance().get_device(" + StmtStrArg2 +
                     ").default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
@@ -9252,6 +9265,9 @@ MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
         emplaceTransformation(
             new InsertBeforeStmt(StreamExpr, "(cl::sycl::queue *)"));
       }
+    } else if (isPredefinedStreamHandle(StreamExpr)) {
+      emplaceTransformation(removeArg(C, i, *Result.SourceManager));
+      return;
     } else if (!isa<DeclRefExpr>(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
@@ -10176,6 +10192,36 @@ void ThrustVarRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(ThrustVarRule)
+
+void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
+  MF.addMatcher(parenExpr(has(cStyleCastExpr(has(
+                              integerLiteral(anyOf(equals(1), equals(2)))))))
+                    .bind("stream"),
+                this);
+}
+
+void PreDefinedStreamHandleRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  if (auto E = getNodeAsType<Expr>(Result, "stream")) {
+    std::string Str = getStmtSpelling(E);
+    if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
+        Str == "cudaStreamPerThread") {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto Begin = getAccurateExpansionRange(E->getBeginLoc(), SM).getBegin();
+      unsigned int Length = Lexer::MeasureTokenLength(
+          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
+      if (checkWhetherIsDuplicate(E, false))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, E, HelperFuncType::DefaultQueue);
+      emplaceTransformation(new ReplaceText(
+          Begin, Length, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
+    }
+  }
+}
+
+REGISTER_RULE(PreDefinedStreamHandleRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

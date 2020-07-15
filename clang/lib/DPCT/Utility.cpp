@@ -1786,17 +1786,18 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
   Lexer::getRawToken(
-    Loc.getLocWithOffset(Lexer::MeasureTokenLength(
-      Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
-    Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+      Loc.getLocWithOffset(Lexer::MeasureTokenLength(
+          Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+      Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
     Lexer::getRawToken(
-      EndOfToken.getLocWithOffset(Lexer::MeasureTokenLength(
-        EndOfToken, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
-      Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
-    EndOfToken = SM.getExpansionLoc(Tok.getEndLoc());;
+        EndOfToken.getLocWithOffset(Lexer::MeasureTokenLength(
+            EndOfToken, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+        Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+    EndOfToken = SM.getExpansionLoc(Tok.getEndLoc());
+    ;
   }
 
   auto It = Map.find(getHashStrFromLoc(EndOfToken));
@@ -1840,4 +1841,35 @@ bool needExtraParens(const Expr *E) {
   default:
     return true;
   }
+}
+
+bool isPredefinedStreamHandle(const Expr *E) {
+  Expr::EvalResult ER;
+  if (auto PE = dyn_cast<ParenExpr>(E->IgnoreImplicit())) {
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(PE->getSubExpr())) {
+      if (!CSCE->getSubExpr()->isValueDependent() &&
+          CSCE->getSubExpr()->EvaluateAsInt(
+              ER, dpct::DpctGlobalInfo::getContext())) {
+        int64_t Value = ER.Val.getInt().getExtValue();
+        if (Value == 1 || Value == 2) {
+          // cudaStreamLegacy is ((cudaStream_t)0x1)
+          // cudaStreamPerThread is ((cudaStream_t)0x2)
+          return true;
+        }
+      }
+    }
+  } else if (!E->IgnoreImplicit()->isValueDependent() &&
+             E->IgnoreImplicit()->EvaluateAsInt(
+                 ER, dpct::DpctGlobalInfo::getContext())) {
+    int64_t Value = ER.Val.getInt().getExtValue();
+    if (Value == 0) {
+      // cudaStreamDefault is 0x00
+      return true;
+    }
+  } else if (dyn_cast<GNUNullExpr>(E->IgnoreImplicit()) ||
+             dyn_cast<CXXNullPtrLiteralExpr>(E->IgnoreImplicit())) {
+      // default stream can be used as NULL, __null, nullptr
+      return true;
+  }
+  return false;
 }

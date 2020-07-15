@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/macro_test.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
 
 #define CUDA_NUM_THREADS 1024+32

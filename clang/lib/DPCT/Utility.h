@@ -412,4 +412,5 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
+bool isPredefinedStreamHandle(const clang::Expr *E);
 #endif // DPCT_UTILITY_H
