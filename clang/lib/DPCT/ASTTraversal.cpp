@@ -9994,7 +9994,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   if (!ME)
     return;
   auto TopMember = getParentMemberExpr(ME);
-  if (!ME)
+  if (!TopMember)
     return;
   auto ResName = ME->getMemberNameInfo().getAsString();
   if (ResName == "array") {
