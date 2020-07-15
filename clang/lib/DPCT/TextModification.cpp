@@ -720,9 +720,11 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   while ((Data == ' ') || (Data == '\t') || (Data == '\n') || (Data == '\r'))
     Data = DataBegin[--i];
   recordMigrationInfo(Context, CD->getBeginLoc());
-  return std::make_shared<ExtReplacement>(
+  auto Repl = std::make_shared<ExtReplacement>(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);
+  Repl->setSYCLHeaderNeeded(false);
+  return Repl;
 }
 
 std::shared_ptr<ExtReplacement>

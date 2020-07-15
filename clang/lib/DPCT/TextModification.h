@@ -88,11 +88,17 @@ public:
            getReplacementText().equals(RHS->getReplacementText());
   }
 
+  inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
+  inline void setSYCLHeaderNeeded(bool Val) {
+    SYCLHeaderNeeded = Val;
+  }
+
 private:
   InsertPosition InsertPos = InsertPositionLeft;
   unsigned BeginLine = 0, EndLine = 0;
   const TextModification *TM;
   unsigned PairID = 0;
+  bool SYCLHeaderNeeded = true;
 };
 
 enum class TextModificationID : int {

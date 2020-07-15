@@ -315,7 +315,13 @@ public:
   void emplaceReplacements(ReplTy &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-    insertHeader(SYCL);
+
+    if(Repl->getLength() == 0 && Repl->getReplacementText().empty())
+      return;
+
+    if(Repl->IsSYCLHeaderNeeded())
+      insertHeader(SYCL);
+
     Repls.addReplacement(Repl);
   }
 
