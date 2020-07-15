@@ -32,6 +32,8 @@ int main(int argc, char* argv[]) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: sycl::event start, stop;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> start_ct1;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> stop_ct1;
   // CHECK-EMPTY:
   // CHECK: /*
   // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
@@ -85,7 +87,7 @@ int main(int argc, char* argv[]) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
-  // CHECK-NEXT: auto start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK-NEXT: start_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(start, 0);
 
   // kernel call without sync
@@ -152,7 +154,7 @@ int main(int argc, char* argv[]) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
-  // CHECK-NEXT: auto stop_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK-NEXT: stop_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
@@ -309,11 +311,11 @@ void foo() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: auto start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: start_ct1 = std::chrono::high_resolution_clock::now();
   // CHECK: cudaCheck(0);
   cudaCheck(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: auto stop_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: stop_ct1 = std::chrono::high_resolution_clock::now();
   // CHECK: cudaCheck(0);
   cudaCheck(cudaEventRecord(stop, 0));
 
@@ -326,10 +328,10 @@ void foo() {
   cudaEventDestroy(stop);
 
   {
-    // CHECK: auto start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: start_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK-NEXT: int err = 0;
     cudaError_t err = cudaEventRecord(start, 0);
-    // CHECK: auto stop_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: stop_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK-NEXT: err = 0;
     err = cudaEventRecord(stop, 0);
     if (cudaSuccess != err) {
@@ -352,11 +354,11 @@ void bar() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: auto start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: start_ct1 = std::chrono::high_resolution_clock::now();
   // CHECK: fun(0);
   fun(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: auto stop_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: stop_ct1 = std::chrono::high_resolution_clock::now();
   // CHECK: fun(0);
   fun(cudaEventRecord(stop, 0));
 
@@ -370,97 +372,120 @@ void bar() {
 }
 
 struct Node {
+ // CHECK: sycl::event start;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> start_ct1;
  cudaEvent_t start;
+ // CHECK: sycl::event end;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> end_ct1;
  cudaEvent_t end;
- struct {
-  cudaEvent_t *ev[100];
-  cudaEvent_t events[100];
- };
+ // CHECK: sycl::event *ev[100];
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> ev_ct1[100];
+ cudaEvent_t *ev[100];
+ // CHECK: sycl::event events[100];
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1[100];
+ cudaEvent_t events[100];
+ // CHECK: sycl::event *p_events;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> p_events_ct1_0;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> p_events_ct1_1;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> p_events_ct1_2;
+ // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> p_events_ct1_3;
+ cudaEvent_t *p_events;
 };
 
 void foo2(Node *n) {
   float elapsed_time;
 
-  // CHECK: auto n_start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: n->start_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(n->start, 0);
-  // CHECK: n_start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: n->start_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(n->start, 0);
   // do something
-  // CHECK: auto n_end_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: n->end_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(n->end, 0);
-  // CHECK: n_end_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: n->end_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(n->end, 0);
-  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(n_end_ct1 - n_start_ct1).count();
+  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(n->end_ct1 - n->start_ct1).count();
   cudaEventElapsedTime(&elapsed_time, n->start, n->end);
   {
     int errorCode;
-    // CHECK: auto n_start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: n->start_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK: cudaCheck(0);
     cudaCheck(cudaEventRecord(n->start, 0));
-    // CHECK: n_start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: n->start_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK: errorCode = 0;
     errorCode = cudaEventRecord(n->start, 0);
   }
 
   Node node;
-  // CHECK: auto node_start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: node.start_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(node.start, 0);
-  // CHECK: node_start_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: node.start_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(node.start, 0);
   // do something
-  // CHECK: auto node_end_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: node.end_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(node.end, 0);
-  // CHECK: node_end_ct1 = std::chrono::high_resolution_clock::now();
+  // CHECK: node.end_ct1 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(node.end, 0);
-  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node_end_ct1 - node_start_ct1).count();
+  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.end_ct1 - node.start_ct1).count();
   cudaEventElapsedTime(&elapsed_time, node.start, node.end);
   {
     int errorCode;
-    // CHECK: auto node_start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.start_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK: cudaCheck(0);
     cudaCheck(cudaEventRecord(node.start, 0));
-    // CHECK: node_start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.start_ct1 = std::chrono::high_resolution_clock::now();
     // CHECK: errorCode = 0;
     errorCode = cudaEventRecord(node.start, 0);
   }
 
   {
-    // CHECK: auto node_events_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.events_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(node.events[0]);
-    // CHECK: node_events_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.events_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(node.events[0]);
-    // CHECK: auto node_events_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.events_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(node.events[23]);
-    // CHECK: node_events_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.events_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(node.events[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node_events_23_ct1 - node_events_0_ct1).count();
+    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.events_ct1[23] - node.events_ct1[0]).count();
     cudaEventElapsedTime(&elapsed_time, node.events[0], node.events[23]);
   }
 
   {
-    // CHECK: auto node_ev_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.ev_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*node.ev[0]);
-    // CHECK: node_ev_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.ev_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*node.ev[0]);
-    // CHECK: auto node_ev_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.ev_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*node.ev[23]);
-    // CHECK: node_ev_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: node.ev_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*node.ev[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node_ev_23_ct1 - node_ev_0_ct1).count();
+    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.ev_ct1[23] - node.ev_ct1[0]).count();
     cudaEventElapsedTime(&elapsed_time, *node.ev[0], *node.ev[23]);
   }
 
   {
-    // CHECK: auto node_ev_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: (&node)->ev_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*(&node)->ev[0]);
-    // CHECK: node_ev_0_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: (&node)->ev_ct1[0] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*(&node)->ev[0]);
-    // CHECK: auto node_ev_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: (&node)->ev_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*(&node)->ev[23]);
-    // CHECK: node_ev_23_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: (&node)->ev_ct1[23] = std::chrono::high_resolution_clock::now();
     cudaEventRecord(*(&node)->ev[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node_ev_23_ct1 - node_ev_0_ct1).count();
+    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>((&node)->ev_ct1[23] - (&node)->ev_ct1[0]).count();
     cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
+  }
+
+  {
+    // CHECK: n->p_events_ct1_0 = std::chrono::high_resolution_clock::now();
+    cudaEventRecord(n->p_events[0]);
+    // CHECK: n->p_events_ct1_1 = std::chrono::high_resolution_clock::now();
+    cudaEventRecord(n->p_events[1]);
+    // CHECK: n->p_events_ct1_2 = std::chrono::high_resolution_clock::now();
+    cudaEventRecord(n->p_events[2]);
+    // CHECK: n->p_events_ct1_3 = std::chrono::high_resolution_clock::now();
+    cudaEventRecord(n->p_events[3]);
   }
 }
 
@@ -490,3 +515,49 @@ class C {
     cudaEventElapsedTime(&elapsed_time, start, stop);
   }
 };
+
+struct S {
+  cudaEvent_t *events;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_0;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_1;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_2;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_3;
+};
+
+void foo(int n) {
+  // CHECK: sycl::event *events = new sycl::event[n];
+  cudaEvent_t *events = new cudaEvent_t[n];
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_0;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_1;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_2;
+  // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> events_ct1_3;
+
+  // CHECK: events_ct1_0 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(events[0]);
+  // CHECK: events_ct1_1 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(events[1]);
+  // CHECK: events_ct1_2 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(events[2]);
+  // CHECK: events_ct1_3 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(events[3]);
+
+  S s;
+  // CHECK: s.events_ct1_0 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s.events[0]);
+  // CHECK: s.events_ct1_1 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s.events[1]);
+  // CHECK: s.events_ct1_2 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s.events[2]);
+  // CHECK: s.events_ct1_3 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s.events[3]);
+
+  S *s2 = new S;
+  // CHECK: s2->events_ct1_0 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s2->events[0]);
+  // CHECK: s2->events_ct1_1 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s2->events[1]);
+  // CHECK: s2->events_ct1_2 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s2->events[2]);
+  // CHECK: s2->events_ct1_3 = std::chrono::high_resolution_clock::now();
+  cudaEventRecord(s2->events[3]);
+}

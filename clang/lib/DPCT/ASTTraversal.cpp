@@ -7293,6 +7293,92 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
+// Gets the declared size of the array referred in E, if E is either
+// ConstantArrayType or VariableArrayType; otherwise return an empty
+// string.
+// For example:
+// int maxSize = 100;
+// int a[10];
+// int b[maxSize];
+//
+// E1(const Expr *)-> a[2]
+// E2(const Expr *)-> b[3]
+// getArraySize(E1) => 10
+// getArraySize(E2) => maxSize
+std::string getArrayDeclSize(const Expr *E) {
+  const ArrayType *AT = nullptr;
+  if (auto ME = dyn_cast<MemberExpr>(E))
+    AT = ME->getMemberDecl()->getType()->getAsArrayTypeUnsafe();
+  else if (auto DRE = dyn_cast<DeclRefExpr>(E))
+    AT = DRE->getDecl()->getType()->getAsArrayTypeUnsafe();
+
+  if (!AT)
+    return {};
+
+  if (auto CAT = dyn_cast<ConstantArrayType>(AT))
+    return std::to_string(*CAT->getSize().getRawData());
+  if (auto VAT = dyn_cast<VariableArrayType>(AT))
+    return ExprAnalysis::ref(VAT->getSizeExpr());
+  return {};
+}
+
+// Returns true if E is array type for a MemberExpr or DeclRefExpr; returns
+// false if E is pointer type.
+// Requires: E is the base of ArraySubscriptExpr
+bool isArrayType(const Expr *E) {
+  if (auto ME = dyn_cast<MemberExpr>(E)) {
+    auto AT = ME->getMemberDecl()->getType()->getAsArrayTypeUnsafe();
+    return AT ? true : false;
+  }
+  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+    auto AT = DRE->getDecl()->getType()->getAsArrayTypeUnsafe();
+    return AT ? true : false;
+  }
+  return false;
+}
+
+// Get the time point helper variable name for an event. The helper variable is
+// declared right after its corresponding event variable.
+std::string getTimePointNameForEvent(const Expr *E, bool IsDecl) {
+  std::string TimePointName;
+  E = E->IgnoreImpCasts();
+  if (auto UO = dyn_cast<UnaryOperator>(E))
+    return getTimePointNameForEvent(UO->getSubExpr(), IsDecl);
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
+    auto Base = ASE->getBase()->IgnoreImpCasts();
+    if (isArrayType(Base))
+      return getTimePointNameForEvent(Base, IsDecl) + "[" +
+        (IsDecl ? getArrayDeclSize(Base) : ExprAnalysis::ref(ASE->getIdx())) + "]";
+    return getTimePointNameForEvent(Base, IsDecl) + "_" +
+      ExprAnalysis::ref(ASE->getIdx());
+  }
+  if (auto ME = dyn_cast<MemberExpr>(E)) {
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    return ((IsDecl || ME->isImplicitAccess()) ? "" :
+            ExprAnalysis::ref(Base) + (ME->isArrow() ? "->" : ".")) +
+      ME->getMemberDecl()->getNameAsString() + getCTFixedSuffix();
+  }
+  if (auto DRE = dyn_cast<DeclRefExpr>(E))
+    return DRE->getDecl()->getNameAsString() + getCTFixedSuffix();
+  return TimePointName;
+}
+
+// Get the (potentially inner) decl of E for common Expr types, including
+// UnaryOperator, ArraySubscriptExpr, MemberExpr and DeclRefExpr; otherwise
+// returns nullptr;
+const ValueDecl *getDecl(const Expr *E) {
+  E = E->IgnoreImpCasts();
+  if (auto UO = dyn_cast<UnaryOperator>(E))
+    return getDecl(UO->getSubExpr());
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(E))
+    return getDecl(ASE->getBase()->IgnoreImpCasts());
+  if (auto ME = dyn_cast<MemberExpr>(E))
+    return ME->getMemberDecl();
+  if (auto DRE = dyn_cast<DeclRefExpr>(E))
+    return DRE->getDecl();
+  return nullptr;
+}
+
 void EventAPICallRule::handleEventRecord(const CallExpr *CE,
                                          const MatchFinder::MatchResult &Result,
                                          bool IsAssigned) {
@@ -7300,53 +7386,24 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Chrono);
   std::ostringstream Repl;
 
-  std::string StmtStr;
-  bool IsInSameClass = false;
-
-  const ValueDecl *MD = nullptr;
-  // Check if the member decl of the event and the function decl is in the
-  // same CXXRecordDecl.
-  if (auto ME = dyn_cast<MemberExpr>(CE->getArg(0)->IgnoreImpCasts())) {
-    auto FD = getFunctionDecl(CE);
-    if (auto CMD = dyn_cast<CXXMethodDecl>(FD)) {
-      auto MethodCRD = CMD->getParent();
-      MD = ME->getMemberDecl();
-      auto MemberCRD = getParentRecordDecl(MD);
-      if (MethodCRD == MemberCRD)
-        IsInSameClass = true;
-    }
-  }
-  // Insert the helper variable inside the class if in the same class
-  if (IsInSameClass) {
-    static std::set<std::pair<const Decl *, const std::string>> MemDupFilter;
-    StmtStr = MD->getNameAsString();
-    auto Pair = std::make_pair(MD, StmtStr);
-    if (MemDupFilter.find(Pair) == MemDupFilter.end()) {
-      MemDupFilter.insert(Pair);
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      std::string InsertStr = getNL();
-      InsertStr += getIndent(MD->getBeginLoc(), SM).str();
-      InsertStr += "std::chrono::time_point<std::chrono::high_resolution_clock> ";
-      InsertStr += StmtStr;
-      InsertStr += getCTFixedSuffix();
-      InsertStr += ";";
-      emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
-    }
-  } else {
-    // Define the helper variable if it is used in the block for first time,
-    // otherwise, just use it.
-    static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
-    const auto *CS = findImmediateBlock(CE);
-    StmtStr = getTempNameForExpr(CE->getArg(0), true, false);
-    auto Pair = std::make_pair(CS, StmtStr);
-
-    if (DupFilter.find(Pair) == DupFilter.end()) {
-      DupFilter.insert(Pair);
-      Repl << "auto ";
-    }
+  const ValueDecl *MD = getDecl(CE->getArg(0));
+  // Insert the helper variable right after the event variables
+  static std::set<std::pair<const Decl *, std::string>> DeclDupFilter;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string InsertStr = getNL();
+  InsertStr += getIndent(MD->getBeginLoc(), SM).str();
+  InsertStr += "std::chrono::time_point<std::chrono::high_resolution_clock> ";
+  InsertStr += getTimePointNameForEvent(CE->getArg(0), true);
+  InsertStr += ";";
+  auto Pair = std::make_pair(MD, InsertStr);
+  if (DeclDupFilter.find(Pair) == DeclDupFilter.end()) {
+    DeclDupFilter.insert(Pair);
+    emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
   }
 
-  Repl << StmtStr << getCTFixedSuffix() << " = std::chrono::high_resolution_clock::now()";
+  // Replace event recording with std::chrono timing
+  Repl << getTimePointNameForEvent(CE->getArg(0), false)
+       << " = std::chrono::high_resolution_clock::now()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
@@ -7372,8 +7429,8 @@ void EventAPICallRule::handleEventElapsedTime(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   auto StmtStrArg0 = getStmtSpelling(CE->getArg(0));
-  auto StmtStrArg1 = getTempNameForExpr(CE->getArg(1), true, false);
-  auto StmtStrArg2 = getTempNameForExpr(CE->getArg(2), true, false);
+  auto StmtStrArg1 = getTimePointNameForEvent(CE->getArg(1), false);
+  auto StmtStrArg2 = getTimePointNameForEvent(CE->getArg(2), false);
   std::ostringstream Repl;
   std::string Assginee = "*(" + StmtStrArg0 + ")";
   if (auto UO = dyn_cast<UnaryOperator>(CE->getArg(0))) {
@@ -7381,8 +7438,7 @@ void EventAPICallRule::handleEventElapsedTime(
       Assginee = getStmtSpelling(UO->getSubExpr());
   }
   Repl << Assginee << " = std::chrono::duration<float, std::milli>("
-       << StmtStrArg2 << getCTFixedSuffix() << " - " << StmtStrArg1
-       << getCTFixedSuffix() << ").count()";
+       << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
   if (IsAssigned) {
     std::ostringstream Temp;
     Temp << "(" << Repl.str() << ", 0)";
