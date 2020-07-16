@@ -324,6 +324,14 @@ public:
     check_id(_current_device);
     return *_devs[_current_device];
   }
+  unsigned int get_cpu_device_id() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (_cpu_dev_id == -1) {
+      throw std::string("no valid cpu device");
+    } else {
+      return _cpu_dev_id;
+    }
+  }
   device_ext &get_device(unsigned int id) const {
     std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
@@ -358,6 +366,8 @@ private:
         cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
     // Collect other devices except for the default device.
     const bool default_is_host = default_device.is_host();
+    if (default_device.is_cpu())
+      _cpu_dev_id = 0;
     for (auto &dev : sycl_all_devs) {
       const bool dev_is_host = dev.is_host();
       if ((dev_is_host && default_is_host) ||
@@ -366,6 +376,9 @@ private:
         continue;
       }
       _devs.push_back(std::make_shared<device_ext>(dev));
+      if (_cpu_dev_id == -1 && dev.is_cpu()) {
+        _cpu_dev_id = _devs.size() - 1;
+      }
     }
   }
   void check_id(unsigned int id) const {
@@ -375,6 +388,7 @@ private:
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
   unsigned int _current_device = 0;
+  unsigned int _cpu_dev_id = -1;
 };
 
 /// Util function to get the defualt queue of current device in
@@ -397,6 +411,11 @@ static inline device_ext &get_device(unsigned int id) {
 /// device in dpct device manager.
 static inline cl::sycl::context get_default_context() {
   return dpct::get_default_queue().get_context();
+}
+
+/// Util function to get a cpu device id.
+static inline unsigned int get_cpu_device_id() {
+  return dev_mgr::instance().get_cpu_device_id();
 }
 
 } // namespace dpct
