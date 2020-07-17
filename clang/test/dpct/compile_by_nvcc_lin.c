@@ -20,11 +20,13 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: int a = 0;
+// CHECK-NEXT: dpct::constant_memory<float, 1> const_angle(360);
 // CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;
 // CHECK-NEXT: }
+int a = 0;
 __constant__ float const_angle[360];
 __global__ void simple_kernel(float *d_array) {
   d_array[0] = const_angle[0];

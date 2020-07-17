@@ -377,6 +377,8 @@ public:
     Repls.addReplacement(Repl);
   }
 
+  ExtReplacements &getRepls() { return Repls; }
+
   size_t getFileSize() const { return FileSize; }
 
   // Header inclusion directive insertion functions
@@ -575,9 +577,17 @@ public:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
-  std::set<unsigned int> &getSpBLASSet() {
-  return SpBLASSet;
-}
+  std::set<unsigned int> &getSpBLASSet() { return SpBLASSet; }
+  std::unordered_set<std::shared_ptr<TextModification>> &
+  getConstantMacroTMSet() {
+    return ConstantMacroTMSet;
+  }
+
+  std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
+      nullptr;
+  std::vector<tooling::Replacement> &getReplacements() {
+    return PreviousTUReplFromYAML->Replacements;
+  }
 
 private:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
@@ -617,6 +627,7 @@ private:
   GlobalMap<RandomEngineInfo> RandomEngineMap;
   GlobalMap<TextureInfo> TextureMap;
   std::set<unsigned int> SpBLASSet;
+  std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
 
   ExtReplacements Repls;
   size_t FileSize = 0;
@@ -771,7 +782,9 @@ public:
     assert(!InRoot.empty());
     return InRoot;
   }
-  static void setOutRoot(const std::string &OutRootPath) { OutRoot = OutRootPath; }
+  static void setOutRoot(const std::string &OutRootPath) {
+    OutRoot = OutRootPath;
+  }
   static const std::string &getOutRoot() {
     assert(!OutRoot.empty());
     return OutRoot;
@@ -1118,6 +1131,19 @@ public:
           LocInfo.second, DeviceRandomStateTypeInfo(Length, GeneratorType)));
     }
   }
+  void insertReplInfoFromYAMLToFileInfo(
+      std::string FilePath,
+      std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
+    auto FileInfo = insertFile(FilePath);
+    if (FileInfo->PreviousTUReplFromYAML == nullptr)
+      FileInfo->PreviousTUReplFromYAML = TUR;
+  }
+  std::shared_ptr<tooling::TranslationUnitReplacements>
+  getReplInfoFromYAMLSavedInFileInfo(std::string FilePath) {
+    auto FileInfo = insertFile(FilePath);
+    return FileInfo->PreviousTUReplFromYAML;
+  }
+
   void
   insertDeviceRandomInitAPIInfo(SourceLocation SL, unsigned int Length,
                                 std::string GeneratorType, std::string RNGSeed,
@@ -1184,6 +1210,27 @@ public:
     FileInfo->getSpBLASSet().insert(LocInfo.second);
   }
 
+  std::shared_ptr<TextModification> findConstantMacroTMInfo(SourceLocation SL) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &S = FileInfo->getConstantMacroTMSet();
+    for (auto TM : S) {
+      if (TM->getConstantOffset() == LocInfo.second) {
+        return TM;
+      }
+    }
+    return nullptr;
+  }
+
+  void insertConstantMacroTMInfo(SourceLocation SL,
+                                 std::shared_ptr<TextModification> TM) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    TM->setConstantOffset(LocInfo.second);
+    auto &S = FileInfo->getConstantMacroTMSet();
+    S.insert(TM);
+  }
+
   void setFileEnterLocation(SourceLocation Loc) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
@@ -1247,6 +1294,12 @@ public:
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
   static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
+  static void removeVarNameInGlobalVarNameSet(const std::string& VarName) {
+    auto Iter = getGlobalVarNameSet().find(VarName);
+    if (Iter != getGlobalVarNameSet().end()) {
+      getGlobalVarNameSet().erase(Iter);
+    }
+  }
   static bool getDeviceChangedFlag() { return HasFoundDeviceChanged; }
   static void setDeviceChangedFlag(bool Flag) { HasFoundDeviceChanged = Flag; }
   static std::unordered_map<int, HelperFuncReplInfo> &
@@ -1612,6 +1665,9 @@ public:
   const DeclStmt *getDeclStmtOfVarType() { return DeclStmtOfVarType; }
   void setLocalTypeName(std::string T) { LocalTypeName = T; }
   std::string getLocalTypeName() { return LocalTypeName; }
+  void setIgnoreFlag(bool Flag) { IsIgnored = Flag; }
+  bool isIgnore() { return IsIgnored; }
+  bool isStatic() { return IsStatic; }
 
   inline void setName(std::string NewName) {
     NewConstVarName  = NewName;
@@ -1651,7 +1707,8 @@ public:
   }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
-    return buildString(getMemoryType(), " ", getConstVarName(),
+    return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
+                       getConstVarName(),
                        PointerAsArray ? "" : getInitArguments(MemSize), ";");
   }
   std::string getMemoryDecl() {
@@ -1825,6 +1882,8 @@ private:
   DpctAccessMode AccMode;
   bool PointerAsArray;
   std::string InitList;
+  bool IsIgnored = false;
+  bool IsStatic = false;
 
   static const std::string ExternVariableName;
 

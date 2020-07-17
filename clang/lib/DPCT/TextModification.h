@@ -24,7 +24,7 @@ namespace dpct {
 
 class KernelCallExpr;
 class TextModification;
-using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
+using TransformSetTy = std::vector<std::shared_ptr<TextModification>>;
 
 class ReplaceInclude;
 using IncludeMapSetTy = std::map<std::string,
@@ -88,6 +88,41 @@ public:
            getReplacementText().equals(RHS->getReplacementText());
   }
 
+  /// merge the constant info to LHS
+  /// the information precedence: HostDevice > Device > Host > empty
+  void mergeConstantInfo(std::shared_ptr<ExtReplacement> RHS) {
+    auto setConstantInfoUsingRHSInfo = [&]() {
+      setConstantFlag(RHS->getConstantFlag());
+      setConstantOffset(RHS->getConstantOffset());
+      setInitStr(RHS->getInitStr());
+      setNewHostVarName(RHS->getNewHostVarName());
+    };
+
+    // LHS has highest precedence or RHS has lowest precedence, use LHS directly
+    if (getConstantFlag() == dpct::ConstantFlagType::HostDevice ||
+        RHS->getConstantFlag() == dpct::ConstantFlagType::Default) {
+      return;
+    }
+
+    // LHS has lowest precedence or RHS has highest precedence, use RHS directly
+    if (RHS->getConstantFlag() == dpct::ConstantFlagType::HostDevice ||
+        getConstantFlag() == dpct::ConstantFlagType::Default) {
+      setConstantInfoUsingRHSInfo();
+      return;
+    }
+
+    // Code at here means it is either "Device" or "Host", use device
+    if (getConstantFlag() == dpct::ConstantFlagType::Device ||
+        RHS->getConstantFlag() == dpct::ConstantFlagType::Host) {
+      return;
+    }
+    if (RHS->getConstantFlag() == dpct::ConstantFlagType::Host ||
+        getConstantFlag() == dpct::ConstantFlagType::Device) {
+      setConstantInfoUsingRHSInfo();
+      return;
+    }
+  }
+
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) {
     SYCLHeaderNeeded = Val;
@@ -130,8 +165,8 @@ public:
   virtual void print(llvm::raw_ostream &OS, ASTContext &Context,
                      const bool PrintDetail = true) const = 0;
   bool operator<(const TextModification &TM) const { return Key < TM.Key; }
-  static bool Compare(const std::unique_ptr<TextModification> &L,
-                      const std::unique_ptr<TextModification> &R) {
+  static bool Compare(const std::shared_ptr<TextModification> &L,
+                      const std::shared_ptr<TextModification> &R) {
     return L->Key < R->Key;
   }
 
@@ -141,12 +176,31 @@ public:
   void setParentRuleID(const char *RuleID) { ParentRuleID = RuleID; }
   const char *getParentRuleID() const { return ParentRuleID; }
   inline void setPairID(unsigned Pair) { PairID = Pair; }
+  dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
+  void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
+  unsigned int getLineBeginOffset() const { return LineBeginOffset; }
+  void setLineBeginOffset(unsigned int O) { LineBeginOffset = O; }
+  unsigned int getConstantOffset() const { return ConstantOffset; }
+  void setConstantOffset(unsigned int O) { ConstantOffset = O; }
+  std::string getInitStr() const { return InitStr; }
+  void setInitStr(std::string S) { InitStr = S; }
+  std::string getNewHostVarName() const { return NewHostVarName; }
+  void setNewHostVarName(std::string N) { NewHostVarName = N; }
+  void setIgnoreTM(bool Flag = true) { IgnoreTM = Flag; }
+  bool isIgnoreTM() const { return IgnoreTM; }
 
 private:
   const TMID ID;
   Group Key;
   const char *ParentRuleID;
   unsigned PairID = 0;
+  //below members are used for process __constant__ macro used in host and device
+  unsigned int LineBeginOffset = 0;
+  bool IgnoreTM = false;
+  dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
+  unsigned int ConstantOffset = 0;
+  std::string InitStr = "";
+  std::string NewHostVarName = "";
 };
 
 /// Insert string in given position.

@@ -260,8 +260,18 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   if (MergeShiftedRs.getCanonicalReplacements() ==
       MergeShiftedReplaces.getCanonicalReplacements())
     return MergeShiftedRs;
+#ifdef INTEL_CUSTOMIZATION
+#ifndef NDEBUG
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
+#else
+  // To avoid SIGABRT, ignore `Replaces`, just return `Rs`.
+  return Rs;
+#endif
+#else
+  return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
+                                            R, *Replaces.begin());
+#endif
 }
 
 llvm::Error Replacements::add(const Replacement &R) {

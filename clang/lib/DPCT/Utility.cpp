@@ -103,16 +103,23 @@ const char *getNL(SourceLocation Loc, const SourceManager &SM) {
     return "\r\n";
 }
 
-int getCurrnetColumn(SourceLocation Loc, const SourceManager &SM) {
+// index base is zero. (The offset of the file begin is 0.)
+unsigned int getOffsetOfLineBegin(SourceLocation Loc, const SourceManager &SM) {
   auto LocInfo = SM.getDecomposedLoc(Loc);
   auto Buffer = SM.getBufferData(LocInfo.first);
   // Find last line end.
-  auto begin = Buffer.find_last_of('\n', LocInfo.second);
-  if (begin == StringRef::npos) {
+  auto Begin = Buffer.find_last_of('\n', LocInfo.second);
+  if (Begin == StringRef::npos) {
     // We're at the beginning of the file.
-    begin = 0;
+    Begin = 0;
   }
-  return LocInfo.second - begin;
+  return Begin + 1;
+}
+
+// index base is one. (The column of the line begin is 1.)
+int getCurrnetColumn(SourceLocation Loc, const SourceManager &SM) {
+  auto LocInfo = SM.getDecomposedLoc(Loc);
+  return LocInfo.second - getOffsetOfLineBegin(Loc, SM) + 1;
 }
 
 StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {

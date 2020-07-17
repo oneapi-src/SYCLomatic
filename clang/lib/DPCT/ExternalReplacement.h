@@ -25,6 +25,9 @@ class Replacements;
 }
 } // namespace clang
 
-int mergeExternalReps(std::string SrcFileName,
+int mergeExternalReps(std::string InRootSrcFilePath,
+                      std::string OutRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
+int loadFromYaml(llvm::StringRef Input,
+                 clang::tooling::TranslationUnitReplacements &TU);
 #endif

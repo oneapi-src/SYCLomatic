@@ -128,3 +128,7 @@ DEF_WARNING(TYPE_IN_FUNCTION, 1054, "The type of variable %0 is declared in devi
 DEF_COMMENT(TYPE_IN_FUNCTION, 1054, "The type of variable {0} is declared in device function with the name {1}. Adjust the code to make the {1} declaration visible at the accessor declaration point.")
 DEF_WARNING(VECTYPE_INHERITATED, 1055, "Vector types with size 1 will be migrated to the corresponding fundmental types which cannot be inherited. You may need to rewrite the code.")
 DEF_COMMENT(VECTYPE_INHERITATED, 1055, "Vector types with size 1 will be migrated to the corresponding fundmental types which cannot be inherited. You may need to rewrite the code.")
+DEF_WARNING(HOST_CONSTANT, 1056, "DPCT did not detect that variable %0 is used in device code. If this variable is also used in device code, you need rewrite the code.")
+DEF_COMMENT(HOST_CONSTANT, 1056, "DPCT did not detect that variable {0} is used in device code. If this variable is also used in device code, you need rewrite the code.")
+DEF_WARNING(HOST_DEVICE_CONSTANT, 1057, "Variable %0 was used in host code and device code. DPCT updated %0 type to be used in SYCL device code and generated new %1 to be used in host code. You need to update the host code manually to use the new %1.")
+DEF_COMMENT(HOST_DEVICE_CONSTANT, 1057, "Variable {0} was used in host code and device code. DPCT updated {0} type to be used in SYCL device code and generated new {1} to be used in host code. You need to update the host code manually to use the new {1}.")

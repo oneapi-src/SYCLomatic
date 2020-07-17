@@ -52,13 +52,18 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
   if (Shorter->getLength() == Longer->getLength()) {
     if (Shorter->getLength() && Shorter->equal(Longer)) {
       // Fully equal replacements which are not insert, just reserve one.
+      Longer->mergeConstantInfo(Shorter);
       return Longer;
     } else if (Shorter->getLength()) {
       // Both Shorter and Longer are replace, just reserve the longer replace.
-      return (Shorter->getReplacementText().str().length() <
-              Longer->getReplacementText().str().length())
-                 ? Longer
-                 : Shorter;
+      if (Shorter->getReplacementText().str().length() <
+          Longer->getReplacementText().str().length()) {
+        Longer->mergeConstantInfo(Shorter);
+        return Longer;
+      } else {
+        Shorter->mergeConstantInfo(Longer);
+        return Shorter;
+      }
     }
     // Both Shorter and Longer are insert, do merge.
     // inset replacement could be "namespace::", "(type cast)",  ")"  "(".
@@ -72,6 +77,7 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
     // Shorter is a sub replacement of Longer, just reserve Longer.
     // TODO: Currently not make sure "keep the longer, remove shorter" is
     // correct, need to do in the future.
+    Longer->mergeConstantInfo(Shorter);
     return Longer;
   }
 }

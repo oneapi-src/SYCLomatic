@@ -76,6 +76,8 @@ enum ProcessStatus {
 int saveNewFiles(clang::tooling::RefactoringTool &Tool, llvm::StringRef InRoot,
                  llvm::StringRef OutRoot);
 
+void loadYAMLIntoFileInfo(std::string Path);
+
 // std::string:  source file name including path.
 // bool: false: the source file has no replacement.
 //       true:  the source file has replacement.

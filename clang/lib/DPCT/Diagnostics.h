@@ -190,6 +190,22 @@ TextModification *insertCommentPrevLine(SourceLocation SL,
   return new InsertComment(StartLoc, OS.str(), UseTextBegin);
 }
 
+//This function is only used to get warning text for regular expression matching.
+//For normal warning emitting, please do not use this interface.
+template <typename IDTy, typename... Ts>
+std::string getWarningTextWithOutPrefix(IDTy MsgID, Ts &&... Vals) {
+  std::string Text;
+  if (CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
+    DiagnosticsMessage Msg = CommentIDTable[(int)MsgID];
+    auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << Formatted;
+    Text = OS.str();
+  }
+  return Text;
+}
+
 template <typename IDTy, typename... Ts>
 std::string getWarningText(IDTy MsgID, Ts &&... Vals) {
   std::string Text;
@@ -243,7 +259,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
+bool report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
 
@@ -259,7 +275,7 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
-    return;
+    return false;
 
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
@@ -275,6 +291,7 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
                                            std::forward<Ts>(Vals)...));
   }
   UniqueID++;
+  return true;
 }
 
 class SourceManagerForWarning {

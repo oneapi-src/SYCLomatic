@@ -93,7 +93,8 @@ public:
 private:
   /// e.g. "__launch_bounds(32, 32)  void foo()"
   /// Result is "void foo()"
-  TextModification *removeMacroInvocationAndTrailingSpaces(SourceRange Range);
+  std::shared_ptr<TextModification>
+  removeMacroInvocationAndTrailingSpaces(SourceRange Range);
 };
 
 class ASTTraversal;
@@ -201,12 +202,12 @@ class MigrationRule : public ASTTraversal {
   friend class ASTTraversalManager;
   ASTTraversalManager *TM;
 
-  TransformSetTy *TransformSet = nullptr;
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
 
   static unsigned PairID;
 
 protected:
+  TransformSetTy *TransformSet = nullptr;
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
@@ -219,7 +220,7 @@ protected:
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
-  void report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
       auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
@@ -230,9 +231,9 @@ protected:
         }
       }
     }
-    DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
-                                          TransformSet, UseTextBegin,
-                                          std::forward<Ts>(Vals)...);
+    return DiagnosticsUtils::report<IDTy, Ts...>(
+        SL, MsgID, getCompilerInstance(), TransformSet, UseTextBegin,
+        std::forward<Ts>(Vals)...);
   }
 
   // Extend version of report()
@@ -990,6 +991,13 @@ public:
 
 private:
   void processDeref(const Stmt *S, ASTContext &Context);
+  void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
+  void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
+  void removeHostConstantWarning(tooling::Replacement &R);
+  void processTypeDeclaredLocal(const VarDecl *MemVar,
+                                std::shared_ptr<MemVarInfo> Info);
+  bool currentIsDevice(const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info);
+  bool currentIsHost(const VarDecl *VD, std::string VarName);
 };
 
 /// Migration rule for memory management routine.
