@@ -1675,7 +1675,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasDataType_t", "curandState_t", "curandState",
                   "curandStateXORWOW_t", "curandStatePhilox4_32_10_t",
                   "curandStateMRG32k3a_t", "minus", "negate", "logical_or",
-                  "identity"),
+                  "identity", "cudaSharedMemConfig"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -2780,9 +2780,25 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
-  } else if (MemberName == "deviceOverlap") {
+  } else if (MemberName == "deviceOverlap" ||
+             MemberName == "concurrentKernels") {
+    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
+           MemberName, "true");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "true"));
+    return;
+  } else if (MemberName == "canMapHostMemory") {
+    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
+           "canMapHostMemory", "false");
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "false"));
+    return;
+  } else if (MemberName == "pciDomainID" || MemberName == "pciBusID" ||
+             MemberName == "pciDeviceID") {
+    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
+           MemberName, "-1");
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "-1"));
     return;
   }
 
@@ -2946,7 +2962,8 @@ REGISTER_RULE(EnumConstantRule)
 void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(anyOf(
                                 hasName("cudaError"), hasName("cufftResult_t"),
-                                hasName("cudaError_enum")))))))
+                                hasName("cudaError_enum"),
+                                hasName("cudaSharedMemConfig")))))))
                     .bind("ErrorConstants"),
                 this);
 }

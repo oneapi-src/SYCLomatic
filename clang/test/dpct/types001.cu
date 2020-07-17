@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001.dp.cpp
 
 #include <cuda.h>
@@ -7,6 +7,7 @@
 #include <curand.h>
 #include <cusolverDn.h>
 #include <cufft.h>
+#include <stdio.h>
 
 // CHECK: dpct::device_info deviceProp;
 cudaDeviceProp deviceProp;
@@ -525,3 +526,48 @@ template <> struct S<cudaError_t> {};
 template <> struct S<cudaError_t *> {};
 template <> struct S<cudaError_t &> {};
 template <> struct S<cudaError_t &&> {};
+
+// CHECK: template <int SMEM_CONFIG = 0>
+// CHECK-NEXT: class BlockRadixRank0 {};
+// CHECK-NEXT: template <int SMEM_CONFIG = 1>
+// CHECK-NEXT: class BlockRadixRank1 {};
+// CHECK-NEXT: template <int SMEM_CONFIG = 2>
+// CHECK-NEXT: class BlockRadixRank2 {};
+template <cudaSharedMemConfig SMEM_CONFIG = cudaSharedMemBankSizeDefault>
+class BlockRadixRank0 {};
+template <cudaSharedMemConfig SMEM_CONFIG = cudaSharedMemBankSizeFourByte>
+class BlockRadixRank1 {};
+template <cudaSharedMemConfig SMEM_CONFIG = cudaSharedMemBankSizeEightByte>
+class BlockRadixRank2 {};
+
+
+void fun3() {
+  char devstr[128] = "";
+  // CHECK: dpct::device_info deviceProp;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property which would be functionally compatible with pciDomainID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property which would be functionally compatible with pciBusID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property which would be functionally compatible with pciDeviceID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, -1);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property which would be functionally compatible with concurrentKernels, it was migrated to true. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if (true) {
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property which would be functionally compatible with canMapHostMemory, it was migrated to false. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if (!false) {
+  // CHECK-NEXT: }
+  cudaDeviceProp deviceProp;
+  sprintf(devstr, "pci %x:%x:%x", deviceProp.pciDomainID, deviceProp.pciBusID, deviceProp.pciDeviceID);
+  if (deviceProp.concurrentKernels) {
+  }
+  if (!deviceProp.canMapHostMemory){
+  }
+}

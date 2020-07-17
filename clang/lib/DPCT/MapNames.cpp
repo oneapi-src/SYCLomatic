@@ -159,6 +159,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaPitchedPtr", "dpct::pitched_data"},
       {"cudaMemcpyKind", "dpct::memcpy_direction"},
       {"cudaComputeMode", "int"},
+      {"cudaSharedMemConfig", "int"},
       // ...
 
   };
