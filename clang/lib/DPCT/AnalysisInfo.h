@@ -1880,6 +1880,7 @@ public:
   inline const std::string &getName() { return Name; }
 
   inline unsigned getOffset() { return Offset; }
+  inline std::string getFilePath() { return FilePath; }
 };
 
 // texture handle info

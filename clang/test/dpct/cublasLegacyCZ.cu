@@ -168,14 +168,14 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: oneapi::mkl::blas::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx, result_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx, result_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasCaxpy(n, alpha_C, x_C, incx, result_C, incy);
 
   // CHECK: {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx, result_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx, result_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZaxpy(n, alpha_Z, x_Z, incx, result_Z, incy);
 
@@ -214,13 +214,13 @@ int main() {
   //cublas<t>scal
   // CHECK: {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-  // CHECK-NEXT: oneapi::mkl::blas::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx);
+  // CHECK-NEXT: oneapi::mkl::blas::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx);
   // CHECK-NEXT: }
   cublasCscal(n, alpha_C, x_C, incx);
 
   // CHECK: {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx);
+  // CHECK-NEXT: oneapi::mkl::blas::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx);
   // CHECK-NEXT: }
   cublasZscal(n, alpha_Z, x_Z, incx);
 
@@ -257,7 +257,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: oneapi::mkl::blas::gbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, lda, y_C_buf_ct{{[0-9]+}}, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::gbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, lda, y_C_buf_ct{{[0-9]+}}, incx, std::complex<float>(beta_C.x(),beta_C.y()), result_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasCgbmv('N', m, n, m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
 
@@ -265,7 +265,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::gbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, lda, y_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::gbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, lda, y_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), result_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZgbmv( 'N', m, n, m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
@@ -274,7 +274,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: oneapi::mkl::blas::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, lda, y_C_buf_ct{{[0-9]+}}, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, lda, y_C_buf_ct{{[0-9]+}}, incx, std::complex<float>(beta_C.x(),beta_C.y()), result_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasCgemv('N', m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
 
@@ -282,7 +282,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, lda, y_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, lda, y_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), result_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZgemv('N', m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
@@ -291,7 +291,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: oneapi::mkl::blas::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, result_C_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, result_C_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasCgeru(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
 
@@ -299,7 +299,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: oneapi::mkl::blas::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, result_C_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, result_C_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasCgerc(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
 
@@ -307,7 +307,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, result_Z_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, result_Z_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasZgeru(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
 
@@ -315,7 +315,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, result_Z_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, result_Z_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasZgerc(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
 
@@ -417,7 +417,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
-  // CHECK-NEXT: oneapi::mkl::blas::hemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>((beta_C).x(),(beta_C).y()), y_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>(beta_C.x(),beta_C.y()), y_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasChemv ('U', n, alpha_C, A_C, lda, x_C, incx, beta_C, y_C, incy);
 
@@ -425,7 +425,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::hemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), y_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), y_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZhemv ('U', n, alpha_Z, A_Z, lda, x_Z, incx, beta_Z, y_Z, incy);
 
@@ -433,7 +433,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
-  // CHECK-NEXT: oneapi::mkl::blas::hbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>((beta_C).x(),(beta_C).y()), y_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, k, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>(beta_C.x(),beta_C.y()), y_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasChbmv ('U', n, k, alpha_C, A_C, lda, x_C, incx, beta_C, y_C, incy);
 
@@ -441,7 +441,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::hbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), y_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hbmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, k, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), y_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZhbmv ('U', n, k, alpha_Z, A_Z, lda, x_Z, incx, beta_Z, y_Z, incy);
 
@@ -449,7 +449,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
-  // CHECK-NEXT: oneapi::mkl::blas::hpmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>((beta_C).x(),(beta_C).y()), y_C_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hpmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, incx, std::complex<float>(beta_C.x(),beta_C.y()), y_C_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasChpmv('U', n, alpha_C, A_C, x_C, incx, beta_C, y_C, incy);
 
@@ -457,7 +457,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::hpmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), y_Z_buf_ct{{[0-9]+}}, incy);
+  // CHECK-NEXT: oneapi::mkl::blas::hpmv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, x_Z_buf_ct{{[0-9]+}}, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), y_Z_buf_ct{{[0-9]+}}, incy);
   // CHECK-NEXT: }
   cublasZhpmv('U', n, alpha_Z, A_Z, x_Z, incx, beta_Z, y_Z, incy);
 
@@ -479,7 +479,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::her2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, C_C_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::her2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, C_C_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasCher2 ('U', n, alpha_C, x_C, incx, y_C, incy, C_C, lda);
 
@@ -487,7 +487,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::her2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, C_Z_buf_ct{{[0-9]+}}, lda);
+  // CHECK-NEXT: oneapi::mkl::blas::her2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, C_Z_buf_ct{{[0-9]+}}, lda);
   // CHECK-NEXT: }
   cublasZher2 ('U', n, alpha_Z, x_Z, incx, y_Z, incy, C_Z, lda);
 
@@ -509,7 +509,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::hpr2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, C_C_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::hpr2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<float>(alpha_C.x(),alpha_C.y()), x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, C_C_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   cublasChpr2 ('U', n, alpha_C, x_C, incx, y_C, incy, C_C);
 
@@ -517,7 +517,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::hpr2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, C_Z_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::hpr2(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, C_Z_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   cublasZhpr2 ('U', n, alpha_Z, x_Z, incx, y_Z, incy, C_Z);
 
@@ -527,7 +527,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>(beta_C.x(),beta_C.y()), C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCgemm('N', 'N', m, n, k, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -535,7 +535,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>(beta_Z.x(),beta_Z.y()), C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZgemm('N', 'N', m, n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
@@ -544,7 +544,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::symm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::lower, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::symm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::lower, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>(beta_C.x(),beta_C.y()), C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCsymm('R', 'L', m, n, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -552,21 +552,21 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::symm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::lower, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::symm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::lower, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>(beta_Z.x(),beta_Z.y()), C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZsymm('r', 'L', m, n, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
   // CHECK: {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::syrk(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::syrk(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, n, k, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, std::complex<float>(beta_C.x(),beta_C.y()), C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCsyrk('U', 'T', n, k, alpha_C, A_C, lda, beta_C, C_C, ldc);
 
   // CHECK: {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::syrk(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::syrk(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, n, k, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, std::complex<double>(beta_Z.x(),beta_Z.y()), C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZsyrk('U', 't', n, k, alpha_Z, A_Z, lda, beta_Z, C_Z, ldc);
 
@@ -589,7 +589,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::syr2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::syr2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>(beta_C.x(),beta_C.y()), C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCsyr2k('U', 'C', n, k, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -597,7 +597,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::syr2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::syr2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>(beta_Z.x(),beta_Z.y()), C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZsyr2k('U', 'c', n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
@@ -605,7 +605,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::her2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, beta_S, C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::her2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, beta_S, C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCher2k('U', 'c', n, k, alpha_C, A_C, lda, B_C, ldb, beta_S, C_C, ldc);
 
@@ -613,7 +613,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::her2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, beta_D, C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::her2k(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, n, k, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, beta_D, C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZher2k('U', 'c', n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_D, C_Z, ldc);
 
@@ -621,7 +621,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::hemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::upper, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::hemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::upper, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb, std::complex<float>(beta_C.x(),beta_C.y()), C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasChemm ('R', 'U', m, n, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -629,7 +629,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::hemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::upper, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::hemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::right, oneapi::mkl::uplo::upper, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb, std::complex<double>(beta_Z.x(),beta_Z.y()), C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZhemm ('R', 'U', m, n, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
@@ -637,14 +637,14 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buf_ct{{[0-9]+}}, lda, C_C_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, C_C_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasCtrsm('L', 'U', 'N', 'n', m, n, alpha_C, A_C, lda, C_C, ldc);
 
   // CHECK: {
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZtrsm('l', 'U', 'N', 'N', m, n, alpha_Z, A_Z, lda, C_Z, ldc);
 
@@ -655,7 +655,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct{{[0-9]+}} = foo();
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), (sidemode_ct{{[0-9]+}}=='L'||sidemode_ct{{[0-9]+}}=='l') ? oneapi::mkl::side::left : oneapi::mkl::side::right, (fillmode_ct{{[0-9]+}}=='L'||fillmode_ct{{[0-9]+}}=='l') ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, (transpose_ct{{[0-9]+}}=='N'||transpose_ct{{[0-9]+}}=='n') ? oneapi::mkl::transpose::nontrans: ((transpose_ct{{[0-9]+}}=='T'||transpose_ct{{[0-9]+}}=='t') ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::conjtrans), (diagtype_ct{{[0-9]+}}=='N'||diagtype_ct{{[0-9]+}}=='n') ? oneapi::mkl::diag::nonunit : oneapi::mkl::diag::unit, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: oneapi::mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), (sidemode_ct{{[0-9]+}}=='L'||sidemode_ct{{[0-9]+}}=='l') ? oneapi::mkl::side::left : oneapi::mkl::side::right, (fillmode_ct{{[0-9]+}}=='L'||fillmode_ct{{[0-9]+}}=='l') ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, (transpose_ct{{[0-9]+}}=='N'||transpose_ct{{[0-9]+}}=='n') ? oneapi::mkl::transpose::nontrans: ((transpose_ct{{[0-9]+}}=='T'||transpose_ct{{[0-9]+}}=='t') ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::conjtrans), (diagtype_ct{{[0-9]+}}=='N'||diagtype_ct{{[0-9]+}}=='n') ? oneapi::mkl::diag::nonunit : oneapi::mkl::diag::unit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZtrsm(foo(), foo(), foo(), foo(), m, n, alpha_Z, A_Z, lda, C_Z, ldc);
 }

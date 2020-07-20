@@ -16,20 +16,24 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
-// CHECK: void gather_force(const dpct::image_accessor<PlaceHolder/*Fix the type mannually*/, 1> gridTexObj){}
+// CHECK: DPCT1050:{{[0-9]+}}: The template argument of  the image_accessor could not be deduced. You need to update this code.
+// CHECK: void gather_force(const dpct::image_accessor<dpct_placeholder/*Fix the type manually*/, 1> gridTexObj){}
 __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 
 // CHECK: void gather_force(const dpct::image_base_p gridTexObj, sycl::queue *stream) {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1050:{{[0-9]+}}: The template argument of the image_accessor could not be deduced. You need to update this code.
+// CHECK-NEXT:  */
 // CHECK-NEXT:  stream->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image<PlaceHolder/*Fix the type mannually*/, 1> *>(gridTexObj)->get_access(cgh);
+// CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image<dpct_placeholder/*Fix the type manually*/, 1> *>(gridTexObj)->get_access(cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto gridTexObj_smpl = gridTexObj->get_sampler();
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class gather_force_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          gather_force(dpct::image_accessor<PlaceHolder/*Fix the type mannually*/, 1>(gridTexObj_smpl, gridTexObj_acc));
+// CHECK-NEXT:          gather_force(dpct::image_accessor<dpct_placeholder/*Fix the type manually*/, 1>(gridTexObj_smpl, gridTexObj_acc));
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT: }

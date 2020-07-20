@@ -279,8 +279,10 @@ void KernelCallExpr::addAccessorDecl() {
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
       if (!Tex->getType()) {
-        // Type PlaceHolder
-        Tex->setType("PlaceHolder/*Fix the type mannually*/", 1);
+        // Type dpct_placeholder
+        Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
+        DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::UNDEDUCED_TYPE, "image_accessor");
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
       SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
@@ -372,13 +374,17 @@ void KernelCallExpr::buildKernelArgsStmt() {
         // If we found this is a RNG state type, we add the vec_size here.
         std::string TypeStr = Arg.getTypeString();
         if (Arg.IsDeviceRandomGeneratorType) {
-          if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1)
+          if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
             TypeStr = TypeStr + "<" +
                       std::to_string(
                           *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
                       "> *";
-          else
-            TypeStr = TypeStr + "<PlaceHolder/*Fix the vec_size mannually*/> *";
+          } else {
+            DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                     Diagnostics::UNDEDUCED_TYPE, "RNG engine");
+            TypeStr =
+                TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
+          }
         }
 
         KernelStmts.emplace_back(buildString(
@@ -1253,8 +1259,10 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
     if (Obj) {
       Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
       if (!Obj->getType()) {
-        // Type PlaceHolder
-        Obj->setType("PlaceHolder/*Fix the type mannually*/", 1);
+        // Type dpct_placeholder
+        Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
+        DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),
+                                 Diagnostics::UNDEDUCED_TYPE, "image_accessor");
       }
       Obj->addParamDeclReplacement();
     }
@@ -1848,12 +1856,13 @@ void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
                 ">",
             nullptr));
   } else {
+    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
+                             "RNG engine");
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                         GeneratorType +
-                                             "<PlaceHolder/*Fix the vec_size "
-                                             "mannually*/>",
-                                         nullptr));
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            GeneratorType + "<dpct_placeholder/*Fix the vec_size manually*/>",
+            nullptr));
   }
 }
 
@@ -1867,7 +1876,9 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
       IsOneNumber = true;
     VecSizeStr = std::to_string(VecSize);
   } else {
-    VecSizeStr = "PlaceHolder/*Fix the vec_size mannually*/";
+    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
+                             "RNG engine");
+    VecSizeStr = "dpct_placeholder/*Fix the vec_size manually*/";
   }
 
   std::string FirstOffsetArg, SecondOffsetArg;

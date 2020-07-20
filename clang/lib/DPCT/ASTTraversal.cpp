@@ -5576,9 +5576,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             CallExprReplStr = CallExprReplStr + ", *(" + ParamsStrsVec[i] + ")";
           }
         } else {
-          CallExprReplStr =
-              CallExprReplStr + ", " + ReplInfo.PointerTypeInfo[IndexTemp] +
-              "((" + ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] + ").y())";
+          if (isAnIdentifierOrLiteral(CE->getArg(i)))
+            CallExprReplStr =
+                CallExprReplStr + ", " + ReplInfo.PointerTypeInfo[IndexTemp] +
+                "(" + ParamsStrsVec[i] + ".x()," + ParamsStrsVec[i] + ".y())";
+          else
+            CallExprReplStr = CallExprReplStr + ", " +
+                              ReplInfo.PointerTypeInfo[IndexTemp] + "((" +
+                              ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] +
+                              ").y())";
         }
       } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
         Expr::EvalResult ER;
