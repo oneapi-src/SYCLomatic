@@ -483,6 +483,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  void replacePlaceHolderExpr(const CXXConstructExpr *CE);
 };
 
 /// Migration rule for types replacements in var. declarations.

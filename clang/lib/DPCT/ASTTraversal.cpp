@@ -1612,17 +1612,71 @@ void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
     return cxxRecordDecl(hasName("complex"),
                          hasDeclContext(namespaceDecl(hasName("thrust"))));
   };
+  auto hasFunctionalActor = []() {
+    return cxxRecordDecl(hasName("thrust::detail::functional::actor"));
+  };
 
   MF.addMatcher(
       cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
       this);
+  MF.addMatcher(cxxConstructExpr(hasType(hasFunctionalActor()))
+                    .bind("thrustCtorPlaceHolder"),
+                this);
+}
+
+void ThrustCtorExprRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
+  unsigned PlaceholderCount = 0;
+
+  auto placeholderStr = [](unsigned Num) {
+    return std::string("_") + std::to_string(Num);
+  };
+
+  // Walk the expression and replace all placeholder occurrences
+  std::function<void(const Stmt *)> walk = [&](const Stmt *S) {
+    if (auto DRE = dyn_cast<DeclRefExpr>(S)) {
+      auto DREStr = getStmtSpelling(DRE);
+      auto TypeStr = DRE->getType().getAsString();
+      std::string PlaceHolderTypeStr =
+          "const thrust::detail::functional::placeholder<";
+      if (TypeStr.find(PlaceHolderTypeStr) == 0) {
+        unsigned PlaceholderNum =
+            (TypeStr[PlaceHolderTypeStr.length()] - '0') + 1;
+        if (PlaceholderNum > PlaceholderCount)
+          PlaceholderCount = PlaceholderNum;
+        emplaceTransformation(new ReplaceStmt(DRE,
+          placeholderStr(PlaceholderNum)));
+      }
+      return;
+    }
+    for (auto SI : S->children())
+      walk(SI);
+  };
+  walk(CE);
+
+  if (PlaceholderCount == 0)
+    // No placeholders were found, so no replacement is necessary
+    return;
+
+  // Construct the lambda wrapper and insert around placeholder expression
+  std::string LambdaPrefix = "[=](";
+  for (unsigned i = 1; i <= PlaceholderCount; ++i) {
+    if (i > 1)
+      LambdaPrefix += ",";
+    LambdaPrefix += "auto _" + std::to_string(i);
+  }
+  LambdaPrefix += "){return ";
+  emplaceTransformation(new InsertBeforeStmt(
+    CE, std::move(LambdaPrefix)));
+  std::string LambdaPostfix = ";}";
+  emplaceTransformation(new InsertAfterStmt(
+    CE, std::move(LambdaPostfix)));
 }
 
 void ThrustCtorExprRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (const CXXConstructExpr *CE =
           getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
-    // handle constructor expressions
+    // handle constructor expressions for thrust::complex
     std::string ExprStr = getStmtSpelling(CE);
     if (ExprStr.substr(0, 8) != "thrust::") {
       return;
@@ -1641,6 +1695,10 @@ void ThrustCtorExprRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(
           new ReplaceText(CE->getBeginLoc(), P, std::move(ReplName)));
     }
+  } else if (const CXXConstructExpr *CE = getNodeAsType<CXXConstructExpr>(
+                 Result, "thrustCtorPlaceHolder")) {
+    // handle constructor expressions with placeholders (_1, _2, etc)
+    replacePlaceHolderExpr(CE);
   }
 }
 
@@ -10251,10 +10309,12 @@ void NamespaceRule::registerMatcher(MatchFinder &MF) {
 void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto UDD = getAssistNodeAsType<UsingDirectiveDecl>(Result, "usingDirective")) {
-    if (UDD->getNominatedNamespace()->getNameAsString() == "cooperative_groups")
+    std::string Namespace = UDD->getNominatedNamespace()->getNameAsString();
+    if (Namespace == "cooperative_groups" || Namespace == "placeholders")
       emplaceTransformation(new ReplaceDecl(UDD, ""));
   } else if (auto NAD = getAssistNodeAsType<NamespaceAliasDecl>(Result, "namespaceAlias")) {
-    if (NAD->getNamespace()->getNameAsString() == "cooperative_groups")
+    std::string Namespace = NAD->getNamespace()->getNameAsString();
+    if (Namespace == "cooperative_groups" || Namespace == "placeholders")
       emplaceTransformation(new ReplaceDecl(NAD, ""));
   }
 }
