@@ -1365,11 +1365,18 @@ bool isInsideFunctionLikeMacro(
   // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
   if (Parent->getSourceRange().getBegin().isValid() &&
-      Parent->getSourceRange().getBegin().isMacroID()) {
+    Parent->getSourceRange().getBegin().isMacroID()) {
     if (SM.getCharacterData(
-            SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
-        SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
-      return true;
+      SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
+      SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
+      if (Parent->getSourceRange().getEnd().isValid() &&
+        Parent->getSourceRange().getEnd().isMacroID()) {
+        if (SM.getCharacterData(
+          SM.getExpansionLoc(Parent->getSourceRange().getEnd())) ==
+          SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+          return true;
+        }
+      }
     }
   }
 

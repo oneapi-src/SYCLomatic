@@ -263,3 +263,16 @@ __global__ void foo4(){
   float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
 }
 
+//CHECK: #define MUL(a, b) sycl::mul24(a, b)
+//CHECK-NEXT: void foo5(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   unsigned int tid =
+//CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2));
+//CHECK-NEXT:   unsigned int threadN =
+//CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group_range(2)) +
+//CHECK-NEXT:       item_ct1.get_local_id(2);
+//CHECK-NEXT: }
+#define MUL(a, b) __umul24(a, b)
+__global__ void foo5() {
+  unsigned int      tid = MUL(blockDim.x, blockIdx.x);
+  unsigned int  threadN = MUL(blockDim.x, gridDim.x) + threadIdx.x;
+}
