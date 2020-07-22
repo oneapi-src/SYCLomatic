@@ -275,6 +275,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         ReportMsg +="\n";
     }
 
+    ReportMsg += "\n";
+    ReportMsg += DiagRef;
+
     PrintMsg(ReportMsg);
 
     if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {

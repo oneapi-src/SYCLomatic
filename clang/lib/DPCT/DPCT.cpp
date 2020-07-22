@@ -97,6 +97,7 @@ const char *const CtHelpMessage =
     "Migrate all files available in vcxprojfile:\n\n"
     "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
 #endif
+    DiagRef
     ;
 
 const char *const CtHelpHint =
