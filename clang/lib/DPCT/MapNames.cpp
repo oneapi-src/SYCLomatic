@@ -3007,6 +3007,13 @@ const MapNames::MapTy MapNames::MemberNamesMap{
     // ...
 };
 
+const MapNames::SetTy MapNames::HostAllocSet {
+    "cudaHostAllocDefault",
+    "cudaHostAllocMapped",
+    "cudaHostAllocPortable",
+    "cudaHostAllocWriteCombined",
+};
+
 // Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},

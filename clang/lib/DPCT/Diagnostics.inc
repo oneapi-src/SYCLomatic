@@ -112,3 +112,5 @@ DEF_WARNING(UNSUPPORT_PARAM_COMBINATION, 1046, "The %0 was not migrated, because
 DEF_COMMENT(UNSUPPORT_PARAM_COMBINATION, 1046, "The {0} was not migrated, because {1}. You need to adjust the code.")
 DEF_WARNING(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of %0 in the %1 is different from the %2. You may need to check the migrated code.")
 DEF_COMMENT(DIFFERENT_LU_FACTORIZATION, 1047, "The meaning of {0} in the {1} is different from the {2}. You may need to check the migrated code.")
+DEF_WARNING(HOSTALLOCMACRO_NO_MEANING, 1048, "The original value %0 is not meaningful in the migrated code and is removed or replaced with 0. You may need to check the migrated code.")
+DEF_COMMENT(HOSTALLOCMACRO_NO_MEANING, 1048, "The original value {0} is not meaningful in the migrated code and is removed or replaced with 0. You may need to check the migrated code.")

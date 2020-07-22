@@ -204,6 +204,21 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
   }
+
+  auto Iter = MapNames::HostAllocSet.find(Name.str());
+  if (TKind == tok::identifier && Iter != MapNames::HostAllocSet.end()) {
+    if (MD.getMacroInfo()->getNumTokens() == 1) {
+      auto ReplToken = MD.getMacroInfo()->getReplacementToken(0);
+      if (ReplToken.getKind() == tok::numeric_constant) {
+        TransformSet.emplace_back(
+            new ReplaceToken(Range.getBegin(), "0"));
+        DiagnosticsUtils::report(
+            Range.getBegin(), Diagnostics::HOSTALLOCMACRO_NO_MEANING,
+            dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
+            Name.str());
+      }
+    }
+  }
 }
 TextModification *
 IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {

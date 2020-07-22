@@ -357,6 +357,7 @@ public:
   }
 
   static const MapNames::MapTy MemberNamesMap;
+  static const MapNames::SetTy HostAllocSet;
 };
 
 class MigrationStatistics {
