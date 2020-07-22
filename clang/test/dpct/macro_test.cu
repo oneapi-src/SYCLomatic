@@ -338,3 +338,119 @@ void bar() {
   // CHECK-NEXT: i = 0;
   i = cudaHostAllocWriteCombined;
 }
+// CHECK: #define BB b
+// CHECK-NEXT: #define AAA int *a
+// CHECK-NEXT: #define BBB int *BB
+#define BB b
+#define AAA int *a
+#define BBB int *BB
+
+// CHECK: #define CCC AAA, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la, int *b=0
+// CHECK-NEXT: #define CC AAA, BBB
+#define CCC AAA, int *b=0
+#define CC AAA, BBB
+
+// CHECK: #define CCCC(x) void fooc(x)
+// CHECK-NEXT: #define CCCCC(x) void foocc(x, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+#define CCCC(x) __device__ void fooc(x)
+#define CCCCC(x) __device__ void foocc(x)
+
+// CHECK: #define XX(x) void foox(x, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK-NEXT: #define FF XX(CC)
+#define XX(x) __device__ void foox(x)
+#define FF XX(CC)
+
+// CHECK: FF
+// CHECK-NEXT: {
+// CHECK-NEXT: }
+FF
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+}
+
+// CHECK: CCCCC(int *a)
+// CHECK-NEXT: {
+// CHECK-NEXT: }
+CCCCC(int *a)
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+}
+
+
+// CHECK: CCCC(CCC)
+// CHECK-NEXT: {
+// CHECK-NEXT: }
+CCCC(CCC)
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+}
+
+// CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+#define FFF __device__ void foo(AAA, BBB)
+
+// CHECK: FFF
+// CHECK-NEXT: {
+// CHECK-NEXT: }
+FFF
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+
+}
+
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+#define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
+
+// CHECK: FFFFF(pos, q)
+// CHECK-NEXT: {
+// CHECK-EMPTY:
+// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT: }
+FFFFF(pos, q)
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+  const int tid = threadIdx.x;
+}
+
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+#define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
+
+// CHECK: FFFFFF(pos, q)
+// CHECK-NEXT: {
+// CHECK-EMPTY:
+// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT: }
+FFFFFF(pos, q)
+{
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+  const int tid = threadIdx.x;
+}
+
+// CHECK: void foo6(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd,
+// CHECK-NEXT:   dpct::accessor<double, dpct::local, 2> la)
+// CHECK-NEXT: {
+// CHECK-NEXT: }
+__device__ void foo6(AAA, BBB)
+{
+   __shared__ float sp_lj[4];
+   __shared__ float sp_coul[4];
+   __shared__ int ljd[0];
+   __shared__ double la[8][0];
+}

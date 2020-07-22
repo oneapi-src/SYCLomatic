@@ -61,6 +61,7 @@ class CallFunctionExpr;
 class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
+class ExplicitInstantiationDecl;
 
 // Below four structs are all used for device RNG library API migration.
 // In the origin code, the returned random number vector size is decided when
@@ -235,14 +236,15 @@ findObject(const MapType &Map, const typename MapType::key_type &Key) {
   return Itr->second;
 }
 
-template <class MapType, class... Args>
+template <class MapType,
+          class ObjetType = typename MapType::mapped_type::element_type,
+          class... Args>
 inline typename MapType::mapped_type
 insertObject(MapType &Map, const typename MapType::key_type &Key,
-             Args... InitArgs) {
+             Args &&... InitArgs) {
   auto &Obj = Map[Key];
   if (!Obj)
-    Obj = std::make_shared<typename MapType::mapped_type::element_type>(
-        Key, InitArgs...);
+    Obj = std::make_shared<ObjetType>(Key, std::forward<Args>(InitArgs)...);
   return Obj;
 }
 
@@ -300,6 +302,11 @@ public:
   template <class Obj, class Node>
   std::shared_ptr<Obj> insertNode(unsigned Offset, const Node *N) {
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
+  }
+  template <class Obj, class MappedT, class... Args>
+  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&... Arguments) {
+    return insertObject<GlobalMap<MappedT>, Obj>(
+        getMap<MappedT>(), Offset, FilePath, std::forward<Args>(Arguments)...);
   }
   template <class Obj>
   std::shared_ptr<Obj> insertNode(unsigned Offset,
@@ -891,6 +898,11 @@ public:
     return getLocInfo(getLocation(N), IsInvalid);
   }
 
+  static std::pair<std::string, unsigned>
+  getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/) {
+    return getLocInfo(TL.getBeginLoc(), IsInvalid);
+  }
+
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     auto LocInfo =
@@ -1004,6 +1016,15 @@ public:
   GLOBAL_TYPE(RandomEngineInfo, DeclaratorDecl)
   GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
+
+  std::shared_ptr<DeviceFunctionDecl> insertDeviceFunctionDecl(
+      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
+    auto LocInfo = getLocInfo(FTL);
+    return insertFile(LocInfo.first)
+        ->insertNode<ExplicitInstantiationDecl, DeviceFunctionDecl>(
+            LocInfo.second, FTL, Attrs, Specialization, TAList);
+  }
 
   // Build kernel and device function declaration replacements and store
   // them.
@@ -2354,24 +2375,11 @@ private:
 class DeviceFunctionDecl {
 public:
   DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
-                     const FunctionDecl *FD)
-      : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
-        ReplaceOffset(0), ReplaceLength(0) {
-    if (!FilePath.empty()) {
-      SourceProcessType FileType = GetSourceFileType(FilePath);
-      if ((FileType & TypeCudaHeader || FileType & TypeCppHeader) &&
-          FD->isThisDeclarationADefinition()) {
-        IsDefFilePathNeeded = false;
-      } else {
-        IsDefFilePathNeeded = FD->isThisDeclarationADefinition();
-      }
-    }
-    IsStatic = FD->getStorageClass() == SC_Static;
-    buildReplaceLocInfo(FD);
-    buildTextureObjectParamsInfo(FD);
-  }
+                     const FunctionDecl *FD);
+  DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
+                     const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
+                     const FunctionDecl *Specialization);
 
-  bool inline isStatic() { return IsStatic; }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkUnresolved(const UnresolvedLookupExpr *ULE) {
     return LinkDeclRange(ULE->decls());
@@ -2380,11 +2388,24 @@ public:
   LinkRedecls(const FunctionDecl *FD) {
     if (auto D = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD))
       return D->getFuncInfo();
+    if (auto FTD = FD->getPrimaryTemplate())
+      return LinkTemplateDecl(FTD);
     return LinkDeclRange(FD->redecls());
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkTemplateDecl(const FunctionTemplateDecl *FTD) {
     return LinkDeclRange(FTD->specializations());
+  }
+  inline static std::shared_ptr<DeviceFunctionInfo> LinkExplicitInstantiation(
+      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
+    auto Info = LinkRedecls(Specialization);
+    if (Info) {
+      auto D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(
+          Specialization, FTL, Attrs, TAList);
+      D->setFuncInfo(Info);
+    }
+    return Info;
   }
 
   inline std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const {
@@ -2413,8 +2434,8 @@ private:
     if (List.empty())
       return Info;
     if (!Info)
-      Info = std::make_shared<DeviceFunctionInfo>(
-          List[0]->ParamsNum, List[0]->isStatic(), List[0]->NonDefaultParamNum);
+      Info = std::make_shared<DeviceFunctionInfo>(List[0]->ParamsNum,
+                                                  List[0]->NonDefaultParamNum);
     for (auto &D : List)
       D->setFuncInfo(Info);
     return Info;
@@ -2429,42 +2450,25 @@ private:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info);
   void buildReplaceLocInfo(const FunctionDecl *FD);
 
+protected:
+  const FormatInfo &getFormatInfo() { return FormatInformation; }
+
 private:
-  void buildTextureObjectParamsInfo(const FunctionDecl *FD) {
-    TextureObjectList.assign(FD->getNumParams(),
+  void buildTextureObjectParamsInfo(const ArrayRef<ParmVarDecl *> &Parms) {
+    TextureObjectList.assign(Parms.size(),
                              std::shared_ptr<TextureObjectInfo>());
-    for (unsigned Idx = 0; Idx < FD->getNumParams(); ++Idx) {
-      auto Param = FD->getParamDecl(Idx);
+    for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
+      auto Param = Parms[Idx];
       if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
           "cudaTextureObject_t")
         TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
     }
   }
-  template <class T>
-  inline void
-  calculateRemoveLength(const FunctionDecl *FD, const std::string &AttrStr,
-                        unsigned int &NeedRemoveLength,
-                        const SourceLocation &BeginParamLoc,
-                        const SourceManager &SM, const LangOptions &LO) {
-    if (const Attr *A = FD->getAttr<T>()) {
-      if (SM.isMacroArgExpansion(A->getRange().getBegin()) &&
-          SM.isMacroArgExpansion(BeginParamLoc))
-        return;
-      auto Begin = SM.getExpansionLoc(A->getRange().getBegin());
-      auto BeginParamLocExpand = SM.getExpansionLoc(BeginParamLoc);
-      auto Length = Lexer::MeasureTokenLength(Begin, SM, LO);
-      auto C = SM.getCharacterData(Begin);
-      std::string Str = std::string(C, C + Length);
-      bool InValidFlag = false;
-      if (Str == AttrStr &&
-          isInSameLine(Begin, BeginParamLocExpand, SM, InValidFlag) &&
-          !InValidFlag) {
-        NeedRemoveLength =
-            NeedRemoveLength +
-            getLenIncludingTrailingSpaces(SourceRange(Begin, Begin), SM);
-      }
-    }
-  }
+
+  template <class AttrsT>
+  void buildReplaceLocInfo(const FunctionTypeLoc &FTL, const AttrsT &Attrs);
+
+  virtual std::string getExtraParameters();
 
   unsigned Offset;
   const std::string FilePath;
@@ -2474,19 +2478,39 @@ private:
   unsigned NonDefaultParamNum;
   bool IsDefFilePathNeeded;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
-  bool IsStatic;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
+};
+
+class ExplicitInstantiationDecl : public DeviceFunctionDecl {
+  std::vector<TemplateArgumentInfo> InstantiationArgs;
+
+public:
+  ExplicitInstantiationDecl(unsigned Offset, const std::string &FilePathIn,
+                            const FunctionTypeLoc &FTL,
+                            const ParsedAttributes &Attrs,
+                            const FunctionDecl *Specialization,
+                            const TemplateArgumentListInfo &TAList)
+      : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, Specialization) {
+    initTemplateArgumentList(TAList, Specialization);
+    processParmVarDecls(FTL.getParams());
+  }
+
+private:
+  void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
+                                const FunctionDecl *Specialization);
+  void processParmVarDecls(const ArrayRef<ParmVarDecl *> &);
+  std::string getExtraParameters() override;
 };
 
 // device function info includes parameters num, memory variable and call
 // expression in the function.
 class DeviceFunctionInfo {
 public:
-  DeviceFunctionInfo(size_t ParamsNum, bool IsStatic, size_t NonDefaultParamNum)
+  DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
-        IsBuilt(false), IsStatic(IsStatic),
+        IsBuilt(false),
         TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
 
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
@@ -2521,17 +2545,22 @@ public:
     return VarMap.getExtraDeclParam(
         NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
+  std::string
+  getExtraParameters(const std::vector<TemplateArgumentInfo> &TAList,
+                     FormatInfo FormatInformation = FormatInfo()) {
+    MemVarMap TmpVarMap;
+    buildInfo();
+    TmpVarMap.merge(VarMap, TAList);
+    return TmpVarMap.getExtraDeclParam(
+        NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
+  }
 
   void setDefinitionFilePath(const std::string &Path) {
     DefinitionFilePath = Path;
   }
   const std::string &getDefinitionFilePath() { return DefinitionFilePath; }
-  void setNeedSyclExternMacro() {
-    if (!IsStatic)
-      NeedSyclExternMacro = true;
-  }
+  void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
-  void inline setStatic(bool Static = true) { IsStatic = Static; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -2546,7 +2575,6 @@ private:
   bool IsBuilt;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
-  bool IsStatic;
 
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;

@@ -10116,6 +10116,11 @@ DeclResult Sema::ActOnExplicitInstantiation(Scope *S,
               : Specialization->getInstantiatedFromMemberFunction(),
       D.getIdentifierLoc(), D.getCXXScopeSpec().isSet(), TSK);
 
+#ifdef INTEL_CUSTOMIZATION
+  Consumer.HandleCXXExplicitFunctionInstantiation(
+      Specialization, T->getTypeLoc().getAs<FunctionTypeLoc>(),
+      D.getDeclSpec().getAttributes(), TemplateArgs);
+#endif
   // FIXME: Create some kind of ExplicitInstantiationDecl here.
   return (Decl*) nullptr;
 }

@@ -449,6 +449,22 @@ public:
         TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
   }
 
+  void HandleCXXExplicitFunctionInstantiation(
+      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+      const ParsedAttributes &Attrs,
+      const TemplateArgumentListInfo &TAList) override {
+    if (!FTL || !Specialization)
+      return;
+    if (Specialization->getTemplateSpecializationKind() !=
+        TSK_ExplicitInstantiationDefinition)
+      return;
+    if (Specialization->hasAttr<CUDADeviceAttr>() ||
+        Specialization->hasAttr<CUDAGlobalAttr>()) {
+      DeviceFunctionDecl::LinkExplicitInstantiation(Specialization, FTL, Attrs,
+                                                    TAList);
+    }
+  }
+
   ~DPCTConsumer() {
     // Clean EmittedTransformations for input file migrated.
     ASTTraversalMetaInfo::getEmittedTransformations().clear();
