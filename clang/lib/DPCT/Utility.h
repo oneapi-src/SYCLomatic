@@ -92,6 +92,9 @@ bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
 bool isCanonical(llvm::StringRef Path);
 
+extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
+extern std::unordered_map<std::string, bool> ChildPathCache;
+
 /// Check \param Child is whether the child path of \param RootAbs
 /// \param [in] RootAbs An absolute path as reference.
 /// \param [in] Child A path to be checked.
@@ -107,9 +110,16 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
   bool InChildAbsValid = true;
 
   if (IsChildAbs) {
-    EC = llvm::sys::fs::real_path(Child, ChildAbs);
-    if ((bool)EC) {
-      InChildAbsValid = false;
+    auto &RealPath = RealPathCache[Child];
+    if(!RealPath.empty()){
+      ChildAbs = RealPath;
+    } else {
+      EC = llvm::sys::fs::real_path(Child, ChildAbs);
+      if ((bool)EC) {
+        InChildAbsValid = false;
+      } else {
+        RealPath = ChildAbs;
+      }
     }
   } else {
     ChildAbs = Child;
@@ -125,42 +135,19 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
 #else
 #error Only support windows and Linux.
 #endif
+  auto Key = LocalRoot + ":" + LocalChild;
+  auto Iter = ChildPathCache.find(Key);
+  if (Iter != ChildPathCache.end()) {
+    return Iter->second;
+  }
 
   auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
                        path::begin(LocalChild));
   // LocalRoot is not considered prefix of LocalChild if they are equal.
-  return Diff.first == path::end(LocalRoot) &&
+  bool Ret = Diff.first == path::end(LocalRoot) &&
          Diff.second != path::end(LocalChild);
-}
-
-/// Check \param Child is whether have the same path of \param RootAbs
-/// \param [in] RootAbs An absolute path as reference.
-/// \param [in] Child A path to be checked.
-/// \return true: same path, false: different path
-/// /x/y and /x/y/z -> false
-/// /x/y and /x/y   -> true
-inline bool isSamePath(const std::string &RootAbs, const std::string &Child) {
-  // 1st make Child as absolute path, then do compare.
-  llvm::SmallString<256> ChildAbs;
-  std::error_code EC;
-  bool InChildAbsValid = true;
-  EC = llvm::sys::fs::real_path(Child, ChildAbs);
-  if ((bool)EC) {
-    InChildAbsValid = false;
-  }
-#if defined(_WIN64)
-  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
-#elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
-#else
-#error Only support windows and Linux.
-#endif
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
-  return Diff.first == path::end(LocalRoot) &&
-         Diff.second == path::end(LocalChild);
+  ChildPathCache[Key] = Ret;
+  return Ret;
 }
 
 extern std::unordered_map<std::string, bool> ChildOrSameCache;
@@ -174,7 +161,9 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   if (Child.empty()) {
     return false;
   }
-  auto Iter = ChildOrSameCache.find(RootAbs + Child);
+
+  auto Key = RootAbs + ":" + Child;
+  auto Iter = ChildOrSameCache.find(Key);
   if (Iter != ChildOrSameCache.end()) {
     return Iter->second;
   }
@@ -182,10 +171,19 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   llvm::SmallString<256> ChildAbs;
   std::error_code EC;
   bool InChildAbsValid = true;
-  EC = llvm::sys::fs::real_path(Child, ChildAbs);
-  if ((bool)EC) {
-    InChildAbsValid = false;
+
+  auto &RealPath = RealPathCache[Child];
+  if(!RealPath.empty()){
+    ChildAbs = RealPath;
+  } else {
+    EC = llvm::sys::fs::real_path(Child, ChildAbs);
+    if ((bool)EC) {
+      InChildAbsValid = false;
+    } else {
+      RealPath = ChildAbs;
+    }
   }
+
 #if defined(_WIN64)
   std::string LocalRoot = llvm::StringRef(RootAbs).lower();
   std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
@@ -198,7 +196,7 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
                        path::begin(LocalChild));
   bool Ret = Diff.first == path::end(LocalRoot);
-  ChildOrSameCache.insert(make_pair(RootAbs + Child, Ret));
+  ChildOrSameCache[Key] = Ret;
   return Ret;
 }
 

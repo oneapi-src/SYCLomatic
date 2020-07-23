@@ -345,6 +345,8 @@ static opt<bool, true>
 std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
+std::unordered_map<std::string, bool> ChildPathCache;
+std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 int FatalErrorCnt=0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;

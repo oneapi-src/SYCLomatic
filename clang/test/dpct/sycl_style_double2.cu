@@ -14,7 +14,7 @@ __global__ void kernel(double2* data) {}
 static __shared__ double2 ctemp2[2]; // Removed.
 
 // CHECK: static void gpuMain(sycl::double2 *ctemp2){
-// CHECK:   int* ctempi = (int*) (&ctemp2[0]);
+// CHECK:   int* ctempi = (int*) ctemp2;
 // CHECK:   sycl::double2* ctempd =  ctemp2;
 // CHECK: }
 static __global__ void gpuMain(){

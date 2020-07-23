@@ -9745,30 +9745,6 @@ void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(KernelFunctionInfoRule)
 
-void TypeCastRule::registerMatcher(MatchFinder &MF) {
-
-  MF.addMatcher(
-      declRefExpr(hasParent(implicitCastExpr(
-                      hasParent(cStyleCastExpr(unless(
-                          hasType(pointsTo(typedefDecl(hasName("double2"))))))),
-                      hasType(pointsTo(typedefDecl(hasName("double2")))))))
-
-          .bind("Double2CastExpr"),
-      this);
-}
-
-void TypeCastRule::run(const MatchFinder::MatchResult &Result) {
-  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-  if (const DeclRefExpr *E =
-          getNodeAsType<DeclRefExpr>(Result, "Double2CastExpr")) {
-    std::string Name = E->getNameInfo().getName().getAsString();
-
-    insertAroundStmt(E, "(&", "[0])");
-  }
-}
-
-REGISTER_RULE(TypeCastRule)
-
 void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AllAPINames = MigrationStatistics::GetAllAPINames();
   MF.addMatcher(

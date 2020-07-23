@@ -1230,14 +1230,6 @@ public:
   static const std::map<std::string, std::string> AttributesNamesMap;
 };
 
-/// Migration rule for type cast issue
-class TypeCastRule : public NamedMigrationRule<TypeCastRule> {
-public:
-  TypeCastRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
 /// RecognizeAPINameRule to give comments for the api not in the record table
 class RecognizeAPINameRule : public NamedMigrationRule<RecognizeAPINameRule> {
 public:
