@@ -19,7 +19,7 @@
 #define DiagRef \
 "See Diagnostics Reference to resolve warnings and complete the migration:\n"\
 "https://software.intel.com/content/www/us/en/develop/documentation/"\
-"intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference.html"
+"intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference.html\n"
 
 namespace llvm {
 class StringRef;
