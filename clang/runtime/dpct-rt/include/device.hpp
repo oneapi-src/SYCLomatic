@@ -324,12 +324,12 @@ public:
     check_id(_current_device);
     return *_devs[_current_device];
   }
-  unsigned int get_cpu_device_id() const {
+  device_ext &cpu_device() const {
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (_cpu_dev_id == -1) {
+    if (_cpu_device == -1) {
       throw std::string("no valid cpu device");
     } else {
-      return _cpu_dev_id;
+      return *_devs[_cpu_device];
     }
   }
   device_ext &get_device(unsigned int id) const {
@@ -367,7 +367,7 @@ private:
     // Collect other devices except for the default device.
     const bool default_is_host = default_device.is_host();
     if (default_device.is_cpu())
-      _cpu_dev_id = 0;
+      _cpu_device = 0;
     for (auto &dev : sycl_all_devs) {
       const bool dev_is_host = dev.is_host();
       if ((dev_is_host && default_is_host) ||
@@ -376,8 +376,8 @@ private:
         continue;
       }
       _devs.push_back(std::make_shared<device_ext>(dev));
-      if (_cpu_dev_id == -1 && dev.is_cpu()) {
-        _cpu_dev_id = _devs.size() - 1;
+      if (_cpu_device == -1 && dev.is_cpu()) {
+        _cpu_device = _devs.size() - 1;
       }
     }
   }
@@ -388,7 +388,7 @@ private:
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
   unsigned int _current_device = 0;
-  unsigned int _cpu_dev_id = -1;
+  int _cpu_device = -1;
 };
 
 /// Util function to get the defualt queue of current device in
@@ -413,9 +413,9 @@ static inline cl::sycl::context get_default_context() {
   return dpct::get_default_queue().get_context();
 }
 
-/// Util function to get a cpu device id.
-static inline unsigned int get_cpu_device_id() {
-  return dev_mgr::instance().get_cpu_device_id();
+/// Util function to get a cpu device.
+static inline device_ext &cpu_device() {
+  return dev_mgr::instance().cpu_device();
 }
 
 } // namespace dpct

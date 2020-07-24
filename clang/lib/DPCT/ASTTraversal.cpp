@@ -9022,7 +9022,10 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
 
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
-    Arg3Str = "dpct::get_cpu_device_id()";
+    OS << "dpct::cpu_device().default_queue().mem_advise(" << Arg0Str
+       << ", " << Arg1Str << ", " << Arg2Str << ")";
+    emplaceTransformation(new ReplaceStmt(C, OS.str()));
+    return;
   }
   OS << "dpct::get_device(" << Arg3Str
      << ").default_queue().mem_advise(" << Arg0Str << ", " << Arg1Str
