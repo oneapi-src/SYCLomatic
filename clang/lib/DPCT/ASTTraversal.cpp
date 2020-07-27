@@ -9450,10 +9450,11 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(MemoryDataTypeRule)
 
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(cxxRecordDecl(unless(anyOf(has(cxxRecordDecl(isImplicit())),
-                                           isImplicit())),
-                              hasDefinition())
-                    .bind("unnamedType"),
+  MF.addMatcher(typedefDecl(hasDescendant(loc(recordType(hasDeclaration(
+                    cxxRecordDecl(unless(anyOf(has(cxxRecordDecl(isImplicit())),
+                                               isImplicit())),
+                                  hasDefinition())
+                        .bind("unnamedType")))))),
                 this);
 }
 

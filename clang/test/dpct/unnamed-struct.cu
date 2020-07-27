@@ -13,7 +13,10 @@ int main()
   return 0;
 }
 
-//CHECK: struct __dpct_align__(4) dpct_type_{{[a-f0-9]+}}
+//CHECK: struct __dpct_align__(4)
+//CHECK-NEXT: {
+//CHECK-NEXT:     unsigned i;
+//CHECK-NEXT: } A;
 struct __align__(4)
 {
     unsigned i;
@@ -32,7 +35,50 @@ typedef struct
     unsigned j;
 } T2;
 
-//CHECK: class dpct_type_{{[a-f0-9]+}}: public T2 {
+
+//CHECK:class: public T2 {
+//CHECK-NEXT:    unsigned k;
+//CHECK-NEXT:} B;
 class: public T2 {
     unsigned k;
 } B;
+
+//CHECK:struct patch_pair {
+//CHECK-NEXT:  union {
+//CHECK-NEXT:    bool done[2];
+//CHECK-NEXT:    struct {
+//CHECK-NEXT:      int t1;
+//CHECK-NEXT:      int t2;
+//CHECK-NEXT:    };
+//CHECK-NEXT:  };
+//CHECK-NEXT:};
+struct patch_pair {
+  union {
+    bool done[2];
+    struct {
+      int t1;
+      int t2;
+    };
+  };
+};
+
+//CHECK:typedef struct tt {
+//CHECK-NEXT:    int t1;
+//CHECK-NEXT:    union {
+//CHECK-NEXT:        int cut;
+//CHECK-NEXT:        int *t2;
+//CHECK-NEXT:    };
+//CHECK-NEXT:    struct {
+//CHECK-NEXT:        int a;
+//CHECK-NEXT:    };
+//CHECK-NEXT:} tt;
+typedef struct tt {
+    int t1;
+    union {
+        int cut;
+        int *t2;
+    };
+    struct {
+        int a;
+    };
+} tt;
