@@ -7870,6 +7870,10 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                   hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
+
+  MF.addMatcher(varDecl(hasParent(translationUnitDecl())).bind("hostGlobalVar"),
+                this);
+
 }
 
 void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
@@ -7927,6 +7931,16 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new InsertAfterStmt(MemVarRef, "[0]"));
       }
     }
+  }
+
+  if (auto VD = getNodeAsType<VarDecl>(Result, "hostGlobalVar")) {
+    auto VarName = VD->getNameAsString();
+    auto TypeName = VD->getType().getAsString();
+    bool IsHost =
+        !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
+          VD->hasAttr<CUDASharedAttr>());
+    if(IsHost)
+      dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
   }
 }
 

@@ -50,6 +50,7 @@ std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<MacroInfo *, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
+std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
@@ -124,6 +125,36 @@ void DpctFileInfo::buildLinesInfo() {
 void DpctFileInfo::buildReplacements() {
   if (!isInRoot())
     return;
+
+  // Traver all the global variables stored one by one to check if its name is
+  // same with normal global variable's name in host side, if the one is found,
+  // postfix "_ct" is added to this __constant__ symbol’s name.
+  std::unordered_map<unsigned int, std::string> ReplUpdated;
+  for (auto Entry : MemVarMap) {
+    auto Name = Entry.second->getName();
+    auto &GlobalVarNameSet = dpct::DpctGlobalInfo::getGlobalVarNameSet();
+    if (GlobalVarNameSet.find(Name) != end(GlobalVarNameSet)) {
+      Entry.second->setName(Name + "_ct");
+    }
+
+    std::string Repl = Entry.second->getDeclarationReplacement();
+    auto FilePath = Entry.second->getFilePath();
+    auto Offset = Entry.second->getNewConstVarOffset();
+    auto Length = Entry.second->getNewConstVarLength();
+
+    auto &ReplText = ReplUpdated[Offset];
+    if (!ReplText.empty()) {
+      ReplText += getNL() + Repl;
+    } else {
+      ReplText = Repl;
+    }
+
+    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, Length,
+                                              ReplText, nullptr);
+
+    addReplacement(R);
+  }
+
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
 

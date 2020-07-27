@@ -34,3 +34,22 @@ void test() {
   // CHECK-NEXT:  });
   cuda_hello<<<2,2>>>();
 }
+
+
+void call_constAdd(float *C, int size);
+
+// CHECK: float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
+// CHECK-NEXT:                 0.1250f, 0.0625f, 0.125f,  0.0625f};
+float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
+                  0.1250f, 0.0625f, 0.125f,  0.0625f};
+
+// CHECK: float A1, A4, A5;
+float A1, A4, A5;
+
+int main(void) {
+  int size = 3 * 3 * sizeof(float);
+
+  float *h_C = (float *)malloc(size);
+  call_constAdd(h_C, size);
+  return 0;
+}

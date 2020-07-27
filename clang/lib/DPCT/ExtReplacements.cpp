@@ -53,6 +53,12 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
     if (Shorter->getLength() && Shorter->equal(Longer)) {
       // Fully equal replacements which are not insert, just reserve one.
       return Longer;
+    } else if (Shorter->getLength()) {
+      // Both Shorter and Longer are replace, just reserve the longer replace.
+      return (Shorter->getReplacementText().str().length() <
+              Longer->getReplacementText().str().length())
+                 ? Longer
+                 : Shorter;
     }
     // Both Shorter and Longer are insert, do merge.
     // inset replacement could be "namespace::", "(type cast)",  ")"  "(".

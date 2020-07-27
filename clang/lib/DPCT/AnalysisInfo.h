@@ -1133,6 +1133,7 @@ public:
   static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
+  static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
   static bool getDeviceChangedFlag() { return HasFoundDeviceChanged; }
   static void setDeviceChangedFlag(bool Flag) { HasFoundDeviceChanged = Flag; }
   static std::unordered_map<int, HelperFuncReplInfo> &
@@ -1294,6 +1295,7 @@ private:
   static int CurrentIndexInRule;
   static std::set<std::string> IncludingFileSet;
   static std::set<std::string> FileSetInCompiationDB;
+  static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
   static bool HasFoundDeviceChanged;
   static std::unordered_map<int, HelperFuncReplInfo> HelperFuncReplInfoMap;
@@ -1519,6 +1521,8 @@ public:
     } else {
       AccMode = Accessor;
     }
+
+    newConstVarInit(Var);
   }
 
   VarAttrKind getAttr() { return Attr; }
@@ -1528,9 +1532,38 @@ public:
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
 
+  inline void setName(std::string NewName) {
+    NewConstVarName  = NewName;
+  }
+
+  inline unsigned int getNewConstVarOffset() { return NewConstVarOffset; }
+  inline unsigned int getNewConstVarLength() { return NewConstVarLength; }
+
+  inline const std::string getConstVarName() {
+    return NewConstVarName.empty() ? getArgName() : NewConstVarName;
+  }
+
+  // Initialize offset and length for __constant__ variable that needs to be
+  // renamed.
+  void newConstVarInit(const VarDecl *Var) {
+    CharSourceRange SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
+        Var->getSourceRange()));
+    auto BeginLoc = SR.getBegin();
+    SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    size_t repLength = 0;
+    auto Buffer = SM.getCharacterData(BeginLoc);
+    auto Data = Buffer[repLength];
+    while (Data != ';')
+      Data = Buffer[++repLength];
+
+    NewConstVarLength = ++repLength;
+    NewConstVarOffset = DpctGlobalInfo::getLocInfo(BeginLoc).second;
+  }
+
   std::string getDeclarationReplacement();
+
   inline std::string getMemoryDecl(const std::string &MemSize) {
-    return buildString(getMemoryType(), " ", getArgName(),
+    return buildString(getMemoryType(), " ", getConstVarName(),
                        PointerAsArray ? "" : getInitArguments(MemSize), ";");
   }
   std::string getMemoryDecl() {
@@ -1539,7 +1572,7 @@ public:
   }
 
   std::string getExternGlobalVarDecl() {
-    return buildString("extern ", getMemoryType(), " ", getArgName(), ";");
+    return buildString("extern ", getMemoryType(), " ", getConstVarName(), ";");
   }
 
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
@@ -1564,11 +1597,11 @@ public:
       AccList.push_back(std::move(OS.str()));
     } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
                AccMode != Accessor) {
-      PtrList.push_back(buildString("auto ", getPtrName(), " = ", getArgName(),
-                                    ".get_ptr();"));
+      PtrList.push_back(buildString("auto ", getPtrName(), " = ",
+                                    getConstVarName(), ".get_ptr();"));
     } else {
       AccList.push_back(buildString("auto ", getAccessorName(), " = ",
-                                    getArgName(), ".get_access(cgh);"));
+                                    getConstVarName(), ".get_access(cgh);"));
     }
   }
   inline std::string getRangeClass() {
@@ -1701,6 +1734,15 @@ private:
   std::string InitList;
 
   static const std::string ExternVariableName;
+
+  // To store the new name for __constant__ variable's name that needs to be
+  // renamed.
+  std::string NewConstVarName;
+
+  // To store the offset and length for __constant__ variable's name
+  // that needs to be renamed.
+  unsigned int NewConstVarOffset;
+  unsigned int NewConstVarLength;
 };
 
 class TextureTypeInfo {
