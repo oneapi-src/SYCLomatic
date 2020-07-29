@@ -104,4 +104,28 @@ int main() {
   // CHECK-NEXT: }
   int2* data;
   kernel<<<1, 1>>>(data);
+
+  // CHECK: volatile int aaa1;
+  // CHECK-NEXT: aaa1 = 1;
+  volatile int1 aaa1;
+  aaa1.x = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1052:{{[0-9]+}}: DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::int2 aaa2;
+  // CHECK-NEXT: aaa2.x() = 1;
+  volatile int2 aaa2;
+  aaa2.x = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1052:{{[0-9]+}}: DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: static sycl::int3 aaa3;
+  // CHECK-NEXT: aaa3.x() = 1;
+  static volatile int3 aaa3;
+  aaa3.x = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1052:{{[0-9]+}}: DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::int4 aaa4;
+  volatile int4 aaa4;
 }

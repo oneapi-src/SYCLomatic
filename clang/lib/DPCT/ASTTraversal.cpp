@@ -2236,6 +2236,7 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    bool NeedRemoveVolatile = true;
     Token Tok;
     auto LOpts = Result.Context->getLangOpts();
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
@@ -2246,6 +2247,42 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       if (!Str.empty()) {
         SrcAPIStaticsMap[TypeStr]++;
         emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
+      }
+      if (*(TypeStr.end() - 1) == '1') {
+        NeedRemoveVolatile = false;
+      }
+    }
+
+    // check whether the vector has volatile qualifier, if so, remove the
+    // qualifier and emit a warning.
+    if (!NeedRemoveVolatile)
+      return;
+    const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
+    if (VD) {
+      if (VD->getType().isVolatileQualified()) {
+        SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
+        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
+
+        // remove the volatile qualifier and trailing spaces
+        Token Tok;
+        Lexer::getRawToken(Loc, Tok, *SM,
+                           DpctGlobalInfo::getContext().getLangOpts(), true);
+        unsigned int EndLocOffset =
+            SM->getDecomposedExpansionLoc(VD->getEndLoc()).second;
+        while (SM->getDecomposedExpansionLoc(Tok.getEndLoc()).second <=
+               EndLocOffset) {
+          if (Tok.is(tok::TokenKind::raw_identifier) &&
+              Tok.getRawIdentifier().str() == "volatile") {
+            emplaceTransformation(new ReplaceText(
+                Tok.getLocation(),
+                getLenIncludingTrailingSpaces(
+                    SourceRange(Tok.getLocation(), Tok.getEndLoc()), *SM),
+                ""));
+            break;
+          }
+          Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+                             DpctGlobalInfo::getContext().getLangOpts(), true);
+        }
       }
     }
   }
