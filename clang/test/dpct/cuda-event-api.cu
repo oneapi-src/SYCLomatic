@@ -561,3 +561,45 @@ void foo(int n) {
   // CHECK: s2->events_ct1_3 = std::chrono::high_resolution_clock::now();
   cudaEventRecord(s2->events[3]);
 }
+
+void barr(int maxCalls) {
+  cudaEvent_t evtStart[maxCalls];
+  cudaEvent_t evtEnd[maxCalls];
+  float time[maxCalls];
+  for (int i = 0; i < maxCalls; i++) {
+    cudaEventCreate( &(evtStart[i]) );
+    cudaEventCreate( &(evtEnd[i]) );
+    time[i] = 0.0;
+  }
+
+  // CHECK: evtStart_ct1[0] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtStart[0], 0 );
+  // CHECK: evtEnd[0].wait();
+  kernelFunc<<<1, 1>>>();
+  // CHECK: evtEnd_ct1[0] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtEnd[0], 0 );
+
+  // CHECK: evtStart_ct1[1] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtStart[1], 0 );
+  // CHECK: evtEnd[1].wait();
+  kernelFunc<<<1, 1>>>();
+  // CHECK: evtEnd_ct1[1] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtEnd[1], 0 );
+
+  // CHECK: evtStart_ct1[2] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtStart[2], 0 );
+  // CHECK: evtEnd[2].wait();
+  kernelFunc<<<1, 1>>>();
+  // CHECK: evtEnd_ct1[2] = std::chrono::high_resolution_clock::now();
+  cudaEventRecord( evtEnd[2], 0 );
+
+  float total;
+  int i=0;
+  cudaEventElapsedTime( &(time[i]), evtStart[i], evtEnd[i]);
+  float timesum = 0.0f;
+  for (int i = 1; i < maxCalls; i++) {
+    cudaEventElapsedTime( &(time[i]), evtStart[i], evtEnd[i]);
+    timesum += time[i];
+  }
+  cudaEventElapsedTime( &total, evtStart[1], evtEnd[maxCalls-1]);
+}

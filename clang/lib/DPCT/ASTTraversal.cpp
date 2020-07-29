@@ -7467,6 +7467,29 @@ void EventAPICallRule::handleEventElapsedTime(
   handleTimeMeasurement(CE, Result);
 }
 
+bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
+  E = E->IgnoreImpCasts();
+  if (auto UO = dyn_cast<UnaryOperator>(E))
+    return IsEventArgArraySubscriptExpr(UO->getSubExpr());
+  if (auto PE = dyn_cast<ParenExpr>(E))
+    return IsEventArgArraySubscriptExpr(PE->getSubExpr());
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(E))
+    return true;
+  return false;
+}
+
+const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Parent,
+                                                    unsigned KCallLoc) {
+  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+    if (auto CE = dyn_cast<CallExpr>(*Iter)) {
+      if (CE->getBeginLoc().getRawEncoding() > KCallLoc &&
+          CE->getDirectCallee()->getName() == "cudaEventRecord")
+        return CE->getArg(0);
+    }
+  }
+  return nullptr;
+}
+
 void EventAPICallRule::handleTimeMeasurement(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   auto CELoc = CE->getBeginLoc().getRawEncoding();
@@ -7477,25 +7500,34 @@ void EventAPICallRule::handleTimeMeasurement(
   if (!Parent) {
     return;
   }
-  const CallExpr *RecordBegin = nullptr, *RecordEnd = nullptr;
-  // Find the last Event record call on start and stop
-  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
-    if (Iter->getBeginLoc().getRawEncoding() > CELoc)
-      continue;
-
-    if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
-      if (!RecordCall->getDirectCallee())
+  const Stmt *RecordBegin = nullptr, *RecordEnd = nullptr;
+  auto EventArg = CE->getArg(0);
+  if (IsEventArgArraySubscriptExpr(EventArg)) {
+    // If the event arg is a ArraySubscriptExpr, mark all kernels in the current
+    // function to wait
+    RecordBegin = *Parent->child_begin();
+    for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter)
+      RecordEnd = *Iter;
+  } else {
+    // Find the last Event record call on start and stop
+    for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+      if (Iter->getBeginLoc().getRawEncoding() > CELoc)
         continue;
-      std::string RecordFuncName =
-          RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
-      // Find the last call of Event Record on start and stop before
-      // calculate the time elapsed
-      if (RecordFuncName == "cudaEventRecord") {
-        auto Arg0 = getStmtSpelling(RecordCall->getArg(0));
-        if (Arg0 == getStmtSpelling(CE->getArg(1)))
-          RecordBegin = RecordCall;
-        else if (Arg0 == getStmtSpelling(CE->getArg(2)))
-          RecordEnd = RecordCall;
+
+      if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
+        if (!RecordCall->getDirectCallee())
+          continue;
+        std::string RecordFuncName =
+            RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
+        // Find the last call of Event Record on start and stop before
+        // calculate the time elapsed
+        if (RecordFuncName == "cudaEventRecord") {
+          auto Arg0 = getStmtSpelling(RecordCall->getArg(0));
+          if (Arg0 == getStmtSpelling(CE->getArg(1)))
+            RecordBegin = RecordCall;
+          else if (Arg0 == getStmtSpelling(CE->getArg(2)))
+            RecordEnd = RecordCall;
+        }
       }
     }
   }
@@ -7520,7 +7552,10 @@ void EventAPICallRule::handleTimeMeasurement(
       // Only the kernel calls between begin and end are set to be synced
       if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
         auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-        K->setEvent(getStmtSpelling(CE->getArg(2)));
+        auto EventExpr = findNextRecordedEvent(Parent, KCallLoc);
+        if (!EventExpr)
+          EventExpr = CE->getArg(2);
+        K->setEvent(ExprAnalysis::ref(EventExpr));
         K->setSync();
       }
     }

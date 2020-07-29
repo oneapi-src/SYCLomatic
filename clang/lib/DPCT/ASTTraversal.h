@@ -920,6 +920,8 @@ public:
   void
   handleTimeMeasurement(const CallExpr *CE,
                         const ast_matchers::MatchFinder::MatchResult &Result);
+  bool IsEventArgArraySubscriptExpr(const Expr *E);
+  const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
 };
 
 /// Migration rule for stream API calls
