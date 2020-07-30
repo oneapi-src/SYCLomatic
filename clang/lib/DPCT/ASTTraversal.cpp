@@ -7402,6 +7402,8 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   std::ostringstream Repl;
 
   const ValueDecl *MD = getDecl(CE->getArg(0));
+  if (!MD)
+    return;
   // Insert the helper variable right after the event variables
   static std::set<std::pair<const Decl *, std::string>> DeclDupFilter;
   auto &SM = DpctGlobalInfo::getSourceManager();

@@ -323,7 +323,7 @@ llvm::Error CommonOptionsParser::init(
       std::move(Adjuster),
       getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
 #ifdef INTEL_CUSTOMIZATION
-  for (auto I : ArgsAfter) {
+  for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
       IsCudaFile = false;
       Adjuster = combineAdjusters(
