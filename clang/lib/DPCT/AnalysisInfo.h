@@ -1358,18 +1358,11 @@ public:
   // If NeedSizeFold is true, array size will be folded, but orginal expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
-  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false,
-             bool IsShared = false);
+  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
 
   inline const std::string &getBaseName() { return BaseName; }
 
   inline size_t getDimension() { return Range.size(); }
-
-  const std::string &getTemplateSpecializationName() {
-    if (isTemplate() && TDSI)
-      return TDSI->getSourceString();
-    return getBaseName();
-  }
 
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
@@ -1377,7 +1370,7 @@ public:
   std::string getRangeArgument(const std::string &MemSize, bool MustArguments);
 
   inline bool isTemplate() const { return IsTemplate; }
-  inline bool isPointer() const { return IsPointer; }
+  inline bool isPointer() const { return PointerLevel; }
   inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
@@ -1394,8 +1387,6 @@ public:
   }
 
 private:
-  CtTypeInfo() : IsPointer(false), IsTemplate(false) {}
-
   /// For ConstantArrayType, size in generated code is folded as an integer.
   /// If \p NeedSizeFold is true, original size expression will followed as
   /// comments.
@@ -1439,11 +1430,13 @@ private:
   /// e.g.: extern __shared__ int a[];
   void setArrayInfo(const IncompleteArrayTypeLoc &TL, bool NeedSizeFold);
   void setName(const TypeLoc &TL);
+  void updateName();
 
   void setPointerAsArray() {
     if (isPointer()) {
-      IsPointer = false;
+      --PointerLevel;
       Range.emplace_back();
+      updateName();
     }
   }
   inline void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
@@ -1452,10 +1445,9 @@ private:
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
   std::vector<SizeInfo> Range;
-  bool IsPointer;
+  unsigned PointerLevel;
   bool IsReference;
   bool IsTemplate;
-  bool IsShared = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
@@ -1527,8 +1519,8 @@ public:
                   : Global),
         PointerAsArray(false) {
     setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                         isLocal(), isShared()));
-    if (getType()->isPointer()) {
+                                         isLocal()));
+    if (getType()->isPointer() && getScope() == Global) {
       Attr = Device;
       getType()->adjustAsMemType();
       PointerAsArray = true;
@@ -1604,7 +1596,7 @@ public:
     if (isShared()) {
       auto Dimension = getType()->getDimension();
       OS << MapNames::getClNamespace() + "::accessor<"
-         << getAccessorDataType(true) << ", " << Dimension
+         << getAccessorDataType() << ", " << Dimension
          << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
                 MapNames::getClNamespace() + "::access::target::local> "
          << getAccessorName() << "(";
@@ -1638,13 +1630,15 @@ public:
                        getType()->getRangeArgument(MemSize, false), ";");
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
-
     if (AccMode == Value) {
-      PS << getAccessorDataType(true) << " ";
+      PS << getAccessorDataType() << " ";
     } else if (AccMode == Pointer) {
-      PS << getAccessorDataType(true) << " *";
+      PS << getAccessorDataType();
+      if (!getType()->isPointer())
+        PS << " ";
+      PS << "*";
     } else {
-      PS << getDpctAccessorType(true) << " ";
+      PS << getDpctAccessorType() << " ";
     }
     return PS << getArgName();
   }
@@ -1654,7 +1648,7 @@ public:
   ParameterStream &getKernelArg(ParameterStream &PS) {
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       if (AccMode == Accessor) {
-        PS << getDpctAccessorType(true) << "(";
+        PS << getDpctAccessorType() << "(";
         PS << getAccessorName();
         if (isShared()) {
           PS << ", " << getRangeName();
@@ -1662,7 +1656,7 @@ public:
         PS << ")";
       } else if (AccMode == Pointer) {
         if (!getType()->isWritten())
-          PS << "(" << getAccessorDataType(true) << " *)";
+          PS << "(" << getAccessorDataType() << " *)";
         PS << getAccessorName() << ".get_pointer()";
       } else {
         PS << getAccessorName();
@@ -1694,8 +1688,7 @@ private:
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
                                    std::shared_ptr<CtTypeInfo> VarType) {
-    return buildString(MemoryType, "<",
-                       VarType->getTemplateSpecializationName(), ", ",
+    return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
                        VarType->getDimension(), ">");
   }
   std::string getInitArguments(const std::string &MemSize,
@@ -1709,19 +1702,15 @@ private:
     return buildString("(", InitList, ")");
   }
   const std::string &getMemoryAttr();
-  std::string getAccessorDataType(bool UsingTemplateName) {
+  std::string getAccessorDataType() {
     if (isExtern()) {
       return "uint8_t";
-    } else if (UsingTemplateName) {
-      return getType()->getTemplateSpecializationName();
-    } else {
-      return getType()->getBaseName();
     }
+    return getType()->getBaseName();
   }
-  std::string getDpctAccessorType(bool UsingTemplateName) {
+  std::string getDpctAccessorType() {
     auto Type = getType();
-    return buildString("dpct::accessor<",
-                       getAccessorDataType(UsingTemplateName), ", ",
+    return buildString("dpct::accessor<", getAccessorDataType(), ", ",
                        getMemoryAttr(), ", ", Type->getDimension(), ">");
   }
   inline std::string getNameWithSuffix(StringRef Suffix) {

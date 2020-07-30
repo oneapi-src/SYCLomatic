@@ -1686,8 +1686,8 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam) c
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
 }
 
-CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold, bool IsShared)
-    : IsPointer(false), IsTemplate(false), IsShared(IsShared) {
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
+    : PointerLevel(0), IsTemplate(false) {
   setTypeInfo(TL, NeedSizeFold);
 }
 
@@ -1724,9 +1724,7 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::IncompleteArray:
     return setArrayInfo(TYPELOC_CAST(IncompleteArrayTypeLoc), NeedSizeFold);
   case TypeLoc::Pointer:
-    if (IsShared)
-      break;
-    IsPointer = true;
+    ++PointerLevel;
     return setTypeInfo(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc());
   case TypeLoc::LValueReference:
   case TypeLoc::RValueReference:
@@ -1773,14 +1771,24 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
   EA.analyze(TL);
   TDSI = EA.getTemplateDependentStringInfo();
 
+  IsTemplate = TL.getTypePtr()->isDependentType();
+  updateName();
+}
+
+void CtTypeInfo::updateName(){
+
   BaseNameWithoutQualifiers = TDSI->getSourceString();
+
+  if (isPointer()) {
+    BaseNameWithoutQualifiers += ' ';
+    BaseNameWithoutQualifiers.append(PointerLevel, '*');
+  }
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
   else
-    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
-
-  IsTemplate = TL.getTypePtr()->isDependentType();
+    BaseName = buildString(BaseName, isPointer() ? "" : " ",
+                           BaseNameWithoutQualifiers);
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
@@ -1790,6 +1798,8 @@ std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
     NewType->TDSI = TDSI->applyTemplateArguments(TA);
   for (auto &R : NewType->Range)
     R.setTemplateList(TA);
+  NewType->BaseName.clear();
+  NewType->updateName();
   return NewType;
 }
 

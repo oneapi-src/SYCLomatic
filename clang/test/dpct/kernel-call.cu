@@ -632,7 +632,7 @@ int run_foo9() {
   k<<<1,1>>>(vec[2].get_pointer());
 }
 
-//CHECK:void cuda_pme_forces_dev(float * *afn_s) {
+//CHECK:void cuda_pme_forces_dev(float **afn_s) {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo10() {
