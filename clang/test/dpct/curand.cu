@@ -16,7 +16,7 @@ int main(){
   //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   //CHECK:int s1;
   //CHECK-NEXT:int s2;
-  //CHECK-NEXT:mkl::rng::philox4x32x10 rng(q_ct1, 1337ull);
+  //CHECK-NEXT:oneapi::mkl::rng::philox4x32x10 rng(q_ct1, 1337ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
   //CHECK-NEXT:function call is redundant in DPC++.
@@ -35,63 +35,69 @@ int main(){
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-  //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-  //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100,
+  //CHECK-NEXT:                                 d_data_buf_ct{{[0-9]+}}),
+  //CHECK-NEXT:      0);
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-  //CHECK-NEXT:mkl::rng::lognormal<float> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
+  //CHECK-NEXT:oneapi::mkl::rng::lognormal<float> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100,
+  //CHECK-NEXT:                                 d_data_buf_ct{{[0-9]+}}),
+  //CHECK-NEXT:      0);
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-  //CHECK-NEXT:mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
+  //CHECK-NEXT:oneapi::mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100,
+  //CHECK-NEXT:                                d_data_buf_ct{{[0-9]+}}),
+  //CHECK-NEXT:      0);
   //CHECK-NEXT:}
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
   //CHECK:{
   //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
-  //CHECK-NEXT:mkl::rng::uniform<double> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::uniform<double> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, d_data_d, 100*100);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
-  //CHECK-NEXT:mkl::rng::lognormal<double> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::lognormal<double> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
-  //CHECK-NEXT:mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
@@ -99,40 +105,42 @@ int main(){
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<uint32_t>(d_data_ui);
-  //CHECK-NEXT:mkl::rng::uniform_bits<uint32_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint32_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = 
-  //CHECK-NEXT:(mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100,
+  //CHECK-NEXT:                                 d_data_ui_buf_ct{{[0-9]+}}),
+  //CHECK-NEXT:      0);
   //CHECK-NEXT:}
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<int32_t>(d_data_ui);
-  //CHECK-NEXT:mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
+  //CHECK-NEXT:oneapi::mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 =
-  //CHECK-NEXT:(mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100,
+  //CHECK-NEXT:                                 d_data_ui_buf_ct{{[0-9]+}}),
+  //CHECK-NEXT:      0);
   //CHECK-NEXT:}
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:{
   //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
-  //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:{
   //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
-  //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct23);
+  //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct23);
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -144,8 +152,8 @@ int main(){
 
   //CHECK:{
   //CHECK-NEXT:  auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
-  //CHECK-NEXT:  mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:  oneapi::mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:  oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -155,7 +163,7 @@ int main(){
   //CHECK-NEXT:if (0) {}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:mkl::rng::sobol rng2(q_ct1, 1111);
+  //CHECK:oneapi::mkl::rng::sobol rng2(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
   //CHECK-NEXT:function call is redundant in DPC++.
@@ -166,20 +174,20 @@ int main(){
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-  //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   curandGenerateUniform(rng2, d_data, 100*100);
 
-  //CHECK:mkl::rng::skip_ahead(rng, 100);
+  //CHECK:oneapi::mkl::rng::skip_ahead(rng, 100);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::skip_ahead(rng2, 200), 0);
+  //CHECK-NEXT:s1 = (oneapi::mkl::rng::skip_ahead(rng2, 200), 0);
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
@@ -204,7 +212,7 @@ curandStatus foo2();
 //CHECK:class A{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  A(){
-//CHECK-NEXT:    rng = new mkl::rng::sobol(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:    rng = new oneapi::mkl::rng::sobol(dpct::get_default_queue(), 1243);
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was
 //CHECK-NEXT:    removed, because the function call is redundant in DPC++.
@@ -214,7 +222,7 @@ curandStatus foo2();
 //CHECK-NEXT:    delete rng;
 //CHECK-NEXT:  }
      //CHECK:private:
-//CHECK-NEXT:  mkl::rng::sobol *rng;
+//CHECK-NEXT:  oneapi::mkl::rng::sobol *rng;
 //CHECK-NEXT:};
 class A{
 public:
@@ -235,7 +243,7 @@ void bar1(){
 //CHECK:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
+//CHECK-NEXT:oneapi::mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
 //CHECK-NEXT:function call is redundant in DPC++.
@@ -254,7 +262,7 @@ void bar2(){
 //CHECK:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:mkl::rng::sobol rng(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:oneapi::mkl::rng::sobol rng(dpct::get_default_queue(), 1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
 //CHECK-NEXT:function call is redundant in DPC++.
@@ -277,7 +285,7 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 }
 
 void bar3(){
-//CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
+//CHECK:oneapi::mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandCreateGenerator was replaced with 0, because
 //CHECK-NEXT:the function call is redundant in DPC++.
@@ -295,8 +303,8 @@ void bar3(){
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {
 //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-//CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
+//CHECK-NEXT:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+//CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
 //CHECK-NEXT:return 0;
 //CHECK-NEXT:}());
 //CHECK-NEXT:/*
@@ -315,10 +323,10 @@ void bar3(){
 void bar4(){
 //CHECK:/*
 //CHECK-NEXT:DPCT1033:{{[0-9]+}}: Migrated code uses a basic Sobol generator. Initialize
-//CHECK-NEXT:mkl::rng::sobol generator with user-defined direction numbers to use it as
-//CHECK-NEXT:Scrambled Sobol generator.
+//CHECK-NEXT:oneapi::mkl::rng::sobol generator with user-defined direction numbers to use
+//CHECK-NEXT:it as Scrambled Sobol generator.
 //CHECK-NEXT:*/
-//CHECK-NEXT:mkl::rng::sobol rng(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:oneapi::mkl::rng::sobol rng(dpct::get_default_queue(), 1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
 //CHECK-NEXT:function call is redundant in DPC++.
@@ -354,7 +362,7 @@ void bar5(){
 
 //CHECK:int bar6() try {
 //CHECK-NEXT:  float *d_data;
-//CHECK-NEXT:  mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
+//CHECK-NEXT:  oneapi::mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
 //CHECK-NEXT:  function call is redundant in DPC++.
@@ -365,8 +373,8 @@ void bar5(){
 //CHECK-NEXT:  */
 //CHECK-NEXT:  {
 //CHECK-NEXT:    auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-//CHECK-NEXT:    mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:    mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
+//CHECK-NEXT:    oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+//CHECK-NEXT:    oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
 //CHECK-NEXT:  }
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error

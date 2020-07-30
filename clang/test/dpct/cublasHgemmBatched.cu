@@ -21,6 +21,6 @@ int main() {
   cublasOperation_t trans3 = CUBLAS_OP_N;
   // CHECK: int64_t m_ct{{[0-9]+}} = N, n_ct{{[0-9]+}} = N, k_ct{{[0-9]+}} = N, lda_ct{{[0-9]+}} = N, ldb_ct{{[0-9]+}} = N, ldc_ct{{[0-9]+}} = N, group_size_ct{{[0-9]+}} = 10;
   // CHECK-NEXT: sycl::half alpha_ct{{[0-9]+}} = dpct::get_value(&alpha_H, *handle), beta_ct{{[0-9]+}} = dpct::get_value(&beta_H, *handle);
-  // CHECK-NEXT: mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_H, &lda_ct{{[0-9]+}}, d_B_H, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, d_C_H, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
+  // CHECK-NEXT: oneapi::mkl::blas::gemm_batch(*handle, &trans3, &trans3, &m_ct{{[0-9]+}}, &n_ct{{[0-9]+}}, &k_ct{{[0-9]+}}, &alpha_ct{{[0-9]+}}, d_A_H, &lda_ct{{[0-9]+}}, d_B_H, &ldb_ct{{[0-9]+}}, &beta_ct{{[0-9]+}}, d_C_H, &ldc_ct{{[0-9]+}}, 1, &group_size_ct{{[0-9]+}}, {});
   cublasHgemmBatched(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N, 10);
 }

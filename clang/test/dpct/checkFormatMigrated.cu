@@ -316,7 +316,7 @@ void foo10(){
   if ((float2*)xx) {}
 }
 
-     //CHECK:#define macro_a (mkl::transpose)1
-//CHECK-NEXT:void foo11(){ mkl::transpose a = macro_a; }
+     //CHECK:#define macro_a (oneapi::mkl::transpose)1
+//CHECK-NEXT:void foo11(){ oneapi::mkl::transpose a = macro_a; }
 #define macro_a (cublasOperation_t)1
 void foo11(){ cublasOperation_t a = macro_a; }

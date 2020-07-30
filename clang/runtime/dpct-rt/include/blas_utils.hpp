@@ -42,13 +42,13 @@ inline int stride_for(int num_elems, int mem_align_in_elems) {
 }
 }
 
-inline mkl::transpose get_transpose(int t) {
+inline oneapi::mkl::transpose get_transpose(int t) {
   if (t == 0) {
-    return mkl::transpose::nontrans;
+    return oneapi::mkl::transpose::nontrans;
   } else if (t == 1) {
-    return mkl::transpose::trans;
+    return oneapi::mkl::transpose::trans;
   } else {
-    return mkl::transpose::conjtrans;
+    return oneapi::mkl::transpose::conjtrans;
   }
 }
 
@@ -88,7 +88,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       detail::stride_for(n * lda, mem_base_addr_align / sizeof(T));
   std::int64_t stride_ipiv =
       detail::stride_for(n, mem_base_addr_align / sizeof(T));
-  std::int64_t scratchpad_size = mkl::lapack::getrf_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getrf_batch_scratchpad_size<Ty>(
       exec_queue, n, n, lda, stride_a, stride_ipiv, batch_size);
 
   T *a_buffer_ptr;
@@ -104,7 +104,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
         cl::sycl::range<1>(batch_size * stride_ipiv));
     cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
     auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
-    mkl::lapack::getrf_batch(exec_queue, n, n, a_buffer, lda, stride_a,
+    oneapi::mkl::lapack::getrf_batch(exec_queue, n, n, a_buffer, lda, stride_a,
                              ipiv_buf, stride_ipiv, batch_size, scratchpad,
                              scratchpad_size);
 
@@ -140,7 +140,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   std::int64_t n_int64 = n;
   std::int64_t lda_int64 = lda;
   std::int64_t group_sizes = batch_size;
-  std::int64_t scratchpad_size = mkl::lapack::getrf_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getrf_batch_scratchpad_size<Ty>(
       exec_queue, &m_int64, &n_int64, &lda_int64, 1, &group_sizes);
 
   Ty *scratchpad = cl::sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
@@ -150,7 +150,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       cl::sycl::malloc_shared<std::int64_t *>(1, exec_queue);
   ipiv_int64_ptr[0] = ipiv_int64;
 
-  mkl::lapack::getrf_batch(exec_queue, &m_int64, &n_int64, (Ty **)a, &lda_int64,
+  oneapi::mkl::lapack::getrf_batch(exec_queue, &m_int64, &n_int64, (Ty **)a, &lda_int64,
                            ipiv_int64_ptr, 1, &group_sizes, scratchpad,
                            scratchpad_size);
 
@@ -183,7 +183,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 /// \param [in] batch_size The size of the batch.
 template <typename T>
 inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
-                                mkl::transpose trans, int n, int nrhs,
+                                oneapi::mkl::transpose trans, int n, int nrhs,
                                 const T *a[], int lda, int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
@@ -199,7 +199,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       detail::stride_for(nrhs * ldb, mem_base_addr_align / sizeof(T));
   std::int64_t stride_ipiv =
       detail::stride_for(n, mem_base_addr_align / sizeof(T));
-  std::int64_t scratchpad_size = mkl::lapack::getrs_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getrs_batch_scratchpad_size<Ty>(
       exec_queue, trans, n, nrhs, lda, stride_a, stride_ipiv, ldb, stride_b,
       batch_size);
 
@@ -233,7 +233,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
           });
     });
 
-    mkl::lapack::getrs_batch(exec_queue, trans, n, nrhs, a_buffer, lda,
+    oneapi::mkl::lapack::getrs_batch(exec_queue, trans, n, nrhs, a_buffer, lda,
                              stride_a, ipiv_buf, stride_ipiv, b_buffer, ldb,
                              stride_b, batch_size, scratchpad, scratchpad_size);
   }
@@ -258,7 +258,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   std::int64_t lda_int64 = lda;
   std::int64_t ldb_int64 = ldb;
   std::int64_t group_sizes = batch_size;
-  std::int64_t scratchpad_size = mkl::lapack::getrs_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getrs_batch_scratchpad_size<Ty>(
       exec_queue, &trans, &n_int64, &nrhs_int64, &lda_int64, &ldb_int64, 1,
       &group_sizes);
 
@@ -276,7 +276,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
         });
   });
 
-  cl::sycl::event e = mkl::lapack::getrs_batch(
+  cl::sycl::event e = oneapi::mkl::lapack::getrs_batch(
       exec_queue, &trans, &n_int64, &nrhs_int64, (Ty **)a, &lda_int64,
       ipiv_int64_ptr, (Ty **)b, &ldb_int64, 1, &group_sizes, scratchpad,
       scratchpad_size);
@@ -312,7 +312,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       detail::stride_for(n * ldb, mem_base_addr_align / sizeof(T));
   std::int64_t stride_ipiv =
       detail::stride_for(n, mem_base_addr_align / sizeof(T));
-  std::int64_t scratchpad_size = mkl::lapack::getri_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getri_batch_scratchpad_size<Ty>(
       exec_queue, n, ldb, stride_b, stride_ipiv, batch_size);
 
   T *b_buffer_ptr;
@@ -347,7 +347,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
           });
     });
 
-    mkl::lapack::getri_batch(exec_queue, n, b_buffer, ldb, stride_b, ipiv_buf,
+    oneapi::mkl::lapack::getri_batch(exec_queue, n, b_buffer, ldb, stride_b, ipiv_buf,
                              stride_ipiv, batch_size, scratchpad,
                              scratchpad_size);
   }
@@ -370,7 +370,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   std::int64_t n_int64 = n;
   std::int64_t ldb_int64 = ldb;
   std::int64_t group_sizes = batch_size;
-  std::int64_t scratchpad_size = mkl::lapack::getri_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::getri_batch_scratchpad_size<Ty>(
       exec_queue, &n_int64, &ldb_int64, 1, &group_sizes);
 
   Ty *scratchpad = cl::sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
@@ -395,7 +395,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
                     exec_queue);
   }
 
-  cl::sycl::event e = mkl::lapack::getri_batch(
+  cl::sycl::event e = oneapi::mkl::lapack::getri_batch(
       exec_queue, &n_int64, (Ty **)b, &ldb_int64, ipiv_int64_ptr, 1,
       &group_sizes, scratchpad, scratchpad_size);
 
@@ -430,7 +430,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
       detail::stride_for(n * lda, mem_base_addr_align / sizeof(T));
   std::int64_t stride_tau = detail::stride_for(std::max(1, std::min(m, n)),
                                                mem_base_addr_align / sizeof(T));
-  std::int64_t scratchpad_size = mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
       exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
 
   T *a_buffer_ptr, *tau_buffer_ptr;
@@ -448,7 +448,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
     auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
     auto tau_buffer = get_buffer<Ty>(tau_buffer_ptr);
     cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
-    mkl::lapack::geqrf_batch(exec_queue, m, n, a_buffer, lda, stride_a,
+    oneapi::mkl::lapack::geqrf_batch(exec_queue, m, n, a_buffer, lda, stride_a,
                              tau_buffer, stride_tau, batch_size, scratchpad,
                              scratchpad_size);
   }
@@ -487,12 +487,12 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   std::int64_t n_int64 = n;
   std::int64_t lda_int64 = lda;
   std::int64_t group_sizes = batch_size;
-  std::int64_t scratchpad_size = mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
+  std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
       exec_queue, &m_int64, &n_int64, &lda_int64, 1, &group_sizes);
 
   Ty *scratchpad = cl::sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
 
-  cl::sycl::event e = mkl::lapack::geqrf_batch(
+  cl::sycl::event e = oneapi::mkl::lapack::geqrf_batch(
       exec_queue, &m_int64, &n_int64, (Ty **)a, &lda_int64, (Ty **)tau, 1,
       &group_sizes, scratchpad, scratchpad_size);
 

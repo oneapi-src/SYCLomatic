@@ -16,7 +16,7 @@ __host__ __device__ void foo1(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side oneapi::mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);
@@ -33,7 +33,7 @@ __device__ void foo2(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side oneapi::mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);
@@ -50,7 +50,7 @@ __global__ void foo3(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax if it is called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side oneapi::mkl::blas::iamax instead, which will submit this call to SYCL queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);
@@ -63,6 +63,6 @@ __host__ void foo4(){
   float* x_S=0;
   int incx=1;
   int* result =0;
-  // CHECK: mkl::blas::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK: oneapi::mkl::blas::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}});
   cublasIsamax(handle, n, x_S, incx, result);
 }

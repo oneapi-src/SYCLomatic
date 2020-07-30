@@ -110,10 +110,10 @@ cuDoubleComplex &&var4 = std::move(var1);
 }
 
 {
-// CHECK: mkl::uplo var1;
-// CHECK-NEXT: mkl::uplo *var2;
-// CHECK-NEXT: mkl::uplo &var3 = var1;
-// CHECK-NEXT: mkl::uplo &&var4 = std::move(var1);
+// CHECK: oneapi::mkl::uplo var1;
+// CHECK-NEXT: oneapi::mkl::uplo *var2;
+// CHECK-NEXT: oneapi::mkl::uplo &var3 = var1;
+// CHECK-NEXT: oneapi::mkl::uplo &&var4 = std::move(var1);
 cublasFillMode_t var1;
 cublasFillMode_t *var2;
 cublasFillMode_t &var3 = var1;
@@ -121,10 +121,10 @@ cublasFillMode_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: mkl::diag var1;
-// CHECK-NEXT: mkl::diag *var2;
-// CHECK-NEXT: mkl::diag &var3 = var1;
-// CHECK-NEXT: mkl::diag &&var4 = std::move(var1);
+// CHECK: oneapi::mkl::diag var1;
+// CHECK-NEXT: oneapi::mkl::diag *var2;
+// CHECK-NEXT: oneapi::mkl::diag &var3 = var1;
+// CHECK-NEXT: oneapi::mkl::diag &&var4 = std::move(var1);
 cublasDiagType_t var1;
 cublasDiagType_t *var2;
 cublasDiagType_t &var3 = var1;
@@ -132,10 +132,10 @@ cublasDiagType_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: mkl::side var1;
-// CHECK-NEXT: mkl::side *var2;
-// CHECK-NEXT: mkl::side &var3 = var1;
-// CHECK-NEXT: mkl::side &&var4 = std::move(var1);
+// CHECK: oneapi::mkl::side var1;
+// CHECK-NEXT: oneapi::mkl::side *var2;
+// CHECK-NEXT: oneapi::mkl::side &var3 = var1;
+// CHECK-NEXT: oneapi::mkl::side &&var4 = std::move(var1);
 cublasSideMode_t var1;
 cublasSideMode_t *var2;
 cublasSideMode_t &var3 = var1;
@@ -143,10 +143,10 @@ cublasSideMode_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: mkl::transpose var1;
-// CHECK-NEXT: mkl::transpose *var2;
-// CHECK-NEXT: mkl::transpose &var3 = var1;
-// CHECK-NEXT: mkl::transpose &&var4 = std::move(var1);
+// CHECK: oneapi::mkl::transpose var1;
+// CHECK-NEXT: oneapi::mkl::transpose *var2;
+// CHECK-NEXT: oneapi::mkl::transpose &var3 = var1;
+// CHECK-NEXT: oneapi::mkl::transpose &&var4 = std::move(var1);
 cublasOperation_t var1;
 cublasOperation_t *var2;
 cublasOperation_t &var3 = var1;
@@ -187,10 +187,10 @@ cusolverEigType_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: mkl::job var1;
-// CHECK-NEXT: mkl::job *var2;
-// CHECK-NEXT: mkl::job &var3 = var1;
-// CHECK-NEXT: mkl::job &&var4 = std::move(var1);
+// CHECK: oneapi::mkl::job var1;
+// CHECK-NEXT: oneapi::mkl::job *var2;
+// CHECK-NEXT: oneapi::mkl::job &var3 = var1;
+// CHECK-NEXT: oneapi::mkl::job &&var4 = std::move(var1);
 cusolverEigMode_t var1;
 cusolverEigMode_t *var2;
 cusolverEigMode_t &var3 = var1;
@@ -302,29 +302,29 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new mkl::uplo();
-// CHECK-NEXT:  new mkl::uplo *();
+// CHECK:  new oneapi::mkl::uplo();
+// CHECK-NEXT:  new oneapi::mkl::uplo *();
   new cublasFillMode_t();
   new cublasFillMode_t *();
 }
 
 {
-// CHECK:  new mkl::diag();
-// CHECK-NEXT:  new mkl::diag *();
+// CHECK:  new oneapi::mkl::diag();
+// CHECK-NEXT:  new oneapi::mkl::diag *();
   new cublasDiagType_t();
   new cublasDiagType_t *();
 }
 
 {
-// CHECK:  new mkl::side();
-// CHECK-NEXT:  new mkl::side *();
+// CHECK:  new oneapi::mkl::side();
+// CHECK-NEXT:  new oneapi::mkl::side *();
   new cublasSideMode_t();
   new cublasSideMode_t *();
 }
 
 {
-// CHECK:  new mkl::transpose();
-// CHECK-NEXT:  new mkl::transpose *();
+// CHECK:  new oneapi::mkl::transpose();
+// CHECK-NEXT:  new oneapi::mkl::transpose *();
   new cublasOperation_t();
   new cublasOperation_t *();
 }
@@ -351,8 +351,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new mkl::job();
-// CHECK-NEXT:  new mkl::job *();
+// CHECK:  new oneapi::mkl::job();
+// CHECK-NEXT:  new oneapi::mkl::job *();
   new cusolverEigMode_t();
   new cusolverEigMode_t *();
 }
@@ -448,30 +448,30 @@ cuDoubleComplex foo24();
 cuDoubleComplex *foo25();
 cuDoubleComplex &foo26();
 
-// CHECK: mkl::uplo foo27();
-// CHECK-NEXT: mkl::uplo *foo28();
-// CHECK-NEXT: mkl::uplo &foo29();
+// CHECK: oneapi::mkl::uplo foo27();
+// CHECK-NEXT: oneapi::mkl::uplo *foo28();
+// CHECK-NEXT: oneapi::mkl::uplo &foo29();
 cublasFillMode_t foo27();
 cublasFillMode_t *foo28();
 cublasFillMode_t &foo29();
 
-// CHECK: mkl::diag foo30();
-// CHECK-NEXT: mkl::diag *foo31();
-// CHECK-NEXT: mkl::diag &foo32();
+// CHECK: oneapi::mkl::diag foo30();
+// CHECK-NEXT: oneapi::mkl::diag *foo31();
+// CHECK-NEXT: oneapi::mkl::diag &foo32();
 cublasDiagType_t foo30();
 cublasDiagType_t *foo31();
 cublasDiagType_t &foo32();
 
-// CHECK: mkl::side foo33();
-// CHECK-NEXT: mkl::side *foo34();
-// CHECK-NEXT: mkl::side &foo35();
+// CHECK: oneapi::mkl::side foo33();
+// CHECK-NEXT: oneapi::mkl::side *foo34();
+// CHECK-NEXT: oneapi::mkl::side &foo35();
 cublasSideMode_t foo33();
 cublasSideMode_t *foo34();
 cublasSideMode_t &foo35();
 
-// CHECK: mkl::transpose foo36();
-// CHECK-NEXT: mkl::transpose *foo37();
-// CHECK-NEXT: mkl::transpose &foo38();
+// CHECK: oneapi::mkl::transpose foo36();
+// CHECK-NEXT: oneapi::mkl::transpose *foo37();
+// CHECK-NEXT: oneapi::mkl::transpose &foo38();
 cublasOperation_t foo36();
 cublasOperation_t *foo37();
 cublasOperation_t &foo38();
@@ -497,9 +497,9 @@ cusolverEigType_t foo45();
 cusolverEigType_t *foo46();
 cusolverEigType_t &foo47();
 
-// CHECK: mkl::job foo48();
-// CHECK-NEXT: mkl::job *foo49();
-// CHECK-NEXT: mkl::job &foo50();
+// CHECK: oneapi::mkl::job foo48();
+// CHECK-NEXT: oneapi::mkl::job *foo49();
+// CHECK-NEXT: oneapi::mkl::job &foo50();
 cusolverEigMode_t foo48();
 cusolverEigMode_t *foo49();
 cusolverEigMode_t &foo50();
@@ -598,37 +598,37 @@ template <> struct S<cuDoubleComplex *> {};
 template <> struct S<cuDoubleComplex &> {};
 template <> struct S<cuDoubleComplex &&> {};
 
-// CHECK: template <> struct S<mkl::uplo> {};
-// CHECK-NEXT: template <> struct S<mkl::uplo *> {};
-// CHECK-NEXT: template <> struct S<mkl::uplo &> {};
-// CHECK-NEXT: template <> struct S<mkl::uplo &&> {};
+// CHECK: template <> struct S<oneapi::mkl::uplo> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::uplo *> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::uplo &> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::uplo &&> {};
 template <> struct S<cublasFillMode_t> {};
 template <> struct S<cublasFillMode_t *> {};
 template <> struct S<cublasFillMode_t &> {};
 template <> struct S<cublasFillMode_t &&> {};
 
-// CHECK: template <> struct S<mkl::diag> {};
-// CHECK-NEXT: template <> struct S<mkl::diag *> {};
-// CHECK-NEXT: template <> struct S<mkl::diag &> {};
-// CHECK-NEXT: template <> struct S<mkl::diag &&> {};
+// CHECK: template <> struct S<oneapi::mkl::diag> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::diag *> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::diag &> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::diag &&> {};
 template <> struct S<cublasDiagType_t> {};
 template <> struct S<cublasDiagType_t *> {};
 template <> struct S<cublasDiagType_t &> {};
 template <> struct S<cublasDiagType_t &&> {};
 
-// CHECK: template <> struct S<mkl::side> {};
-// CHECK-NEXT: template <> struct S<mkl::side *> {};
-// CHECK-NEXT: template <> struct S<mkl::side &> {};
-// CHECK-NEXT: template <> struct S<mkl::side &&> {};
+// CHECK: template <> struct S<oneapi::mkl::side> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::side *> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::side &> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::side &&> {};
 template <> struct S<cublasSideMode_t> {};
 template <> struct S<cublasSideMode_t *> {};
 template <> struct S<cublasSideMode_t &> {};
 template <> struct S<cublasSideMode_t &&> {};
 
-// CHECK: template <> struct S<mkl::transpose> {};
-// CHECK-NEXT: template <> struct S<mkl::transpose *> {};
-// CHECK-NEXT: template <> struct S<mkl::transpose &> {};
-// CHECK-NEXT: template <> struct S<mkl::transpose &&> {};
+// CHECK: template <> struct S<oneapi::mkl::transpose> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::transpose *> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::transpose &> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::transpose &&> {};
 template <> struct S<cublasOperation_t> {};
 template <> struct S<cublasOperation_t *> {};
 template <> struct S<cublasOperation_t &> {};
@@ -661,10 +661,10 @@ template <> struct S<cusolverEigType_t *> {};
 template <> struct S<cusolverEigType_t &> {};
 template <> struct S<cusolverEigType_t &&> {};
 
-// CHECK: template <> struct S<mkl::job> {};
-// CHECK-NEXT: template <> struct S<mkl::job *> {};
-// CHECK-NEXT: template <> struct S<mkl::job &> {};
-// CHECK-NEXT: template <> struct S<mkl::job &&> {};
+// CHECK: template <> struct S<oneapi::mkl::job> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::job *> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::job &> {};
+// CHECK-NEXT: template <> struct S<oneapi::mkl::job &&> {};
 template <> struct S<cusolverEigMode_t> {};
 template <> struct S<cusolverEigMode_t *> {};
 template <> struct S<cusolverEigMode_t &> {};
@@ -783,37 +783,37 @@ template_foo<cuDoubleComplex *>();
 template_foo<cuDoubleComplex &>();
 template_foo<cuDoubleComplex &&>();
 
-// CHECK: template_foo<mkl::uplo>();
-// CHECK-NEXT: template_foo<mkl::uplo *>();
-// CHECK-NEXT: template_foo<mkl::uplo &>();
-// CHECK-NEXT: template_foo<mkl::uplo &&>();
+// CHECK: template_foo<oneapi::mkl::uplo>();
+// CHECK-NEXT: template_foo<oneapi::mkl::uplo *>();
+// CHECK-NEXT: template_foo<oneapi::mkl::uplo &>();
+// CHECK-NEXT: template_foo<oneapi::mkl::uplo &&>();
 template_foo<cublasFillMode_t>();
 template_foo<cublasFillMode_t *>();
 template_foo<cublasFillMode_t &>();
 template_foo<cublasFillMode_t &&>();
 
-// CHECK: template_foo<mkl::diag>();
-// CHECK-NEXT: template_foo<mkl::diag *>();
-// CHECK-NEXT: template_foo<mkl::diag &>();
-// CHECK-NEXT: template_foo<mkl::diag &&>();
+// CHECK: template_foo<oneapi::mkl::diag>();
+// CHECK-NEXT: template_foo<oneapi::mkl::diag *>();
+// CHECK-NEXT: template_foo<oneapi::mkl::diag &>();
+// CHECK-NEXT: template_foo<oneapi::mkl::diag &&>();
 template_foo<cublasDiagType_t>();
 template_foo<cublasDiagType_t *>();
 template_foo<cublasDiagType_t &>();
 template_foo<cublasDiagType_t &&>();
 
-// CHECK: template_foo<mkl::side>();
-// CHECK-NEXT: template_foo<mkl::side *>();
-// CHECK-NEXT: template_foo<mkl::side &>();
-// CHECK-NEXT: template_foo<mkl::side &&>();
+// CHECK: template_foo<oneapi::mkl::side>();
+// CHECK-NEXT: template_foo<oneapi::mkl::side *>();
+// CHECK-NEXT: template_foo<oneapi::mkl::side &>();
+// CHECK-NEXT: template_foo<oneapi::mkl::side &&>();
 template_foo<cublasSideMode_t>();
 template_foo<cublasSideMode_t *>();
 template_foo<cublasSideMode_t &>();
 template_foo<cublasSideMode_t &&>();
 
-// CHECK: template_foo<mkl::transpose>();
-// CHECK-NEXT: template_foo<mkl::transpose *>();
-// CHECK-NEXT: template_foo<mkl::transpose &>();
-// CHECK-NEXT: template_foo<mkl::transpose &&>();
+// CHECK: template_foo<oneapi::mkl::transpose>();
+// CHECK-NEXT: template_foo<oneapi::mkl::transpose *>();
+// CHECK-NEXT: template_foo<oneapi::mkl::transpose &>();
+// CHECK-NEXT: template_foo<oneapi::mkl::transpose &&>();
 template_foo<cublasOperation_t>();
 template_foo<cublasOperation_t *>();
 template_foo<cublasOperation_t &>();
@@ -846,10 +846,10 @@ template_foo<cusolverEigType_t *>();
 template_foo<cusolverEigType_t &>();
 template_foo<cusolverEigType_t &&>();
 
-// CHECK: template_foo<mkl::job>();
-// CHECK-NEXT: template_foo<mkl::job *>();
-// CHECK-NEXT: template_foo<mkl::job &>();
-// CHECK-NEXT: template_foo<mkl::job &&>();
+// CHECK: template_foo<oneapi::mkl::job>();
+// CHECK-NEXT: template_foo<oneapi::mkl::job *>();
+// CHECK-NEXT: template_foo<oneapi::mkl::job &>();
+// CHECK-NEXT: template_foo<oneapi::mkl::job &&>();
 template_foo<cusolverEigMode_t>();
 template_foo<cusolverEigMode_t *>();
 template_foo<cusolverEigMode_t &>();
@@ -976,37 +976,37 @@ using UT33 = cuDoubleComplex *;
 using UT34 = cuDoubleComplex &;
 using UT35 = cuDoubleComplex &&;
 
-// CHECK: using UT36 = mkl::uplo;
-// CHECK-NEXT: using UT37 = mkl::uplo *;
-// CHECK-NEXT: using UT38 = mkl::uplo &;
-// CHECK-NEXT: using UT39 = mkl::uplo &&;
+// CHECK: using UT36 = oneapi::mkl::uplo;
+// CHECK-NEXT: using UT37 = oneapi::mkl::uplo *;
+// CHECK-NEXT: using UT38 = oneapi::mkl::uplo &;
+// CHECK-NEXT: using UT39 = oneapi::mkl::uplo &&;
 using UT36 = cublasFillMode_t;
 using UT37 = cublasFillMode_t *;
 using UT38 = cublasFillMode_t &;
 using UT39 = cublasFillMode_t &&;
 
-// CHECK: using UT40 = mkl::diag;
-// CHECK-NEXT: using UT41 = mkl::diag *;
-// CHECK-NEXT: using UT42 = mkl::diag &;
-// CHECK-NEXT: using UT43 = mkl::diag &&;
+// CHECK: using UT40 = oneapi::mkl::diag;
+// CHECK-NEXT: using UT41 = oneapi::mkl::diag *;
+// CHECK-NEXT: using UT42 = oneapi::mkl::diag &;
+// CHECK-NEXT: using UT43 = oneapi::mkl::diag &&;
 using UT40 = cublasDiagType_t;
 using UT41 = cublasDiagType_t *;
 using UT42 = cublasDiagType_t &;
 using UT43 = cublasDiagType_t &&;
 
-// CHECK: using UT44 = mkl::side;
-// CHECK-NEXT: using UT45 = mkl::side *;
-// CHECK-NEXT: using UT46 = mkl::side &;
-// CHECK-NEXT: using UT47 = mkl::side &&;
+// CHECK: using UT44 = oneapi::mkl::side;
+// CHECK-NEXT: using UT45 = oneapi::mkl::side *;
+// CHECK-NEXT: using UT46 = oneapi::mkl::side &;
+// CHECK-NEXT: using UT47 = oneapi::mkl::side &&;
 using UT44 = cublasSideMode_t;
 using UT45 = cublasSideMode_t *;
 using UT46 = cublasSideMode_t &;
 using UT47 = cublasSideMode_t &&;
 
-// CHECK: using UT48 = mkl::transpose;
-// CHECK-NEXT: using UT49 = mkl::transpose *;
-// CHECK-NEXT: using UT50 = mkl::transpose &;
-// CHECK-NEXT: using UT51 = mkl::transpose &&;
+// CHECK: using UT48 = oneapi::mkl::transpose;
+// CHECK-NEXT: using UT49 = oneapi::mkl::transpose *;
+// CHECK-NEXT: using UT50 = oneapi::mkl::transpose &;
+// CHECK-NEXT: using UT51 = oneapi::mkl::transpose &&;
 using UT48 = cublasOperation_t;
 using UT49 = cublasOperation_t *;
 using UT50 = cublasOperation_t &;
@@ -1039,10 +1039,10 @@ using UT61 = cusolverEigType_t *;
 using UT62 = cusolverEigType_t &;
 using UT63 = cusolverEigType_t &&;
 
-// CHECK: using UT64 = mkl::job;
-// CHECK-NEXT: using UT65 = mkl::job *;
-// CHECK-NEXT: using UT66 = mkl::job &;
-// CHECK-NEXT: using UT67 = mkl::job &&;
+// CHECK: using UT64 = oneapi::mkl::job;
+// CHECK-NEXT: using UT65 = oneapi::mkl::job *;
+// CHECK-NEXT: using UT66 = oneapi::mkl::job &;
+// CHECK-NEXT: using UT67 = oneapi::mkl::job &&;
 using UT64 = cusolverEigMode_t;
 using UT65 = cusolverEigMode_t *;
 using UT66 = cusolverEigMode_t &;
@@ -1168,37 +1168,37 @@ typedef cuDoubleComplex* T33;
 typedef cuDoubleComplex& T34;
 typedef cuDoubleComplex&& T35;
 
-// CHECK: typedef mkl::uplo T36;
-// CHECK-NEXT: typedef mkl::uplo* T37;
-// CHECK-NEXT: typedef mkl::uplo& T38;
-// CHECK-NEXT: typedef mkl::uplo&& T39;
+// CHECK: typedef oneapi::mkl::uplo T36;
+// CHECK-NEXT: typedef oneapi::mkl::uplo* T37;
+// CHECK-NEXT: typedef oneapi::mkl::uplo& T38;
+// CHECK-NEXT: typedef oneapi::mkl::uplo&& T39;
 typedef cublasFillMode_t T36;
 typedef cublasFillMode_t* T37;
 typedef cublasFillMode_t& T38;
 typedef cublasFillMode_t&& T39;
 
-// CHECK: typedef mkl::diag T40;
-// CHECK-NEXT: typedef mkl::diag* T41;
-// CHECK-NEXT: typedef mkl::diag& T42;
-// CHECK-NEXT: typedef mkl::diag&& T43;
+// CHECK: typedef oneapi::mkl::diag T40;
+// CHECK-NEXT: typedef oneapi::mkl::diag* T41;
+// CHECK-NEXT: typedef oneapi::mkl::diag& T42;
+// CHECK-NEXT: typedef oneapi::mkl::diag&& T43;
 typedef cublasDiagType_t T40;
 typedef cublasDiagType_t* T41;
 typedef cublasDiagType_t& T42;
 typedef cublasDiagType_t&& T43;
 
-// CHECK: typedef mkl::side T44;
-// CHECK-NEXT: typedef mkl::side* T45;
-// CHECK-NEXT: typedef mkl::side& T46;
-// CHECK-NEXT: typedef mkl::side&& T47;
+// CHECK: typedef oneapi::mkl::side T44;
+// CHECK-NEXT: typedef oneapi::mkl::side* T45;
+// CHECK-NEXT: typedef oneapi::mkl::side& T46;
+// CHECK-NEXT: typedef oneapi::mkl::side&& T47;
 typedef cublasSideMode_t T44;
 typedef cublasSideMode_t* T45;
 typedef cublasSideMode_t& T46;
 typedef cublasSideMode_t&& T47;
 
-// CHECK: typedef mkl::transpose T48;
-// CHECK-NEXT: typedef mkl::transpose* T49;
-// CHECK-NEXT: typedef mkl::transpose& T50;
-// CHECK-NEXT: typedef mkl::transpose&& T51;
+// CHECK: typedef oneapi::mkl::transpose T48;
+// CHECK-NEXT: typedef oneapi::mkl::transpose* T49;
+// CHECK-NEXT: typedef oneapi::mkl::transpose& T50;
+// CHECK-NEXT: typedef oneapi::mkl::transpose&& T51;
 typedef cublasOperation_t T48;
 typedef cublasOperation_t* T49;
 typedef cublasOperation_t& T50;
@@ -1231,10 +1231,10 @@ typedef cusolverEigType_t* T61;
 typedef cusolverEigType_t& T62;
 typedef cusolverEigType_t&& T63;
 
-// CHECK: typedef mkl::job T64;
-// CHECK-NEXT: typedef mkl::job* T65;
-// CHECK-NEXT: typedef mkl::job& T66;
-// CHECK-NEXT: typedef mkl::job&& T67;
+// CHECK: typedef oneapi::mkl::job T64;
+// CHECK-NEXT: typedef oneapi::mkl::job* T65;
+// CHECK-NEXT: typedef oneapi::mkl::job& T66;
+// CHECK-NEXT: typedef oneapi::mkl::job&& T67;
 typedef cusolverEigMode_t T64;
 typedef cusolverEigMode_t* T65;
 typedef cusolverEigMode_t& T66;
@@ -1473,10 +1473,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_36 mkl::uplo
-// CHECK-NEXT: #define T8_37 mkl::uplo *
-// CHECK-NEXT: #define T8_38 mkl::uplo &
-// CHECK-NEXT: #define T8_39 mkl::uplo &&
+// CHECK: #define T8_36 oneapi::mkl::uplo
+// CHECK-NEXT: #define T8_37 oneapi::mkl::uplo *
+// CHECK-NEXT: #define T8_38 oneapi::mkl::uplo &
+// CHECK-NEXT: #define T8_39 oneapi::mkl::uplo &&
 // CHECK-NEXT:     T8_36 a1;
 // CHECK-NEXT:     T8_37 a2;
 // CHECK-NEXT:     T8_38 a3=a1;
@@ -1493,10 +1493,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_40 mkl::diag
-// CHECK-NEXT: #define T8_41 mkl::diag *
-// CHECK-NEXT: #define T8_42 mkl::diag &
-// CHECK-NEXT: #define T8_43 mkl::diag &&
+// CHECK: #define T8_40 oneapi::mkl::diag
+// CHECK-NEXT: #define T8_41 oneapi::mkl::diag *
+// CHECK-NEXT: #define T8_42 oneapi::mkl::diag &
+// CHECK-NEXT: #define T8_43 oneapi::mkl::diag &&
 // CHECK-NEXT:     T8_40 a1;
 // CHECK-NEXT:     T8_41 a2;
 // CHECK-NEXT:     T8_42 a3=a1;
@@ -1513,10 +1513,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_44 mkl::side
-// CHECK-NEXT: #define T8_45 mkl::side *
-// CHECK-NEXT: #define T8_46 mkl::side &
-// CHECK-NEXT: #define T8_47 mkl::side &&
+// CHECK: #define T8_44 oneapi::mkl::side
+// CHECK-NEXT: #define T8_45 oneapi::mkl::side *
+// CHECK-NEXT: #define T8_46 oneapi::mkl::side &
+// CHECK-NEXT: #define T8_47 oneapi::mkl::side &&
 // CHECK-NEXT:     T8_44 a1;
 // CHECK-NEXT:     T8_45 a2;
 // CHECK-NEXT:     T8_46 a3=a1;
@@ -1533,10 +1533,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_48 mkl::transpose
-// CHECK-NEXT: #define T8_49 mkl::transpose *
-// CHECK-NEXT: #define T8_50 mkl::transpose &
-// CHECK-NEXT: #define T8_51 mkl::transpose &&
+// CHECK: #define T8_48 oneapi::mkl::transpose
+// CHECK-NEXT: #define T8_49 oneapi::mkl::transpose *
+// CHECK-NEXT: #define T8_50 oneapi::mkl::transpose &
+// CHECK-NEXT: #define T8_51 oneapi::mkl::transpose &&
 // CHECK-NEXT:     T8_48 a1;
 // CHECK-NEXT:     T8_49 a2;
 // CHECK-NEXT:     T8_50 a3=a1;
@@ -1619,10 +1619,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_64 mkl::job
-// CHECK-NEXT: #define T8_65 mkl::job *
-// CHECK-NEXT: #define T8_66 mkl::job &
-// CHECK-NEXT: #define T8_67 mkl::job &&
+// CHECK: #define T8_64 oneapi::mkl::job
+// CHECK-NEXT: #define T8_65 oneapi::mkl::job *
+// CHECK-NEXT: #define T8_66 oneapi::mkl::job &
+// CHECK-NEXT: #define T8_67 oneapi::mkl::job &&
 // CHECK-NEXT:     T8_64 a1;
 // CHECK-NEXT:     T8_65 a2;
 // CHECK-NEXT:     T8_66 a3=a1;
@@ -1777,37 +1777,37 @@ template <> void foo2(cuDoubleComplex){}
 template <> void foo3(cuDoubleComplex){}
 template <> void foo4(cuDoubleComplex){}
 
-// CHECK: template <> void foo1(mkl::uplo){}
-// CHECK-NEXT: template <> void foo2(mkl::uplo){}
-// CHECK-NEXT: template <> void foo3(mkl::uplo){}
-// CHECK-NEXT: template <> void foo4(mkl::uplo){}
+// CHECK: template <> void foo1(oneapi::mkl::uplo){}
+// CHECK-NEXT: template <> void foo2(oneapi::mkl::uplo){}
+// CHECK-NEXT: template <> void foo3(oneapi::mkl::uplo){}
+// CHECK-NEXT: template <> void foo4(oneapi::mkl::uplo){}
 template <> void foo1(cublasFillMode_t){}
 template <> void foo2(cublasFillMode_t){}
 template <> void foo3(cublasFillMode_t){}
 template <> void foo4(cublasFillMode_t){}
 
-// CHECK: template <> void foo1(mkl::diag){}
-// CHECK-NEXT: template <> void foo2(mkl::diag){}
-// CHECK-NEXT: template <> void foo3(mkl::diag){}
-// CHECK-NEXT: template <> void foo4(mkl::diag){}
+// CHECK: template <> void foo1(oneapi::mkl::diag){}
+// CHECK-NEXT: template <> void foo2(oneapi::mkl::diag){}
+// CHECK-NEXT: template <> void foo3(oneapi::mkl::diag){}
+// CHECK-NEXT: template <> void foo4(oneapi::mkl::diag){}
 template <> void foo1(cublasDiagType_t){}
 template <> void foo2(cublasDiagType_t){}
 template <> void foo3(cublasDiagType_t){}
 template <> void foo4(cublasDiagType_t){}
 
-// CHECK: template <> void foo1(mkl::side){}
-// CHECK-NEXT: template <> void foo2(mkl::side){}
-// CHECK-NEXT: template <> void foo3(mkl::side){}
-// CHECK-NEXT: template <> void foo4(mkl::side){}
+// CHECK: template <> void foo1(oneapi::mkl::side){}
+// CHECK-NEXT: template <> void foo2(oneapi::mkl::side){}
+// CHECK-NEXT: template <> void foo3(oneapi::mkl::side){}
+// CHECK-NEXT: template <> void foo4(oneapi::mkl::side){}
 template <> void foo1(cublasSideMode_t){}
 template <> void foo2(cublasSideMode_t){}
 template <> void foo3(cublasSideMode_t){}
 template <> void foo4(cublasSideMode_t){}
 
-// CHECK: template <> void foo1(mkl::transpose){}
-// CHECK-NEXT: template <> void foo2(mkl::transpose){}
-// CHECK-NEXT: template <> void foo3(mkl::transpose){}
-// CHECK-NEXT: template <> void foo4(mkl::transpose){}
+// CHECK: template <> void foo1(oneapi::mkl::transpose){}
+// CHECK-NEXT: template <> void foo2(oneapi::mkl::transpose){}
+// CHECK-NEXT: template <> void foo3(oneapi::mkl::transpose){}
+// CHECK-NEXT: template <> void foo4(oneapi::mkl::transpose){}
 template <> void foo1(cublasOperation_t){}
 template <> void foo2(cublasOperation_t){}
 template <> void foo3(cublasOperation_t){}
@@ -1840,10 +1840,10 @@ template <> void foo2(cusolverEigType_t){}
 template <> void foo3(cusolverEigType_t){}
 template <> void foo4(cusolverEigType_t){}
 
-// CHECK: template <> void foo1(mkl::job){}
-// CHECK-NEXT: template <> void foo2(mkl::job){}
-// CHECK-NEXT: template <> void foo3(mkl::job){}
-// CHECK-NEXT: template <> void foo4(mkl::job){}
+// CHECK: template <> void foo1(oneapi::mkl::job){}
+// CHECK-NEXT: template <> void foo2(oneapi::mkl::job){}
+// CHECK-NEXT: template <> void foo3(oneapi::mkl::job){}
+// CHECK-NEXT: template <> void foo4(oneapi::mkl::job){}
 template <> void foo1(cusolverEigMode_t){}
 template <> void foo2(cusolverEigMode_t){}
 template <> void foo3(cusolverEigMode_t){}

@@ -216,8 +216,8 @@ int main(int argc, char **argv) {
   a = sizeof(doubleComplex);
   a = sizeof doubleComplex;
 
-  //CHECK:mkl::uplo fill;
-  //CHECK-NEXT:a = sizeof(mkl::uplo);
+  //CHECK:oneapi::mkl::uplo fill;
+  //CHECK-NEXT:a = sizeof(oneapi::mkl::uplo);
   //CHECK-NEXT:a = sizeof(fill);
   //CHECK-NEXT:a = sizeof fill;
   cublasFillMode_t fill;
@@ -225,8 +225,8 @@ int main(int argc, char **argv) {
   a = sizeof(fill);
   a = sizeof fill;
 
-  //CHECK:mkl::diag diag;
-  //CHECK-NEXT:a = sizeof(mkl::diag);
+  //CHECK:oneapi::mkl::diag diag;
+  //CHECK-NEXT:a = sizeof(oneapi::mkl::diag);
   //CHECK-NEXT:a = sizeof(diag);
   //CHECK-NEXT:a = sizeof diag;
   cublasDiagType_t diag;
@@ -234,8 +234,8 @@ int main(int argc, char **argv) {
   a = sizeof(diag);
   a = sizeof diag;
 
-  //CHECK:mkl::side side;
-  //CHECK-NEXT:a = sizeof(mkl::side);
+  //CHECK:oneapi::mkl::side side;
+  //CHECK-NEXT:a = sizeof(oneapi::mkl::side);
   //CHECK-NEXT:a = sizeof(side);
   //CHECK-NEXT:a = sizeof side;
   cublasSideMode_t side;
@@ -243,8 +243,8 @@ int main(int argc, char **argv) {
   a = sizeof(side);
   a = sizeof side;
 
-  //CHECK:mkl::transpose oper;
-  //CHECK-NEXT:a = sizeof(mkl::transpose);
+  //CHECK:oneapi::mkl::transpose oper;
+  //CHECK-NEXT:a = sizeof(oneapi::mkl::transpose);
   //CHECK-NEXT:a = sizeof(oper);
   //CHECK-NEXT:a = sizeof oper;
   cublasOperation_t oper;
@@ -279,8 +279,8 @@ int main(int argc, char **argv) {
   a = sizeof(eigtype);
   a = sizeof eigtype;
 
-  //CHECK:mkl::job eigmode;
-  //CHECK-NEXT:a = sizeof(mkl::job);
+  //CHECK:oneapi::mkl::job eigmode;
+  //CHECK-NEXT:a = sizeof(oneapi::mkl::job);
   //CHECK-NEXT:a = sizeof(eigmode);
   //CHECK-NEXT:a = sizeof eigmode;
   cusolverEigMode_t eigmode;

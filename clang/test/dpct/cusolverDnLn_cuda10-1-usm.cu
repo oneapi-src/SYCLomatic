@@ -43,28 +43,28 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda), 0);
     status = cusolverDnSpotri_bufferSize(*cusolverH, uplo, n, &A_f, lda, &Lwork);
     status = cusolverDnDpotri_bufferSize(*cusolverH, uplo, n, &A_d, lda, &Lwork);
     status = cusolverDnCpotri_bufferSize(*cusolverH, uplo, n, &A_c, lda, &Lwork);
     status = cusolverDnZpotri_bufferSize(*cusolverH, uplo, n, &A_z, lda, &Lwork);
 
-    //CHECK: mkl::lapack::potri(**cusolverH, uplo, n, (float*)&A_f, lda, (float*)&workspace_f, Lwork);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, (double*)&A_d, lda, (double*)&workspace_d, Lwork);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, (std::complex<float>*)&A_c, lda, (std::complex<float>*)&workspace_c, Lwork);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, (std::complex<double>*)&A_z, lda, (std::complex<double>*)&workspace_z, Lwork);
+    //CHECK: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, (float*)&A_f, lda, (float*)&workspace_f, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, (double*)&A_d, lda, (double*)&workspace_d, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, (std::complex<float>*)&A_c, lda, (std::complex<float>*)&workspace_c, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, (std::complex<double>*)&A_z, lda, (std::complex<double>*)&workspace_z, Lwork);
     cusolverDnSpotri(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
     cusolverDnDpotri(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
     cusolverDnCpotri(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);

@@ -43,19 +43,19 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda), 0);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda), 0);
+    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda), 0);
     status = cusolverDnSpotri_bufferSize(*cusolverH, uplo, n, &A_f, lda, &Lwork);
     status = cusolverDnDpotri_bufferSize(*cusolverH, uplo, n, &A_d, lda, &Lwork);
     status = cusolverDnCpotri_bufferSize(*cusolverH, uplo, n, &A_c, lda, &Lwork);
@@ -67,12 +67,12 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (mkl::lapack::potri(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSpotri(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
     cusolverDnSpotri(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
@@ -83,12 +83,12 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (mkl::lapack::potri(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDpotri(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
     cusolverDnDpotri(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
@@ -99,12 +99,12 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (mkl::lapack::potri(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCpotri(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
     cusolverDnCpotri(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (mkl::lapack::potri(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: mkl::lapack::potri(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::potri(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZpotri(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);
     cusolverDnZpotri(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);

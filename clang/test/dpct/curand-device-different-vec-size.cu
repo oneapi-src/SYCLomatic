@@ -14,17 +14,17 @@ __global__ void picount(int *totals) {
   __shared__ int counter[WARP_SIZE];
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-  //CHECK: mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/> rng;
-  //CHECK: rng = mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/>(clock64(), {1234 * PlaceHolder/*Fix the vec_size mannually*/, static_cast<std::uint64_t>(tid * 8)});
+  //CHECK: oneapi::mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/> rng;
+  //CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<PlaceHolder/*Fix the vec_size mannually*/>(clock64(), {1234 * PlaceHolder/*Fix the vec_size mannually*/, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: mkl::rng::device::uniform<float> distr_ct{{[0-9]+}};
-    //CHECK-NEXT: float x = mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
-    //CHECK-NEXT: sycl::float2 y = mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
+    //CHECK: oneapi::mkl::rng::device::uniform<float> distr_ct{{[0-9]+}};
+    //CHECK-NEXT: float x = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
+    //CHECK-NEXT: sycl::float2 y = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
     float x = curand_uniform(&rng);
     float2 y = curand_normal2(&rng);
     counter[threadIdx.x] += 1 - int(x * x + y.x * y.x);

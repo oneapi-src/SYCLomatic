@@ -27,26 +27,26 @@ cuDoubleComplex foo3(cuDoubleComplex m) {
   return make_cuDoubleComplex(1, 0);
 }
 
-// CHECK: mkl::transpose foo4(mkl::transpose m) {
+// CHECK: oneapi::mkl::transpose foo4(oneapi::mkl::transpose m) {
 cublasOperation_t foo4(cublasOperation_t m) {
-  // CHECK: return mkl::transpose::conjtrans;
+  // CHECK: return oneapi::mkl::transpose::conjtrans;
   return CUBLAS_OP_C;
 }
 
-// CHECK: mkl::uplo foo5(mkl::uplo m) {
+// CHECK: oneapi::mkl::uplo foo5(oneapi::mkl::uplo m) {
 cublasFillMode_t foo5(cublasFillMode_t m) {
-  // CHECK: return mkl::uplo::lower;
+  // CHECK: return oneapi::mkl::uplo::lower;
   return CUBLAS_FILL_MODE_LOWER;
 }
 
-// CHECK: mkl::side foo6(mkl::side m) {
+// CHECK: oneapi::mkl::side foo6(oneapi::mkl::side m) {
 cublasSideMode_t foo6(cublasSideMode_t m) {
-  // CHECK: return mkl::side::right;
+  // CHECK: return oneapi::mkl::side::right;
   return CUBLAS_SIDE_RIGHT;
 }
 
-// CHECK: mkl::diag foo7(mkl::diag m) {
+// CHECK: oneapi::mkl::diag foo7(oneapi::mkl::diag m) {
 cublasDiagType_t foo7(cublasDiagType_t m) {
-  // CHECK: return mkl::diag::nonunit;
+  // CHECK: return oneapi::mkl::diag::nonunit;
   return CUBLAS_DIAG_NON_UNIT;
 }

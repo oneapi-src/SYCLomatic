@@ -93,7 +93,7 @@ typedef struct
   int Cores;
 } sSMtoCores;
 
-     //CHECK:#define macro_a (mkl::transpose)1
-//CHECK-NEXT:void foo7(){ mkl::transpose a = macro_a; }
+     //CHECK:#define macro_a (oneapi::mkl::transpose)1
+//CHECK-NEXT:void foo7(){ oneapi::mkl::transpose a = macro_a; }
 #define macro_a (cublasOperation_t)1
 void foo7(){ cublasOperation_t a = macro_a; }

@@ -5,23 +5,23 @@
 #include <cuda_runtime.h>
 
 int main(){
-  //CHECK: mkl::uplo a1;
-  //CHECK-NEXT: a1 = mkl::uplo::lower;
-  //CHECK-NEXT: a1 = mkl::uplo::upper;
+  //CHECK: oneapi::mkl::uplo a1;
+  //CHECK-NEXT: a1 = oneapi::mkl::uplo::lower;
+  //CHECK-NEXT: a1 = oneapi::mkl::uplo::upper;
   cusparseFillMode_t a1;
   a1 = CUSPARSE_FILL_MODE_LOWER;
   a1 = CUSPARSE_FILL_MODE_UPPER;
 
-  //CHECK: mkl::diag a2;
-  //CHECK-NEXT: a2 = mkl::diag::nonunit;
-  //CHECK-NEXT: a2 = mkl::diag::unit;
+  //CHECK: oneapi::mkl::diag a2;
+  //CHECK-NEXT: a2 = oneapi::mkl::diag::nonunit;
+  //CHECK-NEXT: a2 = oneapi::mkl::diag::unit;
   cusparseDiagType_t a2;
   a2 = CUSPARSE_DIAG_TYPE_NON_UNIT;
   a2 = CUSPARSE_DIAG_TYPE_UNIT;
 
-  //CHECK: mkl::index_base a3;
-  //CHECK-NEXT: a3 = mkl::index_base::zero;
-  //CHECK-NEXT: a3 = mkl::index_base::one;
+  //CHECK: oneapi::mkl::index_base a3;
+  //CHECK-NEXT: a3 = oneapi::mkl::index_base::zero;
+  //CHECK-NEXT: a3 = oneapi::mkl::index_base::one;
   cusparseIndexBase_t a3;
   a3 = CUSPARSE_INDEX_BASE_ZERO;
   a3 = CUSPARSE_INDEX_BASE_ONE;
@@ -37,10 +37,10 @@ int main(){
   a4 = CUSPARSE_MATRIX_TYPE_HERMITIAN;
   a4 = CUSPARSE_MATRIX_TYPE_TRIANGULAR;
 
-  //CHECK: mkl::transpose a5;
-  //CHECK-NEXT: a5 = mkl::transpose::nontrans;
-  //CHECK-NEXT: a5 = mkl::transpose::trans;
-  //CHECK-NEXT: a5 = mkl::transpose::conjtrans;
+  //CHECK: oneapi::mkl::transpose a5;
+  //CHECK-NEXT: a5 = oneapi::mkl::transpose::nontrans;
+  //CHECK-NEXT: a5 = oneapi::mkl::transpose::trans;
+  //CHECK-NEXT: a5 = oneapi::mkl::transpose::conjtrans;
   cusparseOperation_t a5;
   a5 = CUSPARSE_OPERATION_NON_TRANSPOSE;
   a5 = CUSPARSE_OPERATION_TRANSPOSE;
@@ -69,20 +69,20 @@ int main(){
   a6 = CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED;
   a6 = CUSPARSE_STATUS_ZERO_PIVOT;
 
-  //CHECK: mkl::index_base a7;
+  //CHECK: oneapi::mkl::index_base a7;
   cusparseMatDescr_t a7;
 
   //CHECK: sycl::queue* a8;
   cusparseHandle_t a8;
 }
 
-//CHECK: void foo(mkl::uplo a1,
-//CHECK-NEXT:     mkl::diag a2,
-//CHECK-NEXT:     mkl::index_base a3,
+//CHECK: void foo(oneapi::mkl::uplo a1,
+//CHECK-NEXT:     oneapi::mkl::diag a2,
+//CHECK-NEXT:     oneapi::mkl::index_base a3,
 //CHECK-NEXT:     int a4,
-//CHECK-NEXT:     mkl::transpose a5,
+//CHECK-NEXT:     oneapi::mkl::transpose a5,
 //CHECK-NEXT:     int a6,
-//CHECK-NEXT:     mkl::index_base a7,
+//CHECK-NEXT:     oneapi::mkl::index_base a7,
 //CHECK-NEXT:     sycl::queue* a8);
 void foo(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
@@ -93,13 +93,13 @@ void foo(cusparseFillMode_t a1,
          cusparseMatDescr_t a7,
          cusparseHandle_t a8);
 
-//CHECK:mkl::uplo foo1();
-//CHECK-NEXT:mkl::diag foo2();
-//CHECK-NEXT:mkl::index_base foo3();
+//CHECK:oneapi::mkl::uplo foo1();
+//CHECK-NEXT:oneapi::mkl::diag foo2();
+//CHECK-NEXT:oneapi::mkl::index_base foo3();
 //CHECK-NEXT:int foo4();
-//CHECK-NEXT:mkl::transpose foo5();
+//CHECK-NEXT:oneapi::mkl::transpose foo5();
 //CHECK-NEXT:int foo6();
-//CHECK-NEXT:mkl::index_base foo7();
+//CHECK-NEXT:oneapi::mkl::index_base foo7();
 //CHECK-NEXT:sycl::queue* foo8();
 cusparseFillMode_t foo1();
 cusparseDiagType_t foo2();
@@ -111,13 +111,13 @@ cusparseMatDescr_t foo7();
 cusparseHandle_t foo8();
 
 //CHECK:template<typename T>
-//CHECK-NEXT:void bar1(mkl::uplo a1,
-//CHECK-NEXT:          mkl::diag a2,
-//CHECK-NEXT:          mkl::index_base a3,
+//CHECK-NEXT:void bar1(oneapi::mkl::uplo a1,
+//CHECK-NEXT:          oneapi::mkl::diag a2,
+//CHECK-NEXT:          oneapi::mkl::index_base a3,
 //CHECK-NEXT:          int a4,
-//CHECK-NEXT:          mkl::transpose a5,
+//CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          mkl::index_base a7,
+//CHECK-NEXT:          oneapi::mkl::index_base a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar1(cusparseFillMode_t a1,
@@ -130,13 +130,13 @@ void bar1(cusparseFillMode_t a1,
          cusparseHandle_t a8){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:void bar2(mkl::uplo a1,
-//CHECK-NEXT:          mkl::diag a2,
-//CHECK-NEXT:          mkl::index_base a3,
+//CHECK-NEXT:void bar2(oneapi::mkl::uplo a1,
+//CHECK-NEXT:          oneapi::mkl::diag a2,
+//CHECK-NEXT:          oneapi::mkl::index_base a3,
 //CHECK-NEXT:          int a4,
-//CHECK-NEXT:          mkl::transpose a5,
+//CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          mkl::index_base a7,
+//CHECK-NEXT:          oneapi::mkl::index_base a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar2(cusparseFillMode_t a1,
@@ -150,13 +150,13 @@ void bar2(cusparseFillMode_t a1,
 
 // specialization
 //CHECK:template<>
-//CHECK-NEXT:void bar2<double>(mkl::uplo a1,
-//CHECK-NEXT:             mkl::diag a2,
-//CHECK-NEXT:             mkl::index_base a3,
+//CHECK-NEXT:void bar2<double>(oneapi::mkl::uplo a1,
+//CHECK-NEXT:             oneapi::mkl::diag a2,
+//CHECK-NEXT:             oneapi::mkl::index_base a3,
 //CHECK-NEXT:             int a4,
-//CHECK-NEXT:             mkl::transpose a5,
+//CHECK-NEXT:             oneapi::mkl::transpose a5,
 //CHECK-NEXT:             int a6,
-//CHECK-NEXT:             mkl::index_base a7,
+//CHECK-NEXT:             oneapi::mkl::index_base a7,
 //CHECK-NEXT:             sycl::queue* a8){}
 template<>
 void bar2<double>(cusparseFillMode_t a1,

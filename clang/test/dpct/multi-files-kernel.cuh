@@ -35,13 +35,13 @@ void sgemm() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
 }
 
 // CHECK: void randomGen(){
-// CHECK-NEXT:   mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
+// CHECK-NEXT:   oneapi::mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the function call is redundant in DPC++.
 // CHECK-NEXT:   */
@@ -51,8 +51,8 @@ void sgemm() {
 // CHECK-NEXT:   float *d_data;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-// CHECK-NEXT:   mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-// CHECK-NEXT:   mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_buf_ct4);
+// CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+// CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_buf_ct4);
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 void randomGen(){

@@ -3312,7 +3312,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       EA.analyze(CE->getArg(0));
       LHS = "*(" + EA.getReplacedString() + ")";
     }
-    Repl = LHS + " = mkl::index_base::zero";
+    Repl = LHS + " = oneapi::mkl::index_base::zero";
   } else if (FuncName == "cusparseDestroyMatDescr" ||
              FuncName == "cusparseGetPointerMode" ||
              FuncName == "cusparseSetPointerMode" ||
@@ -3345,10 +3345,10 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              Msg);
       if (FuncName == "cusparseGetMatDiagType")
         emplaceTransformation(
-            new ReplaceStmt(CE, false, FuncName, false, "(mkl::diag)0"));
+            new ReplaceStmt(CE, false, FuncName, false, "(oneapi::mkl::diag)0"));
       else if (FuncName == "cusparseGetMatFillMode")
         emplaceTransformation(
-            new ReplaceStmt(CE, false, FuncName, false, "(mkl::uplo)0"));
+            new ReplaceStmt(CE, false, FuncName, false, "(oneapi::mkl::uplo)0"));
       else
         emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
     } else {
@@ -3370,9 +3370,9 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
         int64_t Value = ER.Val.getInt().getExtValue();
         if (Value == 0)
-          Repl = Repl + "mkl::index_base::zero";
+          Repl = Repl + "oneapi::mkl::index_base::zero";
         else
-          Repl = Repl + "mkl::index_base::one";
+          Repl = Repl + "oneapi::mkl::index_base::one";
       } else {
         Repl = Repl + EA1.getReplacedString();
       }
@@ -3431,19 +3431,19 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string MatrixHandleName =
         "mat_handle_ct" +
         std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::matrix_handle_t " +
+    PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::matrix_handle_t " +
                       MatrixHandleName + ";" + getNL() + IndentStr;
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::init_matrix_handle(&" +
+    PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::init_matrix_handle(&" +
                       MatrixHandleName + ");" + getNL() + IndentStr;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       PrefixInsertStr =
-          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+          PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
           CallExprArguReplVec[6] + ", " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
+        PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
                           MatrixHandleName + ", " + CallExprArguReplVec[2] +
                           ", " + CallExprArguReplVec[3] + ", " +
                           CallExprArguReplVec[6] + ", const_cast<int*>(" +
@@ -3452,14 +3452,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           "));" + getNL() + IndentStr;
       else
         PrefixInsertStr =
-            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+            PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] +
             ", " + CallExprArguReplVec[6] + ", const_cast<int*>(" +
             CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
             BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
     SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
-                      "mkl::sparse::release_matrix_handle(&" +
+                      "oneapi::mkl::sparse::release_matrix_handle(&" +
                       MatrixHandleName + ");";
 
     std::string TransStr;
@@ -3467,11 +3467,11 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        TransStr = "mkl::transpose::nontrans";
+        TransStr = "oneapi::mkl::transpose::nontrans";
       } else if (Value == 1) {
-        TransStr = "mkl::transpose::trans";
+        TransStr = "oneapi::mkl::transpose::trans";
       } else {
-        TransStr = "mkl::transpose::conjtrans";
+        TransStr = "oneapi::mkl::transpose::conjtrans";
       }
     } else {
       const CStyleCastExpr *CSCE = nullptr;
@@ -3484,21 +3484,21 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
+      Repl = "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " + TransStr +
              ", " + "dpct::get_value(" + CallExprArguReplVec[5] + ", *" +
              CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + X +
              ", " + "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
              CallExprArguReplVec[0] + "), " + Y + ")";
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
+        Repl = "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
                TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
                ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
                ", const_cast<" + BufferType + "*>(" + X + "), " +
                "dpct::get_value(" + CallExprArguReplVec[11] + ", *" +
                CallExprArguReplVec[0] + "), " + Y + ")";
       else
-        Repl = "mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
+        Repl = "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
                TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[5] +
                ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
                ", (" + BufferType + "*)" + X + ", " + "dpct::get_value(" +
@@ -3549,19 +3549,19 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string MatrixHandleName =
         "mat_handle_ct" +
         std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::matrix_handle_t " +
+    PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::matrix_handle_t " +
                       MatrixHandleName + ";" + getNL() + IndentStr;
-    PrefixInsertStr = PrefixInsertStr + "mkl::sparse::init_matrix_handle(&" +
+    PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::init_matrix_handle(&" +
                       MatrixHandleName + ");" + getNL() + IndentStr;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       PrefixInsertStr =
-          PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+          PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" + MatrixHandleName +
           ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] + ", " +
           CallExprArguReplVec[7] + ", " + CSRRowPtrA + ", " + CSRColIndA +
           ", " + CSRValA + ");" + getNL() + IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        PrefixInsertStr = PrefixInsertStr + "mkl::sparse::set_csr_data(" +
+        PrefixInsertStr = PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
                           MatrixHandleName + ", " + CallExprArguReplVec[2] +
                           ", " + CallExprArguReplVec[4] + ", " +
                           CallExprArguReplVec[7] + ", const_cast<int*>(" +
@@ -3570,14 +3570,14 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           "));" + getNL() + IndentStr;
       else
         PrefixInsertStr =
-            PrefixInsertStr + "mkl::sparse::set_csr_data(" + MatrixHandleName +
+            PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" + MatrixHandleName +
             ", " + CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] +
             ", " + CallExprArguReplVec[7] + ", const_cast<int*>(" +
             CSRRowPtrA + "), const_cast<int*>(" + CSRColIndA + "), (" +
             BufferType + "*)" + CSRValA + ");" + getNL() + IndentStr;
     }
     SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
-                      "mkl::sparse::release_matrix_handle(&" +
+                      "oneapi::mkl::sparse::release_matrix_handle(&" +
                       MatrixHandleName + ");";
 
     std::string TransStr;
@@ -3585,11 +3585,11 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        TransStr = "mkl::transpose::nontrans";
+        TransStr = "oneapi::mkl::transpose::nontrans";
       } else if (Value == 1) {
-        TransStr = "mkl::transpose::trans";
+        TransStr = "oneapi::mkl::transpose::trans";
       } else {
-        TransStr = "mkl::transpose::conjtrans";
+        TransStr = "oneapi::mkl::transpose::conjtrans";
       }
     } else {
       const CStyleCastExpr *CSCE = nullptr;
@@ -3602,7 +3602,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " + TransStr +
+      Repl = "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " + TransStr +
              ", " + "dpct::get_value(" + CallExprArguReplVec[6] + ", *" +
              CallExprArguReplVec[0] + "), " + MatrixHandleName + ", " + B +
              ", " + CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] +
@@ -3611,7 +3611,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              CallExprArguReplVec[15] + ")";
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
+        Repl = "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
                TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[6] +
                ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
                ", const_cast<" + BufferType + "*>(" + B + "), " +
@@ -3620,7 +3620,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                CallExprArguReplVec[0] + "), " + C + ", " +
                CallExprArguReplVec[15] + ")";
       else
-        Repl = "mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
+        Repl = "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
                TransStr + ", " + "dpct::get_value(" + CallExprArguReplVec[6] +
                ", *" + CallExprArguReplVec[0] + "), " + MatrixHandleName +
                ", (" + BufferType + "*)" + B + ", " + CallExprArguReplVec[3] +
@@ -4007,11 +4007,11 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
 
     if (REInfo && (REInfo->isClassMember() || REInfo->isArray())) {
-      ReplStr = "mkl::rng::generate(" + DistrName + ", *" +
+      ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", *" +
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
                 ", " + Data + ")";
     } else {
-      ReplStr = "mkl::rng::generate(" + DistrName + ", " +
+      ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
                 ", " + Data + ")";
     }
@@ -4079,7 +4079,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
     std::string Repl =
-        "mkl::rng::skip_ahead(" + getStmtSpelling(CE->getArg(0)) + ", ";
+        "oneapi::mkl::rng::skip_ahead(" + getStmtSpelling(CE->getArg(0)) + ", ";
     ExprAnalysis EO;
     EO.analyze(CE->getArg(1));
     Repl = Repl + EO.getReplacedString() + ")";
@@ -4186,25 +4186,25 @@ void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
+          "oneapi::mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
           IndentStr);
     } else if (FuncName == "curand_normal2") {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
+          "oneapi::mkl::rng::device::uniform", "float", DistrIndentStr, DrefedStateName,
           IndentStr);
     } else if (FuncName == "curand_normal2_double") {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "mkl::rng::device::uniform", "double", DistrIndentStr,
+          "oneapi::mkl::rng::device::uniform", "double", DistrIndentStr,
           DrefedStateName, IndentStr);
     } else if (FuncName == "curand_normal_double") {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "mkl::rng::device::uniform", "double", DistrIndentStr,
+          "oneapi::mkl::rng::device::uniform", "double", DistrIndentStr,
           DrefedStateName, IndentStr);
     }
   }
@@ -4566,11 +4566,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (CE->getArg(1)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
       else
-        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {1});
+        declareTempVars({"oneapi::mkl::transpose"}, {"transpose_ct"}, {1});
       if (CE->getArg(2)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
       else
-        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {2});
+        declareTempVars({"oneapi::mkl::transpose"}, {"transpose_ct"}, {2});
 
       declareTempVars("int64_t",
                       {"m_ct", "n_ct", "k_ct", "lda_ct", "ldb_ct", "ldc_ct",
@@ -4586,19 +4586,19 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (CE->getArg(1)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[1] = "&" + CallExprArguReplVec[1];
       else
-        declareTempVars({"mkl::side"}, {"side_ct"}, {1});
+        declareTempVars({"oneapi::mkl::side"}, {"side_ct"}, {1});
       if (CE->getArg(2)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[2] = "&" + CallExprArguReplVec[2];
       else
-        declareTempVars({"mkl::uplo"}, {"uplo_ct"}, {2});
+        declareTempVars({"oneapi::mkl::uplo"}, {"uplo_ct"}, {2});
       if (CE->getArg(3)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[3] = "&" + CallExprArguReplVec[3];
       else
-        declareTempVars({"mkl::transpose"}, {"transpose_ct"}, {3});
+        declareTempVars({"oneapi::mkl::transpose"}, {"transpose_ct"}, {3});
       if (CE->getArg(4)->IgnoreImplicit()->isLValue())
         CallExprArguReplVec[2] = "&" + CallExprArguReplVec[4];
       else
-        declareTempVars({"mkl::diag"}, {"diag_ct"}, {4});
+        declareTempVars({"oneapi::mkl::diag"}, {"diag_ct"}, {4});
 
       declareTempVars("int64_t",
                       {"m_ct", "n_ct", "lda_ct", "ldb_ct", "group_size_ct"},
@@ -4724,7 +4724,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         // if the expr has side effect, use the temp variable name which returns
         // from processParamIntCastToBLASEnum()
         InsertStr = "(int)" + TransTempVarName +
-                    "==0 ? mkl::transpose::trans : mkl::transpose::nontrans";
+                    "==0 ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans";
       } else {
         // if the expr hasn't side effect, use the sub-expr to decide the
         // inserting argument
@@ -4750,18 +4750,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           // replacement directly.
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value == 0) {
-            InsertStr = "mkl::transpose::trans";
+            InsertStr = "oneapi::mkl::transpose::trans";
           } else if (Value == 1) {
-            InsertStr = "mkl::transpose::nontrans";
+            InsertStr = "oneapi::mkl::transpose::nontrans";
           } else {
             InsertStr = SubExprStr +
-                "==0 ? mkl::transpose::trans : mkl::transpose::nontrans";
+                "==0 ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans";
           }
         } else {
           // if the sub-expr cannot be evaluated, use the conditional operator
           SubExprStr = IsTypeCastInMacro ? "(int)" + SubExprStr : SubExprStr;
           InsertStr = SubExprStr +
-                      "==0 ? mkl::transpose::trans : mkl::transpose::nontrans";
+                      "==0 ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans";
         }
       }
     } else {
@@ -4771,8 +4771,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         // if the expr has side effect, use the temp variable name which
         // generated in the previous step.
         InsertStr = TransTempVarName +
-                    "==mkl::transpose::nontrans ? mkl::transpose::trans : "
-                    "mkl::transpose::nontrans";
+                    "==oneapi::mkl::transpose::nontrans ? oneapi::mkl::transpose::trans : "
+                    "oneapi::mkl::transpose::nontrans";
       } else {
         // The expr hasn't side effect, if the enumeration is literal, then
         // generate the corresponding replacement directly, if not, use the
@@ -4782,14 +4782,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         if (TransPair != MapNames::BLASEnumsMap.end()) {
           TransStr = TransPair->second;
         }
-        if (TransStr == "mkl::transpose::nontrans") {
-          InsertStr = "mkl::transpose::trans";
-        } else if (TransStr == "mkl::transpose::trans") {
-          InsertStr = "mkl::transpose::nontrans";
+        if (TransStr == "oneapi::mkl::transpose::nontrans") {
+          InsertStr = "oneapi::mkl::transpose::trans";
+        } else if (TransStr == "oneapi::mkl::transpose::trans") {
+          InsertStr = "oneapi::mkl::transpose::nontrans";
         } else {
           InsertStr =
-              TransStr + "==mkl::transpose::nontrans ? mkl::transpose::trans : "
-                         "mkl::transpose::nontrans";
+              TransStr + "==oneapi::mkl::transpose::nontrans ? oneapi::mkl::transpose::trans : "
+                         "oneapi::mkl::transpose::nontrans";
         }
       }
     }
@@ -4965,7 +4965,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasSgemmEx" || FuncName == "cublasCgemmEx") {
-    std::string Replacement = "mkl::blas::gemm";
+    std::string Replacement = "oneapi::mkl::blas::gemm";
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
@@ -5087,7 +5087,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasGemmEx") {
-    std::string Replacement = "mkl::blas::gemm";
+    std::string Replacement = "oneapi::mkl::blas::gemm";
      if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
@@ -5531,11 +5531,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             !CE->getArg(i)->getBeginLoc().isMacroID()) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value == 'N' || Value == 'n') {
-            CallExprReplStr = CallExprReplStr + ", mkl::transpose::nontrans";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::transpose::nontrans";
           } else if (Value == 'T' || Value == 't') {
-            CallExprReplStr = CallExprReplStr + ", mkl::transpose::trans";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::transpose::trans";
           } else {
-            CallExprReplStr = CallExprReplStr + ", mkl::transpose::conjtrans";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::transpose::conjtrans";
           }
         } else {
           std::string TransParamName;
@@ -5551,10 +5551,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           }
           CallExprReplStr = CallExprReplStr + ", " + "(" + TransParamName +
                             "=='N'||" + TransParamName +
-                            "=='n') ? mkl::transpose::nontrans: ((" +
+                            "=='n') ? oneapi::mkl::transpose::nontrans: ((" +
                             TransParamName + "=='T'||" + TransParamName +
-                            "=='t') ? mkl::transpose::"
-                            "trans : mkl::transpose::conjtrans)";
+                            "=='t') ? oneapi::mkl::transpose::"
+                            "trans : oneapi::mkl::transpose::conjtrans)";
         }
       } else if (ReplInfo.FillModeIndexInfo == i) {
         Expr::EvalResult ER;
@@ -5562,9 +5562,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             !CE->getArg(i)->getBeginLoc().isMacroID()) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value == 'U' || Value == 'u') {
-            CallExprReplStr = CallExprReplStr + ", mkl::uplo::upper";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::uplo::upper";
           } else {
-            CallExprReplStr = CallExprReplStr + ", mkl::uplo::lower";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::uplo::lower";
           }
         } else {
           std::string FillParamName;
@@ -5580,7 +5580,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           }
           CallExprReplStr = CallExprReplStr + ", " + "(" + FillParamName +
                             "=='L'||" + FillParamName +
-                            "=='l') ? mkl::uplo::lower : mkl::uplo::upper";
+                            "=='l') ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper";
         }
       } else if (ReplInfo.SideModeIndexInfo == i) {
         Expr::EvalResult ER;
@@ -5588,9 +5588,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             !CE->getArg(i)->getBeginLoc().isMacroID()) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value == 'L' || Value == 'l') {
-            CallExprReplStr = CallExprReplStr + ", mkl::side::left";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::side::left";
           } else {
-            CallExprReplStr = CallExprReplStr + ", mkl::side::right";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::side::right";
           }
         } else {
           std::string SideParamName;
@@ -5606,7 +5606,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           }
           CallExprReplStr = CallExprReplStr + ", " + "(" + SideParamName +
                             "=='L'||" + SideParamName +
-                            "=='l') ? mkl::side::left : mkl::side::right";
+                            "=='l') ? oneapi::mkl::side::left : oneapi::mkl::side::right";
         }
       } else if (ReplInfo.DiagTypeIndexInfo == i) {
         Expr::EvalResult ER;
@@ -5614,9 +5614,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             !CE->getArg(i)->getBeginLoc().isMacroID()) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value == 'N' || Value == 'n') {
-            CallExprReplStr = CallExprReplStr + ", mkl::diag::nonunit";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::diag::nonunit";
           } else {
-            CallExprReplStr = CallExprReplStr + ", mkl::diag::unit";
+            CallExprReplStr = CallExprReplStr + ", oneapi::mkl::diag::unit";
           }
         } else {
           std::string DiagParamName;
@@ -5632,7 +5632,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           }
           CallExprReplStr = CallExprReplStr + ", " + "(" + DiagParamName +
                             "=='N'||" + DiagParamName +
-                            "=='n') ? mkl::diag::nonunit : mkl::diag::unit";
+                            "=='n') ? oneapi::mkl::diag::nonunit : oneapi::mkl::diag::unit";
         }
       } else {
         CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
@@ -6269,11 +6269,11 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
     if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        CurrentArgumentRepl += "mkl::transpose::nontrans";
+        CurrentArgumentRepl += "oneapi::mkl::transpose::nontrans";
       } else if (Value == 1) {
-        CurrentArgumentRepl += "mkl::transpose::trans";
+        CurrentArgumentRepl += "oneapi::mkl::transpose::trans";
       } else {
-        CurrentArgumentRepl += "mkl::transpose::conjtrans";
+        CurrentArgumentRepl += "oneapi::mkl::transpose::conjtrans";
       }
     } else {
       if (E->HasSideEffects(DpctGlobalInfo::getContext())) {
@@ -6284,11 +6284,11 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
                           SubExprStr + ";" + getNL() + IndentStr;
         CurrentArgumentRepl +=
             "(int)" + DpctTempVarName +
-            "==2 ? mkl::transpose::conjtrans : (mkl::transpose)" +
+            "==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)" +
             DpctTempVarName;
       } else {
         CurrentArgumentRepl +=
-            SubExprStr + "==2 ? mkl::transpose::conjtrans : (mkl::transpose)" +
+            SubExprStr + "==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)" +
             SubExprStr;
       }
     }
@@ -6298,13 +6298,13 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
     if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        CurrentArgumentRepl += "mkl::uplo::lower";
+        CurrentArgumentRepl += "oneapi::mkl::uplo::lower";
       } else {
-        CurrentArgumentRepl += "mkl::uplo::upper";
+        CurrentArgumentRepl += "oneapi::mkl::uplo::upper";
       }
     } else {
       CurrentArgumentRepl +=
-          SubExprStr + "==0 ? mkl::uplo::lower : mkl::uplo::upper";
+          SubExprStr + "==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper";
     }
   }
   if (EnumInfo.SideModeIndexInfo == DistinctionID) {
@@ -6312,12 +6312,12 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
     if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        CurrentArgumentRepl += "mkl::side::left";
+        CurrentArgumentRepl += "oneapi::mkl::side::left";
       } else {
-        CurrentArgumentRepl += "mkl::side::right";
+        CurrentArgumentRepl += "oneapi::mkl::side::right";
       }
     } else {
-      CurrentArgumentRepl += "(mkl::side)" + SubExprStr;
+      CurrentArgumentRepl += "(oneapi::mkl::side)" + SubExprStr;
     }
   }
   if (EnumInfo.DiagTypeIndexInfo == DistinctionID) {
@@ -6325,12 +6325,12 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
     if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 0) {
-        CurrentArgumentRepl += "mkl::diag::nonunit";
+        CurrentArgumentRepl += "oneapi::mkl::diag::nonunit";
       } else {
-        CurrentArgumentRepl += "mkl::diag::unit";
+        CurrentArgumentRepl += "oneapi::mkl::diag::unit";
       }
     } else {
-      CurrentArgumentRepl += "(mkl::diag)" + SubExprStr;
+      CurrentArgumentRepl += "(oneapi::mkl::diag)" + SubExprStr;
     }
   }
 

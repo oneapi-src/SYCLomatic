@@ -1894,7 +1894,7 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
 void DeviceRandomGenerateAPIInfo::buildInfo(std::string FilePath,
                                             unsigned int Offset) {
   std::string ReplStr =
-      "mkl::rng::device::generate(" + DistrName + ", " + RNGStateName + ")";
+      "oneapi::mkl::rng::device::generate(" + DistrName + ", " + RNGStateName + ")";
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Length, ReplStr, nullptr));
 }

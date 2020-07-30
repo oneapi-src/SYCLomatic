@@ -31,10 +31,11 @@ int main() {
   // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                   N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                   N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                   d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:       dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:       dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -51,11 +52,12 @@ int main() {
   // CHECK-NEXT:            auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT:            auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:            auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT:            mkl::blas::gemm(
-  // CHECK-NEXT:                *handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
-  // CHECK-NEXT:                N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:                d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:            oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:                                    oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:                                    dpct::get_value(&alpha_S, *handle),
+  // CHECK-NEXT:                                    d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                                    dpct::get_value(&beta_S, *handle),
+  // CHECK-NEXT:                                    d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT:            return 0;
   // CHECK-NEXT:          }()) {
   // CHECK-NEXT: }
@@ -69,10 +71,11 @@ int main() {
   // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                   N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                   N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                   d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:       dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:       dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -89,10 +92,11 @@ int main() {
   // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                   N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                   N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                   d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:       dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}},
+  // CHECK-NEXT:       N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -112,11 +116,12 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N,
-  // CHECK-NEXT:                 dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:                 d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:                         oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:                         dpct::get_value(&alpha_S, *handle),
+  // CHECK-NEXT:                         d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                         dpct::get_value(&beta_S, *handle),
+  // CHECK-NEXT:                         d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }();) {
   // CHECK-NEXT: }
@@ -131,10 +136,11 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                 N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:     dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}},
+  // CHECK-NEXT:     N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }() != 0) {
   // CHECK-NEXT: }
@@ -152,10 +158,11 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                 N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:     dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}},
+  // CHECK-NEXT:     N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }());
   do{
@@ -166,10 +173,11 @@ int main() {
   // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                   N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:                   N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-  // CHECK-NEXT:                   d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   oneapi::mkl::blas::gemm(
+  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N,
+  // CHECK-NEXT:       dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}},
+  // CHECK-NEXT:       N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -189,10 +197,11 @@ int main() {
 // CHECK-NEXT:  auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
 // CHECK-NEXT:  auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
 // CHECK-NEXT:  auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-// CHECK-NEXT:  mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-// CHECK-NEXT:                  N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-// CHECK-NEXT:                  N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-// CHECK-NEXT:                  d_C_S_buf_ct{{[0-9]+}}, N);
+// CHECK-NEXT:  oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans,
+// CHECK-NEXT:                          oneapi::mkl::transpose::nontrans, N, N, N,
+// CHECK-NEXT:                          dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N,
+// CHECK-NEXT:                          d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
+// CHECK-NEXT:                          d_C_S_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
 // CHECK-NEXT:  codes. 0 is used instead of an error code in a return statement. You may need
@@ -208,10 +217,11 @@ int foo() {
 // CHECK-NEXT:  auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
 // CHECK-NEXT:  auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
 // CHECK-NEXT:  auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-// CHECK-NEXT:  mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-// CHECK-NEXT:                  N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}},
-// CHECK-NEXT:                  N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
-// CHECK-NEXT:                  d_C_S_buf_ct{{[0-9]+}}, N);
+// CHECK-NEXT:  oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans,
+// CHECK-NEXT:                          oneapi::mkl::transpose::nontrans, N, N, N,
+// CHECK-NEXT:                          dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N,
+// CHECK-NEXT:                          d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle),
+// CHECK-NEXT:                          d_C_S_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:}
 void foo2() {
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
