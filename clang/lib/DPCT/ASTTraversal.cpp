@@ -6610,10 +6610,10 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             BufferName = "result_temp_buffer" + std::to_string(i);
           }
           bool Moved = false;
-          for (int j = 0; j < ReplInfo.MoveFrom.size();j++) {
+          for (size_t j = 0; j < ReplInfo.MoveFrom.size();j++) {
             if (ReplInfo.MoveFrom[j] == i) {
               Moved = true;
-              if (CE->getArg(ReplInfo.MoveTo[j]) > 0) {
+              if (CE->getArg(ReplInfo.MoveTo[j])) {
                 emplaceTransformation(new InsertAfterStmt(
                     CE->getArg(ReplInfo.MoveTo[j] - 1),
                     ", result_temp_buffer" + std::to_string(i)));
@@ -6638,10 +6638,10 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             ArgName = "&result_temp_pointer" + std::to_string(i);
           }
           bool Moved = false;
-          for (int j = 0; j < ReplInfo.MoveFrom.size(); j++) {
+          for (size_t j = 0; j < ReplInfo.MoveFrom.size(); j++) {
             if (ReplInfo.MoveFrom[j] == i) {
               Moved = true;
-              if (CE->getArg(ReplInfo.MoveTo[j]) > 0) {
+              if (CE->getArg(ReplInfo.MoveTo[j])) {
                 emplaceTransformation(new InsertAfterStmt(
                     CE->getArg(ReplInfo.MoveTo[j] - 1), ", " + ArgName));
               }
@@ -6748,7 +6748,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // Create scratchpad and scratchpad_size if required in MKL
     if (!ReplInfo.WorkspaceIndexInfo.empty()) {
       std::string BufferSizeArgStr = "";
-      for (int i = 0; i < ReplInfo.WorkspaceSizeInfo.size(); ++i) {
+      for (size_t i = 0; i < ReplInfo.WorkspaceSizeInfo.size(); ++i) {
         BufferSizeArgStr += i ? " ," : "";
         BufferSizeArgStr +=
             getStmtSpelling(CE->getArg(ReplInfo.WorkspaceSizeInfo[i]));
@@ -6809,7 +6809,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // Create scratchpad_size if only scratchpad_size is required in MKL
     if (!ReplInfo.WSSizeInsertAfter.empty()) {
       std::string BufferSizeArgStr = "";
-      for (int i = 0; i < ReplInfo.WSSizeInfo.size(); ++i) {
+      for (size_t i = 0; i < ReplInfo.WSSizeInfo.size(); ++i) {
         BufferSizeArgStr += i ? " ," : "";
         BufferSizeArgStr +=
           getStmtSpelling(CE->getArg(ReplInfo.WSSizeInfo[i]));
