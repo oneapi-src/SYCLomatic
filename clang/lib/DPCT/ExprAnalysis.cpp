@@ -345,20 +345,19 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
     }
+  } else if (BaseType == "textureReference") {
+    std::string FieldName = ME->getMemberDecl()->getName().str();
+    if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
+      addReplacement(ME->getMemberLoc(), FieldName + "()");
+    }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
     if (*BaseType.rbegin() == '1') {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
-      dispatch(ME->getBase());
     } else {
-      ExprAnalysis EA;
-      EA.analyze(ME->getBase());
       std::string MemberName = ME->getMemberNameInfo().getAsString();
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
-        std::ostringstream Repl;
-        Repl << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
-             << MemberName;
-        addReplacement(ME, Repl.str());
+        addReplacement(ME->getMemberLoc(), MemberName);
       }
     }
   }

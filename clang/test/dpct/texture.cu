@@ -56,40 +56,37 @@ int main() {
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);
-  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
-  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
+  // CHECK-NEXT: a42 = new dpct::image_matrix(tex42.channel(), sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.filter_mode() = sycl::filtering_mode::nearest;
-  // CHECK-NEXT: tex42_ptr->attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), desc42);
+  // CHECK-NEXT: tex42_ptr->attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), tex42.channel());
   // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4));
-  // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), desc42);
-  // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), desc42);
+  // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), tex42.channel());
+  // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), tex42.channel());
   // CHECK-NEXT: tex42.attach(a42);
-  // CHECK-NEXT: tex42.attach(a42, desc42);
-  // CHECK-NEXT: tex42.attach(a42, desc42);
+  // CHECK-NEXT: tex42.attach(a42, tex42.channel());
+  // CHECK-NEXT: tex42.attach(a42, tex42.channel());
+  // CHECK-NEXT: tex42.channel() = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
   float4 *d_data42;
   cudaArray_t a42;
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
-  cudaChannelFormatDesc desc42 = cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindFloat);
-  cudaMallocArray(&a42, &desc42, 32, 32);
+  cudaMallocArray(&a42, &tex42.channelDesc, 32, 32);
   cudaMemcpyToArray(a42, 0, 0, d_data42, 32 * 32 * sizeof(float4), cudaMemcpyDeviceToDevice);
   tex42.addressMode[0] = cudaAddressModeClamp;
   tex42.addressMode[1] = cudaAddressModeClamp;
   tex42.addressMode[2] = cudaAddressModeClamp;
   tex42.filterMode = cudaFilterModePoint;
-  cudaBindTexture2D(0, tex42_ptr, d_data42, &desc42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
+  cudaBindTexture2D(0, tex42_ptr, d_data42, &tex42.channelDesc, 32 * sizeof(float4), 32, 32 * sizeof(float4));
   cudaBindTexture2D(0, tex42, d_data42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
-  cudaBindTexture2D(0, tex42, d_data42, desc42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
-  cudaBindTexture2D(0, &tex42, d_data42, &desc42, 32 * sizeof(float4), 32, 32 * sizeof(float4));
+  cudaBindTexture2D(0, tex42, d_data42, tex42.channelDesc, 32 * sizeof(float4), 32, 32 * sizeof(float4));
+  cudaBindTexture2D(0, &tex42, d_data42, &tex42.channelDesc, 32 * sizeof(float4), 32, 32 * sizeof(float4));
   cudaBindTextureToArray(tex42, a42);
-  cudaBindTextureToArray(&tex42, a42, &desc42);
-  cudaBindTextureToArray(tex42, a42, desc42);
-
-  // CHECK: desc42 = a42->get_channel();
-  cudaGetChannelDesc(&desc42, a42);
+  cudaBindTextureToArray(&tex42, a42, &tex42.channelDesc);
+  cudaBindTextureToArray(tex42, a42, tex42.channelDesc);
+  tex42.channelDesc = cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindFloat);
 
   // CHECK: sycl::uint2 *d_data21;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data21, sizeof(sycl::uint2) * 32);
@@ -111,6 +108,9 @@ int main() {
   cudaBindTexture(0, tex21, d_data21, desc21, 32 * sizeof(uint2));
   cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
   cudaBindTexture(0, &tex21, d_data21, &desc21, 32 * sizeof(uint2));
+
+  // CHECK: desc21 = a42->get_channel();
+  cudaGetChannelDesc(&desc21, a42);
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
@@ -152,6 +152,7 @@ int main() {
 
   // Test IsAssigned
   {
+    cudaChannelFormatDesc desc42;
     int errorCode;
     // CHECK: errorCode = (tex42.attach(a42, desc42), 0);
     errorCode = cudaBindTextureToArray(tex42, a42, desc42);
