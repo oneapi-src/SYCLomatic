@@ -172,11 +172,14 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   return TextBegin;
 }
 
+bool checkDuplicated(const std::string &FileAndLine,
+                     const std::string &WarningIDAndMsg);
+
 template <typename... Ts>
-TextModification *
-insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
-                      const CompilerInstance &CI, bool UseTextBegin,
-                      Ts &&... Vals) {
+TextModification *insertCommentPrevLine(SourceLocation SL,
+                                        const DiagnosticsMessage &Msg,
+                                        const CompilerInstance &CI,
+                                        bool UseTextBegin, Ts &&... Vals) {
   auto StartLoc =
       getStartOfLine(SL, CI.getSourceManager(), LangOptions(), UseTextBegin);
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
@@ -187,20 +190,29 @@ insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
   return new InsertComment(StartLoc, OS.str(), UseTextBegin);
 }
 
-template <typename... Ts>
-std::string getCommentToInsert(SourceLocation StartLoc, SourceManager &SM,
-                               const DiagnosticsMessage &Msg, Ts &&... Vals) {
-  auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
-  std::string Str;
-  llvm::raw_string_ostream OS(Str);
-  OS << getMessagePrefix(Msg.ID);
-  OS << Formatted;
-  std::string Text = OS.str();
+template <typename IDTy, typename... Ts>
+std::string getWarningText(IDTy MsgID, Ts &&... Vals) {
+  std::string Text;
+  if (CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
+    DiagnosticsMessage Msg = CommentIDTable[(int)MsgID];
+    auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << getMessagePrefix(Msg.ID);
+    OS << Formatted;
+    Text = OS.str();
+  }
+  return Text;
+}
 
+template <typename IDTy, typename... Ts>
+std::string getCommentToInsert(SourceLocation StartLoc, SourceManager &SM,
+                               IDTy MsgID, Ts &&... Vals) {
   std::string OrigIndent = getIndent(StartLoc, SM).str();
-  std::string Comment = (OrigIndent + llvm::Twine("/*") + getNL() + OrigIndent +
-                         Text + getNL() + OrigIndent + "*/" + getNL())
-                            .str();
+  std::string Comment =
+      (OrigIndent + llvm::Twine("/*") + getNL() + OrigIndent +
+       getWarningText(MsgID, Vals...) + getNL() + OrigIndent + "*/" + getNL())
+          .str();
   return Comment;
 }
 
@@ -245,12 +257,10 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
       FileName.str(), ":", SM.getPresumedLineNumber(SL));
   std::string WarningIDAndMsg = clang::dpct::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
-  if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
-    ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
-  } else if (ReportedWarningInfo::getInfo()[FileAndLine].count(
-                 WarningIDAndMsg) != 0) {
+
+  if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return;
-  }
+
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
@@ -267,10 +277,43 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   UniqueID++;
 }
 
+class SourceManagerForWarning {
+public:
+  static SourceManagerForWarning &getInstance() {
+    static SourceManagerForWarning instance;
+    return instance;
+  }
+  SourceManagerForWarning(SourceManagerForWarning const &) = delete;
+  void operator=(SourceManagerForWarning const &) = delete;
+  static SourceManager &getSM() { return *(getInstance().SM); }
+
+private:
+  SourceManagerForWarning() {
+    DiagOpts = new DiagnosticOptions();
+    DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+    Diagnostics = new DiagnosticsEngine(
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+        DiagnosticPrinter, false);
+
+    FSO.WorkingDir = ".";
+    FM = new FileManager(FSO, nullptr);
+    SM = new SourceManager(*Diagnostics, *FM, false);
+    DiagnosticPrinter->BeginSourceFile(DefaultLangOptions, nullptr);
+  }
+
+  LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
+  TextDiagnosticPrinter *DiagnosticPrinter;
+  DiagnosticsEngine *Diagnostics;
+  FileSystemOptions FSO;
+  FileManager *FM;
+  SourceManager *SM;
+};
+
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-void report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
-            Ts &&... Vals) {
+bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
+            bool IsInsertWarningIntoCode, Ts &&... Vals) {
   std::shared_ptr<DpctFileInfo> Fileinfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
 
@@ -283,25 +326,11 @@ void report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
       NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
   std::string WarningIDAndMsg = clang::dpct::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
-  if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
-    ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
-  } else if (ReportedWarningInfo::getInfo()[FileAndLine].count(
-                 WarningIDAndMsg) != 0) {
-    return;
-  }
 
-  LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
-  DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
-      &DiagnosticPrinter, false);
+  if (checkDuplicated(FileAndLine, WarningIDAndMsg))
+    return false;
 
-  FileSystemOptions FSO;
-  FSO.WorkingDir = ".";
-  FileManager FM(FSO, nullptr);
-  SourceManager SM(Diagnostics, FM, false);
-  DiagnosticPrinter.BeginSourceFile(DefaultLangOptions, nullptr);
+  SourceManager &SM = SourceManagerForWarning::getSM();
   FileID FID = SM.getOrCreateFileID(
       SM.getFileManager().getFile(NativeFormPath).get(), SrcMgr::C_User);
 
@@ -313,22 +342,22 @@ void report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
         DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], Diagnostics,
+      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
                     std::forward<Ts>(Vals)...);
     }
   }
 
-  auto StartLoc = getStartOfLine(SL, SM, LangOptions());
-  if (CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
+  if (IsInsertWarningIntoCode) {
+    auto StartLoc = getStartOfLine(SL, SM, LangOptions());
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             NativeFormPath.str().str(), SM.getDecomposedLoc(StartLoc).second, 0,
-            getCommentToInsert(StartLoc, SM, CommentIDTable[(int)MsgID],
-                               std::forward<Ts>(Vals)...),
+            getCommentToInsert(StartLoc, SM, MsgID, std::forward<Ts>(Vals)...),
             nullptr));
   }
 
   UniqueID++;
+  return true;
 }
 
 } // namespace DiagnosticsUtils

@@ -739,3 +739,101 @@ void test_ctor() {
 
   kernel_ctor<<<1,1>>>();
 }
+
+//CHECK:template <typename T>
+//CHECK-NEXT:void k11(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
+//CHECK-NEXT:union  type_ct1{
+//CHECK-NEXT:    T up;
+//CHECK-NEXT:  };
+//CHECK-NEXT:  type_ct1* temp = (type_ct1*)temp_ct1;
+//CHECK-NEXT:  type_ct1* temp2 = (type_ct1*)temp2_ct1;
+//CHECK-NEXT:  temp->up = a;
+//CHECK-NEXT:  temp2->up = a;
+//CHECK-NEXT:}
+//CHECK-NEXT:template<typename TT>
+//CHECK-NEXT:void foo11() {
+//CHECK-NEXT:  TT a;
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      /*
+//CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
+//CHECK-NEXT:      */
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      /*
+//CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
+//CHECK-NEXT:      */
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+template <typename T>
+__global__ void k11(T a){
+__shared__ union {
+    T up;
+  } temp, temp2;
+  temp.up = a;
+  temp2.up = a;
+}
+template<typename TT>
+void foo11() {
+  TT a;
+  k11<TT><<<1,1>>>(a);
+}
+
+//CHECK:template <typename T>
+//CHECK-NEXT:void k12(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
+//CHECK-NEXT:  union UnionType {
+//CHECK-NEXT:    T up;
+//CHECK-NEXT:  };
+//CHECK-NEXT:  UnionType* temp = (UnionType*)temp_ct1;
+//CHECK-NEXT:  //shared variable
+//CHECK-NEXT:  temp->up = a;
+//CHECK-NEXT:  union  type_ct2{
+//CHECK-NEXT:    T up;
+//CHECK-NEXT:  };
+//CHECK-NEXT:  type_ct2* temp2 = (type_ct2*)temp2_ct1;
+//CHECK-NEXT:  temp2->up = a;
+//CHECK-NEXT:}
+//CHECK-NEXT:template<typename TT>
+//CHECK-NEXT:void foo2() {
+//CHECK-NEXT:  TT a;
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      /*
+//CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name UnionType. Adjust the code to make the UnionType declaration visible at the accessor declaration point.
+//CHECK-NEXT:      */
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(UnionType)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      /*
+//CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct2. Adjust the code to make the type_ct2 declaration visible at the accessor declaration point.
+//CHECK-NEXT:      */
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct2)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+template <typename T>
+__global__ void k12(T a){
+  union UnionType {
+    T up;
+  };
+  __shared__ UnionType temp;//shared variable
+  temp.up = a;
+  __shared__ union {
+    T up;
+  } temp2;
+  temp2.up = a;
+}
+template<typename TT>
+void foo2() {
+  TT a;
+  k12<TT><<<1,1>>>(a);
+}

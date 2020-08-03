@@ -53,6 +53,7 @@ std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
+std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
 unsigned int DpctGlobalInfo::IndentWidth = 0;
@@ -192,7 +193,7 @@ void DpctFileInfo::buildReplacements() {
   if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
     for (auto &SpBLASWarningLocOffset : SpBLASSet) {
       DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
-                               Diagnostics::UNSUPPORT_MATRIX_TYPE);
+                               Diagnostics::UNSUPPORT_MATRIX_TYPE, true);
     }
   }
 }
@@ -265,7 +266,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE);
+                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true);
     }
     ++Idx;
   }
@@ -336,7 +337,8 @@ void KernelCallExpr::addAccessorDecl() {
         // Type dpct_placeholder
         Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::UNDEDUCED_TYPE, "image_accessor");
+                                 Diagnostics::UNDEDUCED_TYPE, true,
+                                 "image_accessor");
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
       SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
@@ -393,6 +395,18 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
                                   SubmitStmtsList.AccessorList,
                                   SubmitStmtsList.PtrList);
+  if (VI->isTypeDeclaredLocal()) {
+    if (DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::TYPE_IN_FUNCTION, false,
+                                 VI->getName(), VI->getLocalTypeName())) {
+      if (!SubmitStmtsList.AccessorList.empty()) {
+        SubmitStmtsList.AccessorList.back().Warning =
+            DiagnosticsUtils::getWarningText(Diagnostics::TYPE_IN_FUNCTION,
+                                             VI->getName(),
+                                             VI->getLocalTypeName());
+      }
+    }
+  }
 }
 
 void KernelCallExpr::buildKernelArgsStmt() {
@@ -435,7 +449,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
                       "> *";
           } else {
             DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                     Diagnostics::UNDEDUCED_TYPE, "RNG engine");
+                                     Diagnostics::UNDEDUCED_TYPE, true,
+                                     "RNG engine");
             TypeStr =
                 TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
           }
@@ -501,7 +516,7 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
     else
       Block = std::move(Printer.block(false));
     for (auto &S : OuterStmts)
-      Printer.line(S);
+      Printer.line(S.StmtStr);
   }
   printSubmit(Printer);
   Block.reset();
@@ -592,7 +607,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
 void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   auto B = Printer.block();
   for (auto &S : KernelStmts)
-    Printer.line(S);
+    Printer.line(S.StmtStr);
   Printer.indent() << getName()
                    << (hasWrittenTemplateArgs()
                            ? buildString("<", getTemplateArguments(), ">")
@@ -683,7 +698,7 @@ void KernelCallExpr::buildInfo() {
   if (TotalArgsSize >
       MapNames::KernelArgTypeSizeMap.at(KernelArgType::MaxParameterSize))
     DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE);
+                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true);
   // TODO: Output debug info.
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       getFilePath(), getBegin(), 0, getReplacement(), nullptr));
@@ -1353,7 +1368,8 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),
-                                 Diagnostics::UNDEDUCED_TYPE, "image_accessor");
+                                 Diagnostics::UNDEDUCED_TYPE, true,
+                                 "image_accessor");
       }
       Obj->addParamDeclReplacement();
     }
@@ -1666,6 +1682,70 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
   }
 }
 
+MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
+                       const VarDecl *Var)
+    : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
+      Scope((Var->isInLocalScope())
+                ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
+                : Global),
+      PointerAsArray(false) {
+  setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
+                                       isLocal()));
+  if (getType()->isPointer() && getScope() == Global) {
+    Attr = Device;
+    getType()->adjustAsMemType();
+    PointerAsArray = true;
+  }
+  if (Var->hasInit())
+    setInitList(Var->getInit());
+  if (getType()->getDimension() == 0 && Attr == Constant) {
+    AccMode = Value;
+  } else if (getType()->getDimension() <= 1) {
+    AccMode = Pointer;
+  } else {
+    AccMode = Accessor;
+  }
+
+  if (auto Func = Var->getParentFunctionOrMethod()) {
+    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+      auto F = DeclOfVarType->getParentFunctionOrMethod();
+      if (F && (F == Func)) {
+        IsTypeDeclaredLocal = true;
+
+        auto getParentDeclStmt = [&](const Decl *D) -> const DeclStmt * {
+          auto P = getParentStmt(D);
+          if (!P)
+            return nullptr;
+          auto DS = dyn_cast<DeclStmt>(P);
+          if (!DS)
+            return nullptr;
+          return DS;
+        };
+
+        auto DS1 = getParentDeclStmt(Var);
+        auto DS2 = getParentDeclStmt(DeclOfVarType);
+        if (DS1 && DS2 && DS1 == DS2) {
+          IsAnonymousType = true;
+          DeclStmtOfVarType = DS2;
+          auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
+          if (Iter != AnonymousTypeDeclStmtMap.end()) {
+            LocalTypeName = "type_ct" + std::to_string(Iter->second);
+          } else {
+            LocalTypeName =
+                "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
+            AnonymousTypeDeclStmtMap.insert(
+                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+          }
+        } else if (DS2) {
+          DeclStmtOfVarType = DS2;
+        }
+      }
+    }
+  }
+
+  newConstVarInit(Var);
+}
+
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   if (auto Func = Var->getParentFunctionOrMethod()) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
@@ -1927,7 +2007,7 @@ void RandomEngineInfo::buildInfo() {
     TypeReplacement= "dpct_placeholder/*Fix the engine type manually*/";
     for (unsigned int i = 0; i < CreateAPINum; ++i)
       DiagnosticsUtils::report(CreateCallFilePath[i], CreateAPIBegin[i],
-                               Diagnostics::UNDEDUCED_TYPE, "RNG engine");
+                               Diagnostics::UNDEDUCED_TYPE, true, "RNG engine");
   }
 
   std::string Repl = GeneratorName + " = new " + TypeReplacement + "(" +
@@ -1957,7 +2037,7 @@ void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
             nullptr));
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             "RNG engine");
+                             true, "RNG engine");
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
@@ -1977,7 +2057,7 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
     VecSizeStr = std::to_string(VecSize);
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             "RNG engine");
+                             true, "RNG engine");
     VecSizeStr = "dpct_placeholder/*Fix the vec_size manually*/";
   }
 
@@ -2040,7 +2120,7 @@ void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
             FilePath, Offset, Length,
             "dpct_placeholder/*Fix the engine type manually*/*", nullptr));
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             "RNG engine");
+                             true, "RNG engine");
   }
 }
 

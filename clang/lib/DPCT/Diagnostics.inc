@@ -124,3 +124,5 @@ DEF_WARNING(VOLATILE_VECTOR_ACCESS, 1052, "DPC++ does not support the member acc
 DEF_COMMENT(VOLATILE_VECTOR_ACCESS, 1052, "DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.")
 DEF_WARNING(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
 DEF_COMMENT(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
+DEF_WARNING(TYPE_IN_FUNCTION, 1054, "The type of variable %0 is declared in device function with the name %1. Adjust the code to make the %1 declaration visible at the accessor declaration point.")
+DEF_COMMENT(TYPE_IN_FUNCTION, 1054, "The type of variable {0} is declared in device function with the name {1}. Adjust the code to make the {1} declaration visible at the accessor declaration point.")

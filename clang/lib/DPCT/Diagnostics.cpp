@@ -18,6 +18,20 @@ namespace DiagnosticsUtils {
 unsigned int UniqueID = 0;
 std::unordered_map<std::string, std::unordered_set<std::string>>
     ReportedWarningInfo::ReportedWarning;
+bool checkDuplicated(const std::string &FileAndLine,
+                     const std::string &WarningIDAndMsg) {
+  if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
+    ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
+  } else {
+    if (ReportedWarningInfo::getInfo()[FileAndLine].count(WarningIDAndMsg) ==
+        0) {
+      ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
 }
 
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;

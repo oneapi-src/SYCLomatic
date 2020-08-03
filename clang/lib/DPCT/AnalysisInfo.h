@@ -240,6 +240,15 @@ public:
   int ColumnLimit;
 };
 
+struct StmtWithWarning {
+  StmtWithWarning(std::string Str, std::string Warning = "") : StmtStr(Str) {}
+
+  std::string StmtStr;
+  std::string Warning;
+};
+
+using StmtList = std::vector<StmtWithWarning>;
+
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
@@ -1008,30 +1017,6 @@ public:
     return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
   }
 
-  static inline void
-  getReplacedTypeNameRecursive(QualType QT, const ASTContext &Context,
-                               std::string &MigratedTypeStr) {
-    if (!QT.hasQualifiers() && !QT.getTypePtr()->isPointerType()) {
-      std::string TypeName = QT.getAsString(Context.getPrintingPolicy());
-      MapNames::replaceName(MapNames::TypeNamesMap, TypeName);
-      MigratedTypeStr = buildString(TypeName, MigratedTypeStr);
-      return;
-    }
-    if (!QT.getQualifiers().isEmptyWhenPrinted(Context.getPrintingPolicy())) {
-      MigratedTypeStr = buildString(
-          " ", QT.getQualifiers().getAsString(Context.getPrintingPolicy()),
-          MigratedTypeStr);
-    }
-    QualType RemovedQ = QT.getUnqualifiedType();
-    QualType RemovedP = RemovedQ;
-    if (RemovedQ.getTypePtr()->isPointerType()) {
-      MigratedTypeStr = buildString(" *", MigratedTypeStr);
-      RemovedP = RemovedQ.getTypePtr()->getPointeeType();
-    }
-    getReplacedTypeNameRecursive(RemovedP, Context, MigratedTypeStr);
-    return;
-  }
-
   /// This function will return the replaced type name with qualifiers.
   /// Currently, since clang do not support get the order of original
   /// qualifiers, this function will follow the behavior of
@@ -1554,6 +1539,7 @@ public:
   inline unsigned getOffset() { return Offset; }
   inline const std::string &getRefString() { return RefString; }
   inline const std::string &getName() { return Name; }
+  inline const std::string getNameAppendSuffix() { return Name + "_ct1"; }
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
 
   inline std::string getDerefName() {
@@ -1601,31 +1587,7 @@ public:
     return Host;
   }
 
-  MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var)
-      : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
-        Scope((Var->isInLocalScope())
-                  ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
-                  : Global),
-        PointerAsArray(false) {
-    setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                         isLocal()));
-    if (getType()->isPointer() && getScope() == Global) {
-      Attr = Device;
-      getType()->adjustAsMemType();
-      PointerAsArray = true;
-    }
-    if (Var->hasInit())
-      setInitList(Var->getInit());
-    if (getType()->getDimension() == 0 && Attr == Constant) {
-      AccMode = Value;
-    } else if (getType()->getDimension() <= 1) {
-      AccMode = Pointer;
-    } else {
-      AccMode = Accessor;
-    }
-
-    newConstVarInit(Var);
-  }
+  MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var);
 
   VarAttrKind getAttr() { return Attr; }
   VarScope getScope() { return Scope; }
@@ -1633,6 +1595,12 @@ public:
   bool isExtern() { return Scope == Extern; }
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
+  bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
+  bool isAnonymousType() { return IsAnonymousType; }
+  const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
+  const DeclStmt *getDeclStmtOfVarType() { return DeclStmtOfVarType; }
+  void setLocalTypeName(std::string T) { LocalTypeName = T; }
+  std::string getLocalTypeName() { return LocalTypeName; }
 
   inline void setName(std::string NewName) {
     NewConstVarName  = NewName;
@@ -1678,8 +1646,7 @@ public:
   }
 
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
-                                   std::vector<std::string> &AccList,
-                                   std::vector<std::string> &PtrList) {
+                                   StmtList &AccList, StmtList &PtrList) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     if (isShared()) {
@@ -1696,13 +1663,13 @@ public:
            << getType()->getRangeArgument(ExternMemSize, false) << ", ";
       }
       OS << "cgh);";
-      AccList.push_back(std::move(OS.str()));
+      AccList.emplace_back(std::move(OS.str()));
     } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
                AccMode != Accessor) {
-      PtrList.push_back(buildString("auto ", getPtrName(), " = ",
+      PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
                                     getConstVarName(), ".get_ptr();"));
     } else {
-      AccList.push_back(buildString("auto ", getAccessorName(), " = ",
+      AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
                                     getConstVarName(), ".get_access(cgh);"));
     }
   }
@@ -1720,9 +1687,9 @@ public:
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
     if (AccMode == Value) {
-      PS << getAccessorDataType() << " ";
+      PS << getAccessorDataType(true) << " ";
     } else if (AccMode == Pointer) {
-      PS << getAccessorDataType();
+      PS << getAccessorDataType(true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
@@ -1762,6 +1729,19 @@ public:
     }
     return PS;
   }
+  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false) {
+    if (isExtern()) {
+      return "uint8_t";
+    } else if (isTypeDeclaredLocal()) {
+      if (IsTypeUsedInDevFunDecl) {
+        return "uint8_t";
+      } else {
+        // used in accessor decl
+        return "uint8_t[sizeof(" + LocalTypeName + ")]";
+      }
+    }
+    return getType()->getBaseName();
+  }
 
 private:
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
@@ -1791,12 +1771,6 @@ private:
     return buildString("(", InitList, ")");
   }
   const std::string &getMemoryAttr();
-  std::string getAccessorDataType() {
-    if (isExtern()) {
-      return "uint8_t";
-    }
-    return getType()->getBaseName();
-  }
   std::string getDpctAccessorType() {
     auto Type = getType();
     return buildString("dpct::accessor<", getAccessorDataType(), ", ",
@@ -1811,6 +1785,8 @@ private:
   std::string getArgName() {
     if (isExtern())
       return ExternVariableName;
+    else if (isTypeDeclaredLocal())
+      return getNameAppendSuffix();
     return getName();
   }
 
@@ -1842,6 +1818,14 @@ private:
   // that needs to be renamed.
   unsigned int NewConstVarOffset;
   unsigned int NewConstVarLength;
+
+  bool IsTypeDeclaredLocal = false;
+  bool IsAnonymousType = false;
+  const CXXRecordDecl *DeclOfVarType = nullptr;
+  const DeclStmt *DeclStmtOfVarType = nullptr;
+  std::string LocalTypeName = "";
+
+  static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
 };
 
 class TextureTypeInfo {
@@ -2677,7 +2661,6 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
 private:
-  using StmtList = std::vector<std::string>;
 
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
@@ -2834,8 +2817,14 @@ private:
       return *this;
     }
     KernelPrinter &operator<<(const StmtList &Stmts) {
-      for (auto &S : Stmts)
-        line(S);
+      for (auto &S : Stmts) {
+        if (!S.Warning.empty()) {
+          line("/*");
+          line(S.Warning);
+          line("*/");
+        }
+        line(S.StmtStr);
+      }
       return *this;
     }
     KernelPrinter &indent() { return (*this) << Indent; }
@@ -2843,7 +2832,7 @@ private:
     std::string str() {
       auto Result = Stream.str();
       return Result.substr(Indent.length(),
-        Result.length() - Indent.length() - NL.length());;
+        Result.length() - Indent.length() - NL.length());
     }
   };
 

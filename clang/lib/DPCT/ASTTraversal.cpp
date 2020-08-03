@@ -118,7 +118,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
                                      II->getName().str() == "__device__" ||
                                      II->getName().str() == "__global__" ||
-                                     II->getName().str() == "__constant__")) {
+                                     II->getName().str() == "__constant__" ||
+                                     II->getName().str() == "__shared__")) {
       TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
           SourceRange(Iter->getLocation(), Iter->getEndLoc())));
     }
@@ -196,7 +197,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
-       Name == "__constant__" || Name == "__launch_bounds__")) {
+       Name == "__constant__" || Name == "__launch_bounds__" ||
+       Name == "__shared__")) {
     TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(Range));
   }
 
@@ -8081,9 +8083,62 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto MemVar = getNodeAsType<VarDecl>(Result, "var")) {
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        MemVar,
-        MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+    auto &SM  = DpctGlobalInfo::getSourceManager();
+    auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (Info->isTypeDeclaredLocal()) {
+      if (Info->isAnonymousType()) {
+        // keep the origin type declaration, only remove variable name
+        //  }  a_variable  ,  b_variable ;
+        //   |                |
+        // begin             end
+        // ReplaceToken replacing [begin, end]
+        SourceLocation Begin = SM.getExpansionLoc(
+            Info->getDeclOfVarType()->getBraceRange().getEnd());
+        Begin = Begin.getLocWithOffset(1); // this token is }
+        SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
+        emplaceTransformation(new ReplaceToken(Begin, End, ""));
+
+        std::string NewTypeName = Info->getLocalTypeName();
+
+        // add a typename
+        emplaceTransformation(new InsertText(
+            SM.getExpansionLoc(
+                Info->getDeclOfVarType()->getBraceRange().getBegin()),
+            " " + NewTypeName));
+
+        // add typecast for the __shared__ variable, since after migration the
+        // __shared__ variable type will be uint8_t*
+        auto DS = Info->getDeclStmtOfVarType();
+        SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
+        InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
+        std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
+                                NewTypeName + "* " + Info->getName() + " = (" +
+                                NewTypeName + "*)" +
+                                Info->getNameAppendSuffix() + ";";
+        emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+      } else if (auto DS = Info->getDeclStmtOfVarType()) {
+        // remove var decl
+        emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+            MemVar,
+            MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+
+        Info->setLocalTypeName(Info->getType()->getBaseName());
+        // add typecast for the __shared__ variable, since after migration the
+        // __shared__ variable type will be uint8_t*
+        SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
+        InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
+        std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
+                                Info->getType()->getBaseName() + "* " +
+                                Info->getName() + " = (" +
+                                Info->getType()->getBaseName() + "*)" +
+                                Info->getNameAppendSuffix() + ";";
+        emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+      }
+    } else {
+      emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+          MemVar,
+          MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+    }
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
