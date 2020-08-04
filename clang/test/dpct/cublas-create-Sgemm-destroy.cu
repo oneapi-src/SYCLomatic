@@ -259,6 +259,16 @@ int foo2(cudaDataType DT) {
   // CHECK-NEXT: foo(bar((oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N), 0)));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
+#define dA(i, j) *(d_A_S + (i) + (j) * N)
+  // CHECK: {
+  // CHECK-NEXT: auto dA_10_20_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&dA(10, 20));
+  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: oneapi::mkl::blas::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, *handle), dA_10_20_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, &dA(10, 20), N, d_B_S, N, &beta_S, d_C_S, N);
+#undef dA(i, j)
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */

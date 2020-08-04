@@ -3870,7 +3870,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     }
 
-    std::string EnumStr = getStmtSpelling(CE->getArg(1));
+    std::string EnumStr = ExprAnalysis::ref(CE->getArg(1));
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
         MapNames::RandomEngineTypeMap.end()) {
       report(SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()),
@@ -3964,7 +3964,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
       emplaceTransformation(
           new ReplaceStmt(CE, false, FuncName, false,
-                          "delete " + getStmtSpelling(CE->getArg(0))));
+                          "delete " + ExprAnalysis::ref(CE->getArg(0))));
     } else {
       if (IsAssigned) {
         report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -4045,13 +4045,13 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       auto TypePtr = CE->getArg(1)->getType().getTypePtr();
       if (!TypePtr || !TypePtr->isPointerType()) {
         Data = "(" + ReplInfo.DistributeType + "*)" +
-               getStmtSpelling(CE->getArg(1));
+               ExprAnalysis::ref(CE->getArg(1));
       } else if (TypePtr->getPointeeType().getAsString() ==
                  ReplInfo.DistributeType) {
-        Data = getStmtSpelling(CE->getArg(1));
+        Data = ExprAnalysis::ref(CE->getArg(1));
       } else {
         Data = "(" + ReplInfo.DistributeType + "*)" +
-               getStmtSpelling(CE->getArg(1));
+               ExprAnalysis::ref(CE->getArg(1));
       }
     } else {
       PrefixInsertStr = BufferDecl + DistributeDecl + getNL() + IndentStr;
@@ -4063,12 +4063,12 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     if (REInfo && (REInfo->isClassMember() || REInfo->isArray())) {
       ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", *" +
-                getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
-                ", " + Data + ")";
+                ExprAnalysis::ref(CE->getArg(0)) + ", " +
+                EA.getReplacedString() + ", " + Data + ")";
     } else {
       ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
-                getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
-                ", " + Data + ")";
+                ExprAnalysis::ref(CE->getArg(0)) + ", " +
+                EA.getReplacedString() + ", " + Data + ")";
     }
 
     if (NeedUseLambda) {
@@ -4133,8 +4133,8 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(CE, "(", ", 0)");
       report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    std::string Repl =
-        "oneapi::mkl::rng::skip_ahead(" + getStmtSpelling(CE->getArg(0)) + ", ";
+    std::string Repl = "oneapi::mkl::rng::skip_ahead(" +
+                       ExprAnalysis::ref(CE->getArg(0)) + ", ";
     ExprAnalysis EO;
     EO.analyze(CE->getArg(1));
     Repl = Repl + EO.getReplacedString() + ")";
@@ -4796,7 +4796,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           SEA.analyze(CSCE);
           SubExprStr = SEA.getReplacedString();
         } else {
-          SubExprStr = getStmtSpelling(CSCE->getSubExpr());
+          SubExprStr = ExprAnalysis::ref(CSCE->getSubExpr());
         }
         Expr::EvalResult ER;
         if (CSCE->getSubExpr()->EvaluateAsInt(ER, *Result.Context) &&
@@ -4832,7 +4832,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         // The expr hasn't side effect, if the enumeration is literal, then
         // generate the corresponding replacement directly, if not, use the
         // conditional operator
-        std::string TransStr = getStmtSpelling(CE->getArg(2));
+        std::string TransStr = ExprAnalysis::ref(CE->getArg(2));
         auto TransPair = MapNames::BLASEnumsMap.find(TransStr);
         if (TransPair != MapNames::BLASEnumsMap.end()) {
           TransStr = TransPair->second;
@@ -4934,10 +4934,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (E->HasSideEffects(Context)) {
         ArgRepl = getTempNameForExpr(E, true, true) + Name +
                   std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-        TempArgsDecl =
-            TempArgsDecl + "auto " + ArgRepl + " = " + getStmtSpelling(E) + ";";
+        TempArgsDecl = TempArgsDecl + "auto " + ArgRepl + " = " +
+                       ExprAnalysis::ref(E) + ";";
       } else {
-        ArgRepl = getStmtSpelling(E);
+        ArgRepl = ExprAnalysis::ref(E);
       }
     };
     processTempVars(CE->getArg(5), "m_ct", Arg5Repl); // Arg5: m
@@ -5313,13 +5313,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                 MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
                 "1, dpct::get_default_queue());" + getNL() + IndentStr;
             SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
-                              getStmtSpelling(CE->getArg(i)) + " = (int)*" +
+                              ExprAnalysis::ref(CE->getArg(i)) + " = (int)*" +
                               ResultTempPtr + ";" + getNL() + IndentStr +
                               MapNames::getClNamespace() + "::free(" +
                               ResultTempPtr + ", dpct::get_default_queue());";
             CurrentArgumentRepl = ResultTempPtr;
           } else {
-            CurrentArgumentRepl = getStmtSpelling(CE->getArg(i));
+            CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
           }
         } else {
           std::string BufferDecl = "";
@@ -5422,7 +5422,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                 MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
                 "1, dpct::get_default_queue());" + getNL() + IndentStr;
             SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
-                              getStmtSpelling(CE->getArg(i)) + " = (int)*" +
+                              ExprAnalysis::ref(CE->getArg(i)) + " = (int)*" +
                               ResultTempPtr + ";" + getNL() + IndentStr +
                               MapNames::getClNamespace() + "::free(" +
                               ResultTempPtr + ", dpct::get_default_queue());";
@@ -5432,9 +5432,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
             CurrentArgumentRepl = "(" + ReplInfo.BufferTypeInfo[IndexTemp] +
-                                  "*)" + getStmtSpelling(CE->getArg(i));
+                                  "*)" + ExprAnalysis::ref(CE->getArg(i));
           } else {
-            CurrentArgumentRepl = getStmtSpelling(CE->getArg(i));
+            CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
           }
         } else {
           std::string BufferDecl = "";
@@ -5541,7 +5541,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               i == 5) {
             CallExprReplStr = CallExprReplStr + ", const_cast<" +
                               ReplInfo.BufferTypeInfo[IndexTemp] + "*>(" +
-                              getStmtSpelling(CE->getArg(5)) + ")";
+                              ExprAnalysis::ref(CE->getArg(5)) + ")";
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
@@ -6257,7 +6257,7 @@ BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
                                       const ASTContext &Context) {
   std::vector<std::string> ParamsStrVec;
   for (auto Arg : CE->arguments())
-    ParamsStrVec.emplace_back(getStmtSpelling(Arg));
+    ParamsStrVec.emplace_back(ExprAnalysis::ref(Arg));
   return ParamsStrVec;
 }
 
@@ -6321,7 +6321,7 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
     CurrentArgumentRepl = "(int)";
   } else {
     // To eliminate the redundant cast of non-macro cases
-    SubExprStr = getStmtSpelling(SubExpr);
+    SubExprStr = ExprAnalysis::ref(SubExpr);
   }
 
   int IndexTemp = -1;
@@ -6688,12 +6688,12 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               new ReplaceStmt(CE->getArg(i), BufferName));
           }
         } else {
-          std::string ArgName = getStmtSpelling(CE->getArg(i));
+          std::string ArgName = ExprAnalysis::ref(CE->getArg(i));
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             PrefixInsertStr = IndentStr + "int64_t result_temp_pointer" +
                               std::to_string(i) + ";" + getNL();
             SuffixInsertStr = SuffixInsertStr + " *" +
-                              getStmtSpelling(CE->getArg(i)) +
+                              ExprAnalysis::ref(CE->getArg(i)) +
                               " = result_temp_pointer" + std::to_string(i) +
                               ";" + getNL() + IndentStr;
             ArgName = "&result_temp_pointer" + std::to_string(i);
@@ -6744,14 +6744,15 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       // OldFoo(float* out); --> *(out) = NewFoo();
       // In current case, return value is always the last arg
       if (ReplInfo.ReturnValue && i == ArgNum - 1) {
-        Replacement = "*(" + getStmtSpelling(CE->getArg(CE->getNumArgs() - 1)) +
+        Replacement = "*(" +
+                      ExprAnalysis::ref(CE->getArg(CE->getNumArgs() - 1)) +
                       ") = " + Replacement;
       }
       // The arg#0 is always the handler and will always be migrated to queue.
       if (i == 0) {
         // process handle argument
         emplaceTransformation(new ReplaceStmt(
-            CE->getArg(i), "*" + getStmtSpelling(CE->getArg(i))));
+            CE->getArg(i), "*" + ExprAnalysis::ref(CE->getArg(i))));
       }
     }
     // Declare new args if it is used in MKL
@@ -6789,7 +6790,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       std::string InsStr = "";
       for (size_t i = 0; i < ReplInfo.CopyFrom.size(); ++i) {
         InsStr =
-            InsStr + ", " + getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]));
+            InsStr + ", " + ExprAnalysis::ref(CE->getArg(ReplInfo.CopyFrom[i]));
         if (i == ReplInfo.CopyTo.size() - 1 ||
             ReplInfo.CopyTo[i + 1] != ReplInfo.CopyTo[i]) {
           emplaceTransformation(new InsertAfterStmt(
@@ -6812,7 +6813,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       for (size_t i = 0; i < ReplInfo.WorkspaceSizeInfo.size(); ++i) {
         BufferSizeArgStr += i ? " ," : "";
         BufferSizeArgStr +=
-            getStmtSpelling(CE->getArg(ReplInfo.WorkspaceSizeInfo[i]));
+            ExprAnalysis::ref(CE->getArg(ReplInfo.WorkspaceSizeInfo[i]));
       }
       std::string ScratchpadSizeNameStr =
           "scratchpad_size_ct" +
@@ -6840,7 +6841,8 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr += IndentStr + BufferTypeStr + " *" +
                            ScratchpadNameStr + " = cl::sycl::malloc_device<" +
                            BufferTypeStr + ">(" + ScratchpadSizeNameStr +
-                           ", *" + getStmtSpelling(CE->getArg(0)) + ");" + getNL();
+                           ", *" + ExprAnalysis::ref(CE->getArg(0)) + ");" +
+                           getNL();
         PrefixInsertStr += IndentStr + "cl::sycl::event " +
                            EventNameStr + ";" + getNL();
 
@@ -6850,7 +6852,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                            ScratchpadNameStr + "};" + getNL() + IndentStr;
         SuffixInsertStr +=
             "std::thread mem_free_thread(dpct::detail::mem_free, " +
-            getStmtSpelling(CE->getArg(0)) + ", " + WSVectorNameStr + ", " +
+            ExprAnalysis::ref(CE->getArg(0)) + ", " + WSVectorNameStr + ", " +
             EventNameStr + ");" + getNL() + IndentStr;
         SuffixInsertStr +=
             "mem_free_thread.detach();" + std::string(getNL()) + IndentStr;
@@ -6873,7 +6875,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       for (size_t i = 0; i < ReplInfo.WSSizeInfo.size(); ++i) {
         BufferSizeArgStr += i ? " ," : "";
         BufferSizeArgStr +=
-          getStmtSpelling(CE->getArg(ReplInfo.WSSizeInfo[i]));
+            ExprAnalysis::ref(CE->getArg(ReplInfo.WSSizeInfo[i]));
       }
       std::string ScratchpadSizeNameStr =
         "scratchpad_size_ct" +
@@ -6983,7 +6985,7 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
     const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
 
-  std::string PointerName = getStmtSpelling(Arg);
+  std::string PointerName = ExprAnalysis::ref(Arg);
   std::string BufferTempName =
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());

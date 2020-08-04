@@ -1131,7 +1131,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
                                     const std::string &TypeAsStr,
                                     const std::string &IndentStr,
                                     std::string &BufferDecl) {
-  std::string PointerName = getStmtSpelling(Arg);
+  std::string PointerName = dpct::ExprAnalysis::ref(Arg);
   std::string BufferTempName =
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
