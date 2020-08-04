@@ -174,7 +174,7 @@ inline T vectorized_min(T a, T b) {
   return v0;
 }
 
-/// Compute vectorized greater than for two values, with each value treated as a
+/// Compute vectorized isgreater for two values, with each value treated as a
 /// vector type S
 /// \param [in] S The type of the vector
 /// \param [in] T The type of the original values
@@ -191,8 +191,8 @@ inline T vectorized_isgreater(T a, T b) {
   return v0;
 }
 
-/// Compute vectorized greater than for two unsigned int values, with each
-/// value treated as a vector of two unsigned short
+/// Compute vectorized isgreater for two unsigned int values, with each value
+/// treated as a vector of two unsigned short
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \return The vectorized greater than of the two values
