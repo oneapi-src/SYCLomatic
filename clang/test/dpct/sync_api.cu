@@ -5,12 +5,11 @@
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-EMPTY:
-// CHECK-NEXT: #define TB(b) sycl::group<3> b = item_ct1.get_group();
 #include "cooperative_groups.h"
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
+// CHECK: #define TB(b) sycl::group<3> b = item_ct1.get_group();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
 __device__ void foo(int i) {}

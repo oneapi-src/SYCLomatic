@@ -3015,6 +3015,27 @@ const MapNames::SetTy MapNames::HostAllocSet {
     "cudaHostAllocWriteCombined",
 };
 
+const MapNames::MapTy MapNames::MathRewriterMap{
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) \
+  {SOURCEAPINAME, TARGETAPINAME},
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) \
+  {SOURCEAPINAME, TARGETAPINAME},
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) \
+  {SOURCEAPINAME, TARGETAPINAME},
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_TYPECAST(SOURCEAPINAME)
+#define ENTRY_UNSUPPORTED(SOURCEAPINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+};
+
 // Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},

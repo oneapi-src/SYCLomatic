@@ -358,6 +358,7 @@ public:
 
   static const MapNames::MapTy MemberNamesMap;
   static const MapNames::SetTy HostAllocSet;
+  static const MapNames::MapTy MathRewriterMap;
 };
 
 class MigrationStatistics {

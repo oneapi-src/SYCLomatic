@@ -15,6 +15,9 @@
 
 using namespace std;
 
+// CHECK: using sycl::max;
+using ::max;
+
 // CHECK: dpct::constant_memory<double, 0> d;
 // CHECK-NEXT: dpct::constant_memory<double, 0> d2;
 __constant__ double d;

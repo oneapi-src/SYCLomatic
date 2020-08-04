@@ -10293,6 +10293,7 @@ REGISTER_RULE(CXXNewExprRule)
 void NamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(usingDirectiveDecl().bind("usingDirective"), this);
   MF.addMatcher(namespaceAliasDecl().bind("namespaceAlias"), this);
+  MF.addMatcher(usingDecl().bind("using"), this);
 }
 
 void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
@@ -10305,6 +10306,15 @@ void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
     std::string Namespace = NAD->getNamespace()->getNameAsString();
     if (Namespace == "cooperative_groups" || Namespace == "placeholders")
       emplaceTransformation(new ReplaceDecl(NAD, ""));
+  } else if (auto UD = getAssistNodeAsType<UsingDecl>(Result, "using")) {
+    auto Iter = MapNames::MathRewriterMap.find(UD->getNameAsString());
+    if (Iter != MapNames::MathRewriterMap.end()) {
+      DpctGlobalInfo::getInstance().insertHeader(UD->getBeginLoc(), Math);
+      std::string Repl{"using "};
+      Repl += Iter->second;
+      Repl += ";";
+      emplaceTransformation(new ReplaceDecl(UD, std::move(Repl)));
+    }
   }
 }
 

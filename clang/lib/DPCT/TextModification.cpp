@@ -250,7 +250,7 @@ ReplaceDecl::getReplacement(const ASTContext &Context) const {
   auto EndData = SM.getCharacterData(End2);
   while (EndData && *EndData++ != '\n')
     ; // Do nothing in the body
-  auto Len = EndData - BeginData;
+  auto Len = EndData - BeginData - 1;
   return std::make_shared<ExtReplacement>(SM, Begin, Len, ReplacementString,
                                           this);
 }
