@@ -1786,15 +1786,19 @@ void insertComplexHeader(SourceLocation SL,
 void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
                                            const SourceManager *SM,
                                            bool &SpecialCaseHappened) {
-
   Token Tok;
   Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
   auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
+  llvm::Optional<Token> TokAfterTypePtr;
+  Token TokAfterType;
+  // Distinguish between variable decls and just types (e.g. in function
+  // signatures). If the next token of the tye is comma or r_paren, it is
+  // just a name.
+  // It matters for migration of cudaStream_t.
+  bool IsTokenAfterTypeCommaOrRParen = false;
 
   if (Tok2Ptr.hasValue()) {
-
     auto Tok2 = Tok2Ptr.getValue();
-
     SourceLocation InsertLoc;
     auto PointerType = deducePointerType(DD, "CUstream_st");
     std::string TypeStr = Tok.getRawIdentifier().str();
@@ -1804,20 +1808,51 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
       // cudaStream_t const
       if (Tok2.getKind() == tok::raw_identifier &&
           Tok2.getRawIdentifier() == "const") {
-        emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-        emplaceTransformation(
-            new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
-        InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-        emplaceTransformation(
-            new InsertText(InsertLoc, std::move(PointerType)));
+        TokAfterTypePtr = Lexer::findNextToken(Tok2.getLocation(), *SM,
+                                               LangOptions());
+        if (TokAfterTypePtr.hasValue()) {
+          TokAfterType = TokAfterTypePtr.getValue();
+          if (TokAfterType.getKind() == tok::comma ||
+              TokAfterType.getKind() == tok::r_paren)
+            IsTokenAfterTypeCommaOrRParen = true;
+        }
+        if (IsTokenAfterTypeCommaOrRParen) {
+          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+          std::string T{"sycl::queue "};
+          T += PointerType;
+          emplaceTransformation(
+              new ReplaceToken(Tok2.getLocation(), std::move(T)));
+        } else {
+          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+          emplaceTransformation(
+              new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+          emplaceTransformation(
+              new InsertText(InsertLoc, std::move(PointerType)));
+        }
       }
       // cudaStream_t
       else {
-        emplaceTransformation(
-            new ReplaceToken(Tok.getLocation(), "sycl::queue"));
-        InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
-        emplaceTransformation(
-            new InsertText(InsertLoc, std::move(PointerType)));
+        TokAfterTypePtr = Lexer::findNextToken(Tok.getLocation(), *SM,
+                                               LangOptions());
+        if (TokAfterTypePtr.hasValue()) {
+          TokAfterType = TokAfterTypePtr.getValue();
+          if (TokAfterType.getKind() == tok::comma ||
+              TokAfterType.getKind() == tok::r_paren)
+            IsTokenAfterTypeCommaOrRParen = true;
+        }
+        if (IsTokenAfterTypeCommaOrRParen) {
+          std::string T{"sycl::queue "};
+          T += PointerType;
+          emplaceTransformation(
+              new ReplaceToken(Tok.getLocation(), std::move(T)));
+        } else {
+          emplaceTransformation(
+              new ReplaceToken(Tok.getLocation(), "sycl::queue"));
+          InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
+          emplaceTransformation(
+              new InsertText(InsertLoc, std::move(PointerType)));
+        }
       }
     } else if (Tok.getKind() == tok::raw_identifier &&
                Tok.getRawIdentifier() == "const") {
@@ -1827,12 +1862,28 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
       if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
         SpecialCaseHappened = true;
         SrcAPIStaticsMap[TypeStr]++;
-        emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-        emplaceTransformation(
-            new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
-        InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-        emplaceTransformation(
-            new InsertText(InsertLoc, std::move(PointerType)));
+        TokAfterTypePtr = Lexer::findNextToken(Tok2.getLocation(), *SM,
+                                               LangOptions());
+        if (TokAfterTypePtr.hasValue()) {
+          TokAfterType = TokAfterTypePtr.getValue();
+          if (TokAfterType.getKind() == tok::comma ||
+              TokAfterType.getKind() == tok::r_paren)
+            IsTokenAfterTypeCommaOrRParen = true;
+        }
+        if (IsTokenAfterTypeCommaOrRParen) {
+          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+          std::string T{"sycl::queue "};
+          T += PointerType;
+          emplaceTransformation(
+              new ReplaceToken(Tok2.getLocation(), std::move(T)));
+        } else {
+          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+          emplaceTransformation(
+              new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+          emplaceTransformation(
+              new InsertText(InsertLoc, std::move(PointerType)));
+        }
       }
     }
   }

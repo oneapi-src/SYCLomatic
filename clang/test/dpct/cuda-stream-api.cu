@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>
+#include <functional>
 
 template <typename T>
 // CHECK: void check(T result, char const *const func) {
@@ -325,4 +326,39 @@ class S2 {
 void foo(int size) {
   // CHECK: sycl::queue *streams[size];
   cudaStream_t streams[size];
+}
+
+// CHECK: void gFunc0(int e, sycl::queue *s) {}
+void gFunc0(cudaError_t e, cudaStream_t s) {}
+// CHECK: void gFunc1(sycl::queue *s, int e) {}
+void gFunc1(cudaStream_t s ,cudaError_t e) {}
+
+// CHECK: void gFunc2(int e, sycl::queue *const s) {}
+void gFunc2(cudaError_t e, cudaStream_t const s) {}
+// CHECK: void gFunc3(sycl::queue *const s, int e) {}
+void gFunc3(cudaStream_t const s ,cudaError_t e) {}
+
+// CHECK: void gFunc4(int e, sycl::queue *const s) {}
+void gFunc4(cudaError_t e, const cudaStream_t s) {}
+// CHECK: void gFunc5(sycl::queue *const s, int e) {}
+void gFunc5(const cudaStream_t s ,cudaError_t e) {}
+
+void bar() {
+   // CHECK: std::function<void(int, sycl::queue *)> f0 = gFunc0;
+   std::function<void(cudaError_t, cudaStream_t)> f0 = gFunc0;
+   // CHECK: std::function<void(sycl::queue *, int)> f1 = gFunc1;
+   std::function<void(cudaStream_t, cudaError_t)> f1 = gFunc1;
+
+   // CHECK: std::function<void(int, sycl::queue *const)> f2 = gFunc2;
+   std::function<void(cudaError_t, cudaStream_t const)> f2 = gFunc2;
+   // CHECK: std::function<void(sycl::queue *const, int)> f3 = gFunc3;
+   std::function<void(cudaStream_t const, cudaError_t)> f3 = gFunc3;
+
+   // CHECK: std::function<void(int, sycl::queue *const)> f4 = gFunc4;
+   std::function<void(cudaError_t, const cudaStream_t)> f4 = gFunc4;
+   // CHECK: std::function<void(sycl::queue *const, int)> f5 = gFunc5;
+   std::function<void(const cudaStream_t, cudaError_t)> f5 = gFunc5;
+
+   // CHECK: sizeof(sycl::queue *);
+   sizeof(cudaStream_t);
 }
