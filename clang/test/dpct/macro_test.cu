@@ -156,12 +156,12 @@ while(0)
 
 HANDLE_GPU_ERROR(0);
 
-// CHECK: #define cbrt(x) pow((double)x,(double)(1.0/3.0))
+// CHECK: #define cbrt(x) pow((double)x, (double)(1.0 / 3.0))
 // CHECK-NEXT: double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 #define cbrt(x) pow((double)x,(double)(1.0/3.0))
   double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 
-// CHECK: #define NNBI(x) floor(x+0.5)
+// CHECK: #define NNBI(x) floor(x + 0.5)
 // CHECK-NEXT: NNBI(3.0);
 #define NNBI(x) floor(x+0.5)
 NNBI(3.0);
@@ -261,20 +261,6 @@ __global__ void foo4(){
   MMM( float rsqrtfr2; );
   // CHECK: sycl::float4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
   float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
-}
-
-//CHECK: #define MUL(a, b) sycl::mul24(a, b)
-//CHECK-NEXT: void foo5(sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:   unsigned int tid =
-//CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2));
-//CHECK-NEXT:   unsigned int threadN =
-//CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group_range(2)) +
-//CHECK-NEXT:       item_ct1.get_local_id(2);
-//CHECK-NEXT: }
-#define MUL(a, b) __umul24(a, b)
-__global__ void foo5() {
-  unsigned int      tid = MUL(blockDim.x, blockIdx.x);
-  unsigned int  threadN = MUL(blockDim.x, gridDim.x) + threadIdx.x;
 }
 
 // CHECK: template <class T>
@@ -453,4 +439,53 @@ __device__ void foo6(AAA, BBB)
    __shared__ float sp_coul[4];
    __shared__ int ljd[0];
    __shared__ double la[8][0];
+}
+
+
+//CHECK: #define MM __umul24
+//CHECK-NEXT: #define MUL(a, b) sycl::mul24(a, b)
+//CHECK-NEXT: void foo7(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   unsigned int tid =
+//CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2)) +
+//CHECK-NEXT:       item_ct1.get_local_range().get(2);
+//CHECK-NEXT:   unsigned int tid2 =
+//CHECK-NEXT:       sycl::mul24(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
+//CHECK-NEXT: }
+#define MM __umul24
+#define MUL(a, b) __umul24(a, b)
+__global__ void foo7() {
+  unsigned int      tid = MUL(blockDim.x, blockIdx.x) + blockDim.x;
+  unsigned int      tid2 = MM(blockDim.x, gridDim.x);
+}
+
+
+//CHECK: void foo8(){
+//CHECK-NEXT:   #define SLOW(X) X
+//CHECK-NEXT:   double* data;
+//CHECK-NEXT:   unsigned long long int tid;
+//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add(&data[0], (double)tid);
+//CHECK-NEXT:         dpct::atomic_fetch_add(&data[1], (double)(tid + 1));
+//CHECK-NEXT:         dpct::atomic_fetch_add(&data[2], (double)(tid + 2)););
+//CHECK-NEXT: }
+__global__ void foo8(){
+#define SLOW(X) X
+  double* data;
+  unsigned long long int tid;
+  SLOW(atomicAdd(&data[0], tid);
+  atomicAdd(&data[1], tid + 1);
+  atomicAdd(&data[2], tid + 2););
+}
+
+
+//CHECK: #define DFABS(x) (double)sycl::fabs((x))
+//CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
+//CHECK-NEXT: void foo9(){
+//CHECK-NEXT:   double a,b,c;
+//CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
+//CHECK-NEXT: }
+#define DFABS(x) (double) fabs((x))
+#define MAX(x, y) max(x, y)
+__global__ void foo9(){
+  double a,b,c;
+  MAX(a, sqrt(DFABS(b)));
 }

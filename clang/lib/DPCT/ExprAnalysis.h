@@ -228,15 +228,69 @@ public:
 
   inline void clearReplacement() { ReplSet.reset(); }
 
-  SourceLocation getExprBeginSrcLoc() { return ExprBeginLoc; }
-  SourceLocation getExprEndSrcLoc() { return ExprEndLoc; }
+  inline SourceLocation getExprBeginSrcLoc() { return ExprBeginLoc; }
+  inline SourceLocation getExprEndSrcLoc() { return ExprEndLoc; }
+  inline size_t getExprLength() { return SrcLength; }
+
+  // When NewRepl has larger range than existing Repl, remove Repl from
+  // SubExprRepl and vice versa
+  inline void addExtReplacement(std::shared_ptr<ExtReplacement> NewRepl) {
+    for (auto Repl = SubExprRepl.begin(); Repl != SubExprRepl.end();) {
+      if ((*Repl)->getFilePath() != NewRepl->getFilePath()) {
+        continue;
+      } else if ((*Repl)->getOffset() <= NewRepl->getOffset() &&
+        (*Repl)->getOffset() + (*Repl)->getLength() >=
+        NewRepl->getOffset() + NewRepl->getLength()) {
+        return;
+      } else if ((*Repl)->getOffset() >= NewRepl->getOffset() &&
+        (*Repl)->getOffset() + (*Repl)->getLength() <=
+        NewRepl->getOffset() + NewRepl->getLength()) {
+        SubExprRepl.erase(Repl);
+        if (Repl == SubExprRepl.end())
+          break;
+      } else {
+        Repl++;
+      }
+    }
+    SubExprRepl.push_back(NewRepl);
+  }
 
   // Replace a sub expr
-  template <class TextData>
-  inline void addReplacement(const Expr *E, TextData Text) {
-    auto LocInfo = getOffsetAndLength(E);
-    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  inline void addReplacement(const Expr *E, std::string Text) {
+    auto SpellingLocInfo = getSpellingOffsetAndLength(E);
+    if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                SpellingLocInfo.second >
+            SrcBegin + SrcLength) {
+      // If the spelling location is not in the parent range, add ExtReplacement
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+    } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                       SpellingLocInfo.second ==
+                   SrcBegin + SrcLength) {
+      // If the spelling location is the same as the parent range, add both
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(E);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    } else {
+      // If the spelling location is inside the parent range, add string
+      // replacement. The String replacement will be add to ExtReplacement other
+      // where.
+      auto LocInfo = getOffsetAndLength(E);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    }
   }
+
+  void applyAllSubExprRepl();
+ // Replace a sub template arg
+ inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
+   auto LocInfo = getOffsetAndLength(E);
+   addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+ }
 
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
@@ -263,6 +317,11 @@ protected:
   void initExpression(const Expr *Expression);
   void initSourceRange(const SourceRange &Range);
 
+  std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(SourceLocation Begin,
+    SourceLocation End);
+  std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(SourceLocation SL);
+  std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(const Expr *);
+
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
                                                SourceLocation End);
   // Advanced version to handle macros
@@ -273,11 +332,40 @@ protected:
   std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
 
   // Replace a token with its begin location
-  template <class TextData>
-  inline void addReplacement(SourceLocation SL, TextData Text) {
-    auto LocInfo = getOffsetAndLength(SL);
-    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  inline void addReplacement(SourceLocation SL, std::string Text) {
+    auto SpellingLocInfo = getSpellingOffsetAndLength(SL);
+    if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                SpellingLocInfo.second >
+            SrcBegin + SrcLength) {
+      // If the spelling location is not in the parent range, add ExtReplacement
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+    } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                       SpellingLocInfo.second ==
+                   SrcBegin + SrcLength) {
+      // If the spelling location is the same as the parent range, add both
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(SL);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    } else {
+      // If the spelling location is inside the parent range, add string
+      // replacement. The String replacement will be add to ExtReplacement other
+      // where.
+      auto LocInfo = getOffsetAndLength(SL);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    }
   }
+
+  inline void addReplacement(SourceLocation SL, unsigned TemplateIndex) {
+    auto LocInfo = getOffsetAndLength(SL);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+  }
+
   // Replace string with relative offset to the stored string and length
   inline void addReplacement(SourceLocation Begin, size_t Length,
                              std::string Text) {
@@ -285,29 +373,100 @@ protected:
   }
 
   // Replace string between begin location and end location
-  template <class TextData>
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
-                             TextData Text) {
-    auto LocInfo = getOffsetAndLength(Begin, End);
-    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
-  }
-  // Replace string between begin location and end location.
-  // Pass parent expr to calculate the correct location of macros
-  template <class TextData>
-  inline void addReplacement(SourceLocation Begin, SourceLocation End,
-                             const Expr *P, TextData Text) {
-    if (!P)
-      return addReplacement(Begin, End, std::move(Text));
-    auto LocInfo = getOffsetAndLength(Begin, End, P);
-    if (LocInfo.first > 0 && LocInfo.first < SrcLength) {
+                             std::string Text) {
+    auto SpellingLocInfo = getSpellingOffsetAndLength(Begin, End);
+    if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                SpellingLocInfo.second >
+            SrcBegin + SrcLength) {
+      // If the spelling location is not in the parent range, add ExtReplacement
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+    } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                       SpellingLocInfo.second ==
+                   SrcBegin + SrcLength) {
+      // If the spelling location is the same as the parent range, add both
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(Begin, End);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    } else {
+      // If the spelling location is inside the parent range, add string
+      // replacement. The String replacement will be add to ExtReplacement other
+      // where.
+      //addExtReplacement(std::make_shared<ExtReplacement>(
+      //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(Begin, End);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
   }
 
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+    unsigned TemplateIndex) {
+    auto LocInfo = getOffsetAndLength(Begin, End);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+  }
+
+  // Replace string between begin location and end location.
+  // Pass parent expr to calculate the correct location of macros
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+                             const Expr *P, std::string Text) {
+    if (!P)
+      return addReplacement(Begin, End, std::move(Text));
+    auto LocInfo = getOffsetAndLength(Begin, End, P);
+    if (LocInfo.first > 0 && LocInfo.first + LocInfo.second < SrcLength) {
+      auto SpellingLocInfo = getSpellingOffsetAndLength(Begin, End);
+      if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+        SpellingLocInfo.second >
+        SrcBegin + SrcLength) {
+        // If the spelling location is not in the parent range, add ExtReplacement
+        addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+        SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+        SpellingLocInfo.second ==
+        SrcBegin + SrcLength) {
+        // If the spelling location is the same as the parent range, add both
+        addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+        addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+      } else {
+        // If the spelling location is inside the parent range, add string
+        // replacement. The String replacement will be add to ExtReplacement other
+        // where.
+        //addExtReplacement(std::make_shared<ExtReplacement>(
+        //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+        addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+      }
+    }
+  }
+
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+    const Expr *P, unsigned TemplateIndex) {
+    if (!P)
+      return addReplacement(Begin, End, std::move(TemplateIndex));
+    auto LocInfo = getOffsetAndLength(Begin, End, P);
+    if (LocInfo.first > 0 && LocInfo.first < SrcLength) {
+      addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+    }
+  }
+
   // Replace total string
-  template <class TextData> inline void addReplacement(TextData Text) {
+  inline void addReplacement(std::string Text) {
     addReplacement(0, SrcLength, std::move(Text));
   }
+
+  inline void addReplacement(unsigned TemplateIndex) {
+    addReplacement(0, SrcLength, std::move(TemplateIndex));
+  }
+
   // Replace string with relative offset to the stored string and length
   inline void addReplacement(size_t Offset, size_t Length, std::string Text) {
     ReplSet.addStringReplacement(Offset, Length, std::move(Text));
@@ -384,8 +543,9 @@ protected:
   const SourceManager &SM;
 
   std::string RefString;
-
+  std::vector<std::shared_ptr<ExtReplacement>> SubExprRepl;
   bool IsInMacroDefine = false;
+
 private:
   // E is analyze target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
@@ -417,12 +577,26 @@ public:
   // Special init is needed for argument expression.
   void analyze(const Expr *Expression) {
     initArgumentExpr(Expression);
+    auto ExprBeginBeforeAnalyze = getExprBeginSrcLoc();
     analyze();
+    addExtReplacement(std::make_shared<ExtReplacement>(
+        SM, ExprBeginBeforeAnalyze, getExprLength(), getReplacedString(),
+        nullptr));
   }
+
+  inline void setCallSpelling(const CallExpr* E) {
+    auto LocInfo = getSpellingOffsetAndLength(E);
+    CallSpellingBegin = LocInfo.first;
+    CallSpellingEnd = CallSpellingBegin.getLocWithOffset(LocInfo.second);
+  }
+
+  std::string getRewriteString();
+
+  std::pair<SourceLocation, SourceLocation> getLocInCallSpelling(const Expr* E);
 
 protected:
   // Ignore the constructor when it's argument expression, it is copy/move
-  // constructor and no migration for it.Start analyze its argument.
+  // constructor and no migration for it. Start analyze its argument.
   // Replace total string when it is default argument expression.
   void initArgumentExpr(const Expr *Expression) {
     if (!Expression)
@@ -441,6 +615,11 @@ private:
 
   using DefaultArgMapTy = std::map<const Expr *, std::string>;
   static DefaultArgMapTy DefaultArgMap;
+  SourceLocation CallSpellingBegin;
+  SourceLocation CallSpellingEnd;
+
+  bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc);
+  bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath, size_t Offset);
 };
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {

@@ -8931,11 +8931,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaFree" || Name == "cublasFree") {
     if (USMLevel == UsmLevel::restricted) {
-      ExprAnalysis EA;
-      EA.analyze(C->getArg(0));
+      ArgumentAnalysis AA;
+      AA.setCallSpelling(C);
+      AA.analyze(C->getArg(0));
+      auto ArgStr = AA.getRewritePrefix() + AA.getRewriteString() +
+        AA.getRewritePostfix();
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
-      Repl << MapNames::getClNamespace() + "::free(" << EA.getReplacedString()
+      Repl << MapNames::getClNamespace() + "::free(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -9768,22 +9771,8 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
-    // Make sure all args in CE are not straddle nodes.
-    // (partially in function-like macro)
-    int ArgNum = CE->getNumArgs();
-    bool HasStraddleArg = false;
-    for (int i = 0; i < ArgNum; ++i) {
-      auto AE = CE->getArg(i);
-      ExprSpellingStatus SpellingStatus;
-      if (isExprStraddle(AE, &SpellingStatus)) {
-        HasStraddleArg = true;
-        break;
-      }
-    }
-    if (!HasStraddleArg) {
-      ExprAnalysis EA(CE);
-      emplaceTransformation(EA.getReplacement());
-    }
+    ExprAnalysis EA(CE);
+    EA.applyAllSubExprRepl();
   }
 }
 

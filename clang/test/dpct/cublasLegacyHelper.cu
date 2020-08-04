@@ -29,8 +29,8 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: #define MACRO_C(pointer) status = (dpct::dpct_free(d_A), 0)
-#define MACRO_C(pointer) status = cublasFree(d_A)
+// CHECK-NEXT: #define MACRO_C(pointer) status = (dpct::dpct_free(pointer), 0)
+#define MACRO_C(pointer) status = cublasFree(pointer)
 
 void foo2(cublasStatus){}
 

@@ -20,12 +20,13 @@ namespace dpct {
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
   Analyzer.analyze(Call->getArg(Idx));
-  return Analyzer.getRewritePrefix() + Analyzer.getReplacedString() +
+  return Analyzer.getRewritePrefix() + Analyzer.getRewriteString() +
          Analyzer.getRewritePostfix();
 }
 
 std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   std::vector<std::string> ArgList;
+  Analyzer.setCallSpelling(Call);
   for (unsigned i = 0; i < Call->getNumArgs(); ++i)
     ArgList.emplace_back(getMigratedArg(i));
   return ArgList;
@@ -79,20 +80,7 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   reportUnsupportedRoundingMode();
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(getNewFuncName());
-  // When the function name is in macro define,
-  // add extra replacement to migrate the function name
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto It = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(Call->getCallee()->getBeginLoc()));
-  if (It != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
-    ExprAnalysis EA;
-    EA.analyze(Call->getCallee());
-    EA.addReplacement(Call->getCallee(), getNewFuncName());
-    if (auto R = EA.getReplacement()) {
-    DpctGlobalInfo::getInstance().addReplacement(
-      R->getReplacement(DpctGlobalInfo::getContext()));
-    }
-  }
+
   return buildRewriteString();
 }
 
@@ -591,6 +579,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
         NamespaceStr = Namespace->getName().str();
     }
   }
+
+  Analyzer.setCallSpelling(Call);
 
   auto FD = Call->getDirectCallee();
   if (!FD)
