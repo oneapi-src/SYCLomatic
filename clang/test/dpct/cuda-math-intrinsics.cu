@@ -1689,10 +1689,10 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: us = sycl::vec<sycl::half, 1>{h}.convert<unsigned short, sycl::rounding_mode::rtz>()[0];
   us = __half2ushort_rz(h);
 
-  // CHECK: s = dpct::bit_cast<sycl::half, short>(h);
+  // CHECK: s = sycl::detail::bit_cast<short>(h);
   s = __half_as_short(h);
 
-  // CHECK: us = dpct::bit_cast<sycl::half, unsigned short>(h);
+  // CHECK: us = sycl::detail::bit_cast<unsigned short>(h);
   us = __half_as_ushort(h);
 
   // CHECK: h2 = sycl::half2{h,h};
@@ -1761,7 +1761,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __short2half_rz(s);
 
-  // CHECK: h = dpct::bit_cast<short, sycl::half>(s);
+  // CHECK: h = sycl::detail::bit_cast<sycl::half>(s);
   h = __short_as_half(s);
 
   // CHECK: h = sycl::vec<unsigned int, 1>{ui}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
@@ -1800,7 +1800,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = sycl::vec<unsigned short, 1>{us}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __ushort2half_rz(us);
 
-  // CHECK: h = dpct::bit_cast<unsigned short, sycl::half>(us);
+  // CHECK: h = sycl::detail::bit_cast<sycl::half>(us);
   h = __ushort_as_half(us);
 
   // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtn>()[0];
@@ -1863,7 +1863,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __double2ull_rz(d);
 
-  // CHECK: ll = dpct::bit_cast<double, long long>(d);
+  // CHECK: ll = sycl::detail::bit_cast<long long>(d);
   ll = __double_as_longlong(d);
 
   // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtn>()[0];
@@ -1914,10 +1914,10 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __float2ull_rz(f);
 
-  // CHECK: i = dpct::bit_cast<float, int>(f);
+  // CHECK: i = sycl::detail::bit_cast<int>(f);
   i = __float_as_int(f);
 
-  // CHECK: ui = dpct::bit_cast<float, unsigned int>(f);
+  // CHECK: ui = sycl::detail::bit_cast<unsigned int>(f);
   ui = __float_as_uint(f);
 
   // CHECK: d = sycl::vec<int, 1>{i}.convert<double, sycl::rounding_mode::rte>()[0];
@@ -1935,7 +1935,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtz>()[0];
   d = __int2float_rz(i);
 
-  // CHECK: f = dpct::bit_cast<int, float>(i);
+  // CHECK: f = sycl::detail::bit_cast<float>(i);
   f = __int_as_float(i);
 
   // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtn>()[0];
@@ -1962,7 +1962,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __ll2float_rz(ll);
 
-  // CHECK: d = dpct::bit_cast<long long, double>(ll);
+  // CHECK: d = sycl::detail::bit_cast<double>(ll);
   d = __longlong_as_double(ll);
 
   // CHECK: d = sycl::vec<unsigned int, 1>{ui}.convert<double, sycl::rounding_mode::rte>()[0];
@@ -1980,7 +1980,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtz>()[0];
   f = __uint2float_rz(ui);
 
-  // CHECK: f = dpct::bit_cast<unsigned int, float>(ui);
+  // CHECK: f = sycl::detail::bit_cast<float>(ui);
   f = __uint_as_float(ui);
 
   // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtn>()[0];
