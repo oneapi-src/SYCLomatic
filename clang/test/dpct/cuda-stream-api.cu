@@ -308,3 +308,21 @@ static void func()
   // CHECK-NEXT: checkCudaErrors((dev_ct1.destroy_queue(s1), 0));
   checkCudaErrors(cudaStreamDestroy(s1));
 }
+
+template <typename T>
+class S {
+  static const unsigned int MAX_NUM_PATHS = 8;
+  // CHECK: sycl::queue *streams[MAX_NUM_PATHS];
+  cudaStream_t streams[MAX_NUM_PATHS];
+};
+
+template <int I>
+class S2 {
+  // CHECK: sycl::queue *streams[I];
+  cudaStream_t streams[I];
+};
+
+void foo(int size) {
+  // CHECK: sycl::queue *streams[size];
+  cudaStream_t streams[size];
+}

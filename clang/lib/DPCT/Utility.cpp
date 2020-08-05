@@ -1660,7 +1660,7 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
     }
   }
   // cudaStream_t [] and cudaStream_t *[]
-  else if (auto CAT = dyn_cast<ConstantArrayType>(DDT)) {
+  else if (auto CAT = dyn_cast<clang::ArrayType>(DDT)) {
     auto PT = CAT->getElementType()->getPointeeType();
     // cudaStream_t []
     Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
