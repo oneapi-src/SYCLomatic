@@ -1200,6 +1200,9 @@ void ExplicitInstantiationDecl::initTemplateArgumentList(
                                            nullptr));
     }
   }
+
+  if (Specialization->getTemplateSpecializationArgs() == nullptr)
+    return;
   for (auto &Arg : Specialization->getTemplateSpecializationArgs()->asArray()) {
     TemplateArgumentInfo TA;
     switch (Arg.getKind()) {
