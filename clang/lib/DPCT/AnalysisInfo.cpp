@@ -617,14 +617,6 @@ std::string KernelCallExpr::getReplacement() {
   return Printer.str();
 }
 
-
-CallFunctionExpr::CallFunctionExpr(unsigned Offset,
-                                   const std::string &FilePathIn,
-                                   const CallExpr *CE)
-    : FilePath(FilePathIn), BeginLoc(Offset),
-      TextureObjectList(CE ? CE->getNumArgs() : 0,
-                        std::shared_ptr<TextureObjectInfo>()) {}
-
 inline std::string CallFunctionExpr::getExtraArguments() {
   if (!FuncInfo)
     return "";
@@ -1009,8 +1001,8 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
   deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
 }
 
-void deduceTemplateArguments(const CallExpr *CE,
-                             const FunctionTemplateDecl *FTD,
+template <class CallT>
+void deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (!FTD)
     return;
@@ -1023,9 +1015,9 @@ void deduceTemplateArguments(const CallExpr *CE,
 
   TAIList.resize(TemplateParmsList.size());
 
-  auto ArgItr = CE->arg_begin();
+  auto ArgItr = C->arg_begin();
   auto ParmItr = FTD->getTemplatedDecl()->param_begin();
-  while (ArgItr != CE->arg_end() &&
+  while (ArgItr != C->arg_end() &&
          ParmItr != FTD->getTemplatedDecl()->param_end()) {
     deduceTemplateArgument(TAIList, *ArgItr, *ParmItr);
     ++ArgItr;
@@ -1046,22 +1038,24 @@ void deduceTemplateArguments(const CallExpr *CE,
   }
 }
 
-void deduceTemplateArguments(const CallExpr *CE, const FunctionDecl *FD,
+template <class CallT>
+void deduceTemplateArguments(const CallT *C, const FunctionDecl *FD,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (FD)
-    return deduceTemplateArguments(CE, FD->getPrimaryTemplate(), TAIList);
+    return deduceTemplateArguments(C, FD->getPrimaryTemplate(), TAIList);
 }
 
-void deduceTemplateArguments(const CallExpr *CE, const NamedDecl *ND,
+template <class CallT>
+void deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (!ND)
     return;
   if (auto FTD = dyn_cast<FunctionTemplateDecl>(ND)) {
-    deduceTemplateArguments(CE, FTD, TAIList);
+    deduceTemplateArguments(C, FTD, TAIList);
   } else if (auto FD = dyn_cast<FunctionDecl>(ND)) {
-    deduceTemplateArguments(CE, FD, TAIList);
+    deduceTemplateArguments(C, FD, TAIList);
   } else if (auto UD = dyn_cast<UsingShadowDecl>(ND)) {
-    deduceTemplateArguments(CE, UD->getUnderlyingDecl(), TAIList);
+    deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList);
   }
 }
 
@@ -1087,7 +1081,42 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   }
 }
 
+void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
+  if (!Ctor)
+    return;
+  if (Ctor->getParenOrBraceRange().isInvalid())
+    return;
+
+  buildTextureObjectArgsInfo(Ctor);
+
+  auto CtorDecl = Ctor->getConstructor();
+  Name = getName(CtorDecl);
+  FuncInfo = DeviceFunctionDecl::LinkRedecls(CtorDecl);
+  deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
+
+  SourceLocation InsertLocation;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (FuncInfo) {
+    if (FuncInfo->NonDefaultParamNum) {
+      if (Ctor->getNumArgs() >= FuncInfo->NonDefaultParamNum) {
+        InsertLocation =
+            Ctor->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc();
+      } else {
+        ExtraArgLoc = 0;
+        return;
+      }
+    } else {
+      InsertLocation = Ctor->getParenOrBraceRange().getBegin();
+    }
+  }
+  ExtraArgLoc = SM.getFileOffset(
+      Lexer::getLocForEndOfToken(SM.getSpellingLoc(InsertLocation), 0, SM,
+                                 DpctGlobalInfo::getContext().getLangOpts()));
+}
+
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
+  if (!CE)
+    return;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
   buildTextureObjectArgsInfo(CE);
 

@@ -272,14 +272,14 @@ findObject(const MapType &Map, const typename MapType::key_type &Key) {
 }
 
 template <class MapType,
-          class ObjetType = typename MapType::mapped_type::element_type,
+          class ObjectType = typename MapType::mapped_type::element_type,
           class... Args>
 inline typename MapType::mapped_type
 insertObject(MapType &Map, const typename MapType::key_type &Key,
              Args &&... InitArgs) {
   auto &Obj = Map[Key];
   if (!Obj)
-    Obj = std::make_shared<ObjetType>(Key, std::forward<Args>(InitArgs)...);
+    Obj = std::make_shared<ObjectType>(Key, std::forward<Args>(InitArgs)...);
   return Obj;
 }
 
@@ -2364,9 +2364,11 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
 // variable info of all related function decls.
 class CallFunctionExpr {
 public:
-  CallFunctionExpr(unsigned Offset, const std::string &FilePathIn,
-    const CallExpr *CE);
+  template <class T>
+  CallFunctionExpr(unsigned Offset, const std::string &FilePathIn, const T &C)
+      : FilePath(FilePathIn), BeginLoc(Offset) {}
 
+  void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
 
   inline const MemVarMap &getVarMap() { return VarMap; }
@@ -2428,11 +2430,19 @@ private:
     }
   }
 
-  void buildTextureObjectArgsInfo(const CallExpr *CE) {
-    for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
-      addTextureObjectArg(
-          Idx, dyn_cast<DeclRefExpr>(CE->getArg(Idx)->IgnoreImpCasts()),
-          CE->getStmtClass() == Stmt::CUDAKernelCallExprClass);
+  template <class CallT>
+  void
+  buildTextureObjectArgsInfo(const CallT*C) {
+    auto Args = C->arguments();
+    auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
+    auto ArgsNum = std::distance(Args.begin(), Args.end());
+    auto ArgItr = Args.begin();
+    unsigned Idx = 0;
+    TextureObjectList.resize(ArgsNum);
+    while (ArgItr != Args.end()) {
+      addTextureObjectArg(Idx++,
+                          dyn_cast<DeclRefExpr>((*ArgItr++)->IgnoreImpCasts()),
+                          IsKernel);
     }
   }
   void mergeTextureObjectTypeInfo();
@@ -2592,12 +2602,13 @@ public:
         IsBuilt(false),
         TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
 
-  inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
-    auto CallLocInfo = DpctGlobalInfo::getLocInfo(CE);
-    auto C =
-        insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, CE);
-    C->buildCallExprInfo(CE);
-    return C;
+  template <class CallT>
+  inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
+    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+    auto Call =
+        insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
+    Call->buildCallExprInfo(C);
+    return Call;
   }
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
   inline void setItem() { VarMap.setItem(); }

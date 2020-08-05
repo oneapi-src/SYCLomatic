@@ -677,3 +677,65 @@ __global__ void cuda_pme_forces_dev() {
 int run_foo10() {
   cuda_pme_forces_dev<<<1,1>>>();
 }
+
+struct test_class {
+  __device__ test_class() = default;
+  // CHECK: test_class(int *a, cl::sycl::nd_item<3> item_ct1, int *s1) {
+  // CHECK-NEXT:  // __shared__ variable
+  // CHECK-NEXT:   s1[0] = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: test_class(int *a, int *b, cl::sycl::nd_item<3> item_ct1, float *s2) {
+  // CHECK-NEXT:  // __shared__ variable
+  // CHECK-NEXT:   int d = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: template<class T>
+  // CHECK-NEXT: test_class(T *a, T *b, cl::sycl::nd_item<3> item_ct1, T *s3) {
+  // CHECK-NEXT:  // __shared__ variable
+  // CHECK-NEXT:   int d = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT: }
+  __device__ test_class(int *a) {
+    __shared__ int s1[10]; // __shared__ variable
+    s1[0] = blockDim.x;
+  }
+  __device__ test_class(int *a, int *b) {
+    __shared__ float s2; // __shared__ variable
+    int d = blockDim.x;
+  }
+  template<class T>
+  __device__ test_class(T *a, T *b) {
+    __shared__ T s3; // __shared__ variable
+    int d = blockDim.x;
+  }
+};
+
+// CHECK: void kernel_ctor(cl::sycl::nd_item<3> item_ct1, int *s1, float *s2, float *s3) {
+// CHECK-NEXT:   float *fa, *fb;
+// CHECK-NEXT:   int *la, *lb;
+// CHECK-NEXT:   test_class tc(la, item_ct1, s1);
+// CHECK-NEXT:   tc = test_class(la, lb, item_ct1, s2);
+// CHECK-NEXT:   tc = test_class(fa, fb, item_ct1, s3);
+// CHECK-NEXT: }
+__global__ void kernel_ctor() {
+  float *fa, *fb;
+  int *la, *lb;
+  test_class tc(la);
+  tc = test_class(la, lb);
+  tc = test_class(fa, fb);
+}
+
+void test_ctor() {
+  // CHECK: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s2_acc_ct1(cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:       [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_pointer(), s2_acc_ct1.get_pointer(), (float *)s3_acc_ct1.get_pointer());
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+
+  kernel_ctor<<<1,1>>>();
+}

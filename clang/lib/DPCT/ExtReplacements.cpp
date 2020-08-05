@@ -25,7 +25,7 @@ ExtReplacements::ExtReplacements(DpctFileInfo *FileInfo)
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
   if (!Repl)
     return true;
-  if (Repl->getFilePath() != FilePath)
+  if (Repl->getFilePath().empty() || Repl->getFilePath() != FilePath)
     return true;
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
     return true;
