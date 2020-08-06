@@ -147,8 +147,9 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   std::int64_t *ipiv_int64 =
       cl::sycl::malloc_device<std::int64_t>(batch_size * n, exec_queue);
   std::int64_t **ipiv_int64_ptr =
-      cl::sycl::malloc_shared<std::int64_t *>(1, exec_queue);
-  ipiv_int64_ptr[0] = ipiv_int64;
+      cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
+  for (int64_t i = 0; i < batch_size; ++i)
+    ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
   oneapi::mkl::lapack::getrf_batch(exec_queue, &m_int64, &n_int64, (Ty **)a, &lda_int64,
                            ipiv_int64_ptr, 1, &group_sizes, scratchpad,
@@ -266,8 +267,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   std::int64_t *ipiv_int64 =
       cl::sycl::malloc_device<std::int64_t>(batch_size * n, exec_queue);
   std::int64_t **ipiv_int64_ptr =
-      cl::sycl::malloc_shared<std::int64_t *>(1, exec_queue);
-  ipiv_int64_ptr[0] = ipiv_int64;
+      cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
 
   exec_queue.submit([&](cl::sycl::handler &cgh) {
     cgh.parallel_for<class device_int_to_int64>(
@@ -275,6 +275,9 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
           ipiv_int64[idx] = static_cast<std::int64_t>(ipiv[idx]);
         });
   });
+
+  for (int64_t i = 0; i < batch_size; ++i)
+    ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
   cl::sycl::event e = oneapi::mkl::lapack::getrs_batch(
       exec_queue, &trans, &n_int64, &nrhs_int64, (Ty **)a, &lda_int64,
@@ -377,8 +380,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   std::int64_t *ipiv_int64 =
       cl::sycl::malloc_device<std::int64_t>(batch_size * n, exec_queue);
   std::int64_t **ipiv_int64_ptr =
-      cl::sycl::malloc_shared<std::int64_t *>(1, exec_queue);
-  ipiv_int64_ptr[0] = ipiv_int64;
+      cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
 
   exec_queue.submit([&](cl::sycl::handler &cgh) {
     cgh.parallel_for<class device_int_to_int64>(
@@ -388,6 +390,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   });
 
   for (int64_t i = 0; i < batch_size; ++i) {
+    ipiv_int64_ptr[i] = ipiv_int64 + n * i;
     // Need to create a copy of input matrices A to keep them unchanged.
     // B (copy of A) will be used as input and output parameter in MKL API
     // call.
