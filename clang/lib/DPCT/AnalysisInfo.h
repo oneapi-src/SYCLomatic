@@ -2583,13 +2583,12 @@ public:
                             const TemplateArgumentListInfo &TAList)
       : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, Specialization) {
     initTemplateArgumentList(TAList, Specialization);
-    processParmVarDecls(FTL.getParams());
   }
+  static void processFunctionTypeLoc(const FunctionTypeLoc &);
 
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
-  void processParmVarDecls(const ArrayRef<ParmVarDecl *> &);
   std::string getExtraParameters() override;
 };
 

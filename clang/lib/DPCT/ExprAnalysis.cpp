@@ -424,6 +424,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
     return analyzeType(TL.getUnqualifiedLoc(), CSCE);
+  case TypeLoc::LValueReference:
+  case TypeLoc::RValueReference:
+    return analyzeType(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Pointer:
     return analyzeType(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:

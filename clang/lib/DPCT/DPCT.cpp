@@ -455,6 +455,7 @@ public:
       const TemplateArgumentListInfo &TAList) override {
     if (!FTL || !Specialization)
       return;
+    ExplicitInstantiationDecl::processFunctionTypeLoc(FTL);
     if (Specialization->getTemplateSpecializationKind() !=
         TSK_ExplicitInstantiationDefinition)
       return;

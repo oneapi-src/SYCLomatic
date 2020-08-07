@@ -1263,18 +1263,23 @@ void ExplicitInstantiationDecl::initTemplateArgumentList(
   }
 }
 
-void ExplicitInstantiationDecl::processParmVarDecls(
-    const ArrayRef<ParmVarDecl *> &Parms) {
+void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
+                    const SourceManager &SM) {
+  EA.analyze(TL);
+  if (EA.hasReplacement()) {
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
+        nullptr));
+  }
+}
+
+void ExplicitInstantiationDecl::processFunctionTypeLoc(
+    const FunctionTypeLoc &FTL) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   ExprAnalysis EA;
-  for (auto Parm : Parms) {
-    auto TL = Parm->getTypeSourceInfo()->getTypeLoc();
-    EA.analyze(Parm->getTypeSourceInfo()->getTypeLoc());
-    if (EA.hasReplacement()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
-                                           nullptr));
-    }
+  processTypeLoc(FTL.getReturnLoc(), EA, SM);
+  for (auto Parm : FTL.getParams()) {
+    processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
   }
 }
 

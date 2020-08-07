@@ -1,6 +1,14 @@
 // RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-instantiation.dp.cpp
 
+#include <vector>
+
+template<class T>
+T &host_instantiation(T &a) { return a; }
+
+// CHECK: template const std::vector<sycl::float2> &host_instantiation(std::vector<sycl::float2> const &);
+template const std::vector<float2> &host_instantiation(std::vector<float2> const &);
+
 // CHECK: void kernel(int *, sycl::nd_item<3> item_ct1, T *a) {
 template<class T>
 __global__ void kernel(int *) {
