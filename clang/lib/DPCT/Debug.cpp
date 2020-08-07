@@ -242,8 +242,21 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: Prefix is too long; should be less than 128";
     break;
   case MigrationErrorNoFileTypeAvail:
-      StatusString = "Error: File Type not available for input file";
-      break;
+    StatusString = "Error: File Type not available for input file";
+    break;
+  case MigrationErrorInRootContainCTTool:
+    StatusString =
+        "Error: Input folder is the parent or the same as the folder where "
+        "Intel(R) DPC++ Compatibility Tool is installed";
+    break;
+  case MigrationErrorRunFromSDKFolder:
+    StatusString = "Error: Input folder specified by \"-in-root\" option is in "
+                   "CUDA_PATH folder";
+    break;
+  case MigrationErrorInRootContainSDKFolder:
+    StatusString =
+        "Error: Input folder is the parent or the same of CUDA_PATH folder";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     exit(-1);

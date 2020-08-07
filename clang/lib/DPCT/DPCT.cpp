@@ -583,19 +583,17 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
-    std::string ErrMsg =
-        "[ERROR] Input root specified by \"-in-root\" option \"" + InRoot +
-        "\" is in CUDA_PATH folder \"" + CudaPath + "\"\n";
-    PrintMsg(ErrMsg);
+    DebugInfo::ShowStatus(MigrationErrorRunFromSDKFolder);
     exit(MigrationErrorRunFromSDKFolder);
   }
 
+  if (isChildOrSamePath(InRoot, CudaPath)) {
+    DebugInfo::ShowStatus(MigrationErrorInRootContainSDKFolder);
+    exit(MigrationErrorInRootContainSDKFolder);
+  }
+
   if (isChildOrSamePath(InRoot, DpctInstallPath)) {
-    std::string ErrMsg = "[ERROR] Input folder \"" + InRoot +
-                         "\" is the parent or the same as the folder where "
-                         "Intel(R) DPC++ Compatibility Tool is installed \"" +
-                         DpctInstallPath + "\"\n";
-    PrintMsg(ErrMsg);
+    DebugInfo::ShowStatus(MigrationErrorInRootContainCTTool);
     exit(MigrationErrorInRootContainCTTool);
   }
 }

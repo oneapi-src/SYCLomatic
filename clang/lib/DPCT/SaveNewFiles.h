@@ -64,6 +64,7 @@ enum ProcessStatus {
   MigrationErrorPrefixTooLong = -25,
   MigrationErrorFormatFail = -26,
   MigrationErrorNoFileTypeAvail = -27,
+  MigrationErrorInRootContainSDKFolder = -28,
 };
 
 /// Apply all generated replacements, and immediately save the results to
