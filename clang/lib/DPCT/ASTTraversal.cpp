@@ -2111,6 +2111,182 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
   return false;
 }
 
+// Make the necessary replacements for thrust::transform_iterator.
+// The mapping requires swapping of the two template parameters, i.e.
+//   thrust::transform_iterator<Functor, Iterator> ->
+//     dpstd::transform_iterator<Iterator, Functor>
+// This is a special transformation, because it requires the template
+// parameters to be processed as part of the top level processing of
+// the transform_iterator itself.  Simply processing the TypeLocs
+// representing the template arguments when they are matched would
+// result in wrong replacements being produced.
+//
+// For example:
+//   thrust::transform_iterator<F, thrust::transform_iterator<F,I>>
+// Should produce:
+//   dpstd::transform_iterator<dpstd::transform_iterator<I,F>, F>
+//
+// The processing is therefore done by recursively walking all the
+// TypeLocs that can be reached from the template arguments, and
+// marking them as processed, so they won't be processed again, when
+// their TypeLocs are matched by the matcher
+bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
+                                              LangOptions &LOpts,
+                                              const TypeLoc *TL) {
+
+  // Local helper functions
+
+  auto getFileLoc = [&](SourceLocation Loc) -> SourceLocation {
+    // The EndLoc of some TypeLoc objects are Extension Locs, even
+    // when the BeginLoc is a regular FileLoc.  This seems to happen
+    // when the last typearg in a template specialization
+    // is itself a template type.  For example.
+    // SomeType<T1, AnotherType<T2>>.  The EndLoc for the TypeLoc for
+    // AnotherType<T2> is an extension Loc.
+    return SM->getFileLoc(Loc);
+  };
+
+  // Get the string from the source between [B, E].  The E location
+  // is extended to the end of the token.  Special handling of the
+  // '>' token is required in case it's followed by another '>'
+  // For example: T<F, I<X>>
+  // Without the special case condition, '>>' is considered one token
+  auto getStr = [&](SourceLocation B, SourceLocation E) {
+    B = getFileLoc(B);
+    E = getFileLoc(E);
+    if (*(SM->getCharacterData(E)) == '>')
+      E = E.getLocWithOffset(1);
+    else
+      E = Lexer::getLocForEndOfToken(E, 0, *SM, LOpts);
+    return std::string(SM->getCharacterData(B), SM->getCharacterData(E));
+  };
+
+  // Strip the 'typename' keyword when used in front of template types
+  // This is necessary when looking up the typename string in the TypeNamesMap
+  auto stripTypename = [](std::string &Str) {
+    if (Str.substr(0, 8) == "typename") {
+      Str = Str.substr(8);
+      Str.erase(Str.begin(), std::find_if(Str.begin(), Str.end(), [](char ch) {
+                  return !std::isspace(ch);
+                }));
+      return true;
+    }
+    return false;
+  };
+
+  // Get the Typename without potential template arguments.
+  // For example:
+  //   thrust::transform_iterator<F, I>
+  //     -> thrust::transform_iterator
+  auto getBaseTypeName = [&](const TypeLoc *TL) -> std::string {
+    std::string Name = getStr(TL->getBeginLoc(), TL->getEndLoc());
+    auto LAnglePos = Name.find("<");
+    if (LAnglePos != std::string::npos)
+      return Name.substr(0, LAnglePos);
+    else
+      return Name;
+  };
+
+  // Get the mapped typename, if one exists.  If not return the input
+  auto mapName = [&](std::string Name) -> std::string {
+    std::string NameToMap = Name;
+    bool Stripped = stripTypename(NameToMap);
+    std::string Replacement =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, NameToMap);
+    if (Replacement.empty())
+      return Name;
+    else if (Stripped)
+      return std::string("typename ") + Replacement;
+    else
+      return Replacement;
+  };
+
+  // Returns whether a TypeLoc has a template specialization, if
+  // so the specialization is returned as well
+  auto hasTemplateSpecialization =
+      [&](const TypeLoc *TL, TemplateSpecializationTypeLoc &TSTL) -> bool {
+    if (TL->getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+      TSTL = TL->getAs<TemplateSpecializationTypeLoc>();
+      return true;
+    }
+    if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
+      auto ETL = TL->getAs<ElaboratedTypeLoc>();
+      auto NTL = ETL.getNamedTypeLoc();
+      if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+        TSTL = NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+        return true;
+      } else
+        return false;
+    }
+    return false;
+  };
+
+  // Returns whether a TypeLoc represents the thrust::transform_iterator
+  // type with exactly 2 template arguments
+  auto isTransformIterator = [&](const TypeLoc *TL) -> bool {
+    TemplateSpecializationTypeLoc TSTL;
+    if (hasTemplateSpecialization(TL, TSTL)) {
+      std::string TypeStr = getStr(TSTL.getBeginLoc(), TSTL.getBeginLoc());
+      if (TypeStr == "transform_iterator" && TSTL.getNumArgs() == 2) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Returns the full string replacement for a TypeLoc.  If necessary
+  // template arguments are recursively walked to get potential replacement
+  // for those as well.
+  std::function<std::string(const TypeLoc *)> getNewTypeStr =
+      [&](const TypeLoc *TL) -> std::string {
+    std::string BaseTypeStr = getBaseTypeName(TL);
+    std::string NewBaseTypeStr = mapName(BaseTypeStr);
+    TemplateSpecializationTypeLoc TSTL;
+    bool hasTSTL = hasTemplateSpecialization(TL, TSTL);
+    // Mark this TL as having been processed
+    ProcessedTypeLocs.insert(*TL);
+    if (!hasTSTL) {
+      // Not a template specialization, so recursion can terminate
+      return NewBaseTypeStr;
+    }
+    // Mark the TSTL TypeLoc as having been processed
+    ProcessedTypeLocs.insert(TSTL);
+    if (isTransformIterator(TL)) {
+      // Two template arguments must be swapped
+      auto Arg1 = TSTL.getArgLoc(0).getTypeSourceInfo()->getTypeLoc();
+      auto Arg2 = TSTL.getArgLoc(1).getTypeSourceInfo()->getTypeLoc();
+      std::string Arg1Str = getNewTypeStr(&Arg1);
+      std::string Arg2Str = getNewTypeStr(&Arg2);
+      return NewBaseTypeStr + "<" + Arg2Str + ", " + Arg1Str + ">";
+    }
+    // Recurse down through the template arguments
+    std::string NewTypeStr = NewBaseTypeStr + "<";
+    for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
+      auto ArgLoc = TSTL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc();
+      std::string ArgStr = getNewTypeStr(&ArgLoc);
+      if (i != 0)
+        NewTypeStr += ", ";
+      NewTypeStr += ArgStr;
+    }
+    NewTypeStr += ">";
+    return NewTypeStr;
+  };
+
+  // Main function:
+  // Perform the complete replacement for the input TypeLoc.
+  // TypeLocs that are being processed during the walk are inserted
+  // into the ProcessedTypeLocs set, to prevent further processing
+  // by the main matcher function
+  if (!isTransformIterator(TL)) {
+    return false;
+  }
+  std::string NewTypeStr = getNewTypeStr(TL);
+  emplaceTransformation(new ReplaceToken(getFileLoc(TL->getBeginLoc()),
+                                         getFileLoc(TL->getEndLoc()),
+                                         std::move(NewTypeStr)));
+  return true;
+}
+
 bool TypeInDeclRule::isDeviceRandomStateType(const TypeLoc *TL,
                                              const SourceLocation &SL) {
   std::string TypeStr = TL->getType().getAsString();
@@ -2129,9 +2305,13 @@ bool TypeInDeclRule::isDeviceRandomStateType(const TypeLoc *TL,
 
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  SourceManager *SM = Result.SourceManager;
+  auto LOpts = Result.Context->getLangOpts();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    if (ProcessedTypeLocs.find(*TL) != ProcessedTypeLocs.end())
+      return;
+
     auto BeginLoc = TL->getBeginLoc();
-    SourceManager *SM = Result.SourceManager;
 
     if (BeginLoc.isMacroID()) {
       auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
@@ -2163,9 +2343,11 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
     reportForNcclAndCudnn(TL, BeginLoc);
 
-    auto LOpts = Result.Context->getLangOpts();
-
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
+      return;
+    }
+
+    if (replaceTransformIterator(SM, LOpts, TL)) {
       return;
     }
 

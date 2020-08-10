@@ -494,6 +494,21 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  struct TypeLocHash {
+    std::size_t operator()(TypeLoc const& TL) const noexcept {
+      return std::hash<unsigned>{}(TL.getBeginLoc().getRawEncoding());
+    }
+  };
+  struct TypeLocEqual {
+    bool operator()(TypeLoc const& TL1, TypeLoc const& TL2) const {
+      return (TL1.getBeginLoc() == TL2.getBeginLoc()) &&
+        (TL1.getEndLoc() == TL2.getEndLoc());
+    }
+  };
+  // Holds the set of TypeLocs that have been processed.
+  // Used to prevent them from being processed multiple times
+  std::unordered_set<TypeLoc, TypeLocHash, TypeLocEqual> ProcessedTypeLocs;
+
   void processCudaStreamType(const DeclaratorDecl *DD, const SourceManager *SM,
                              bool &SpecialCaseHappened);
   void reportForNcclAndCudnn(const TypeLoc *TL, const SourceLocation BeginLoc);
@@ -502,6 +517,10 @@ private:
                                      const TemplateSpecializationTypeLoc TSL);
   bool replaceDependentNameTypeLoc(SourceManager *SM, LangOptions &LOpts,
                                    const TypeLoc *TL);
+  bool replaceTransformIterator(SourceManager *SM,
+                                LangOptions &LOpts,
+                                const TypeLoc *TL);
+
   bool isDeviceRandomStateType(const TypeLoc *TL, const SourceLocation &SL);
 };
 

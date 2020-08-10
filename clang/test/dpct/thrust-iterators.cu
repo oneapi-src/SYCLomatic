@@ -12,22 +12,26 @@
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/functional.h>
 
-template <typename Iterator, typename StrideFunctor>
+template <typename I, typename F>
 class StridedRange {
 public:
-  // TODO
-  typedef typename thrust::iterator_difference<Iterator>::type difference_type;
-// CHECK:  typedef typename dpstd::counting_iterator<difference_type>                   CountingIterator;
-  typedef typename thrust::counting_iterator<difference_type>                   CountingIterator;
-// CHECK:  typedef typename dpstd::transform_iterator<StrideFunctor, CountingIterator>  TransformIterator;
-  typedef typename thrust::transform_iterator<StrideFunctor, CountingIterator>  TransformIterator;
-// CHECK:  typedef typename dpstd::permutation_iterator<Iterator,TransformIterator>     PermutationIterator;
-  typedef typename thrust::permutation_iterator<Iterator,TransformIterator>     PermutationIterator;
+  typedef typename thrust::iterator_difference<I>::type difference_type;
+// CHECK:  typedef typename dpstd::counting_iterator<difference_type> CI;
+  typedef typename thrust::counting_iterator<difference_type> CI;
+// CHECK:  typedef typename dpstd::permutation_iterator<I, I> PI;
+  typedef typename thrust::permutation_iterator<I, I> PI;
+
+// CHECK:  typedef typename dpstd::transform_iterator<CI, F> TI1;
+  typedef typename thrust::transform_iterator<F, CI> TI1;
+// CHECK:  typedef typename dpstd::transform_iterator<dpstd::counting_iterator<int>, F> TI2;
+  typedef typename thrust::transform_iterator<F, thrust::counting_iterator<int>> TI2;
+// CHECK:  typedef typename dpstd::transform_iterator<dpstd::transform_iterator<I, F>, F> TI3;
+  typedef typename thrust::transform_iterator<F, thrust::transform_iterator<F, I>> TI3;
 
 // CHECK:  dpstd::counting_iterator<difference_type> cIt;
   thrust::counting_iterator<difference_type> cIt;
-// CHECK:  dpstd::transform_iterator<StrideFunctor, CountingIterator>  tIt;
-  thrust::transform_iterator<StrideFunctor, CountingIterator>  tIt;
-// CHECK:  dpstd::permutation_iterator<Iterator,TransformIterator> pIt;
-  thrust::permutation_iterator<Iterator,TransformIterator> pIt;
+// CHECK:  dpstd::permutation_iterator<I, TI1> pIt;
+  thrust::permutation_iterator<I, TI1> pIt;
+// CHECK:  dpstd::transform_iterator<F, CI>  tIt;
+  thrust::transform_iterator<CI, F>  tIt;
 };
