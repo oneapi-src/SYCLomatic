@@ -686,6 +686,45 @@ public:
   inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
 };
 
+/// Analyzes the side effects of an expression while doing basic expression analysis
+class SideEffectsAnalysis : public ExprAnalysis {
+public:
+  explicit SideEffectsAnalysis(const Expr *E) : ExprAnalysis(E) {}
+  inline bool hasSideEffects() {
+    return HasSideEffects;
+  }
+
+protected:
+  void dispatch(const Stmt *Expression) override;
+
+private:
+  using Base = ExprAnalysis;
+
+  inline void analyzeExpr(const BinaryOperator *BO) {
+    switch (BO->getOpcode()) {
+    // Some binary operators have side effects
+    case BO_Assign:
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_ShlAssign:
+    case BO_ShrAssign:
+    case BO_AndAssign:
+    case BO_XorAssign:
+    case BO_OrAssign:
+      HasSideEffects = true;
+    default:
+      break;
+    }
+    Base::analyzeExpr(BO);
+  }
+
+private:
+  bool HasSideEffects = false;
+};
+
 } // namespace dpct
 } // namespace clang
 

@@ -15,6 +15,7 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
 #include "clang/AST/ExprObjC.h"
 #include "clang/AST/ExprOpenMP.h"
@@ -874,6 +875,28 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
     }
   }
   return std::pair<SourceLocation, SourceLocation>(BeginCandidate, EndCandidate);
+}
+
+void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(BinaryOperator)
+  // The following types of expressions don't have side effects
+  case Stmt::IntegerLiteralClass:
+  case Stmt::FloatingLiteralClass:
+  case Stmt::StringLiteralClass:
+  case Stmt::DeclRefExprClass:
+  case Stmt::ArraySubscriptExprClass:
+  case Stmt::CStyleCastExprClass:
+  case Stmt::CXXStaticCastExprClass:
+  case Stmt::ImplicitCastExprClass:
+  case Stmt::ParenExprClass:
+  case Stmt::ConditionalOperatorClass:
+  case Stmt::MemberExprClass:
+      break;
+  default:
+    HasSideEffects = true;
+  }
+  return ExprAnalysis::dispatch(Expression);
 }
 
 } // namespace dpct

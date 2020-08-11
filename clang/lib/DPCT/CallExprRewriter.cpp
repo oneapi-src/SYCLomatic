@@ -12,8 +12,10 @@
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/Basic/LangOptions.h"
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
+#include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
 
@@ -818,12 +820,36 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
     auto T1 = Arg1->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
+    auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
-    // For integer literal 2, expand to multiply expression:
-    // pow(x, 2) ==> x * x.
-    if (IL1 && DRE0 && IL1->getValue().getZExtValue() == 2) {
-      auto Arg0Str = ExprAnalysis::ref(Arg0);
-      return Arg0Str + " * " + Arg0Str;
+    // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
+    // multiply expression:
+    // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
+    // pow(x, 2.0) ==> x * x, if x is an expression that has no side effects.
+    // pow(x, 2.0f) ==> x * x, if x is an expression that has no side effects.
+    bool IsExponentTwo= false;
+    if (IL1) {
+      if (IL1->getValue().getZExtValue() == 2)
+        IsExponentTwo = true;
+    } else if (FL1) {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
+        auto B = SM.getCharacterData(FL1->getBeginLoc());
+        auto E = SM.getCharacterData(Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
+        std::string Exponent(B, E);
+        if (Exponent == "2.0" || Exponent == "2.0f")
+          IsExponentTwo = true;
+      }
+    }
+    SideEffectsAnalysis SEA(Arg0);
+    SEA.analyze();
+    bool Arg0HasSideEffects = SEA.hasSideEffects();
+    if (!Arg0HasSideEffects && IsExponentTwo) {
+      auto Arg0Str = SEA.getReplacedString();
+      if (!needExtraParens(Arg0))
+        return Arg0Str + " * " + Arg0Str;
+      else
+        return "(" + Arg0Str + ") * (" + Arg0Str + ")";
     }
     // For i of integer type or integer literals, migrate to sycl::pown:
     // pow(x, i) ==> pown(x, i);

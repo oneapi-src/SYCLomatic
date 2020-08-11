@@ -3365,3 +3365,88 @@ __global__ void test_umul24_complicated() {
   // CHECK: unsigned int threadN2 = UMUL(item_ct1.get_local_range().get(2), item_ct1.get_group_range(2));
   unsigned int threadN2 = UMUL(blockDim.x, gridDim.x);
 }
+
+struct S {
+  int m;
+};
+
+__device__ int fun(int i) { return i * 2; }
+
+__device__ S fun2(int i) { return { i * 2 }; }
+
+#define TWO 2.0
+
+// CHECK: #define POW_TWO(x) sycl::pow(x, 2.0)
+#define POW_TWO(x) pow(x, 2.0)
+
+// CHECK: #define POW(x, y) sycl::pow(x, y)
+#define POW(x, y) pow(x, y)
+
+__global__ void test_side_effects() {
+  int a, b[10];
+  S s;
+  S *sp = new S;
+
+  // CHECK: int c = (a - b[0]) * (a - b[0]);
+  int c = pow(a - b[0], 2);
+  // CHECK: int d = a * a;
+  int d = pow(a, 2);
+  // CHECK: int e = 2 * 2;
+  int e = pow(2, 2);
+  // CHECK: int f = 2.0 * 2.0;
+  int f = pow(2.0, 2);
+  // CHECK: int g = (a ? b[0] : b[1]) * (a ? b[0] : b[1]);
+  int g = pow(a ? b[0] : b[1] , 2);
+  // CHECK: int h = (a >> 2) * (a >> 2);
+  int h = pow(a >> 2, 2);
+  // CHECK: int i = sycl::pown((float)(fun(a)), 2);
+  int i = pow(fun(a), 2);
+  // CHECK: int j = b[0] * b[0];
+  int j = pow(b[0], 2);
+  // CHECK: int k = (a + b[0]) * (a + b[0]);
+  int k = pow((a + b[0]), 2);
+  // CHECK: int l = s.m * s.m;
+  int l = pow(s.m, 2);
+  // CHECK: int m = sp->m * sp->m;
+  int m = pow(sp->m, 2);
+  // CHECK: int n = (int)a * (int)a;
+  int n = pow((int)a, 2);
+  // CHECK: int o = static_cast<float>(a) * static_cast<float>(a);
+  int o = pow(static_cast<float>(a), 2);
+  // CHECK: int p = (a & b[0]) * (a & b[0]);
+  int p = pow(a & b[0], 2);
+  // CHECK: int q = (a && b[0]) * (a && b[0]);
+  int q = pow(a && b[0], 2);
+  // CHECK: int r = sycl::pown((float)(a += b[0]), 2);
+  int r = pow(a += b[0], 2);
+  // CHECK: int t = sycl::pown((float)(fun2(a).m), 2);
+  int t = pow(fun2(a).m, 2);
+  // CHECK: int u = sycl::pown((float)(a = b[0]), 2);
+  int u = pow(a = b[0], 2);
+
+  // CHECK: int u1 = 2.0 * 2.0;
+  int u1 = pow(2.0, 2.0);
+  // CHECK: int v = sycl::pow(2.0, 1.99999999999999999);
+  int v = pow(2.0, 1.99999999999999999);
+  // CHECK: int w = 2.0 * 2.0;
+  int w = pow(2.0, 2.0f);
+  // CHECK: int w1 = sycl::pow(2.0, (double)(2.0000000001f));
+  int w1 = pow(2.0, 2.0000000001f);
+  // CHECK: int w2 = sycl::pow(2.0, (double)(2.0000001f));
+  int w2 = pow(2.0, 2.0000001f);
+  // CHECK: int w3 = sycl::pow(2.0, 2.0000000000000001);
+  int w3 = pow(2.0, 2.0000000000000001);
+  // CHECK: int x = 2.0 * 2.0;
+  int x = pow(2.0, 2l);
+  // CHECK: int y = 2.0 * 2.0;
+  int y = pow(2.0, 2ul);
+  // CHECK: int z = 2.0 * 2.0;
+  int z = pow(2.0, 2ull);
+
+  // CHECK: sycl::pow(2.0, TWO);
+  pow(2.0, TWO);
+  // CHECK: POW_TWO(2.0);
+  POW_TWO(2.0);
+  // CHECK: POW(2.0, 2.0);
+  POW(2.0, 2.0);
+}
