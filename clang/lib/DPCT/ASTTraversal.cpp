@@ -10453,6 +10453,21 @@ void PreDefinedStreamHandleRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(PreDefinedStreamHandleRule)
 
+void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(asmStmt(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                       hasAttr(attr::CUDAGlobal))))).bind("asm"), this);
+}
+
+void AsmRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  if (auto E = getNodeAsType<Stmt>(Result, "asm")){
+    report(E->getBeginLoc(), Diagnostics::DEVICE_ASM, true);
+  }
+  return;
+}
+
+REGISTER_RULE(AsmRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;

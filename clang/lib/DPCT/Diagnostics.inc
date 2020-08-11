@@ -122,3 +122,5 @@ DEF_WARNING(UNSUPPORTED_DEVICE_PROP, 1051, "DPC++ does not support the device pr
 DEF_COMMENT(UNSUPPORTED_DEVICE_PROP, 1051, "DPC++ does not support the device property which would be functionally compatible with {0}, it was migrated to {1}. You may need to rewrite the code.")
 DEF_WARNING(VOLATILE_VECTOR_ACCESS, 1052, "DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.")
 DEF_COMMENT(VOLATILE_VECTOR_ACCESS, 1052, "DPC++ does not support the member access for volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.")
+DEF_WARNING(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
+DEF_COMMENT(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
