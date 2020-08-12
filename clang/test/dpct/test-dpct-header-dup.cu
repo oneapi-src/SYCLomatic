@@ -6,7 +6,7 @@
 #include "inc/header3.c"
 #include "inc/header4.c"
 
-// CHECK: void foo() {
+// CHECK: void foo(int *) {
 // CHECK-NEXT: }
-__global__ void foo() {
+__global__ void foo(int *) {
 }

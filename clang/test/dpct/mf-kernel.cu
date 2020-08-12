@@ -1,12 +1,18 @@
 #include "mf-kernel.cuh"
-// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/mf-test.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: echo pass
 
-  // CHECK: dpct::device_memory<volatile int, 0> g_mutex(0);
+// CHECK: dpct::device_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int *g_mutex)
 __global__ void Reset_kernel_parameters(void)
 {
     g_mutex=0;
+}
+
+// CHECK: SYCL_EXTERNAL void kernel_extern(sycl::nd_item<3> item_ct1, int *a) {
+__global__ void kernel_extern() {
+  __shared__ int a[360];
+  a[0] = blockIdx.x;
 }
 
 // CHECK: SYCL_EXTERNAL void test_foo(){
@@ -58,17 +64,19 @@ __global__ void constAdd(float *C) {
 
 // CHECK: void call_constAdd(float *h_C, int size) {
 // CHECK-NEXT:  float *d_C = NULL;
-// CHECK-NEXT:  {
-// CHECK-NEXT:    dpct::buffer_t d_C_buf_ct0 = dpct::get_buffer(d_C);
+// CHECK-NEXT:  {    
+// CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> d_C_buf_ct0 = dpct::get_buffer_and_offset(d_C);
+// CHECK-NEXT:    size_t d_C_offset_ct0 = d_C_buf_ct0.second;
 // CHECK-NEXT:    dpct::get_default_queue().submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        auto A_ct_acc_ct1 = A_ct.get_access(cgh);
-// CHECK-NEXT:        auto d_C_acc_ct0 = d_C_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:        auto A_acc_ct1 = A_ct.get_access(cgh);
+// CHECK-NEXT:        auto d_C_acc_ct0 = d_C_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            constAdd((float *)(&d_C_acc_ct0[0]), item_ct1, A_ct_acc_ct1.get_pointer());
+// CHECK-NEXT:            float *d_C_ct0 = (float *)(&d_C_acc_ct0[0] + d_C_offset_ct0);
+// CHECK-NEXT:            constAdd(d_C_ct0, item_ct1, A_acc_ct1.get_pointer());
 // CHECK-NEXT:          });
 // CHECK-NEXT:      });
 // CHECK-NEXT:  }

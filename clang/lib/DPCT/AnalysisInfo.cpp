@@ -17,6 +17,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/Mangle.h"
 
 #include <deque>
 
@@ -70,6 +71,9 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
+
+std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
+    DeviceFunctionDecl::FuncInfoMap;
 
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
@@ -1381,13 +1385,16 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
                                        const FunctionDecl *FD)
     : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
       ReplaceOffset(0), ReplaceLength(0),
-      NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()) {
-  if (!FilePath.empty()) {
+      NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
+      FuncInfo(getFuncInfo(FD)) {
+  if (!FuncInfo)
+    FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
+                                                    NonDefaultParamNum);
+  else if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
-    if (FileType & TypeCudaHeader || FileType & TypeCppHeader) {
-      IsDefFilePathNeeded = false;
-    } else {
-      IsDefFilePathNeeded = FD->isThisDeclarationADefinition();
+    if (!(FileType & TypeCudaHeader) && !(FileType & TypeCppHeader) &&
+        FD->isThisDeclarationADefinition()) {
+      FuncInfo->setDefinitionFilePath(FilePath);
     }
   }
 
@@ -1407,8 +1414,9 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       ParamsNum(Specialization->getNumParams()), ReplaceOffset(0),
       ReplaceLength(0),
       NonDefaultParamNum(
-          Specialization->getMostRecentDecl()->getMinRequiredArguments()) {
-  IsDefFilePathNeeded = true;
+          Specialization->getMostRecentDecl()->getMinRequiredArguments()),
+      FuncInfo(getFuncInfo(Specialization)) {
+  IsDefFilePathNeeded = false;
 
   buildReplaceLocInfo(FTL, Attrs);
   buildTextureObjectParamsInfo(FTL.getParams());
@@ -1627,6 +1635,8 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
 }
 
 void DeviceFunctionDecl::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
+  if (FuncInfo.get() == Info.get())
+    return;
   FuncInfo = Info;
   if (IsDefFilePathNeeded)
     FuncInfo->setDefinitionFilePath(FilePath);
@@ -1634,10 +1644,25 @@ void DeviceFunctionDecl::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
 
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
-  if (FD->isImplicit())
-    return;
   if (!DpctGlobalInfo::isInRoot(FD->getBeginLoc()))
     return;
+  /// Ignore explicit instantiation definition, as the decl in AST has wrong
+  /// location info. And it is processed in
+  /// DPCTConsumer::HandleCXXExplicitFunctionInstantiation
+  if (FD->getTemplateSpecializationKind() ==
+      TSK_ExplicitInstantiationDefinition)
+    return;
+  if (FD->isImplicit()) {
+    auto &FuncInfo = getFuncInfo(FD);
+    if (Info) {
+      if (FuncInfo)
+        Info->merge(FuncInfo);
+      FuncInfo = Info;
+    } else if (FuncInfo) {
+      Info = FuncInfo;
+    }
+    return;
+  }
   auto D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
   if (Info) {
     if (auto FuncInfo = D->getFuncInfo())
@@ -1682,15 +1707,15 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
   }
 }
 
-MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
-                       const VarDecl *Var)
-    : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
-      Scope((Var->isInLocalScope())
-                ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
-                : Global),
-      PointerAsArray(false) {
+  MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
+    const VarDecl *Var)
+  : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
+  Scope((Var->isInLocalScope())
+    ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
+    : Global),
+  PointerAsArray(false) {
   setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                       isLocal()));
+    isLocal()));
   if (getType()->isPointer() && getScope() == Global) {
     Attr = Device;
     getType()->adjustAsMemType();
@@ -1700,9 +1725,11 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
     setInitList(Var->getInit());
   if (getType()->getDimension() == 0 && Attr == Constant) {
     AccMode = Value;
-  } else if (getType()->getDimension() <= 1) {
+  }
+  else if (getType()->getDimension() <= 1) {
     AccMode = Pointer;
-  } else {
+  }
+  else {
     AccMode = Accessor;
   }
 
@@ -1730,13 +1757,15 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
           auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
           if (Iter != AnonymousTypeDeclStmtMap.end()) {
             LocalTypeName = "type_ct" + std::to_string(Iter->second);
-          } else {
-            LocalTypeName =
-                "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
-            AnonymousTypeDeclStmtMap.insert(
-                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
           }
-        } else if (DS2) {
+          else {
+            LocalTypeName =
+              "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
+            AnonymousTypeDeclStmtMap.insert(
+              std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+          }
+        }
+        else if (DS2) {
           DeclStmtOfVarType = DS2;
         }
       }
@@ -1744,6 +1773,42 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   }
 
   newConstVarInit(Var);
+}
+/// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
+/// For template dependent FunctionDecl, generate name with pattern
+/// "QuailifiedName@FunctionType".
+/// e.g.: template<class T> void test(T *int)
+/// -> test@void (type-parameter-0-1 *)
+class DpctNameGenerator {
+  ASTNameGenerator G;
+  PrintingPolicy PP;
+
+  void printName(const FunctionDecl *FD, llvm::raw_ostream &OS) {
+    if (G.writeName(FD, OS)) {
+      FD->printQualifiedName(OS, PP);
+      OS << "@";
+      FD->getType().print(OS, PP);
+    }
+  }
+
+public:
+  DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
+  explicit DpctNameGenerator(ASTContext &Ctx)
+      : G(Ctx), PP(Ctx.getPrintingPolicy()) {
+    PP.PrintCanonicalTypes = true;
+  }
+  std::string getName(const FunctionDecl*D) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    printName(D, OS);
+    return OS.str();
+  }
+};
+
+std::shared_ptr<DeviceFunctionInfo> &
+DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
+  DpctNameGenerator G;
+  return FuncInfoMap[G.getName(FD)];
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {

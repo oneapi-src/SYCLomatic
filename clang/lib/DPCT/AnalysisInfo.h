@@ -2463,11 +2463,13 @@ public:
       return D->getFuncInfo();
     if (auto FTD = FD->getPrimaryTemplate())
       return LinkTemplateDecl(FTD);
+    else if (FTD = FD->getDescribedFunctionTemplate())
+      return LinkTemplateDecl(FTD);
     return LinkDeclRange(FD->redecls());
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkTemplateDecl(const FunctionTemplateDecl *FTD) {
-    return LinkDeclRange(FTD->specializations());
+    return LinkDeclRange(FTD->redecls());
   }
   inline static std::shared_ptr<DeviceFunctionInfo> LinkExplicitInstantiation(
       const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
@@ -2550,10 +2552,14 @@ private:
   unsigned ReplaceLength;
   unsigned NonDefaultParamNum;
   bool IsDefFilePathNeeded;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  std::shared_ptr<DeviceFunctionInfo> &FuncInfo;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
+
+  static std::shared_ptr<DeviceFunctionInfo> &getFuncInfo(const FunctionDecl *);
+  static std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
+      FuncInfoMap;
 };
 
 class ExplicitInstantiationDecl : public DeviceFunctionDecl {

@@ -1,8 +1,11 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T %s %S/mf-kernel.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test.dp.cpp
+// RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-kernel.dp.cpp
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-kernel.dp.hpp
+// RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-extern.dp.hpp
 
 #include "mf-kernel.cuh"
+#include "mf-extern.cuh"
 
 __global__ void cuda_hello(){
     test_foo();
@@ -33,6 +36,18 @@ void test() {
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
   cuda_hello<<<2,2>>>();
+
+  // CHECK:          q_ct1.submit(
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
+  // CHECK-NEXT:         sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(360), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_extern_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:             kernel_extern(item_ct1, a_acc_ct1.get_pointer());
+  // CHECK-NEXT:           });
+  // CHECK-NEXT:       });
+  kernel_extern<<<1,1>>>();
 }
 
 
