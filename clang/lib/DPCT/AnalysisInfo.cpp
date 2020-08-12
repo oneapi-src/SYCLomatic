@@ -1099,7 +1099,9 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
   }
 }
-
+SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
+                                       const SourceManager &SM,
+                                       const LangOptions &LO);
 void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   if (!Ctor)
     return;
@@ -1128,9 +1130,10 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
       InsertLocation = Ctor->getParenOrBraceRange().getBegin();
     }
   }
-  ExtraArgLoc = SM.getFileOffset(
-      Lexer::getLocForEndOfToken(SM.getSpellingLoc(InsertLocation), 0, SM,
-                                 DpctGlobalInfo::getContext().getLangOpts()));
+  ExtraArgLoc = SM.getFileOffset(Lexer::getLocForEndOfToken(
+      getActualInsertLocation(InsertLocation, SM,
+                              DpctGlobalInfo::getContext().getLangOpts()),
+      0, SM, DpctGlobalInfo::getContext().getLangOpts()));
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
@@ -1170,9 +1173,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
       if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         auto TokenLoc = Lexer::getLocForEndOfToken(
-            SM.getSpellingLoc(
+            getActualInsertLocation(
                 CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
-                    ->getEndLoc()),
+                    ->getEndLoc(),
+                SM, DpctGlobalInfo::getContext().getLangOpts()),
             0, SM, DpctGlobalInfo::getContext().getLangOpts());
         ExtraArgLoc =
             DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);

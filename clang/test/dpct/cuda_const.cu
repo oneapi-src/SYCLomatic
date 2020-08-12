@@ -229,3 +229,27 @@ __global__ void foo(float d, float y){
   float temp;
   float maxtemp = fmaxf(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, -10);
 }
+
+// CHECK: dpct::constant_memory<int, 0> d_a0(1);
+// CHECK-NEXT: dpct::constant_memory<int, 0> d_a1(2);
+// CHECK-NEXT: dpct::device_memory<int, 1> const_array(10);
+__constant__ int d_a0 = 1;
+__constant__ int d_a1 = 2;
+__device__ __constant__ int const_array[10];
+
+#define l_arg &d_a0, &d_a1
+#define d_arg int *d_a0, int *d_a1
+
+
+// CHECK: void bar(int *const_array) { int a = const_array[0]; }
+// CHECK-NEXT: void inner_foo(int *last, d_arg, int *const_array) { bar(const_array); }
+// CHECK-NEXT: void foo(int d_a0, int d_a1, int *const_array) {
+// CHECK-NEXT:   int last;
+// CHECK-NEXT:   inner_foo(&last, l_arg, const_array);
+// CHECK-NEXT: }
+__device__ void bar() { int a = const_array[0]; }
+__device__ void inner_foo(int *last, d_arg) { bar(); }
+__device__ void foo() {
+  int last;
+  inner_foo(&last, l_arg);
+}
