@@ -60,6 +60,10 @@ class Replacements;
 } // namespace tooling
 } // namespace clang
 
+extern bool IsUsingDefaultOutRoot;
+void removeDefaultOutRootFolder(const std::string &DefaultOutRoot);
+void dpctExit(int ExitCode);
+
 // classes for keeping track of Stmt->String mappings
 using StmtStringPair = std::pair<const clang::Stmt *, std::string>;
 

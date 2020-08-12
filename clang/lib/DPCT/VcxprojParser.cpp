@@ -316,7 +316,7 @@ void generateCompilationDatabase(const std::string &BuildDir) {
     std::string ErrMsg =
         "Cannot create CompilationDatabase \"" + FilePath + "\"\n";
     clang::dpct::PrintMsg(ErrMsg);
-    exit(VcxprojPaserCreateCompilationDBFail);
+    dpctExit(VcxprojPaserCreateCompilationDBFail);
   }
 
   OutFile << "[\n";
@@ -451,7 +451,7 @@ void parseVaribles(const std::string &VcxprojFile) {
   if (!InFile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
     clang::dpct::PrintMsg(ErrMsg);
-    exit(VcxprojPaserFileNotExist);
+    dpctExit(VcxprojPaserFileNotExist);
   }
 
   std::string Line;
@@ -520,7 +520,7 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
   if (!Infile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
     clang::dpct::PrintMsg(ErrMsg);
-    exit(VcxprojPaserFileNotExist);
+    dpctExit(VcxprojPaserFileNotExist);
   }
 
   std::string Line;

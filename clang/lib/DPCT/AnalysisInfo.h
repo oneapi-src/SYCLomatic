@@ -770,6 +770,11 @@ public:
     assert(!InRoot.empty());
     return InRoot;
   }
+  static void setOutRoot(const std::string &OutRootPath) { OutRoot = OutRootPath; }
+  static const std::string &getOutRoot() {
+    assert(!OutRoot.empty());
+    return OutRoot;
+  }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const std::string &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -1354,6 +1359,7 @@ private:
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
 
   static std::string InRoot;
+  static std::string OutRoot;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;

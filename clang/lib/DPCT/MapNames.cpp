@@ -3064,7 +3064,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
     DebugInfo::ShowStatus(MigrationError);
-    std::exit(MigrationError);
+    dpctExit(MigrationError);
   }
 }
 

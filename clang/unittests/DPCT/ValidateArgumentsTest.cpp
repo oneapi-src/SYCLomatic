@@ -77,8 +77,9 @@ TEST(getDefaultInRoot, noInroot) {
 TEST_F(MakeCanonicalOrSetDefaults, empty) {
   string InRoot;
   string OutRoot;
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(
-                      InRoot, OutRoot, {TempDirAbsolute + "/a/b/in/file.cpp"}));
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
+                      InRoot, {TempDirAbsolute + "/a/b/in/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -91,17 +92,20 @@ TEST_F(MakeCanonicalOrSetDefaults, emptyOnlyOneFileAllowed) {
   string InRoot;
   string OutRoot;
   ASSERT_EQ(false,
-            makeCanonicalOrSetDefaults(
-                InRoot, OutRoot, {"/a/b/in/file.cpp", "/a/b/in/file.cpp"}));
+            makeInRootCanonicalOrSetDefaults(
+                InRoot,{"/a/b/in/file.cpp", "/a/b/in/file.cpp"}));
+  ASSERT_EQ(true,
+            makeOutRootCanonicalOrSetDefaults(OutRoot));
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, dotAtTheEnd) {
   string InRoot = TempDirAbsolute + "/a/b/in/.";
   string OutRoot = TempDirAbsolute + "/a/b/.";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(
-                      InRoot, OutRoot,
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
+                      InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -113,10 +117,11 @@ TEST_F(MakeCanonicalOrSetDefaults, dotAtTheEnd) {
 TEST_F(MakeCanonicalOrSetDefaults, dotInTheMiddle) {
   string InRoot = TempDirAbsolute + "/a/b/./in/.";
   string OutRoot = TempDirAbsolute + "/a/b/.";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(
-                      InRoot, OutRoot,
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
+                      InRoot,
                       {TempDirAbsolute + "/a/b/./in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -128,10 +133,11 @@ TEST_F(MakeCanonicalOrSetDefaults, dotInTheMiddle) {
 TEST_F(MakeCanonicalOrSetDefaults, dotDotAtTheEnd) {
   string InRoot = TempDirAbsolute + "/a/b/in/..";
   string OutRoot = TempDirAbsolute + "/a/b/";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(
-                      InRoot, OutRoot,
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
+                      InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -143,10 +149,11 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotAtTheEnd) {
 TEST_F(MakeCanonicalOrSetDefaults, dotDotInTheMiddle) {
   string InRoot = TempDirAbsolute + "/a/b/../b/in";
   string OutRoot = TempDirAbsolute + "/a/b/";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(
-                      InRoot, OutRoot,
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(
+                      InRoot,
                       {TempDirAbsolute + "/a/b/in/file.cpp",
                        TempDirAbsolute + "/a/b/in/c/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -158,9 +165,10 @@ TEST_F(MakeCanonicalOrSetDefaults, dotDotInTheMiddle) {
 TEST_F(MakeCanonicalOrSetDefaults, relativePaths) {
   string InRoot = TempDir + "a/b/../b/in";
   string OutRoot = TempDir + "a/b/";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(InRoot, OutRoot,
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot,
                                              {TempDir + "a/b/in/file.cpp",
                                               TempDir + "a/b/in/c/file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -172,7 +180,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePaths) {
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
   string InRoot;
   string OutRoot;
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(InRoot, OutRoot, {"file.cpp"}));
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -184,7 +193,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
   string InRoot = ".";
   string OutRoot = "..";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(InRoot, OutRoot, {"./file.cpp"}));
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
@@ -196,7 +206,8 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
 TEST_F(MakeCanonicalOrSetDefaults, relativeOutRoot) {
   string InRoot = TempDirAbsolute + "/a/b/in";
   string OutRoot = "..";
-  ASSERT_EQ(true, makeCanonicalOrSetDefaults(InRoot, OutRoot, {"./file.cpp"}));
+  ASSERT_EQ(true, makeInRootCanonicalOrSetDefaults(InRoot, {"./file.cpp"}));
+  ASSERT_EQ(true, makeOutRootCanonicalOrSetDefaults(OutRoot));
 #if _WIN32
   std::replace(InRoot.begin(), InRoot.end(), '\\', '/');
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');

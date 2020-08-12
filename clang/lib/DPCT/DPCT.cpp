@@ -12,6 +12,7 @@
 #include "clang/DPCT/DPCT.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "Checkpoint.h"
 #include "Config.h"
 #include "Debug.h"
 #include "GAnalytics.h"
@@ -20,7 +21,6 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
-#include "Checkpoint.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Format/Format.h"
@@ -30,9 +30,9 @@
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
-#include "llvm/Support/Host.h"
 
 #include <string>
 
@@ -347,7 +347,7 @@ std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
-int FatalErrorCnt=0;
+int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
 JMP_BUF CPFileASTMaterEnter;
@@ -408,9 +408,9 @@ public:
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
-    if(StopOnParseErr && Context.getDiagnostics().getClient()&&
-        Context.getDiagnostics().getClient()->getNumErrors()>0){
-        return;
+    if (StopOnParseErr && Context.getDiagnostics().getClient() &&
+        Context.getDiagnostics().getClient()->getNumErrors() > 0) {
+      return;
     }
     // The migration process is separated into two stages:
     // 1) Analysis of AST and identification of applicable migration rules
@@ -423,10 +423,11 @@ public:
     std::unordered_set<std::string> DuplicateFilter;
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
-      // For file path got in AST may be different with the one in preprocessing stage,
-      // here only the file name is used to retrieve IncludeMapSet.
-      const std::string FileName = llvm::sys::path::filename(Repl->getFilePath()).str();
-      if(DuplicateFilter.find(FileName) == end(DuplicateFilter)) {
+      // For file path got in AST may be different with the one in preprocessing
+      // stage, here only the file name is used to retrieve IncludeMapSet.
+      const std::string FileName =
+          llvm::sys::path::filename(Repl->getFilePath()).str();
+      if (DuplicateFilter.find(FileName) == end(DuplicateFilter)) {
         DuplicateFilter.insert(FileName);
         auto Find = IncludeMapSet.find(FileName);
         if (Find != IncludeMapSet.end()) {
@@ -538,7 +539,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   std::string Path = SDKDetector.getInstallPath().str();
   if (!SDKDetector.isValid()) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    exit(MigrationErrorInvalidSDKPath);
+    dpctExit(MigrationErrorInvalidSDKPath);
   }
 
   makeCanonical(Path);
@@ -547,7 +548,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
   if ((bool)EC) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    exit(MigrationErrorInvalidSDKPath);
+    dpctExit(MigrationErrorInvalidSDKPath);
   }
   return CudaPathAbs.str().str();
 }
@@ -573,7 +574,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
   if ((bool)EC) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInstallPath);
-    exit(MigrationErrorInvalidInstallPath);
+    dpctExit(MigrationErrorInvalidInstallPath);
   }
   return InstallPathAbs.str().str();
 }
@@ -584,17 +585,17 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
     DebugInfo::ShowStatus(MigrationErrorRunFromSDKFolder);
-    exit(MigrationErrorRunFromSDKFolder);
+    dpctExit(MigrationErrorRunFromSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, CudaPath)) {
     DebugInfo::ShowStatus(MigrationErrorInRootContainSDKFolder);
-    exit(MigrationErrorInRootContainSDKFolder);
+    dpctExit(MigrationErrorInRootContainSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, DpctInstallPath)) {
     DebugInfo::ShowStatus(MigrationErrorInRootContainCTTool);
-    exit(MigrationErrorInRootContainCTTool);
+    dpctExit(MigrationErrorInRootContainCTTool);
   }
 }
 
@@ -615,7 +616,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
-    exit(MigrationErrorInvalidFilePath);
+    dpctExit(MigrationErrorInvalidFilePath);
   }
 
   FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
@@ -839,7 +840,7 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
-int run(int argc, const char **argv) {
+int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
     std::cout << CtHelpHint;
@@ -857,7 +858,8 @@ int run(int argc, const char **argv) {
 
   // Set hangle for libclangTooling to proccess message for dpct
   clang::tooling::SetPrintHandler(PrintMsg);
-  clang::tooling::SetFileSetInCompiationDB(dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+  clang::tooling::SetFileSetInCompiationDB(
+      dpct::DpctGlobalInfo::getFileSetInCompiationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -875,13 +877,13 @@ int run(int argc, const char **argv) {
           handleErrors(OptParser.takeError(), [](const DPCTError &DE) {
             if (DE.EC == -101) {
               DebugInfo::ShowStatus(MigrationErrorCannotParseDatabase);
-              exit(MigrationErrorCannotParseDatabase);
+              dpctExit(MigrationErrorCannotParseDatabase);
             } else if (DE.EC == -102) {
               DebugInfo::ShowStatus(MigrationErrorCannotFindDatabase);
-              exit(MigrationErrorCannotFindDatabase);
+              dpctExit(MigrationErrorCannotFindDatabase);
             } else {
               DebugInfo::ShowStatus(MigrationError);
-              exit(MigrationError);
+              dpctExit(MigrationError);
             }
           });
     }
@@ -891,35 +893,35 @@ int run(int argc, const char **argv) {
           DpctLog() << E.getMessage();
         });
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
-    exit(MigrationOptionParsingError);
+    dpctExit(MigrationOptionParsingError);
   }
 
   if (!OutputFile.empty()) {
-      //Set handle for libclangTooling to redirect warning message to DpctTerm
-      clang::tooling::SetDiagnosticOutput(DpctTerm());
+    // Set handle for libclangTooling to redirect warning message to DpctTerm
+    clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
 
   initWarningIDs();
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
-    exit(MigrationErrorPathTooLong);
+    dpctExit(MigrationErrorPathTooLong);
   }
   if (OutRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
-    exit(MigrationErrorPathTooLong);
+    dpctExit(MigrationErrorPathTooLong);
   }
   if (SDKIncludePath.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --cuda-include-path '" << SDKIncludePath
               << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
-    exit(MigrationErrorPathTooLong);
+    dpctExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
-    exit(MigrationErrorPathTooLong);
+    dpctExit(MigrationErrorPathTooLong);
   }
   // Report file prefix is limited to 128, so that <report-type> and
   // <report-format> can be extended later
@@ -927,7 +929,7 @@ int run(int argc, const char **argv) {
     DpctLog() << "Error: --report-file-prefix '" << ReportFilePrefix
               << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPrefixTooLong);
-    exit(MigrationErrorPrefixTooLong);
+    dpctExit(MigrationErrorPrefixTooLong);
   }
   auto P = std::find_if_not(
       ReportFilePrefix.begin(), ReportFilePrefix.end(),
@@ -936,36 +938,37 @@ int run(int argc, const char **argv) {
     DpctLog() << "Error: --report-file-prefix contains special character '"
               << *P << "' \n";
     DebugInfo::ShowStatus(MigrationErrorSpecialCharacter);
-    exit(MigrationErrorSpecialCharacter);
+    dpctExit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
-    exit(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
   if (InRoot.empty() && ProcessAllFlag) {
     DebugInfo::ShowStatus(MigrationErrorNoExplicitInRoot);
-    exit(MigrationErrorNoExplicitInRoot);
-  }
-  if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
-                                  OptParser->getSourcePathList())) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    exit(MigrationErrorInvalidInRootOrOutRoot);
+    dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
-  int ValidPath=validatePaths(InRoot, OptParser->getSourcePathList());
+  if (!makeInRootCanonicalOrSetDefaults(InRoot,
+                                        OptParser->getSourcePathList())) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    dpctExit(MigrationErrorInvalidInRootOrOutRoot);
+  }
+
+  int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
   if (ValidPath == -1) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
-    exit(MigrationErrorInvalidInRootPath);
-  } else if (ValidPath==-2) {
+    dpctExit(MigrationErrorInvalidInRootPath);
+  } else if (ValidPath == -2) {
     DebugInfo::ShowStatus(MigrationErrorNoFileTypeAvail);
-    exit(MigrationErrorNoFileTypeAvail);
+    dpctExit(MigrationErrorNoFileTypeAvail);
   }
 
   int SDKIncPathRes =
       checkSDKPathOrIncludePath(SDKIncludePath, RealSDKIncludePath);
   if (SDKIncPathRes == -1) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    exit(MigrationErrorInvalidSDKPath);
+    dpctExit(MigrationErrorInvalidSDKPath);
   } else if (SDKIncPathRes == 0) {
     HasSDKIncludeOption = true;
   }
@@ -973,22 +976,22 @@ int run(int argc, const char **argv) {
   int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
   if (SDKPathRes == -1) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    exit(MigrationErrorInvalidSDKPath);
+    dpctExit(MigrationErrorInvalidSDKPath);
   } else if (SDKPathRes == 0) {
     HasSDKPathOption = true;
   }
 
   bool GenReport = false;
-  #ifdef DPCT_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
   std::string &DVerbose = DiagsContent;
-  #else
-  std::string DVerbose ="";
-  #endif
+#else
+  std::string DVerbose = "";
+#endif
   if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
                       ReportFilePrefix, ReportOnlyFlag, GenReport,
                       DVerbose) == false) {
     DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
-    exit(MigrationErrorInvalidReportArgs);
+    dpctExit(MigrationErrorInvalidReportArgs);
   }
 
   if (GenReport) {
@@ -1021,21 +1024,30 @@ int run(int argc, const char **argv) {
 
   ValidateInputDirectory(Tool, InRoot);
 
+  IsUsingDefaultOutRoot = OutRoot.empty();
+  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    dpctExit(MigrationErrorInvalidInRootOrOutRoot);
+  }
+  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor = "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
-  Tool.appendArgumentsAdjuster(
-    getInsertArgumentAdjuster(CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+  std::string CUDAVerMajor =
+      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMinor = "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+  std::string CUDAVerMinor =
+      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
   Tool.appendArgumentsAdjuster(
-    getInsertArgumentAdjuster(CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-    getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
+      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
 
   SetSDKIncludePath(CudaPath);
 
@@ -1055,7 +1067,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   StopOnParseErrTooling = StopOnParseErr;
-  InRootTooling=InRoot;
+  InRootTooling = InRoot;
 
   MapNames::setClNamespace(ExplicitClNamespace);
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
@@ -1076,9 +1088,9 @@ int run(int argc, const char **argv) {
     }
   }
 
-  int RetJmp=0;
+  int RetJmp = 0;
   CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-  if(RetJmp==0) {
+  if (RetJmp == 0) {
     auto &Global = DpctGlobalInfo::getInstance();
     Global.buildReplacements();
     Global.emplaceReplacements(Tool.getReplacements());
@@ -1111,5 +1123,13 @@ int run(int argc, const char **argv) {
   DebugInfo::ShowStatus(Status);
 
   DumpOutputFile();
+  return Status;
+}
+
+int run(int argc, const char **argv) {
+  int Status = runDPCT(argc, argv);
+  if (IsUsingDefaultOutRoot) {
+    removeDefaultOutRootFolder(OutRoot);
+  }
   return Status;
 }

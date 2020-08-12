@@ -84,15 +84,8 @@ static bool getDefaultInRoot(std::string &InRootPar,
   return true;
 }
 
-bool makeCanonicalOrSetDefaults(string &InRoot, string &OutRoot,
-                                const std::vector<std::string> SourceFiles) {
-  if (OutRoot.empty()) {
-    if (!getDefaultOutRoot(OutRoot))
-      return false;
-  } else if (!makeCanonical(OutRoot)) {
-    return false;
-  }
-
+bool makeInRootCanonicalOrSetDefaults(
+    string &InRoot, const std::vector<std::string> SourceFiles) {
   if (InRoot.empty()) {
     if (!getDefaultInRoot(InRoot, SourceFiles))
       return false;
@@ -108,9 +101,19 @@ bool makeCanonicalOrSetDefaults(string &InRoot, string &OutRoot,
   std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
   if ((bool)EC) {
     clang::dpct::DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
-    exit(MigrationErrorInvalidInRootPath);
+    dpctExit(MigrationErrorInvalidInRootPath);
   }
   InRoot = InRootAbs.str().str();
+  return true;
+}
+
+bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
+  if (OutRoot.empty()) {
+    if (!getDefaultOutRoot(OutRoot))
+      return false;
+  } else if (!makeCanonical(OutRoot)) {
+    return false;
+  }
   return true;
 }
 

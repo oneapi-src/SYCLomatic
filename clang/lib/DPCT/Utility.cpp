@@ -35,6 +35,29 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+bool IsUsingDefaultOutRoot = false;
+
+void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
+  if (llvm::sys::fs::is_directory(DefaultOutRoot)) {
+    std::error_code EC;
+    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot, EC);
+    if ((bool)EC)
+      return;
+    llvm::sys::fs::directory_iterator End;
+    if (Iter == End) {
+      // This folder is empty, then remove it.
+      llvm::sys::fs::remove_directories(DefaultOutRoot, false);
+    }
+  }
+}
+
+void dpctExit(int ExitCode) {
+  if (IsUsingDefaultOutRoot) {
+    removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
+  }
+  std::exit(ExitCode);
+}
+
 bool makeCanonical(SmallVectorImpl<char> &Path) {
   if (fs::make_absolute(Path) != std::error_code()) {
     llvm::errs() << "Could not get absolute path from '" << Path << "'\n ";
@@ -245,7 +268,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
   if (Vec.size() != InDegree.size()) {
     std::cout << "Error: Two rules have dependency on each other！\n";
     dpct::DebugInfo::ShowStatus(MigrationError);
-    exit(MigrationError);
+    dpctExit(MigrationError);
   }
 
   return Vec;

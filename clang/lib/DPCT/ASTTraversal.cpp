@@ -10571,7 +10571,7 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
     auto *ID = ASTTraversalMetaInfo::getID(*it);
     if (!ID) {
       llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
-      std::exit(MigrationError);
+      dpctExit(MigrationError);
     }
     emplaceMigrationRule(ID);
   }

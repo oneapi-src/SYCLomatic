@@ -28,8 +28,9 @@ enum class DPCTFormatStyle { llvm, google, custom };
 enum class ReportFormatEnum { notsetformat, csv, formatted };
 enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
 
-bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
-                                const std::vector<std::string> SourceFiles);
+bool makeInRootCanonicalOrSetDefaults(
+    std::string &InRoot, const std::vector<std::string> SourceFiles);
+bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
 
 /// Make sure files passed to Intel(R) DPC++ Compatibility Tool are under the
 /// input root directory and have an extension.

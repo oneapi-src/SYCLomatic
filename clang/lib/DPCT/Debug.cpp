@@ -259,7 +259,7 @@ void DebugInfo::ShowStatus(int Status) {
     break;
   default:
     DpctLog() << "Unknown error\n";
-    exit(-1);
+    dpctExit(-1);
   }
 
   if (Status != 0) {

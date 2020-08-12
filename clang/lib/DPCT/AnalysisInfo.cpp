@@ -28,6 +28,7 @@ extern std::function<bool(SourceLocation)> IsInRootFunc;
 
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
+std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;

@@ -12,6 +12,7 @@
 #include "Checkpoint.h"
 #include "SignalProcess.h"
 #include "SaveNewFiles.h"
+#include "Utility.h"
 
 #include "clang/Basic/LangOptions.h"
 
@@ -94,7 +95,7 @@ void FaultHandler(int Signo) {
                          " Intel(R) DPC++ Compatibility Tool tries to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
-  exit(MigrationError);
+  dpctExit(MigrationError);
 }
 
 static void SetSignalHandler(void (*Handler)(int)) {
@@ -138,7 +139,7 @@ static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
                          " Intel(R) DPC++ Compatibility Tool trys to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
-  exit(MigrationError);
+  dpctExit(MigrationError);
 }
 
 static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
@@ -148,31 +149,31 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 
   if (sigaction(SIGSEGV, &action, NULL) == -1) {
     llvm::errs() << "SIGSEGV: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGABRT, &action, NULL) == -1) {
     llvm::errs() << "SIGABRT: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGTERM, &action, NULL) == -1) {
     llvm::errs() << "SIGTERM: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGFPE, &action, NULL) == -1) {
     llvm::errs() << "SIGFPE: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGSTKFLT, &action, NULL) == -1) {
     llvm::errs() << "SIGSTKFLT: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
   if (sigaction(SIGPIPE, &action, NULL) == -1) {
     llvm::errs() << "SIGPIPE: sigaction installation failure\n";
-    exit(-1);
+    dpctExit(-1);
   }
 }
 #endif
