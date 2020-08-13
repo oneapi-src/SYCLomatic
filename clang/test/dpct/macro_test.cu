@@ -76,6 +76,17 @@ void foo() {
   //CHECK-NEXT: });))
   CALL( (foo_kernel<<<1, 2, 0>>>()) )
 
+  //CHECK: #define AA 3
+  //CHECK-NEXT: #define MCALL                                                                  \
+  //CHECK-NEXT: q_ct1.submit([&](sycl::handler &cgh) {                                       \
+  //CHECK-NEXT:   cgh.parallel_for(                                                          \
+  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * 2 * AA, 2 * AA),           \
+  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });                     \
+  //CHECK-NEXT: });
+  //CHECK-NEXT: MCALL
+  #define AA 3
+  #define MCALL foo_kernel<<<dim3(2,1), 2*AA, 0>>>();
+  MCALL
 
   // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(

@@ -1461,60 +1461,46 @@ bool isInsideFunctionLikeMacro(
 }
 
 // Check if an Expr is partially in function-like macro
-bool isExprStraddle(const Stmt *S, ExprSpellingStatus *SpellingStatus) {
+bool isExprStraddle(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  bool HasMacroDefine = false;
-  bool HasMacroExpansion = false;
-  *SpellingStatus = NoType;
+  auto Begin = S->getBeginLoc();
+  auto End = S->getEndLoc();
+  auto SpellingBegin = S->getBeginLoc();
+  auto SpellingEnd = S->getEndLoc();
+  auto ItSpellingBegin =
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          SM.getCharacterData(SpellingBegin));
+  auto ItSpellingEnd =
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          SM.getCharacterData(SpellingEnd));
 
-  // For all tokens of S, check whether it's in the define or the expansion part
-  for (auto It = S->child_begin(); It != S->child_end(); It++) {
-    bool ArgIsDefine = false;
-    SourceLocation BeginLoc;
-    // Instead of calling isOuterMostMacro to decide which Loc is correct,
-    // calling getImmediateSpellingLoc anyway
-    // because we only care about the consistency between tokens.
-    BeginLoc = SM.getImmediateSpellingLoc(It->getBeginLoc());
-
-    // Check if the token in the define part of a function-like macro.
-    auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-        SM.getCharacterData(BeginLoc));
-    if (ItMatch !=
-            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-        ItMatch->second->IsFunctionLike) {
-      ArgIsDefine = true;
-      HasMacroDefine = true;
-    } else {
-      HasMacroExpansion = true;
-    }
-    ExprSpellingStatus ChildSpellingStatus;
-    // Recursively check the child node
-    if (isExprStraddle(*It, &ChildSpellingStatus)) {
-      return true;
-    }
-    // If the child's descendent has different SpellingStatus with the child
-    // itself, it is straddle. In the following example,
-    // "(double)x" is the parent and is in macro define
-    // while "0" is the child and is in macro expansion
-    // #define macro(x) (double)x
-    // macro(0);
-    if ((ChildSpellingStatus == IsExpansion && ArgIsDefine) ||
-        (ChildSpellingStatus == IsDefine && !ArgIsDefine)) {
-      return true;
-    }
+  // If begin and end are both not in macro define, not straddle
+  if (ItSpellingBegin ==
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+      ItSpellingEnd ==
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    return false;
   }
-  // If some children are in the define part and others are in the expansion
-  // part, the Expr is a straddle node and no consist SpellingStatus to set.
-  if (HasMacroDefine && HasMacroExpansion) {
+
+  // If only one of begin and end is in macro define, straddle
+  if (ItSpellingBegin ==
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+    ItSpellingEnd ==
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return true;
   }
-  // When all children have consist SpellingStatus, record and return the
-  // status.
-  if (HasMacroDefine) {
-    *SpellingStatus = IsDefine;
-  } else {
-    *SpellingStatus = IsExpansion;
+
+  auto DLBeginToken =
+      SM.getDecomposedLoc(ItSpellingBegin->second->ReplaceTokenBegin);
+  auto DLEndToken =
+      SM.getDecomposedLoc(ItSpellingEnd->second->ReplaceTokenBegin);
+  // If DL.first(the FileId) or DL.second(the location) is different which means
+  // begin and end are in different macro define, straddle
+  if (DLBeginToken.first != DLEndToken.first ||
+      DLBeginToken.second != DLEndToken.second) {
+    return true;
   }
+
   return false;
 }
 
@@ -1908,4 +1894,37 @@ bool isPredefinedStreamHandle(const Expr *E) {
       return true;
   }
   return false;
+}
+
+// Get the range of an Expr in the largest(the outermost) macro definition
+// e.g.
+// line 1:#define MACRO_A 3
+// line 2:#define MACRO_B 2 + MACRO_A
+// line 3:MACRO_B
+// The result of PP: 2 + 3
+// The search path of Beginloc "2": line 2 --> line 3
+// Since line 3 is not MacroID, stops at line 2.
+// The search path of EndLoc "3": line 1 --> line 2 --> line 3
+// Since line 3 is not MacroID, stops at line 2.
+// Return std::pair(line 2 "2", line 2 "3")
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
+                                       const clang::SourceLocation End) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto ResultBegin = Begin;
+  auto ResultEnd = End;
+
+  // Keep calling getImmediateExpansionRange until the next location is not macro
+  if (ResultBegin.isMacroID()) {
+    while (SM.getImmediateExpansionRange(ResultBegin).getBegin().isMacroID()) {
+      ResultBegin = SM.getImmediateExpansionRange(ResultBegin).getBegin();
+    }
+  }
+  if (ResultEnd.isMacroID()) {
+    while (SM.getImmediateExpansionRange(ResultEnd).getEnd().isMacroID()) {
+      ResultEnd = SM.getImmediateExpansionRange(ResultEnd).getEnd();
+    }
+  }
+  return std::pair<clang::SourceLocation, clang::SourceLocation>(ResultBegin,
+                                                                 ResultEnd);
 }

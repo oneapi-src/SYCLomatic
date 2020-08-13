@@ -388,7 +388,7 @@ enum ExprSpellingStatus {
   IsDefine = 1,
   IsExpansion = 2
 };
-bool isExprStraddle(const clang::Stmt *S, ExprSpellingStatus *SpellingStatus);
+bool isExprStraddle(const clang::Stmt *S);
 bool isSimpleAddrOf(const clang::Expr *E);
 bool isCOCESimpleAddrOf(const clang::Expr *E);
 std::string getNameStrRemovedAddrOf(const clang::Expr *E, bool isCOCE = false);
@@ -415,4 +415,7 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
 bool isPredefinedStreamHandle(const clang::Expr *E);
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
+                                       const clang::SourceLocation End);
 #endif // DPCT_UTILITY_H

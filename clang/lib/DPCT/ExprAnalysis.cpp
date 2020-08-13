@@ -221,11 +221,21 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
       BeginLoc =
           SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
       EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
+      if (isExprStraddle(E)) {
+        auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(), E->getEndLoc());
+        BeginLoc = SM.getImmediateSpellingLoc(Range.first);
+        EndLoc = SM.getImmediateSpellingLoc(Range.second);
+      }
     }
   } else if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
     // If E is not OuterMostMacro, use the spelling location
     BeginLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getBeginLoc()));
     EndLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getEndLoc()));
+    if (isExprStraddle(E)) {
+      auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(), E->getEndLoc());
+      BeginLoc = SM.getImmediateSpellingLoc(Range.first);
+      EndLoc = SM.getImmediateSpellingLoc(Range.second);
+    }
   } else {
     // If E is the OuterMostMacro, use the expansion location
     BeginLoc = SM.getExpansionRange(E->getBeginLoc()).getBegin();
@@ -250,7 +260,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
 
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
-
   RewritePrefix =
     std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
@@ -379,6 +388,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       OS << A.getReplacedString() << ", ";
     }
     OS.flush();
+
     // Special handling for implicit ctor.
     // #define GET_BLOCKS(a) a
     // dim3 A = GET_BLOCKS(1);
