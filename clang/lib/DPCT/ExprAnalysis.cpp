@@ -404,7 +404,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockIdx_t", "get_group"},
       {"__cuda_builtin_gridDim_t", "get_group_range"},
       {"__cuda_builtin_blockDim_t", "get_local_range"},
-      {"__cuda_builtin_threadIdx_t", "get_local_id"}};
+      {"__cuda_builtin_threadIdx_t", "get_local_id"},
+  };
   auto BaseType =
       DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
   auto ItemItr = NdItemMap.find(BaseType);

@@ -11,6 +11,7 @@
 
 
 #include "clang/AST/Attr.h"
+#include "clang/AST/Expr.h"
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "MapNames.h"
@@ -85,6 +86,20 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   return buildRewriteString();
 }
 
+/// Returns true if E is one of the forms:
+/// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
+bool isTargetPseudoObjectExpr(const Expr *E) {
+  auto POE = dyn_cast<PseudoObjectExpr>(E->IgnoreImpCasts());
+  auto RE = POE->getResultExpr();
+  if (auto CE = dyn_cast<CallExpr>(RE)) {
+    auto FD = CE->getDirectCallee();
+    auto Name = FD->getNameAsString();
+    if (Name == "__fetch_builtin_x" || Name == "__fetch_builtin_y" ||
+        Name == "__fetch_builtin_z")
+      return true;
+  }
+}
+
 /// Policies to migrate math functions:
 /// 1) Functions with the "std" namespace are treated as host functions;
 /// 2) Functions with __device__ attribute but without __host__
@@ -133,24 +148,14 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         std::string FT = Call->getType().getAsString(PrintingPolicy(LO));
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
-          auto ArgExpr = Arg->getStmtClass();
-          if (ArgExpr == Stmt::PseudoObjectExprClass) {
-            auto POE = dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts());
-            auto RE = POE->getResultExpr();
-            if (auto CE = dyn_cast<CallExpr>(RE)) {
-              auto FD = CE->getDirectCallee();
-              auto Name = FD->getNameAsString();
-              // Force typecast threadIdx/blockIdx/blockDim./x/y/z to return
-              // types of math functions
-              if (Name == "__fetch_builtin_x" || Name == "__fetch_builtin_y" ||
-                  Name == "__fetch_builtin_z") {
-                RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
-              }
-            }
+          auto ArgExprClass = Arg->getStmtClass();
+          if (ArgExprClass == Stmt::PseudoObjectExprClass) {
+            if (isTargetPseudoObjectExpr(Arg))
+              RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
           } else {
             std::string ArgT = Arg->getType().getAsString(PrintingPolicy(LO));
             auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-            if (ArgT != FT || ArgExpr == Stmt::BinaryOperatorClass) {
+            if (ArgT != FT || ArgExprClass == Stmt::BinaryOperatorClass) {
               if (DRE)
                 RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
               else
@@ -183,20 +188,35 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           }
         }
       } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
+                 SourceCalleeName == "__umul24" || SourceCalleeName == "umul24" ||
                  SourceCalleeName == "__mulhi" || SourceCalleeName == "__hadd") {
+        std::string ParamType = "int";
+        if (SourceCalleeName == "__umul24" || SourceCalleeName == "umul24")
+          ParamType = "unsigned int";
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          auto Arg = Call->getArg(i);
+          auto Arg = Call->getArg(i)->IgnoreImpCasts();
           std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
               PrintingPolicy(LO));
-          std::string ArgExpr = Arg->getStmtClassName();
-          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-          auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
-          if (ArgT != "int") {
-            if (DRE || IL)
-              RewriteArgList[i] = "(int)" + RewriteArgList[i];
-            else
-              RewriteArgList[i] = "(int)(" + RewriteArgList[i] + ")";
+          auto ArgExpr = Arg->getStmtClass();
+          if (ArgExpr == Stmt::PseudoObjectExprClass) {
+            // The type of (blockDim/blockIdx/threadIdx/gridDim).(x/y/z) is
+            // unsigned int but it is migrated to size_t (unsigned long in
+            // typical 64-bit systems). However, sycl::mul24 only takes 32-bit
+            // integers, so it is necessary to convert the migrated type to
+            // int or unsigned int.
+            if (isTargetPseudoObjectExpr(Arg))
+                RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
+          } else {
+            auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
+            auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
+            auto FL = dyn_cast<FloatingLiteral>(Arg->IgnoreCasts());
+            if (ArgT != ParamType) {
+              if (DRE || IL || FL)
+                RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
+              else
+                RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+            }
           }
         }
       }

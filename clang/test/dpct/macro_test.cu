@@ -443,13 +443,13 @@ __device__ void foo6(AAA, BBB)
 
 
 //CHECK: #define MM __umul24
-//CHECK-NEXT: #define MUL(a, b) sycl::mul24(a, b)
+//CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
 //CHECK-NEXT: void foo7(sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:   unsigned int tid =
 //CHECK-NEXT:       MUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2)) +
 //CHECK-NEXT:       item_ct1.get_local_range().get(2);
-//CHECK-NEXT:   unsigned int tid2 =
-//CHECK-NEXT:       sycl::mul24(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
+//CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(2),
+//CHECK-NEXT:                                   (unsigned int)item_ct1.get_group_range(2));
 //CHECK-NEXT: }
 #define MM __umul24
 #define MUL(a, b) __umul24(a, b)
