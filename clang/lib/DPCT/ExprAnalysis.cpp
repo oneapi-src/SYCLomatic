@@ -597,7 +597,8 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
     }
 
     Expr::EvalResult ER;
-    if (Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+    if (!Ctor->getArg(i)->isValueDependent() &&
+        Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       int64_t Value = ER.Val.getInt().getExtValue();
       Size = Size * Value;
     } else {

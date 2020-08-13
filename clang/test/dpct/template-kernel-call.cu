@@ -307,3 +307,41 @@ template <typename T>
 static void multiply(int block_size, Image<T> &ptr, T value) {
   my_kernel<T><<<8, block_size, 0, ptr.s>>>(ptr.dPtr);
 }
+
+// CHECK:template <typename T, int size>
+// CHECK-NEXT:void foo1(Image<T> &ptr, T value) {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, size), sycl::range<3>(0, 0, size)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+template <typename T, int size>
+void foo1(Image<T> &ptr, T value) {
+  my_kernel<T><<<8, size, 0, ptr.s>>>(ptr.dPtr);
+}
+
+// CHECK:template <typename T, int size>
+// CHECK-NEXT:void foo2(Image<T> &ptr, T value) {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+template <typename T, int size>
+void foo2(Image<T> &ptr, T value) {
+  my_kernel<T><<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
+}
