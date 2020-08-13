@@ -982,13 +982,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::fdim((float)i, f1);
   f2 = fdimf(i, f1);
 
-  // CHECK: f2 = sycl::native::divide(f0, f1);
+  // CHECK: f2 = f0 / f1;
   f2 = fdividef(f0, f1);
-  // CHECK: f2 = sycl::native::divide((float)i, (float)i);
+  // CHECK: f2 = i / i;
   f2 = fdividef(i, i);
-  // CHECK: f2 = sycl::native::divide(f0, (float)i);
+  // CHECK: f2 = f0 / i;
   f2 = fdividef(f0, i);
-  // CHECK: f2 = sycl::native::divide((float)i, f1);
+  // CHECK: f2 = i / f1;
   f2 = fdividef(i, f1);
 
   // CHECK: f2 = sycl::floor(f0);
@@ -1281,13 +1281,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rz(f0, f1);
 
-  // CHECK: f2 = sycl::native::divide(f0, f1);
+  // CHECK: f2 = f0 / f1;
   f2 = __fdividef(f0, f1);
-  // CHECK: f2 = sycl::native::divide((float)i, (float)i);
+  // CHECK: f2 = i / i;
   f2 = __fdividef(i, i);
-  // CHECK: f2 = sycl::native::divide(f0, (float)i);
+  // CHECK: f2 = f0 / i;
   f2 = __fdividef(f0, i);
-  // CHECK: f2 = sycl::native::divide((float)i, f1);
+  // CHECK: f2 = i / f1;
   f2 = __fdividef(i, f1);
 
   // CHECK: /*
@@ -2497,11 +2497,11 @@ void testTypecasts() {
 __global__ void testConditionalOperator(float *deviceArrayFloat) {
   float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1),
         &f2 = *(deviceArrayFloat + 2);
-  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::native::divide(sycl::pow(f1, 2.f), f1) : -f1, f1 + f1 < f2
-  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::native::divide(sycl::pow(f2, 2.f), f1) : -f1)
+  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow(f1, 2.f) / f1 : -f1, f1 + f1 < f2
+  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow(f2, 2.f) / f1 : -f1)
   // CHECK-NEXT:         : -f1);
-  // CHECK-NEXT: f0 = f1 > f2 ? sycl::native::divide(sycl::pow(f1, 2.f), f1) : f1;
-  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::native::divide(sycl::pow(f1, 2.f), f1) : f1, f2);
+  // CHECK-NEXT: f0 = f1 > f2 ? sycl::pow(f1, 2.f) / f1 : f1;
+  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::pow(f1, 2.f) / f1 : f1, f2);
   f0 = fmaxf(
       f0 = (f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f1, 2.f), f1) : -f1,
       f1 + f1 < f2

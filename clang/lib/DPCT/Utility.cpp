@@ -1837,6 +1837,12 @@ bool needExtraParens(const Expr *E) {
   case Stmt::MemberExprClass:
   case Stmt::ParenExprClass:
   case Stmt::CallExprClass:
+  case Stmt::IntegerLiteralClass:
+  case Stmt::FloatingLiteralClass:
+  case Stmt::StringLiteralClass:
+  case Stmt::ArraySubscriptExprClass:
+  case Stmt::CStyleCastExprClass:
+  case Stmt::CXXStaticCastExprClass:
     return false;
   case Stmt::CXXConstructExprClass: {
     auto Ctor = static_cast<const CXXConstructExpr *>(E);

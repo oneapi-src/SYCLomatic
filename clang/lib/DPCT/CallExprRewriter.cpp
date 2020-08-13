@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "MapNames.h"
+#include "Utility.h"
 
 namespace clang {
 namespace dpct {
@@ -938,10 +939,19 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   reportUnsupportedRoundingMode();
   if (SourceCalleeName == "__hneg" || SourceCalleeName == "__hneg2") {
     setLHS("");
-    setRHS(getMigratedArg(0));
+    if (needExtraParens(Call->getArg(0)))
+      setRHS("(" + getMigratedArg(0) + ")");
+    else
+      setRHS(getMigratedArg(0));
   } else {
-    setLHS(getMigratedArg(0));
-    setRHS(getMigratedArg(1));
+    if (needExtraParens(Call->getArg(0)))
+      setLHS("(" + getMigratedArg(0) + ")");
+    else
+      setLHS(getMigratedArg(0));
+    if (needExtraParens(Call->getArg(1)))
+      setRHS("(" + getMigratedArg(1) + ")");
+    else
+      setRHS(getMigratedArg(1));
   }
   return buildRewriteString();
 }
