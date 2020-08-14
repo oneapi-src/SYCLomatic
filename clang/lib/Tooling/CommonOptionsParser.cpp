@@ -301,8 +301,9 @@ llvm::Error CommonOptionsParser::init(
         if (!hasHelpOption(OriArgc, argv)) {
           std::string buf;
           llvm::raw_string_ostream OS(buf);
-          OS << "Error while trying to load a compilation database:\n"
-             << ErrorMessage;
+          if (!BuildPath.getValue().empty())
+            OS << "Error while trying to load a compilation database:\n";
+          OS << ErrorMessage;
           DoPrintHandler(OS.str(), true);
         }
       }

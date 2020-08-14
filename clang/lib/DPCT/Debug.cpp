@@ -166,29 +166,30 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Migration process completed";
     break;
   case MigrationNoCodeChangeHappen:
-    StatusString = "Migration not necessary";
+    StatusString = "Migration not necessary; no CUDA code detected";
     break;
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
     break;
   case MigrationError:
-    StatusString = "Migration error happened";
+    StatusString = "An error has occurred during migration";
     break;
   case MigrationSaveOutFail:
-    StatusString = "Error: Saving output file(s)";
+    StatusString = "Error: Unable to save the output to the specified directory";
     break;
   case MigrationErrorInvalidSDKPath:
     StatusString = "Error: Path for CUDA header files is invalid or "
-                   "not available. Specify with --cuda-include-path";
+                   "not available. Use --cuda-include-path to specify the "
+                   "correct path to the header files";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:
-    StatusString = "Error: Invalid --in-root or --out-root path";
+    StatusString = "Error: The path for --in-root or --out-root is not valid";
     break;
   case MigrationErrorInvalidInRootPath:
-    StatusString = "Error: Invalid --in-root path";
+    StatusString = "Error: The path for --in-root is not valid";
     break;
   case MigrationErrorInvalidReportArgs:
-    StatusString = "Error: Bad value provided for report option(s)";
+    StatusString = "Error: The value(s) provided for report option(s) is incorrect.";
     break;
   case MigrationErrorInvalidWarningID:
     StatusString = "Error: Invalid warning ID or range; "
@@ -219,8 +220,8 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: Cannot parse compilation database";
     break;
   case MigrationErrorNoExplicitInRoot:
-    StatusString = "Error: --process-all option requires --in-root to be "
-                   "specified explicitly. Specify --in-root.";
+    StatusString = "Error: The option --process-all requires that the --in-root be "
+                   "specified explicitly. Use the --in-root option to specify the directory to be migrated.";
     break;
   case MigrationErrorSpecialCharacter:
     StatusString = "Error: Prefix contains special characters;"
@@ -239,7 +240,7 @@ void DebugInfo::ShowStatus(int Status) {
 #endif
     break;
   case MigrationErrorPrefixTooLong:
-    StatusString = "Error: Prefix is too long; should be less than 128";
+    StatusString = "Error: Prefix is too long; should be less than 128 characters";
     break;
   case MigrationErrorNoFileTypeAvail:
     StatusString = "Error: File Type not available for input file";

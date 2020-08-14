@@ -118,8 +118,8 @@ static opt<std::string>
                 "to be migrated.\n"
                 "Only files under this root are migrated. Default: Current"
                 " directory, if input\nsource files are not provided. "
-                "The directory of the first input source file, if\ninput"
-                " source files are provided."),
+                "If input source files are provided, the directory\n"
+                "of the first input source file is used."),
            value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional);
 static opt<std::string> OutRoot(

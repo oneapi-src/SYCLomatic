@@ -141,13 +141,19 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   DatabaseStatus ErrCode;
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage, ErrCode);
+  if (!DB)
+    ErrorMessage =
+        (ErrorMessage +
+         "Migration initiated without compilation database for file \"" +
+         SourceFile + "\"\n")
+            .str();
 #else
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage);
-#endif
   if (!DB)
-    ErrorMessage = ("Could not auto-detect compilation database for file \"" +
+    ErrorMessage = ("Migration initiated without compilation database for file \"" +
                    SourceFile + "\"\n" + ErrorMessage).str();
+#endif
   return DB;
 }
 
@@ -164,14 +170,15 @@ CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
     if (ErrCode == CannotParseDatabase
         /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
       ErrorMessage =
+          ErrorMessage +
           "Compilation database compile_commands.json from directory \"" +
-          SourceDir.str() + "\" or its parent directories cannot be parsed.\n" +
-          ErrorMessage;
+          SourceDir.str() + "\" or its parent directories cannot be parsed.\n";
     } else {
-      ErrorMessage =
-          ("Could not auto-detect compilation database from directory \"" +
-           SourceDir + "\"\n" + ErrorMessage)
-              .str();
+      ErrorMessage = (ErrorMessage +
+                      "Migration initiated without compilation "
+                      "database from directory \"" +
+                      SourceDir + "\"\n")
+                         .str();
     }
   }
   return DB;
