@@ -144,7 +144,7 @@ private:
   void tryToParseJSFunction();
   bool tryToParseSimpleAttribute();
 #ifdef INTEL_CUSTOMIZATION
-  void addUnwrappedLine(bool MustAdd = false);
+  bool addUnwrappedLine(bool MustAdd = false);
 #else
   void addUnwrappedLine();
 #endif

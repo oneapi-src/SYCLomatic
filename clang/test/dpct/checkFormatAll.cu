@@ -5,6 +5,7 @@
 
 #include <cuda_runtime.h>
 #include <cassert>
+#include <cstdio>
 #include "cublas_v2.h"
 
      //CHECK:void testDevice(const int *K) { int t = K[0]; }
@@ -99,6 +100,26 @@ typedef struct
 } sSMtoCores;
 
      //CHECK:#define macro_a (oneapi::mkl::transpose)1
-//CHECK-NEXT:void foo7(){ oneapi::mkl::transpose a = macro_a; }
+//CHECK-NEXT:void foo7() { oneapi::mkl::transpose a = macro_a; }
 #define macro_a (cublasOperation_t)1
-void foo7(){ cublasOperation_t a = macro_a; }
+void foo7() { cublasOperation_t a = macro_a; }
+
+     //CHECK:void foo8(float *Result) {
+//CHECK-NEXT:  for (int i = 0; i < 16; i++) {
+//CHECK-NEXT:    if (i % 4 == 0) Result[i] = log(Result[i]);
+//CHECK-NEXT:    if (i % 16 == 0) {
+//CHECK-NEXT:      printf("\n");
+//CHECK-NEXT:    }
+//CHECK-NEXT:    printf("%f ", Result[i]);
+//CHECK-NEXT:  }
+//CHECK-NEXT:}
+void foo8(float *Result) {
+  for (int i = 0; i < 16; i++) {
+  if (i % 4 == 0) Result[i] = log(Result[i]);
+    if (i % 16 == 0) {
+      printf("\n");
+    }
+    printf("%f ", Result[i]);
+  }
+}
+

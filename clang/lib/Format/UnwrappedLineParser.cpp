@@ -1079,7 +1079,14 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
       return;
   }
   if (Next->is(tok::exclaim) && PreviousMustBeValue)
-    return addUnwrappedLine();
+#ifdef INTEL_CUSTOMIZATION
+  {
+    addUnwrappedLine();
+    return;
+  }
+#else
+  return addUnwrappedLine();
+#endif
   bool NextMustBeValue = mustBeJSIdentOrValue(Keywords, Next);
   bool NextEndsTemplateExpr =
       Next->is(TT_TemplateString) && Next->TokenText.startswith("}");
@@ -1087,10 +1094,24 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
       (PreviousMustBeValue ||
        Previous->isOneOf(tok::r_square, tok::r_paren, tok::plusplus,
                          tok::minusminus)))
+#ifdef INTEL_CUSTOMIZATION
+  {
+    addUnwrappedLine();
+    return;
+  }
+#else
     return addUnwrappedLine();
+#endif
   if ((PreviousMustBeValue || Previous->is(tok::r_paren)) &&
       isJSDeclOrStmt(Keywords, Next))
+#ifdef INTEL_CUSTOMIZATION
+  {
+    addUnwrappedLine();
+    return;
+  }
+#else
     return addUnwrappedLine();
+#endif
 }
 
 void UnwrappedLineParser::parseStructuralElement() {
@@ -2079,10 +2100,20 @@ void UnwrappedLineParser::parseIfThenElse() {
     else
       NeedsUnwrappedLine = true;
   } else {
+#ifdef INTEL_CUSTOMIZATION
+    if (addUnwrappedLine()) {
+      ++Line->Level;
+      parseStructuralElement();
+      --Line->Level;
+    } else {
+      parseStructuralElement();
+    }
+#else
     addUnwrappedLine();
     ++Line->Level;
     parseStructuralElement();
     --Line->Level;
+#endif
   }
   if (FormatTok->Tok.is(tok::kw_else)) {
     nextToken();
@@ -2913,12 +2944,12 @@ LLVM_ATTRIBUTE_UNUSED static void printDebugInfo(const UnwrappedLine &Line,
 }
 
 #ifdef INTEL_CUSTOMIZATION
-void UnwrappedLineParser::addUnwrappedLine(bool MustAdd) {
+bool UnwrappedLineParser::addUnwrappedLine(bool MustAdd) {
 #else
 void UnwrappedLineParser::addUnwrappedLine() {
 #endif
   if (Line->Tokens.empty())
-    return;
+    return false;
   LLVM_DEBUG({
     if (CurrentLines == &Lines)
       printDebugInfo(*Line);
@@ -2926,7 +2957,7 @@ void UnwrappedLineParser::addUnwrappedLine() {
 #ifdef INTEL_CUSTOMIZATION
   if (!MustAdd && FormatTok->Previous &&
       isInSameLine(FormatTok->Previous, FormatTok, SourceMgr))
-    return;
+    return false;
 #endif
   CurrentLines->push_back(std::move(*Line));
   Line->Tokens.clear();
@@ -2940,6 +2971,7 @@ void UnwrappedLineParser::addUnwrappedLine() {
   }
   // Disconnect the current token from the last token on the previous line.
   FormatTok->Previous = nullptr;
+  return true;
 }
 
 bool UnwrappedLineParser::eof() const { return FormatTok->Tok.is(tok::eof); }
