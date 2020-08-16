@@ -636,7 +636,7 @@ int testVectorAdd(void)
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
     // CHECK: /*
-    // CHECK: DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit query info::device::max_work_group_size. Adjust the workgroup size if needed.
+    // CHECK: DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
     // CHECK: */
     // CHECK-NEXT: {
     // CHECK-NEXT:   dpct::buffer_t d_A_buf_ct0 = dpct::get_buffer(d_A);
