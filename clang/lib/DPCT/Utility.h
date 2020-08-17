@@ -418,4 +418,8 @@ bool isPredefinedStreamHandle(const clang::Expr *E);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);
+bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
+               clang::SourceLocation Loc);
+bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
+               clang::StringRef FilePath, size_t Offset);
 #endif // DPCT_UTILITY_H

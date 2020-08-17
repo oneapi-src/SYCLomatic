@@ -1896,6 +1896,7 @@ bool isPredefinedStreamHandle(const Expr *E) {
   return false;
 }
 
+
 // Get the range of an Expr in the largest(the outermost) macro definition
 // e.g.
 // line 1:#define MACRO_A 3
@@ -1909,7 +1910,7 @@ bool isPredefinedStreamHandle(const Expr *E) {
 // Return std::pair(line 2 "2", line 2 "3")
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
-                                       const clang::SourceLocation End) {
+  const clang::SourceLocation End) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ResultBegin = Begin;
   auto ResultEnd = End;
@@ -1926,5 +1927,32 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
     }
   }
   return std::pair<clang::SourceLocation, clang::SourceLocation>(ResultBegin,
-                                                                 ResultEnd);
+    ResultEnd);
+}
+
+bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto PBDC = SM.getDecomposedLoc(PB);
+  auto DC = SM.getDecomposedLoc(Loc);
+  if (PBDC.first != DC.first || PBDC.second > DC.second) {
+    return false;
+  }
+  auto PEDC = SM.getDecomposedLoc(PE);
+  if (PEDC.first != DC.first || DC.second > PEDC.second) {
+    return false;
+  }
+  return true;
+}
+
+bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
+               size_t Offset) {
+  auto PBLC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PB);
+  if (PBLC.first != FilePath || PBLC.second > Offset) {
+    return false;
+  }
+  auto PELC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PE);
+  if (PELC.first != FilePath || Offset > PELC.second) {
+    return false;
+  }
+  return true;
 }

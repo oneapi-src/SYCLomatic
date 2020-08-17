@@ -46,6 +46,8 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
+std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
 std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
@@ -1629,6 +1631,23 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
     InsertLocation = Lexer::getLocForEndOfToken(InsertLocation, 0, SM, LO);
     FormatInformation = buildFormatInfo(FTL, InsertLocation, Attrs, SM, LO);
   }
+
+  // Keep skiping #ifdef #endif pair
+  Token TokOfHash;
+  if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
+    auto ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
+      getHashStrFromLoc(TokOfHash.getEndLoc()));
+    while (ItIf != DpctGlobalInfo::getEndifLocationOfIfdef().end()) {
+      InsertLocation = Lexer::getLocForEndOfToken(ItIf->second, 0, SM, LO);
+      InsertLocation = Lexer::GetBeginningOfToken(
+        Lexer::findNextToken(InsertLocation, SM, LO)->getLocation(), SM, LO);
+      if (Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true))
+        break;
+      ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
+        getHashStrFromLoc(TokOfHash.getEndLoc()));
+    }
+  }
+
   ReplaceOffset = SM.getFileOffset(InsertLocation);
   if (FTL.getNumParams() == 0) {
     Token Tok;

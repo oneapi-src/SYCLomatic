@@ -80,6 +80,7 @@ public:
   void ReplaceCuMacro(SourceRange ConditionRange);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
+  void Endif(SourceLocation Loc, SourceLocation IfLoc) override;
   void FileChanged(SourceLocation Loc, FileChangeReason Reason,
                    SrcMgr::CharacteristicKind FileType,
                    FileID PrevFID = FileID()) override;

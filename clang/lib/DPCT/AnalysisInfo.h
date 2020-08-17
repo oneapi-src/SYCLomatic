@@ -19,6 +19,7 @@
 #include "ValidateArguments.h"
 #include <bitset>
 #include <unordered_set>
+#include <vector>
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
@@ -1223,6 +1224,14 @@ public:
     return MacroTokenToMacroDefineLoc;
   }
 
+  static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef() {
+    return EndifLocationOfIfdef;
+  }
+
+  static std::vector<std::pair<std::string, size_t>> &getConditionalCompilationLoc() {
+    return ConditionalCompilationLoc;
+  }
+
   static std::map<std::string, SourceLocation> &getBeginOfEmptyMacros() {
     return BeginOfEmptyMacros;
   }
@@ -1382,6 +1391,8 @@ private:
   static std::map<const char *,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
+  static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
+  static std::vector<std::pair<std::string, size_t>> ConditionalCompilationLoc;
   static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
   // key: The hash string of the first non-empty token after the end location of

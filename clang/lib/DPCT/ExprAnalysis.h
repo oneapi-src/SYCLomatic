@@ -617,9 +617,6 @@ private:
   static DefaultArgMapTy DefaultArgMap;
   SourceLocation CallSpellingBegin;
   SourceLocation CallSpellingEnd;
-
-  bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc);
-  bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath, size_t Offset);
 };
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {

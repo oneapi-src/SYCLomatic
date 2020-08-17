@@ -164,8 +164,10 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     } while (Tok.isNot(tok::eof) && Tok.is(tok::comment));
 
     if (Tok.isNot(tok::eof)) {
-      dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(Tok.getLocation())] = Range.getBegin();
-      dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(Range.getBegin())] = Range.getEnd();
+      dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(
+          Tok.getLocation())] = Range.getBegin();
+      dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(
+          Range.getBegin())] = Range.getEnd();
     }
   }
 
@@ -240,6 +242,21 @@ void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
 void IncludesCallbacks::Defined(const Token &MacroNameTok,
                                 const MacroDefinition &MD, SourceRange Range) {
   ReplaceCuMacro(MacroNameTok);
+}
+
+void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(Loc).str();
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildOrSamePath(InRoot, InFile));
+  if (IsInRoot) {
+    dpct::DpctGlobalInfo::getEndifLocationOfIfdef()[getHashStrFromLoc(IfLoc)] =
+        Loc;
+    dpct::DpctGlobalInfo::getConditionalCompilationLoc().emplace_back(
+        DpctGlobalInfo::getInstance().getLocInfo(Loc));
+    dpct::DpctGlobalInfo::getConditionalCompilationLoc().emplace_back(
+        DpctGlobalInfo::getInstance().getLocInfo(IfLoc));
+  }
 }
 
 void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {

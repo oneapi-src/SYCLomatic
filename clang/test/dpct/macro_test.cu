@@ -26,6 +26,21 @@ public:
 
 __global__ void foo_kernel() {}
 
+//CHECK: void foo_kernel2(int a, int b
+//CHECK-NEXT:   #ifdef MACRO_CC
+//CHECK-NEXT:   , int c
+//CHECK-NEXT:   #endif
+//CHECK-NEXT:   , sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:     int x = item_ct1.get_group(2);
+//CHECK-NEXT:   }
+__global__ void foo_kernel2(int a, int b
+#ifdef MACRO_CC
+, int c
+#endif
+) {
+  int x = blockIdx.x;
+}
+
 __global__ void foo2(){
   // CHECK: #define IMUL(a, b) sycl::mul24(a, b)
   // CHECK-NEXT: int vectorBase = IMUL(1, 2);
@@ -262,6 +277,21 @@ int b;
   // If DPCT visit this path, b is redeclared.
   int b;
 #endif
+
+  //CHECK: q_ct1.submit([&](sycl::handler &cgh) {
+  //CHECK-NEXT:   cgh.parallel_for(
+  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),
+  //CHECK-NEXT:                         sycl::range<3>(1, 1, 2)),
+  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:         foo_kernel2(3, 3, item_ct1);
+  //CHECK-NEXT:       });
+  //CHECK-NEXT: });
+  foo_kernel2<<<2, 2, 0>>>(3,3
+    #ifdef MACRO_CC
+    , 2
+    #endif
+  );
+
 
 }
 

@@ -779,30 +779,6 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   }
 }
 
-bool ArgumentAnalysis::isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc) {
-  auto PBDC = SM.getDecomposedLoc(PB);
-  auto DC = SM.getDecomposedLoc(Loc);
-  if (PBDC.first != DC.first || PBDC.second > DC.second) {
-    return false;
-  }
-  auto PEDC = SM.getDecomposedLoc(PE);
-  if (PEDC.first != DC.first || DC.second > PEDC.second) {
-    return false;
-  }
-  return true;
-}
-bool ArgumentAnalysis::isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath, size_t Offset) {
-  auto PBLC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PB);
-  if (PBLC.first != FilePath || PBLC.second > Offset) {
-    return false;
-  }
-  auto PELC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PE);
-  if (PELC.first != FilePath || Offset > PELC.second) {
-    return false;
-  }
-  return true;
-}
-
 std::string ArgumentAnalysis::getRewriteString() {
   // Find rewrite range
   auto RewriteRange = getLocInCallSpelling(getTargetExpr());
