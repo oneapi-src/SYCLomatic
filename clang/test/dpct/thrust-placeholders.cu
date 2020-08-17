@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/thrust-placeholders.dp.cpp
 
 // CHECK: #include <CL/sycl.hpp>
