@@ -463,3 +463,20 @@ __global__ void k() {
   // CHECK: dpct::atomic_fetch_add(&f, f);
   atomicAdd(&f, f);
 }
+
+// CHECK: void mykernel(unsigned int *dev, sycl::nd_item<3> item_ct1, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
+// CHECK-NEXT:  unsigned int* as= (unsigned int*)sm;
+// CHECK-NEXT:  const int kc=item_ct1.get_local_id(2);
+// CHECK-NEXT:  const int tid=item_ct1.get_group(2)*item_ct1.get_local_range().get(2)+item_ct1.get_local_id(2);
+// CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&as[kc])).fetch_or((unsigned int)1);
+// CHECK-NEXT:  dev[tid]=as[kc];
+// CHECK-NEXT: }
+__global__ void mykernel(unsigned int *dev) {
+  extern __shared__ unsigned int sm[];
+  unsigned int* as= (unsigned int*)sm;
+  const int kc=threadIdx.x;
+  const int tid=blockIdx.x*blockDim.x+threadIdx.x;
+  atomicOr(&as[kc], (unsigned int)1);
+  dev[tid]=as[kc];
+}

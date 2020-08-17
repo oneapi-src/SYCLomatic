@@ -1263,6 +1263,11 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
   if (auto ASE = dyn_cast<ArraySubscriptExpr>(Expr)) {
     Expr = ASE->getBase();
   }
+
+  if(auto CSCE = dyn_cast<CStyleCastExpr>(Expr)){
+    Expr = CSCE->getSubExpr();
+  }
+
   const clang::Expr *AssignedExpr = NULL;
   const FunctionDecl *FuncDecl =NULL;
   if (auto DRE = dyn_cast<DeclRefExpr>(Expr->IgnoreImplicitAsWritten())) {
