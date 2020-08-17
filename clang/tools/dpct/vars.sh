@@ -15,7 +15,61 @@
 #
 ###############################################################################
 
-export DPCT_BUNDLE_ROOT=$(dirname $(dirname $(realpath "${BASH_SOURCE[0]}")))
+# ############################################################################
+# Get absolute path to script, when sourced from bash, zsh and ksh shells.
+# Usage:
+#   script_dir=$(get_root_path "$script_rel_path")
+# Inputs:
+#   script/relative/pathname
+# Outputs:
+#   /script/absolute/pathname
+# executing function in a *subshell* to localize vars and effects on `cd`
+get_root_path() (
+  script="$1"
+  while [ -L "$script" ] ; do
+    script_dir=$(command dirname -- "$script")
+    script_dir=$(cd "$script_dir" && command pwd -P)
+    script="$(readlink "$script")"
+    case $script in
+      (/*) ;;
+       (*) script="$script_dir/$script" ;;
+    esac
+  done
+  script_dir=$(command dirname -- "$script")
+  script_dir=$(cd "$script_dir" && command pwd -P)
+  echo "$script_dir"
+)
+# ############################################################################
+usage() {
+  printf "%s\n"   "ERROR: This script must be sourced."
+  printf "%s\n"   "Usage: source $1"
+  return 2 2>/dev/null || exit 2
+}
+
+if [ -n "$ZSH_EVAL_CONTEXT" ] ; then
+  # shellcheck disable=2039,2015  # following only executed in zsh
+  [[ $ZSH_EVAL_CONTEXT =~ :file$ ]] && vars_script_name="${(%):-%x}" || usage "${(%):-%x}"
+elif [ -n "$KSH_VERSION" ] ; then
+  # shellcheck disable=2039,2015  # following only executed in ksh
+  [[ $(cd "$(dirname -- "$0")" && printf '%s' "${PWD%/}/")$(basename -- "$0") != \
+  "${.sh.file}" ]] && vars_script_name="${.sh.file}" || usage "$0"
+elif [ -n "$BASH_VERSION" ] ; then
+  # shellcheck disable=2039,2015  # following only executed in bash
+  (return 0 2>/dev/null) && vars_script_name="${BASH_SOURCE[0]}" || usage "${BASH_SOURCE[0]}"
+else
+  case ${0##*/} in (sh|dash) vars_script_name="" ;; esac
+fi
+
+if [ "" = "$vars_script_name" ] ; then
+  >&2 echo ":: ERROR: Unable to proceed: do not support for sourcing from '[dash|sh]' shell." ;
+  >&2 echo "   Can be caused by sourcing from inside a \"shebang-less\" script." ;
+  return 1
+fi
+
+# ############################################################################
+
+# Export required env vars for dpct package.
+export DPCT_BUNDLE_ROOT=$(dirname -- "$(get_root_path "$vars_script_name")")
 
 if [[ ! -e $DPCT_BUNDLE_ROOT/bin/dpct || \
       ! -e $DPCT_BUNDLE_ROOT/bin/intercept-build ]]; then
