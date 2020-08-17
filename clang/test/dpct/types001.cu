@@ -545,22 +545,22 @@ void fun3() {
   char devstr[128] = "";
   // CHECK: dpct::device_info deviceProp;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciDomainID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciDomainID. It was migrated to -1. You may need to rewrite the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciBusID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciBusID. It was migrated to -1. You may need to rewrite the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciDeviceID, it was migrated to -1. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciDeviceID. It was migrated to -1. You may need to rewrite the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, -1);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with concurrentKernels, it was migrated to true. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with concurrentKernels. It was migrated to true. You may need to rewrite the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with canMapHostMemory, it was migrated to false. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with canMapHostMemory. It was migrated to false. You may need to rewrite the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (!false) {
   // CHECK-NEXT: }

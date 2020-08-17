@@ -60,12 +60,12 @@ void foo() {
   CUDA_SAFE_CALL(cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and is removed or replaced with 0. You may need to check the migrated code.
+  // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(double2) - size, cudaHostAllocDefault);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and is removed or replaced with 0. You may need to check the migrated code.
+  // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(uchar4) - size, cudaHostAllocDefault);

@@ -220,8 +220,10 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: Cannot parse compilation database";
     break;
   case MigrationErrorNoExplicitInRoot:
-    StatusString = "Error: The option --process-all requires that the --in-root be "
-                   "specified explicitly. Use the --in-root option to specify the directory to be migrated.";
+    StatusString =
+        "Error: The option --process-all requires that the --in-root be "
+        "specified explicitly. Use the --in-root option to specify the "
+        "directory to be migrated.";
     break;
   case MigrationErrorSpecialCharacter:
     StatusString = "Error: Prefix contains special characters;"
@@ -247,16 +249,16 @@ void DebugInfo::ShowStatus(int Status) {
     break;
   case MigrationErrorInRootContainCTTool:
     StatusString =
-        "Error: Input folder is the parent or the same as the folder where "
-        "Intel(R) DPC++ Compatibility Tool is installed";
+        "Error: Input folder is the parent of, or the same folder as, the "
+        "installation directory of the Intel(R) DPC++ Compatibility Tool";
     break;
   case MigrationErrorRunFromSDKFolder:
-    StatusString = "Error: Input folder specified by \"-in-root\" option is in "
-                   "CUDA_PATH folder";
+    StatusString = "Error: Input folder specified by --in-root option is "
+                   "in the CUDA_PATH folder";
     break;
   case MigrationErrorInRootContainSDKFolder:
-    StatusString =
-        "Error: Input folder is the parent or the same of CUDA_PATH folder";
+    StatusString = "Error: Input folder is the parent of, or the same folder "
+                   "as, the CUDA_PATH folder";
     break;
   default:
     DpctLog() << "Unknown error\n";

@@ -310,7 +310,7 @@ __global__ void foo4(){
 // CHECK-NEXT: bool reallocate_host(T **pp, int *curlen, const int newlen,
 // CHECK-NEXT:                      /*
 // CHECK-NEXT:                      DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not
-// CHECK-NEXT:                      meaningful in the migrated code and is removed or replaced
+// CHECK-NEXT:                      meaningful in the migrated code and was removed or replaced
 // CHECK-NEXT:                      with 0. You may need to check the migrated code.
 // CHECK-NEXT:                      */
 // CHECK-NEXT:                      const float fac = 1.0f, const unsigned int flag = 0) {
@@ -330,8 +330,8 @@ bool fooo() {
   // CHECK-NEXT:     &force_ready_queue, &force_ready_queue_size,
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1048:{{[0-9]+}}: The original value cudaHostAllocMapped is not meaningful in
-  // CHECK-NEXT:     the migrated code and is removed or replaced with 0. You may need to check
-  // CHECK-NEXT:     the migrated code.
+  // CHECK-NEXT:     the migrated code and was removed or replaced with 0. You may need to
+  // CHECK-NEXT:     check the migrated code.
   // CHECK-NEXT:     */
   // CHECK-NEXT:     npatches, 1.2f, 0);
   return reallocate_host<int>(&force_ready_queue, &force_ready_queue_size,
@@ -341,28 +341,28 @@ bool fooo() {
 void bar() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the
-  // CHECK-NEXT: migrated code and is removed or replaced with 0. You may need to check the
+  // CHECK-NEXT: migrated code and was removed or replaced with 0. You may need to check the
   // CHECK-NEXT: migrated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: int i = 0;
   int i = cudaHostAllocDefault;
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocMapped is not meaningful in the
-  // CHECK-NEXT: migrated code and is removed or replaced with 0. You may need to check the
+  // CHECK-NEXT: migrated code and was removed or replaced with 0. You may need to check the
   // CHECK-NEXT: migrated code.
   // CHECK-NEXT: */
   i = cudaHostAllocMapped;
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocPortable is not meaningful in the
-  // CHECK-NEXT: migrated code and is removed or replaced with 0. You may need to check the
+  // CHECK-NEXT: migrated code and was removed or replaced with 0. You may need to check the
   // CHECK-NEXT: migrated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: i = 0;
   i = cudaHostAllocPortable;
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocWriteCombined is not meaningful in
-  // CHECK-NEXT: the migrated code and is removed or replaced with 0. You may need to check the
-  // CHECK-NEXT: migrated code.
+  // CHECK-NEXT: the migrated code and was removed or replaced with 0. You may need to check
+  // CHECK-NEXT: the migrated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: i = 0;
   i = cudaHostAllocWriteCombined;

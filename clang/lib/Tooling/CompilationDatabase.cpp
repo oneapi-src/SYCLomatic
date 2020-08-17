@@ -151,7 +151,7 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage);
   if (!DB)
-    ErrorMessage = ("Migration initiated without compilation database for file \"" +
+    ErrorMessage = ("Could not auto-detect compilation database for file \"" +
                    SourceFile + "\"\n" + ErrorMessage).str();
 #endif
   return DB;
