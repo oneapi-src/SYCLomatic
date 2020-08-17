@@ -25,6 +25,15 @@
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <map>
+#if defined(__linux__)
+#include <unistd.h>
+#include <sys/syscall.h>
+#endif
+#if defined(_WIN64)
+#include <windows.h>
+#endif
+
 
 namespace dpct {
 
@@ -316,13 +325,23 @@ private:
   mutable std::mutex m_mutex;
 };
 
+static inline unsigned int get_tid(){
+#if defined(__linux__)
+  return syscall(SYS_gettid);
+#elif defined(_WIN64)
+  return GetCurrentThreadId();
+#else
+#error "Only support Windows and Linux."
+#endif
+}
+
 /// device manager
 class dev_mgr {
 public:
   device_ext &current_device() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    check_id(_current_device);
-    return *_devs[_current_device];
+    unsigned int dev_id=current_device_id();
+    check_id(dev_id);
+    return *_devs[dev_id];
   }
   device_ext &cpu_device() const {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -337,11 +356,18 @@ public:
     check_id(id);
     return *_devs[id];
   }
-  unsigned int current_device_id() const { return _current_device; }
+  unsigned int current_device_id() const {
+   std::lock_guard<std::mutex> lock(m_mutex);
+   auto it=_thread2dev_map.find(get_tid());
+   if(it != _thread2dev_map.end())
+      return it->second;
+    return _default_device;
+  }
   void select_device(unsigned int id) {
     std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
-    _current_device = id;
+    _default_device = id;
+    _thread2dev_map[get_tid()]=id;
   }
   unsigned int device_count() { return _devs.size(); }
 
@@ -387,7 +413,10 @@ private:
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
-  unsigned int _current_device = 0;
+  // _default_device is used if can not find in _thread2dev_map
+  unsigned int _default_device = 0;
+  // thread-id to device-id map.
+  std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };
 
