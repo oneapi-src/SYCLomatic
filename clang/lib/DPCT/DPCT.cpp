@@ -1027,7 +1027,7 @@ int runDPCT(int argc, const char **argv) {
   IsUsingDefaultOutRoot = OutRoot.empty();
   if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot);
+    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 

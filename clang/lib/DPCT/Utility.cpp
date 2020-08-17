@@ -51,8 +51,8 @@ void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
   }
 }
 
-void dpctExit(int ExitCode) {
-  if (IsUsingDefaultOutRoot) {
+void dpctExit(int ExitCode, bool NeedCleanUp) {
+  if (IsUsingDefaultOutRoot && NeedCleanUp) {
     removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
   }
   std::exit(ExitCode);

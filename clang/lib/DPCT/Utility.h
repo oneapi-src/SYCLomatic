@@ -62,7 +62,7 @@ class Replacements;
 
 extern bool IsUsingDefaultOutRoot;
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot);
-void dpctExit(int ExitCode);
+void dpctExit(int ExitCode, bool NeedCleanUp = true);
 
 // classes for keeping track of Stmt->String mappings
 using StmtStringPair = std::pair<const clang::Stmt *, std::string>;
