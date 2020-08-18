@@ -1398,7 +1398,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
   if (!FuncInfo)
     FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
                                                     NonDefaultParamNum);
-  else if (!FilePath.empty()) {
+  if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & TypeCudaHeader) && !(FileType & TypeCppHeader) &&
         FD->isThisDeclarationADefinition()) {
