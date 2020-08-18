@@ -8102,7 +8102,8 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("kernelCall"),
       this);
 
-  MF.addMatcher(callExpr(callee(functionDecl(hasName("cudaLaunchKernel"))))
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("cudaLaunchKernel",
+                                                        "cudaLaunchCooperativeKernel"))))
                     .bind("launch"),
                 this);
 }

@@ -668,7 +668,8 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<std::string, unsigned> &LocInfo, const CallExpr *CE) {
   auto LaunchFD = CE->getDirectCallee();
-  if (!LaunchFD || LaunchFD->getName() != "cudaLaunchKernel") {
+  if (!LaunchFD || (LaunchFD->getName() != "cudaLaunchKernel" &&
+      LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
     return std::shared_ptr<KernelCallExpr>();
   }
   if (auto Callee = getAddressedRef(CE->getArg(0))) {

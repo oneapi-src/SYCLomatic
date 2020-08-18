@@ -59,6 +59,22 @@ int main() {
   // CHECK-NEXT:  });
   cudaLaunchKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
 
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:  [&](sycl::handler &cgh) {
+  // CHECK-NEXT:    auto tex_acc = static_cast<dpct::image<int, 1> *>(*(dpct::image_base_p *)args[1])->get_access(cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:    auto tex_smpl = *(dpct::image_base_p *)args[1]->get_sampler();
+  // CHECK-EMPTY:
+  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
+  // CHECK-EMPTY:
+  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
+  // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:        kernel(d_ct0, dpct::image_accessor<int, 1>(tex_smpl, tex_acc), item_ct1);
+  // CHECK-NEXT:      });
+  // CHECK-NEXT:  });
+  cudaLaunchCooperativeKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
+
   cudaStream_t stream;
   cudaStreamCreate(&stream);
   // CHECK: stream->submit(
@@ -76,12 +92,33 @@ int main() {
   // CHECK-NEXT:  });
   cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
 
+  // CHECK: stream->submit(
+  // CHECK-NEXT:  [&](sycl::handler &cgh) {
+  // CHECK-NEXT:    sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
+  // CHECK-NEXT:    sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(16), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
+  // CHECK-EMPTY:
+  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
+  // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:        template_kernel<int>(d_ct0, item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:      });
+  // CHECK-NEXT:  });
+  cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
+
   void *kernel_func = (void *)&kernel;
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
+  cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);
