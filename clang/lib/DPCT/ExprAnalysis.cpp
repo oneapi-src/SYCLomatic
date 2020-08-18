@@ -121,23 +121,11 @@ std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const
   SourceLocation SpellingBeginLoc, SpellingEndLoc;
   SpellingBeginLoc = SM.getSpellingLoc(E->getBeginLoc());
   SpellingEndLoc = SM.getSpellingLoc(E->getEndLoc());
-  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(SpellingBeginLoc));
-  auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(SpellingEndLoc));
 
   // Both Begin/End are not macro
   // or
   // SpellingBeginLoc and SpellingEndLoc are in the same macro define
-  if ((ItBegin ==
-           dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-       ItEnd == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) ||
-      ((ItBegin !=
-            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-        ItEnd !=
-            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) &&
-       SM.getCharacterData(ItBegin->second->ReplaceTokenBegin) ==
-           SM.getCharacterData(ItEnd->second->ReplaceTokenBegin))) {
+  if (!isExprStraddle(E)) {
     auto LastTokenLength =
         Lexer::MeasureTokenLength(SpellingEndLoc, SM, Context.getLangOpts());
     return std::pair<SourceLocation, size_t>(
@@ -790,6 +778,7 @@ std::string ArgumentAnalysis::getRewriteString() {
   auto DL = SM.getDecomposedLoc(RewriteRangeBegin);
   std::string OriginalStr =
       std::string(SM.getBufferData(DL.first).substr(DL.second, RewriteLength));
+
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
 
@@ -847,7 +836,7 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
     if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
       // Try ImmediateExpansion
       EndCandidate =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getEndLoc()).getBegin());
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
       auto LastTokenLength =
         Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);

@@ -3,6 +3,8 @@
 // RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
 
+#include <math.h>
+
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
 #define GET_BLOCKS2(n,t) 1+n+t
@@ -529,4 +531,21 @@ __global__ void foo8(){
 __global__ void foo9(){
   double a,b,c;
   MAX(a, sqrt(DFABS(b)));
+}
+
+
+
+//CHECK: #define My_PI  3.14159265358979
+//CHECK-NEXT: #define g2r(x)  (((double)(x))*My_PI/180)
+//CHECK-NEXT: #define sindeg(x) sin(g2r(x))
+//CHECK-NEXT: void foo10()
+//CHECK-NEXT: {
+//CHECK-NEXT:   sindeg(5);
+//CHECK-NEXT: }
+#define My_PI  3.14159265358979
+#define g2r(x)  (((double)(x))*My_PI/180)
+#define sindeg(x) sin(g2r(x))
+void foo10()
+{
+  sindeg(5);
 }
