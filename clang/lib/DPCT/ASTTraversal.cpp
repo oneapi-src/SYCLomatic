@@ -7851,7 +7851,7 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, ""));
+                          /*IsProcessMacro*/ true, ""));
     }
   } else if (FuncName == "cudaEventQuery") {
     ExprAnalysis EA(CE->getArg(0));

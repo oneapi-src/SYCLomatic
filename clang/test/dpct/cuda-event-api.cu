@@ -59,7 +59,11 @@ int main(int argc, char* argv[]) {
 
   int blocks = 32, threads = 32;
 
+  // CHECK: printf"<<<\n");
+  // CHECK-NEXT: printf">>>\n");
+  printf"<<<\n");
   CudaEvent(start);
+  printf">>>\n");
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
