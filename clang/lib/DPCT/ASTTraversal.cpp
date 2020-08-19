@@ -1418,7 +1418,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
       printDerefOp(OS, CE->getArg(0));
       ReplStr += OS.str();
     } else {
-      ReplStr += getStmtSpelling(CE->getArg(0));
+      ArgumentAnalysis A(CE->getArg(0), false);
+      A.analyze();
+      ReplStr += A.getReplacedString();
     }
     ReplStr += ")).";
     ReplStr += Iter->second;
@@ -1432,7 +1434,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
       printDerefOp(OS, CE->getArg(1));
       ReplStr += OS.str();
     } else {
-      ReplStr += getStmtSpelling(CE->getArg(1));
+      ArgumentAnalysis A(CE->getArg(1), false);
+      A.analyze();
+      ReplStr += A.getReplacedString();
     }
     ReplStr += ")";
 
