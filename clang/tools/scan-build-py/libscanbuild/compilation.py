@@ -262,6 +262,9 @@ def parse_args(args):
             elif arg == '--gpu-architecture' or arg == '-arch':
                 arg_next = next(args)
                 arg_next = gpu_virtual_arch_to_arch(arg_next)
+                # clang cuda parser does not support CUDA gpu architecture: sm_13
+                if(arg_next == "sm_13"):
+                    continue
                 new_flag += arg_next
             flags.append(new_flag)
         # ignore some flags
