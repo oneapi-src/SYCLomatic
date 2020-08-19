@@ -16,6 +16,7 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "Checkpoint.h"
+#include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/CharInfo.h"
@@ -2474,14 +2475,28 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
       }
 
+      const Expr *Init = nullptr;
+
       if (VarD) {
         DD = VarD;
+        if (VarD->hasInit())
+          Init = VarD->getInit();
       } else if (FieldD) {
         DD = FieldD;
+        if (FieldD->hasInClassInitializer())
+          Init = FieldD->getInClassInitializer();
       }
 
+      auto IsTypeInInitializer = [&]() -> bool {
+        if (!Init)
+          return false;
+        if (TL->getBeginLoc() >= Init->getBeginLoc() && TL->getEndLoc() <= Init->getEndLoc())
+          return true;
+        return false;
+      };
+
       bool SpecialCaseHappened = false;
-      if (DD) {
+      if (DD && !IsTypeInInitializer()) {
         if (TL->getType().getAsString().find("cudaStream_t") !=
             std::string::npos) {
           processCudaStreamType(DD, SM, SpecialCaseHappened);
