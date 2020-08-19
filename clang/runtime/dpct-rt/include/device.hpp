@@ -361,12 +361,11 @@ public:
    auto it=_thread2dev_map.find(get_tid());
    if(it != _thread2dev_map.end())
       return it->second;
-    return _default_device;
+    return DEFAULT_DEVICE_ID;
   }
   void select_device(unsigned int id) {
     std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
-    _default_device = id;
     _thread2dev_map[get_tid()]=id;
   }
   unsigned int device_count() { return _devs.size(); }
@@ -413,8 +412,8 @@ private:
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
-  // _default_device is used if can not find in _thread2dev_map
-  unsigned int _default_device = 0;
+  // DEFAULT_DEVICE_ID is used, if can not find in _thread2dev_map
+  const unsigned int DEFAULT_DEVICE_ID = 0;
   // thread-id to device-id map.
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
