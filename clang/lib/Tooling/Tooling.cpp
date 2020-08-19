@@ -108,6 +108,7 @@ llvm::raw_ostream &DiagnosticsOS() {
   }
 }
 
+std::string ClangToolOutputMessage = "";
 } // namespace tooling
 } // namespace clang
 #if defined(__linux__)
@@ -628,8 +629,15 @@ int ClangTool::run(ToolAction *Action) {
       // file system abstraction that allows openat() style interactions.
       if (OverlayFileSystem->setCurrentWorkingDirectory(
               CompileCommand.Directory))
+#ifdef INTEL_CUSTOMIZATION
+      {
+        ClangToolOutputMessage = CompileCommand.Directory;
+        return -29 /*MigrationErrorCannotAccessDirInDatabase*/;
+      }
+#else
         llvm::report_fatal_error("Cannot chdir into \"" +
                                  Twine(CompileCommand.Directory) + "\"!");
+#endif
 
       // Now fill the in-memory VFS with the relative file mappings so it will
       // have the correct relative paths. We never remove mappings but that
