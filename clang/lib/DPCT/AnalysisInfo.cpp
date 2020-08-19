@@ -285,7 +285,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::DefaultQueue);
   }
@@ -389,15 +389,19 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       SubmitStmtsList.RangeList.emplace_back(
           VI->getRangeDecl(ExecutionConfig.ExternMemSize));
     }
-  } else if (!VI->isGlobal()) {
-    SubmitStmtsList.MemoryList.emplace_back(
-        VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  } else if (getFilePath() != VI->getFilePath() &&
-             !isIncludedFile(getFilePath(), VI->getFilePath())) {
-    // Global variable definition and global variable reference are not in the
-    // same file, and are not a share varible, insert extern variable
-    // declaration.
-    SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+  } else {
+    SubmitStmtsList.InitList.emplace_back(
+        VI->getInitStmt(isDefaultStream() ? "" : ExecutionConfig.Stream));
+    if (VI->isLocal()) {
+      SubmitStmtsList.MemoryList.emplace_back(
+          VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
+    } else if (getFilePath() != VI->getFilePath() &&
+               !isIncludedFile(getFilePath(), VI->getFilePath())) {
+      // Global variable definition and global variable reference are not in the
+      // same file, and are not a share varible, insert extern variable
+      // declaration.
+      SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+    }
   }
   VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
                                   SubmitStmtsList.AccessorList,
@@ -536,16 +540,16 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream == "0") {
-    Printer << QueueStr << ".";
-  } else {
-    if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-      Printer << "(" << ExecutionConfig.Stream << ")";
-    } else {
-      Printer << ExecutionConfig.Stream;
-    }
-    Printer << "->";
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
   }
+  else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isDefaultStream())
+    Printer << ".";
+  else
+    Printer << "->";
   (Printer << "submit(").newLine();
   printSubmitLamda(Printer);
 }

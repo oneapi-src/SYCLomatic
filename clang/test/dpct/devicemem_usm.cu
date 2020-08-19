@@ -79,8 +79,9 @@ int main() {
   cudaMalloc((void **)&d_out, array_size);
 
   const int threads_per_block = NUM_ELEMENTS;
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       t1.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
@@ -92,6 +93,8 @@ int main() {
   member_acc<<<1, threads_per_block>>>();
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       in.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto in_ptr_ct1 = in.get_ptr();
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
@@ -105,6 +108,11 @@ int main() {
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       tmp.init();
+  // CHECK-NEXT:       al.init();
+  // CHECK-NEXT:       fx.init();
+  // CHECK-NEXT:       fy.init();
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto tmp_ptr_ct1 = tmp.get_ptr();
   // CHECK-NEXT:       auto al_ptr_ct1 = al.get_ptr();

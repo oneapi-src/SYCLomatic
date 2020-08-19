@@ -14,6 +14,8 @@ __global__ void kernel(){
 //CHECK:extern "C" int foo(){
 //CHECK-NEXT:  dpct::get_default_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      c_clusters.init();
+//CHECK-EMPTY:
 //CHECK-NEXT:      auto c_clusters_ptr_ct1 = c_clusters.get_ptr();
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for(

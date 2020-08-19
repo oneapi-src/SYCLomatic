@@ -80,6 +80,8 @@ int main() {
   const int threads_per_block = NUM_ELEMENTS;
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       t1.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
@@ -93,6 +95,8 @@ int main() {
   // CHECK-NEXT:   dpct::buffer_t d_out_buf_ct0 = dpct::get_buffer(d_out);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       in.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -105,11 +109,15 @@ int main() {
   // CHECK-NEXT: }
   kernel1<<<1, threads_per_block>>>(d_out);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::buffer_t d_out_buf_ct0 = dpct::get_buffer(d_out);
+  // CHECK:   dpct::buffer_t d_out_buf_ct0 = dpct::get_buffer(d_out);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       tmp.init();
+  // CHECK-NEXT:       al.init();
+  // CHECK-NEXT:       fx.init();
+  // CHECK-NEXT:       fy.init();
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto tmp_acc_ct1 = tmp.get_access(cgh);
   // CHECK-NEXT:       auto al_acc_ct1 = al.get_access(cgh);
@@ -123,7 +131,6 @@ int main() {
   // CHECK-NEXT:           kernel2((float *)(&d_out_acc_ct0[0]), item_ct1, al_acc_ct1.get_pointer(), fx_acc_ct1.get_pointer(), dpct::accessor<float, dpct::device, 2>(fy_acc_ct1), tmp_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel2<<<1, threads_per_block>>>(d_out);
 
   cudaMemcpy(h_out, d_out, array_size, cudaMemcpyDeviceToHost);

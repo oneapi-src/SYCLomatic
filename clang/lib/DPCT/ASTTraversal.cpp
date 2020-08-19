@@ -8504,8 +8504,9 @@ llvm::raw_ostream &printMemcpy3DParmsName(llvm::raw_ostream &OS,
 
 void MemoryMigrationRule::replaceMemAPIArg(
     const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
-    std::string OffsetFromBaseStr) {
-
+    const std::string &StreamStr, std::string OffsetFromBaseStr) {
+  auto GetPtrString =
+      buildString(".get_ptr(", StreamStr.empty() ? "" : ("*" + StreamStr), ")");
   auto ASE = getArraySubscriptExpr(E);
   const clang::Expr *BASE = nullptr;
   if (ASE) {
@@ -8520,7 +8521,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
     // const_angle.get_ptr() + sizeof(TYPE) * (3)",
     // and "&const_angle[3]" to "const_angle.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     bool IsOffsetNeeded = true;
     Expr::EvalResult ER;
@@ -8550,7 +8551,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
                         getVarDecl(UO)))) {
     // Migrate the expr such as "&const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     if (!OffsetFromBaseStr.empty()) {
       VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
@@ -8560,7 +8561,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
   } else if (VI = DpctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(E))) {
     // Migrate the expr such as "const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     if (!OffsetFromBaseStr.empty()) {
       VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
@@ -8918,8 +8919,13 @@ void MemoryMigrationRule::memcpyMigration(
     }
   } else if (NameRef == "cudaMemcpy") {
     handleDirection(C, 3);
-    replaceMemAPIArg(C->getArg(0), Result);
-    replaceMemAPIArg(C->getArg(1), Result);
+    std::string AsyncQueue;
+    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(4)))
+        AsyncQueue = ExprAnalysis::ref(C->getArg(4));
+    }
+    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
+    replaceMemAPIArg(C->getArg(1), Result, AsyncQueue);
     if (USMLevel == UsmLevel::restricted) {
       // Since the range of removeArg is larger than the range of
       // handleDirection, the handle direction replacement will be removed.
@@ -8928,11 +8934,6 @@ void MemoryMigrationRule::memcpyMigration(
         emplaceTransformation(removeArg(C, 4, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
-      }
-      std::string AsyncQueue;
-      if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
-        if (!isPredefinedStreamHandle(C->getArg(4)))
-          AsyncQueue = ExprAnalysis::ref(C->getArg(4));
       }
       if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))
@@ -9078,6 +9079,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   std::string ReplaceStr;
+  std::string StreamStr;
   if (checkWhetherIsDuplicate(C, false))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -9089,21 +9091,17 @@ void MemoryMigrationRule::memcpySymbolMigration(
       ReplaceStr = "dpct::dpct_memcpy";
     }
   } else {
+    if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(5))) {
+        StreamStr = ExprAnalysis::ref(C->getArg(5));
+      }
+    }
     if (USMLevel == UsmLevel::restricted) {
-      if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
-        const Expr *Stream = C->getArg(5);
-        if (Stream) {
-          if (isPredefinedStreamHandle(C->getArg(5))) {
-            buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
-            ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
-          } else {
-            auto StreamStr = ExprAnalysis::ref(Stream);
-            ReplaceStr = StreamStr + "->memcpy";
-          }
-        }
-      } else {
+      if (StreamStr.empty()) {
         buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
+      } else {
+        ReplaceStr = StreamStr + "->memcpy";
       }
     } else
       ReplaceStr = "dpct::async_dpct_memcpy";
@@ -9128,16 +9126,16 @@ void MemoryMigrationRule::memcpySymbolMigration(
 
   if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(0), Result, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(0), Result, StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(0), Result);
+    replaceMemAPIArg(C->getArg(0), Result, StreamStr);
   }
 
   if ((Name == "cudaMemcpyFromSymbol" || Name == "cudaMemcpyFromSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(1), Result, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(1), Result, StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(1), Result);
+    replaceMemAPIArg(C->getArg(1), Result, StreamStr);
   }
 
   // Remove C->getArg(3)
@@ -9256,17 +9254,17 @@ void MemoryMigrationRule::memsetMigration(
   } else if (NameRef == "cudaMemset3D") {
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
-    replaceMemAPIArg(C->getArg(0), Result);
+    std::string AsyncQueue;
+    if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(3)))
+        AsyncQueue = ExprAnalysis::ref(C->getArg(3));
+    }
+    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
     if (USMLevel == UsmLevel::restricted) {
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
-      }
-      std::string AsyncQueue;
-      if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
-        if (!isPredefinedStreamHandle(C->getArg(3)))
-          AsyncQueue = ExprAnalysis::ref(C->getArg(3));
       }
       if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))

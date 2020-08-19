@@ -3,7 +3,7 @@
 #define DPCT_NAMED_LAMBDA
 #define DPCT_USM_LEVEL_NONE
 #include <CL/sycl.hpp>
-#include "../include/dpct.hpp"
+#include <dpct/dpct.hpp>
 
 class TestStruct {
 public:
@@ -98,6 +98,10 @@ void test1(volatile int *acc_d1, int *acc_d2, int *c1, int c2) {
 int main() try {
   dpct::get_default_queue().submit(
     [&](cl::sycl::handler &cgh) {
+      d1_a.init();
+      d2_a.init();
+      c1_a.init();
+      c2_a.init();
       auto d1_acc = d1_a.get_access(cgh);
       auto d2_acc = d2_a.get_access(cgh);
       auto c1_acc = c1_a.get_access(cgh);
@@ -110,6 +114,8 @@ int main() try {
     });
   dpct::get_default_queue().submit(
     [&](cl::sycl::handler &cgh) {
+      c3_a.init();
+      c4_a.init();
       auto c3_acc = c3_a.get_access(cgh);
       auto c4_acc = c4_a.get_access(cgh);
       cgh.parallel_for<dpct_kernel_name<class kernel_test>>(
@@ -118,8 +124,12 @@ int main() try {
           test3(c3_acc, c4_acc);
         });
     });
-  dpct::get_default_queue().submit(
+
+  sycl::queue *q = dpct::get_current_device().create_queue();
+  q->submit(
     [&](cl::sycl::handler &cgh) {
+      d3_a.init(*q);
+      d4_a.init(*q);
       auto d3_acc = d3_a.get_access(cgh);
       auto d4_acc = d4_a.get_access(cgh);
       cgh.parallel_for<dpct_kernel_name<class kernel_test>>(
@@ -128,6 +138,7 @@ int main() try {
           test4(d3_acc.get_pointer(), d4_acc.get_pointer());
         });
     });
+
 
   if (verify()) {
     printf("Init Constant Memory Success!\n");

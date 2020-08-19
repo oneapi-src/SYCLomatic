@@ -230,11 +230,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0));
 
-  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size);
+  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size), 0);
+  // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream));
 
   /// memcpy to symbol
@@ -268,11 +268,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0));
 
-  // CHECK: stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size);
+  // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size), 0);
+  // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream));
 
   /// memset
@@ -417,11 +417,11 @@ int foo2() {
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0));
 
-  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size);
+  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size), 0);
+  // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr()) + 3, size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream));
 
   /// memcpy to symbol
@@ -475,11 +475,11 @@ int foo2() {
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0));
 
-  // CHECK: stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size);
+  // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size), 0);
+  // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr()) + 3, h_A, size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream));
 }
 

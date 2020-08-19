@@ -1068,9 +1068,10 @@ private:
   void handleAsync(const CallExpr *C, unsigned i,
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);
-  void replaceMemAPIArg(
-      const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
-      std::string OffsetFromBaseStr = "");
+  void replaceMemAPIArg(const Expr *E,
+                        const ast_matchers::MatchFinder::MatchResult &Result,
+                        const std::string &StreamStr,
+                        std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
   const Expr *getUnaryOperatorExpr(const Expr *E);
   void memcpySymbolMigration(

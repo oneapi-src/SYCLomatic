@@ -1638,6 +1638,13 @@ public:
 
   std::string getDeclarationReplacement();
 
+  std::string getInitStmt() { return getInitStmt(""); }
+  std::string getInitStmt(StringRef QueueString) {
+    if (QueueString.empty())
+      return getConstVarName() + ".init();";
+    return buildString(getConstVarName(), ".init(*", QueueString, ");");
+  }
+
   inline std::string getMemoryDecl(const std::string &MemSize) {
     return buildString(getMemoryType(), " ", getConstVarName(),
                        PointerAsArray ? "" : getInitArguments(MemSize), ";");
@@ -2940,6 +2947,9 @@ private:
       }
     }
   }
+  bool isDefaultStream() {
+    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ");
+  }
   bool isIncludedFile(const std::string &CurrentFile,
                       const std::string &CheckingFile);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -3025,6 +3035,7 @@ private:
     StmtList StreamList;
     StmtList RangeList;
     StmtList MemoryList;
+    StmtList InitList;
     StmtList ExternList;
     StmtList PtrList;
     StmtList AccessorList;
@@ -3037,6 +3048,7 @@ private:
       printList(Printer, StreamList);
       printList(Printer, ExternList);
       printList(Printer, MemoryList);
+      printList(Printer, InitList, "init global memory");
       printList(Printer, RangeList,
                 "ranges used for accessors to device memory");
       printList(Printer, PtrList, "pointers to device memory");
@@ -3064,7 +3076,6 @@ private:
   StmtList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
-  std::string QueueStr;
   int TotalArgsSize = 0;
 };
 
