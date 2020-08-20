@@ -1350,6 +1350,7 @@ void DeviceFunctionInfo::buildInfo() {
     VarMap.merge(Call.second->getVarMap());
     mergeCalledTexObj(Call.second->getTextureObjectList());
   }
+  VarMap.removeDuplicateVar();
 }
 
 std::string DeviceFunctionDecl::getExtraParameters() {
@@ -1935,6 +1936,27 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+template <class T>
+void removeDuplicateVar(GlobalMap<T> &VarMap,
+                        std::unordered_set<std::string> &VarNames) {
+  auto Itr = VarMap.begin();
+  while (Itr != VarMap.end()) {
+    if (VarNames.find(Itr->second->getName()) == VarNames.end()) {
+      VarNames.insert(Itr->second->getName());
+      ++Itr;
+    } else {
+      Itr = VarMap.erase(Itr);
+    }
+  }
+}
+void MemVarMap::removeDuplicateVar() {
+  std::unordered_set<std::string> VarNames{DpctGlobalInfo::getItemName(),
+                                           DpctGlobalInfo::getStreamName()};
+  dpct::removeDuplicateVar(GlobalVarMap, VarNames);
+  dpct::removeDuplicateVar(LocalVarMap, VarNames);
+  dpct::removeDuplicateVar(ExternVarMap, VarNames);
+  dpct::removeDuplicateVar(TextureMap, VarNames);
+}
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }

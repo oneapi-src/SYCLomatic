@@ -2154,6 +2154,7 @@ public:
     return const_cast<MemVarMap *>(this)->getMap(Scope);
   }
   const GlobalMap<TextureInfo> &getTextureMap() const { return TextureMap; }
+  void removeDuplicateVar();
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
     switch (Scope) {
