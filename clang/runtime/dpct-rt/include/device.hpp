@@ -31,6 +31,7 @@
 #include <sys/syscall.h>
 #endif
 #if defined(_WIN64)
+#define NOMINMAX
 #include <windows.h>
 #endif
 
