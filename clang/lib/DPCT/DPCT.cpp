@@ -687,7 +687,7 @@ static void saveApisReport(void) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
       if (ReportFormat.getValue() == ReportFormatEnum::csv) {
-        File << APIName << "," << std::to_string(Count) << std::endl;
+        File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
       } else {
         std::string Str;
         llvm::raw_string_ostream OS(Str);
