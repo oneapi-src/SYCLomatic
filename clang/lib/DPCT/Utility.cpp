@@ -130,6 +130,51 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   return Buffer.substr(begin, end - begin);
 }
 
+SourceRange getStmtSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  SourceLocation BeginLoc, EndLoc;
+  if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
+    BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
+    EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
+    // If the call expr is in a function-like macro or nested macros, to get the
+    // correct loc of the previous arg, we need to use getImmediateSpellingLoc
+    // step by step until reaching a FileID or a non-function-like macro. E.g.
+    // MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
+    // When we try to remove arg3, Begin should be at the end of arg2.
+    // However, the expansionLoc of Begin is at the beginning of MACRO_A.
+    // After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
+    // Begin is at the beginning of MACRO_B.
+    // After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
+    // Begin is at the beginning of arg2.
+    // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
+    // and SM.getSpellingLoc will return the macro definition in this case.
+    while (BeginLoc.isMacroID() &&
+           !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
+      auto ISL = SM.getImmediateSpellingLoc(BeginLoc);
+      if (!dpct::DpctGlobalInfo::isInRoot(
+              SM.getFilename(SM.getExpansionLoc(ISL)).str()))
+        break;
+      BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+      EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+    }
+    if (EndLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
+    }
+    if (BeginLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    }
+    return SourceRange(BeginLoc, EndLoc);
+  } else {
+    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
+    EndLoc = SM.getExpansionLoc(S->getEndLoc());
+    return SourceRange(BeginLoc, EndLoc);
+  }
+}
+
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S) {
   std::string Str;
@@ -137,23 +182,10 @@ std::string getStmtSpelling(const Stmt *S) {
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-    BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
-    EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
-    if (EndLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      EndLoc = SM.getExpansionLoc(EndLoc);
-    }
-    if (BeginLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      BeginLoc = SM.getExpansionLoc(BeginLoc);
-    }
-  } else {
-    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
-    EndLoc = SM.getExpansionLoc(S->getEndLoc());
-  }
+  auto StmtRange = getStmtSourceRange(S);
+
+  BeginLoc = StmtRange.getBegin();
+  EndLoc = StmtRange.getEnd();
 
   int Length =
       SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +

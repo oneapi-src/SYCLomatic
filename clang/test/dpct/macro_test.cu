@@ -294,7 +294,11 @@ int b;
     #endif
   );
 
-
+  #define SIZE    (100*1024*1024)
+  unsigned char *dev_buffer;
+  unsigned char *buffer = (unsigned char*)malloc(500);
+  //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE).wait();
+  cudaMemcpy( dev_buffer, buffer, SIZE, cudaMemcpyHostToDevice);
 }
 
 #define MMM(x)

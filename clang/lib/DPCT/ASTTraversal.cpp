@@ -8528,52 +8528,6 @@ void MemoryMigrationRule::replaceMemAPIArg(
   }
 }
 
-// Incase the previous arg is another macro or function-like macro,
-// we take 1 token(the last token of Expr, because of the design of Clang's
-// EndLoc) after getExpansionRange().getEnd() as the real end location. If the
-// call expr is in a function-like macro or nested macros, to get the correct
-// loc of the previous arg, we need to use getImmediateSpellingLoc step by
-// step until reaching a FileID or a non-function-like macro. E.g.
-// MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
-// When we try to remove arg3, Begin should be at the end of arg2.
-// However, the expansionLoc of Begin is at the beginning of MACRO_A.
-// After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
-// Begin is at the beginning of MACRO_B.
-// After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
-// Begin is at the beginning of arg2.
-// CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
-// and SM.getSpellingLoc will return the macro definition in this case.
-CharSourceRange getAccurateExpansionRange(SourceLocation Loc,
-                                          const SourceManager &SM) {
-  while (Loc.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Loc)) {
-    auto ISL = SM.getImmediateSpellingLoc(Loc);
-    if (!DpctGlobalInfo::isInRoot(
-            SM.getFilename(SM.getExpansionLoc(ISL)).str()))
-      break;
-    Loc = ISL;
-  }
-  return SM.getExpansionRange(Loc);
-}
-
-/// Get the accurate begin expansion location of argument \p ArgIndex of call \p
-/// C.
-SourceLocation getArgEndLocation(const CallExpr *C, size_t ArgIndex,
-                                 const SourceManager &SM) {
-  auto Loc =
-      getAccurateExpansionRange(C->getArg(ArgIndex)->getEndLoc(), SM).getEnd();
-  return Loc.getLocWithOffset(Lexer::MeasureTokenLength(
-      SM.getExpansionLoc(Loc), SM,
-      dpct::DpctGlobalInfo::getContext().getLangOpts()));
-}
-
-/// Get the accurate end expansion location of argument \p ArgIndex of call \p
-/// C.
-SourceLocation getArgBeginLocation(const CallExpr *C, size_t ArgIndex,
-                                   const SourceManager &SM) {
-  return getAccurateExpansionRange(C->getArg(ArgIndex)->getBeginLoc(), SM)
-      .getBegin();
-}
-
 TextModification *replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM) {
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
@@ -8594,16 +8548,22 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getArgEndLocation(C, n - 1, SM);
-    End = getArgEndLocation(C, n, SM);
+    Begin = getStmtSourceRange(C->getArg(n - 1)).getEnd();
+    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    End = getStmtSourceRange(C->getArg(n)).getEnd();
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+      End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
   } else {
-    Begin = getArgBeginLocation(C, n, SM);
-    if (C->getNumArgs() > 1)
-      End = getArgBeginLocation(C, n + 1, SM);
-    else
-      End = getArgEndLocation(C, n, SM);
+    Begin = getStmtSourceRange(C->getArg(n)).getBegin();
+    if (C->getNumArgs() > 1) {
+      End = getStmtSourceRange(C->getArg(n + 1)).getBegin();
+    } else {
+      End = getStmtSourceRange(C->getArg(n)).getEnd();
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    }
   }
-
   return replaceText(Begin, End, "", SM);
 }
 
@@ -8839,10 +8799,13 @@ void MemoryMigrationRule::mallocMigration(
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
-    emplaceTransformation(
-        replaceText(getArgEndLocation(C, 0, *Result.SourceManager),
-                    getArgBeginLocation(C, 1, *Result.SourceManager), "*",
-                    *Result.SourceManager));
+    auto ArgRange0 = getStmtSourceRange(C->getArg(0));
+    auto ArgEnd0 = ArgRange0.getEnd().getLocWithOffset(
+        Lexer::MeasureTokenLength(ArgRange0.getEnd(), *(Result.SourceManager),
+                                  Result.Context->getLangOpts()));
+    auto ArgRange1 = getStmtSourceRange(C->getArg(1));
+    emplaceTransformation(replaceText(ArgEnd0, ArgRange1.getBegin(),
+                                      "*", *Result.SourceManager));
     insertAroundStmt(C->getArg(0), "(", ")");
     insertAroundStmt(C->getArg(1), "(", ")");
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
@@ -8916,6 +8879,8 @@ void MemoryMigrationRule::memcpyMigration(
     replaceMemAPIArg(C->getArg(0), Result);
     replaceMemAPIArg(C->getArg(1), Result);
     if (USMLevel == UsmLevel::restricted) {
+      // Since the range of removeArg is larger than the range of
+      // handleDirection, the handle direction replacement will be removed.
       emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 4, *Result.SourceManager));
@@ -9727,9 +9692,11 @@ void MemoryMigrationRule::aggregatePitchedData(const CallExpr *C,
 void MemoryMigrationRule::aggregateArgsToCtor(
     const CallExpr *C, const std::string &ClassName, size_t StartArgIndex,
     size_t EndArgIndex, const std::string &PaddingArgs, SourceManager &SM) {
-  insertAroundRange(getArgBeginLocation(C, StartArgIndex, SM),
-                    getArgEndLocation(C, EndArgIndex, SM), ClassName + "(",
-                    PaddingArgs + ")");
+  auto EndLoc = getStmtSourceRange(C->getArg(EndArgIndex)).getEnd();
+  EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
+      EndLoc, SM, DpctGlobalInfo::getContext().getLangOpts()));
+  insertAroundRange(getStmtSourceRange(C->getArg(StartArgIndex)).getBegin(),
+                    EndLoc, ClassName + "(", PaddingArgs + ")");
 }
 
 /// Convert several arguments to a 3D vector constructor, like id<3> or
@@ -10698,7 +10665,7 @@ void PreDefinedStreamHandleRule::run(const MatchFinder::MatchResult &Result) {
     if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
         Str == "cudaStreamPerThread") {
       auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getAccurateExpansionRange(E->getBeginLoc(), SM).getBegin();
+      auto Begin = getStmtSourceRange(E).getBegin();
       unsigned int Length = Lexer::MeasureTokenLength(
           Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
       if (checkWhetherIsDuplicate(E, false))

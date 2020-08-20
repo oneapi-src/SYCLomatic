@@ -217,8 +217,11 @@ int getCurrnetColumn(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
+clang::SourceRange getStmtSourceRange(const clang::Stmt *S);
+
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);
+
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
