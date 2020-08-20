@@ -92,6 +92,8 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
 /// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
 bool isTargetPseudoObjectExpr(const Expr *E) {
   auto POE = dyn_cast<PseudoObjectExpr>(E->IgnoreImpCasts());
+  if (!POE)
+    return false;
   auto RE = POE->getResultExpr();
   if (auto CE = dyn_cast<CallExpr>(RE)) {
     auto FD = CE->getDirectCallee();
@@ -100,6 +102,7 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
         Name == "__fetch_builtin_z")
       return true;
   }
+  return false;
 }
 
 /// Policies to migrate math functions:
