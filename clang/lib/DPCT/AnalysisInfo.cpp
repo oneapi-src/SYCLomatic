@@ -1082,10 +1082,59 @@ void deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
   }
 }
 
+/// This function gets the \p FD name with the necessary qualified namespace at
+/// \p Callee position.
+/// Method:
+/// 1. record all NamespaceDecl nodes of the ancestors \p FD and \p Callee, get
+/// two namespace sequences. E.g.,
+///   decl: aaa,bbb,ccc; callee: aaa,eee;
+/// 2. Remove the longest continuous common subsequence
+/// 3. the rest sequence of \p FD is the namespace sequence
+std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
+                                                   const Expr *Callee) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto getNamespaceSeq =
+      [&](DynTypedNodeList Parents) -> std::deque<std::string> {
+    std::deque<std::string> Seq;
+    while (Parents.size() > 0) {
+      auto *Parent = Parents[0].get<NamespaceDecl>();
+      if (Parent) {
+        Seq.push_front(Parent->getNameAsString());
+      }
+      Parents = Context.getParents(Parents[0]);
+    }
+    return Seq;
+  };
+
+  std::deque<std::string> FDNamespaceSeq =
+      getNamespaceSeq(Context.getParents(*FD));
+  std::deque<std::string> CalleeNamespaceSeq =
+      getNamespaceSeq(Context.getParents(*Callee));
+
+  auto FDIter = FDNamespaceSeq.begin();
+  for (auto CalleeNamespace : CalleeNamespaceSeq) {
+    if (FDIter == FDNamespaceSeq.end())
+      break;
+    if (CalleeNamespace == *FDIter) {
+      FDIter++;
+      FDNamespaceSeq.pop_front();
+    } else {
+      break;
+    }
+  }
+
+  std::string Result;
+  for (auto I : FDNamespaceSeq) {
+    Result = Result + I + "::";
+  }
+
+  return Result + getName(FD);
+}
+
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
-    Name = getName(CallDecl);
+    Name = getNameWithNamespace(CallDecl, Callee);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments());
@@ -1216,6 +1265,7 @@ void CallFunctionExpr::mergeTextureObjectTypeInfo() {
 }
 
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
+
   if (auto ID = D->getIdentifier())
     return ID->getName().str();
   return "";

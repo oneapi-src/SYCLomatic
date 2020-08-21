@@ -2431,6 +2431,8 @@ private:
     }
   }
 
+  std::string getNameWithNamespace(const FunctionDecl* FD, const Expr* Callee);
+
   template <class CallT>
   void
   buildTextureObjectArgsInfo(const CallT*C) {
