@@ -1,5 +1,7 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-usm.dp.cpp
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
+// RUN: dpct --format-range=none -usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-cooperative.dp.cpp
 
 // CHECK: void template_device(T *d, T *s) {
 template<class T>
@@ -43,45 +45,55 @@ int main() {
 
   void *args[2] = { &d_data, &tex };
 
-  // CHECK: q_ct1.submit(
+  // CHECK: {
+  // CHECK-NEXT: std::pair<dpct::buffer_t, size_t> d_buf_ct0 = dpct::get_buffer_and_offset(*(int **)args[0]);
+  // CHECK-NEXT: size_t d_offset_ct0 = d_buf_ct0.second;
+  // CHECK-NEXT: dpct::get_default_queue().submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
+  // CHECK-NEXT:    auto d_acc_ct0 = d_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:    auto tex_acc = static_cast<dpct::image<int, 1> *>(*(dpct::image_base_p *)args[1])->get_access(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:    auto tex_smpl = *(dpct::image_base_p *)args[1]->get_sampler();
   // CHECK-EMPTY:
-  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
-  // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:        int *d_ct0 = (int *)(&d_acc_ct0[0] + d_offset_ct0);
   // CHECK-NEXT:        kernel(d_ct0, dpct::image_accessor<int, 1>(tex_smpl, tex_acc), item_ct1);
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
-  cudaLaunchKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
+  // CHECK-NEXT:}
+  cudaLaunchCooperativeKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
 
   cudaStream_t stream;
   cudaStreamCreate(&stream);
-  // CHECK: stream->submit(
+
+  // CHECK: {
+  // CHECK-NEXT: std::pair<dpct::buffer_t, size_t> d_buf_ct0 = dpct::get_buffer_and_offset(*(int **)args[0]);
+  // CHECK-NEXT: size_t d_offset_ct0 = d_buf_ct0.second;
+  // CHECK-NEXT: stream->submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
   // CHECK-NEXT:    sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(16), cgh);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
+  // CHECK-NEXT:    auto d_acc_ct0 = d_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:        int *d_ct0 = (int *)(&d_acc_ct0[0] + d_offset_ct0);
   // CHECK-NEXT:        template_kernel<int>(d_ct0, item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
-  cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
+  cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
 
   void *kernel_func = (void *)&kernel;
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
-  cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
+  // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
+  cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);

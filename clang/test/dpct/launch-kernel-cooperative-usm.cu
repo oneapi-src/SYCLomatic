@@ -1,5 +1,7 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-usm.dp.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-cooperative-usm.dp.cpp
 
 // CHECK: void template_device(T *d, T *s) {
 template<class T>
@@ -57,10 +59,11 @@ int main() {
   // CHECK-NEXT:        kernel(d_ct0, dpct::image_accessor<int, 1>(tex_smpl, tex_acc), item_ct1);
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
-  cudaLaunchKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
+  cudaLaunchCooperativeKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
 
   cudaStream_t stream;
   cudaStreamCreate(&stream);
+
   // CHECK: stream->submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
@@ -74,14 +77,15 @@ int main() {
   // CHECK-NEXT:        template_kernel<int>(d_ct0, item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
-  cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
+  cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
 
   void *kernel_func = (void *)&kernel;
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
-  cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
+  // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
+  cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);
