@@ -242,10 +242,10 @@ private:
 };
 
 template <typename T, typename Predicate, typename BinaryOperation>
-class transform_if_zip_stencil_fun {
+class transform_if_zip_mask_fun {
 public:
-  transform_if_zip_stencil_fun(Predicate _pred = dpstd::identity(),
-                               BinaryOperation _op = dpstd::identity())
+  transform_if_zip_mask_fun(Predicate _pred = dpstd::identity(),
+                            BinaryOperation _op = dpstd::identity())
       : pred(_pred), op(_op) {}
   template <typename _T> void operator()(_T &&t) {
     using std::get;
