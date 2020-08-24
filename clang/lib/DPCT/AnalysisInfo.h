@@ -2283,8 +2283,8 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
 template <>
 inline ParameterStream &
 MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
-  static std::string StreamParamDecl = MapNames::getClNamespace() +
-                                       "::stream " +
+  static std::string StreamParamDecl = "const " + MapNames::getClNamespace() +
+                                       "::stream &" +
                                        DpctGlobalInfo::getStreamName();
   return PS << StreamParamDecl;
 }

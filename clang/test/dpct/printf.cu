@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-// CHECK: void device_test(sycl::stream [[STREAM:stream_ct1]]) {
+// CHECK: void device_test(const sycl::stream &[[STREAM:stream_ct1]]) {
 // CHECK-NEXT: [[STREAM]] << "print test\n";
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1015:0: Output needs adjustment.
@@ -15,7 +15,7 @@ __device__ void device_test() {
   printf("print %s\n", "test");
 }
 
-// CHECK: void kernel_test(sycl::stream [[STREAM:stream_ct1]]) {
+// CHECK: void kernel_test(const sycl::stream &[[STREAM:stream_ct1]]) {
 // CHECK-NEXT: device_test([[STREAM]]);
 // CHECK-NEXT: [[STREAM]] << "kernel test\n";
 // CHECK-NEXT: }
