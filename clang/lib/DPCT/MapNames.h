@@ -368,6 +368,8 @@ public:
   static const MapNames::MapTy MemberNamesMap;
   static const MapNames::SetTy HostAllocSet;
   static const MapNames::MapTy MathRewriterMap;
+
+  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
 };
 
 class MigrationStatistics {

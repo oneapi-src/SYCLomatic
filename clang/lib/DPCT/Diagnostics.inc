@@ -132,3 +132,5 @@ DEF_WARNING(HOST_CONSTANT, 1056, "DPCT did not detect that variable %0 is used i
 DEF_COMMENT(HOST_CONSTANT, 1056, "DPCT did not detect that variable {0} is used in device code. If this variable is also used in device code, you need rewrite the code.")
 DEF_WARNING(HOST_DEVICE_CONSTANT, 1057, "Variable %0 was used in host code and device code. DPCT updated %0 type to be used in SYCL device code and generated new %1 to be used in host code. You need to update the host code manually to use the new %1.")
 DEF_COMMENT(HOST_DEVICE_CONSTANT, 1057, "Variable {0} was used in host code and device code. DPCT updated {0} type to be used in SYCL device code and generated new {1} to be used in host code. You need to update the host code manually to use the new {1}.")
+DEF_WARNING(API_NOT_OCCURRED_IN_AST, 1058, "\"%0\" is not migrated because it is not called in the code.")
+DEF_COMMENT(API_NOT_OCCURRED_IN_AST, 1058, "\"{0}\" is not migrated because it is not called in the code.")

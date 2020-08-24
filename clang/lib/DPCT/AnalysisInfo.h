@@ -574,6 +574,7 @@ public:
     return IncludedFilesInfoSet;
   }
   std::set<unsigned int> &getSpBLASSet() { return SpBLASSet; }
+
   std::unordered_set<std::shared_ptr<TextModification>> &
   getConstantMacroTMSet() {
     return ConstantMacroTMSet;
@@ -583,6 +584,11 @@ public:
       nullptr;
   std::vector<tooling::Replacement> &getReplacements() {
     return PreviousTUReplFromYAML->Replacements;
+  }
+
+  std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
+  getAtomicMap() {
+    return AtomicMap;
   }
 
 private:
@@ -624,6 +630,8 @@ private:
   GlobalMap<TextureInfo> TextureMap;
   std::set<unsigned int> SpBLASSet;
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
+  std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
+      AtomicMap;
 
   ExtReplacements Repls;
   size_t FileSize = 0;
@@ -1225,6 +1233,28 @@ public:
     TM->setConstantOffset(LocInfo.second);
     auto &S = FileInfo->getConstantMacroTMSet();
     S.insert(TM);
+  }
+
+  void insertAtomicInfo(std::string HashStr, SourceLocation SL,
+                       std::string FuncName) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getAtomicMap();
+    if (M.find(HashStr) == M.end()) {
+      M.insert(std::make_pair(
+          HashStr, std::make_tuple(LocInfo.second, FuncName, true)));
+    }
+  }
+
+  void removeAtomicInfo(std::string HashStr) {
+    for (auto &File : FileMap) {
+      auto &M = File.second->getAtomicMap();
+      auto Iter = M.find(HashStr);
+      if (Iter != M.end()) {
+        std::get<2>(Iter->second) = false;
+        return;
+      }
+    }
   }
 
   void setFileEnterLocation(SourceLocation Loc) {

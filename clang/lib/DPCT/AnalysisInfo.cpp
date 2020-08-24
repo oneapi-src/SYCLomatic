@@ -206,6 +206,13 @@ void DpctFileInfo::buildReplacements() {
                                Diagnostics::UNSUPPORT_MATRIX_TYPE, true);
     }
   }
+
+  for (auto &AtomicInfo : AtomicMap) {
+    if (std::get<2>(AtomicInfo.second))
+      DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
+                               Diagnostics::API_NOT_OCCURRED_IN_AST, true,
+                               std::get<1>(AtomicInfo.second));
+  }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {

@@ -2920,8 +2920,7 @@ const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
     };
 
 // Atomic function names mapping
-const std::unordered_map<std::string, std::string>
-    AtomicFunctionRule::AtomicFuncNamesMap{
+const std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap{
         {"atomicAdd", "dpct::atomic_fetch_add"},
         {"atomicSub", "dpct::atomic_fetch_sub"},
         {"atomicAnd", "dpct::atomic_fetch_and"},

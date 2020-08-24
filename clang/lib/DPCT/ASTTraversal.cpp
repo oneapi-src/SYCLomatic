@@ -133,6 +133,14 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
           SourceRange(Iter->getLocation(), Iter->getEndLoc())));
 #endif
     }
+
+    if (MapNames::AtomicFuncNamesMap.find(II->getName().str()) !=
+        MapNames::AtomicFuncNamesMap.end()) {
+      std::string HashStr =
+          getHashStrFromLoc(MI->getReplacementToken(0).getLocation());
+        DpctGlobalInfo::getInstance().insertAtomicInfo(
+          HashStr, MacroNameTok.getLocation(), II->getName().str());
+    }
   }
 }
 
@@ -275,6 +283,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
             dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
             Name.str());
       }
+    }
+  }
+
+  if (auto MI = MD.getMacroInfo()) {
+    if (MI->getNumTokens() > 0) {
+      DpctGlobalInfo::getInstance().removeAtomicInfo(
+          getHashStrFromLoc(MI->getReplacementToken(0).getLocation()));
     }
   }
 }
@@ -1187,9 +1202,9 @@ void FuncAttrsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(FuncAttrsRule)
 
 void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> AtomicFuncNames(AtomicFuncNamesMap.size());
+  std::vector<std::string> AtomicFuncNames(MapNames::AtomicFuncNamesMap.size());
   std::transform(
-      AtomicFuncNamesMap.begin(), AtomicFuncNamesMap.end(),
+      MapNames::AtomicFuncNamesMap.begin(), MapNames::AtomicFuncNamesMap.end(),
       AtomicFuncNames.begin(),
       [](const std::pair<std::string, std::string> &p) { return p.first; });
 
@@ -1369,9 +1384,11 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   if (!CE->getDirectCallee())
     return;
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
-  if(AtomicFuncNamesMap.find(AtomicFuncName) == AtomicFuncNamesMap.end())
+  if (MapNames::AtomicFuncNamesMap.find(AtomicFuncName) ==
+      MapNames::AtomicFuncNamesMap.end())
     return;
-  std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
+  std::string ReplacedAtomicFuncName =
+      MapNames::AtomicFuncNamesMap.at(AtomicFuncName);
 
   // Explicitly cast all arguments except first argument
   const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();

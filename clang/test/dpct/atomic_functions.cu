@@ -510,3 +510,9 @@ __shared__ unsigned int temp[256];
   __syncthreads();
   atomicAdd(&(histo[threadIdx.x]), temp[threadIdx.x]);
 }
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1058:{{[0-9]+}}: "atomicAdd" is not migrated because it is not called in the code.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define ATOMIC_ADD( x, v )  atomicAdd( &x, v );
+#define ATOMIC_ADD( x, v )  atomicAdd( &x, v );

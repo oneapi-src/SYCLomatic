@@ -456,8 +456,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
-
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
