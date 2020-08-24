@@ -1109,9 +1109,12 @@ private:
                            size_t StartArgIndex, size_t EndArgIndex,
                            const std::string &PaddingArgs, SourceManager &SM);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
-    if (C->getNumArgs() > ArgIndex)
+    if (C->getNumArgs() > ArgIndex) {
+      if (needExtraParens(C->getArg(ArgIndex)))
+        insertAroundStmt(C->getArg(ArgIndex), "(", ")");
       emplaceTransformation(
-          new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
+        new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
+    }
   }
   void insertZeroOffset(const CallExpr *C, size_t InsertArgIndex) {
     static std::string InsertedText =
