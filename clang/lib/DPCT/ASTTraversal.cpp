@@ -10168,9 +10168,9 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr += getIndent(CE->getBeginLoc(), *Result.SourceManager).str();
     }
     if (FuncName == "__syncthreads_and")
-      ReplStr += "sycl::intel::all_of(";
+      ReplStr += "sycl::ONEAPI::all_of(";
     else
-      ReplStr += "sycl::intel::any_of(";
+      ReplStr += "sycl::ONEAPI::any_of(";
     ReplStr += getItemName();
     ReplStr += ".get_group(), ";
     ReplStr += ExprAnalysis::ref(CE->getArg(0));
