@@ -700,8 +700,10 @@ void KernelCallExpr::buildInfo() {
     DiagnosticsUtils::report(getFilePath(), getBegin(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true);
   // TODO: Output debug info.
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      getFilePath(), getBegin(), 0, getReplacement(), nullptr));
+  auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
+                                            getReplacement(), nullptr);
+  R->setBlockLevelFormatFlag();
+  DpctGlobalInfo::getInstance().addReplacement(R);
 }
 
 void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {

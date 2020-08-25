@@ -1307,33 +1307,77 @@ SourceRange getFunctionRange(const CallExpr *CE) {
   return SourceRange(Begin, End);
 }
 
-/// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
-/// \param Repls Replacements with format flags.
-/// \return The result ranges.
-std::vector<clang::tooling::Range>
-calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
-  std::vector<bool> NotFormatFlags;
+// If Flags[i] is true, then the range of Repls[i] will be calculated.
+static std::vector<clang::tooling::Range>
+calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
+                        std::vector<bool> Flags) {
   std::vector<clang::tooling::Range> Ranges;
 
   int Diff = 0;
   for (auto R : Repls) {
-    if (R.getNotFormatFlag())
-      NotFormatFlags.push_back(true);
-    else
-      NotFormatFlags.push_back(false);
     Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
                         /*length*/ R.getReplacementText().size());
-
     Diff = Diff + R.getReplacementText().size() - R.getLength();
   }
 
   std::vector<clang::tooling::Range> RangesAfterFilter;
   int Size = Ranges.size();
   for (int i = 0; i < Size; ++i) {
-    if (!NotFormatFlags[i])
+    if (Flags[i])
       RangesAfterFilter.push_back(Ranges[i]);
   }
   return RangesAfterFilter;
+}
+
+/// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
+/// \param Repls Replacements with format flags.
+/// \return The result ranges.
+std::vector<clang::tooling::Range>
+calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
+  std::vector<bool> FormatFlags;
+  for (auto R : Repls) {
+    if (R.getNotFormatFlag())
+      FormatFlags.push_back(false);
+    else
+      FormatFlags.push_back(true);
+  }
+  return calculateRangesWithFlag(Repls, FormatFlags);
+}
+
+/// Calculate the ranges of the input \p Repls which has set BlockLevelFormatFlags.
+/// \param Repls Replacements with lambda flags.
+/// \return The result ranges.
+std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
+    const clang::tooling::Replacements &Repls) {
+  std::vector<bool> BlockLevelFormatFlags;
+
+  for (auto R : Repls) {
+    if (R.getBlockLevelFormatFlag())
+      BlockLevelFormatFlags.push_back(true);
+    else
+      BlockLevelFormatFlags.push_back(false);
+  }
+
+  return calculateRangesWithFlag(Repls, BlockLevelFormatFlags);
+}
+
+/// Calculate the ranges of the input \p Ranges after \p Repls is applied to
+/// the files.
+/// \param Repls Replacements to apply.
+/// \param Ranges Ranges before applying the replacements.
+/// \return The result ranges.
+std::vector<clang::tooling::Range>
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                const std::vector<clang::tooling::Range> &Ranges) {
+  std::vector<clang::tooling::Range> Result;
+  for (auto R : Ranges) {
+    unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
+    unsigned int EOffset =
+        Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
+    // TODO: maybe need to check if BOffset <= EOffset, if not, then skip
+    Result.emplace_back(BOffset, EOffset - BOffset);
+  }
+  return Result;
 }
 
 /// Determine if \param S is assigned or not

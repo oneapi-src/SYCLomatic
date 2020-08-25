@@ -1116,6 +1116,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   }
 
   std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
+  std::string InnerIndentStr = IndentStr + "  ";
 
   if (IsLambda) {
     if (auto CSM = dyn_cast<CompoundStmt>(FD->getBody())) {
@@ -1134,11 +1135,11 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
       getNL() + IndentStr +
       std::string("catch (" + MapNames::getClNamespace() +
                   "::exception const &exc) {") +
-      getNL() + IndentStr + IndentStr +
+      getNL() + InnerIndentStr +
       std::string("std::cerr << exc.what() << \"Exception caught at file:\" << "
                   "__FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;") +
-      getNL() + IndentStr + IndentStr + std::string("std::exit(1);") + getNL() +
+      getNL() + InnerIndentStr + std::string("std::exit(1);") + getNL() +
       IndentStr + "}";
   if (IsLambda) {
     ReplaceStr += getNL() + IndentStr + "}";
@@ -4614,8 +4615,10 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                       IndentStr;
         else
           InsertStr = PrefixInsertStr + ReplStr + ";" + getNL() + IndentStr;
-        emplaceTransformation(
-            new InsertText(OuterInsertLoc, std::move(InsertStr)));
+
+        auto IT = new InsertText(OuterInsertLoc, std::move(InsertStr));
+        IT->setBlockLevelFormatFlag();
+        emplaceTransformation(std::move(IT));
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
                OriginStmtType == "if" ? "an " + OriginStmtType
                                       : "a " + OriginStmtType);
@@ -4627,12 +4630,12 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
               std::string(";") + getNL() + IndentStr + "return 0;" + getNL() +
-                  IndentStr + std::string("}()"));
+                  IndentStr + std::string("}()"), true);
         } else {
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
-              std::string(";") + getNL() + IndentStr + std::string("}()"));
+              std::string(";") + getNL() + IndentStr + std::string("}()"), true);
         }
         emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
       }
@@ -4642,7 +4645,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("{") + getNL() + IndentStr + PrefixInsertStr,
-              getNL() + IndentStr + std::string("}"));
+              getNL() + IndentStr + std::string("}"), true);
         }
       } else {
         emplaceTransformation(

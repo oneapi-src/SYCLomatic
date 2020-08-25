@@ -120,8 +120,10 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     if (IsCleanup && ReplacementString.empty())
       return removeStmtWithCleanups(SM);
-    return std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
-                                            ReplacementString, this);
+    auto R = std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
+                                              ReplacementString, this);
+    R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    return R;
   } else {
     // When replacing a CallExpr with an empty string, also remove semicolons
     // and redundant spaces
@@ -130,8 +132,10 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
-                                            this);
+    auto R = std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                              this);
+    R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    return R;
   }
 }
 
@@ -395,6 +399,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
       // true means [Begin, End]
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
   R->setPairID(PairID);
+  R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   return R;
 }
 
@@ -673,7 +678,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
          OrigIndent + "*/" + NL)
             .str(),
         this);
-  ExtReplPtr->setConstantOffset(getConstantOffset());
+  ExtReplPtr->setConstantOffset(this->getConstantOffset());
+  ExtReplPtr->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   return ExtReplPtr;
 }
 

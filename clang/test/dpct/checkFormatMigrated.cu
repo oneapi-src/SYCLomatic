@@ -324,7 +324,7 @@ void foo11() { cublasOperation_t a = macro_a; }
 
      //CHECK:void foo12(float *Result) {
 //CHECK-NEXT:  for (int i = 0; i < 16; i++) {
-//CHECK-NEXT:    if (i % 4 == 0) Result[i] = log(Result[i]);
+//CHECK-NEXT:  if (i % 4 == 0) Result[i] = log(Result[i]);
 //CHECK-NEXT:    if (i % 16 == 0) {
 //CHECK-NEXT:      printf("\n");
 //CHECK-NEXT:    }
@@ -341,3 +341,19 @@ void foo12(float *Result) {
   }
 }
 
+     //CHECK:void foo13() {
+//CHECK-NEXT:                cl::sycl::int4 n;
+//CHECK-NEXT:                cl::sycl::int4 m;
+//CHECK-NEXT:                n.x() = m.w();
+//CHECK-NEXT:                n.y() = m.z();
+//CHECK-NEXT:                n.z() = m.y();
+//CHECK-NEXT:                n.w() = m.x();
+//CHECK-NEXT:}
+__global__ void foo13() {
+		int4 n;
+		int4 m;
+		n.x = m.w;
+		n.y = m.z;
+		n.z = m.y;
+		n.w = m.x;
+}

@@ -1137,10 +1137,25 @@ unsigned UnwrappedLineFormatter::format(
     }
 
     if (ShouldFormat && TheLine.Type != LT_Invalid) {
+#ifdef INTEL_CUSTOMIZATION
+      unsigned NewIndent = 0;
+      if ((formatRangeGetter() == FormatRange::all) ||
+          clang::format::BlockLevelFormatFlag) {
+        NewIndent = Indent;
+      } else if (TheLine.First) {
+        NewIndent = TheLine.First->OriginalColumn;
+      }
+#endif
       if (!DryRun) {
         bool LastLine = Line->First->is(tok::eof);
+#ifdef INTEL_CUSTOMIZATION
+        formatFirstToken(TheLine, PreviousLine, Lines, NewIndent,
+                         LastLine ? LastStartColumn
+                                  : NextStartColumn + NewIndent);
+#else
         formatFirstToken(TheLine, PreviousLine, Lines, Indent,
                          LastLine ? LastStartColumn : NextStartColumn + Indent);
+#endif
       }
 
       NextLine = Joiner.getNextMergedLine(DryRun, IndentTracker);
@@ -1161,9 +1176,15 @@ unsigned UnwrappedLineFormatter::format(
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
       else
+#ifdef INTEL_CUSTOMIZATION
+        Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
+                       .formatLine(TheLine, NextStartColumn + NewIndent,
+                                   FirstLine ? FirstStartColumn : 0, DryRun);
+#else
         Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
+#endif
       RangeMinLevel = std::min(RangeMinLevel, TheLine.Level);
     } else {
       // If no token in the current line is affected, we still need to format

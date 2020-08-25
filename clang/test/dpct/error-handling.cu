@@ -548,10 +548,10 @@ void foo3(){
 // CHECK: void foo4() try {
 // CHECK-NEXT:   do{
 // CHECK-NEXT:     printf("efef");
-// CHECK-NEXT:     /*
-// CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted.
-// CHECK-NEXT:     You may need to rewrite this code.
-// CHECK-NEXT:     */
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
+// CHECK-NEXT:   */
 // CHECK-NEXT:   } while ((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (sycl::exception const &exc) {

@@ -389,9 +389,11 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
 
         // Using "NewReplText" to generate a new ExtReplacement, then replace
         // the old one in the ReplMap
-        R.second = std::make_shared<ExtReplacement>(
+        auto NewRepl = std::make_shared<ExtReplacement>(
             FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
             nullptr);
+        NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
+        R.second = NewRepl;
       }
     }
   }

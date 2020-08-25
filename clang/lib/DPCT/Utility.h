@@ -376,8 +376,12 @@ bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
                   const clang::SourceManager &SM, bool &Invalid);
 clang::SourceRange getFunctionRange(const clang::CallExpr *CE);
 std::vector<clang::tooling::Range>
-calculateRangesWithFormatFlag(
+calculateRangesWithFormatFlag(const clang::tooling::Replacements &Replaces);
+std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Replaces);
+std::vector<clang::tooling::Range>
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
 

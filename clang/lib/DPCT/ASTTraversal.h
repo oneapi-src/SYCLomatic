@@ -406,10 +406,17 @@ protected:
   }
   void insertAroundRange(const SourceLocation &PrefixSL,
                          const SourceLocation &SuffixSL, std::string &&Prefix,
-                         std::string &&Suffix) {
+                         std::string &&Suffix,
+                         bool BlockLevelFormatFlag = false) {
     auto P = incPairID();
-    emplaceTransformation(new InsertText(PrefixSL, std::move(Prefix), P));
-    emplaceTransformation(new InsertText(SuffixSL, std::move(Suffix), P));
+    auto PIT = new InsertText(PrefixSL, std::move(Prefix), P);
+    auto SIT = new InsertText(SuffixSL, std::move(Suffix), P);
+    if (BlockLevelFormatFlag) {
+      PIT->setBlockLevelFormatFlag();
+      SIT->setBlockLevelFormatFlag();
+    }
+    emplaceTransformation(std::move(PIT));
+    emplaceTransformation(std::move(SIT));
   }
 };
 
@@ -794,8 +801,9 @@ public:
         else
           InsertStr = PrefixInsertStr + CallExprReplStr + ";" +
                       SuffixInsertStr + getNL() + IndentStr;
-        emplaceTransformation(
-            new InsertText(OuterInsertLoc, std::move(InsertStr)));
+        auto IT = new InsertText(OuterInsertLoc, std::move(InsertStr));
+        IT->setBlockLevelFormatFlag();
+        emplaceTransformation(std::move(IT));
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
                OriginStmtType == "if" ? "an " + OriginStmtType
                                       : "a " + OriginStmtType);
@@ -812,13 +820,13 @@ public:
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
               std::string(";") + SuffixInsertStr + getNL() + IndentStr +
-                  "return 0;" + getNL() + IndentStr + std::string("}()"));
+                  "return 0;" + getNL() + IndentStr + std::string("}()"), true);
         } else {
           insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                             std::string("[&](){") + getNL() + IndentStr +
                                 PrefixInsertStr,
                             std::string(";") + SuffixInsertStr + getNL() +
-                                IndentStr + std::string("}()"));
+                                IndentStr + std::string("}()"), true);
         }
         if (IsHelperFunction)
           emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
@@ -835,11 +843,11 @@ public:
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("{") + getNL() + IndentStr + PrefixInsertStr,
-              SuffixInsertStr + getNL() + IndentStr + std::string("}"));
+              SuffixInsertStr + getNL() + IndentStr + std::string("}"), true);
         else
           insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                             std::move(PrefixInsertStr),
-                            std::move(SuffixInsertStr));
+                            std::move(SuffixInsertStr), true);
       }
       if (IsHelperFunction)
         emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,

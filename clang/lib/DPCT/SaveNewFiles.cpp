@@ -48,7 +48,7 @@ extern std::map<std::string, uint64_t> ErrorCnt;
 
 static bool formatFile(StringRef FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
-                       clang::SourceManager &SM) {
+                       clang::tooling::Replacements &FormatChanges) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
       MemoryBuffer::getFileAsStream(FileName);
   if (std::error_code EC = ErrorOrMemoryBuffer.getError()) {
@@ -66,11 +66,28 @@ static bool formatFile(StringRef FileName,
           clang::format::FormatRange::migrated &&
       clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag()) {
 
-      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
+    Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
   }
 
+  // Here need new SourceManager. Because SourceManager caches the file buffer,
+  // if we use a common SourceManager, the second time format will still act on
+  // the fisrt input (the original output of dpct without format), then the
+  // result is wrong.
+  clang::LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts =
+      new clang::DiagnosticOptions();
+  clang::TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  clang::DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<clang::DiagnosticIDs>(new clang::DiagnosticIDs()),
+      &*DiagOpts,
+      &DiagnosticPrinter, false);
+
+  clang::FileSystemOptions FSO;
+  FSO.WorkingDir = ".";
+  clang::FileManager FM(FSO, nullptr);
+  clang::SourceManager SM(Diagnostics, FM, false);
+
   clang::Rewriter Rewrite(SM, clang::LangOptions());
-  clang::tooling::Replacements FormatChanges;
   if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
     std::vector<clang::tooling::Range> AllLineRanges;
     AllLineRanges.push_back(clang::tooling::Range(
@@ -82,6 +99,7 @@ static bool formatFile(StringRef FileName,
     FormatChanges =
         reformat(Style, FileBuffer->getBuffer(), Ranges, FileName, &Status);
   }
+
   clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
   Rewrite.overwriteChangedFiles();
   return true;
@@ -181,6 +199,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   } else {
     std::unordered_map<std::string, std::vector<clang::tooling::Range>>
         FileRangesMap;
+    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
+        FileBlockLevelFormatRangesMap;
     // There are matching rules for *.cpp files ,*.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
     auto GroupResult = groupReplacementsByFile(
@@ -240,6 +260,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       Ranges = calculateRangesWithFormatFlag(Entry.second);
       FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
 
+      std::vector<clang::tooling::Range> BlockLevelFormatRanges;
+      BlockLevelFormatRanges =
+          calculateRangesWithBlockLevelFormatFlag(Entry.second);
+      FileBlockLevelFormatRangesMap.insert(
+          std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
+
+
       AppliedAll =
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
       Rewrite
@@ -292,8 +319,25 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           clang::dpct::DpctGlobalInfo::getFormatRange);
       bool FormatResult = true;
       for (auto Iter : FileRangesMap) {
+        clang::tooling::Replacements FormatChanges;
         FormatResult =
-            formatFile(Iter.first, Iter.second, Sources) && FormatResult;
+            formatFile(Iter.first, Iter.second, FormatChanges) && FormatResult;
+
+        auto BlockLevelFormatIter =
+            FileBlockLevelFormatRangesMap.find(Iter.first);
+        if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
+          clang::format::BlockLevelFormatFlag = true;
+
+          std::vector<clang::tooling::Range>
+              BlockLevelFormatRangeAfterFisrtFormat = calculateUpdatedRanges(
+                  FormatChanges, BlockLevelFormatIter->second);
+          FormatResult = formatFile(BlockLevelFormatIter->first,
+                                    BlockLevelFormatRangeAfterFisrtFormat,
+                                    FormatChanges) &&
+                         FormatResult;
+
+          clang::format::BlockLevelFormatFlag = false;
+        }
       }
       if (!FormatResult) {
         PrintMsg("[Warning] Error happened while formatting. Generating "
