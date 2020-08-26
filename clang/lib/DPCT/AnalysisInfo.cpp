@@ -429,7 +429,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
     if(ArgCounter != 0)
       KernelArgs += ", ";
 
-    if (Arg.IsPointer) {
+    if (Arg.TryGetBuffer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
@@ -485,7 +485,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       if (!Arg.IsDefinedOnDevice) {
         ReDeclStr = ReDeclStr + ";";
       } else {
-        if (Arg.IsKernelParamPtr) {
+        if (Arg.IsPointer) {
           ReDeclStr = ReDeclStr + ".get_ptr();";
         } else {
           ReDeclStr = ReDeclStr + "[0];";

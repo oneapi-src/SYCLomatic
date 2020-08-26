@@ -2684,11 +2684,10 @@ private:
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-        IsPointer = Analysis.IsPointer;
+      TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
-      IsKernelParamPtr = Analysis.IsKernelParamPtr;
+      IsPointer = Analysis.IsPointer;
 
       if (IsPointer) {
         QualType PointerType;
@@ -2731,15 +2730,16 @@ private:
 
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
             KernelCallExpr *Kernel)
-        : IsPointer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
-                    PVD->getType()->isPointerType()),
-          IsRedeclareRequired(true), IsUsedAsLvalueAfterMalloc(true),
+        : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+          IsUsedAsLvalueAfterMalloc(true),
+          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+                       IsPointer),
           TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
           Index(PVD->getFunctionScopeIndex()) {
       /// For parameter declaration 'float *a' with index = 2 and args array's
       /// name is 'args', the arg string will be '*(float **)args[2]'.
-      std::ostringstream OS;
+      llvm::raw_string_ostream OS(ArgString);
       /// Get pointer type of the parameter declaration's type, e.g. 'float **'.
       auto CastPointerType =
           DpctGlobalInfo::getContext().getPointerType(PVD->getType());
@@ -2747,11 +2747,10 @@ private:
       OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
       /// Print args array subscript.
       OS << ArgsArrayName << "[" << Index << "]";
-      ArgString = OS.str();
 
       if (TextureObjectInfo::isTextureObject(PVD)) {
         IsRedeclareRequired = false;
-        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgString);
+        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, OS.str());
         Kernel->addTextureObjectArgInfo(Index, Texture);
       }
     }
@@ -2778,7 +2777,7 @@ private:
     bool IsRedeclareRequired;
     bool IsUsedAsLvalueAfterMalloc;
     bool IsDefinedOnDevice = false;
-    bool IsKernelParamPtr = false;
+    bool TryGetBuffer = false;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;

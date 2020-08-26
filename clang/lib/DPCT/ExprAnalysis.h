@@ -624,16 +624,11 @@ public:
   bool IsRedeclareRequired;
   bool IsPointer;
   bool IsDefinedOnDevice = false;
-  bool IsKernelParamPtr = false;
+  bool TryGetBuffer = false;
 
   KernelArgumentAnalysis(bool IsInMacroDefine)
       : ArgumentAnalysis(IsInMacroDefine) {}
-  void analyze(const Expr *Expression) {
-    IsPointer = Expression->getType()->isPointerType();
-    IsKernelParamPtr = IsPointer;
-    IsRedeclareRequired = false;
-    ArgumentAnalysis::analyze(Expression);
-  }
+  void analyze(const Expr *Expression);
 
 protected:
   void dispatch(const Stmt *Arg) override;
@@ -650,6 +645,8 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+
+  bool isNullPtr(const Expr *);
 };
 
 class KernelConfigAnalysis : public ArgumentAnalysis {
