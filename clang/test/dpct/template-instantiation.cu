@@ -9,12 +9,9 @@ T &host_instantiation(T &a) { return a; }
 // CHECK: template const std::vector<sycl::float2> &host_instantiation(std::vector<sycl::float2> const &);
 template const std::vector<float2> &host_instantiation(std::vector<float2> const &);
 
-// CHECK: void kernel(int *, sycl::nd_item<3> item_ct1, T *a) {
+// CHECK: void kernel(int *, sycl::nd_item<3> item_ct1, T *a);
 template<class T>
-__global__ void kernel(int *) {
-  __shared__ T a[10];
-  int b = blockDim.x;
-}
+__global__ void kernel(int *);
 
 // CHECK: template void kernel<sycl::float2>(int *, sycl::nd_item<3> item_ct1, sycl::float2 *a);
 template __global__ void kernel<float2>(int *);
@@ -117,4 +114,11 @@ int main() {
 // CHECK-NEXT:     });
 // CHECK-NEXT: });  
     kernel3<20><<<1,1>>>(d);
+}
+
+// CHECK: void kernel(int *, sycl::nd_item<3> item_ct1, T *a) {
+template<class T>
+__global__ void kernel(int *) {
+  __shared__ T a[10];
+  int b = blockDim.x;
 }

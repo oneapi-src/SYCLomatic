@@ -1546,15 +1546,14 @@ private:
 // variable info includes name, type and location.
 class VarInfo {
 public:
-  VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
-      : VarInfo(FilePathIn, Offset, Var) {}
   VarInfo(unsigned Offset, const std::string &FilePathIn,
-          const FieldDecl *FieldVar, std::string MemberExprString)
-      : VarInfo(FilePathIn, Offset, FieldVar, MemberExprString) {}
+          const DeclaratorDecl *Var)
+      : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
+        Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
+                                        Var->isInLocalScope())) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
-  inline const std::string &getRefString() { return RefString; }
   inline const std::string &getName() { return Name; }
   inline const std::string getNameAppendSuffix() { return Name + "_ct1"; }
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
@@ -1568,20 +1567,10 @@ public:
     Ty = Ty->applyTemplateArguments(TAList);
   }
 
-protected:
-  VarInfo(const std::string &FilePath, unsigned Offset,
-          const DeclaratorDecl *DD, const std::string &RefStringIn = "")
-      : FilePath(FilePath), Offset(Offset), Name(DD->getName()),
-        RefString(RefStringIn.empty() ? Name : RefStringIn),
-        Ty(std::make_shared<CtTypeInfo>(
-            DD->getTypeSourceInfo()->getTypeLoc())) {}
-  inline void setType(std::shared_ptr<CtTypeInfo> T) { Ty = T; }
-
 private:
   const std::string FilePath;
   unsigned Offset;
   std::string Name;
-  std::string RefString;
   std::shared_ptr<CtTypeInfo> Ty;
 };
 

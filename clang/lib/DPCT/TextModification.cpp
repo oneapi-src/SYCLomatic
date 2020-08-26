@@ -317,6 +317,8 @@ ReplaceVarDecl::ReplaceVarDecl(const VarDecl *D, std::string &&Text)
       NL(getNL()) {}
 
 void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
+  if (T.find(Text) != std::string::npos)
+    return;
   SourceManager &SM = DpctGlobalInfo::getSourceManager();
   CharSourceRange Range = SM.getExpansionRange(VD->getSourceRange());
   if (SM.getCharacterData(Range.getEnd()) > SM.getCharacterData(SR.getEnd()))

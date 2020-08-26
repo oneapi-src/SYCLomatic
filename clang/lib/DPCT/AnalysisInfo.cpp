@@ -1789,8 +1789,6 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
     ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
     : Global),
   PointerAsArray(false) {
-  setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-    isLocal()));
   if (getType()->isPointer() && getScope() == Global) {
     Attr = Device;
     getType()->adjustAsMemType();
@@ -1887,10 +1885,14 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
-  if (auto Func = Var->getParentFunctionOrMethod()) {
+  if (auto Func =
+          dyn_cast_or_null<FunctionDecl>(Var->getParentFunctionOrMethod())) {
+    if (Func->getTemplateSpecializationKind() ==
+        TSK_ExplicitInstantiationDefinition)
+      return std::shared_ptr<MemVarInfo>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
-    DeviceFunctionDecl::LinkRedecls(dyn_cast<FunctionDecl>(Func))->addVar(VI);
+    DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
     return VI;
   }
 

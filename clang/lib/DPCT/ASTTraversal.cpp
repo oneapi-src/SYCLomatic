@@ -8228,7 +8228,6 @@ void DeviceFunctionCallRule::run(
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
-
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
@@ -8306,9 +8305,11 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
 
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-  if (auto MemVar = getNodeAsType<VarDecl>(Result, "var")) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     auto &SM  = DpctGlobalInfo::getSourceManager();
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (!Info)
+      return;
     if (Info->isTypeDeclaredLocal()) {
       if (Info->isAnonymousType()) {
         // keep the origin type declaration, only remove variable name
@@ -8344,7 +8345,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
         // remove var decl
         emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
             MemVar,
-            MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+            Info->getDeclarationReplacement()));
 
         Info->setLocalTypeName(Info->getType()->getBaseName());
         // add typecast for the __shared__ variable, since after migration the
@@ -8390,10 +8391,9 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto VD = getNodeAsType<VarDecl>(Result, "hostGlobalVar")) {
     auto VarName = VD->getNameAsString();
-    auto TypeName = VD->getType().getAsString();
     bool IsHost =
         !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
-          VD->hasAttr<CUDASharedAttr>());
+          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<CUDAManagedAttr>());
     if(IsHost)
       dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
   }
