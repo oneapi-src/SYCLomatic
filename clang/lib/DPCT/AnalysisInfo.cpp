@@ -1983,6 +1983,40 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
+                                             StmtList &AccList, StmtList &PtrList){
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  if (isShared()) {
+    auto Dimension = getType()->getDimension();
+    OS << MapNames::getClNamespace() + "::accessor<"
+       << getAccessorDataType() << ", " << Dimension
+       << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
+          MapNames::getClNamespace() + "::access::target::local> "
+       << getAccessorName() << "(";
+    if (Dimension > 1) {
+      OS << getRangeName() << ", ";
+    } else if (Dimension == 1) {
+      OS << getRangeClass()
+         << getType()->getRangeArgument(ExternMemSize, false) << ", ";
+    }
+    OS << "cgh);";
+    StmtWithWarning AccDecl(OS.str());
+    if(Dimension > 3) {
+      AccDecl.Warning = DiagnosticsUtils::getWarningText(Diagnostics::EXCEED_MAX_DIMENSION);
+      DiagnosticsUtils::report(getFilePath(), getOffset(), Diagnostics::EXCEED_MAX_DIMENSION, false);
+    }
+    AccList.emplace_back(std::move(AccDecl));
+  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+             AccMode != Accessor) {
+    PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
+                                     getConstVarName(), ".get_ptr();"));
+  } else {
+    AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
+                                     getConstVarName(), ".get_access(cgh);"));
+  }
+}
+
 template <class T>
 void removeDuplicateVar(GlobalMap<T> &VarMap,
                         std::unordered_set<std::string> &VarNames) {
@@ -2004,6 +2038,7 @@ void MemVarMap::removeDuplicateVar() {
   dpct::removeDuplicateVar(ExternVarMap, VarNames);
   dpct::removeDuplicateVar(TextureMap, VarNames);
 }
+
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }

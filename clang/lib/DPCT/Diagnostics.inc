@@ -136,4 +136,7 @@ DEF_WARNING(API_NOT_OCCURRED_IN_AST, 1058, "\"%0\" is not migrated because it is
 DEF_COMMENT(API_NOT_OCCURRED_IN_AST, 1058, "\"{0}\" is not migrated because it is not called in the code.")
 DEF_WARNING(UNSUPPORTED_IMAGE_FORMAT, 1059, "Level-Zero API only support 4-channel image format layout.")
 DEF_COMMENT(UNSUPPORTED_IMAGE_FORMAT, 1059, "Level-Zero API only support 4-channel image format layout.")
+DEF_WARNING(EXCEED_MAX_DIMENSION, 1060, "DPC++ does not support the memory with dimension exceed 3. You may need to adjust the code.")
+DEF_COMMENT(EXCEED_MAX_DIMENSION, 1060, "DPC++ does not support the memory with dimension exceed 3. You may need to adjust the code.")
+
 

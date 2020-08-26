@@ -1747,33 +1747,8 @@ public:
   }
 
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
-                                   StmtList &AccList, StmtList &PtrList) {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    if (isShared()) {
-      auto Dimension = getType()->getDimension();
-      OS << MapNames::getClNamespace() + "::accessor<"
-         << getAccessorDataType() << ", " << Dimension
-         << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
-                MapNames::getClNamespace() + "::access::target::local> "
-         << getAccessorName() << "(";
-      if (Dimension > 1) {
-        OS << getRangeName() << ", ";
-      } else if (Dimension == 1) {
-        OS << getRangeClass()
-           << getType()->getRangeArgument(ExternMemSize, false) << ", ";
-      }
-      OS << "cgh);";
-      AccList.emplace_back(std::move(OS.str()));
-    } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
-               AccMode != Accessor) {
-      PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
-                                    getConstVarName(), ".get_ptr();"));
-    } else {
-      AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
-                                    getConstVarName(), ".get_access(cgh);"));
-    }
-  }
+                                   StmtList &AccList, StmtList &PtrList);
+
   inline std::string getRangeClass() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);

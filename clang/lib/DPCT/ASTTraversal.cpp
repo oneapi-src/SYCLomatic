@@ -8784,7 +8784,9 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
           return true;
         }
       }
-
+      if(Info->getType()->getDimension() > 3 && DpctGlobalInfo::getUsmLevel() == UsmLevel::none){
+        report(MemVar->getBeginLoc(), Diagnostics::EXCEED_MAX_DIMENSION, true);
+      }
       // Code here means this is the first migration, need save info to
       // replacement
       Info->setIgnoreFlag(false);
@@ -8905,8 +8907,13 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
       }
 
       Info->setIgnoreFlag(false);
+
+      if(!Info->isShared() && Info->getType()->getDimension() > 3 && DpctGlobalInfo::getUsmLevel() == UsmLevel::none){
+        report(MemVar->getBeginLoc(), Diagnostics::EXCEED_MAX_DIMENSION, true);
+      }
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-          MemVar, Info->getDeclarationReplacement()));
+          MemVar,
+          Info->getDeclarationReplacement()));
     }
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
