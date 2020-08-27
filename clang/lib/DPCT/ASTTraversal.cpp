@@ -1549,6 +1549,16 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
         return;
     auto NewName = ReplInfo->second.ReplName;
 
+    // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
+    // thrust::count, thrust::equal) called in device function , should be
+    // migrated to dpstd APIs without a policy on the DPC++ side
+    if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+          ArgT.find("execution_policy_base") != std::string::npos) {
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      }
+    }
+
     if (ThrustFuncName == "copy_if" &&
         (ArgT.find("execution_policy_base") == std::string::npos &&
              NumArgs == 5 ||
