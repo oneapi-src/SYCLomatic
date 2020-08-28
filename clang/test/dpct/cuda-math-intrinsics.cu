@@ -3450,3 +3450,12 @@ __global__ void test_side_effects() {
   // CHECK: POW(2.0, 2.0);
   POW(2.0, 2.0);
 }
+
+#define fp float
+__device__ void foo() {
+  fp d_initvalu_36;
+  fp ret;
+  // CHECK: ret = sycl::pow(d_initvalu_36, fp(1.6));
+  ret = pow(d_initvalu_36, fp(1.6));
+}
+
