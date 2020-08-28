@@ -9929,6 +9929,28 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(UnnamedTypesRule)
 
+void CMemoryAPIRule::registerMatcher(MatchFinder &MF) {
+  auto cMemoryAPI = [&]() { return hasAnyName("calloc", "realloc", "malloc"); };
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(cMemoryAPI())),
+                     hasParent(implicitCastExpr().bind("implicitCast")))),
+      this);
+}
+
+void CMemoryAPIRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
+  if (!ICE)
+    return;
+
+  emplaceTransformation(new InsertText(
+      ICE->getBeginLoc(),
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
+}
+
+REGISTER_RULE(CMemoryAPIRule)
+
 void GuessIndentWidthRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(allOf(hasParent(translationUnitDecl()),

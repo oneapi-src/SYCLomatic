@@ -1187,6 +1187,13 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class CMemoryAPIRule : public NamedMigrationRule<CMemoryAPIRule> {
+public:
+  CMemoryAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Name all unnamed types.
 class UnnamedTypesRule : public NamedMigrationRule<UnnamedTypesRule> {
 public:
