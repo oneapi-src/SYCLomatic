@@ -3061,10 +3061,14 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
   if (Search != MigrationTable.end()) {
     return Search->second;
   } else {
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
     DebugInfo::ShowStatus(MigrationError);
     dpctExit(MigrationError);
+#else
+    return false;
+#endif
   }
 }
 

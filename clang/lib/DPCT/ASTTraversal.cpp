@@ -10260,12 +10260,14 @@ RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
 
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  bool HaveKeywordInAPIName = false;
   const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
   if (!C) {
     C = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI");
     if (!C) {
       return;
     }
+    HaveKeywordInAPIName = true;
   }
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(C->getCalleeDecl());
@@ -10307,6 +10309,11 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     }
     report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+  } else if (HaveKeywordInAPIName) {
+    // In the AST matcher, it will match function call whose name contains
+    // keyword. If the keyword is at name begin, code will go in to previous two
+    // branch. If code goes here, we treat the API is user-defined, just return.
+    return;
   } else if (!MigrationStatistics::IsMigrated(APIName)) {
     GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
     const SourceManager &SM = (*Result.Context).getSourceManager();
@@ -10318,8 +10325,13 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     LOCStaticsMap[FileName][2]++;
-    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           MapNames::ITFName.at(APIName.c_str()));
+
+    auto Iter = MapNames::ITFName.find(APIName.c_str());
+    if (Iter != MapNames::ITFName.end())
+      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             Iter->second);
+    else
+      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
   }
 }
 

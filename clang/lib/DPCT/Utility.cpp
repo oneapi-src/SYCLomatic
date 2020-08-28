@@ -310,7 +310,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
     Vec.push_back(RuleNames[v]);
   }
   if (Vec.size() != InDegree.size()) {
-    std::cout << "Error: Two rules have dependency on each other！\n";
+    std::cout << "Error: Two rules have dependency on each other.\n";
     dpct::DebugInfo::ShowStatus(MigrationError);
     dpctExit(MigrationError);
   }
