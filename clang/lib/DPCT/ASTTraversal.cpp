@@ -8145,7 +8145,14 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
     }
 
     // Remove KCall in the original location
-    emplaceTransformation(new ReplaceStmt(KCall, ""));
+    auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+        KCall->getBeginLoc(), KCall->getEndLoc());
+    auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
+                    SM.getCharacterData(KCallSpellingRange.first) +
+                    Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
+                                              Result.Context->getLangOpts());
+    emplaceTransformation(
+        new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     removeTrailingSemicolon(KCall, Result);
 
     // Add kernel call to map,
@@ -8190,6 +8197,7 @@ void KernelCallRule::removeTrailingSemicolon(
   if (KELoc.isMacroID() && !isOuterMostMacro(KCall)) {
     KELoc = SM.getImmediateSpellingLoc(KELoc);
   }
+  KELoc = SM.getExpansionRange(KELoc).getEnd();
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   if(Tok.is(tok::TokenKind::semi))
       emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));

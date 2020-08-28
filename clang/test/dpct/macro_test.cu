@@ -553,3 +553,31 @@ void foo10()
 {
   sindeg(5);
 }
+
+
+template<int a, int b>
+__global__ void templatefoo(){
+  int x = a;
+  int y = b;
+}
+//CHECK: #define AAA 15 + 3
+//CHECK-NEXT: #define CCC <<<1,1>>>()
+//CHECK-NEXT: #define KERNEL(A, B)                                                           \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });              \
+//CHECK-NEXT:   });
+//CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
+//CHECK-NEXT: #define CALL_KERNEL2(E, F) sycl::range<3>(1, 1, 1)
+//CHECK-NEXT: void templatefoo2(){
+//CHECK-NEXT:   CALL_KERNEL2(8, AAA)
+//CHECK-NEXT: }
+#define AAA 15 + 3
+#define CCC <<<1,1>>>()
+#define KERNEL(A, B) templatefoo<A,B>CCC
+#define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
+#define CALL_KERNEL2(E, F) CALL_KERNEL(E, F)
+void templatefoo2(){
+  CALL_KERNEL2(8, AAA)
+}

@@ -2071,10 +2071,36 @@ public:
 
 private:
   template <class T> void setArgFromExprAnalysis(const T &Arg) {
-    ExprAnalysis EA;
-    EA.analyze(Arg);
-    DependentStr = EA.getTemplateDependentStringInfo();
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto Range = getArgSourceRange(Arg);
+    auto Begin = Range.getBegin();
+    auto End = Range.getEnd();
+    if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin)) {
+      Begin =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
+      auto Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+                    Lexer::MeasureTokenLength(
+                        End, SM, DpctGlobalInfo::getContext().getLangOpts());
+      std::string Result = std::string(SM.getCharacterData(Begin), Length);
+      setArgStr(std::move(Result));
+    } else {
+      ExprAnalysis EA;
+      EA.analyze(Arg);
+      DependentStr = EA.getTemplateDependentStringInfo();
+    }
   }
+
+  template <class T>
+  SourceRange getArgSourceRange(const T &Arg) {
+    return Arg.getSourceRange();
+  }
+
+  template <class T>
+  SourceRange getArgSourceRange(const T *Arg) {
+    return Arg->getSourceRange();
+  }
+
   void setArgStr(std::string &&Str) {
     DependentStr =
         std::make_shared<TemplateDependentStringInfo>(std::move(Str));
