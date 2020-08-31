@@ -487,18 +487,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                   Arg.getIdStringWithSuffix("acc"), "[0])");
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      std::string ReDeclStr = buildString("auto ", Arg.getIdStringWithIndex(),
-                                          " = ", Arg.getArgString());
-      if (!Arg.IsDefinedOnDevice) {
-        ReDeclStr = ReDeclStr + ";";
-      } else {
-        if (Arg.IsPointer) {
-          ReDeclStr = ReDeclStr + ".get_ptr();";
-        } else {
-          ReDeclStr = ReDeclStr + "[0];";
-        }
-      }
-      SubmitStmtsList.CommandGroupList.emplace_back(ReDeclStr);
+      SubmitStmtsList.CommandGroupList.emplace_back(buildString(
+          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;

@@ -252,3 +252,25 @@ int run_foo11() {
   my_kernel3<<<1,1,1,cudaStreamPerThread>>>();
   my_kernel3<<<1,1,1,cudaStreamLegacy>>>();
 }
+
+int *g_a;
+
+__global__ void foo_kernel3(int *d) {
+}
+//CHECK:void run_foo(sycl::range<3> c, sycl::range<3> d) {
+//CHECK-NEXT:  if (1)
+//CHECK-NEXT:      dpct::get_default_queue().submit(
+//CHECK-NEXT:        [&](sycl::handler &cgh) {
+//CHECK-NEXT:          auto g_a_ct0 = &g_a[0];
+//CHECK-EMPTY:
+//CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:            sycl::nd_range<3>(c, sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:              foo_kernel3(g_a_ct0);
+//CHECK-NEXT:            });
+//CHECK-NEXT:        });
+//CHECK-NEXT:    }
+void run_foo(dim3 c, dim3 d) {
+  if (1)
+    foo_kernel3<<<c, 1>>>(&g_a[0]);
+}

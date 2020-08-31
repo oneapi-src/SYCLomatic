@@ -625,8 +625,17 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (auto Var = DpctGlobalInfo::getInstance().findMemVarInfo(VD)) {
       IsDefinedOnDevice = true;
-      if (!VD->getType()->isArrayType()) {
-        IsRedeclareRequired = true;
+      IsRedeclareRequired = true;
+      if (!IsAddrOf && !VD->getType()->isArrayType()) {
+        addReplacement(Lexer::getLocForEndOfToken(
+                           DRE->getEndLoc(), 0, SM,
+                           DpctGlobalInfo::getContext().getLangOpts()),
+                       DRE->getEndLoc(), "[0]");
+      } else {
+        addReplacement(Lexer::getLocForEndOfToken(
+                           DRE->getEndLoc(), 0, SM,
+                           DpctGlobalInfo::getContext().getLangOpts()),
+                       DRE->getEndLoc(), ".get_ptr()");
       }
     }
   }
@@ -660,10 +669,16 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
     return;
   }
   if (UO->getOpcode() == UO_AddrOf) {
-    // remove the "&"
-    addReplacement(UO->getBeginLoc(), "");
+    IsAddrOf = true;
   }
   dispatch(UO->getSubExpr());
+  /// If subexpr is variable defined on device, remove operator '&'.
+  if (IsAddrOf && IsDefinedOnDevice) {
+    addReplacement(UO->getOperatorLoc(), "");
+  }
+  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+  IsDefinedOnDevice = false;
+  IsAddrOf = false;
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {

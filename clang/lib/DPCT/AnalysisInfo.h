@@ -2783,7 +2783,6 @@ private:
       ArgString = Analysis.getReplacedString();
       TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
-      IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
       IsPointer = Analysis.IsPointer;
 
       if (IsPointer) {
