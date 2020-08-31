@@ -629,7 +629,6 @@ class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
   bool IsRedeclareRequired;
   bool IsPointer;
-  bool IsDefinedOnDevice = false;
   bool TryGetBuffer = false;
 
   KernelArgumentAnalysis(bool IsInMacroDefine)
@@ -653,6 +652,9 @@ private:
   inline void analyzeExpr(const UnaryOperator *Arg);
 
   bool isNullPtr(const Expr *);
+
+  bool IsDefinedOnDevice = false;
+  bool IsAddrOf = false;
 };
 
 class KernelConfigAnalysis : public ArgumentAnalysis {

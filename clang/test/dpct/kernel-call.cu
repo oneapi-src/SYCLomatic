@@ -332,7 +332,7 @@ __global__ void foo_kernel3(int *d) {
 //CHECK:void run_foo(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  if (1)
 //CHECK-NEXT:    {
-//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(g_a);
+//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(&g_a[0]);
 //CHECK-NEXT:      size_t g_a_offset_ct0 = g_a_buf_ct0.second;
 //CHECK-NEXT:      dpct::get_default_queue().submit(
 //CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
@@ -349,7 +349,7 @@ __global__ void foo_kernel3(int *d) {
 //CHECK-NEXT:}
 void run_foo(dim3 c, dim3 d) {
   if (1)
-    foo_kernel3<<<c, 1>>>(g_a);
+    foo_kernel3<<<c, 1>>>(&g_a[0]);
 }
 //CHECK:void run_foo2(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
