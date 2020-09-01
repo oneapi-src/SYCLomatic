@@ -16,10 +16,16 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
+// CHECK: /*
+// CHECK: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK: */
 // CHECK: dpct::image_wrapper<int, 4> tex_no_ref;
 static texture<int, 4> tex_no_ref;
 // CHECK: dpct::image_wrapper<sycl::float4, 2> tex42;
 static texture<float4, 2> tex42;
+// CHECK: /*
+// CHECK: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK: */
 // CHECK: dpct::image_wrapper<sycl::uint2, 1> tex21;
 static texture<uint2, 1> tex21;
 /// TODO: Expect to support 3D array in future.
@@ -109,6 +115,9 @@ int main() {
 
   // CHECK: sycl::uint2 *d_data21;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data21, sizeof(sycl::uint2) * 32);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;

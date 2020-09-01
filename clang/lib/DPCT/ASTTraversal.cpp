@@ -10996,6 +10996,10 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
     auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
+    auto DataType = Tex->getType()->getDataType();
+    if(DataType.back() != '4'){
+      report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+    }
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
       DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
@@ -11060,6 +11064,22 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
     ExprAnalysis A;
     A.analyze(CE);
+    auto Name = CE->getDirectCallee()->getNameAsString();
+    if(Name == "cudaCreateChannelDesc") {
+      auto Callee = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
+      if(Callee) {
+        auto TemArg = Callee->template_arguments();
+        if (TemArg.size() != 0) {
+          auto ChnType = TemArg[0].getArgument().getAsType().getAsString();
+          if (ChnType.back() != '4') {
+            report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+          }
+        } else if (getStmtSpelling(CE->getArg(0)) == "0" || getStmtSpelling(CE->getArg(1)) == "0"
+                   || getStmtSpelling(CE->getArg(2)) == "0" || getStmtSpelling(CE->getArg(3)) == "0") {
+          report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+        }
+      }
+    }
     emplaceTransformation(A.getReplacement());
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
     if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

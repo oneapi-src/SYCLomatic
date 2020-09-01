@@ -1956,7 +1956,9 @@ public:
     if (IsArray)
       --Dimension;
   }
-
+  std::string getDataType(){
+    return DataType;
+  }
   ParameterStream &printType(ParameterStream &PS,
                                const std::string &TemplateName) {
     PS << TemplateName << "<" << DataType << ", " << Dimension;
