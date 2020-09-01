@@ -1286,8 +1286,11 @@ void CallFunctionExpr::buildInfo() {
 
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, ExtraArgLoc, 0, getExtraArguments(), nullptr));
+
+  if (ExtraArgLoc)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
+                                         getExtraArguments(), nullptr));
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
