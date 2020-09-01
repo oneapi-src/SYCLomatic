@@ -1113,7 +1113,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
   auto FDIter = FDNamespaceSeq.begin();
   for (auto CalleeNamespace : CalleeNamespaceSeq) {
-    if (FDIter == FDNamespaceSeq.end())
+    if (FDNamespaceSeq.empty())
       break;
     if (CalleeNamespace == *FDIter) {
       FDIter++;

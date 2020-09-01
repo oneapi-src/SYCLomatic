@@ -123,6 +123,14 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      II->getName().str() == "__shared__")) {
       TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
           SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+    } else if (II->hasMacroDefinition() && II->getName().str() == "CUDART_CB") {
+#ifdef _WIN32
+      TransformSet.emplace_back(
+          new ReplaceText(Iter->getLocation(), 9, "__stdcall"));
+#else
+      TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
+          SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+#endif
     }
   }
 }
@@ -208,6 +216,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier && Name == "__forceinline__") {
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
+  } else if (TKind == tok::identifier && Name == "CUDART_CB") {
+#ifdef _WIN32
+    TransformSet.emplace_back(
+        new ReplaceText(Range.getBegin(), 9, "__stdcall"));
+#else
+    TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(Range));
+#endif
   }
 
   auto Iter = MapNames::HostAllocSet.find(Name.str());
