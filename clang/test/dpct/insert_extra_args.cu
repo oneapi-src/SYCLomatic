@@ -87,3 +87,37 @@ int main(){
   return 0;
 }
 
+
+typedef float Real_t;
+#define VOLUDER(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)	(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)
+
+//CHECK: float foo(float a, float b, int c, sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int i = item_ct1.get_group(2);
+//CHECK-NEXT:  return 1.0f;
+//CHECK-NEXT:}
+__device__ float foo(float a, float b, int c) {
+  int i = blockIdx.x;
+  return 1.0f;
+}
+
+__global__ void bar() {
+    float ind0, ind1, ind2, ind3, ind4, ind5, dvdzn;
+    float xn, yn;
+
+   //CHECK: VOLUDER(foo(xn,ind0,8, item_ct1),foo(xn,ind1,8, item_ct1),foo(xn,ind2,8, item_ct1),
+   //CHECK-NEXT:         foo(xn,ind3,8, item_ct1),foo(xn,ind4,8, item_ct1),foo(xn,ind5,8, item_ct1),
+   //CHECK-NEXT:         foo(yn,ind0,8, item_ct1),foo(yn,ind1,8, item_ct1),foo(yn,ind2,8, item_ct1),
+   //CHECK-NEXT:         foo(yn,ind3,8, item_ct1),foo(yn,ind4,8, item_ct1),foo(yn,ind5,8, item_ct1),
+   //CHECK-NEXT:       dvdzn);
+    VOLUDER(foo(xn,ind0,8),foo(xn,ind1,8),foo(xn,ind2,8),
+            foo(xn,ind3,8),foo(xn,ind4,8),foo(xn,ind5,8),
+            foo(yn,ind0,8),foo(yn,ind1,8),foo(yn,ind2,8),
+            foo(yn,ind3,8),foo(yn,ind4,8),foo(yn,ind5,8),
+          dvdzn);
+}
+
+int main() {
+    bar<<<1, 2>>>();
+    return 0;
+}
+

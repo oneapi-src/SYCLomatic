@@ -976,6 +976,11 @@ public:
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
+
+    if (SM->isMacroArgExpansion(Loc)) {
+        LocInfo = SM->getDecomposedLoc(SM->getSpellingLoc(Loc));
+    }
+
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
       // To avoid potential path inconsist issue,
       // using tryGetRealPathName while applicable.
