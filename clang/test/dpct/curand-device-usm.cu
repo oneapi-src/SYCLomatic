@@ -3,6 +3,7 @@
 
 //CHECK: #include <CL/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
+//CHECK-NEXT: #include <mkl_rng_sycl.hpp>
 //CHECK-NEXT: #include <mkl_rng_sycl_device.hpp>
 //CHECK-NEXT: #include <cstdio>
 //CHECK-NEXT: #include <time.h>
@@ -85,7 +86,11 @@ int main(int argc, char **argv) {
   cudaMalloc((void**)&dev, size * sizeof(curandState));
   //CHECK: RandomStates = (oneapi::mkl::rng::device::philox4x32x10<1>*)dev;
   RandomStates = (curandState*)dev;
-  
+  //CHECK: RandomStates = (oneapi::mkl::rng::device::philox4x32x10<1> *)sycl::malloc_device(size * sizeof(oneapi::mkl::rng::device::philox4x32x10<1>) * 10, q_ct1);
+  cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
+  //CHECK: RandomStates = sycl::malloc_device<oneapi::mkl::rng::device::philox4x32x10<1>>(size , q_ct1);
+  cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
+
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
   cuda_kernel_RNDnormalDitribution<<<16,32>>>(Image, RandomStates);
 

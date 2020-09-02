@@ -1120,6 +1120,7 @@ private:
   void aggregateArgsToCtor(const CallExpr *C, const std::string &ClassName,
                            size_t StartArgIndex, size_t EndArgIndex,
                            const std::string &PaddingArgs, SourceManager &SM);
+  std::string getFinalCastTypeNameStr(std::string CastTypeName);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
     if (C->getNumArgs() > ArgIndex) {
       if (needExtraParens(C->getArg(ArgIndex)))

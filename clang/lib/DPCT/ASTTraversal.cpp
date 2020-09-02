@@ -489,19 +489,10 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
-  // Replace with <mkl_rng_sycl.hpp>
-  if ((FileName.compare(StringRef("curand.h")) == 0)) {
+  // Replace with <mkl_rng_sycl.hpp> and <mkl_rng_sycl_device.hpp>
+  if ((FileName.compare(StringRef("curand.h")) == 0) ||
+      (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_RNG);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  // Replace with <mkl_rng_sycl_device.hpp>
-  if ((FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_RNG_DEVICE);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -9140,7 +9131,7 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
 
   std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
   // ReplType will be used as the template arguement in memory API.
-  ReplType = TypeStr;
+  ReplType = getFinalCastTypeNameStr(TypeStr);
 
   auto BO = dyn_cast<BinaryOperator>(SizeExpr);
   if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
@@ -9253,6 +9244,21 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
   }
 }
 
+/// For types like curandState, the template argument of the migrated type cannot be
+/// decided at this time. It is known after AST traversal. So here we need use
+/// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
+std::string
+MemoryMigrationRule::getFinalCastTypeNameStr(std::string CastTypeName) {
+  for (auto Pair : MapNames::DeviceRandomGeneratorTypeMap) {
+    std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
+    if (BeginLoc != std::string::npos) {
+      return CastTypeName.replace(BeginLoc, Pair.first.size(),
+                                  Pair.second + "<{{NEEDREPLACEV1}}>");
+    }
+  }
+  return CastTypeName;
+}
+
 /// e.g., for int *a and cudaMalloc(&a, size), return "a = (int *)".
 /// If \p NeedTypeCast is false, return "a = ";
 /// If \p TemplateStyle is true, \p NeedTypeCast will be specified as false always
@@ -9274,7 +9280,7 @@ MemoryMigrationRule::getTransformedMallocPrefixStr(const Expr *MallocOutArg,
 
   OS << " = ";
   if (!CastTypeName.empty())
-    OS << "(" << CastTypeName << ")";
+    OS << "(" << getFinalCastTypeNameStr(CastTypeName) << ")";
 
   return OS.str();
 }

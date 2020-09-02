@@ -45,5 +45,16 @@ int main(int argc, char **argv) {
   int *dOut;
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);
 
+  int size = 10;
+  //CHECK: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
+  //CHECK: oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/> *RandomStates;
+  curandState *RandomStates;
+  //CHECK: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
+  //CHECK: RandomStates = (oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/> *)sycl::malloc_device(size * sizeof(oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/>) * 10, q_ct1);
+  cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
+  //CHECK: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
+  //CHECK: RandomStates = sycl::malloc_device<oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/>>(size , q_ct1);
+  cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
+
   return 0;
 }

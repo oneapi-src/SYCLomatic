@@ -304,7 +304,6 @@ enum HeaderType {
   Numeric,
   MKL_BLAS_Solver,
   MKL_RNG,
-  MKL_RNG_DEVICE,
   MKL_SPBLAS,
   Chrono,
 };
@@ -454,10 +453,7 @@ public:
                           "<mkl_sycl_types.hpp>", "<dpct/blas_utils.hpp>");
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
-                          "<mkl_rng_sycl.hpp>");
-    case MKL_RNG_DEVICE:
-      return insertHeader(HeaderType::MKL_RNG_DEVICE, LastIncludeOffset,
-                          "<mkl_rng_sycl_device.hpp>");
+                          "<mkl_rng_sycl.hpp>", "<mkl_rng_sycl_device.hpp>");
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
                           "<mkl_spblas_sycl.hpp>", "<dpct/blas_utils.hpp>");

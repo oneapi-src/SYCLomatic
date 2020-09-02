@@ -3,6 +3,7 @@
 
 //CHECK: #include <CL/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
+//CHECK-NEXT: #include <mkl_rng_sycl.hpp>
 //CHECK-NEXT: #include <mkl_rng_sycl_device.hpp>
 //CHECK-NEXT: #include <cstdio>
 //CHECK-NEXT: #include <time.h>
