@@ -2571,15 +2571,25 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                                   typedefDecl(vectorTypeName()))))))
                     .bind("vectorTypeTL"),
                 this);
+
+  MF.addMatcher(
+      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
+          .bind("inheritanceType"),
+      this);
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  SourceManager *SM = Result.SourceManager;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
     auto BeginLoc = TL->getBeginLoc();
-    SourceManager *SM = Result.SourceManager;
 
+    bool IsInScratchspace = false;
     if (BeginLoc.isMacroID()) {
+      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(BeginLoc))) {
+        BeginLoc = SM->getImmediateExpansionRange(BeginLoc).getBegin();
+        IsInScratchspace = true;
+      }
       auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
       if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
         BeginLoc = SM->getExpansionLoc(BeginLoc);
@@ -2620,6 +2630,28 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (IsInScratchspace) {
+      std::string TypeStr = TL->getType().getUnqualifiedType().getAsString();
+      auto Begin = SM->getImmediateExpansionRange(TL->getBeginLoc()).getBegin();
+      auto End = SM->getImmediateExpansionRange(TL->getEndLoc()).getEnd();
+      if (*(TypeStr.end() - 1) == '1') {
+        // Make (Begin, End) be the range of "##1"
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+          Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+      } else {
+        // Make Begin be the begin of "MACROARG##1"
+        Begin = SM->getSpellingLoc(Begin);
+        return emplaceTransformation(
+          new InsertText(Begin, MapNames::getClNamespace() + "::"));
+      }
+    }
+
     // check whether the vector has volatile qualifier, if so, remove the
     // qualifier and emit a warning.
     if (!NeedRemoveVolatile)
@@ -2653,6 +2685,56 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
   }
+  if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
+    for (auto ItBase = CRD->bases_begin(); ItBase != CRD->bases_end();
+         ItBase++) {
+      std::string TypeName = ItBase->getBaseTypeInfo()->getType().getAsString();
+      if (MapNames::SupportedVectorTypes.find(TypeName) ==
+        MapNames::SupportedVectorTypes.end())
+        return;
+      auto Begin = ItBase->getSourceRange().getBegin();
+      auto End = ItBase->getSourceRange().getEnd();
+      if (*(TypeName.end() - 1) == '1') {
+        if (Begin.isMacroID() &&
+            (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
+             SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
+          // Macro concatenate --> use immediateExpansion
+          // Make (Begin, End) be the range of "##1"
+          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+          End = SM->getImmediateExpansionRange(End).getEnd();
+          Begin = SM->getSpellingLoc(Begin);
+          End = SM->getSpellingLoc(End);
+          Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+              Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+          report(Begin, Comments::VECTYPE_INHERITATED, false);
+        } else {
+          // Make (Begin, End) be the range of "1"
+          Begin = SM->getSpellingLoc(Begin);
+          End = SM->getSpellingLoc(End);
+          Begin = Begin.getLocWithOffset(
+              Lexer::MeasureTokenLength(
+                  Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
+              1);
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        }
+        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+      }
+      if (Begin.isMacroID()) {
+        // Macro concatenate --> use immediateExpansion
+        // Make Begin be the begin of "MACROARG##1"
+        if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
+          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+        }
+        Begin = SM->getSpellingLoc(Begin);
+      }
+      return emplaceTransformation(
+          new InsertText(Begin, MapNames::getClNamespace() + "::"));
+    }
+  }
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule)
@@ -2671,6 +2753,12 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
           .bind("VecMemberExpr"),
       this);
 
+  // class A : int2{ void foo(){x = 3;}}
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(pointsTo(cxxRecordDecl(
+                               hasAnyName(SUPPORTEDVECTORTYPENAMES))))))
+          .bind("DerivedVecMemberExpr"),
+      this);
+
   // int2.x += xxx => int2.x() += xxx
   MF.addMatcher(
       binaryOperator(allOf(hasLHS(memberExpr(memberAccess())
@@ -2682,12 +2770,32 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
   auto BaseTy = ME->getBase()->getType().getAsString();
+  bool isPtr = false;
+  // when BaseTy == "struct int1 *", remove " *"
+  if (*(BaseTy.end() - 1) == '*') {
+    BaseTy = BaseTy.erase(BaseTy.size() - 2, 2);
+    isPtr = true;
+  }
   auto &SM = DpctGlobalInfo::getSourceManager();
   if (*(BaseTy.end() - 1) == '1') {
     auto Begin = ME->getOperatorLoc();
-    auto End = Lexer::getLocForEndOfToken(
-        ME->getMemberLoc(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+    bool isImplicit = false;
+    if (Begin.isInvalid()) {
+      Begin = ME->getMemberLoc();
+      isImplicit = true;
+    }
+    Begin = SM.getSpellingLoc(Begin);
+    auto End =
+        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+                                   DpctGlobalInfo::getContext().getLangOpts());
     auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+    if (isPtr && isImplicit) {
+      return emplaceTransformation(new ReplaceText(Begin, Length, "*this"));
+    }
+    if (isPtr) {
+      auto BaseBegin = ME->getBeginLoc();
+      emplaceTransformation(new InsertText(BaseBegin, "*"));
+    }
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
   std::string MemberName = ME->getMemberNameInfo().getAsString();
@@ -2704,6 +2812,10 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
     if (Parents.size() == 0) {
       return;
     }
+    renameMemberField(ME);
+  }
+
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "DerivedVecMemberExpr")) {
     renameMemberField(ME);
   }
 

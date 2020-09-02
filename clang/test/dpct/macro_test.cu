@@ -581,3 +581,76 @@ __global__ void templatefoo(){
 void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
+//CHECK: /*
+//CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 will be migrated to the corresponding
+//CHECK-NEXT: fundmental types which cannot be inherited. You may need to rewrite the code.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define VECTOR_TYPE_DEF(type)                                                  \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:   struct MyVector : type                                                       \
+//CHECK-NEXT:   {                                                                            \
+//CHECK-NEXT:     typedef type Type;                                                         \
+//CHECK-NEXT:     __dpct_inline__ MyVector operator+(const MyVector &other) const {          \
+//CHECK-NEXT:       MyVector retval;                                                         \
+//CHECK-NEXT:       retval = *this + other;                                                  \
+//CHECK-NEXT:       return retval;                                                           \
+//CHECK-NEXT:     }                                                                          \
+//CHECK-NEXT:     __dpct_inline__ MyVector operator-(const MyVector &other) const {          \
+//CHECK-NEXT:       MyVector retval;                                                         \
+//CHECK-NEXT:       retval = *this - other;                                                  \
+//CHECK-NEXT:       return retval;                                                           \
+//CHECK-NEXT:     }                                                                          \
+//CHECK-NEXT:   };                                                                           \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:   struct MyVector2 : sycl::type##2                                             \
+//CHECK-NEXT:   {                                                                            \
+//CHECK-NEXT:     typedef sycl::type##2 Type;                                                \
+//CHECK-NEXT:     __dpct_inline__ MyVector2 operator+(const MyVector2 &other) const {        \
+//CHECK-NEXT:       MyVector2 retval;                                                        \
+//CHECK-NEXT:       retval.x() = x() + other.x();                                            \
+//CHECK-NEXT:       retval.y() = y() + other.y();                                            \
+//CHECK-NEXT:       return retval;                                                           \
+//CHECK-NEXT:     }                                                                          \
+//CHECK-NEXT:     __dpct_inline__ MyVector2 operator-(const MyVector2 &other) const {        \
+//CHECK-NEXT:       MyVector2 retval;                                                        \
+//CHECK-NEXT:       retval.x() = x() - other.x();                                            \
+//CHECK-NEXT:       retval.y() = y() - other.y();                                            \
+//CHECK-NEXT:       return retval;                                                           \
+//CHECK-NEXT:     }                                                                          \
+//CHECK-NEXT:   };
+
+#define VECTOR_TYPE_DEF(type)                                                                           \
+                                                                                                        \
+    struct MyVector : type##1                                                                           \
+    {                                                                                                   \
+        typedef type##1   Type;                                                                         \
+        __host__ __device__ __forceinline__ MyVector operator+(const MyVector &other) const {           \
+        MyVector retval;                                                                                \
+            retval.x = x + other.x;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+        __host__ __device__ __forceinline__ MyVector operator-(const MyVector &other) const {           \
+        MyVector retval;                                                                                \
+            retval.x = x - other.x;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+    };                                                                                                  \
+                                                                                                        \
+    struct MyVector2 : type##2                                                                          \
+    {                                                                                                   \
+        typedef type##2 Type;                                                                           \
+        __host__ __device__ __forceinline__ MyVector2 operator+(const MyVector2 &other) const {         \
+            MyVector2 retval;                                                                           \
+            retval.x = x + other.x;                                                                     \
+            retval.y = y + other.y;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+        __host__ __device__ __forceinline__ MyVector2 operator-(const MyVector2 &other) const {         \
+            MyVector2 retval;                                                                           \
+            retval.x = x - other.x;                                                                     \
+            retval.y = y - other.y;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+    };
+
+VECTOR_TYPE_DEF(int)

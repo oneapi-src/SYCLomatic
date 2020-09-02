@@ -126,3 +126,5 @@ DEF_WARNING(DEVICE_ASM, 1053, "Migration of device assembly code is not supporte
 DEF_COMMENT(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
 DEF_WARNING(TYPE_IN_FUNCTION, 1054, "The type of variable %0 is declared in device function with the name %1. Adjust the code to make the %1 declaration visible at the accessor declaration point.")
 DEF_COMMENT(TYPE_IN_FUNCTION, 1054, "The type of variable {0} is declared in device function with the name {1}. Adjust the code to make the {1} declaration visible at the accessor declaration point.")
+DEF_WARNING(VECTYPE_INHERITATED, 1055, "Vector types with size 1 will be migrated to the corresponding fundmental types which cannot be inherited. You may need to rewrite the code.")
+DEF_COMMENT(VECTYPE_INHERITATED, 1055, "Vector types with size 1 will be migrated to the corresponding fundmental types which cannot be inherited. You may need to rewrite the code.")
