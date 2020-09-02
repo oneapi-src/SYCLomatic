@@ -618,7 +618,19 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     IsRedeclareRequired = true;
   } else if (!DRE->getDecl()->isInLocalScope()) {
     IsRedeclareRequired = true;
+  } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    bool PreviousFlag = IsRedeclareRequired;
+    if (VD->getStorageClass() == SC_Static) {
+      IsRedeclareRequired = true;
+      // exclude const variable with zero-init and const-init
+      if (VD->getType().isConstQualified()) {
+        if (VD->hasInit() && VD->checkInitIsICE()) {
+          IsRedeclareRequired = PreviousFlag;
+        }
+      }
+    }
   }
+
   // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
   // variables on device. They are migrated to objects, so need add get_ptr() by
   // setting IsDefinedOnDevice flag.

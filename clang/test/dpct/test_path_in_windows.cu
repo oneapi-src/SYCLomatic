@@ -31,7 +31,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:          // run the kernel within defined ND range
   // CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:            sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:            sycl::nd_range<3>(dpct_global_range, threaddim),
   // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:              const int *karg2_ct0 = (const int *)(&karg2_acc_ct0[0] + karg2_offset_ct0);
   // CHECK-NEXT:              const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);

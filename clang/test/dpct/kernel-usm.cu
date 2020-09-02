@@ -274,3 +274,31 @@ void run_foo(dim3 c, dim3 d) {
   if (1)
     foo_kernel3<<<c, 1>>>(&g_a[0]);
 }
+
+__global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){}
+int run_foo12() {
+  static int aa;
+  static int *bb;
+  static const int cc = 0;
+  static constexpr int dd = 0;
+
+  const int ci = 1;
+  int i = 2;
+
+  static const int ee = ci;
+  static constexpr int ff = ci;
+  static const int gg = i;
+  // CHECK:  dpct::get_default_queue().submit(
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      auto aa_ct0 = aa;
+  // CHECK-NEXT:      auto bb_ct1 = bb;
+  // CHECK-NEXT:      auto gg_ct6 = gg;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:          my_kernel4(aa_ct0, bb_ct1, cc, dd, ee, ff, gg_ct6);
+  // CHECK-NEXT:        });
+  // CHECK-NEXT:    });
+  my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
+}

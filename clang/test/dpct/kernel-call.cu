@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call.dp.cpp --match-full-lines %s
 
@@ -839,4 +839,38 @@ template<typename TT>
 void foo2() {
   TT a;
   k12<TT><<<1,1>>>(a);
+}
+
+__global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){}
+int run_foo12() {
+  static int aa;
+  static int *bb;
+  static const int cc = 0;
+  static constexpr int dd = 0;
+
+  const int ci = 1;
+  int i = 2;
+
+  static const int ee = ci;
+  static constexpr int ff = ci;
+  static const int gg = i;
+  //CHECK:{
+  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> bb_buf_ct1 = dpct::get_buffer_and_offset(bb);
+  //CHECK-NEXT:  size_t bb_offset_ct1 = bb_buf_ct1.second;
+  //CHECK-NEXT:  dpct::get_default_queue().submit(
+  //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+  //CHECK-NEXT:      auto bb_acc_ct1 = bb_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-EMPTY:
+  //CHECK-NEXT:      auto aa_ct0 = aa;
+  //CHECK-NEXT:      auto gg_ct6 = gg;
+  //CHECK-EMPTY:
+  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:          int *bb_ct1 = (int *)(&bb_acc_ct1[0] + bb_offset_ct1);
+  //CHECK-NEXT:          my_kernel4(aa_ct0, bb_ct1, cc, dd, ee, ff, gg_ct6);
+  //CHECK-NEXT:        });
+  //CHECK-NEXT:    });
+  //CHECK-NEXT:}
+  my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }
