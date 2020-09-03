@@ -1183,6 +1183,18 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
       Member,
       std::forward<std::function<CallArgsT(const CallExpr *)>>(Args)...);
 }
+template <class... CallArgsT>
+using CallExprPrinterCreator =
+    PrinterCreator<CallExprPrinter<CallArgsT...>, std::string,
+                   std::function<CallArgsT(const CallExpr *)>...>;
+
+template <class... CallArgsT>
+std::function<CallExprPrinter<CallArgsT...>(const CallExpr *)>
+makeCallExprCreator(std::string Name,
+                    std::function<CallArgsT(const CallExpr *)>... Args) {
+  return CallExprPrinterCreator<CallArgsT...>(
+      Name, std::forward<std::function<CallArgsT(const CallExpr *)>>(Args)...);
+}
 
 /// Create AssignExprRewriterFactory with given argumens.
 /// \p SourceName the source callee name of original call expr.
@@ -1397,6 +1409,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 #define DEREF(x) makeDerefExprCreator(x)
 #define ARG(x) makeCallArgCreator(x)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),

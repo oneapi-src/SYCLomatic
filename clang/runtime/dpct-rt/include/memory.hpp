@@ -802,20 +802,20 @@ public:
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<3>;
   accessor(pointer_t data, const cl::sycl::range<3> &in_range)
-      : data(data), range(in_range) {}
+      : _data(data), _range(in_range) {}
   template <memory_attribute M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const cl::sycl::range<3> &in_range)
       : accessor(acc.get_pointer(), in_range) {}
   accessor<T, Memory, 2> operator[](size_t index) const {
-    cl::sycl::range<2> sub(range.get(1), range.get(2));
-    return accessor<T, Memory, 2>(data + index * sub.size(), sub);
+    cl::sycl::range<2> sub(_range.get(1), _range.get(2));
+    return accessor<T, Memory, 2>(_data + index * sub.size(), sub);
   }
 
 private:
-  pointer_t data;
-  cl::sycl::range<3> range;
+  pointer_t _data;
+  cl::sycl::range<3> _range;
 };
 template <class T, memory_attribute Memory> class accessor<T, Memory, 2> {
 public:
@@ -824,7 +824,7 @@ public:
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<2>;
   accessor(pointer_t data, const cl::sycl::range<2> &in_range)
-      : data(data), range(in_range) {}
+      : _data(data), _range(in_range) {}
   template <memory_attribute M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
@@ -832,12 +832,12 @@ public:
       : accessor(acc.get_pointer(), in_range) {}
 
   pointer_t operator[](size_t index) const {
-    return data + range.get(1) * index;
+    return _data + _range.get(1) * index;
   }
 
 private:
-  pointer_t data;
-  cl::sycl::range<2> range;
+  pointer_t _data;
+  cl::sycl::range<2> _range;
 };
 
 // Variable with address space of global or constant
@@ -858,9 +858,9 @@ public:
       std::initializer_list<value_t> &&init_list)
       : global_memory(in_range) {
     assert(init_list.size() <= in_range.size());
-    host_ptr = (value_t *)std::malloc(size);
-    std::memset(host_ptr, 0, size);
-    std::memcpy(host_ptr, init_list.begin(), init_list.size() * sizeof(T));
+    _host_ptr = (value_t *)std::malloc(_size);
+    std::memset(_host_ptr, 0, _size);
+    std::memcpy(_host_ptr, init_list.begin(), init_list.size() * sizeof(T));
   }
 
   /// Constructor of 2-D array with initializer list
@@ -870,9 +870,9 @@ public:
       std::initializer_list<std::initializer_list<value_t>> &&init_list)
       : global_memory(in_range) {
     assert(init_list.size() <= in_range[0]);
-    host_ptr = (value_t *)std::malloc(size);
-    std::memset(host_ptr, 0, size);
-    auto tmp_data = host_ptr;
+    _host_ptr = (value_t *)std::malloc(_size);
+    std::memset(_host_ptr, 0, _size);
+    auto tmp_data = _host_ptr;
     for (auto sub_list : init_list) {
       assert(sub_list.size() <= in_range[1]);
       std::memcpy(tmp_data, sub_list.begin(), sub_list.size() * sizeof(T));
@@ -882,8 +882,8 @@ public:
 
   /// Constructor with range
   global_memory(const cl::sycl::range<Dimension> &range_in)
-      : size(range_in.size() * sizeof(T)), range(range_in), reference(false),
-        host_ptr(nullptr), device_ptr(nullptr) {
+      : _size(range_in.size() * sizeof(T)), _range(range_in), _reference(false),
+        _host_ptr(nullptr), _device_ptr(nullptr) {
     static_assert(
         (Memory == device) || (Memory == constant) || (Memory == shared),
         "Global memory attribute should be constant, device or shared");
@@ -899,10 +899,10 @@ public:
       : global_memory(cl::sycl::range<Dimension>(Arguments...)) {}
 
   ~global_memory() {
-    if (device_ptr && !reference)
-      dpct_free(device_ptr);
-    if (host_ptr)
-      std::free(host_ptr);
+    if (_device_ptr && !_reference)
+      dpct_free(_device_ptr);
+    if (_host_ptr)
+      std::free(_host_ptr);
   }
 
   /// Allocate memory with default queue, and init memory if has initial value.
@@ -911,13 +911,13 @@ public:
   }
   /// Allocate memory with specficed queue, and init memory if has initial value.
   void init(cl::sycl::queue &q) {
-    if (device_ptr)
+    if (_device_ptr)
       return;
-    if (!size)
+    if (!_size)
       return;
     allocate_device(q);
-    if (host_ptr)
-      detail::dpct_memcpy(q, device_ptr, host_ptr, size, host_to_device);
+    if (_host_ptr)
+      detail::dpct_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
   }
 
   /// The variable is assigned to a device pointer.
@@ -935,24 +935,24 @@ public:
   /// usm is not used, and device pointer when usm is used .
   value_t *get_ptr(cl::sycl::queue &q) {
     init(q);
-    return device_ptr;
+    return _device_ptr;
   }
 
   /// Get the device memory object size in bytes.
-  size_t get_size() { return size; }
+  size_t get_size() { return _size; }
 
 #ifdef DPCT_USM_LEVEL_NONE
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
     init();
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
-               device_ptr)
+               _device_ptr)
         .template get_access<sycl::access::mode::read_write>()[index];
   }
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    return get_buffer(device_ptr)
-        .template reinterpret<T, Dimension>(range)
+    return get_buffer(_device_ptr)
+        .template reinterpret<T, Dimension>(_range)
         .template get_access<detail::memory_traits<Memory, T>::mode,
                              detail::memory_traits<Memory, T>::target>(cgh);
   }
@@ -960,38 +960,38 @@ public:
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
     init();
-    return device_ptr[index];
+    return _device_ptr[index];
   }
   /// Get dpct::accessor with dimension info for the device memory object
   /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>
   typename std::enable_if<D != 1, dpct_accessor_t>::type
   get_access(cl::sycl::handler &cgh) {
-    return dpct_accessor_t((T *)device_ptr, range);
+    return dpct_accessor_t((T *)_device_ptr, _range);
   }
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
   global_memory(value_t *memory_ptr, size_t size)
-      : size(size), range(size / sizeof(T)), reference(true),
-        device_ptr(memory_ptr) {}
+      : _size(size), _range(size / sizeof(T)), _reference(true),
+        _device_ptr(memory_ptr) {}
 
   void allocate_device(cl::sycl::queue &q) {
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
-      device_ptr = (value_t *)cl::sycl::malloc_shared(
-          size, q.get_device(), q.get_context());
+      _device_ptr = (value_t *)cl::sycl::malloc_shared(
+          _size, q.get_device(), q.get_context());
       return;
     }
 #endif
-    detail::dpct_malloc((void **)&device_ptr, size, q);
+    detail::dpct_malloc((void **)&_device_ptr, _size, q);
   }
 
-  size_t size;
-  cl::sycl::range<Dimension> range;
-  bool reference;
-  value_t *host_ptr;
-  value_t *device_ptr;
+  size_t _size;
+  cl::sycl::range<Dimension> _range;
+  bool _reference;
+  value_t *_host_ptr;
+  value_t *_device_ptr;
 };
 template <class T, memory_attribute Memory>
 class global_memory<T, Memory, 0> : public global_memory<T, Memory, 1> {

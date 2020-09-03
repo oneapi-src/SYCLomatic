@@ -23,7 +23,7 @@ ASSIGNABLE_FACTORY(
                          MEMBER_CALL(ARG(1), true, "get_data")))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc",
                                         DEREF(0),
-                                        MEMBER_CALL(ARG(1), true, "get_info")))
+                                        MEMBER_CALL(ARG(1), true, "get_sampling_info")))
 
 ENTRY_TEXTURE("tex1D", 0x01, 1)
 ENTRY_TEXTURE("tex2D", 0x02, 1, 2)
@@ -39,11 +39,9 @@ ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
                               3 /*size in dimension y*/, 4 /*pitch*/))
 ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray", 0 /*start arg idx*/))
 
-ASSIGNABLE_FACTORY(ENTRY_REORDER("cudaCreateTextureObject",
-                                 "dpct::create_image",
-                                 0 /*ref of texture object*/,
-                                 1 /*ref of data desc*/,
-                                 2 /*ref of info desc*/))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
+                                        CALL("dpct::create_image_wrapper", DEREF(1),
+                                             DEREF(2))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::NOTSUPPORTED)

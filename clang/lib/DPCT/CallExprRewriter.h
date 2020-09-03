@@ -505,6 +505,18 @@ void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
   printMemberOp(Stream, IsArrow);
 }
 
+template <class... CallArgsT> class CallExprPrinter {
+  StringRef CalleeName;
+  CallArgsPrinter<CallArgsT...> Args;
+
+public:
+  CallExprPrinter(StringRef Name, CallArgsT &&... Args)
+      : CalleeName(Name), Args(std::forward<CallArgsT>(Args)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << CalleeName;
+    Args.print(Stream);
+  }
+};
 template <class BaseT, class... CallArgsT> class MemberCallPrinter {
   BaseT Base;
   bool IsArrow;

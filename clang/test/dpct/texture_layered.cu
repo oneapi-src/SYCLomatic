@@ -16,14 +16,14 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
-// CHECK: dpct::image<int, 2, true> tex_no_ref;
+// CHECK: dpct::image_wrapper<int, 2, true> tex_no_ref;
 static texture<int, cudaTextureType1DLayered> tex_no_ref;
-// CHECK: dpct::image<sycl::float4, 3, true> tex42;
+// CHECK: dpct::image_wrapper<sycl::float4, 3, true> tex42;
 static texture<float4, cudaTextureType2DLayered> tex42;
-// CHECK: dpct::image<sycl::uint2, 2, true> tex21;
+// CHECK: dpct::image_wrapper<sycl::uint2, 2, true> tex21;
 static texture<uint2, cudaTextureType1DLayered> tex21;
 
-// CHECK: void device01(sycl::float4 *out, dpct::image_accessor<sycl::uint2, 1, true> tex21) {
+// CHECK: void device01(sycl::float4 *out, dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(12, 1.0f);
 // CHECK-NEXT: out[0].x() =  u21.x();
 __device__ void device01(float4 *out) {
@@ -31,8 +31,8 @@ __device__ void device01(float4 *out) {
   out[0].x = u21.x;
 }
 
-// CHECK: void kernel(sycl::float4 *out, dpct::image_accessor<sycl::float4, 2, true> tex42,
-// CHECK-NEXT:        dpct::image_accessor<sycl::uint2, 1, true> tex21) {
+// CHECK: void kernel(sycl::float4 *out, dpct::image_accessor_ext<sycl::float4, 2, true> tex42,
+// CHECK-NEXT:        dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: device01(out, tex21);
 // CHECK-NEXT: out[1] = tex42.read(12, 1.0f, 1.0f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.
@@ -106,7 +106,7 @@ int main() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:               kernel((sycl::float4 *)(&d_acc_ct0[0]), dpct::image_accessor<sycl::float4, 2, true>(tex42_smpl, tex42_acc), dpct::image_accessor<sycl::uint2, 1, true>(tex21_smpl, tex21_acc));
+  // CHECK-NEXT:               kernel((sycl::float4 *)(&d_acc_ct0[0]), dpct::image_accessor_ext<sycl::float4, 2, true>(tex42_smpl, tex42_acc), dpct::image_accessor_ext<sycl::uint2, 1, true>(tex21_smpl, tex21_acc));
   // CHECK-NEXT:             });
   // CHECK-NEXT:       });
   kernel<<<1, 1>>>(d);
@@ -124,7 +124,7 @@ int main() {
   cudaFree(d_data42);
   cudaFree(d_data21);
 
-  // CHECK:  dpct::image<unsigned int, 1> tex_tmp;
+  // CHECK:  dpct::image_wrapper<unsigned int, 1> tex_tmp;
   // CHECK-NEXT:   tex_tmp.coord_normalized() = false;
   // CHECK-NEXT:   tex_tmp.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT:   tex_tmp.filter_mode() = sycl::filtering_mode::nearest;

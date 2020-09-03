@@ -11015,7 +11015,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
       if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
         emplaceTransformation(new ReplaceToken(
-            TL->getBeginLoc(), TL->getEndLoc(), "dpct::image_base_p"));
+            TL->getBeginLoc(), TL->getEndLoc(), "dpct::image_wrapper_base_p"));
       }
     }
   }

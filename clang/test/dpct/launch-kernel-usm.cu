@@ -15,8 +15,8 @@ __global__ void template_kernel(T *d) {
   template_device(d);
 }
 
-// CHECK: void kernel(int *d, dpct::image_accessor<int, 1> tex, sycl::nd_item<3> item_ct1) {
-__global__ void kernel(int *d, cudaTextureObject_t tex) {  
+// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, sycl::nd_item<3> item_ct1) {
+__global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);
 }
@@ -45,16 +45,16 @@ int main() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    auto tex_acc = static_cast<dpct::image<int, 1> *>(*(dpct::image_base_p *)args[1])->get_access(cgh);
+  // CHECK-NEXT:    auto tex_acc = static_cast<dpct::image_wrapper<int, 1> *>(*(dpct::image_wrapper_base_p *)args[1])->get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:    auto tex_smpl = *(dpct::image_base_p *)args[1]->get_sampler();
+  // CHECK-NEXT:    auto tex_smpl = (*(dpct::image_wrapper_base_p *)args[1])->get_sampler();
   // CHECK-EMPTY:
   // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:        kernel(d_ct0, dpct::image_accessor<int, 1>(tex_smpl, tex_acc), item_ct1);
+  // CHECK-NEXT:        kernel(d_ct0, dpct::image_accessor_ext<int, 1>(tex_smpl, tex_acc), item_ct1);
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
   cudaLaunchKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);

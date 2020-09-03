@@ -1,16 +1,15 @@
 // RUN: dpcpp image_wrapper.cpp -o image_wrapper
 
 #define DPCT_NAMED_LAMBDA
-//#include <dpct/dpct.hpp>
-#include "../include/dpct.hpp"
+#include <dpct/dpct.hpp>
 
-dpct::image<cl::sycl::float4, 2> tex42;
-dpct::image<cl::sycl::float2, 1> tex21;
-dpct::image<unsigned short, 3> tex13;
+dpct::image_wrapper<cl::sycl::float4, 2> tex42;
+dpct::image_wrapper<cl::sycl::float2, 1> tex21;
+dpct::image_wrapper<unsigned short, 3> tex13;
 
-void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2> acc42,
-                  dpct::image_accessor<cl::sycl::float2, 1> acc21,
-                  dpct::image_accessor<unsigned short, 3> acc13) {
+void test_image(sycl::float4* out, dpct::image_accessor_ext<cl::sycl::float4, 2> acc42,
+                  dpct::image_accessor_ext<cl::sycl::float2, 1> acc21,
+                  dpct::image_accessor_ext<unsigned short, 3> acc13) {
   out[0] = acc42.read(0.5f, 0.5f);
   unsigned short data13 = acc13.read(0.5f, 0.5f, 0.5f);
   cl::sycl::float2 data21 = acc21.read(0.5f);
@@ -51,20 +50,27 @@ int main() {
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(unsigned short), 640 * 480 * 24 * sizeof(unsigned short), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(unsigned short), 1, 1));
 
   tex42.attach(image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
-  tex21.attach(array1);
   tex13.attach(array3);
 
+  dpct::image_wrapper_base *tex21;
+  dpct::image_data res21;
+  dpct::sampling_info texDesc21;
+  res21.type = dpct::data_matrix;
+  res21.data = array1;
+
   tex42.addr_mode()=cl::sycl::addressing_mode::clamp;
-  tex21.addr_mode()=cl::sycl::addressing_mode::clamp;
+  texDesc21.addr_mode()=cl::sycl::addressing_mode::clamp;
   tex13.addr_mode()=cl::sycl::addressing_mode::clamp;
 
   tex42.coord_normalized()=1;
-  tex21.coord_normalized()=1;
+  texDesc21.coord_normalized()=1;
   tex13.coord_normalized()=1;
 
   tex42.filter_mode()=cl::sycl::filtering_mode::linear;
-  tex21.filter_mode()=cl::sycl::filtering_mode::linear;
+  texDesc21.filter_mode()=cl::sycl::filtering_mode::linear;
   tex13.filter_mode()=cl::sycl::filtering_mode::linear;
+
+  tex21 = dpct::create_image_wrapper(res21, texDesc21);
 
   sycl::float4 d[32];
   for(int i = 0; i < 32; ++i) {
@@ -75,18 +81,18 @@ int main() {
     dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
       auto acc42 = tex42.get_access(cgh);
       auto acc13 = tex13.get_access(cgh);
-      auto acc21 = tex21.get_access(cgh);
+      auto acc21 = static_cast<dpct::image_wrapper<cl::sycl::float2, 1> *>(tex21)->get_access(cgh);
 
       auto smpl42 = tex42.get_sampler();
       auto smpl13 = tex13.get_sampler();
-      auto smpl21 = tex21.get_sampler();
+      auto smpl21 = tex21->get_sampler();
 
       auto acc_out = buf.get_access<sycl::access::mode::read_write, sycl::access::target::global_buffer>(cgh);
 
       cgh.single_task<dpct_kernel_name<class dpct_single_kernel>>([=] {
-        test_image(acc_out.get_pointer(),dpct::image_accessor<cl::sycl::float4, 2>(smpl42, acc42),
-                   dpct::image_accessor<cl::sycl::float2, 1>(smpl21, acc21),
-                   dpct::image_accessor<unsigned short, 3>(smpl13, acc13));
+        test_image(acc_out.get_pointer(),dpct::image_accessor_ext<cl::sycl::float4, 2>(smpl42, acc42),
+                   dpct::image_accessor_ext<cl::sycl::float2, 1>(smpl21, acc21),
+                   dpct::image_accessor_ext<unsigned short, 3>(smpl13, acc13));
       });
     });
   }
@@ -95,9 +101,9 @@ int main() {
   printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
   tex42.detach();
-  tex21.detach();
   tex13.detach();
 
+  delete tex21;
   sycl::free(device_buffer, dpct::get_default_queue());
   std::free(host_buffer);
   std::free(image_data2);

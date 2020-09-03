@@ -3,11 +3,11 @@
 #define DPCT_NAMED_LAMBDA
 #include <dpct/dpct.hpp>
 
-dpct::image<cl::sycl::float4, 3, true> tex43;
-dpct::image<cl::sycl::float2, 2, true> tex22;
+dpct::image_wrapper<cl::sycl::float4, 3, true> tex43;
+dpct::image_wrapper<cl::sycl::float2, 2, true> tex22;
 
-void test_image(sycl::float4* out, dpct::image_accessor<cl::sycl::float4, 2,true> acc42,
-                  dpct::image_accessor<cl::sycl::float2, 1,true> acc21) {
+void test_image(sycl::float4* out, dpct::image_accessor_ext<cl::sycl::float4, 2,true> acc42,
+                  dpct::image_accessor_ext<cl::sycl::float2, 1,true> acc21) {
   out[0] = acc42.read(16, 0.5f, 0.5f);
   cl::sycl::float2 data32 = acc21.read(16, 0.5f);
   out[1].x() = data32.x();
@@ -42,17 +42,24 @@ int main() {
   dpct::dpct_memcpy(array2->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float2), 640 * 480 * sizeof(cl::sycl::float2), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float2), 1, 1));
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4), 640 * 480 * 24 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(cl::sycl::float4), 1, 1));
 
+  dpct::image_wrapper_base *tex22;
+  dpct::image_data res22;
+  dpct::sampling_info texDesc22;
+  res22.type = dpct::data_matrix;
+  res22.data = array2;
+
   tex43.attach(array3);
-  tex22.attach(array2);
 
   tex43.addr_mode()=cl::sycl::addressing_mode::clamp;
-  tex22.addr_mode()=cl::sycl::addressing_mode::clamp;
+  texDesc22.addr_mode()=cl::sycl::addressing_mode::clamp;
 
   tex43.coord_normalized()=1;
-  tex22.coord_normalized()=1;
+  texDesc22.coord_normalized()=1;
 
   tex43.filter_mode()=cl::sycl::filtering_mode::linear;
-  tex22.filter_mode()=cl::sycl::filtering_mode::linear;
+  texDesc22.filter_mode()=cl::sycl::filtering_mode::linear;
+
+  tex22 = dpct::create_image_wrapper(res22, texDesc22);
 
   sycl::float4 d[32];
   for(int i = 0; i < 32; ++i) {
@@ -62,16 +69,16 @@ int main() {
     sycl::buffer<sycl::float4, 1> buf(d, sycl::range<1>(32));
     dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
       auto acc42 = tex43.get_access(cgh);
-      auto acc21 = tex22.get_access(cgh);
+      auto acc21 = static_cast<dpct::image_wrapper<cl::sycl::float2, 2, true> *>(tex22)->get_access(cgh);
 
       auto smpl42 = tex43.get_sampler();
-      auto smpl21 = tex22.get_sampler();
+      auto smpl21 = tex22->get_sampler();
 
       auto acc_out = buf.get_access<sycl::access::mode::read_write, sycl::access::target::global_buffer>(cgh);
 
       cgh.single_task<dpct_kernel_name<class dpct_single_kernel>>([=] {
-        test_image(acc_out.get_pointer(),dpct::image_accessor<cl::sycl::float4, 2, true>(smpl42, acc42),
-                   dpct::image_accessor<cl::sycl::float2, 1, true>(smpl21, acc21));
+        test_image(acc_out.get_pointer(),dpct::image_accessor_ext<cl::sycl::float4, 2, true>(smpl42, acc42),
+                   dpct::image_accessor_ext<cl::sycl::float2, 1, true>(smpl21, acc21));
       });
     });
   }
@@ -80,5 +87,6 @@ int main() {
   printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
   tex43.detach();
-  tex22.detach();
+
+  delete tex22;
 }

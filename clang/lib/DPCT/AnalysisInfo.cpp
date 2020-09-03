@@ -348,7 +348,7 @@ void KernelCallExpr::addAccessorDecl() {
         Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::UNDEDUCED_TYPE, true,
-                                 "image_accessor");
+                                 "image_accessor_ext");
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
       SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
@@ -1430,7 +1430,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),
                                  Diagnostics::UNDEDUCED_TYPE, true,
-                                 "image_accessor");
+                                 "image_accessor_ext");
       }
       Obj->addParamDeclReplacement();
     }

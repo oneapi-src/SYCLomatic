@@ -1993,7 +1993,7 @@ public:
   virtual std::string getHostDeclString() {
     ParameterStream PS;
     Type->prepareForImage();
-    getDecl(PS, "image") << ";";
+    getDecl(PS, "image_wrapper") << ";";
     Type->endForImage();
     return PS.Str;
   }
@@ -2006,13 +2006,13 @@ public:
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-    return getDecl(PS, "image_accessor");
+    return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) {
     return PS << Name;
   }
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
-    getType()->printType(OS, "dpct::image_accessor");
+    getType()->printType(OS, "dpct::image_accessor_ext");
     OS << "(" << Name << "_smpl, " << Name << "_acc)";
     return OS;
   }
@@ -2041,7 +2041,7 @@ public:
   std::string getAccessorDecl() override {
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(PS, "dpct::image")
+    getType()->printType(PS, "dpct::image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
     return PS.Str;
   }
@@ -2052,7 +2052,7 @@ public:
 
   std::string getParamDeclType() {
     ParameterStream PS;
-    Type->printType(PS, "dpct::image_accessor");
+    Type->printType(PS, "dpct::image_accessor_ext");
     return PS.Str;
   }
 
@@ -2081,12 +2081,12 @@ public:
   std::string getAccessorDecl() override {
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(PS, "dpct::image")
+    getType()->printType(PS, "dpct::image_wrapper")
         << " *>(" << ArgStr << ")->get_access(cgh);";
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    return buildString("auto ", Name, "_smpl = ", ArgStr, "->get_sampler();");
+    return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
   }
 };
 

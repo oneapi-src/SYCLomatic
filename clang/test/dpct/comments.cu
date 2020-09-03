@@ -66,7 +66,7 @@ int main() {
 // CHECK-NEXT:          cgh.parallel_for(
 // CHECK-NEXT:            sycl::nd_range<3>(dpct_global_range, threaddim),
 // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, cl_acc_ct1.get_pointer(), al_ptr_ct1, dpct::accessor<int, dpct::local, 2>(bl_acc_ct1, bl_range_ct1), dpct::image_accessor<sycl::uint2, 1>(tex21_smpl, tex21_acc));
+// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, cl_acc_ct1.get_pointer(), al_ptr_ct1, dpct::accessor<int, dpct::local, 2>(bl_acc_ct1, bl_range_ct1), dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
 // CHECK-NEXT:            });
 // CHECK-NEXT:        });
     kernel<<<griddim, threaddim>>>();
