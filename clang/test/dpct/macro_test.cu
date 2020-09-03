@@ -1,9 +1,13 @@
 // RUN: cat %s > %T/macro_test.cu
+// RUN: cat %S/macro_test.h > %T/macro_test.h
 // RUN: cd %T
-// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
-
+// RUN: rm -rf %T/macro_test_output
+// RUN: mkdir %T/macro_test_output
+// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
+// RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
+#include "macro_test.h"
 
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
@@ -569,6 +573,14 @@ __global__ void templatefoo(){
 void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
+
+//CHECK: void foo11(sycl::nd_item<3> item_ct1){
+//CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
+//CHECK-NEXT: }
+__global__ void foo11(){
+  exp(THREAD_IDX_X);
+}
+
 //CHECK: /*
 //CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 will be migrated to the corresponding
 //CHECK-NEXT: fundmental types which cannot be inherited. You may need to rewrite the code.
