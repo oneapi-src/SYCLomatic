@@ -475,6 +475,9 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
+                           const CallExpr *C,
+                           const UnresolvedLookupExpr *ULExpr = NULL);
 };
 
 /// Migration rule for thrust constructor expressions

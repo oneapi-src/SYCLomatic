@@ -9,6 +9,8 @@
 // CHECK-NEXT: #include <dpstd/algorithm>
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
 
 int main() {
   double sum;
@@ -18,3 +20,25 @@ int main() {
 // CHECK:  sum = std::reduce(dpstd::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
 }
+
+template <typename T>
+class C {
+  T *data;
+public:
+  C() {
+    this->data = 0;
+  }
+
+  // CHECK:   inline T *raw() {
+  // CHECK-NEXT:   return dpct::raw_pointer_cast(this->data);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: inline const T *raw() const {
+  // CHECK-NEXT:   return dpct::raw_pointer_cast(this->data + 2);
+  // CHECK-NEXT: }
+  inline T *raw() {
+    return thrust::raw_pointer_cast(this->data);
+  }
+  inline const T *raw() const {
+    return thrust::raw_pointer_cast(this->data + 2);
+  }
+};

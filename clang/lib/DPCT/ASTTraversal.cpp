@@ -1563,31 +1563,47 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
                     .bind("thrustFuncCall"),
                this);
+
+  MF.addMatcher(
+      unresolvedLookupExpr(
+          hasAnyDeclaration(namedDecl(hasAnyThrustFuncName())),
+          hasParent(callExpr(unless(parentStmt())).bind("thrustApiCallExpr"))
+          )
+          .bind("unresolvedThrustAPILookupExpr"),
+      this);
 }
 
 TextModification *removeArg(const CallExpr *C, unsigned n,
                             const SourceManager &SM);
 
-void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
-  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+void ThrustFunctionRule::thrustFuncMigration(
+    const MatchFinder::MatchResult &Result, const CallExpr *CE,
+    const UnresolvedLookupExpr *ULExpr) {
+
   auto UniqueName = [](const Stmt *S) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Loc = S->getBeginLoc();
     return getHashAsString(Loc.printToString(SM)).substr(0, 6);
   };
 
-  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
-    // handle the a regular call expr
-    const std::string ThrustFuncName = CE->getDirectCallee()->getName().str();
-    const unsigned NumArgs = CE->getNumArgs();
-    auto QT= CE->getArg(0)->getType();
-    LangOptions LO;
-    std::string ArgT = QT.getAsString(PrintingPolicy(LO));
+  // handle the a regular call expr
+  std::string ThrustFuncName;
+  if (ULExpr) {
+    ThrustFuncName = ULExpr->getName().getAsString();
+  } else {
+    ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
 
-    auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
-    if(ReplInfo == MapNames::ThrustFuncNamesMap.end())
-        return;
-    auto NewName = ReplInfo->second.ReplName;
+  const unsigned NumArgs = CE->getNumArgs();
+  auto QT = CE->getArg(0)->getType();
+  LangOptions LO;
+  std::string ArgT = QT.getAsString(PrintingPolicy(LO));
+
+  auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
+
+  if (ReplInfo == MapNames::ThrustFuncNamesMap.end())
+    return;
+  auto NewName = ReplInfo->second.ReplName;
 
     // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
     // thrust::count, thrust::equal) called in device function , should be
@@ -1599,104 +1615,130 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (ThrustFuncName == "copy_if" &&
-        (ArgT.find("execution_policy_base") == std::string::npos &&
-             NumArgs == 5 ||
-         NumArgs > 5)) {
-      NewName = "dpct::" + ThrustFuncName;
+  if (ArgT != "ExecutionPolicy" && ThrustFuncName == "copy_if" &&
+      (ArgT.find("execution_policy_base") == std::string::npos &&
+           NumArgs == 5 ||
+       NumArgs > 5)) {
+    NewName = "dpct::" + ThrustFuncName;
+
+    if (ULExpr)
+      emplaceTransformation(new ReplaceToken(
+          ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+    else
       emplaceTransformation(
           new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-    } else if (ThrustFuncName == "transform_reduce") {
-      // The initial value and the reduce functor are provided before the
-      // transform functor in std::transform_reduce, which differs from
-      // thrust::transform_reduce.
-      if (NumArgs == 5) {
-        emplaceTransformation(removeArg(CE, 2, *Result.SourceManager));
+  } else if (ThrustFuncName == "transform_reduce") {
+    // The initial value and the reduce functor are provided before the
+    // transform functor in std::transform_reduce, which differs from
+    // thrust::transform_reduce.
+    if (NumArgs == 5) {
+      emplaceTransformation(removeArg(CE, 2, *Result.SourceManager));
 
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(2));
-        std::string Str = ", " + EA.getReplacedString();
-        emplaceTransformation(
-            new InsertAfterStmt(CE->getArg(4), std::move(Str)));
+      dpct::ExprAnalysis EA;
+      EA.analyze(CE->getArg(2));
+      std::string Str = ", " + EA.getReplacedString();
+      emplaceTransformation(new InsertAfterStmt(CE->getArg(4), std::move(Str)));
 
-      } else if (NumArgs == 6) {
-        emplaceTransformation(removeArg(CE, 3, *Result.SourceManager));
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(3));
-        std::string Str = ", " + EA.getReplacedString();
-        emplaceTransformation(
-            new InsertAfterStmt(CE->getArg(5), std::move(Str)));
-      }
+    } else if (NumArgs == 6) {
+      emplaceTransformation(removeArg(CE, 3, *Result.SourceManager));
+      dpct::ExprAnalysis EA;
+      EA.analyze(CE->getArg(3));
+      std::string Str = ", " + EA.getReplacedString();
+      emplaceTransformation(new InsertAfterStmt(CE->getArg(5), std::move(Str)));
+    }
 
-      if (ArgT.find("execution_policy_base") != std::string::npos) {
+    if (ArgT.find("execution_policy_base") != std::string::npos ||
+        ArgT == "ExecutionPolicy") {
+      if (ULExpr) {
+        emplaceTransformation(new ReplaceToken(
+            ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+      } else {
         emplaceTransformation(
             new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-        return;
       }
-
-    } else if (ThrustFuncName == "make_zip_iterator") {
-      // dpstd::make_zip_iterator expects the component iterators to be passed
-      // directly instead of being wrapped in a tuple as
-      // thrust::make_zip_iterator requires.
-      std::string NewArg;
-      if (auto CCE = dyn_cast<CXXConstructExpr>(CE->getArg(0)))
-        if (const CallExpr *SubCE =
-                dyn_cast<CallExpr>(CCE->getArg(0)->IgnoreImplicit())) {
-          std::string Arg0 = getStmtSpelling(SubCE->getArg(0));
-          std::string Arg1 = getStmtSpelling(SubCE->getArg(1));
-          NewArg = Arg0 + ", " + Arg1;
-        }
-
-      if (NewArg.empty()) {
-        std::string Arg0 =
-            "std::get<0>(" + getStmtSpelling(CE->getArg(0)) + ")";
-        std::string Arg1 =
-            "std::get<1>(" + getStmtSpelling(CE->getArg(0)) + ")";
+      return;
+    }
+  } else if (ThrustFuncName == "make_zip_iterator") {
+    // dpstd::make_zip_iterator expects the component iterators to be passed
+    // directly instead of being wrapped in a tuple as
+    // thrust::make_zip_iterator requires.
+    std::string NewArg;
+    if (auto CCE = dyn_cast<CXXConstructExpr>(CE->getArg(0)))
+      if (const CallExpr *SubCE =
+              dyn_cast<CallExpr>(CCE->getArg(0)->IgnoreImplicit())) {
+        std::string Arg0 = getStmtSpelling(SubCE->getArg(0));
+        std::string Arg1 = getStmtSpelling(SubCE->getArg(1));
         NewArg = Arg0 + ", " + Arg1;
       }
 
-      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-      emplaceTransformation(
-          new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
-
-    } else if (ArgT.find("execution_policy_base") != std::string::npos) {
-      emplaceTransformation(
-          new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-      return;
+    if (NewArg.empty()) {
+      std::string Arg0 = "std::get<0>(" + getStmtSpelling(CE->getArg(0)) + ")";
+      std::string Arg1 = "std::get<1>(" + getStmtSpelling(CE->getArg(0)) + ")";
+      NewArg = Arg0 + ", " + Arg1;
     }
 
-    if (ThrustFuncName == "exclusive_scan") {
-      DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Numeric);
-      emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
-    }
+    emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+    emplaceTransformation(
+        new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
 
+  } else if (ArgT.find("execution_policy_base") != std::string::npos ||
+             ArgT == "ExecutionPolicy") {
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-    if(CE->getNumArgs()<=0)
+    return;
+  }
+
+  if (ThrustFuncName == "exclusive_scan") {
+    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Numeric);
+    emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
+  }
+
+  if (ULExpr)
+    emplaceTransformation(new ReplaceToken(
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+  else
+    emplaceTransformation(
+        new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+  if (CE->getNumArgs() <= 0)
+    return;
+  auto ExtraParam = ReplInfo->second.ExtraParam;
+  if (!ExtraParam.empty()) {
+    // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
+    // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
+    // without creating a unique one for every use
+    if (ExtraParam == "dpstd::execution::sycl") {
+      std::string Name = UniqueName(CE);
+      if (checkWhetherIsDuplicate(CE, false))
         return;
-    auto ExtraParam = ReplInfo->second.ExtraParam;
-    if (!ExtraParam.empty()) {
-      // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
-      // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
-      // without creating a unique one for every use
-      if (ExtraParam == "dpstd::execution::sycl") {
-        std::string Name = UniqueName(CE);
-        if (checkWhetherIsDuplicate(CE, false))
-          return;
-        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
-        std::string TemplateArg = "";
-        if (DpctGlobalInfo::isSyclNamedLambda())
-          TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
-        ExtraParam = "dpstd::execution::make_device_policy" +
-                      TemplateArg + "({{NEEDREPLACEQ" +
-                     std::to_string(Index) + "}})";
-      }
-      emplaceTransformation(
-          new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+      std::string TemplateArg = "";
+      if (DpctGlobalInfo::isSyclNamedLambda())
+        TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
+      ExtraParam = "dpstd::execution::make_device_policy" + TemplateArg +
+                   "({{NEEDREPLACEQ" + std::to_string(Index) + "}})";
     }
+    emplaceTransformation(
+        new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
   }
 }
+
+void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+
+  if (const UnresolvedLookupExpr *ULExpr =
+          getAssistNodeAsType<UnresolvedLookupExpr>(
+              Result, "unresolvedThrustAPILookupExpr")) {
+    const CallExpr *CE =
+        getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr");
+    thrustFuncMigration(Result, CE, ULExpr);
+  }
+
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+    thrustFuncMigration(Result, CE);
+  }
+}
+
 
 REGISTER_RULE(ThrustFunctionRule)
 
