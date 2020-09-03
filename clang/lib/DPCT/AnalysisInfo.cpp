@@ -285,7 +285,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::DefaultQueue);
   }
@@ -389,15 +389,19 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       SubmitStmtsList.RangeList.emplace_back(
           VI->getRangeDecl(ExecutionConfig.ExternMemSize));
     }
-  } else if (!VI->isGlobal()) {
-    SubmitStmtsList.MemoryList.emplace_back(
-        VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  } else if (getFilePath() != VI->getFilePath() &&
-             !isIncludedFile(getFilePath(), VI->getFilePath())) {
-    // Global variable definition and global variable reference are not in the
-    // same file, and are not a share varible, insert extern variable
-    // declaration.
-    SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+  } else {
+    SubmitStmtsList.InitList.emplace_back(
+        VI->getInitStmt(isDefaultStream() ? "" : ExecutionConfig.Stream));
+    if (VI->isLocal()) {
+      SubmitStmtsList.MemoryList.emplace_back(
+          VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
+    } else if (getFilePath() != VI->getFilePath() &&
+               !isIncludedFile(getFilePath(), VI->getFilePath())) {
+      // Global variable definition and global variable reference are not in the
+      // same file, and are not a share varible, insert extern variable
+      // declaration.
+      SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
+    }
   }
   VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
                                   SubmitStmtsList.AccessorList,
@@ -429,7 +433,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
     if(ArgCounter != 0)
       KernelArgs += ", ";
 
-    if (Arg.IsPointer) {
+    if (Arg.TryGetBuffer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
@@ -485,7 +489,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       if (!Arg.IsDefinedOnDevice) {
         ReDeclStr = ReDeclStr + ";";
       } else {
-        if (Arg.IsKernelParamPtr) {
+        if (Arg.IsPointer) {
           ReDeclStr = ReDeclStr + ".get_ptr();";
         } else {
           ReDeclStr = ReDeclStr + "[0];";
@@ -536,16 +540,16 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream == "0") {
-    Printer << QueueStr << ".";
-  } else {
-    if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-      Printer << "(" << ExecutionConfig.Stream << ")";
-    } else {
-      Printer << ExecutionConfig.Stream;
-    }
-    Printer << "->";
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
   }
+  else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isDefaultStream())
+    Printer << ".";
+  else
+    Printer << "->";
   (Printer << "submit(").newLine();
   printSubmitLamda(Printer);
 }
@@ -1082,10 +1086,59 @@ void deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
   }
 }
 
+/// This function gets the \p FD name with the necessary qualified namespace at
+/// \p Callee position.
+/// Method:
+/// 1. record all NamespaceDecl nodes of the ancestors \p FD and \p Callee, get
+/// two namespace sequences. E.g.,
+///   decl: aaa,bbb,ccc; callee: aaa,eee;
+/// 2. Remove the longest continuous common subsequence
+/// 3. the rest sequence of \p FD is the namespace sequence
+std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
+                                                   const Expr *Callee) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto getNamespaceSeq =
+      [&](DynTypedNodeList Parents) -> std::deque<std::string> {
+    std::deque<std::string> Seq;
+    while (Parents.size() > 0) {
+      auto *Parent = Parents[0].get<NamespaceDecl>();
+      if (Parent) {
+        Seq.push_front(Parent->getNameAsString());
+      }
+      Parents = Context.getParents(Parents[0]);
+    }
+    return Seq;
+  };
+
+  std::deque<std::string> FDNamespaceSeq =
+      getNamespaceSeq(Context.getParents(*FD));
+  std::deque<std::string> CalleeNamespaceSeq =
+      getNamespaceSeq(Context.getParents(*Callee));
+
+  auto FDIter = FDNamespaceSeq.begin();
+  for (auto CalleeNamespace : CalleeNamespaceSeq) {
+    if (FDNamespaceSeq.empty())
+      break;
+    if (CalleeNamespace == *FDIter) {
+      FDIter++;
+      FDNamespaceSeq.pop_front();
+    } else {
+      break;
+    }
+  }
+
+  std::string Result;
+  for (auto I : FDNamespaceSeq) {
+    Result = Result + I + "::";
+  }
+
+  return Result + getName(FD);
+}
+
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
-    Name = getName(CallDecl);
+    Name = getNameWithNamespace(CallDecl, Callee);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments());
@@ -1216,6 +1269,7 @@ void CallFunctionExpr::mergeTextureObjectTypeInfo() {
 }
 
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
+
   if (auto ID = D->getIdentifier())
     return ID->getName().str();
   return "";
@@ -1236,8 +1290,11 @@ void CallFunctionExpr::buildInfo() {
 
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, ExtraArgLoc, 0, getExtraArguments(), nullptr));
+
+  if (ExtraArgLoc)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
+                                         getExtraArguments(), nullptr));
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
@@ -1350,6 +1407,7 @@ void DeviceFunctionInfo::buildInfo() {
     VarMap.merge(Call.second->getVarMap());
     mergeCalledTexObj(Call.second->getTextureObjectList());
   }
+  VarMap.removeDuplicateVar();
 }
 
 std::string DeviceFunctionDecl::getExtraParameters() {
@@ -1739,8 +1797,6 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
     ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
     : Global),
   PointerAsArray(false) {
-  setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-    isLocal()));
   if (getType()->isPointer() && getScope() == Global) {
     Attr = Device;
     getType()->adjustAsMemType();
@@ -1837,10 +1893,14 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
-  if (auto Func = Var->getParentFunctionOrMethod()) {
+  if (auto Func =
+          dyn_cast_or_null<FunctionDecl>(Var->getParentFunctionOrMethod())) {
+    if (Func->getTemplateSpecializationKind() ==
+        TSK_ExplicitInstantiationDefinition)
+      return std::shared_ptr<MemVarInfo>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
-    DeviceFunctionDecl::LinkRedecls(dyn_cast<FunctionDecl>(Func))->addVar(VI);
+    DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
     return VI;
   }
 
@@ -1935,6 +1995,27 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+template <class T>
+void removeDuplicateVar(GlobalMap<T> &VarMap,
+                        std::unordered_set<std::string> &VarNames) {
+  auto Itr = VarMap.begin();
+  while (Itr != VarMap.end()) {
+    if (VarNames.find(Itr->second->getName()) == VarNames.end()) {
+      VarNames.insert(Itr->second->getName());
+      ++Itr;
+    } else {
+      Itr = VarMap.erase(Itr);
+    }
+  }
+}
+void MemVarMap::removeDuplicateVar() {
+  std::unordered_set<std::string> VarNames{DpctGlobalInfo::getItemName(),
+                                           DpctGlobalInfo::getStreamName()};
+  dpct::removeDuplicateVar(GlobalVarMap, VarNames);
+  dpct::removeDuplicateVar(LocalVarMap, VarNames);
+  dpct::removeDuplicateVar(ExternVarMap, VarNames);
+  dpct::removeDuplicateVar(TextureMap, VarNames);
+}
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }

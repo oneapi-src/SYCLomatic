@@ -155,7 +155,7 @@ std::string getDpctStatsStr() { return DpctStatsStream.str().str(); }
 std::string getDpctDiagsStr() { return DpctDiagsStream.str().str(); }
 std::string getDpctTermStr() { return DpctTermStream.str().str(); }
 
-void DebugInfo::ShowStatus(int Status) {
+void DebugInfo::ShowStatus(int Status, std::string Message) {
 
   std::string StatusString;
   switch (Status) {
@@ -260,6 +260,11 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: Input folder is the parent of, or the same folder "
                    "as, the CUDA_PATH folder";
     break;
+  case MigrationErrorCannotAccessDirInDatabase:
+    StatusString = "Error: Cannot access directory \"" + Message +
+                   "\" from the compilation database, check if the directory "
+                   "exists and can be accessed by the tool.";
+          break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

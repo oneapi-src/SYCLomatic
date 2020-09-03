@@ -35,7 +35,7 @@ class ASTTraversal;
 
 class DebugInfo {
 public:
-  static void ShowStatus(int status = 0);
+  static void ShowStatus(int status = 0, std::string Message = "");
   static void
   printMigrationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(

@@ -8,10 +8,10 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_WARP("__all", "sycl::intel::all_of")
-ENTRY_WARP("__all_sync", "sycl::intel::all_of")
-ENTRY_WARP("__any", "sycl::intel::any_of")
-ENTRY_WARP("__any_sync", "sycl::intel::any_of")
+ENTRY_WARP("__all", "sycl::ONEAPI::all_of")
+ENTRY_WARP("__all_sync", "sycl::ONEAPI::all_of")
+ENTRY_WARP("__any", "sycl::ONEAPI::any_of")
+ENTRY_WARP("__any_sync", "sycl::ONEAPI::any_of")
 ENTRY_WARP("__shfl", "shuffle")
 ENTRY_WARP("__shfl_sync", "shuffle")
 ENTRY_WARP("__shfl_up", "shuffle_up")

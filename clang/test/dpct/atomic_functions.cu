@@ -480,3 +480,33 @@ __global__ void mykernel(unsigned int *dev) {
   atomicOr(&as[kc], (unsigned int)1);
   dev[tid]=as[kc];
 }
+
+// CHECK: void mykernel_1(unsigned char *buffer, long size,
+// CHECK-NEXT:                             unsigned int *histo, sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                             unsigned int *temp) {
+// CHECK-EMPTY:
+// CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
+// CHECK-NEXT:  item_ct1.barrier();
+// CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range().get(2);
+// CHECK-NEXT:  int offset = item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2);
+// CHECK-NEXT:  while (i < size) {
+// CHECK-NEXT:    sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&temp[buffer[i]])).fetch_add(1);
+// CHECK-NEXT:    i += offset;
+// CHECK-NEXT:  }
+// CHECK-NEXT:  item_ct1.barrier();
+// CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&(histo[item_ct1.get_local_id(2)]))).fetch_add(temp[item_ct1.get_local_id(2)]);
+// CHECK-NEXT:}
+__global__ void mykernel_1(unsigned char *buffer, long size,
+                             unsigned int *histo) {
+__shared__ unsigned int temp[256];
+  temp[threadIdx.x] = 0;
+  __syncthreads();
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int offset = blockDim.x * gridDim.x;
+  while (i < size) {
+    atomicAdd(&temp[buffer[i]], 1);
+    i += offset;
+  }
+  __syncthreads();
+  atomicAdd(&(histo[threadIdx.x]), temp[threadIdx.x]);
+}

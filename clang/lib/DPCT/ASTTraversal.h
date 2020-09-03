@@ -1068,9 +1068,10 @@ private:
   void handleAsync(const CallExpr *C, unsigned i,
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);
-  void replaceMemAPIArg(
-      const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
-      std::string OffsetFromBaseStr = "");
+  void replaceMemAPIArg(const Expr *E,
+                        const ast_matchers::MatchFinder::MatchResult &Result,
+                        const std::string &StreamStr,
+                        std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
   const Expr *getUnaryOperatorExpr(const Expr *E);
   void memcpySymbolMigration(
@@ -1109,9 +1110,12 @@ private:
                            size_t StartArgIndex, size_t EndArgIndex,
                            const std::string &PaddingArgs, SourceManager &SM);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
-    if (C->getNumArgs() > ArgIndex)
+    if (C->getNumArgs() > ArgIndex) {
+      if (needExtraParens(C->getArg(ArgIndex)))
+        insertAroundStmt(C->getArg(ArgIndex), "(", ")");
       emplaceTransformation(
-          new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
+        new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
+    }
   }
   void insertZeroOffset(const CallExpr *C, size_t InsertArgIndex) {
     static std::string InsertedText =
@@ -1180,6 +1184,13 @@ public:
     return Member;
   }
   MemoryDataTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+class CMemoryAPIRule : public NamedMigrationRule<CMemoryAPIRule> {
+public:
+  CMemoryAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

@@ -663,6 +663,27 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   dispatch(UO->getSubExpr());
 }
 
+void KernelArgumentAnalysis::analyze(const Expr *Expression) {
+  IsPointer = Expression->getType()->isPointerType();
+  TryGetBuffer = IsPointer && DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+                 !isNullPtr(Expression);
+  IsRedeclareRequired = false;
+  ArgumentAnalysis::analyze(Expression);
+}
+
+bool KernelArgumentAnalysis::isNullPtr(const Expr *E) {
+  E = E->IgnoreCasts();
+  if (isa<GNUNullExpr>(E))
+    return true;
+  if (isa<CXXNullPtrLiteralExpr>(E))
+    return true;
+  if (auto IL = dyn_cast<IntegerLiteral>(E)) {
+    if (!IL->getValue().getZExtValue())
+      return true;
+  }
+  return false;
+}
+
 void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(CXXConstructExpr)

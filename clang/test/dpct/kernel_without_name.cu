@@ -164,16 +164,18 @@ private:
   struct config aa;
 };
 
+int *g_a;
+
 __global__ void foo_kernel3(int *d) {
 }
 //CHECK:dpct::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo(dim3 c, dim3 d) {
   if (1)
-    foo_kernel3<<<c, 1>>>(0);
+    foo_kernel3<<<c, 1>>>(g_a);
 }
 
 void run_foo2(dim3 c, dim3 d) {
@@ -181,38 +183,38 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 //CHECK:  q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
   if (1)
-    foo_kernel3<<<c, d>>>(0);
+    foo_kernel3<<<c, d>>>(g_a);
   else
-    foo_kernel3<<<c, 1>>>(0);
+    foo_kernel3<<<c, 1>>>(g_a);
 }
 //CHECK:dpct::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo3(dim3 c, dim3 d) {
   for (;;)
-    foo_kernel3<<<c, d>>>(0);
+    foo_kernel3<<<c, d>>>(g_a);
 }
 //CHECK:dpct::get_default_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
-//CHECK-NEXT:         auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:         auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for(
 void run_foo4(dim3 c, dim3 d) {
  while (1)
-   foo_kernel3<<<c, 1>>>(0);
+   foo_kernel3<<<c, 1>>>(g_a);
 }

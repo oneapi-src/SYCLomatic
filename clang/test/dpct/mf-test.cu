@@ -14,9 +14,12 @@ __global__ void cuda_hello(){
 void test() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
-  // CHECK:          q_ct1.submit(
+
+  // CHECK:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         extern dpct::device_memory<volatile int, 0> g_mutex;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:         g_mutex.init();
   // CHECK-EMPTY:
   // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-EMPTY:

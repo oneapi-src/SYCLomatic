@@ -323,9 +323,9 @@ public:
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class image_info {
-  cl::sycl::addressing_mode _addr_mode;
-  cl::sycl::filtering_mode _filter_mode;
-  bool _normalized;
+  cl::sycl::addressing_mode _addr_mode = cl::sycl::addressing_mode::clamp_to_edge;
+  cl::sycl::filtering_mode _filter_mode = cl::sycl::filtering_mode::nearest;
+  bool _normalized = false;
 
 public:
   inline cl::sycl::addressing_mode &addr_mode() { return _addr_mode; }

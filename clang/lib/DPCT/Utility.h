@@ -217,8 +217,11 @@ int getCurrnetColumn(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
+clang::SourceRange getStmtSourceRange(const clang::Stmt *S);
+size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);
+
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -388,6 +391,7 @@ enum ExprSpellingStatus {
   IsDefine = 1,
   IsExpansion = 2
 };
+bool isLocationStraddle(clang::SourceLocation Begin, clang::SourceLocation End);
 bool isExprStraddle(const clang::Stmt *S);
 bool isSimpleAddrOf(const clang::Expr *E);
 bool isCOCESimpleAddrOf(const clang::Expr *E);
@@ -418,6 +422,9 @@ bool isPredefinedStreamHandle(const clang::Expr *E);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
+                                 clang::SourceLocation EndLoc);
 bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::SourceLocation Loc);
 bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,

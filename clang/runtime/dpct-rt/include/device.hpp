@@ -206,7 +206,7 @@ public:
     // For Intel(R) oneAPI DPC++ Compiler, if current device does not support
     // "cl_intel_required_subgroup_size" extension, max_sub_group_size will be
     // initialized to one.
-    // For other compilers, just initialize max_sub_group_size to one.
+    // For other compilers, max_sub_group_size will be initialized to one.
     // This code may need to be updated depending on subgroup support by other
     // compilers.
     size_t max_sub_group_size = 1;
@@ -214,9 +214,12 @@ public:
     if (has_extension("cl_intel_required_subgroup_size")) {
       cl::sycl::vector_class<size_t> sub_group_sizes =
           get_info<cl::sycl::info::device::sub_group_sizes>();
-      cl::sycl::vector_class<size_t>::const_iterator max_iter =
-          std::max_element(sub_group_sizes.begin(), sub_group_sizes.end());
-      max_sub_group_size = *max_iter;
+
+      for (const auto &sub_group_size : sub_group_sizes) {
+        if (max_sub_group_size < sub_group_size)
+          max_sub_group_size = sub_group_size;
+      }
+
     }
 #endif
     prop.set_max_sub_group_size(max_sub_group_size);

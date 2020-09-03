@@ -144,6 +144,8 @@ int main(int argc, char **argv) {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       t1.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
@@ -155,6 +157,9 @@ int main(int argc, char **argv) {
   member_acc<<<1, 1>>>();
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       const_angle.init();
+  // CHECK-NEXT:       const_ptr.init();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto const_angle_ptr_ct1 = const_angle.get_ptr();
   // CHECK-NEXT:       auto const_ptr_ptr_ct1 = const_ptr.get_ptr();
   // CHECK-EMPTY:
@@ -182,8 +187,12 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  (q_ct1.memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait(), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
-  // CHECK:   q_ct1.submit(
+  cudaStream_t stream;
+  // CHECK:   stream->submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       const_float.init(*stream);
+  // CHECK-NEXT:       const_one.init(*stream);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto const_one_ptr_ct1 = const_one.get_ptr();
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
@@ -194,7 +203,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:           simple_kernel_one(d_array, item_ct1, const_float_acc_ct1, *const_one_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  simple_kernel_one<<<size / 64, 64>>>(d_array);
+  simple_kernel_one<<<size / 64, 64, 0, stream>>>(d_array);
 
   // CHECK:  q_ct1.memcpy(hangle_h, d_array, 360 * sizeof(float)).wait();
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);

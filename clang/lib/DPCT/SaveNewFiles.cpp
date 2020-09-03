@@ -207,17 +207,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       rewriteFileName(OutPath);
       rewriteDir(OutPath, InRoot, OutRoot);
 
-      // for headfile, as it can be included from differnt file, it need
-      // merge the migration triggered by each including.
-      if (OutPath.back() == 'h') {
-        // note the replacement of Entry.second are updated by this call.
-        mergeExternalReps(std::string(OutPath.str()), Entry.second);
-      }
-
-      std::vector<clang::tooling::Range> Ranges;
-      Ranges = calculateRangesWithFormatFlag(Entry.second);
-      FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
-
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(OutPath));
       if ((bool)EC) {
@@ -239,6 +228,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         status = MigrationSaveOutFail;
         return status;
       }
+
+      // for headfile, as it can be included from differnt file, it need
+      // merge the migration triggered by each including.
+      if (OutPath.back() == 'h') {
+        // note the replacement of Entry.second are updated by this call.
+        mergeExternalReps(std::string(OutPath.str()), Entry.second);
+      }
+
+      std::vector<clang::tooling::Range> Ranges;
+      Ranges = calculateRangesWithFormatFlag(Entry.second);
+      FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
 
       AppliedAll =
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;

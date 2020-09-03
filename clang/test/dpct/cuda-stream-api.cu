@@ -362,3 +362,29 @@ void bar() {
    // CHECK: sizeof(sycl::queue *);
    sizeof(cudaStream_t);
 }
+
+// CHECK: #define INIT_STREAM (sycl::queue **)malloc(10 * sizeof(sycl::queue *))
+#define INIT_STREAM (cudaStream_t *) malloc(10 * sizeof(cudaStream_t))
+
+int stream_initializers() {
+  // CHECK: sycl::queue **streams = (sycl::queue **)malloc(10 * sizeof(sycl::queue *));
+  cudaStream_t *streams = (cudaStream_t *) malloc(10 * sizeof(cudaStream_t));
+  // CHECK: (sycl::queue **)malloc(10 * sizeof(sycl::queue *));
+  (cudaStream_t *) malloc(10 * sizeof(cudaStream_t));
+  // CHECK: sizeof(sycl::queue *);
+  sizeof(cudaStream_t);
+
+  // CHECK: sycl::queue **streams2 = INIT_STREAM;
+  cudaStream_t *streams2 = INIT_STREAM;
+}
+
+class C {
+  // CHECK: sycl::queue **streams = (sycl::queue **)malloc(10 * sizeof(sycl::queue *));
+  cudaStream_t *streams = (cudaStream_t *) malloc(10 * sizeof(cudaStream_t));
+  cudaStream_t *streams2 = INIT_STREAM;
+  void foo() {
+    // CHECK: streams = (sycl::queue **)malloc(10 * sizeof(sycl::queue *));
+    streams = (cudaStream_t *) malloc(10 * sizeof(cudaStream_t));
+    streams2 = INIT_STREAM;
+  }
+};

@@ -114,7 +114,8 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     }
 
     auto CallExprLength =
-        SM.getCharacterData(End) - SM.getCharacterData(Begin) + 1;
+        SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+        Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     if (IsCleanup && ReplacementString.empty())
       return removeStmtWithCleanups(SM);
     return std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
@@ -317,6 +318,8 @@ ReplaceVarDecl::ReplaceVarDecl(const VarDecl *D, std::string &&Text)
       NL(getNL()) {}
 
 void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
+  if (T.find(Text) != std::string::npos)
+    return;
   SourceManager &SM = DpctGlobalInfo::getSourceManager();
   CharSourceRange Range = SM.getExpansionRange(VD->getSourceRange());
   if (SM.getCharacterData(Range.getEnd()) > SM.getCharacterData(SR.getEnd()))

@@ -976,6 +976,11 @@ public:
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
+
+    if (SM->isMacroArgExpansion(Loc)) {
+        LocInfo = SM->getDecomposedLoc(SM->getSpellingLoc(Loc));
+    }
+
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
       // To avoid potential path inconsist issue,
       // using tryGetRealPathName while applicable.
@@ -1546,15 +1551,14 @@ private:
 // variable info includes name, type and location.
 class VarInfo {
 public:
-  VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
-      : VarInfo(FilePathIn, Offset, Var) {}
   VarInfo(unsigned Offset, const std::string &FilePathIn,
-          const FieldDecl *FieldVar, std::string MemberExprString)
-      : VarInfo(FilePathIn, Offset, FieldVar, MemberExprString) {}
+          const DeclaratorDecl *Var)
+      : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
+        Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
+                                        Var->isInLocalScope())) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
-  inline const std::string &getRefString() { return RefString; }
   inline const std::string &getName() { return Name; }
   inline const std::string getNameAppendSuffix() { return Name + "_ct1"; }
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
@@ -1568,20 +1572,10 @@ public:
     Ty = Ty->applyTemplateArguments(TAList);
   }
 
-protected:
-  VarInfo(const std::string &FilePath, unsigned Offset,
-          const DeclaratorDecl *DD, const std::string &RefStringIn = "")
-      : FilePath(FilePath), Offset(Offset), Name(DD->getName()),
-        RefString(RefStringIn.empty() ? Name : RefStringIn),
-        Ty(std::make_shared<CtTypeInfo>(
-            DD->getTypeSourceInfo()->getTypeLoc())) {}
-  inline void setType(std::shared_ptr<CtTypeInfo> T) { Ty = T; }
-
 private:
   const std::string FilePath;
   unsigned Offset;
   std::string Name;
-  std::string RefString;
   std::shared_ptr<CtTypeInfo> Ty;
 };
 
@@ -1648,6 +1642,13 @@ public:
   }
 
   std::string getDeclarationReplacement();
+
+  std::string getInitStmt() { return getInitStmt(""); }
+  std::string getInitStmt(StringRef QueueString) {
+    if (QueueString.empty())
+      return getConstVarName() + ".init();";
+    return buildString(getConstVarName(), ".init(*", QueueString, ");");
+  }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
     return buildString(getMemoryType(), " ", getConstVarName(),
@@ -2082,10 +2083,36 @@ public:
 
 private:
   template <class T> void setArgFromExprAnalysis(const T &Arg) {
-    ExprAnalysis EA;
-    EA.analyze(Arg);
-    DependentStr = EA.getTemplateDependentStringInfo();
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto Range = getArgSourceRange(Arg);
+    auto Begin = Range.getBegin();
+    auto End = Range.getEnd();
+    if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin)) {
+      Begin =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
+      auto Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+                    Lexer::MeasureTokenLength(
+                        End, SM, DpctGlobalInfo::getContext().getLangOpts());
+      std::string Result = std::string(SM.getCharacterData(Begin), Length);
+      setArgStr(std::move(Result));
+    } else {
+      ExprAnalysis EA;
+      EA.analyze(Arg);
+      DependentStr = EA.getTemplateDependentStringInfo();
+    }
   }
+
+  template <class T>
+  SourceRange getArgSourceRange(const T &Arg) {
+    return Arg.getSourceRange();
+  }
+
+  template <class T>
+  SourceRange getArgSourceRange(const T *Arg) {
+    return Arg->getSourceRange();
+  }
+
   void setArgStr(std::string &&Str) {
     DependentStr =
         std::make_shared<TemplateDependentStringInfo>(std::move(Str));
@@ -2154,6 +2181,7 @@ public:
     return const_cast<MemVarMap *>(this)->getMap(Scope);
   }
   const GlobalMap<TextureInfo> &getTextureMap() const { return TextureMap; }
+  void removeDuplicateVar();
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
     switch (Scope) {
@@ -2283,8 +2311,8 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
 template <>
 inline ParameterStream &
 MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
-  static std::string StreamParamDecl = MapNames::getClNamespace() +
-                                       "::stream " +
+  static std::string StreamParamDecl = "const " + MapNames::getClNamespace() +
+                                       "::stream &" +
                                        DpctGlobalInfo::getStreamName();
   return PS << StreamParamDecl;
 }
@@ -2430,6 +2458,8 @@ private:
       TemplateArgs.emplace_back(TL.getArgLoc(i));
     }
   }
+
+  std::string getNameWithNamespace(const FunctionDecl* FD, const Expr* Callee);
 
   template <class CallT>
   void
@@ -2692,11 +2722,10 @@ private:
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-        IsPointer = Analysis.IsPointer;
+      TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
-      IsKernelParamPtr = Analysis.IsKernelParamPtr;
+      IsPointer = Analysis.IsPointer;
 
       if (IsPointer) {
         QualType PointerType;
@@ -2739,15 +2768,16 @@ private:
 
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
             KernelCallExpr *Kernel)
-        : IsPointer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
-                    PVD->getType()->isPointerType()),
-          IsRedeclareRequired(true), IsUsedAsLvalueAfterMalloc(true),
+        : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+          IsUsedAsLvalueAfterMalloc(true),
+          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+                       IsPointer),
           TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
           Index(PVD->getFunctionScopeIndex()) {
       /// For parameter declaration 'float *a' with index = 2 and args array's
       /// name is 'args', the arg string will be '*(float **)args[2]'.
-      std::ostringstream OS;
+      llvm::raw_string_ostream OS(ArgString);
       /// Get pointer type of the parameter declaration's type, e.g. 'float **'.
       auto CastPointerType =
           DpctGlobalInfo::getContext().getPointerType(PVD->getType());
@@ -2755,11 +2785,10 @@ private:
       OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
       /// Print args array subscript.
       OS << ArgsArrayName << "[" << Index << "]";
-      ArgString = OS.str();
 
       if (TextureObjectInfo::isTextureObject(PVD)) {
         IsRedeclareRequired = false;
-        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgString);
+        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, OS.str());
         Kernel->addTextureObjectArgInfo(Index, Texture);
       }
     }
@@ -2786,7 +2815,7 @@ private:
     bool IsRedeclareRequired;
     bool IsUsedAsLvalueAfterMalloc;
     bool IsDefinedOnDevice = false;
-    bool IsKernelParamPtr = false;
+    bool TryGetBuffer = false;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;
@@ -2923,6 +2952,9 @@ private:
       }
     }
   }
+  bool isDefaultStream() {
+    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ");
+  }
   bool isIncludedFile(const std::string &CurrentFile,
                       const std::string &CheckingFile);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -3008,6 +3040,7 @@ private:
     StmtList StreamList;
     StmtList RangeList;
     StmtList MemoryList;
+    StmtList InitList;
     StmtList ExternList;
     StmtList PtrList;
     StmtList AccessorList;
@@ -3020,6 +3053,7 @@ private:
       printList(Printer, StreamList);
       printList(Printer, ExternList);
       printList(Printer, MemoryList);
+      printList(Printer, InitList, "init global memory");
       printList(Printer, RangeList,
                 "ranges used for accessors to device memory");
       printList(Printer, PtrList, "pointers to device memory");
@@ -3047,7 +3081,6 @@ private:
   StmtList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
-  std::string QueueStr;
   int TotalArgsSize = 0;
 };
 

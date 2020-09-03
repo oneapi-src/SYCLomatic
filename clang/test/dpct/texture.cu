@@ -53,6 +53,25 @@ int main() {
   cudaChannelFormatDesc float4Chn = cudaCreateChannelDesc<float4>();
 
   auto tex42_ptr = &tex42;
+
+  // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
+  // CHECK-NEXT: sycl::float4 *d_test;
+  // CHECK-NEXT: dpct::dpct_malloc(&d_test, sizeof(sycl::float4) * 32 * 32);
+  // CHECK-NEXT: *a_ptr = new dpct::image_matrix(tex42.channel(), sycl::range<2>(32, 32));
+  // CHECK-NEXT: dpct::dpct_memcpy((*a_ptr)->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_test, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
+  // CHECK-NEXT: delete *a_ptr;
+  // CHECK-NEXT: dpct::dpct_free(d_test);
+  // CHECK-NEXT: delete a_ptr;
+
+  cudaArray **a_ptr = new cudaArray_t;
+  float4 *d_test;
+  cudaMalloc(&d_test, sizeof(float4) * 32 * 32);
+  cudaMallocArray(a_ptr, &tex42.channelDesc, 32, 32);
+  cudaMemcpyToArray(*a_ptr, 0, 0, d_test, 32 * 32 * sizeof(float4), cudaMemcpyDeviceToDevice);
+  cudaFreeArray(*a_ptr);
+  cudaFree(d_test);
+  delete a_ptr;
+
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);

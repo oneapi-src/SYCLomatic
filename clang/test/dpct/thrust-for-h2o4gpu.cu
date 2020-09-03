@@ -32,7 +32,7 @@ template <typename T> struct absolute_value {
 //CHECK: template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
 //CHECK-NEXT: void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
 //CHECK-NEXT: {
-//CHECK-NEXT:   *result2 = std::copy_if(exec, first, last, result1, pred);
+//CHECK-NEXT:   *result2 = std::copy_if(first, last, result1, pred);
 //CHECK-NEXT: }
 template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
 __global__ void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
@@ -47,12 +47,10 @@ void copy_if_device(ExecutionPolicy exec)
 
   //CHECK: std::vector<int>   h_data (n, 1);
   //CHECK-NEXT: dpct::device_vector<int> d_data = h_data;
-  //CHECK-NEXT: typename dpct::device_vector<int>::iterator d_new_end;
   //CHECK-NEXT: dpct::device_vector<int> d_result(n);
   //CHECK-NEXT: dpct::device_vector<typename dpct::device_vector<int>::iterator> dd(1);
   thrust::host_vector<int>   h_data (n, 1);
   thrust::device_vector<int> d_data = h_data;
-  typename thrust::device_vector<int>::iterator d_new_end;
   thrust::device_vector<int> d_result(n);
   thrust::device_vector<typename thrust::device_vector<int>::iterator> dd(1);
 
@@ -200,12 +198,13 @@ void foo() {
  }
 
  {
-  //CHECK: dpct::device_ptr<int> begin;
-  //CHECK-NEXT: dpct::device_ptr<int> end;
+  int data[10];
+  //CHECK: dpct::device_ptr<int> begin = dpct::device_pointer_cast(&data[0]);
+  //CHECK-NEXT: dpct::device_ptr<int> end=begin + 10;
   //CHECK-NEXT: bool h_result = std::transform_reduce(dpstd::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: bool h_result_1 = std::transform_reduce(dpstd::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
-  thrust::device_ptr<int> begin;
-  thrust::device_ptr<int> end;
+  thrust::device_ptr<int> begin = thrust::device_pointer_cast(&data[0]);
+  thrust::device_ptr<int> end=begin + 10;
   bool h_result = thrust::transform_reduce(begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
   bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
 

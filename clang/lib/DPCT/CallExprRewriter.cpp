@@ -820,8 +820,22 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     LangOptions LO;
     auto Arg0 = Call->getArg(0);
     auto Arg1 = Call->getArg(1);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
-    auto T1 = Arg1->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+
+    std::string T0, T1;
+    if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(0))) {
+      T0 = CXXFCE->getType().getAsString(PrintingPolicy(LO));
+    } else {
+      T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+    }
+
+    if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(1))) {
+      T1 = CXXFCE->getType().getAsString(PrintingPolicy(LO));
+    } else {
+      T1 = Arg1->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+    }
+
+
+
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());

@@ -16,6 +16,7 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "Checkpoint.h"
+#include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/CharInfo.h"
@@ -122,6 +123,14 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      II->getName().str() == "__shared__")) {
       TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
           SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+    } else if (II->hasMacroDefinition() && II->getName().str() == "CUDART_CB") {
+#ifdef _WIN32
+      TransformSet.emplace_back(
+          new ReplaceText(Iter->getLocation(), 9, "__stdcall"));
+#else
+      TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
+          SourceRange(Iter->getLocation(), Iter->getEndLoc())));
+#endif
     }
   }
 }
@@ -207,6 +216,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier && Name == "__forceinline__") {
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
+  } else if (TKind == tok::identifier && Name == "CUDART_CB") {
+#ifdef _WIN32
+    TransformSet.emplace_back(
+        new ReplaceText(Range.getBegin(), 9, "__stdcall"));
+#else
+    TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(Range));
+#endif
   }
 
   auto Iter = MapNames::HostAllocSet.find(Name.str());
@@ -1418,7 +1434,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
       printDerefOp(OS, CE->getArg(0));
       ReplStr += OS.str();
     } else {
-      ReplStr += getStmtSpelling(CE->getArg(0));
+      ArgumentAnalysis A(CE->getArg(0), false);
+      A.analyze();
+      ReplStr += A.getReplacedString();
     }
     ReplStr += ")).";
     ReplStr += Iter->second;
@@ -1432,7 +1450,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
       printDerefOp(OS, CE->getArg(1));
       ReplStr += OS.str();
     } else {
-      ReplStr += getStmtSpelling(CE->getArg(1));
+      ArgumentAnalysis A(CE->getArg(1), false);
+      A.analyze();
+      ReplStr += A.getReplacedString();
     }
     ReplStr += ")";
 
@@ -1528,6 +1548,16 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
     if(ReplInfo == MapNames::ThrustFuncNamesMap.end())
         return;
     auto NewName = ReplInfo->second.ReplName;
+
+    // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
+    // thrust::count, thrust::equal) called in device function , should be
+    // migrated to dpstd APIs without a policy on the DPC++ side
+    if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+          ArgT.find("execution_policy_base") != std::string::npos) {
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      }
+    }
 
     if (ThrustFuncName == "copy_if" &&
         (ArgT.find("execution_policy_base") == std::string::npos &&
@@ -2470,14 +2500,28 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
       }
 
+      const Expr *Init = nullptr;
+
       if (VarD) {
         DD = VarD;
+        if (VarD->hasInit())
+          Init = VarD->getInit();
       } else if (FieldD) {
         DD = FieldD;
+        if (FieldD->hasInClassInitializer())
+          Init = FieldD->getInClassInitializer();
       }
 
+      auto IsTypeInInitializer = [&]() -> bool {
+        if (!Init)
+          return false;
+        if (TL->getBeginLoc() >= Init->getBeginLoc() && TL->getEndLoc() <= Init->getEndLoc())
+          return true;
+        return false;
+      };
+
       bool SpecialCaseHappened = false;
-      if (DD) {
+      if (DD && !IsTypeInInitializer()) {
         if (TL->getType().getAsString().find("cudaStream_t") !=
             std::string::npos) {
           processCudaStreamType(DD, SM, SpecialCaseHappened);
@@ -2527,15 +2571,25 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                                   typedefDecl(vectorTypeName()))))))
                     .bind("vectorTypeTL"),
                 this);
+
+  MF.addMatcher(
+      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
+          .bind("inheritanceType"),
+      this);
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  SourceManager *SM = Result.SourceManager;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
     auto BeginLoc = TL->getBeginLoc();
-    SourceManager *SM = Result.SourceManager;
 
+    bool IsInScratchspace = false;
     if (BeginLoc.isMacroID()) {
+      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(BeginLoc))) {
+        BeginLoc = SM->getImmediateExpansionRange(BeginLoc).getBegin();
+        IsInScratchspace = true;
+      }
       auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
       if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
         BeginLoc = SM->getExpansionLoc(BeginLoc);
@@ -2576,6 +2630,28 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (IsInScratchspace) {
+      std::string TypeStr = TL->getType().getUnqualifiedType().getAsString();
+      auto Begin = SM->getImmediateExpansionRange(TL->getBeginLoc()).getBegin();
+      auto End = SM->getImmediateExpansionRange(TL->getEndLoc()).getEnd();
+      if (*(TypeStr.end() - 1) == '1') {
+        // Make (Begin, End) be the range of "##1"
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+          Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+      } else {
+        // Make Begin be the begin of "MACROARG##1"
+        Begin = SM->getSpellingLoc(Begin);
+        return emplaceTransformation(
+          new InsertText(Begin, MapNames::getClNamespace() + "::"));
+      }
+    }
+
     // check whether the vector has volatile qualifier, if so, remove the
     // qualifier and emit a warning.
     if (!NeedRemoveVolatile)
@@ -2609,6 +2685,56 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
   }
+  if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
+    for (auto ItBase = CRD->bases_begin(); ItBase != CRD->bases_end();
+         ItBase++) {
+      std::string TypeName = ItBase->getBaseTypeInfo()->getType().getAsString();
+      if (MapNames::SupportedVectorTypes.find(TypeName) ==
+        MapNames::SupportedVectorTypes.end())
+        return;
+      auto Begin = ItBase->getSourceRange().getBegin();
+      auto End = ItBase->getSourceRange().getEnd();
+      if (*(TypeName.end() - 1) == '1') {
+        if (Begin.isMacroID() &&
+            (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
+             SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
+          // Macro concatenate --> use immediateExpansion
+          // Make (Begin, End) be the range of "##1"
+          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+          End = SM->getImmediateExpansionRange(End).getEnd();
+          Begin = SM->getSpellingLoc(Begin);
+          End = SM->getSpellingLoc(End);
+          Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+              Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+          report(Begin, Comments::VECTYPE_INHERITATED, false);
+        } else {
+          // Make (Begin, End) be the range of "1"
+          Begin = SM->getSpellingLoc(Begin);
+          End = SM->getSpellingLoc(End);
+          Begin = Begin.getLocWithOffset(
+              Lexer::MeasureTokenLength(
+                  Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
+              1);
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        }
+        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+      }
+      if (Begin.isMacroID()) {
+        // Macro concatenate --> use immediateExpansion
+        // Make Begin be the begin of "MACROARG##1"
+        if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
+          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+        }
+        Begin = SM->getSpellingLoc(Begin);
+      }
+      return emplaceTransformation(
+          new InsertText(Begin, MapNames::getClNamespace() + "::"));
+    }
+  }
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule)
@@ -2627,6 +2753,12 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
           .bind("VecMemberExpr"),
       this);
 
+  // class A : int2{ void foo(){x = 3;}}
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(pointsTo(cxxRecordDecl(
+                               hasAnyName(SUPPORTEDVECTORTYPENAMES))))))
+          .bind("DerivedVecMemberExpr"),
+      this);
+
   // int2.x += xxx => int2.x() += xxx
   MF.addMatcher(
       binaryOperator(allOf(hasLHS(memberExpr(memberAccess())
@@ -2638,12 +2770,32 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
   auto BaseTy = ME->getBase()->getType().getAsString();
+  bool isPtr = false;
+  // when BaseTy == "struct int1 *", remove " *"
+  if (*(BaseTy.end() - 1) == '*') {
+    BaseTy = BaseTy.erase(BaseTy.size() - 2, 2);
+    isPtr = true;
+  }
   auto &SM = DpctGlobalInfo::getSourceManager();
   if (*(BaseTy.end() - 1) == '1') {
     auto Begin = ME->getOperatorLoc();
-    auto End = Lexer::getLocForEndOfToken(
-        ME->getMemberLoc(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+    bool isImplicit = false;
+    if (Begin.isInvalid()) {
+      Begin = ME->getMemberLoc();
+      isImplicit = true;
+    }
+    Begin = SM.getSpellingLoc(Begin);
+    auto End =
+        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+                                   DpctGlobalInfo::getContext().getLangOpts());
     auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+    if (isPtr && isImplicit) {
+      return emplaceTransformation(new ReplaceText(Begin, Length, "*this"));
+    }
+    if (isPtr) {
+      auto BaseBegin = ME->getBeginLoc();
+      emplaceTransformation(new InsertText(BaseBegin, "*"));
+    }
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
   std::string MemberName = ME->getMemberNameInfo().getAsString();
@@ -2660,6 +2812,10 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
     if (Parents.size() == 0) {
       return;
     }
+    renameMemberField(ME);
+  }
+
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "DerivedVecMemberExpr")) {
     renameMemberField(ME);
   }
 
@@ -8126,7 +8282,14 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
     }
 
     // Remove KCall in the original location
-    emplaceTransformation(new ReplaceStmt(KCall, ""));
+    auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+        KCall->getBeginLoc(), KCall->getEndLoc());
+    auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
+                    SM.getCharacterData(KCallSpellingRange.first) +
+                    Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
+                                              Result.Context->getLangOpts());
+    emplaceTransformation(
+        new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     removeTrailingSemicolon(KCall, Result);
 
     // Add kernel call to map,
@@ -8171,6 +8334,7 @@ void KernelCallRule::removeTrailingSemicolon(
   if (KELoc.isMacroID() && !isOuterMostMacro(KCall)) {
     KELoc = SM.getImmediateSpellingLoc(KELoc);
   }
+  KELoc = SM.getExpansionRange(KELoc).getEnd();
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   if(Tok.is(tok::TokenKind::semi))
       emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
@@ -8209,7 +8373,6 @@ void DeviceFunctionCallRule::run(
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
-
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
@@ -8287,9 +8450,11 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
 
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-  if (auto MemVar = getNodeAsType<VarDecl>(Result, "var")) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     auto &SM  = DpctGlobalInfo::getSourceManager();
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (!Info)
+      return;
     if (Info->isTypeDeclaredLocal()) {
       if (Info->isAnonymousType()) {
         // keep the origin type declaration, only remove variable name
@@ -8325,7 +8490,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
         // remove var decl
         emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
             MemVar,
-            MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+            Info->getDeclarationReplacement()));
 
         Info->setLocalTypeName(Info->getType()->getBaseName());
         // add typecast for the __shared__ variable, since after migration the
@@ -8371,10 +8536,9 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto VD = getNodeAsType<VarDecl>(Result, "hostGlobalVar")) {
     auto VarName = VD->getNameAsString();
-    auto TypeName = VD->getType().getAsString();
     bool IsHost =
         !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
-          VD->hasAttr<CUDASharedAttr>());
+          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<CUDAManagedAttr>());
     if(IsHost)
       dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
   }
@@ -8462,8 +8626,9 @@ llvm::raw_ostream &printMemcpy3DParmsName(llvm::raw_ostream &OS,
 
 void MemoryMigrationRule::replaceMemAPIArg(
     const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
-    std::string OffsetFromBaseStr) {
-
+    const std::string &StreamStr, std::string OffsetFromBaseStr) {
+  auto GetPtrString =
+      buildString(".get_ptr(", StreamStr.empty() ? "" : ("*" + StreamStr), ")");
   auto ASE = getArraySubscriptExpr(E);
   const clang::Expr *BASE = nullptr;
   if (ASE) {
@@ -8478,7 +8643,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
     // const_angle.get_ptr() + sizeof(TYPE) * (3)",
     // and "&const_angle[3]" to "const_angle.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     bool IsOffsetNeeded = true;
     Expr::EvalResult ER;
@@ -8508,7 +8673,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
                         getVarDecl(UO)))) {
     // Migrate the expr such as "&const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     if (!OffsetFromBaseStr.empty()) {
       VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
@@ -8518,7 +8683,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
   } else if (VI = DpctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(E))) {
     // Migrate the expr such as "const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
-    VarName += ".get_ptr()";
+    VarName += GetPtrString;
 
     if (!OffsetFromBaseStr.empty()) {
       VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
@@ -8526,52 +8691,6 @@ void MemoryMigrationRule::replaceMemAPIArg(
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   }
-}
-
-// Incase the previous arg is another macro or function-like macro,
-// we take 1 token(the last token of Expr, because of the design of Clang's
-// EndLoc) after getExpansionRange().getEnd() as the real end location. If the
-// call expr is in a function-like macro or nested macros, to get the correct
-// loc of the previous arg, we need to use getImmediateSpellingLoc step by
-// step until reaching a FileID or a non-function-like macro. E.g.
-// MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
-// When we try to remove arg3, Begin should be at the end of arg2.
-// However, the expansionLoc of Begin is at the beginning of MACRO_A.
-// After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
-// Begin is at the beginning of MACRO_B.
-// After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
-// Begin is at the beginning of arg2.
-// CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
-// and SM.getSpellingLoc will return the macro definition in this case.
-CharSourceRange getAccurateExpansionRange(SourceLocation Loc,
-                                          const SourceManager &SM) {
-  while (Loc.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Loc)) {
-    auto ISL = SM.getImmediateSpellingLoc(Loc);
-    if (!DpctGlobalInfo::isInRoot(
-            SM.getFilename(SM.getExpansionLoc(ISL)).str()))
-      break;
-    Loc = ISL;
-  }
-  return SM.getExpansionRange(Loc);
-}
-
-/// Get the accurate begin expansion location of argument \p ArgIndex of call \p
-/// C.
-SourceLocation getArgEndLocation(const CallExpr *C, size_t ArgIndex,
-                                 const SourceManager &SM) {
-  auto Loc =
-      getAccurateExpansionRange(C->getArg(ArgIndex)->getEndLoc(), SM).getEnd();
-  return Loc.getLocWithOffset(Lexer::MeasureTokenLength(
-      SM.getExpansionLoc(Loc), SM,
-      dpct::DpctGlobalInfo::getContext().getLangOpts()));
-}
-
-/// Get the accurate end expansion location of argument \p ArgIndex of call \p
-/// C.
-SourceLocation getArgBeginLocation(const CallExpr *C, size_t ArgIndex,
-                                   const SourceManager &SM) {
-  return getAccurateExpansionRange(C->getArg(ArgIndex)->getBeginLoc(), SM)
-      .getBegin();
 }
 
 TextModification *replaceText(SourceLocation Begin, SourceLocation End,
@@ -8594,16 +8713,22 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getArgEndLocation(C, n - 1, SM);
-    End = getArgEndLocation(C, n, SM);
+    Begin = getStmtSourceRange(C->getArg(n - 1)).getEnd();
+    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    End = getStmtSourceRange(C->getArg(n)).getEnd();
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+      End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
   } else {
-    Begin = getArgBeginLocation(C, n, SM);
-    if (C->getNumArgs() > 1)
-      End = getArgBeginLocation(C, n + 1, SM);
-    else
-      End = getArgEndLocation(C, n, SM);
+    Begin = getStmtSourceRange(C->getArg(n)).getBegin();
+    if (C->getNumArgs() > 1) {
+      End = getStmtSourceRange(C->getArg(n + 1)).getBegin();
+    } else {
+      End = getStmtSourceRange(C->getArg(n)).getEnd();
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    }
   }
-
   return replaceText(Begin, End, "", SM);
 }
 
@@ -8839,10 +8964,13 @@ void MemoryMigrationRule::mallocMigration(
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
-    emplaceTransformation(
-        replaceText(getArgEndLocation(C, 0, *Result.SourceManager),
-                    getArgBeginLocation(C, 1, *Result.SourceManager), "*",
-                    *Result.SourceManager));
+    auto ArgRange0 = getStmtSourceRange(C->getArg(0));
+    auto ArgEnd0 = ArgRange0.getEnd().getLocWithOffset(
+        Lexer::MeasureTokenLength(ArgRange0.getEnd(), *(Result.SourceManager),
+                                  Result.Context->getLangOpts()));
+    auto ArgRange1 = getStmtSourceRange(C->getArg(1));
+    emplaceTransformation(replaceText(ArgEnd0, ArgRange1.getBegin(),
+                                      "*", *Result.SourceManager));
     insertAroundStmt(C->getArg(0), "(", ")");
     insertAroundStmt(C->getArg(1), "(", ")");
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
@@ -8913,19 +9041,21 @@ void MemoryMigrationRule::memcpyMigration(
     }
   } else if (NameRef == "cudaMemcpy") {
     handleDirection(C, 3);
-    replaceMemAPIArg(C->getArg(0), Result);
-    replaceMemAPIArg(C->getArg(1), Result);
+    std::string AsyncQueue;
+    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(4)))
+        AsyncQueue = ExprAnalysis::ref(C->getArg(4));
+    }
+    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
+    replaceMemAPIArg(C->getArg(1), Result, AsyncQueue);
     if (USMLevel == UsmLevel::restricted) {
+      // Since the range of removeArg is larger than the range of
+      // handleDirection, the handle direction replacement will be removed.
       emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 4, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
-      }
-      std::string AsyncQueue;
-      if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument()) {
-        if (!isPredefinedStreamHandle(C->getArg(4)))
-          AsyncQueue = ExprAnalysis::ref(C->getArg(4));
       }
       if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))
@@ -9071,6 +9201,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   std::string ReplaceStr;
+  std::string StreamStr;
   if (checkWhetherIsDuplicate(C, false))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -9082,21 +9213,17 @@ void MemoryMigrationRule::memcpySymbolMigration(
       ReplaceStr = "dpct::dpct_memcpy";
     }
   } else {
+    if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(5))) {
+        StreamStr = ExprAnalysis::ref(C->getArg(5));
+      }
+    }
     if (USMLevel == UsmLevel::restricted) {
-      if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
-        const Expr *Stream = C->getArg(5);
-        if (Stream) {
-          if (isPredefinedStreamHandle(C->getArg(5))) {
-            buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
-            ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
-          } else {
-            auto StreamStr = ExprAnalysis::ref(Stream);
-            ReplaceStr = StreamStr + "->memcpy";
-          }
-        }
-      } else {
+      if (StreamStr.empty()) {
         buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
+      } else {
+        ReplaceStr = StreamStr + "->memcpy";
       }
     } else
       ReplaceStr = "dpct::async_dpct_memcpy";
@@ -9121,16 +9248,16 @@ void MemoryMigrationRule::memcpySymbolMigration(
 
   if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(0), Result, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(0), Result, StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(0), Result);
+    replaceMemAPIArg(C->getArg(0), Result, StreamStr);
   }
 
   if ((Name == "cudaMemcpyFromSymbol" || Name == "cudaMemcpyFromSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(1), Result, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(1), Result, StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(1), Result);
+    replaceMemAPIArg(C->getArg(1), Result, StreamStr);
   }
 
   // Remove C->getArg(3)
@@ -9249,17 +9376,17 @@ void MemoryMigrationRule::memsetMigration(
   } else if (NameRef == "cudaMemset3D") {
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
-    replaceMemAPIArg(C->getArg(0), Result);
+    std::string AsyncQueue;
+    if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+      if (!isPredefinedStreamHandle(C->getArg(3)))
+        AsyncQueue = ExprAnalysis::ref(C->getArg(3));
+    }
+    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
     if (USMLevel == UsmLevel::restricted) {
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       } else {
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
-      }
-      std::string AsyncQueue;
-      if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
-        if (!isPredefinedStreamHandle(C->getArg(3)))
-          AsyncQueue = ExprAnalysis::ref(C->getArg(3));
       }
       if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))
@@ -9727,9 +9854,11 @@ void MemoryMigrationRule::aggregatePitchedData(const CallExpr *C,
 void MemoryMigrationRule::aggregateArgsToCtor(
     const CallExpr *C, const std::string &ClassName, size_t StartArgIndex,
     size_t EndArgIndex, const std::string &PaddingArgs, SourceManager &SM) {
-  insertAroundRange(getArgBeginLocation(C, StartArgIndex, SM),
-                    getArgEndLocation(C, EndArgIndex, SM), ClassName + "(",
-                    PaddingArgs + ")");
+  auto EndLoc = getStmtSourceRange(C->getArg(EndArgIndex)).getEnd();
+  EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
+      EndLoc, SM, DpctGlobalInfo::getContext().getLangOpts()));
+  insertAroundRange(getStmtSourceRange(C->getArg(StartArgIndex)).getBegin(),
+                    EndLoc, ClassName + "(", PaddingArgs + ")");
 }
 
 /// Convert several arguments to a 3D vector constructor, like id<3> or
@@ -9919,6 +10048,28 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(UnnamedTypesRule)
+
+void CMemoryAPIRule::registerMatcher(MatchFinder &MF) {
+  auto cMemoryAPI = [&]() { return hasAnyName("calloc", "realloc", "malloc"); };
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(cMemoryAPI())),
+                     hasParent(implicitCastExpr().bind("implicitCast")))),
+      this);
+}
+
+void CMemoryAPIRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  auto ICE = getNodeAsType<ImplicitCastExpr>(Result, "implicitCast");
+  if (!ICE)
+    return;
+
+  emplaceTransformation(new InsertText(
+      ICE->getBeginLoc(),
+      "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
+}
+
+REGISTER_RULE(CMemoryAPIRule)
 
 void GuessIndentWidthRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -10137,9 +10288,9 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr += getIndent(CE->getBeginLoc(), *Result.SourceManager).str();
     }
     if (FuncName == "__syncthreads_and")
-      ReplStr += "sycl::intel::all_of(";
+      ReplStr += "sycl::ONEAPI::all_of(";
     else
-      ReplStr += "sycl::intel::any_of(";
+      ReplStr += "sycl::ONEAPI::any_of(";
     ReplStr += getItemName();
     ReplStr += ".get_group(), ";
     ReplStr += ExprAnalysis::ref(CE->getArg(0));
@@ -10229,12 +10380,14 @@ RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
 
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  bool HaveKeywordInAPIName = false;
   const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
   if (!C) {
     C = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI");
     if (!C) {
       return;
     }
+    HaveKeywordInAPIName = true;
   }
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(C->getCalleeDecl());
@@ -10276,6 +10429,11 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     }
     report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+  } else if (HaveKeywordInAPIName) {
+    // In the AST matcher, it will match function call whose name contains
+    // keyword. If the keyword is at name begin, code will go in to previous two
+    // branch. If code goes here, we treat the API is user-defined, just return.
+    return;
   } else if (!MigrationStatistics::IsMigrated(APIName)) {
     GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
     const SourceManager &SM = (*Result.Context).getSourceManager();
@@ -10287,8 +10445,13 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     LOCStaticsMap[FileName][2]++;
-    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           MapNames::ITFName.at(APIName.c_str()));
+
+    auto Iter = MapNames::ITFName.find(APIName.c_str());
+    if (Iter != MapNames::ITFName.end())
+      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             Iter->second);
+    else
+      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
   }
 }
 
@@ -10698,7 +10861,7 @@ void PreDefinedStreamHandleRule::run(const MatchFinder::MatchResult &Result) {
     if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
         Str == "cudaStreamPerThread") {
       auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getAccurateExpansionRange(E->getBeginLoc(), SM).getBegin();
+      auto Begin = getStmtSourceRange(E).getBegin();
       unsigned int Length = Lexer::MeasureTokenLength(
           Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
       if (checkWhetherIsDuplicate(E, false))

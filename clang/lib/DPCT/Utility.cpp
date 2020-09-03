@@ -130,6 +130,63 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   return Buffer.substr(begin, end - begin);
 }
 
+SourceRange getStmtSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  SourceLocation BeginLoc, EndLoc;
+  if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
+    BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
+    EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
+    // If the call expr is in a function-like macro or nested macros, to get the
+    // correct loc of the previous arg, we need to use getImmediateSpellingLoc
+    // step by step until reaching a FileID or a non-function-like macro. E.g.
+    // MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
+    // When we try to remove arg3, Begin should be at the end of arg2.
+    // However, the expansionLoc of Begin is at the beginning of MACRO_A.
+    // After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
+    // Begin is at the beginning of MACRO_B.
+    // After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
+    // Begin is at the beginning of arg2.
+    // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
+    // and SM.getSpellingLoc will return the macro definition in this case.
+    while (BeginLoc.isMacroID() &&
+      !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
+      auto ISL = SM.getImmediateSpellingLoc(BeginLoc);
+      if (!dpct::DpctGlobalInfo::isInRoot(
+        SM.getFilename(SM.getExpansionLoc(ISL)).str()))
+        break;
+      BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+      EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+    }
+    if (EndLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
+    }
+    if (BeginLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    }
+  } else {
+    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
+    EndLoc = SM.getExpansionLoc(S->getEndLoc());
+  }
+  return SourceRange(BeginLoc, EndLoc);
+}
+
+size_t calculateExpansionLevel(const SourceLocation Loc) {
+  if (Loc.isFileID())
+    return 0;
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto ExpanLoc = Loc;
+  size_t Count = 0;
+  while(ExpanLoc.isMacroID()) {
+    Count++;
+    ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getBegin();
+  }
+  return Count;
+}
+
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S) {
   std::string Str;
@@ -137,23 +194,10 @@ std::string getStmtSpelling(const Stmt *S) {
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-    BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
-    EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
-    if (EndLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      EndLoc = SM.getExpansionLoc(EndLoc);
-    }
-    if (BeginLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      BeginLoc = SM.getExpansionLoc(BeginLoc);
-    }
-  } else {
-    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
-    EndLoc = SM.getExpansionLoc(S->getEndLoc());
-  }
+  auto StmtRange = getStmtSourceRange(S);
+
+  BeginLoc = StmtRange.getBegin();
+  EndLoc = StmtRange.getEnd();
 
   int Length =
       SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
@@ -266,7 +310,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
     Vec.push_back(RuleNames[v]);
   }
   if (Vec.size() != InDegree.size()) {
-    std::cout << "Error: Two rules have dependency on each other！\n";
+    std::cout << "Error: Two rules have dependency on each other.\n";
     dpct::DebugInfo::ShowStatus(MigrationError);
     dpctExit(MigrationError);
   }
@@ -1460,25 +1504,22 @@ bool isInsideFunctionLikeMacro(
   return true;
 }
 
-// Check if an Expr is partially in function-like macro
-bool isExprStraddle(const Stmt *S) {
+bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto Begin = S->getBeginLoc();
-  auto End = S->getEndLoc();
-  auto SpellingBegin = S->getBeginLoc();
-  auto SpellingEnd = S->getEndLoc();
+  auto SpellingBegin = SM.getSpellingLoc(BeginLoc);
+  auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-          SM.getCharacterData(SpellingBegin));
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(SpellingBegin));
   auto ItSpellingEnd =
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-          SM.getCharacterData(SpellingEnd));
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(SpellingEnd));
 
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==
-          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-      ItSpellingEnd ==
-          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+    ItSpellingEnd ==
+    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return false;
   }
 
@@ -1491,17 +1532,22 @@ bool isExprStraddle(const Stmt *S) {
   }
 
   auto DLBeginToken =
-      SM.getDecomposedLoc(ItSpellingBegin->second->ReplaceTokenBegin);
+    SM.getDecomposedLoc(ItSpellingBegin->second->ReplaceTokenBegin);
   auto DLEndToken =
-      SM.getDecomposedLoc(ItSpellingEnd->second->ReplaceTokenBegin);
+    SM.getDecomposedLoc(ItSpellingEnd->second->ReplaceTokenBegin);
   // If DL.first(the FileId) or DL.second(the location) is different which means
   // begin and end are in different macro define, straddle
   if (DLBeginToken.first != DLEndToken.first ||
-      DLBeginToken.second != DLEndToken.second) {
+    DLBeginToken.second != DLEndToken.second) {
     return true;
   }
 
   return false;
+}
+
+// Check if an Expr is partially in function-like macro
+bool isExprStraddle(const Stmt *S) {
+  return isLocationStraddle(S->getBeginLoc(), S->getEndLoc());
 }
 
 /// Check the expression \p E is an address-of expression like "&aaa".
@@ -1928,6 +1974,54 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
   }
   return std::pair<clang::SourceLocation, clang::SourceLocation>(ResultBegin,
     ResultEnd);
+}
+
+
+// To remove the correct kernel range, DPCT need to find the Begin/End pair in
+// which the Begin/End are at the same macro define. e.g.
+// Line 1: #define CCC <<<1,1>>>()
+// Line 2: #define KERNEL(A, B) templatefoo<A,B>CCC
+// Line 3: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
+// Line 4: void templatefoo2() { CALL_KERNEL(8, 9) }
+// There are 3 candidates of the kernel range,
+// 1. Line 4 "CALL_KERNEL2(8, AAA)"
+// 2. Line 3 "KERNEL(C, D)"
+// 3. Line 2 "templatefoo<A,B>CCC"
+// The 3rd candidate is the best choice.
+// However, the original begin/end location of the kernel call is at Line 2 "t"
+// and Line1 ")". This function will calculate the macro expansion level of the
+// begin and end location.
+// The macro expansion level of Line 2 "t" is 3. (Line4 -> Line3 -> Line2)
+// The macro expansion level of Line1 ")" is 4. (Line4 -> Line3 -> Line2 -> Line1)
+// And this function will perform a while loop to find
+// the lowest common ancestor of the begin and end.
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
+                                 clang::SourceLocation EndLoc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto BeginLevel = calculateExpansionLevel(BeginLoc);
+  auto EndLevel = calculateExpansionLevel(EndLoc);
+
+  while ((BeginLevel > 0 || EndLevel > 0) &&
+         (isLocationStraddle(BeginLoc, EndLoc) ||
+          ((BeginLoc.isMacroID() &&
+            !dpct::DpctGlobalInfo::isInRoot(
+                SM.getFilename(SM.getSpellingLoc(BeginLoc)).str())) ||
+           (EndLoc.isMacroID() &&
+            !dpct::DpctGlobalInfo::isInRoot(
+                SM.getFilename(SM.getSpellingLoc(EndLoc)).str()))))) {
+    if (BeginLevel > EndLevel) {
+      BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
+      BeginLevel--;
+    } else {
+      EndLoc = SM.getImmediateExpansionRange(EndLoc).getEnd();
+      EndLevel--;
+    }
+  }
+  BeginLoc = SM.getSpellingLoc(BeginLoc);
+  EndLoc = SM.getSpellingLoc(EndLoc);
+  return std::pair<clang::SourceLocation, clang::SourceLocation>(BeginLoc,
+                                                                 EndLoc);
 }
 
 bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc) {

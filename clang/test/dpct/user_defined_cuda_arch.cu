@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/user_defined_cuda_arch.dp.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP
-//CHECK-NEXT: void hello(sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }
+//CHECK-NEXT: void hello(const sycl::stream &[[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }
 #ifdef __CUDA_ARCH__
 __global__ void hello() { printf("foo"); }
 #else
@@ -14,7 +14,7 @@ __global__ void hello() { printf("other"); }
 #if defined(xxx)
 __global__ void hello4() { printf("hello2"); }
 //CHECK: #elif defined(DPCPP_COMPATIBILITY_TEMP)
-//CHECK-NEXT: void hello4(sycl::stream [[STREAM]]) { [[STREAM]] << "hello2"; }
+//CHECK-NEXT: void hello4(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #elif defined(__CUDA_ARCH__)
 __global__ void hello4() { printf("hello2"); }
 #endif
@@ -28,7 +28,7 @@ __global__ void hello5() { printf("hello2"); }
 #endif
 
 //CHECK: #if defined(DPCPP_COMPATIBILITY_TEMP)
-//CHECK-NEXT: void hello6(sycl::stream [[STREAM]]) { [[STREAM]] << "hello2"; }
+//CHECK-NEXT: void hello6(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #if defined(__CUDA_ARCH__)
 __global__ void hello6() { printf("hello2"); }
 #endif
@@ -36,7 +36,7 @@ __global__ void hello6() { printf("hello2"); }
 //CHECK: #ifndef DPCPP_COMPATIBILITY_TEMP
 //CHECK-NEXT: __global__ void hello7() { printf("hello2"); }
 //CHECK-NEXT: #else
-//CHECK-NEXT: void hello7(sycl::stream [[STREAM]]) { [[STREAM]] << "hello2"; }
+//CHECK-NEXT: void hello7(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #ifndef __CUDA_ARCH__
 __global__ void hello7() { printf("hello2"); }
 #else

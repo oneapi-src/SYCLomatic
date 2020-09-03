@@ -64,11 +64,13 @@ __global__ void constAdd(float *C) {
 
 // CHECK: void call_constAdd(float *h_C, int size) {
 // CHECK-NEXT:  float *d_C = NULL;
-// CHECK-NEXT:  {    
+// CHECK-NEXT:  {
 // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> d_C_buf_ct0 = dpct::get_buffer_and_offset(d_C);
 // CHECK-NEXT:    size_t d_C_offset_ct0 = d_C_buf_ct0.second;
 // CHECK-NEXT:    dpct::get_default_queue().submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
+// CHECK-NEXT:        A_ct.init();
+// CHECK-EMPTY:
 // CHECK-NEXT:        auto A_acc_ct1 = A_ct.get_access(cgh);
 // CHECK-NEXT:        auto d_C_acc_ct0 = d_C_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 // CHECK-EMPTY:

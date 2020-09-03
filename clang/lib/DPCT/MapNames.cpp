@@ -215,17 +215,7 @@ void MapNames::setClNamespace(bool Enable) {
 }
 
 // Supported vector types
-const MapNames::SetTy MapNames::SupportedVectorTypes{
-    "char1",     "uchar1",     "char2",      "uchar2",     "char3",
-    "uchar3",    "char4",      "uchar4",     "short1",     "ushort1",
-    "short2",    "ushort2",    "short3",     "ushort3",    "short4",
-    "ushort4",   "int1",       "uint1",      "int2",       "uint2",
-    "int3",      "uint3",      "int4",       "uint4",      "long1",
-    "ulong1",    "long2",      "ulong2",     "long3",      "ulong3",
-    "long4",     "ulong4",     "float1",     "float2",     "float3",
-    "float4",    "longlong1",  "ulonglong1", "longlong2",  "ulonglong2",
-    "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
-    "double2",   "double3",    "double4"};
+const MapNames::SetTy MapNames::SupportedVectorTypes{ SUPPORTEDVECTORTYPENAMES };
 
 const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
   {"char1", 1},      {"char2", 2},       {"char3", 4},       {"char4", 4},
@@ -3061,10 +3051,14 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
   if (Search != MigrationTable.end()) {
     return Search->second;
   } else {
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
     DebugInfo::ShowStatus(MigrationError);
     dpctExit(MigrationError);
+#else
+    return false;
+#endif
   }
 }
 

@@ -45,24 +45,24 @@ __global__ void k() {
   // CHECK: item_ct1.mem_fence();
   __threadfence_block();
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::intel::all_of(item_ct1.get_group(), p);
+  // CHECK-NEXT: sycl::ONEAPI::all_of(item_ct1.get_group(), p);
   __syncthreads_and(p);
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::intel::any_of(item_ct1.get_group(), p);
+  // CHECK-NEXT: sycl::ONEAPI::any_of(item_ct1.get_group(), p);
   __syncthreads_or(p);
 
-  // CHECK: int a = (item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p));
+  // CHECK: int a = (item_ct1.barrier(), sycl::ONEAPI::all_of(item_ct1.get_group(), p));
   int a = __syncthreads_and(p);
-  // CHECK: int b = (item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p));
+  // CHECK: int b = (item_ct1.barrier(), sycl::ONEAPI::any_of(item_ct1.get_group(), p));
   int b = __syncthreads_or(p);
 
-  // CHECK: foo((item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(), sycl::ONEAPI::all_of(item_ct1.get_group(), p)));
   foo(__syncthreads_and(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(), sycl::ONEAPI::any_of(item_ct1.get_group(), p)));
   foo(__syncthreads_or(p));
 
-  // CHECK: FOO((item_ct1.barrier(), sycl::intel::all_of(item_ct1.get_group(), p)));
+  // CHECK: FOO((item_ct1.barrier(), sycl::ONEAPI::all_of(item_ct1.get_group(), p)));
   FOO(__syncthreads_and(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::intel::any_of(item_ct1.get_group(), p)));
+  // CHECK: FOO((item_ct1.barrier(), sycl::ONEAPI::any_of(item_ct1.get_group(), p)));
   FOO(__syncthreads_or(p));
 }
