@@ -10925,22 +10925,53 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                       "cudaChannelFormatKind", "cudaResourceType"))))))
           .bind("texEnum"),
       this);
-  MF.addMatcher(
-      callExpr(
-          callee(functionDecl(hasAnyName(
-              "cudaCreateChannelDesc", "cudaCreateChannelDescHalf",
-              "cudaUnbindTexture", "cudaBindTextureToArray", "cudaBindTexture",
-              "cudaBindTexture2D", "tex1D", "tex2D", "tex3D", "tex1Dfetch",
-              "tex1DLayered", "tex2DLayered", "cudaCreateTextureObject",
-              "cudaDestroyTextureObject", "cudaGetTextureObjectResourceDesc",
-              "cudaGetTextureObjectTextureDesc",
-              "cudaGetTextureObjectResourceViewDesc"))))
-          .bind("call"),
-      this);
+
+  std::vector<std::string> APINamesSelected = {
+      "cudaCreateChannelDesc",
+      "cudaCreateChannelDescHalf",
+      "cudaUnbindTexture",
+      "cudaBindTextureToArray",
+      "cudaBindTexture",
+      "cudaBindTexture2D",
+      "tex1D",
+      "tex2D",
+      "tex3D",
+      "tex1Dfetch",
+      "tex1DLayered",
+      "tex2DLayered",
+      "cudaCreateTextureObject",
+      "cudaDestroyTextureObject",
+      "cudaGetTextureObjectResourceDesc",
+      "cudaGetTextureObjectTextureDesc",
+      "cudaGetTextureObjectResourceViewDesc"};
+
+  auto hasAnyFuncName = [&]() {
+    return internal::Matcher<NamedDecl>(
+        new internal::HasNameMatcher(APINamesSelected));
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyFuncName()))).bind("call"),
+                this);
+
+  MF.addMatcher(unresolvedLookupExpr(
+                    hasAnyDeclaration(namedDecl(hasAnyFuncName())),
+                    hasParent(callExpr(unless(parentStmt())).bind("callExpr")))
+                    .bind("unresolvedLookupExpr"),
+                this);
 }
 
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+
+  if (const UnresolvedLookupExpr *ULExpr =
+          getAssistNodeAsType<UnresolvedLookupExpr>(Result,
+                                                    "unresolvedLookupExpr")) {
+    const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
+    ExprAnalysis A;
+    A.analyze(CE);
+    emplaceTransformation(A.getReplacement());
+  }
+
   if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
     auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));

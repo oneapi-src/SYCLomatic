@@ -237,3 +237,58 @@ __device__ void foo() {
    float *ret;
    tex1D(ret, foo, 1.0);
 }
+
+template <class T>
+__device__ T fooFilter(float w0x, float w1x, float w2x, float w3x, T c0, T c1,
+                       T c2, T c3) {
+  T resultVal = (int)(c0 * w0x + c1 * w1x + c2 * w2x + c3 * w3x + 0.5f);
+  return resultVal;
+}
+
+template <class T, class R>
+__device__ R foo(const texture<T, 2, cudaReadModeElementType> texref,
+                            float x, float y) {
+  float px = floor(x - 2) + 1.0f;
+  float py = floor(y - 2) + 1.0f;
+
+  float fx = x - px;
+  float fy = y - py;
+  float w0x = 0;
+  float w1x = 0;
+  float w2x = 0;
+  float w3x = 0;
+
+  float w0y = 0;
+  float w1y = 0;
+  float w2y = 0;
+  float w3y = 0;
+
+  // CHECK:return fooFilter<R>(
+  // CHECK-NEXT:    w0x, w1x, w2x, w3x,
+  // CHECK-NEXT:    fooFilter<R>(w0y, w1y, w2y, w3y, texref.read(px, py),
+  // CHECK-NEXT:                 texref.read(px, py + 1), texref.read(px, py + 2),
+  // CHECK-NEXT:                 texref.read(px, py + 3)),
+  // CHECK-NEXT:    fooFilter<R>(w0y, w1y, w2y, w3y, texref.read(px + 1, py),
+  // CHECK-NEXT:                 texref.read(px + 1, py + 1), texref.read(px + 1, py + 2),
+  // CHECK-NEXT:                 texref.read(px + 1, py + 3)),
+  // CHECK-NEXT:    fooFilter<R>(w0y, w1y, w2y, w3y, texref.read(px + 2, py),
+  // CHECK-NEXT:                 texref.read(px + 2, py + 1), texref.read(px + 2, py + 2),
+  // CHECK-NEXT:                 texref.read(px + 2, py + 3)),
+  // CHECK-NEXT:    fooFilter<R>(w0y, w1y, w2y, w3y, texref.read(px + 3, py),
+  // CHECK-NEXT:                 texref.read(px + 3, py + 1), texref.read(px + 3, py + 2),
+  // CHECK-NEXT:                 texref.read(px + 3, py + 3)));
+  return fooFilter<R>(
+      w0x, w1x, w2x, w3x,
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(texref, px, py),
+                   tex2D(texref, px, py + 1), tex2D(texref, px, py + 2),
+                   tex2D(texref, px, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(texref, px + 1, py),
+                   tex2D(texref, px + 1, py + 1), tex2D(texref, px + 1, py + 2),
+                   tex2D(texref, px + 1, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(texref, px + 2, py),
+                   tex2D(texref, px + 2, py + 1), tex2D(texref, px + 2, py + 2),
+                   tex2D(texref, px + 2, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(texref, px + 3, py),
+                   tex2D(texref, px + 3, py + 1), tex2D(texref, px + 3, py + 2),
+                   tex2D(texref, px + 3, py + 3)));
+}
