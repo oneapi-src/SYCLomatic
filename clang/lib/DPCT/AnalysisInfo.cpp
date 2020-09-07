@@ -1916,7 +1916,7 @@ MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = "dpct::device_memory";
+    static std::string DeviceMemory = "dpct::global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {

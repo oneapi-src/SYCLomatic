@@ -120,7 +120,7 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
-// CHECK: static dpct::device_memory<uint32_t, 1> d_error(1);
+// CHECK: static dpct::global_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
 // CHECK: void fun(uint32_t *d_error){
@@ -224,7 +224,7 @@ __shared__ uint32_t share_v;
   atomicAdd(p_4, 1);
 }
 
-// CHECK:dpct::device_memory<uint32_t, 1> dmem(100);
+// CHECK:dpct::global_memory<uint32_t, 1> dmem(100);
 // CHECK-NEXT:void foo_4(uint8_t *dpct_local, uint32_t *dmem) {
 // CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;

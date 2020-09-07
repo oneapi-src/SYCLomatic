@@ -34,7 +34,7 @@ int main() {
 // CHECK-NEXT:        [&](sycl::handler &cgh) {
 // CHECK-NEXT:          sycl::stream stream_ct1(64 * 1024, 80, cgh);
 // CHECK-EMPTY:  
-// CHECK-NEXT:          dpct::device_memory<sycl::uint2, 1> al(16);
+// CHECK-NEXT:          dpct::global_memory<sycl::uint2, 1> al(16);
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // init global memory
 // CHECK-NEXT:          al.init();

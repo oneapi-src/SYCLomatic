@@ -12,7 +12,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: dpct::device_memory<TestStruct, 0> t1;
+// CHECK: dpct::global_memory<TestStruct, 0> t1;
 __device__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct *t1) {
@@ -21,9 +21,9 @@ __device__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: dpct::device_memory<float, 1> in(NUM_ELEMENTS);
+// CHECK: dpct::global_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
-// CHECK: dpct::device_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
+// CHECK: dpct::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], float *in) {
@@ -33,14 +33,14 @@ __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
 }
 
-// CHECK: dpct::device_memory<int, 0> al;
+// CHECK: dpct::global_memory<int, 0> al;
 __device__ int al;
-// CHECK: dpct::device_memory<int, 0> ainit(NUM_ELEMENTS);
+// CHECK: dpct::global_memory<int, 0> ainit(NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 const int num_elements = 16;
-// CHECK: dpct::device_memory<float, 1> fx(2);
-// CHECK: dpct::device_memory<float, 2> fy(num_elements, 4 * num_elements);
+// CHECK: dpct::global_memory<float, 1> fx(2);
+// CHECK: dpct::global_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
 // CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
@@ -112,7 +112,7 @@ int main() {
   // CHECK:   dpct::buffer_t d_out_buf_ct0 = dpct::get_buffer(d_out);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-NEXT:       dpct::global_memory<float, 1> tmp(64/*size*/);
   // CHECK-EMPTY:
   // CHECK-NEXT:       tmp.init();
   // CHECK-NEXT:       al.init();

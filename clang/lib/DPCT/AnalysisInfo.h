@@ -1570,11 +1570,11 @@ private:
   /// Get folded array size with original size expression following as comments.
   /// e.g.,
   /// #define SIZE 24
-  /// dpct::device_memory<int, 1>(24 /* SIZE */);
+  /// dpct::global_memory<int, 1>(24 /* SIZE */);
   /// Exception for particular case:
   /// __device__ int a[24];
   /// will be migrated to:
-  /// dpct::device_memory<int, 1> a(24);
+  /// dpct::global_memory<int, 1> a(24);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
@@ -1592,7 +1592,7 @@ private:
   /// comments.
   /// e.g.,
   /// #define SIZE 24
-  /// dpct::device_memory<int, 1>(24 /* SIZE */);
+  /// dpct::global_memory<int, 1>(24 /* SIZE */);
   void setArrayInfo(const ConstantArrayTypeLoc &TL, bool NeedFoldSize);
 
   /// Typically C++ array with template depedent size.

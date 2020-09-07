@@ -577,12 +577,12 @@ void testCommas() {
   free(h_A);
 }
 
-// CHECK: static dpct::device_memory<float, 1> d_A(1234567);
-// CHECK: static dpct::device_memory<float, 1> d_B(1234567);
+// CHECK: static dpct::global_memory<float, 1> d_A(1234567);
+// CHECK: static dpct::global_memory<float, 1> d_B(1234567);
 static __device__ float d_A[1234567];
 static __device__ float d_B[1234567];
 
-void testCommas_in_device_memory() {
+void testCommas_in_global_memory() {
   size_t size = 1234567 * sizeof(float);
   cudaError_t err;
   float *h_A = (float *)malloc(size);
@@ -933,7 +933,7 @@ void test_segmentation_fault() {
   cudaMalloc(&buffer, N*sizeof(float));
 }
 
-// CHECK: static dpct::device_memory<uint32_t, 1> d_error(1);
+// CHECK: static dpct::global_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
 void test_foo(){

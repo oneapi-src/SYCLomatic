@@ -17,7 +17,7 @@ void test() {
 
   // CHECK:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         extern dpct::device_memory<volatile int, 0> g_mutex;
+  // CHECK-NEXT:         extern dpct::global_memory<volatile int, 0> g_mutex;
   // CHECK-EMPTY:
   // CHECK-NEXT:         g_mutex.init();
   // CHECK-EMPTY:

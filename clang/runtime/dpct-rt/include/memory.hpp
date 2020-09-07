@@ -47,11 +47,11 @@ enum memcpy_direction {
   device_to_device,
   automatic
 };
-enum memory_attribute {
-  device = 0,
-  constant,
-  local,
-  shared,
+enum memory_region {
+  global = 0,  // device global memory
+  constant,    // device constant memroy
+  local,       // device local memory
+  shared,      // memory which can be accessed by host and device
 };
 
 // Byte type to use.
@@ -195,17 +195,17 @@ private:
   }
 };
 
-template <class T, memory_attribute Memory, size_t Dimension> class accessor;
-template <memory_attribute Memory, class T = byte_t> class memory_traits {
+template <class T, memory_region Memory, size_t Dimension> class accessor;
+template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr cl::sycl::access::address_space asp =
-      (Memory == device)
+      (Memory == global)
           ? cl::sycl::access::address_space::global_space
           : ((Memory == constant)
                  ? cl::sycl::access::address_space::constant_space
                  : cl::sycl::access::address_space::local_space);
   static constexpr cl::sycl::access::target target =
-      (Memory == device)
+      (Memory == global)
           ? cl::sycl::access::target::global_buffer
           : ((Memory == constant) ? cl::sycl::access::target::constant_buffer
                                   : cl::sycl::access::target::local);
@@ -794,8 +794,8 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
 }
 
 // dpct accessor used as kernel function and device function parameter
-template <class T, memory_attribute Memory, size_t Dimension> class accessor;
-template <class T, memory_attribute Memory> class accessor<T, Memory, 3> {
+template <class T, memory_region Memory, size_t Dimension> class accessor;
+template <class T, memory_region Memory> class accessor<T, Memory, 3> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
@@ -803,7 +803,7 @@ public:
   using accessor_t = typename memory_t::template accessor_t<3>;
   accessor(pointer_t data, const cl::sycl::range<3> &in_range)
       : _data(data), _range(in_range) {}
-  template <memory_attribute M = Memory>
+  template <memory_region M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const cl::sycl::range<3> &in_range)
@@ -817,7 +817,7 @@ private:
   pointer_t _data;
   cl::sycl::range<3> _range;
 };
-template <class T, memory_attribute Memory> class accessor<T, Memory, 2> {
+template <class T, memory_region Memory> class accessor<T, Memory, 2> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
@@ -825,7 +825,7 @@ public:
   using accessor_t = typename memory_t::template accessor_t<2>;
   accessor(pointer_t data, const cl::sycl::range<2> &in_range)
       : _data(data), _range(in_range) {}
-  template <memory_attribute M = Memory>
+  template <memory_region M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const cl::sycl::range<2> &in_range)
@@ -840,23 +840,24 @@ private:
   cl::sycl::range<2> _range;
 };
 
+namespace detail {
 // Variable with address space of global or constant
-template <class T, memory_attribute Memory, size_t Dimension>
-class global_memory {
+template <class T, memory_region Memory, size_t Dimension>
+class device_memory {
 public:
   using accessor_t =
       typename detail::memory_traits<Memory, T>::template accessor_t<Dimension>;
   using value_t = typename detail::memory_traits<Memory, T>::value_t;
   using dpct_accessor_t = dpct::accessor<T, Memory, Dimension>;
 
-  global_memory() : global_memory(cl::sycl::range<Dimension>(1)) {}
+  device_memory() : device_memory(cl::sycl::range<Dimension>(1)) {}
 
   /// Constructor of 1-D array with initializer list
   template <size_t D = Dimension>
-  global_memory(
+  device_memory(
       const typename std::enable_if<D == 1, cl::sycl::range<1>>::type &in_range,
       std::initializer_list<value_t> &&init_list)
-      : global_memory(in_range) {
+      : device_memory(in_range) {
     assert(init_list.size() <= in_range.size());
     _host_ptr = (value_t *)std::malloc(_size);
     std::memset(_host_ptr, 0, _size);
@@ -865,10 +866,10 @@ public:
 
   /// Constructor of 2-D array with initializer list
   template <size_t D = Dimension>
-  global_memory(
+  device_memory(
       const typename std::enable_if<D == 2, cl::sycl::range<2>>::type &in_range,
       std::initializer_list<std::initializer_list<value_t>> &&init_list)
-      : global_memory(in_range) {
+      : device_memory(in_range) {
     assert(init_list.size() <= in_range[0]);
     _host_ptr = (value_t *)std::malloc(_size);
     std::memset(_host_ptr, 0, _size);
@@ -881,12 +882,12 @@ public:
   }
 
   /// Constructor with range
-  global_memory(const cl::sycl::range<Dimension> &range_in)
+  device_memory(const cl::sycl::range<Dimension> &range_in)
       : _size(range_in.size() * sizeof(T)), _range(range_in), _reference(false),
         _host_ptr(nullptr), _device_ptr(nullptr) {
     static_assert(
-        (Memory == device) || (Memory == constant) || (Memory == shared),
-        "Global memory attribute should be constant, device or shared");
+        (Memory == global) || (Memory == constant) || (Memory == shared),
+        "device memory region should be global, constant or shared");
     /// Make sure that singleton class mem_mgr and dev_mgr will destruct later
     /// than this.
     detail::mem_mgr::instance();
@@ -895,10 +896,10 @@ public:
 
   /// Constructor with range
   template <class... Args>
-  global_memory(Args... Arguments)
-      : global_memory(cl::sycl::range<Dimension>(Arguments...)) {}
+  device_memory(Args... Arguments)
+      : device_memory(cl::sycl::range<Dimension>(Arguments...)) {}
 
-  ~global_memory() {
+  ~device_memory() {
     if (_device_ptr && !_reference)
       dpct_free(_device_ptr);
     if (_host_ptr)
@@ -922,8 +923,8 @@ public:
 
   /// The variable is assigned to a device pointer.
   void assign(value_t *src, size_t size) {
-    this->~global_memory();
-    new (this) global_memory(src, size);
+    this->~device_memory();
+    new (this) device_memory(src, size);
   }
 
   /// Get memory pointer of the memory object, which is virtual pointer when
@@ -972,7 +973,7 @@ public:
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
-  global_memory(value_t *memory_ptr, size_t size)
+  device_memory(value_t *memory_ptr, size_t size)
       : _size(size), _range(size / sizeof(T)), _reference(true),
         _device_ptr(memory_ptr) {}
 
@@ -993,19 +994,19 @@ private:
   value_t *_host_ptr;
   value_t *_device_ptr;
 };
-template <class T, memory_attribute Memory>
-class global_memory<T, Memory, 0> : public global_memory<T, Memory, 1> {
+template <class T, memory_region Memory>
+class device_memory<T, Memory, 0> : public device_memory<T, Memory, 1> {
 public:
-  using base = global_memory<T, Memory, 1>;
+  using base = device_memory<T, Memory, 1>;
   using value_t = typename base::value_t;
   using accessor_t =
       typename detail::memory_traits<Memory, T>::template accessor_t<0>;
 
   /// Constructor with initial value.
-  global_memory(const value_t &val) : base(cl::sycl::range<1>(1), {val}) {}
+  device_memory(const value_t &val) : base(cl::sycl::range<1>(1), {val}) {}
 
   /// Default constructor
-  global_memory() : base(1) {}
+  device_memory() : base(1) {}
 
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
@@ -1016,13 +1017,14 @@ public:
   }
 #endif // DPCT_USM_LEVEL_NONE
 };
+}
 
 template <class T, size_t Dimension>
-using device_memory = global_memory<T, device, Dimension>;
+using global_memory = detail::device_memory<T, global, Dimension>;
 template <class T, size_t Dimension>
-using constant_memory = global_memory<T, constant, Dimension>;
+using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
-using shared_memory = global_memory<T, shared, Dimension>;
+using shared_memory = detail::device_memory<T, shared, Dimension>;
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

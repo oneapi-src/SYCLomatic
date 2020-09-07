@@ -26,7 +26,7 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 // CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK: dpct::device_memory<int, 1> const_ptr;
+// CHECK: dpct::global_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
 // CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
