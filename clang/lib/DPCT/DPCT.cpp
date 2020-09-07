@@ -424,6 +424,12 @@ public:
     std::unordered_set<std::string> DuplicateFilter;
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
+
+      // When processing __constant__ between two executions, tool may set the
+      // replacement from TextModification as nullptr to ignore this replacement.
+      if (Repl == nullptr)
+        continue;
+
       // For file path got in AST may be different with the one in preprocessing
       // stage, here only the file name is used to retrieve IncludeMapSet.
       const std::string FileName =
@@ -1058,6 +1064,7 @@ int runDPCT(int argc, const char **argv) {
                                 ArgumentInsertPosition::BEGIN));
 #endif
   DpctGlobalInfo::setInRoot(InRoot);
+  DpctGlobalInfo::setOutRoot(OutRoot);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);

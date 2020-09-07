@@ -1,9 +1,13 @@
 // RUN: cat %s > %T/macro_test.cu
+// RUN: cat %S/macro_test.h > %T/macro_test.h
 // RUN: cd %T
-// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
-
+// RUN: rm -rf %T/macro_test_output
+// RUN: mkdir %T/macro_test_output
+// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
+// RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
+#include "macro_test.h"
 
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
@@ -64,9 +68,9 @@ void foo() {
 #endif
 
 
-  // CHECK: (*d3.A)[0] = 3;
-  // CHECK-NEXT: d3.B[0] = 2;
-  // CHECK-NEXT: EMPTY_MACRO(d3.B[0]);
+  // CHECK: (*d3.A)[2] = 3;
+  // CHECK-NEXT: d3.B[2] = 2;
+  // CHECK-NEXT: EMPTY_MACRO(d3.B[2]);
   // CHECK-NEXT: GET_MEMBER_MACRO(d3.B);
   d3.A->x = 3;
   d3.B.x = 2;
@@ -82,11 +86,7 @@ void foo() {
   //CHECK-NEXT: */
   //CHECK-NEXT: CALL((q_ct1.submit([&](sycl::handler &cgh) {
   //CHECK-NEXT:   auto dpct_global_range = x * x;
-  //CHECK:   cgh.parallel_for(
-  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),
-  //CHECK-NEXT:                                        dpct_global_range.get(1),
-  //CHECK-NEXT:                                        dpct_global_range.get(0)),
-  //CHECK-NEXT:                         sycl::range<3>(x.get(2), x.get(1), x.get(0))),
+  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, x),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:         foo_kernel();
   //CHECK-NEXT:       });
@@ -212,44 +212,36 @@ double cosine = cos(2 * PI);
 MACRO_KC
 
 
-//CHECK: #define HARD_KC(NAME, a, b, c, d)                                                   \
+//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
 //CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
 //CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(                                                          \
-//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),             \
-//CHECK-NEXT:                                          dpct_global_range.get(1),             \
-//CHECK-NEXT:                                          dpct_global_range.get(0)),            \
-//CHECK-NEXT:                           sycl::range<3>(b.get(2), b.get(1), b.get(0))),       \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
 //CHECK-NEXT:   migration result may be incorrect. You need to verify the definition of the
 //CHECK-NEXT:   macro.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   HARD_KC(foo3, sycl::range<3>(3, 1, 1), sycl::range<3>(2, 1, 1), 1, 0)
+//CHECK-NEXT:   HARD_KC(foo3, sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
 #define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
 HARD_KC(foo3,3,2,1,0)
 
 
-// CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
-// CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-// CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
-// CHECK-NEXT:                                                                                \
-// CHECK-NEXT:     auto c_ct0 = c;                                                            \
-// CHECK-NEXT:     auto d_ct1 = d;                                                            \
-// CHECK-NEXT:                                                                                \
-// CHECK-NEXT:     cgh.parallel_for(                                                          \
-// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),             \
-// CHECK-NEXT:                                          dpct_global_range.get(1),             \
-// CHECK-NEXT:                                          dpct_global_range.get(0)),            \
-// CHECK-NEXT:                           sycl::range<3>(b.get(2), b.get(1), b.get(0))),       \
-// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
-// CHECK-NEXT:   });
+//CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
+//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
+//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     auto c_ct0 = c;                                                            \
+//CHECK-NEXT:     auto d_ct1 = d;                                                            \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
+//CHECK-NEXT:   });
 #define MACRO_KC2(a,b,c,d) foo3<<<a, b, 0>>>(c,d);
 
 dim3 griddim = 2;
@@ -261,10 +253,10 @@ MACRO_KC2(griddim,threaddim,1,0)
 // [Note] Since 3 and 2 are migrated to sycl::range<3>, if they are used in macro as native numbers,
 // there might be some issues in the migrated code.
 // Since this is a corner case, not to emit warning message here.
-// CHECK: MACRO_KC2(sycl::range<3>(3, 1, 1), sycl::range<3>(2, 1, 1), 1, 0)
+// CHECK: MACRO_KC2(sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
 MACRO_KC2(3,2,1,0)
 
-// CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), sycl::range<3>(2, 1, 1), 1, 0)
+// CHECK: MACRO_KC2(sycl::range<3>(3, 4, 5), sycl::range<3>(1, 1, 2), 1, 0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
@@ -581,6 +573,14 @@ __global__ void templatefoo(){
 void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
+
+//CHECK: void foo11(sycl::nd_item<3> item_ct1){
+//CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
+//CHECK-NEXT: }
+__global__ void foo11(){
+  exp(THREAD_IDX_X);
+}
+
 //CHECK: /*
 //CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 will be migrated to the corresponding
 //CHECK-NEXT: fundmental types which cannot be inherited. You may need to rewrite the code.

@@ -140,6 +140,9 @@ void DpctFileInfo::buildReplacements() {
   // postfix "_ct" is added to this __constant__ symbol’s name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (auto Entry : MemVarMap) {
+    if (Entry.second->isIgnore())
+      continue;
+
     auto Name = Entry.second->getName();
     auto &GlobalVarNameSet = dpct::DpctGlobalInfo::getGlobalVarNameSet();
     if (GlobalVarNameSet.find(Name) != end(GlobalVarNameSet)) {
@@ -586,28 +589,16 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
       "(1, 1, 1)";
   if (ExecutionConfig.DeclGlobalRange) {
-    printReverseRange(Printer, "dpct_global_range");
+    Printer << "dpct_global_range";
   } else if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
-    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                     ExecutionConfig.DeclLocalRange,
-                     ExecutionConfig.LocalDirectRef);
+    Printer << ExecutionConfig.LocalSize;
   } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr) {
-    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
-                     ExecutionConfig.DeclGroupRange,
-                     ExecutionConfig.GroupDirectRef);
+    Printer << ExecutionConfig.GroupSize;
   } else {
-    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
-                     ExecutionConfig.DeclGroupRange,
-                     ExecutionConfig.GroupDirectRef);
-    Printer << " * ";
-    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                     ExecutionConfig.DeclLocalRange,
-                     ExecutionConfig.LocalDirectRef);
+    Printer << ExecutionConfig.GroupSize << " * " << ExecutionConfig.LocalSize;
   }
   Printer << ", ";
-  printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
-                   ExecutionConfig.DeclLocalRange,
-                   ExecutionConfig.LocalDirectRef);
+  Printer << ExecutionConfig.LocalSize;
   (Printer << "), ").newLine();
   Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
                DpctGlobalInfo::getItemName(), ") {");
@@ -1790,7 +1781,7 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
   }
 }
 
-  MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
+MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
     const VarDecl *Var)
   : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
   Scope((Var->isInLocalScope())
@@ -1806,12 +1797,13 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
     setInitList(Var->getInit());
   if (getType()->getDimension() == 0 && Attr == Constant) {
     AccMode = Value;
-  }
-  else if (getType()->getDimension() <= 1) {
+  } else if (getType()->getDimension() <= 1) {
     AccMode = Pointer;
-  }
-  else {
+  } else {
     AccMode = Accessor;
+  }
+  if (Var->getStorageClass() == SC_Static) {
+    IsStatic = true;
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {

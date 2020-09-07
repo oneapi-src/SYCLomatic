@@ -89,7 +89,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(16, 1, 1), sycl::range<3>(16, 1, 1), args, 0, 0);
+  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, 0);
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

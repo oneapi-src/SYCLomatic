@@ -28,6 +28,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <regex>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -180,6 +181,31 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 
+  // In order to check whether __constant__ macro is empty, we first record
+  // the expansion location of the __constant__, then check each __annotate__
+  // macro, if the expansion locations are same and the content is empty, then
+  // it means this __constant__ variable is used in host.
+  // In this case, we need add "host_constant" flag in the replacement of removing
+  // "__constant__"; and record the offset of the begining of this line for finding
+  // this replacement in MemVarRule.
+  // Since the varible name is difficult to get here, the warning is also emitted
+  // in MemVarRule.
+  if (MacroNameTok.getKind() == tok::identifier &&
+      MacroNameTok.getIdentifierInfo() &&
+      MacroNameTok.getIdentifierInfo()->getName() == "__annotate__" &&
+      !MD.getMacroInfo()->param_empty()) {
+    SourceLocation Loc = SM.getExpansionLoc(Range.getBegin());
+
+    if (auto TM = DpctGlobalInfo::getInstance().findConstantMacroTMInfo(Loc)) {
+      TM->setLineBeginOffset(getOffsetOfLineBegin(Loc, SM));
+      if (MD.getMacroInfo()->getNumTokens() == 0) {
+        TM->setConstantFlag(dpct::ConstantFlagType::Host);
+      } else {
+        TM->setConstantFlag(dpct::ConstantFlagType::Device);
+      }
+    }
+  }
+
   if (!IsInRoot) {
     return;
   }
@@ -205,12 +231,24 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!MacroNameTok.getIdentifierInfo()) {
     return;
   }
+
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
        Name == "__constant__" || Name == "__launch_bounds__" ||
        Name == "__shared__")) {
-    TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(Range));
+    auto TM = removeMacroInvocationAndTrailingSpaces(Range);
+
+    if (Name == "__constant__") {
+      if (!DpctGlobalInfo::getInstance().findConstantMacroTMInfo(
+              SM.getExpansionLoc(Range.getBegin()))) {
+        DpctGlobalInfo::getInstance().insertConstantMacroTMInfo(
+            SM.getExpansionLoc(Range.getBegin()), TM);
+        TransformSet.emplace_back(TM);
+      }
+    } else {
+      TransformSet.emplace_back(TM);
+    }
   }
 
   if (TKind == tok::identifier && Name == "__forceinline__") {
@@ -240,9 +278,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 }
-TextModification *
+std::shared_ptr<TextModification>
 IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
-  return new ReplaceText(Range.getBegin(),
+  return std::make_shared<ReplaceText>(Range.getBegin(),
                          getLenIncludingTrailingSpaces(Range, SM), "", true);
 }
 
@@ -608,6 +646,8 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(), InFile)] = false;
     }
     IsFileInCmd = false;
+
+    loadYAMLIntoFileInfo(InFile);
   }
 }
 
@@ -8412,8 +8452,7 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                                       unless(hasParent(arraySubscriptExpr())))
                                       .bind("impl")),
                         anything()),
-                  to(DeclMatcher.bind("var")),
-                  hasAncestor(functionDecl().bind("func")))
+                  to(DeclMatcher), hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
 
@@ -8448,66 +8487,365 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
   }
 }
 
+void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
+  // 1. emit DPCT1055 warning
+  // 2. add a new variable for host
+  // 3. insert dpct::constant_memory and add the info from that replacment into
+  //    current replacemrnt.
+  // 4. remove the replacement of removing "__constant__". In yaml case, clang
+  //    replacement merging mechanism will occur error due to overlapping.
+  //    The reason of setting offset as 0 is to avoid doing merge.
+  //    4.1 About removing the replacement of removing "__constant__",
+  //        e.g., the code is: static __constant__ a;
+  //        the repl of removing "__constant__" and repl of replacing
+  //        "static __constant__ a;" to "static dpct::constant_memory<float, 0> a;"
+  //        are overlapped. And this merging is not in dpct but in clang's file
+  //        (Replacement.cpp), clang's merging mechanism will occur error due to
+  //        overlapping.
+  //    4.2 About setting the offset equals to 0,
+  //        if we keep the original offset, in clang's merging, a new merged
+  //        replacement will be saved and it will not contain the addational
+  //        info we added. So we need to avoid this merge.
+  // 5. remove previous DPCT1056 warning (will be handled in removeHostConstantWarning)
+
+  auto &SM = DpctGlobalInfo::getSourceManager();
+
+  std::string HostVariableName = VD->getNameAsString() + "_host_ct1";
+  report(VD->getBeginLoc(), Diagnostics::HOST_DEVICE_CONSTANT, false,
+         VD->getNameAsString(), HostVariableName);
+
+  std::string InitStr =
+      VD->hasInit() ? ExprAnalysis::ref(VD->getInit()) : std::string("");
+  std::string NewDecl =
+      DpctGlobalInfo::getReplacedTypeName(VD->getType()) + " " +
+      HostVariableName +
+      (InitStr.empty() ? InitStr : std::string(" = " + InitStr)) + ";" +
+      getNL() + getIndent(SM.getExpansionLoc(VD->getBeginLoc()), SM).str();
+  if (VD->getStorageClass() == SC_Static)
+    NewDecl = "static " + NewDecl;
+  emplaceTransformation(new InsertText(SM.getExpansionLoc(VD->getBeginLoc()),
+                                       std::move(NewDecl)));
+
+  auto DeviceRepl = ReplaceVarDecl::getVarDeclReplacement(
+      VD, MemVarInfo::buildMemVarInfo(VD)->getDeclarationReplacement());
+  DeviceRepl->setConstantFlag(dpct::ConstantFlagType::HostDevice);
+  DeviceRepl->setConstantOffset(R.getConstantOffset());
+  DeviceRepl->setInitStr(InitStr);
+  DeviceRepl->setNewHostVarName(HostVariableName);
+  emplaceTransformation(DeviceRepl);
+
+  R = tooling::Replacement(R.getFilePath(), 0, 0, "");
+}
+
+void MemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
+  // 1. change DeviceConstant to HostDeviceConstant
+  // 2. emit DPCT1055 warning (warning info is from previous device case)
+  // 3. add a new variable for host (decl info is from previous device case)
+
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  R.setConstantFlag(dpct::ConstantFlagType::HostDevice);
+
+  std::string HostVariableName = R.getNewHostVarName();
+  std::string InitStr = R.getInitStr();
+  std::string NewDecl =
+      DpctGlobalInfo::getReplacedTypeName(VD->getType()) + " " +
+      HostVariableName +
+      (InitStr.empty() ? InitStr : std::string(" = " + InitStr)) + ";" +
+      getNL() + getIndent(SM.getExpansionLoc(VD->getBeginLoc()), SM).str();
+  if (VD->getStorageClass() == SC_Static)
+    NewDecl = "static " + NewDecl;
+
+  SourceLocation SL = SM.getComposedLoc(
+      SM.getDecomposedLoc(SM.getExpansionLoc(VD->getBeginLoc())).first,
+      R.getConstantOffset());
+  SL = DiagnosticsUtils::getStartOfLine(
+      SL, SM, DpctGlobalInfo::getContext().getLangOpts(), false);
+  report(SL, Diagnostics::HOST_DEVICE_CONSTANT, false, VD->getNameAsString(),
+         HostVariableName);
+
+  emplaceTransformation(new InsertText(SL, std::move(NewDecl)));
+}
+
+void MemVarRule::removeHostConstantWarning(Replacement &R){
+  std::string ReplStr = R.getReplacementText().str();
+
+  std::string Pattern =
+      "/\\*\\s+DPCT" +
+      std::to_string(static_cast<int>(Diagnostics::HOST_CONSTANT)) + ":[0-9]+: " +
+      DiagnosticsUtils::getWarningTextWithOutPrefix(Diagnostics::HOST_CONSTANT,
+                                                    "[_a-zA-Z][_a-zA-Z0-9]+") +
+      "\\s+\\*/" + getNL();
+  std::regex RE(Pattern);
+  std::smatch MRes;
+  std::string Result;
+  std::regex_replace(std::back_inserter(Result), ReplStr.begin(), ReplStr.end(),
+                     RE, "");
+  R.setReplacementText(Result);
+}
+
+void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
+                                          std::shared_ptr<MemVarInfo> Info) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (Info->isAnonymousType()) {
+    // keep the origin type declaration, only remove variable name
+    //  }  a_variable  ,  b_variable ;
+    //   |                |
+    // begin             end
+    // ReplaceToken replacing [begin, end]
+    SourceLocation Begin =
+        SM.getExpansionLoc(Info->getDeclOfVarType()->getBraceRange().getEnd());
+    Begin = Begin.getLocWithOffset(1); // this token is }
+    SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
+    emplaceTransformation(new ReplaceToken(Begin, End, ""));
+
+    std::string NewTypeName = Info->getLocalTypeName();
+
+    // add a typename
+    emplaceTransformation(new InsertText(
+        SM.getExpansionLoc(
+            Info->getDeclOfVarType()->getBraceRange().getBegin()),
+        " " + NewTypeName));
+
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    auto DS = Info->getDeclStmtOfVarType();
+    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
+    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
+    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
+                            NewTypeName + "* " + Info->getName() + " = (" +
+                            NewTypeName + "*)" + Info->getNameAppendSuffix() +
+                            ";";
+    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+  } else if (auto DS = Info->getDeclStmtOfVarType()) {
+    // remove var decl
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+        MemVar, Info->getDeclarationReplacement()));
+
+    Info->setLocalTypeName(Info->getType()->getBaseName());
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
+    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
+    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
+                            Info->getType()->getBaseName() + "* " +
+                            Info->getName() + " = (" +
+                            Info->getType()->getBaseName() + "*)" +
+                            Info->getNameAppendSuffix() + ";";
+    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+  }
+}
+
+
+bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
+                                 std::shared_ptr<MemVarInfo> Info) {
+  auto &SM  = DpctGlobalInfo::getSourceManager();
+  auto BeginLoc = SM.getExpansionLoc(MemVar->getBeginLoc());
+  auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
+  auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+  auto &S = FileInfo->getConstantMacroTMSet();
+  for (auto &TM : S) {
+    if (TM == nullptr)
+      continue;
+    if (TM->getConstantFlag() == dpct::ConstantFlagType::Device &&
+        TM->getLineBeginOffset() == OffsetOfLineBegin) {
+      TM->setIgnoreTM(true);
+      // current __constant__ variable used in device, using
+      // OffsetOfLineBegin link the R(reomving __constant__) and
+      // R(dcpt::constant_memery):
+      // 1. check previous processed replacements, if found, do not check
+      // info from yaml
+      auto &M = FileInfo->getRepls().getReplMap();
+      bool RemoveWarning = false;
+      for (auto &R : M) {
+        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Host &&
+            R.second->getConstantOffset() == TM->getConstantOffset()) {
+          // using flag and the offset of __constant__ to link
+          // R(dcpt::constant_memery)  and R(reomving __constant__) from
+          // previous exection previous is host, current is device:
+          previousHCurrentD(MemVar, *(R.second));
+          dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(
+              MemVar->getNameAsString());
+          RemoveWarning = true;
+          break;
+        } else if ((R.second->getConstantFlag() ==
+                        dpct::ConstantFlagType::Device ||
+                    R.second->getConstantFlag() ==
+                        dpct::ConstantFlagType::HostDevice) &&
+                   R.second->getConstantOffset() == TM->getConstantOffset()) {
+          TM->setIgnoreTM(true);
+          return true;
+        }
+      }
+      if (RemoveWarning) {
+        for (auto &R : M) {
+          if (R.second->getConstantOffset() == TM->getConstantOffset()) {
+            removeHostConstantWarning(*(R.second));
+            TM->setIgnoreTM(true);
+            return true;
+          }
+        }
+        TM->setIgnoreTM(true);
+        return true;
+      }
+
+      // 2. if no info found, check info from yaml
+      if (FileInfo->PreviousTUReplFromYAML) {
+        auto &ReplsFromYAML = FileInfo->getReplacements();
+        for (auto &R : ReplsFromYAML) {
+          if (R.getConstantFlag() == dpct::ConstantFlagType::Host &&
+              R.getConstantOffset() == TM->getConstantOffset()) {
+            // using flag and the offset of __constant__ to link
+            // R(dcpt::constant_memery) and R(reomving __constant__) from
+            // previous execution previous is host, current is device:
+            previousHCurrentD(MemVar, R);
+            dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(
+                MemVar->getNameAsString());
+            RemoveWarning = true;
+            break;
+          } else if ((R.getConstantFlag() == dpct::ConstantFlagType::Device ||
+                      R.getConstantFlag() ==
+                          dpct::ConstantFlagType::HostDevice) &&
+                     R.getConstantOffset() == TM->getConstantOffset()) {
+            TM->setIgnoreTM(true);
+            return true;
+          }
+        }
+        if (RemoveWarning) {
+          for (auto &R : ReplsFromYAML) {
+            if (R.getConstantOffset() == TM->getConstantOffset()) {
+              removeHostConstantWarning(R);
+              TM->setIgnoreTM(true);
+              return true;
+            }
+          }
+          TM->setIgnoreTM(true);
+          return true;
+        }
+      }
+
+      // Code here means this is the first migration, need save info to
+      // replacement
+      Info->setIgnoreFlag(false);
+      TM->setIgnoreTM(true);
+      auto RVD = ReplaceVarDecl::getVarDeclReplacement(
+          MemVar, Info->getDeclarationReplacement());
+      if (!RVD)
+        return true;
+      RVD->setConstantFlag(TM->getConstantFlag());
+      RVD->setConstantOffset(TM->getConstantOffset());
+      RVD->setInitStr(MemVar->hasInit() ? ExprAnalysis::ref(MemVar->getInit())
+                                        : std::string(""));
+      RVD->setNewHostVarName(MemVar->getNameAsString() + "_host_ct1");
+      emplaceTransformation(RVD);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto BeginLoc = SM.getExpansionLoc(VD->getBeginLoc());
+  auto OffsetOfLineBegin = getOffsetOfLineBegin(BeginLoc, SM);
+  auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+  auto &S = FileInfo->getConstantMacroTMSet();
+  for (auto &TM : S) {
+    if (TM == nullptr)
+      continue;
+    if (TM->getConstantFlag() == dpct::ConstantFlagType::Host &&
+        TM->getLineBeginOffset() == OffsetOfLineBegin) {
+      // current __constant__ variable used in host, using OffsetOfLineBegin
+      // link the R(reomving __constant__) and here
+
+      // 1. check previous processed replacements, if found, do not check
+      // info from yaml
+      auto &M = FileInfo->getRepls().getReplMap();
+      for (auto &R : M) {
+        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Device &&
+            R.second->getConstantOffset() == TM->getConstantOffset()) {
+          // using flag and the offset of __constant__ to link previous
+          // exection previous is device, current is host:
+          previousDCurrentH(VD, *(R.second));
+          dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+          TM->setIgnoreTM(true);
+          return true;
+        } else if ((R.second->getConstantFlag() ==
+                        dpct::ConstantFlagType::Host ||
+                    R.second->getConstantFlag() ==
+                        dpct::ConstantFlagType::HostDevice) &&
+                   R.second->getConstantOffset() == TM->getConstantOffset()) {
+          if (R.second->getConstantFlag() == dpct::ConstantFlagType::HostDevice)
+            dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+          TM->setIgnoreTM(true);
+          return true;
+        }
+      }
+
+      // 2. if no info found, check info from yaml
+      if (FileInfo->PreviousTUReplFromYAML) {
+        auto &ReplsFromYAML = FileInfo->getReplacements();
+        for (auto &R : ReplsFromYAML) {
+          if (R.getConstantFlag() == dpct::ConstantFlagType::Device &&
+              R.getConstantOffset() == TM->getConstantOffset()) {
+            // using flag and the offset of __constant__ to link here and
+            // R(reomving __constant__) from previous exection previous is
+            // device, current is host:
+            previousDCurrentH(VD, R);
+            dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+            TM->setIgnoreTM(true);
+            return true;
+          } else if ((R.getConstantFlag() == dpct::ConstantFlagType::Host ||
+                      R.getConstantFlag() ==
+                          dpct::ConstantFlagType::HostDevice) &&
+                     R.getConstantOffset() == TM->getConstantOffset()) {
+            if (R.getConstantFlag() == dpct::ConstantFlagType::HostDevice)
+              dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+            TM->setIgnoreTM(true);
+            return true;
+          }
+        }
+      }
+
+      // Code here means this is the first migration, only emit a warning
+      // Add the constant offset in the replacement
+      // The constant offset will be used in previousHCurrentD to distingush
+      // uncecessary warnings.
+      if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
+                 VD->getNameAsString())) {
+        TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+      }
+    }
+  }
+  return false;
+}
+
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    auto &SM  = DpctGlobalInfo::getSourceManager();
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
     if (Info->isTypeDeclaredLocal()) {
-      if (Info->isAnonymousType()) {
-        // keep the origin type declaration, only remove variable name
-        //  }  a_variable  ,  b_variable ;
-        //   |                |
-        // begin             end
-        // ReplaceToken replacing [begin, end]
-        SourceLocation Begin = SM.getExpansionLoc(
-            Info->getDeclOfVarType()->getBraceRange().getEnd());
-        Begin = Begin.getLocWithOffset(1); // this token is }
-        SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
-        emplaceTransformation(new ReplaceToken(Begin, End, ""));
-
-        std::string NewTypeName = Info->getLocalTypeName();
-
-        // add a typename
-        emplaceTransformation(new InsertText(
-            SM.getExpansionLoc(
-                Info->getDeclOfVarType()->getBraceRange().getBegin()),
-            " " + NewTypeName));
-
-        // add typecast for the __shared__ variable, since after migration the
-        // __shared__ variable type will be uint8_t*
-        auto DS = Info->getDeclStmtOfVarType();
-        SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-        InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-        std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                                NewTypeName + "* " + Info->getName() + " = (" +
-                                NewTypeName + "*)" +
-                                Info->getNameAppendSuffix() + ";";
-        emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
-      } else if (auto DS = Info->getDeclStmtOfVarType()) {
-        // remove var decl
-        emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-            MemVar,
-            Info->getDeclarationReplacement()));
-
-        Info->setLocalTypeName(Info->getType()->getBaseName());
-        // add typecast for the __shared__ variable, since after migration the
-        // __shared__ variable type will be uint8_t*
-        SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-        InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-        std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                                Info->getType()->getBaseName() + "* " +
-                                Info->getName() + " = (" +
-                                Info->getType()->getBaseName() + "*)" +
-                                Info->getNameAppendSuffix() + ";";
-        emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
-      }
+      processTypeDeclaredLocal(MemVar, Info);
     } else {
+      // This IgnoreFlag is used to disable the replacement of
+      // "dpct::constant_memory<T, 0> a;"
+      // The reason is in previous migration executions, this variable has been
+      // migrated and saved the replacement in yaml. That replacement maybe has
+      // both host and device replacements, which is different from current
+      // replacement (only device). We want to use the Repl in yaml. so ignore
+      // this replacement.
+      Info->setIgnoreFlag(true);
+      if (MemVar->hasAttr<CUDAConstantAttr>()) {
+        if (currentIsDevice(MemVar, Info))
+          return;
+      }
+
+      Info->setIgnoreFlag(false);
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-          MemVar,
-          MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+          MemVar, Info->getDeclarationReplacement()));
     }
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
@@ -8539,8 +8877,12 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
     bool IsHost =
         !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
           VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<CUDAManagedAttr>());
-    if(IsHost)
+    if (IsHost) {
       dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
+
+      if (currentIsHost(VD, VarName))
+        return;
+    }
   }
 }
 
@@ -10592,8 +10934,9 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
       auto Field = ME->getMemberNameInfo().getAsString();
       auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
       if (ReplField.empty()) {
-        return report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
+        report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
                       Field);
+        return;
       }
       emplaceTransformation(new RenameFieldInMemberExpr(ME, ReplField + "()"));
       if (Field == "addressMode") {

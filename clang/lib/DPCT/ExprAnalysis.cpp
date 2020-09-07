@@ -371,10 +371,13 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
                                    3)
         << "(";
     ArgumentAnalysis A;
+    std::string ArgStr = "";
     for (auto Arg : Ctor->arguments()) {
       A.analyze(Arg);
-      OS << A.getReplacedString() << ", ";
+      ArgStr = ", " + A.getReplacedString() + ArgStr;
     }
+    ArgStr.replace(0, 2, "");
+    OS << ArgStr << ")";
     OS.flush();
 
     // Special handling for implicit ctor.
@@ -389,9 +392,9 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       return addReplacement(
           SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
           SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
-          ArgsString.replace(ArgsString.length() - 2, 2, ")"));
+          ArgsString);
     }
-    addReplacement(Ctor, ArgsString.replace(ArgsString.length() - 2, 2, ")"));
+    addReplacement(Ctor, ArgsString);
   }
 }
 

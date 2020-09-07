@@ -237,6 +237,7 @@ public:
   inline void addExtReplacement(std::shared_ptr<ExtReplacement> NewRepl) {
     for (auto Repl = SubExprRepl.begin(); Repl != SubExprRepl.end();) {
       if ((*Repl)->getFilePath() != NewRepl->getFilePath()) {
+        Repl++;
         continue;
       } else if ((*Repl)->getOffset() <= NewRepl->getOffset() &&
         (*Repl)->getOffset() + (*Repl)->getLength() >=
@@ -246,8 +247,9 @@ public:
         (*Repl)->getOffset() + (*Repl)->getLength() <=
         NewRepl->getOffset() + NewRepl->getLength()) {
         SubExprRepl.erase(Repl);
-        if (Repl == SubExprRepl.end())
+        if (Repl == SubExprRepl.end()) {
           break;
+        }
       } else {
         Repl++;
       }

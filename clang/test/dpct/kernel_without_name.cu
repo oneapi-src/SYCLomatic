@@ -34,7 +34,7 @@ void testReference(const int &i) {
   // CHECK-NEXT:     auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
-  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:       sycl::nd_range<3>(dpct_global_range, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPU(i, item_ct1);
   // CHECK-NEXT:       });
@@ -59,7 +59,7 @@ struct TestThis {
     // CHECK-NEXT:     auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
-    // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+    // CHECK-NEXT:       sycl::nd_range<3>(dpct_global_range, threaddim),
     // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:         testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
     // CHECK-NEXT:       });

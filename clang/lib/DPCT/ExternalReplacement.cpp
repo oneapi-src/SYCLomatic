@@ -14,6 +14,7 @@
 //   -merage replacement in current migration with previous migration.
 
 #include "Utility.h"
+#include "AnalysisInfo.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -53,7 +54,6 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
   std::ofstream File(YamlFile.str(), std::ios::binary);
   llvm::raw_os_ostream Stream(File);
   Stream << YamlContent;
-
   return 0;
 }
 
@@ -108,18 +108,20 @@ void mergeAndUniqueReps(Replacements &Replaces,
   }
 }
 
-int mergeExternalReps(std::string SrcFileName, Replacements &Replaces) {
-  std::string YamlFile = SrcFileName + ".yaml";
-  clang::tooling::TranslationUnitReplacements PreTU;
-  int ret = 0;
-  if (fs::exists(YamlFile)) {
+int mergeExternalReps(std::string InRootSrcFilePath,
+                      std::string OutRootSrcFilePath, Replacements &Replaces) {
+  std::string YamlFile = OutRootSrcFilePath + ".yaml";
+
+  auto PreTU = clang::dpct::DpctGlobalInfo::getInstance()
+                   .getReplInfoFromYAMLSavedInFileInfo(InRootSrcFilePath);
+
+  if (PreTU) {
     llvm::errs() << YamlFile << " exist, try to merge it.\n";
-    ret = loadFromYaml(std::move(YamlFile), PreTU);
-    if (ret == 0) {
-      mergeAndUniqueReps(Replaces, PreTU);
-    }
+
+    mergeAndUniqueReps(Replaces, *PreTU);
   }
+
   llvm::errs() << "Save out new version " << YamlFile << " file\n";
-  save2Yaml(std::move(YamlFile), std::move(SrcFileName), Replaces);
-  return ret;
+  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Replaces);
+  return 0;
 }

@@ -120,7 +120,7 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
-// CHECK: dpct::device_memory<uint32_t, 1> d_error(1);
+// CHECK: static dpct::device_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
 // CHECK: void fun(uint32_t *d_error){

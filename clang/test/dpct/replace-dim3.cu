@@ -39,46 +39,46 @@ int main() {
 
   // CHECK: sycl::range<3> round1(1, 1, 1);
   dim3 round1(1);
-  // CHECK: sycl::range<3> round1_1(NUM, 1, 1);
+  // CHECK: sycl::range<3> round1_1(1, 1, NUM);
   dim3 round1_1(NUM);
 
-  // CHECK: sycl::range<3> round2(2, 1, 1);
+  // CHECK: sycl::range<3> round2(1, 1, 2);
   dim3 round2(2, 1);
-  // CHECK: sycl::range<3> round2_1(NUM, NUM, 1);
+  // CHECK: sycl::range<3> round2_1(1, NUM, NUM);
   dim3 round2_1(NUM, NUM);
 
-  // CHECK: sycl::range<3> assign = sycl::range<3>(32, 1, 1);
+  // CHECK: sycl::range<3> assign = sycl::range<3>(1, 1, 32);
   dim3 assign = 32;
-  // CHECK: sycl::range<3> assign_1 = sycl::range<3>(NUM, 1, 1);
+  // CHECK: sycl::range<3> assign_1 = sycl::range<3>(1, 1, NUM);
   dim3 assign_1 = NUM;
 
-  // CHECK: sycl::range<3> castini = sycl::range<3>(4, 1, 1);
+  // CHECK: sycl::range<3> castini = sycl::range<3>(1, 1, 4);
   dim3 castini = (dim3)4;
-  // CHECK: sycl::range<3> castini_1 = sycl::range<3>(NUM, 1, 1);
+  // CHECK: sycl::range<3> castini_1 = sycl::range<3>(1, 1, NUM);
   dim3 castini_1 = (dim3)NUM;
 
-  // CHECK: sycl::range<3> castini2 = sycl::range<3>(2, 2, 1);
+  // CHECK: sycl::range<3> castini2 = sycl::range<3>(1, 2, 2);
   dim3 castini2 = dim3(2, 2);
-  // CHECK: sycl::range<3> castini2_1 = sycl::range<3>(NUM, NUM, 1);
+  // CHECK: sycl::range<3> castini2_1 = sycl::range<3>(1, NUM, NUM);
   dim3 castini2_1 = dim3(NUM, NUM);
 
-  // CHECK: sycl::range<3> castini3 = sycl::range<3>(3, 1, 10);
+  // CHECK: sycl::range<3> castini3 = sycl::range<3>(10, 1, 3);
   dim3 castini3 = dim3(3, 1, 10);
   // CHECK: sycl::range<3> castini3_1 = sycl::range<3>(NUM, NUM, NUM);
   dim3 castini3_1 = dim3(NUM, NUM, NUM);
 
-  // CHECK: deflt = sycl::range<3>(3, 1, 1);
+  // CHECK: deflt = sycl::range<3>(1, 1, 3);
   deflt = dim3(3);
-  // CHECK: deflt = sycl::range<3>(NUM, 1, 1);
+  // CHECK: deflt = sycl::range<3>(1, 1, NUM);
   deflt = dim3(NUM);
-  // CHECK: deflt = sycl::range<3>(5, 1, 1);
+  // CHECK: deflt = sycl::range<3>(1, 1, 5);
   deflt = 5;
-  // CHECK: deflt = sycl::range<3>(((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1)), 1, 1);
+  // CHECK: deflt = sycl::range<3>(1, 1, ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1)));
   deflt = ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1));
 
-  // CHECK: sycl::range<3> copyctor1 = sycl::range<3>(sycl::range<3>(33, 1, 1));
+  // CHECK: sycl::range<3> copyctor1 = sycl::range<3>(sycl::range<3>(1, 1, 33));
   dim3 copyctor1 = dim3((dim3)33);
-  // CHECK: sycl::range<3> copyctor1_1 = sycl::range<3>(sycl::range<3>(NUM, 1, 1));
+  // CHECK: sycl::range<3> copyctor1_1 = sycl::range<3>(sycl::range<3>(1, 1, NUM));
   dim3 copyctor1_1 = dim3((dim3)NUM);
 
   // CHECK: sycl::range<3> copyctor2 = sycl::range<3>(copyctor1);
@@ -87,34 +87,34 @@ int main() {
   // CHECK: sycl::range<3> copyctor3(copyctor1);
   dim3 copyctor3(copyctor1);
 
-  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1), sycl::range<3>(2, 1, 1), sycl::range<3>(3, 2, 1));
+  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 2), sycl::range<3>(1, 2, 3));
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
-  // CHECK: func(sycl::range<3>(NUM, 1, 1), sycl::range<3>(NUM, 1, 1), sycl::range<3>(NUM, NUM, 1), sycl::range<3>(NUM, NUM, NUM));
+  // CHECK: func(sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, NUM, NUM), sycl::range<3>(NUM, NUM, NUM));
   func((dim3)NUM, dim3(NUM), dim3(NUM, NUM), dim3(NUM, NUM, NUM));
-  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(2, 1, 1), sycl::range<3>(3, 1, 1), sycl::range<3>(4, 1, 1));
+  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 4));
   func(1, 2, 3, 4);
-  // CHECK: func(sycl::range<3>(NUM, 1, 1), sycl::range<3>(NUM, 1, 1), sycl::range<3>(NUM, 1, 1), sycl::range<3>(NUM, 1, 1));
+  // CHECK: func(sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM));
   func(NUM, NUM, NUM, NUM);
-  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(2 + 3 * 3, 1, 1));
+  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(1, 1, 2 + 3 * 3));
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
-  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(NUM + NUM * NUM, 1, 1));
+  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(1, 1, NUM + NUM * NUM));
   func(deflt, dim3(deflt), (dim3)deflt, NUM + NUM * NUM);
 
-  // CHECK: sycl::range<3> test(1, 2, 3);
+  // CHECK: sycl::range<3> test(3, 2, 1);
   dim3 test(1, 2, 3);
   // CHECK: sycl::range<3> test_1(NUM, NUM, NUM);
   dim3 test_1(NUM, NUM, NUM);
 
-  // CHECK: int b = test[0] + test [1] + test [2];
+  // CHECK: int b = test[2] + test [1] + test [0];
   int b = test.x + test. y + test .z;
   // CHECK: sycl::range<3> *p = &test;
   dim3 *p = &test;
   // CHECK: sycl::range<3> **pp = &p;
   dim3 **pp = &p;
 
-  // CHECK: int a = (*p)[0] + (*p)[1] + (*p)[2];
+  // CHECK: int a = (*p)[2] + (*p)[1] + (*p)[0];
   int a = p->x + p->y + p->z;
-  // CHECK: int aa = (*(*pp))[0] + (*(*pp))[1] + (*(*pp))[2];
+  // CHECK: int aa = (*(*pp))[2] + (*(*pp))[1] + (*(*pp))[0];
   int aa = (*pp)->x + (*pp)->y + (*pp)->z;
 
   struct  container
@@ -131,47 +131,47 @@ int main() {
 
   container t;
 
-  // CHECK: int c = t.w[0] + t.w[1] + t.w[2];
+  // CHECK: int c = t.w[2] + t.w[1] + t.w[0];
   int c = t.w.x + t.w.y + t.w.z;
-  // CHECK: int c2 = (*t.pw)[0] + (*t.pw)[1] + (*t.pw)[2];
+  // CHECK: int c2 = (*t.pw)[2] + (*t.pw)[1] + (*t.pw)[0];
   int c2 = t.pw->x + t.pw->y + t.pw->z;
-  // CHECK: int c3 = (*(*t.ppw))[0] + (*(*t.ppw))[1] + (*(*t.ppw))[2];
+  // CHECK: int c3 = (*(*t.ppw))[2] + (*(*t.ppw))[1] + (*(*t.ppw))[0];
   int c3 = (*t.ppw)->x + (*t.ppw)->y + (*t.ppw)->z;
 
-  // CHECK: sycl::range<3> d3_1(test[0], 1, 1);
+  // CHECK: sycl::range<3> d3_1(1, 1, test[2]);
   dim3 d3_1(test.x);
-  // CHECK: sycl::range<3> d3_2(test[0] + 1, 1, 1);
+  // CHECK: sycl::range<3> d3_2(1, 1, test[2] + 1);
   dim3 d3_2(test.x + 1);
-  // CHECK: sycl::range<3> d3_2_1(static_cast<unsigned>(test[0] + 32), 1, 1);
+  // CHECK: sycl::range<3> d3_2_1(1, 1, static_cast<unsigned>(test[2] + 32));
   dim3 d3_2_1(static_cast<unsigned>(test.x + 32));
-  // CHECK: sycl::range<3> d3_2_2(test[0] + NUM, 1, 1);
+  // CHECK: sycl::range<3> d3_2_2(1, 1, test[2] + NUM);
   dim3 d3_2_2(test.x + NUM);
-  // CHECK: sycl::range<3> d3_3(2 + test[0] + 1, 1, 1);
+  // CHECK: sycl::range<3> d3_3(1, 1, 2 + test[2] + 1);
   dim3 d3_3(2 + test.x + 1);
-  // CHECK: sycl::range<3> d3_3_1(32 + test[0] + 64, 1, 1);
+  // CHECK: sycl::range<3> d3_3_1(1, 1, 32 + test[2] + 64);
   dim3 d3_3_1(32 + test.x + 64);
-  // CHECK: sycl::range<3> d3_3_2(NUM + test[0] + NUM, 1, 1);
+  // CHECK: sycl::range<3> d3_3_2(1, 1, NUM + test[2] + NUM);
   dim3 d3_3_2(NUM + test.x + NUM);
-  // CHECK: sycl::range<3> d3_4(test[0], test[1], 1);
+  // CHECK: sycl::range<3> d3_4(1, test[1], test[2]);
   dim3 d3_4(test.x, test.y);
   // CHECK: sycl::range<3> d3_5(test[0], test[1], test[2]);
   dim3 d3_5(test.x, test.y, test.z);
-  // CHECK: sycl::range<3> d3_6 = sycl::range<3>(test[0] + 1, 2 + test[1], 3 + test[2] + 4);
+  // CHECK: sycl::range<3> d3_6 = sycl::range<3>(3 + test[0] + 4, 2 + test[1], test[2] + 1);
   dim3 d3_6 = dim3(test.x + 1, 2 + test.y, 3 + test.z + 4);
-  // CHECK: sycl::range<3> d3_6_1 = sycl::range<3>(test[0] + 111, 112 + test[1], 113 + test[2] + 114);
+  // CHECK: sycl::range<3> d3_6_1 = sycl::range<3>(113 + test[0] + 114, 112 + test[1], test[2] + 111);
   dim3 d3_6_1 = dim3(test.x + 111, 112 + test.y, 113 + test.z + 114);
-  // CHECK: sycl::range<3> d3_6_2 = sycl::range<3>(test[0] + NUM, NUM + test[1], NUM + test[2] + NUM);
+  // CHECK: sycl::range<3> d3_6_2 = sycl::range<3>(NUM + test[0] + NUM, NUM + test[1], test[2] + NUM);
   dim3 d3_6_2 = dim3(test.x + NUM, NUM + test.y, NUM + test.z + NUM);
-  // todoCHECK: sycl::range<3> d3_6_3 = sycl::range<3>(sycl::ceil(test[0] + NUM), NUM + test[1], NUM + test[2] + NUM);
+  // todoCHECK: sycl::range<3> d3_6_3 = sycl::range<3>(NUM + test[0] + NUM, NUM + test[1], sycl::ceil(test[2] + NUM));
   dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
-  // CHECK: sycl::range<3> gpu_blocks(1 / (d3_6_3[0] * 200), 1, 1);
+  // CHECK: sycl::range<3> gpu_blocks(1, 1, 1 / (d3_6_3[2] * 200));
   dim3 gpu_blocks(1 / (d3_6_3.x * 200));
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(d3_6[0]);
+  // CHECK-NEXT:           kernel(d3_6[2]);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 1>>>(d3_6.x);
@@ -180,7 +180,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, NUM) * sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(d3_6[0]);
+  // CHECK-NEXT:           kernel(d3_6[2]);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<NUM, NUM>>>(d3_6.x);
@@ -195,11 +195,11 @@ __host__ __device__ T getgriddim(T totallen, T blockdim)
 template<typename T>
 static void memsetCuda(T * d_mem, T v, int n)
 {
-  // CHECK: sycl::range<3> dimBlock(256, 1, 1);
-  // CHECK: sycl::range<3> dimGrid_2(std::max(2048, 3), 1, 1);
-  // CHECK: sycl::range<3> dimGrid_1(std::max(2048, 3), 1, 1);
-  // CHECK: std::min(2048, getgriddim<int>(n, dimBlock[0]));
-  // CHECK: sycl::range<3> dimGrid(std::min(2048, getgriddim<int>(n, dimBlock[0])), 1, 1);
+  // CHECK: sycl::range<3> dimBlock(1, 1, 256);
+  // CHECK: sycl::range<3> dimGrid_2(1, 1, std::max(2048, 3));
+  // CHECK: sycl::range<3> dimGrid_1(1, 1, std::max(2048, 3));
+  // CHECK: std::min(2048, getgriddim<int>(n, dimBlock[2]));
+  // CHECK: sycl::range<3> dimGrid(1, 1, std::min(2048, getgriddim<int>(n, dimBlock[2])));
   dim3 dimBlock(256);
   dim3 dimGrid_2(max(2048, 3));
   dim3 dimGrid_1(std::max(2048, 3));

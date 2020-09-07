@@ -38,6 +38,16 @@ class FileManager;
 class Rewriter;
 class SourceManager;
 
+#ifdef INTEL_CUSTOMIZATION
+namespace dpct {
+enum class ConstantFlagType : int {
+  Default = 0,
+  Host = 1,
+  Device = 2,
+  HostDevice = 3
+};
+}
+#endif
 namespace tooling {
 
 /// A source range independent of the \c SourceManager.
@@ -121,6 +131,9 @@ public:
   unsigned getOffset() const { return ReplacementRange.getOffset(); }
   unsigned getLength() const { return ReplacementRange.getLength(); }
   StringRef getReplacementText() const { return ReplacementText; }
+#ifdef INTEL_CUSTOMIZATION
+  void setReplacementText(const std::string Str) { ReplacementText = Str; }
+#endif
   /// @}
 
   /// Applies the replacement on the Rewriter.
@@ -131,6 +144,14 @@ public:
 #ifdef INTEL_CUSTOMIZATION
   void setNotFormatFlag() { NotFormatFlag = true; }
   bool getNotFormatFlag() { return NotFormatFlag; }
+  dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
+  void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
+  unsigned int getConstantOffset() const { return ConstantOffset; }
+  void setConstantOffset(unsigned int O) { ConstantOffset = O; }
+  std::string getInitStr() const { return InitStr; }
+  void setInitStr(std::string S) { InitStr = S; }
+  std::string getNewHostVarName() const { return NewHostVarName; }
+  void setNewHostVarName(std::string N) { NewHostVarName = N; }
 #endif
 
 private:
@@ -146,6 +167,18 @@ private:
   std::string ReplacementText;
 #ifdef INTEL_CUSTOMIZATION
   bool NotFormatFlag = false;
+  // Record the __constant__ variable is used in host, device or hostdevice
+  dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
+  // Record the offset of the begin of token "__constant__"
+  unsigned int ConstantOffset = 0;
+  // Record the init expression of the __constant__ variable, it is used when
+  // adding a new host variable declaration. Since these information can be
+  // collected only when it used in device code.
+  std::string InitStr = "";
+  // Record the new host variable name. The new name is the original name
+  // appending "_host_ct1". Since the original name can only be collected when
+  // it used in device code, so we need record it.
+  std::string NewHostVarName = "";
 #endif
 };
 

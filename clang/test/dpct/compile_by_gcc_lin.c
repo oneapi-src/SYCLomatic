@@ -17,11 +17,16 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: float const_angle[360];
+// CHECK: int a = 0;
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1056:{{[0-9]+}}: DPCT did not detect that variable const_angle is used in device code. If this variable is also used in device code, you need rewrite the code.
+// CHECK-NEXT: */
+// CHECK-NEXT: float const_angle[360];
 // CHECK-NEXT: void simple_kernel(float *d_array) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;
 // CHECK-NEXT: }
+int a = 0;
 __constant__ float const_angle[360];
 __global__ void simple_kernel(float *d_array) {
   d_array[0] = const_angle[0];

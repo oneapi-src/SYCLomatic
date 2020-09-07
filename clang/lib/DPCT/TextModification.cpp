@@ -63,6 +63,8 @@ void recordMigrationInfo(const ASTContext &Context, const SourceLocation &SL,
 
 std::shared_ptr<ExtReplacement>
 ReplaceStmt::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   const SourceManager &SM = Context.getSourceManager();
   SourceLocation Begin(TheStmt->getBeginLoc()), End(TheStmt->getEndLoc());
 
@@ -242,6 +244,8 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceDecl::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   const SourceManager &SM = Context.getSourceManager();
   // Remove the Decl as well as the trailing semicolon
   SourceLocation Begin(TheDecl->getBeginLoc()), End(TheDecl->getEndLoc());
@@ -259,6 +263,8 @@ ReplaceDecl::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   const SourceManager &SM = Context.getSourceManager();
   recordMigrationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
   return std::make_shared<ExtReplacement>(
@@ -270,6 +276,8 @@ std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
 
 std::shared_ptr<ExtReplacement>
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   if (DD)
     recordMigrationInfo(Context, DD->getBeginLoc());
   else
@@ -329,6 +337,8 @@ void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
 
 std::shared_ptr<ExtReplacement>
 ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   size_t repLength;
   repLength =
@@ -341,12 +351,19 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   recordMigrationInfo(Context, SR.getBegin());
   // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be destructed
   ReplaceMap.erase(D->getBeginLoc().getRawEncoding());
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(),
-                                          SR.getBegin(), ++repLength, T, this);
+  auto R = std::make_shared<ExtReplacement>(
+      Context.getSourceManager(), SR.getBegin(), ++repLength, T, this);
+  R->setConstantFlag(getConstantFlag());
+  R->setConstantOffset(getConstantOffset());
+  R->setInitStr(getInitStr());
+  R->setNewHostVarName(getNewHostVarName());
+  return R;
 }
 
 std::shared_ptr<ExtReplacement>
 ReplaceReturnType::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   SourceRange SR = FD->getReturnTypeSourceRange();
   recordMigrationInfo(Context, FD->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
@@ -355,6 +372,8 @@ ReplaceReturnType::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceToken::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   recordMigrationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   return std::make_shared<ExtReplacement>(
@@ -366,6 +385,8 @@ ReplaceToken::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertText::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   recordMigrationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   auto R = std::make_shared<ExtReplacement>(
@@ -379,6 +400,8 @@ InsertText::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceCCast::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();
   recordMigrationInfo(Context, Cast->getBeginLoc());
@@ -389,6 +412,8 @@ ReplaceCCast::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   SourceLocation SL = ME->getEndLoc();
   SourceLocation Begin = SL;
   if (PositionOfDot != 0) {
@@ -405,6 +430,8 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertAfterStmt::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   auto Loc = SM.getSpellingLoc(S->getEndLoc());
   Loc = Loc.getLocWithOffset(
@@ -430,6 +457,8 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertAfterDecl::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   auto Loc = SM.getSpellingLoc(D->getEndLoc());
   Loc = Loc.getLocWithOffset(
@@ -473,6 +502,8 @@ getReplacementInfo(const ASTContext &Context, const CharSourceRange &Range) {
 
 std::shared_ptr<ExtReplacement>
 ReplaceInclude::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   recordMigrationInfo(Context, Range.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
@@ -576,17 +607,18 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
     std::string ReplacedString;
     llvm::raw_string_ostream OS(ReplacedString);
     ArgumentAnalysis AA;
+    std::string ArgStr = "";
     for (auto Arg : Ctor->arguments()) {
       AA.analyze(Arg);
-      OS << AA.getReplacedString() << ", ";
+      ArgStr = ", " + AA.getReplacedString() + ArgStr;
     }
+    ArgStr.replace(0, 2, "");
+    OS << ArgStr;
     OS.flush();
     if (Ctor->getParenOrBraceRange().isInvalid()) {
       // dim3 = a;
       ReplacedString =
-          "(" + ReplacedString.replace(ReplacedString.length() - 2, 2, ")");
-    } else {
-      ReplacedString.erase(ReplacedString.length() - 2, 2);
+          "(" + ReplacedString + ")";
     }
     return ReplacedString;
   } else {
@@ -602,6 +634,8 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   recordMigrationInfo(Context, CSR.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
@@ -620,22 +654,27 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertComment::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto NL = getNL();
   auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
+  std::shared_ptr<ExtReplacement> ExtReplPtr;
   if (UseTextBegin)
-    return std::make_shared<ExtReplacement>(
+    ExtReplPtr = std::make_shared<ExtReplacement>(
         Context.getSourceManager(), SL, 0,
         (llvm::Twine("/*") + NL + OrigIndent + Text + NL + OrigIndent + "*/" +
          NL + OrigIndent)
             .str(),
         this);
   else
-    return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
-                                            (OrigIndent + llvm::Twine("/*") +
-                                             NL + OrigIndent + Text + NL +
-                                             OrigIndent + "*/" + NL)
-                                                .str(),
-                                            this);
+    ExtReplPtr = std::make_shared<ExtReplacement>(
+        Context.getSourceManager(), SL, 0,
+        (OrigIndent + llvm::Twine("/*") + NL + OrigIndent + Text + NL +
+         OrigIndent + "*/" + NL)
+            .str(),
+        this);
+  ExtReplPtr->setConstantOffset(getConstantOffset());
+  return ExtReplPtr;
 }
 
 std::string printTemplateArgument(const TemplateArgument &Arg,
@@ -666,6 +705,8 @@ SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
 
 std::shared_ptr<ExtReplacement>
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   recordMigrationInfo(Context, CDecl->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
                                           getInsertLoc(), 0, T, this);
@@ -673,6 +714,8 @@ InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   SourceLocation Begin = S->getSourceRange().getBegin();
   if (DoMacroExpansion) {
@@ -698,6 +741,8 @@ InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 RemoveArg::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   SourceRange SR = CE->getArg(N)->getSourceRange();
   SourceLocation Begin = SR.getBegin();
   SourceLocation End;
@@ -715,6 +760,8 @@ RemoveArg::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertClassName::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   auto BeginLoc = CD->getBeginLoc();
   auto DataBegin = SM.getCharacterData(BeginLoc);
@@ -737,6 +784,8 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 ReplaceText::getReplacement(const ASTContext &Context) const {
+  if (this->isIgnoreTM())
+    return nullptr;
   auto &SM = Context.getSourceManager();
   if (IsReplaceCompatibilityAPI) {
     recordMigrationInfo(Context, BeginLoc, true, OrigAPIName);
@@ -746,6 +795,9 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   auto Repl = std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
   if (getNotFormatFlag())
     Repl->setNotFormatFlag();
+
+  Repl->setConstantFlag(this->getConstantFlag());
+  Repl->setConstantOffset(this->getConstantOffset());
   return Repl;
 }
 

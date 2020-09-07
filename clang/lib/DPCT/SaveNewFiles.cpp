@@ -233,7 +233,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // merge the migration triggered by each including.
       if (OutPath.back() == 'h') {
         // note the replacement of Entry.second are updated by this call.
-        mergeExternalReps(std::string(OutPath.str()), Entry.second);
+        mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
       }
 
       std::vector<clang::tooling::Range> Ranges;
@@ -364,4 +364,27 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     status = MigrationSkipped;
   }
   return status;
+}
+
+void loadYAMLIntoFileInfo(std::string Path) {
+  SmallString<512> SourceFilePath(Path);
+  if (SourceFilePath.back() != 'h')
+    return;
+
+  SourceFilePath = StringRef(DpctGlobalInfo::removeSymlinks(
+      DpctGlobalInfo::getFileManager(), Path));
+  makeCanonical(SourceFilePath);
+
+  std::string OriginPath = SourceFilePath.str().str();
+  rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
+             DpctGlobalInfo::getOutRoot());
+
+  std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (fs::exists(YamlFilePath)) {
+    if (loadFromYaml(std::move(YamlFilePath), *PreTU) == 0) {
+      DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(OriginPath,
+                                                                     PreTU);
+    }
+  }
 }

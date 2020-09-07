@@ -51,6 +51,9 @@ public:
   struct SourceLineRange {
     unsigned SrcBeginLine = 0, SrcEndLine = 0, SrcBeginOffset = 0;
   };
+  std::multimap<unsigned, std::shared_ptr<ExtReplacement>> &getReplMap() {
+    return ReplMap;
+  }
 
 private:
   using ReplIterator =
@@ -95,11 +98,14 @@ private:
   inline std::shared_ptr<ExtReplacement>
   mergeReplacement(std::shared_ptr<ExtReplacement> First,
                    std::shared_ptr<ExtReplacement> Second) {
-    return std::make_shared<ExtReplacement>(
+    First->mergeConstantInfo(Second);
+    auto R = std::make_shared<ExtReplacement>(
         FilePath, First->getOffset(),
         Second->getOffset() + Second->getLength() - First->getOffset(),
         (First->getReplacementText() + Second->getReplacementText()).str(),
         nullptr);
+    R->mergeConstantInfo(First);
+    return R;
   }
   std::shared_ptr<ExtReplacement>
   filterOverlappedReplacement(std::shared_ptr<ExtReplacement> Repl,

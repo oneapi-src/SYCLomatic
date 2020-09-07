@@ -59,11 +59,11 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK:  /* DPCT_ORIG   dim3 griddim = 2;*/
-  // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
+  // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
   dim3 griddim = 2;
 
   // CHECK:  /* DPCT_ORIG   dim3 threaddim = 32;*/
-  // CHECK-NEXT:   sycl::range<3> threaddim = sycl::range<3>(32, 1, 1);
+  // CHECK-NEXT:   sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
   dim3 threaddim = 32;
 
   void *karg1 = 0;
@@ -87,7 +87,7 @@ int main() {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
@@ -159,7 +159,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[0]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[2]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
