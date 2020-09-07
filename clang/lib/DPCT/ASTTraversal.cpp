@@ -4570,13 +4570,15 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr = BufferDecl;
       Data = BufferName;
     }
-    ExprAnalysis EA;
-    EA.analyze(CE->getArg(2));
-    std::string ReplStr;
+    ArgumentAnalysis AA;
+    AA.setCallSpelling(CE);
+    AA.analyze(CE->getArg(2));
+    auto ArgStr =
+        AA.getRewritePrefix() + AA.getRewriteString() + AA.getRewritePostfix();
 
+    std::string ReplStr;
     ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
-              getDrefName(CE->getArg(0)) + ", " + EA.getReplacedString() +
-              ", " + Data + ")";
+              getDrefName(CE->getArg(0)) + ", " + ArgStr + ", " + Data + ")";
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty()) {

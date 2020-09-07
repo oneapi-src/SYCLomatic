@@ -106,6 +106,13 @@ int main(){
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   curandGenerateUniform(rng2, d_data, 100*100);
 
+#define M 100
+#define N 200
+  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, M * N, d_data);
+  curandGenerateUniform(rng2, d_data, M * N);
+#undef M
+#undef N
+
   //CHECK:oneapi::mkl::rng::skip_ahead(*rng, 100);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
