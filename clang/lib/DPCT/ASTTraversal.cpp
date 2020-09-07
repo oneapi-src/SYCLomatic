@@ -213,7 +213,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
     TransformSet.emplace_back(
-      new ReplaceText(Range.getBegin(), 13, "DPCPP_COMPATIBILITY_TEMP"));
+      new ReplaceText(Range.getBegin(), 13, "DPCT_COMPATIBILITY_TEMP"));
   }
 
   // For the un-specialized struct, there is no AST for the extern function

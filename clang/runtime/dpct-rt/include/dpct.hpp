@@ -43,7 +43,7 @@ template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 #endif
 
-#define DPCPP_COMPATIBILITY_TEMP (600)
+#define DPCT_COMPATIBILITY_TEMP (600)
 
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
