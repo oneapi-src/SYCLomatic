@@ -3063,11 +3063,6 @@ private:
           DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   }
   void addNdRangeDecl() {
-    if (ExecutionConfig.DeclGlobalRange) {
-      SubmitStmtsList.NdRangeList.emplace_back(
-          buildString("auto dpct_global_range = ", ExecutionConfig.GroupSize,
-                      " * ", ExecutionConfig.LocalSize, ";"));
-    }
     if (ExecutionConfig.DeclGroupRange) {
       SubmitStmtsList.NdRangeList.emplace_back(buildString(
           "auto dpct_group_range = ", ExecutionConfig.GroupSize, ";"));
@@ -3093,7 +3088,7 @@ private:
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
     std::string &Stream = Config[3];
-    bool DeclGlobalRange = false, DeclLocalRange = false,
+    bool DeclLocalRange = false,
          DeclGroupRange = false;
     bool LocalDirectRef = false, GroupDirectRef = false;
   } ExecutionConfig;

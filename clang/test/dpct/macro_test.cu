@@ -85,8 +85,7 @@ void foo() {
   //CHECK-NEXT: macro.
   //CHECK-NEXT: */
   //CHECK-NEXT: CALL((q_ct1.submit([&](sycl::handler &cgh) {
-  //CHECK-NEXT:   auto dpct_global_range = x * x;
-  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, x),
+  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(x * x, x),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:         foo_kernel();
   //CHECK-NEXT:       });
@@ -212,14 +211,12 @@ double cosine = cos(2 * PI);
 MACRO_KC
 
 
-//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
+//CHECK: #define HARD_KC(NAME, a, b, c, d)                                                   \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
-//CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                              \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 //CHECK-NEXT:   /*
@@ -234,12 +231,10 @@ HARD_KC(foo3,3,2,1,0)
 
 //CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
-//CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                  \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 #define MACRO_KC2(a,b,c,d) foo3<<<a, b, 0>>>(c,d);

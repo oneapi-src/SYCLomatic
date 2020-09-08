@@ -31,10 +31,8 @@ void testReference(const int &i) {
   dim3 threaddim = 32;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
-  // CHECK-NEXT:       sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPU(i, item_ct1);
   // CHECK-NEXT:       });
@@ -52,14 +50,12 @@ struct TestThis {
   void test() {
     // CHECK: dpct::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     auto dpct_global_range = griddim * threaddim;
-    // CHECK-EMPTY:
     // CHECK-NEXT:     auto args_arg1_ct0 = args.arg1;
     // CHECK-NEXT:     auto args_arg2_ct1 = args.arg2;
     // CHECK-NEXT:     auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
-    // CHECK-NEXT:       sycl::nd_range<3>(dpct_global_range, threaddim),
+    // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
     // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:         testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
     // CHECK-NEXT:       });
@@ -76,9 +72,7 @@ int main() {
   void *karg1 = 0;
   const int *karg2 = 0;
   int karg3 = 80;
-  // CHECK:  auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
-  // CHECK-NEXT:  cgh.parallel_for(
+  // CHECK:  cgh.parallel_for(
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 
   int karg1int = 1;
@@ -185,8 +179,6 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          auto dpct_global_range = c * d;
-//CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 //CHECK:  q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
@@ -201,8 +193,6 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK:dpct::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-//CHECK-EMPTY:
-//CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo3(dim3 c, dim3 d) {

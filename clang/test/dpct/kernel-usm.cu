@@ -36,10 +36,8 @@ int main() {
   int karg3 = 80;
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernelPtr((const int *)karg1, karg2, karg3, item_ct1);
   // CHECK-NEXT:         });

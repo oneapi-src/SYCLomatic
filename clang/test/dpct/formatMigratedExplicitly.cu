@@ -43,9 +43,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  workgroup size if needed.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  q_ct1.submit([&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:    auto dpct_global_range = griddim * threaddim;
-//CHECK-EMPTY:
-//CHECK-NEXT:    cgh.parallel_for(cl::sycl::nd_range<3>(dpct_global_range, threaddim),
+//CHECK-NEXT:    cgh.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
 //CHECK-NEXT:                                     item_ct1);

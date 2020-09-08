@@ -23,10 +23,8 @@ int main() {
   // CHECK-NEXT:       auto karg2_acc_ct0 = karg2_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const int *karg2_ct0 = (const int *)(&karg2_acc_ct0[0] + karg2_offset_ct0);
   // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);

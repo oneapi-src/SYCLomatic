@@ -291,7 +291,6 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       !LocalReversed && !ExecutionConfig.LocalDirectRef;
   ExecutionConfig.DeclGroupRange =
       LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
-  ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -585,9 +584,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   static std::string CanIgnoreRangeStr =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
       "(1, 1, 1)";
-  if (ExecutionConfig.DeclGlobalRange) {
-    Printer << "dpct_global_range";
-  } else if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
+  if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
     Printer << ExecutionConfig.LocalSize;
   } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr) {
     Printer << ExecutionConfig.GroupSize;
