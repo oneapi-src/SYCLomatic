@@ -944,7 +944,7 @@ public:
 
 #ifdef DPCT_USM_LEVEL_NONE
   template <size_t D = Dimension>
-  typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
+  typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     init();
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
                _device_ptr)
@@ -959,7 +959,7 @@ public:
   }
 #else
   template <size_t D = Dimension>
-  typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
+  typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     init();
     return _device_ptr[index];
   }
