@@ -1949,17 +1949,30 @@ class TextureInfo {
 protected:
   const std::string FilePath;
   const unsigned Offset;
-  const std::string Name;
+  const std::string Name; // original expression str
+  std::string NewVarName; // name of new variable which tool
 
   std::shared_ptr<TextureTypeInfo> Type;
 
 protected:
   TextureInfo(unsigned Offset, const std::string &FilePath, StringRef Name)
-      : FilePath(FilePath), Offset(Offset), Name(Name) {}
+      : FilePath(FilePath), Offset(Offset), Name(Name) {
+    NewVarName = Name.str();
+    for (auto &C : NewVarName) {
+      if ((!isDigit(C)) && (!isLetter(C)) && (C != '_'))
+        C = '_';
+    }
+    if (NewVarName.size() > 1 && NewVarName[NewVarName.size() - 1] == '_')
+      NewVarName.pop_back();
+  }
   TextureInfo(const VarDecl *VD)
       : TextureInfo(DpctGlobalInfo::getLocInfo(
                         VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
                     VD->getName()) {}
+  TextureInfo(const VarDecl *VD, std::string Subscript)
+      : TextureInfo(DpctGlobalInfo::getLocInfo(
+                        VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
+                    VD->getName().str() + "[" + Subscript + "]") {}
   TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
       : TextureInfo(LocInfo.second, LocInfo.first.str(), Name) {}
 
@@ -2002,10 +2015,12 @@ public:
   }
 
   virtual std::string getSamplerDecl() {
-    return buildString("auto ", Name, "_smpl = ", Name, ".get_sampler();");
+    return buildString("auto ", NewVarName, "_smpl = ", Name,
+                       ".get_sampler();");
   }
   virtual std::string getAccessorDecl() {
-    return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
+    return buildString("auto ", NewVarName, "_acc = ", Name,
+                       ".get_access(cgh);");
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
@@ -2016,7 +2031,7 @@ public:
   }
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
     getType()->printType(OS, "dpct::image_accessor_ext");
-    OS << "(" << Name << "_smpl, " << Name << "_acc)";
+    OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
     return OS;
   }
   inline const std::string &getName() { return Name; }
@@ -2035,21 +2050,31 @@ class TextureObjectInfo : public TextureInfo {
 
   TextureObjectInfo(const VarDecl *VD, unsigned ParamIdx)
       : TextureInfo(VD), ParamIdx(ParamIdx) {}
+  TextureObjectInfo(const VarDecl *VD, std::string Subscript, unsigned ParamIdx)
+      : TextureInfo(VD, Subscript), ParamIdx(ParamIdx) {}
 
 public:
   TextureObjectInfo(const ParmVarDecl *PVD)
       : TextureObjectInfo(PVD, PVD->getFunctionScopeIndex()) {}
   TextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD, 0) {}
+
+  TextureObjectInfo(const ParmVarDecl *PVD, std::string Subscript)
+      : TextureObjectInfo(PVD, Subscript, PVD->getFunctionScopeIndex()) {}
+  TextureObjectInfo(const VarDecl *VD, std::string Subscript)
+      : TextureObjectInfo(VD, Subscript, 0) {}
+
   virtual ~TextureObjectInfo() = default;
   std::string getAccessorDecl() override {
     ParameterStream PS;
-    PS << "auto " << Name << "_acc = static_cast<";
+
+    PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, "dpct::image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    return buildString("auto ", Name, "_smpl = ", Name, "->get_sampler();");
+    return buildString("auto ", NewVarName, "_smpl = ", Name,
+                       "->get_sampler();");
   }
   inline unsigned getParamIdx() const { return ParamIdx; }
 
@@ -2493,6 +2518,9 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const DeclRefExpr *TexRef,
                       bool isKernelCall = false);
+  virtual std::shared_ptr<TextureObjectInfo>
+  addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
+                      bool isKernelCall = false);
 
 protected:
   inline unsigned getBegin() { return BeginLoc; }
@@ -2533,9 +2561,12 @@ private:
     unsigned Idx = 0;
     TextureObjectList.resize(ArgsNum);
     while (ArgItr != Args.end()) {
-      addTextureObjectArg(Idx++,
-                          dyn_cast<DeclRefExpr>((*ArgItr++)->IgnoreImpCasts()),
-                          IsKernel);
+      if (auto DRE = dyn_cast<DeclRefExpr>((*ArgItr)->IgnoreImpCasts()))
+        addTextureObjectArg(Idx++, DRE, IsKernel);
+      else if (auto ASE =
+                   dyn_cast<ArraySubscriptExpr>((*ArgItr)->IgnoreImpCasts()))
+        addTextureObjectArg(Idx++, ASE, IsKernel);
+      ArgItr++;
     }
   }
   void mergeTextureObjectTypeInfo();

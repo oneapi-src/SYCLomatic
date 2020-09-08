@@ -1247,6 +1247,27 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 
+std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
+    unsigned ArgIdx, const ArraySubscriptExpr *TexRef, bool isKernelCall) {
+  if (TextureObjectInfo::isTextureObject(TexRef)) {
+    if (auto Base =
+            dyn_cast<DeclRefExpr>(TexRef->getBase()->IgnoreImpCasts())) {
+      if (isKernelCall) {
+        if (auto VD = dyn_cast<VarDecl>(Base->getDecl())) {
+          return addTextureObjectArgInfo(
+              ArgIdx, std::make_shared<TextureObjectInfo>(
+                          VD, ExprAnalysis::ref(TexRef->getIdx())));
+        }
+      } else if (auto PVD = dyn_cast<ParmVarDecl>(Base->getDecl())) {
+        return addTextureObjectArgInfo(
+            ArgIdx, std::make_shared<TextureObjectInfo>(
+                        PVD, ExprAnalysis::ref(TexRef->getIdx())));
+      }
+    }
+  }
+  return std::shared_ptr<TextureObjectInfo>();
+}
+
 void CallFunctionExpr::mergeTextureObjectTypeInfo() {
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {

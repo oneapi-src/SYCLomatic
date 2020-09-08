@@ -11109,6 +11109,11 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new ReplaceToken(
             TL->getBeginLoc(), TL->getEndLoc(), "dpct::image_wrapper_base_p"));
       }
+    } else if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
+      if (VD->hasGlobalStorage()) {
+        emplaceTransformation(new ReplaceToken(
+            TL->getBeginLoc(), TL->getEndLoc(), "dpct::image_wrapper_base_p"));
+      }
     }
   }
 }
