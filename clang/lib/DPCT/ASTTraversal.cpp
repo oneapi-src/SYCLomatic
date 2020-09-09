@@ -12,8 +12,10 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Debug.h"
+#include "ExprAnalysis.h"
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"
+#include "TextModification.h"
 #include "Utility.h"
 #include "Checkpoint.h"
 #include "clang/AST/TypeLoc.h"
@@ -8170,6 +8172,52 @@ void EventAPICallRule::handleTimeMeasurement(
         K->setSync();
       }
     }
+
+    if (auto *MemCall = dyn_cast<CallExpr>(*Iter)) {
+      auto MemCallLoc = MemCall->getBeginLoc().getRawEncoding();
+      if (MemCallLoc > RecordBeginLoc && MemCallLoc < RecordEndLoc) {
+        auto CalleeName = MemCall->getDirectCallee()->getName();
+        if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          if (USMLevel == UsmLevel::restricted) {
+            std::string EventName = ExprAnalysis::ref(CE->getArg(2));
+            emplaceTransformation(new InsertBeforeStmt(MemCall, EventName + " = "));
+            std::string SyncStmt = ";";
+            SyncStmt += getNL();
+            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
+            SyncStmt += EventName;
+            SyncStmt += ".wait()";
+            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
+          } else {
+            std::string SyncStmt = ";";
+            SyncStmt += getNL();
+            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
+            auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
+            bool NeedQueue = false;
+            // Need queue for default stream or stream 0, 1 and 2
+            if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+              NeedQueue = true;
+            } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
+              auto IL = dyn_cast<IntegerLiteral>(StreamArg);
+              auto V = IL->getValue().getZExtValue();
+              if (V >= 0 && V <= 2)
+                NeedQueue = true;
+            }
+            if (NeedQueue) {
+              if (checkWhetherIsDuplicate(MemCall, false))
+                continue;
+              int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+              SyncStmt += "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+              SyncStmt += ".wait()";
+              buildTempVariableMap(Index, MemCall, HelperFuncType::DefaultQueue);
+            } else {
+              SyncStmt += ExprAnalysis::ref(StreamArg) + "->wait()";
+            }
+            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
+          }
+        }
+      }
+    }
   }
 }
 
@@ -11024,6 +11072,10 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
 
 bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
   auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+
+  if (TST->getNumArgs() <= 2)
+    return false;
+
   auto Arg2 = TST->getArg(2);
 
   if (auto FD =
