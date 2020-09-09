@@ -354,6 +354,7 @@ public:
   virtual void attach(image_data data) { _data = data; }
   sampling_info get_sampling_info() { return _smpl_info; }
   const image_data &get_data() { return _data; }
+  image_channel &channel() { return _data.chn; }
   inline cl::sycl::addressing_mode &addr_mode() {
     return _smpl_info.addr_mode();
   }
@@ -372,7 +373,6 @@ template <class T, int Dimension, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
 template <class T, int Dimension, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   cl::sycl::image<Dimension> *_image = nullptr;
-  image_channel _chn;
 
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
@@ -380,13 +380,12 @@ public:
       typename image_accessor_ext<T, IsImageArray ? (Dimension - 1) : Dimension,
                               IsImageArray>::accessor_t;
 
-  image_wrapper() : _chn(create_image_channel<T>()) {}
+  image_wrapper() { channel() = create_image_channel<T>(); }
   ~image_wrapper() { detach(); }
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return accessor_t(*_image, cgh);
   }
-  image_channel &channel() { return _chn; }
   // Set data info, attach the data to this class.
   void attach(image_data data) override {
     image_wrapper_base::attach(data);
@@ -404,7 +403,7 @@ public:
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count) {
-    attach(ptr, count, _chn);
+    attach(ptr, count, channel());
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count, image_channel chn_desc) {
@@ -419,7 +418,7 @@ public:
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
-    attach(data, x, y, pitch, _chn);
+    attach(data, x, y, pitch, channel());
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch, const image_channel &chn_desc) {
