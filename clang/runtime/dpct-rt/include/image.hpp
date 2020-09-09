@@ -315,8 +315,35 @@ enum image_data_type { data_matrix, data_linear, data_pitch, data_unsupport };
 /// This class doesn't manage the data pointer.
 class image_data {
 public:
+  image_data() { type = data_unsupport; }
+  image_data(image_matrix_p matrix) { set_data(matrix); }
+  image_data(void *data_ptr, size_t x_size, image_channel channel) {
+    set_data(data_ptr, x_size, channel);
+  }
+  image_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
+             image_channel channel) {
+    set_data(data_ptr, x_size, y_size, pitch_size, channel);
+  }
+  void set_data(image_matrix_p matrix) {
+    type = data_matrix;
+    data = matrix;
+  }
+  void set_data(void *data_ptr, size_t x_size, image_channel channel) {
+    type = data_linear;
+    data = data_ptr;
+    x = x_size;
+    chn = channel;
+  }
+  void set_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
+                image_channel channel) {
+    type = data_pitch;
+    data = data_ptr;
+    x = x_size;
+    y = y_size;
+    pitch = pitch_size;
+  }
   image_data_type type;
-  void *data;
+  void *data = nullptr;
   size_t x, y, pitch;
   image_channel chn;
 };

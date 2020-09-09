@@ -53,10 +53,11 @@ int main() {
   tex13.attach(array3);
 
   dpct::image_wrapper_base *tex21;
-  dpct::image_data res21;
+  dpct::image_data res21(array1);
   dpct::sampling_info texDesc21;
-  res21.type = dpct::data_matrix;
-  res21.data = array1;
+  res21.set_data(image_data2, 640, chn2);
+  res21.set_data(image_data2, 640, 480, 670, chn2);
+  res21.set_data(array1);
 
   tex42.addr_mode()=cl::sycl::addressing_mode::clamp;
   texDesc21.addr_mode()=cl::sycl::addressing_mode::clamp;
