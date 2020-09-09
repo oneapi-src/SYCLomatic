@@ -8624,12 +8624,15 @@ void MemVarRule::previousDCurrentH(const VarDecl *VD, tooling::Replacement &R) {
 void MemVarRule::removeHostConstantWarning(Replacement &R){
   std::string ReplStr = R.getReplacementText().str();
 
+  // warning text of Diagnostics::HOST_CONSTANT
+  std::string Warning =
+      "Intel\\(R\\) DPC\\+\\+ Compatibility Tool did not detect that variable "
+      "[_a-zA-Z][_a-zA-Z0-9]+ is used in device code. If this variable is also "
+      "used in device code, you need to rewrite the code.";
   std::string Pattern =
       "/\\*\\s+DPCT" +
-      std::to_string(static_cast<int>(Diagnostics::HOST_CONSTANT)) + ":[0-9]+: " +
-      DiagnosticsUtils::getWarningTextWithOutPrefix(Diagnostics::HOST_CONSTANT,
-                                                    "[_a-zA-Z][_a-zA-Z0-9]+") +
-      "\\s+\\*/" + getNL();
+      std::to_string(static_cast<int>(Diagnostics::HOST_CONSTANT)) +
+      ":[0-9]+: " + Warning + "\\s+\\*/" + getNL();
   std::regex RE(Pattern);
   std::smatch MRes;
   std::string Result;

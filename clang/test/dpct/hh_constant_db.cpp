@@ -22,13 +22,15 @@
 // RUN: rm -rf ./hh_constant_db
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1056:{{[0-9]+}}: DPCT did not detect that variable aaa is used in device code. If
-// CHECK-NEXT: this variable is also used in device code, you need rewrite the code.
+// CHECK-NEXT: DPCT1056:{{[0-9]+}}: Intel(R) DPC++ Compatibility Tool did not detect that variable aaa
+// CHECK-NEXT: is used in device code. If this variable is also used in device code, you need
+// CHECK-NEXT: to rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float aaa = (float)(1ll << 40);
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1056:{{[0-9]+}}: DPCT did not detect that variable bbb is used in device code. If
-// CHECK-NEXT: this variable is also used in device code, you need rewrite the code.
+// CHECK-NEXT: DPCT1056:{{[0-9]+}}: Intel(R) DPC++ Compatibility Tool did not detect that variable bbb
+// CHECK-NEXT: is used in device code. If this variable is also used in device code, you need
+// CHECK-NEXT: to rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float bbb = (float)(1ll << 20);
 
