@@ -219,7 +219,8 @@ int getCurrnetColumn(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
-clang::SourceRange getStmtSourceRange(const clang::Stmt *S);
+clang::SourceRange getStmtExpansionSourceRange(const clang::Stmt *S);
+clang::SourceRange getStmtSpellingSourceRange(const clang::Stmt *S);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);

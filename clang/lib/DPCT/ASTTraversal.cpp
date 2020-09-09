@@ -9144,18 +9144,18 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getStmtSourceRange(C->getArg(n - 1)).getEnd();
+    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
     Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
         Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    End = getStmtSourceRange(C->getArg(n)).getEnd();
+    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
     End = End.getLocWithOffset(Lexer::MeasureTokenLength(
       End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
   } else {
-    Begin = getStmtSourceRange(C->getArg(n)).getBegin();
+    Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
     if (C->getNumArgs() > 1) {
-      End = getStmtSourceRange(C->getArg(n + 1)).getBegin();
+      End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
     } else {
-      End = getStmtSourceRange(C->getArg(n)).getEnd();
+      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
       End = End.getLocWithOffset(Lexer::MeasureTokenLength(
         End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
     }
@@ -9410,11 +9410,11 @@ void MemoryMigrationRule::mallocMigration(
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
-    auto ArgRange0 = getStmtSourceRange(C->getArg(0));
+    auto ArgRange0 = getStmtExpansionSourceRange(C->getArg(0));
     auto ArgEnd0 = ArgRange0.getEnd().getLocWithOffset(
         Lexer::MeasureTokenLength(ArgRange0.getEnd(), *(Result.SourceManager),
                                   Result.Context->getLangOpts()));
-    auto ArgRange1 = getStmtSourceRange(C->getArg(1));
+    auto ArgRange1 = getStmtExpansionSourceRange(C->getArg(1));
     emplaceTransformation(replaceText(ArgEnd0, ArgRange1.getBegin(),
                                       "*", *Result.SourceManager));
     insertAroundStmt(C->getArg(0), "(", ")");
@@ -10300,10 +10300,10 @@ void MemoryMigrationRule::aggregatePitchedData(const CallExpr *C,
 void MemoryMigrationRule::aggregateArgsToCtor(
     const CallExpr *C, const std::string &ClassName, size_t StartArgIndex,
     size_t EndArgIndex, const std::string &PaddingArgs, SourceManager &SM) {
-  auto EndLoc = getStmtSourceRange(C->getArg(EndArgIndex)).getEnd();
+  auto EndLoc = getStmtExpansionSourceRange(C->getArg(EndArgIndex)).getEnd();
   EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
       EndLoc, SM, DpctGlobalInfo::getContext().getLangOpts()));
-  insertAroundRange(getStmtSourceRange(C->getArg(StartArgIndex)).getBegin(),
+  insertAroundRange(getStmtExpansionSourceRange(C->getArg(StartArgIndex)).getBegin(),
                     EndLoc, ClassName + "(", PaddingArgs + ")");
 }
 
@@ -11438,7 +11438,7 @@ void PreDefinedStreamHandleRule::run(const MatchFinder::MatchResult &Result) {
     if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
         Str == "cudaStreamPerThread") {
       auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtSourceRange(E).getBegin();
+      auto Begin = getStmtExpansionSourceRange(E).getBegin();
       unsigned int Length = Lexer::MeasureTokenLength(
           Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
       if (checkWhetherIsDuplicate(E, false))

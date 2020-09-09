@@ -137,9 +137,11 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   return Buffer.substr(begin, end - begin);
 }
 
-SourceRange getStmtSourceRange(const Stmt *S) {
+SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
+  BeginLoc = S->getBeginLoc();
+  EndLoc = S->getEndLoc();
   if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
     BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
     EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
@@ -164,20 +166,36 @@ SourceRange getStmtSourceRange(const Stmt *S) {
       BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
       EndLoc = SM.getImmediateSpellingLoc(EndLoc);
     }
-    if (EndLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
-    if (BeginLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-    }
-  } else {
-    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
-    EndLoc = SM.getExpansionLoc(S->getEndLoc());
   }
+  return SourceRange(BeginLoc, EndLoc);
+}
+
+SourceRange getStmtExpansionSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  auto BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
+  auto EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  return SourceRange(BeginLoc, EndLoc);
+}
+
+SourceRange getStmtSpellingSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
+  // Remove outer function-like macro
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  auto BeginLoc = Range.getBegin();
+  auto EndLoc = Range.getEnd();
+  // For multi level macro, e.g.
+  // #define AAA a
+  // #define BBB AAA
+  // Keep finding the immediate expansion location
+  std::tie(BeginLoc, EndLoc) =
+      getTheOneBeforeLastImmediateExapansion(BeginLoc, EndLoc);
+  // For straddle expr, e.g.
+  // #define AAA a
+  // #define BBB 3 + AAA
+  std::tie(BeginLoc, EndLoc) =
+      getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
   return SourceRange(BeginLoc, EndLoc);
 }
 
@@ -201,7 +219,7 @@ std::string getStmtSpelling(const Stmt *S) {
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  auto StmtRange = getStmtSourceRange(S);
+  auto StmtRange = getStmtExpansionSourceRange(S);
 
   BeginLoc = StmtRange.getBegin();
   EndLoc = StmtRange.getEnd();
@@ -2059,7 +2077,6 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginLevel = calculateExpansionLevel(BeginLoc);
   auto EndLevel = calculateExpansionLevel(EndLoc);
-
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&

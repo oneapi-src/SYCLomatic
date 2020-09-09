@@ -649,3 +649,22 @@ __global__ void foo11(){
     };
 
 VECTOR_TYPE_DEF(int)
+
+//CHECK: typedef float real;
+//CHECK-NEXT: #define POW(x, y) sycl::pow(x, y)
+//CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
+//CHECK-NEXT: void foo12(){
+//CHECK-NEXT: real *vx;
+//CHECK-NEXT: real *vy;
+//CHECK-NEXT: int id;
+//CHECK-NEXT: real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+//CHECK-NEXT: }
+typedef float real;
+#define POW(x,y)    powf(x,y)
+#define SQRT(x)     sqrtf(x)
+__global__ void foo12(){
+real *vx;
+real *vy;
+int id;
+real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+}

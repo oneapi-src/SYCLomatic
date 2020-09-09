@@ -867,9 +867,21 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
       BeginCandidate =
         SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-        // Default use SpellingLoc
-        // e.g. M1(call(targetExpr))
-        BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+        // Multi-Level funclike special process
+        // e.g.
+        // #define M1(x) call1(x)
+        // #define M2(y) call2(y)
+        // M1(M2(3))
+        BeginCandidate = getStmtSpellingSourceRange(E).getBegin();
+        if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
+          if (!isExprStraddle(E)) {
+            // Default use SpellingLoc
+            // e.g. M1(call(targetExpr))
+            BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+          } else {
+            BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
+          }
+        }
       }
     }
   }
@@ -892,11 +904,21 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
         Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-        // Default use SpellingLoc
-        EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+        EndCandidate = getStmtSpellingSourceRange(E).getEnd();
         auto LastTokenLength =
           Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
         EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+        if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
+          if (!isExprStraddle(E)) {
+            // Default use SpellingLoc
+            EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+            auto LastTokenLength =
+              Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+            EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+          } else {
+            EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+          }
+        }
       }
     }
   }
