@@ -138,5 +138,5 @@ DEF_WARNING(UNSUPPORTED_IMAGE_FORMAT, 1059, "Level-Zero API only support 4-chann
 DEF_COMMENT(UNSUPPORTED_IMAGE_FORMAT, 1059, "Level-Zero API only support 4-channel image format layout.")
 DEF_WARNING(EXCEED_MAX_DIMENSION, 1060, "DPC++ does not support the memory with dimension exceed 3. You may need to adjust the code.")
 DEF_COMMENT(EXCEED_MAX_DIMENSION, 1060, "DPC++ does not support the memory with dimension exceed 3. You may need to adjust the code.")
-
-
+DEF_WARNING(UNSUPPORTED_IMAGE_NORM_READ_MODE, 1062, "DPC++ image doesn't support normalized read mode.")
+DEF_COMMENT(UNSUPPORTED_IMAGE_NORM_READ_MODE, 1062, "DPC++ image doesn't support normalized read mode.")

@@ -254,6 +254,12 @@ __device__ T fooFilter(float w0x, float w1x, float w2x, float w3x, T c0, T c1,
   return resultVal;
 }
 
+// CHECK:template <class T, class R>
+// CHECK-NEXT:/*
+// CHECK-NEXT:DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK-NEXT:*/
+// CHECK-NEXT:R foo(dpct::image_accessor_ext<T, 2> texref,
+// CHECK-NEXT:                            float x, float y) {
 template <class T, class R>
 __device__ R foo(const texture<T, 2, cudaReadModeElementType> texref,
                             float x, float y) {
@@ -301,3 +307,117 @@ __device__ R foo(const texture<T, 2, cudaReadModeElementType> texref,
                    tex2D(texref, px + 3, py + 1), tex2D(texref, px + 3, py + 2),
                    tex2D(texref, px + 3, py + 3)));
 }
+
+// CHECK:/*
+// CHECK-NEXT:DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK-NEXT:*/
+// CHECK-NEXT:dpct::image_wrapper<unsigned int, 1> tex_tmp;
+// CHECK-NEXT:/*
+// CHECK-NEXT:DPCT1062:{{[0-9]+}}: DPC++ image doesn't support normalized read mode.
+// CHECK-NEXT:*/
+// CHECK-NEXT:/*
+// CHECK-NEXT:DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK-NEXT:*/
+// CHECK-NEXT:dpct::image_wrapper<unsigned char, 2> tex;
+texture<unsigned int, 1, cudaReadModeElementType> tex_tmp;
+texture<unsigned char, 2, cudaReadModeNormalizedFloat> tex;
+
+// CHECK:template <class T, class R>
+// CHECK-NEXT:R tex2D_bar(
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1062:{{[0-9]+}}: DPC++ image doesn't support normalized read mode.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    dpct::image_accessor_ext<T, 2> tex, float x, float y) {
+// CHECK-NEXT:  float px = sycl::floor(x - 2) + 1.0f;
+// CHECK-NEXT:  float py = sycl::floor(y - 2) + 1.0f;
+// CHECK-NEXT:  float fx = x - px;
+// CHECK-NEXT:  float fy = y - py;
+// CHECK-NEXT:  float w0x = 0; // w0_2(fx);
+// CHECK-NEXT:  float w1x = 0; // w1_2(fx);
+// CHECK-NEXT:  float w2x = 0; // w2_2(fx);
+// CHECK-NEXT:  float w3x = 0; // w3_2(fx);
+// CHECK-NEXT:  float w0y = 0; // w0_2(fy);
+// CHECK-NEXT:  float w1y = 0; // w1_2(fy);
+// CHECK-NEXT:  float w2y = 0; // w2_2(fy);
+// CHECK-NEXT:  float w3y = 0; // w3_2(fy);
+// CHECK-NEXT:  return fooFilter<R>(
+// CHECK-NEXT:      w0x, w1x, w2x, w3x,
+// CHECK-NEXT:      fooFilter<R>(w0y, w1y, w2y, w3y, tex.read(px, py),
+// CHECK-NEXT:                   tex.read(px, py + 1), tex.read(px, py + 2),
+// CHECK-NEXT:                   tex.read(px, py + 3)),
+// CHECK-NEXT:      fooFilter<R>(w0y, w1y, w2y, w3y, tex.read(px + 1, py),
+// CHECK-NEXT:                   tex.read(px + 1, py + 1), tex.read(px + 1, py + 2),
+// CHECK-NEXT:                   tex.read(px + 1, py + 3)),
+// CHECK-NEXT:      fooFilter<R>(w0y, w1y, w2y, w3y, tex.read(px + 2, py),
+// CHECK-NEXT:                   tex.read(px + 2, py + 1), tex.read(px + 2, py + 2),
+// CHECK-NEXT:                   tex.read(px + 2, py + 3)),
+// CHECK-NEXT:      fooFilter<R>(w0y, w1y, w2y, w3y, tex.read(px + 3, py),
+// CHECK-NEXT:                   tex.read(px + 3, py + 1), tex.read(px + 3, py + 2),
+// CHECK-NEXT:                   tex.read(px + 3, py + 3)));
+// CHECK-NEXT:}
+template <class T, class R>
+__device__ R tex2D_bar(
+    const texture<T, 2, cudaReadModeNormalizedFloat> tex, float x, float y) {
+  float px = floor(x - 2) + 1.0f;
+  float py = floor(y - 2) + 1.0f;
+  float fx = x - px;
+  float fy = y - py;
+  float w0x = 0; // w0_2(fx);
+  float w1x = 0; // w1_2(fx);
+  float w2x = 0; // w2_2(fx);
+  float w3x = 0; // w3_2(fx);
+  float w0y = 0; // w0_2(fy);
+  float w1y = 0; // w1_2(fy);
+  float w2y = 0; // w2_2(fy);
+  float w3y = 0; // w3_2(fy);
+  return fooFilter<R>(
+      w0x, w1x, w2x, w3x,
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(tex, px, py),
+                   tex2D(tex, px, py + 1), tex2D(tex, px, py + 2),
+                   tex2D(tex, px, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(tex, px + 1, py),
+                   tex2D(tex, px + 1, py + 1), tex2D(tex, px + 1, py + 2),
+                   tex2D(tex, px + 1, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(tex, px + 2, py),
+                   tex2D(tex, px + 2, py + 1), tex2D(tex, px + 2, py + 2),
+                   tex2D(tex, px + 2, py + 3)),
+      fooFilter<R>(w0y, w1y, w2y, w3y, tex2D(tex, px + 3, py),
+                   tex2D(tex, px + 3, py + 1), tex2D(tex, px + 3, py + 2),
+                   tex2D(tex, px + 3, py + 3)));
+}
+
+// CHECK:void test_call(sycl::uchar4 *d_output,
+// CHECK-NEXT:                          unsigned int srcImgWidth,
+// CHECK-NEXT:                          unsigned int srcImgHeight,
+// CHECK-NEXT:                          float inverseOfScale, float tx,
+// CHECK-NEXT:                          float ty, sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                          dpct::image_accessor_ext<unsigned char, 2> tex) {
+// CHECK-NEXT:  unsigned int x = sycl::mul24((unsigned int)item_ct1.get_group(2), (unsigned int)item_ct1.get_local_range(2)) + item_ct1.get_local_id(2);
+// CHECK-NEXT:  unsigned int y = sycl::mul24((unsigned int)item_ct1.get_group(1), (unsigned int)item_ct1.get_local_range(1)) + item_ct1.get_local_id(1);
+// CHECK-NEXT:  unsigned int i = sycl::mul24(y, (unsigned int)(srcImgWidth / inverseOfScale)) + x; // mabinbin
+// CHECK-NEXT:  float u = x * inverseOfScale + tx; // mabinbin
+// CHECK-NEXT:  float v = y * inverseOfScale + ty; // mabinbin
+// CHECK-NEXT:  if ((x < srcImgWidth / inverseOfScale) &&
+// CHECK-NEXT:      (y < srcImgHeight / inverseOfScale)) {
+// CHECK-NEXT:    float c = tex2D_bar<unsigned char, float>(tex, u, v);
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+__global__ void test_call(uchar4 *d_output,
+                          unsigned int srcImgWidth,
+                          unsigned int srcImgHeight,
+                          float inverseOfScale, float tx,
+                          float ty) {
+  unsigned int x = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
+  unsigned int y = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
+  unsigned int i = __umul24(y, srcImgWidth / inverseOfScale) + x; // mabinbin
+  float u = x * inverseOfScale + tx; // mabinbin
+  float v = y * inverseOfScale + ty; // mabinbin
+  if ((x < srcImgWidth / inverseOfScale) &&
+      (y < srcImgHeight / inverseOfScale)) {
+    float c = tex2D_bar<unsigned char, float>(tex, u, v);
+  }
+}
+

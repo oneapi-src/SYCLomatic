@@ -1984,7 +1984,7 @@ protected:
 public:
   TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
       : TextureInfo(Offset, FilePath, VD->getName()) {
-    if (auto D = dyn_cast<ClassTemplateSpecializationDecl>(
+    if (auto D = dyn_cast_or_null<ClassTemplateSpecializationDecl>(
             VD->getType()->getAsCXXRecordDecl())) {
       auto &TemplateList = D->getTemplateInstantiationArgs();
       auto DataTy = TemplateList[0].getAsType();
@@ -1992,6 +1992,24 @@ public:
         DataTy = ET->getNamedType();
       setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy),
               TemplateList[1].getAsIntegral().getExtValue());
+    } else {
+      auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+      if(TST) {
+        auto Arg0 = TST->getArg(0);
+        auto Arg1 = TST->getArg(1);
+
+        if (Arg1.getKind() == clang::TemplateArgument::Expression) {
+          auto DataTy = Arg0.getAsType();
+          if (auto ET = dyn_cast<ElaboratedType>(DataTy))
+            DataTy = ET->getNamedType();
+          Expr::EvalResult ER;
+          if (!Arg1.getAsExpr()->isValueDependent() &&
+              Arg1.getAsExpr()->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+            int64_t Value = ER.Val.getInt().getExtValue();
+            setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
+          }
+        }
+      }
     }
   }
 

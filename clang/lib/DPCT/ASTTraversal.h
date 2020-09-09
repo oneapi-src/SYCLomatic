@@ -1311,6 +1311,8 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
   static const MapNames::MapTy TextureMemberNames;
+private:
+  bool processTexVarDeclInDevice(const VarDecl *VD);
 };
 
 template <typename T> class RuleRegister {

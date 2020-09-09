@@ -10939,6 +10939,11 @@ const BinaryOperator *TextureRule::getAssignedBO(const Expr *E,
 void TextureRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher = varDecl(hasType(templateSpecializationType(
       hasDeclaration(classTemplateSpecializationDecl(hasName("texture"))))));
+
+  auto DeclMatcherUTF = varDecl(hasType(templateSpecializationType()));
+  MF.addMatcher(DeclMatcherUTF.bind("texDeclForUnspecializedTemplateFunc"),
+                this);
+
   // Match texture object's declaration
   MF.addMatcher(DeclMatcher.bind("texDecl"), this);
   MF.addMatcher(
@@ -11008,6 +11013,31 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                     hasParent(callExpr(unless(parentStmt())).bind("callExpr")))
                     .bind("unresolvedLookupExpr"),
                 this);
+
+}
+
+bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
+  auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+  auto Arg2 = TST->getArg(2);
+
+  if (auto FD =
+          dyn_cast_or_null<FunctionDecl>(VD->getParentFunctionOrMethod())) {
+    if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+      auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
+
+      auto DataType = Tex->getType()->getDataType();
+      if (DataType.back() != '4') {
+        report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+      }
+
+      ParameterStream PS;
+      Tex->getFuncDecl(PS);
+      emplaceTransformation(new ReplaceToken(VD->getBeginLoc(), VD->getEndLoc(),
+                                             std::move(PS.Str)));
+      return true;
+    }
+  }
+  return false;
 }
 
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
@@ -11022,16 +11052,60 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(A.getReplacement());
   }
 
-  if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
+  if (auto VD = getAssistNodeAsType<VarDecl>(
+          Result, "texDeclForUnspecializedTemplateFunc")) {
+
+    auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+    if (!TST)
+      return;
+
+    std::string Name =
+        TST->getTemplateName().getAsTemplateDecl()->getNameAsString();
+
+    if (Name == "texture") {
+      auto ArgNum = TST->getNumArgs();
+
+      if (!isa<ParmVarDecl>(VD) || ArgNum != 3)
+        return;
+
+      auto Arg2 = TST->getArg(2);
+      if (getStmtSpelling(Arg2.getAsExpr()) == "cudaReadModeNormalizedFloat")
+        report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
+               true);
+
+      processTexVarDeclInDevice(VD);
+    }
+  } else if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
+    auto TST = VD->getType()->getAs<TemplateSpecializationType>();
+    if (!TST)
+      return;
+
+    auto ArgNum = TST->getNumArgs();
+
+    if (ArgNum == 3) {
+      auto Arg2 = TST->getArg(2);
+      if (getStmtSpelling(Arg2.getAsExpr()) == "cudaReadModeNormalizedFloat")
+        report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
+               true);
+    }
+
     auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
+
+    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
+
+      if (!isa<ParmVarDecl>(VD))
+        DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
+    }
+
+    if (processTexVarDeclInDevice(VD))
+      return;
+
     auto DataType = Tex->getType()->getDataType();
-    if(DataType.back() != '4'){
+    if (DataType.back() != '4') {
       report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
     }
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
-    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
-      DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
-    }
+
   } else if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
     auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
         ME->getBase()->getType().getUnqualifiedType(), *Result.Context);
