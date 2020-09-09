@@ -2495,6 +2495,7 @@ public:
 
   void emplaceReplacement();
   inline bool hasArgs() { return HasArgs; }
+  inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline bool hasWrittenTemplateArgs() {
     for (auto &Arg : TemplateArgs)
       if (!Arg.isNull() && Arg.isWritten())
@@ -2503,7 +2504,8 @@ public:
   }
   inline const std::string &getName() { return Name; }
 
-  std::string getTemplateArguments(bool WithScalarWrapped = false);
+  std::string getTemplateArguments(bool WrittenArgsOnly = true,
+                                   bool WithScalarWrapped = false);
 
   inline virtual std::string getExtraArguments();
 

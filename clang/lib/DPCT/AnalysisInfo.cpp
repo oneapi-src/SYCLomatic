@@ -572,7 +572,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer.line(
         "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
         LocInfo.LocHash,
-        (hasWrittenTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
+        (hasTemplateArgs() ? (", " + getTemplateArguments(false, true)) : ""),
         ">>(");
   } else {
     Printer.line("cgh.parallel_for(");
@@ -1305,13 +1305,14 @@ void CallFunctionExpr::emplaceReplacement() {
                                          getExtraArguments(), nullptr));
 }
 
-std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
+std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
+                                                   bool WithScalarWrapped) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
-    if (TA.isNull() || !TA.isWritten())
+    if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
-    if (WithScalarWrapped && !TA.isType())
+    if (WithScalarWrapped && (!TA.isType() && !TA.isNull()))
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
     else
       appendString(OS, TA.getString(), ", ");

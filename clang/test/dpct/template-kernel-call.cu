@@ -244,7 +244,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0), cgh);
 // CHECK-NEXT:      sycl::accessor<double, 2, sycl::access::mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), dpct::accessor<double, dpct::local, 2>(bbb_acc_ct1, bbb_range_ct1));
@@ -301,16 +301,16 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, size), sycl::range<3>(0, 0, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo1(Image<T> &ptr, T value) {
-  my_kernel<T><<<8, size, 0, ptr.s>>>(ptr.dPtr);
+  my_kernel<<<8, size, 0, ptr.s>>>(ptr.dPtr);
 }
 
 // CHECK:template <typename T, int size>
@@ -320,14 +320,14 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo2(Image<T> &ptr, T value) {
-  my_kernel<T><<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
+  my_kernel<<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
 }
