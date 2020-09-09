@@ -285,12 +285,6 @@ public:
         get_range(make_index_sequence<Dimension>()),
         cl::sycl::property::image::use_host_ptr());
   }
-  /// Free the data.
-  void free_data() {
-    if (_host_data)
-      std::free(_host_data);
-    _host_data = nullptr;
-  }
 
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
@@ -305,7 +299,11 @@ public:
     return pitched_data(_host_data, _range[0], _range[0], _range[1]);
   }
 
-  ~image_matrix() { free_data(); }
+  ~image_matrix() {
+    if (_host_data)
+      std::free(_host_data);
+    _host_data = nullptr;
+  }
 };
 using image_matrix_p = image_matrix *;
 
