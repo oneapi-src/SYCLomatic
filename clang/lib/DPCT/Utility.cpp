@@ -2108,3 +2108,53 @@ bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
   }
   return true;
 }
+
+unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
+                                  clang::SourceLocation SL, bool &Flag) {
+  Flag = true;
+  if (!Node)
+    return dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  std::string IndentStr = getIndent(SL, SM).str();
+  unsigned int Len = 0;
+  for (const auto &C : IndentStr) {
+    if (C == '\t')
+      Len = Len + dpct::DpctGlobalInfo::getCodeFormatStyle().TabWidth;
+    else
+      Len++;
+  }
+
+  unsigned int CompoundStmtCounter = 0;
+  clang::DynTypedNodeList Parents = Context.getParents(*Node);
+  while (!Parents.empty()) {
+    auto Cur = Parents[0];
+
+    if (Cur.get<clang::CompoundStmt>()) {
+      if (!Context.getParents(Cur).empty() &&
+          !Context.getParents(Cur)[0].get<clang::IfStmt>() &&
+          !Context.getParents(Cur)[0].get<clang::ForStmt>() &&
+          !Context.getParents(Cur)[0].get<clang::WhileStmt>()) {
+        CompoundStmtCounter++;
+      }
+    } else if (Cur.get<clang::IfStmt>() || Cur.get<clang::ForStmt>() ||
+               Cur.get<clang::WhileStmt>()) {
+      CompoundStmtCounter++;
+    }
+
+    Parents = Context.getParents(Cur);
+  }
+
+  unsigned int Result = 0;
+  if (CompoundStmtCounter) {
+    Result = Len / CompoundStmtCounter;
+    if (Len % CompoundStmtCounter != 0)
+      Flag = false;
+  } else {
+    Result = Len;
+  }
+
+  return Result == 0 ? dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth
+                     : Result;
+}

@@ -435,4 +435,6 @@ bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::SourceLocation Loc);
 bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::StringRef FilePath, size_t Offset);
+unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
+                                  clang::SourceLocation SL, bool &Flag);
 #endif // DPCT_UTILITY_H

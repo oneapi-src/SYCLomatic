@@ -8404,6 +8404,12 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
         new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     removeTrailingSemicolon(KCall, Result);
 
+    bool Flag = true;
+    unsigned int IndentLen = calculateIndentWidth(
+        KCall, SM.getExpansionLoc(KCall->getBeginLoc()), Flag);
+    if (Flag)
+      DpctGlobalInfo::insertKCIndentWidth(IndentLen);
+
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
     if (!FD->isTemplateInstantiation())

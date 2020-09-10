@@ -62,11 +62,18 @@ static bool formatFile(StringRef FileName,
 
   clang::format::FormattingAttemptStatus Status;
   clang::format::FormatStyle Style = DpctGlobalInfo::getCodeFormatStyle();
-  if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
-          clang::format::FormatRange::migrated &&
-      clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag()) {
 
-    Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
+  if (clang::format::BlockLevelFormatFlag) {
+    if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
+        clang::format::FormatRange::migrated) {
+      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getKCIndentWidth();
+    }
+  } else {
+    if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
+            clang::format::FormatRange::migrated &&
+        clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag()) {
+      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
+    }
   }
 
   // Here need new SourceManager. Because SourceManager caches the file buffer,

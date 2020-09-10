@@ -856,6 +856,23 @@ public:
   }
   inline static void setIndentWidth(unsigned int W) { IndentWidth = W; }
   inline static unsigned int getIndentWidth() { return IndentWidth; }
+  inline static void insertKCIndentWidth(unsigned int W) {
+    auto Iter = KCIndentWidthMap.find(W);
+    if (Iter != KCIndentWidthMap.end())
+      Iter->second++;
+    else
+      KCIndentWidthMap.insert(std::make_pair(W, 1));
+  }
+  inline static unsigned int getKCIndentWidth() {
+    if (KCIndentWidthMap.empty())
+      return DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
+
+    std::multimap<unsigned int, unsigned int> OccuranceIndentWidthMap;
+    for (const auto &I : KCIndentWidthMap)
+      OccuranceIndentWidthMap.insert(std::make_pair(I.second, I.first));
+
+    return OccuranceIndentWidthMap.begin()->second;
+  }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   inline static format::FormatRange getFormatRange() { return FmtRng; }
@@ -1471,6 +1488,7 @@ private:
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
+  static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
