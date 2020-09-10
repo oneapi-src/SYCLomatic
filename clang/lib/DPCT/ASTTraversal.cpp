@@ -151,6 +151,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
+  if (!MD.getMacroInfo())
+    return;
   if (MD.getMacroInfo()->getNumTokens() > 0) {
     if (dpct::DpctGlobalInfo::getMacroDefines().find(MD.getMacroInfo()) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
@@ -201,7 +203,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (MacroNameTok.getKind() == tok::identifier &&
       MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__annotate__" &&
-      !MD.getMacroInfo()->param_empty()) {
+	  MD.getMacroInfo() && !MD.getMacroInfo()->param_empty()) {
     SourceLocation Loc = SM.getExpansionLoc(Range.getBegin());
 
     if (auto TM = DpctGlobalInfo::getInstance().findConstantMacroTMInfo(Loc)) {
@@ -8581,13 +8583,14 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   emplaceTransformation(new InsertText(SM.getExpansionLoc(VD->getBeginLoc()),
                                        std::move(NewDecl)));
 
-  auto DeviceRepl = ReplaceVarDecl::getVarDeclReplacement(
-      VD, MemVarInfo::buildMemVarInfo(VD)->getDeclarationReplacement());
-  DeviceRepl->setConstantFlag(dpct::ConstantFlagType::HostDevice);
-  DeviceRepl->setConstantOffset(R.getConstantOffset());
-  DeviceRepl->setInitStr(InitStr);
-  DeviceRepl->setNewHostVarName(HostVariableName);
-  emplaceTransformation(DeviceRepl);
+  if(auto DeviceRepl = ReplaceVarDecl::getVarDeclReplacement(
+      VD, MemVarInfo::buildMemVarInfo(VD)->getDeclarationReplacement())) {
+    DeviceRepl->setConstantFlag(dpct::ConstantFlagType::HostDevice);
+    DeviceRepl->setConstantOffset(R.getConstantOffset());
+    DeviceRepl->setInitStr(InitStr);
+    DeviceRepl->setNewHostVarName(HostVariableName);
+    emplaceTransformation(DeviceRepl);
+  }
 
   R = tooling::Replacement(R.getFilePath(), 0, 0, "");
 }
