@@ -260,11 +260,11 @@ public:
   cl::sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
     std::set<cl::sycl::queue *> current_queues;
     std::copy(_queues.begin(), _queues.end(),
       std::inserter(current_queues, current_queues.begin()));
-    lock.~lock_guard();
+    lock.unlock();
     for (auto q : current_queues) {
       q->wait_and_throw();
     }
