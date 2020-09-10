@@ -76,9 +76,8 @@ bool isTargetMathFunction(const FunctionDecl *FD) {
 Optional<std::string> MathFuncNameRewriter::rewrite() {
   // If the function is not a target math function, do not migrate it
   if (!isTargetMathFunction(Call->getDirectCallee())) {
-    RewriteArgList = getMigratedArgs();
-    setTargetCalleeName(getSourceCalleeName().str());
-    return buildRewriteString();
+    // No actions needed here, just return an empty string
+    return {};
   }
 
   reportUnsupportedRoundingMode();
