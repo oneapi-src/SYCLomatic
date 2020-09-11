@@ -141,7 +141,7 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc21;
   // CHECK-NEXT: res21.type = dpct::data_linear;
   // CHECK-NEXT: res21.data = d_data21;
-  // CHECK-NEXT: res21.chn.type = dpct::channel_unsigned;
+  // CHECK-NEXT: res21.chn.kind = dpct::channel_unsigned;
   // CHECK-NEXT: res21.chn.set_channel_size(1, sizeof(unsigned)*8); // bits per channel
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*2) res21.chn.set_channel_size(2, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*3) res21.chn.set_channel_size(3, sizeof(unsigned)*8);

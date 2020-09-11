@@ -11030,7 +11030,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
       }
     } else if (BaseTy == "cudaChannelFormatDesc") {
       if (ME->getMemberNameInfo().getAsString() == "f") {
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
+        emplaceTransformation(new RenameFieldInMemberExpr(ME, "kind"));
       } else if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         static std::map<std::string, std::string> ChannelOrderMap = {
             {"x", "1"}, {"y", "2"}, {"z", "3"}, {"w", "4"}};
