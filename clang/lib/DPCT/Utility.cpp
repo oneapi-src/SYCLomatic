@@ -1455,6 +1455,7 @@ bool isOuterMostMacro(const Stmt *E) {
     P->print(StreamP, CT.getPrintingPolicy());
     StreamP.flush();
   } while (!ExpandedParent.compare(ExpandedExpr));
+
   return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
 }
 
@@ -1484,14 +1485,14 @@ bool isInsideFunctionLikeMacro(
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
   if (Parent->getSourceRange().getBegin().isValid() &&
     Parent->getSourceRange().getBegin().isMacroID()) {
-    if (SM.getCharacterData(
+    if (getHashStrFromLoc(
       SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
-      SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
+        getHashStrFromLoc(SM.getExpansionLoc(BeginLoc))) {
       if (Parent->getSourceRange().getEnd().isValid() &&
         Parent->getSourceRange().getEnd().isMacroID()) {
-        if (SM.getCharacterData(
+        if (getHashStrFromLoc(
           SM.getExpansionLoc(Parent->getSourceRange().getEnd())) ==
-          SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+            getHashStrFromLoc(SM.getExpansionLoc(EndLoc))) {
           return true;
         }
       }
@@ -1507,48 +1508,54 @@ bool isInsideFunctionLikeMacro(
   // Should check if the expansion is the whole macro definition.
 
   // Get the location of "x" in "#define MacroA(x) = x"
-  SourceLocation ImmediateSpellingBegin = SM.getImmediateSpellingLoc(BeginLoc);
-  SourceLocation ImmediateSpellingEnd = SM.getImmediateSpellingLoc(EndLoc);
+  SourceLocation ImmediateSpellingBegin =
+      SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
+  SourceLocation ImmediateSpellingEnd =
+      SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
   SourceLocation ImmediateExpansionBegin =
-      SM.getImmediateExpansionRange(BeginLoc).getBegin();
+      SM.getSpellingLoc(SM.getImmediateExpansionRange(BeginLoc).getBegin());
   SourceLocation ImmediateExpansionEnd =
-      SM.getImmediateExpansionRange(EndLoc).getEnd();
+      SM.getSpellingLoc(SM.getImmediateExpansionRange(EndLoc).getEnd());
 
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
   auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateExpansionBegin));
+      getHashStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateExpansionEnd)) {
+      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
+          getHashStrFromLoc(ImmediateExpansionEnd)) {
     return false;
   }
+
   // ExpansionBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateExpansionBegin));
+      getHashStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateSpellingEnd)) {
+      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
+          getHashStrFromLoc(ImmediateSpellingEnd)) {
     return false;
   }
+
   // SpellingBegin & ExpansionEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateSpellingBegin));
+      getHashStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateExpansionEnd)) {
+      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
+          getHashStrFromLoc(ImmediateExpansionEnd)) {
     return false;
   }
+
   // SpellingBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateSpellingBegin));
+      getHashStrFromLoc(ImmediateSpellingBegin));
+
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateSpellingEnd)) {
+      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
+          getHashStrFromLoc(ImmediateSpellingEnd)) {
     return false;
   }
 
@@ -1561,10 +1568,10 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(SpellingBegin));
+          getHashStrFromLoc(SpellingBegin));
   auto ItSpellingEnd =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(SpellingEnd));
+          getHashStrFromLoc(SpellingEnd));
 
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==

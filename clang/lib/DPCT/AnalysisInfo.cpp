@@ -44,15 +44,15 @@ SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager   *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
-std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
-std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
-std::map<MacroInfo *, bool> DpctGlobalInfo::MacroDefines;
+std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
@@ -728,7 +728,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   calleeSpelling = SM.getSpellingLoc(calleeSpelling);
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(calleeSpelling));
+      getHashStrFromLoc(calleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
   }

@@ -1292,12 +1292,12 @@ public:
     insertFile(LocInfo.first)->insertHeader(Type);
   }
 
-  static std::map<const char *, std::shared_ptr<MacroExpansionRecord>> &
+  static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
   }
 
-  static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       &getMacroTokenToMacroDefineLoc() {
     return MacroTokenToMacroDefineLoc;
   }
@@ -1316,7 +1316,7 @@ public:
   static std::map<std::string, SourceLocation> &getEndOfEmptyMacros() {
     return EndOfEmptyMacros;
   }
-  static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
+  static std::map<std::string, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
   static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
@@ -1421,7 +1421,7 @@ private:
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
     // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
     auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-        SM->getCharacterData(SM->getSpellingLoc(CKC->getBeginLoc())));
+        getHashStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
@@ -1472,12 +1472,12 @@ private:
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
-  static std::map<const char *,
+  static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
   static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
   static std::vector<std::pair<std::string, size_t>> ConditionalCompilationLoc;
-  static std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
   // key: The hash string of the first non-empty token after the end location of
   // macro expansion
@@ -1486,7 +1486,7 @@ private:
   // key: The hash string of the begin location of the macro expansion
   // value: The end location of the macro expansion
   static std::map<std::string, SourceLocation> BeginOfEmptyMacros;
-  static std::map<MacroInfo *, bool> MacroDefines;
+  static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<std::string> IncludingFileSet;

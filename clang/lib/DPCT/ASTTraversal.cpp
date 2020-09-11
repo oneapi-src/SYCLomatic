@@ -95,7 +95,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     std::shared_ptr<dpct::DpctGlobalInfo::MacroDefRecord> R =
       std::make_shared<dpct::DpctGlobalInfo::MacroDefRecord>(
         MacroNameTok.getLocation(), IsInRoot);
-    dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc()[SM.getCharacterData(
+    dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc()[getHashStrFromLoc(
         MD->getMacroInfo()->getReplacementToken(i).getLocation())] = R;
   }
 
@@ -151,13 +151,28 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
+
   if (!MD.getMacroInfo())
     return;
   if (MD.getMacroInfo()->getNumTokens() > 0) {
-    if (dpct::DpctGlobalInfo::getMacroDefines().find(MD.getMacroInfo()) ==
+    std::string HashKey = "";
+    if (MD.getMacroInfo()->getReplacementToken(0).getLocation().isValid())
+      HashKey = getHashStrFromLoc(SM.getSpellingLoc(
+          MD.getMacroInfo()->getReplacementToken(0).getLocation()));
+    else
+      HashKey = "InvalidLoc";
+
+    std::string Tok = "";
+    if (MacroNameTok.getIdentifierInfo())
+      Tok = MacroNameTok.getIdentifierInfo()->getName().str();
+
+    HashKey = HashKey + ":" + Tok + ":" +
+              std::to_string((int64_t)(MD.getMacroInfo()));
+
+    if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
-      dpct::DpctGlobalInfo::getMacroDefines()[MD.getMacroInfo()] = true;
+      dpct::DpctGlobalInfo::getMacroDefines()[HashKey] = true;
       size_t i;
       // Record all tokens in the macro definition
       for (i = 0; i < MD.getMacroInfo()->getNumTokens(); i++) {
@@ -166,7 +181,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                 MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range,
                 IsInRoot, i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-            [SM.getCharacterData(
+            [getHashStrFromLoc(
                 MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
       }
     }

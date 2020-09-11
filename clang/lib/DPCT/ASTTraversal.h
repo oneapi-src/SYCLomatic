@@ -224,7 +224,7 @@ protected:
     auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
       auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
-        SM.getCharacterData(SM.getImmediateSpellingLoc(SL)));
+          getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch != dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInRoot){
           SL = ItMatch->second->NameTokenLoc;
