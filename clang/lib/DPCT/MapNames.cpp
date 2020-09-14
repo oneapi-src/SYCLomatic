@@ -190,13 +190,13 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaFilterModePoint", ClNamespace + "::filtering_mode::nearest"},
     {"cudaFilterModeLinear", ClNamespace + "::filtering_mode::linear"},
     // enum Channel Format Kind
-    {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
-    {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
-    {"cudaChannelFormatKindFloat", "dpct::channel_float"},
+    {"cudaChannelFormatKindSigned", "dpct::image_channel_data_type::signed_int"},
+    {"cudaChannelFormatKindUnsigned", "dpct::image_channel_data_type::unsigned_int"},
+    {"cudaChannelFormatKindFloat", "dpct::image_channel_data_type::fp"},
     // enum Resource Type
-    {"cudaResourceTypeArray", "dpct::data_matrix"},
-    {"cudaResourceTypeLinear", "dpct::data_linear"},
-    {"cudaResourceTypePitch2D", "dpct::data_pitch"},
+    {"cudaResourceTypeArray", "dpct::image_data_type::matrix"},
+    {"cudaResourceTypeLinear", "dpct::image_data_type::linear"},
+    {"cudaResourceTypePitch2D", "dpct::image_data_type::pitch"},
     // ...
   };
 

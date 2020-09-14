@@ -44,7 +44,7 @@ void gather_force(const cudaTextureObject_t gridTexObj, cudaStream_t stream) {
 // CHECK: template <class T> void BindTextureObject(dpct::image_matrix_p &data, dpct::image_wrapper_base_p &tex) {
 // CHECK-NEXT:   dpct::image_data res42;
 // CHECK-NEXT:   dpct::sampling_info texDesc42;
-// CHECK-NEXT:   res42.type = dpct::data_matrix;
+// CHECK-NEXT:   res42.type = dpct::image_data_type::matrix;
 // CHECK-NEXT:   res42.data = data;
 // CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
 // CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -90,19 +90,19 @@ int main() {
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);
-  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: dpct::image_wrapper_base_p tex42;
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::sampling_info texDesc42;
-  // CHECK-NEXT: res42.type = dpct::data_pitch;
+  // CHECK-NEXT: res42.type = dpct::image_data_type::pitch;
   // CHECK-NEXT: res42.data = d_data42;
   // CHECK-NEXT: res42.chn = desc42;
   // CHECK-NEXT: res42.x = sizeof(sycl::float4) * 32;
   // CHECK-NEXT: res42.y = 32;
   // CHECK-NEXT: res42.pitch = sizeof(sycl::float4) * 32;
-  // CHECK-NEXT: res42.type = dpct::data_matrix;
+  // CHECK-NEXT: res42.type = dpct::image_data_type::matrix;
   // CHECK-NEXT: res42.data = a42;
   // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -139,9 +139,9 @@ int main() {
   // CHECK-NEXT: dpct::image_wrapper_base_p tex21;
   // CHECK-NEXT: dpct::image_data res21;
   // CHECK-NEXT: dpct::sampling_info texDesc21;
-  // CHECK-NEXT: res21.type = dpct::data_linear;
+  // CHECK-NEXT: res21.type = dpct::image_data_type::linear;
   // CHECK-NEXT: res21.data = d_data21;
-  // CHECK-NEXT: res21.chn.kind = dpct::channel_unsigned;
+  // CHECK-NEXT: res21.chn.type = dpct::image_channel_data_type::unsigned_int;
   // CHECK-NEXT: res21.chn.set_channel_size(1, sizeof(unsigned)*8); // bits per channel
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*2) res21.chn.set_channel_size(2, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*3) res21.chn.set_channel_size(3, sizeof(unsigned)*8);

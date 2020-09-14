@@ -54,7 +54,7 @@ int main() {
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);
-  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -79,7 +79,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
+  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;

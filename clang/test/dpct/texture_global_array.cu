@@ -18,10 +18,13 @@ cudaTextureObject_t tex_Input[MAX_INSTANCES] = {NULL};
 void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
                        int pPitch) {
   // CHECK: memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
-  // CHECK-NEXT: resDescInput[instance].type = dpct::data_pitch;
+  // CHECK-NEXT: resDescInput[instance].type = dpct::image_data_type::pitch;
   // CHECK-NEXT: resDescInput[instance].data = d_In;
   // CHECK-NEXT: dpct::image_channel channelDesc =
-  // CHECK-NEXT:     dpct::create_image_channel(8, 0, 0, 0, dpct::channel_unsigned);
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     dpct::create_image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: resDescInput[instance].chn = channelDesc;
   // CHECK-NEXT: resDescInput[instance].y = pSize;
   // CHECK-NEXT: resDescInput[instance].x = rSize;
@@ -62,7 +65,7 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
 void createTestTextureAlternative(int instance, unsigned char *d_In, int rSize,
                                   int pSize, int pPitch) {
   // CHECK: memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
-  // CHECK-NEXT: resDescInput[instance].type = dpct::data_matrix;
+  // CHECK-NEXT: resDescInput[instance].type = dpct::image_data_type::matrix;
   // CHECK-NEXT: resDescInput[instance].data = d_Input[instance];
   // CHECK-NEXT: memset(&texDescInput[instance], 0, sizeof(texDescInput[instance]));
   // CHECK-NEXT: texDescInput[instance].filter_mode() = sycl::filtering_mode::linear;
@@ -119,10 +122,8 @@ void test(float *d_Out, int rSize, int pSize, int pPitch) {
   //CHECK-EMPTY:
   //CHECK-NEXT:     auto tex_Input_0_smpl = tex_Input[0]->get_sampler();
   //CHECK-EMPTY:
-  //CHECK-NEXT:     auto dpct_global_range = gridSz * blockSz;
-  //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
-  //CHECK-NEXT:       sycl::nd_range<3>(dpct_global_range, blockSz),
+  //CHECK-NEXT:       sycl::nd_range<3>(gridSz * blockSz, blockSz),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:         test_Kernel(dpct::image_accessor_ext<float, 2>(tex_Input_0_smpl, tex_Input_0_acc), d_Out, pPitch / sizeof(float), item_ct1);
   //CHECK-NEXT:       });

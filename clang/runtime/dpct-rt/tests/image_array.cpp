@@ -27,9 +27,9 @@ int main() {
   dpct::dpct_memcpy(device_buffer, host_buffer, 640 * 480 * 24 * sizeof(sycl::float4));
 
   dpct::image_channel chn2 =
-      dpct::create_image_channel(32, 32, 0, 0, dpct::channel_float);
+      dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   dpct::image_channel chn4 =
-      dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+      dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   chn4.set_channel_size(4, 32);
 
   dpct::image_matrix_p array1;
@@ -45,7 +45,7 @@ int main() {
   dpct::image_wrapper_base *tex22;
   dpct::image_data res22;
   dpct::sampling_info texDesc22;
-  res22.type = dpct::data_matrix;
+  res22.type = dpct::image_data_type::matrix;
   res22.data = array2;
 
   tex43.attach(array3);

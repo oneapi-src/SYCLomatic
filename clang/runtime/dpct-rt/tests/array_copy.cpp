@@ -41,7 +41,7 @@ void print(int *in, size_t size) {
 int main() {
   dpct::image_matrix_p ain, aout;
   dpct::image_channel chn =
-      dpct::create_image_channel(32, 0, 0, 0, dpct::channel_signed);
+      dpct::create_image_channel(32, 0, 0, 0, dpct::image_channel_data_type::signed_int);
   int *in, *out;
   sycl::range<2> size = sycl::range<2>(256, 1);
 

@@ -94,7 +94,7 @@ int main() {
   // CHECK-NEXT: tex42.attach(a42);
   // CHECK-NEXT: tex42.attach(a42, tex42.channel());
   // CHECK-NEXT: tex42.attach(a42, tex42.channel());
-  // CHECK-NEXT: tex42.channel() = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+  // CHECK-NEXT: tex42.channel() = dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   float4 *d_data42;
   cudaArray_t a42;
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
@@ -118,7 +118,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
+  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
