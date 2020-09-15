@@ -4,9 +4,9 @@
 // RUN: FileCheck --input-file %T/thrust-copy-2.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
-// CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 
 #include <thrust/device_vector.h>
 #include <thrust/copy.h>
@@ -17,6 +17,6 @@ int main(void) {
 // CHECK:   dpct::device_vector<int> output(4);
   thrust::device_vector<int> output(4);
 
-// CHECK:  std::copy(dpstd::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), input.begin(), input.end(), output.begin());
+// CHECK:  std::copy(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), input.begin(), input.end(), output.begin());
   thrust::copy(input.begin(), input.end(), output.begin());
 }

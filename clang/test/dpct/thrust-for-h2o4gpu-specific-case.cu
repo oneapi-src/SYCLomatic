@@ -6,9 +6,9 @@
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
-// CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 

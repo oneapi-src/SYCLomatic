@@ -50,7 +50,7 @@ class IncludesCallbacks : public PPCallbacks {
   SourceManager &SM;
 
   std::unordered_set<std::string> SeenFiles;
-  bool DpstdHeaderInserted;
+  bool DplHeaderInserted;
   ASTTraversalManager &ATM;
   bool IsFileInCmd = true;
 
@@ -59,7 +59,7 @@ public:
                     IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
                     ASTTraversalManager &ATM)
       : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        DpstdHeaderInserted(false), ATM(ATM) {}
+        DplHeaderInserted(false), ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,

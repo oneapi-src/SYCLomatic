@@ -4,9 +4,9 @@
 // RUN: FileCheck --input-file %T/thrust-complex.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
-// CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <complex>
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
@@ -132,7 +132,7 @@ int main() {
 //CHECK: int foo(){
 //CHECK-NEXT:   double *p;
 //CHECK-NEXT:   dpct::device_ptr<double> dp(p);
-//CHECK-NEXT:   double sum = std::reduce(dpstd::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
 //CHECK-NEXT:   printf("sum = %f\n", sum);
 //CHECK-NEXT:   std::complex<float> c1(1.0);
 //CHECK-NEXT:   std::complex<float> c2(2.0);

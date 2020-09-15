@@ -7,16 +7,16 @@ set(dpct_rt_files
   include/image.hpp
   include/util.hpp
   include/blas_utils.hpp
-  include/dpstd_utils.hpp
+  include/dpl_utils.hpp
 )
 
 set(dpct_rt_dpstd_files
-  include/dpstd_extras/functional.h
-  include/dpstd_extras/memory.h
-  include/dpstd_extras/iterators.h
-  include/dpstd_extras/algorithm.h
-  include/dpstd_extras/numeric.h
-  include/dpstd_extras/vector.h
+  include/dpl_extras/functional.h
+  include/dpl_extras/memory.h
+  include/dpl_extras/iterators.h
+  include/dpl_extras/algorithm.h
+  include/dpl_extras/numeric.h
+  include/dpl_extras/vector.h
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

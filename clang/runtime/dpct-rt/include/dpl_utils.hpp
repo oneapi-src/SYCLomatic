@@ -14,23 +14,23 @@
 * License.
 *****************************************************************************/
 
-//===--- dpstd_utils.hpp ------------------------------*- C++ -*---===//
+//===--- dpl_utils.hpp ------------------------------*- C++ -*---===//
 
-#ifndef __DPSTD_UTILS_HPP
-#define __DPSTD_UTILS_HPP
+#ifndef __DPL_UTILS_HPP
+#define __DPL_UTILS_HPP
 
 
 #define __PSTL_BACKEND_SYCL 1
 #define __USE_DPCT 1
 
-#include <dpstd/execution>
-#include <dpstd/algorithm>
-#include <dpstd/numeric>
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/numeric>
 
-#include "dpstd_extras/memory.h"
-#include "dpstd_extras/algorithm.h"
-#include "dpstd_extras/numeric.h"
-#include "dpstd_extras/iterators.h"
-#include "dpstd_extras/vector.h"
+#include "dpl_extras/memory.h"
+#include "dpl_extras/algorithm.h"
+#include "dpl_extras/numeric.h"
+#include "dpl_extras/iterators.h"
+#include "dpl_extras/vector.h"
 
-#endif // __DPSTD_UTILS_HPP
+#endif // __DPL_UTILS_HPP

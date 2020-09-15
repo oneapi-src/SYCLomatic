@@ -608,11 +608,11 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
-    if (!DpstdHeaderInserted) {
-      std::string Replacement = std::string("<dpct/dpstd_utils.hpp>") +
-                                getNL() + "#include <dpstd/execution>" +
-                                getNL() + "#include <dpstd/algorithm>";
-      DpstdHeaderInserted = true;
+    if (!DplHeaderInserted) {
+      std::string Replacement = std::string("<dpct/dpl_utils.hpp>") +
+                                getNL() + "#include <oneapi/dpl/execution>" +
+                                getNL() + "#include <oneapi/dpl/algorithm>";
+      DplHeaderInserted = true;
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
     } else {
@@ -1633,7 +1633,7 @@ void ThrustFunctionRule::thrustFuncMigration(
 
     // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
     // thrust::count, thrust::equal) called in device function , should be
-    // migrated to dpstd APIs without a policy on the DPC++ side
+    // migrated to oneapi::dpl APIs without a policy on the DPC++ side
     if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
       if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
           ArgT.find("execution_policy_base") != std::string::npos) {
@@ -1685,8 +1685,8 @@ void ThrustFunctionRule::thrustFuncMigration(
       return;
     }
   } else if (ThrustFuncName == "make_zip_iterator") {
-    // dpstd::make_zip_iterator expects the component iterators to be passed
-    // directly instead of being wrapped in a tuple as
+    // oneapi::dpl::make_zip_iterator expects the component iterators to be
+    // passed directly instead of being wrapped in a tuple as
     // thrust::make_zip_iterator requires.
     std::string NewArg;
     if (auto CCE = dyn_cast<CXXConstructExpr>(CE->getArg(0)))
@@ -1732,7 +1732,7 @@ void ThrustFunctionRule::thrustFuncMigration(
     // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
     // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
     // without creating a unique one for every use
-    if (ExtraParam == "dpstd::execution::sycl") {
+    if (ExtraParam == "oneapi::dpl::execution::sycl") {
       std::string Name = UniqueName(CE);
       if (checkWhetherIsDuplicate(CE, false))
         return;
@@ -1741,7 +1741,7 @@ void ThrustFunctionRule::thrustFuncMigration(
       std::string TemplateArg = "";
       if (DpctGlobalInfo::isSyclNamedLambda())
         TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
-      ExtraParam = "dpstd::execution::make_device_policy" + TemplateArg +
+      ExtraParam = "oneapi::dpl::execution::make_device_policy" + TemplateArg +
                    "({{NEEDREPLACEQ" + std::to_string(Index) + "}})";
     }
     emplaceTransformation(
@@ -2274,7 +2274,7 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
 // Make the necessary replacements for thrust::transform_iterator.
 // The mapping requires swapping of the two template parameters, i.e.
 //   thrust::transform_iterator<Functor, Iterator> ->
-//     dpstd::transform_iterator<Iterator, Functor>
+//     oenapi::dpl::transform_iterator<Iterator, Functor>
 // This is a special transformation, because it requires the template
 // parameters to be processed as part of the top level processing of
 // the transform_iterator itself.  Simply processing the TypeLocs
@@ -2284,7 +2284,7 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
 // For example:
 //   thrust::transform_iterator<F, thrust::transform_iterator<F,I>>
 // Should produce:
-//   dpstd::transform_iterator<dpstd::transform_iterator<I,F>, F>
+//   oneapi::dpl::transform_iterator<oneapi::dpl::transform_iterator<I,F>, F>
 //
 // The processing is therefore done by recursively walking all the
 // TypeLocs that can be reached from the template arguments, and

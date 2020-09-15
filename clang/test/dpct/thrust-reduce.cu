@@ -4,9 +4,9 @@
 // RUN: FileCheck --input-file %T/thrust-reduce.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
-// CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
 #include <thrust/host_vector.h>
@@ -17,7 +17,7 @@ int main() {
   double *p;
 // CHECK:  dpct::device_ptr<double> dp(p);
   thrust::device_ptr<double> dp(p);
-// CHECK:  sum = std::reduce(dpstd::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+// CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
 }
 
