@@ -19,7 +19,7 @@ void foo() {
   float *d_A = NULL;
   cudaStream_t stream;
 
-  // CHECK: dpct::dpct_malloc((void **)&d_A, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size);
   cudaMalloc((void **)&d_A, size);
 
   /// memcpy

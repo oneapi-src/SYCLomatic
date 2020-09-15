@@ -27,6 +27,7 @@
 #include "llvm/Support/Path.h"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -9329,6 +9330,7 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
     case Stmt::MemberExprClass:
     case Stmt::ParenExprClass:
     case Stmt::CallExprClass:
+    case Stmt::IntegerLiteralClass:
       break;
     default:
       PP = std::make_unique<ParensPrinter<std::ostream>>(OS);
@@ -9420,13 +9422,33 @@ void MemoryMigrationRule::mallocMigration(
     DpctGlobalInfo::getInstance().insertCudaMalloc(C);
     if (USMLevel == UsmLevel::restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
+      if (IsAssigned)
+        emplaceTransformation(new InsertBeforeStmt(C, "("));
       mallocMigrationWithTransformation(
           *Result.SourceManager, C, Name,
           MapNames::getClNamespace() + "::malloc_device",
           "{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
     } else {
-      emplaceTransformation(
-          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+      std::ostringstream OS;
+      std::string Type;
+      if (IsAssigned)
+        OS << "(";
+      printDerefOp(OS, C->getArg(0)->IgnoreCasts()->IgnoreParens(), &Type);
+      if (Type != "NULL TYPE" && Type != "void *")
+        OS << " = (" << Type << ")";
+      else
+        OS << " = ";
+      emplaceTransformation(new InsertBeforeStmt(C, OS.str()));
+      emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+      emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
     std::string ReplaceName;
@@ -9470,21 +9492,58 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
     if (USMLevel == UsmLevel::restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
+      if (IsAssigned)
+        emplaceTransformation(new InsertBeforeStmt(C, "("));
       mallocMigrationWithTransformation(
           *Result.SourceManager, C, Name,
           MapNames::getClNamespace() + "::malloc_device",
           "{{NEEDREPLACEQ" + std::to_string(Index) + "}}", true, 2);
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
     } else {
       ExprAnalysis EA(C->getArg(2));
       EA.analyze();
+      std::ostringstream OS;
+      std::string Type;
+      if (IsAssigned)
+        OS << "(";
+      printDerefOp(OS, C->getArg(2)->IgnoreCasts()->IgnoreParens(), &Type);
+      if (Type != "NULL TYPE" && Type != "void *")
+        OS << " = (" << Type << ")";
+      else
+        OS << " = ";
+      emplaceTransformation(new InsertBeforeStmt(C, OS.str()));
       emplaceTransformation(
           new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
-      emplaceTransformation(
-          new InsertBeforeStmt(C->getArg(0), EA.getReplacedString() + ", ",
-                               InsertPosition::InsertPositionAlwaysLeft));
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
     }
   } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+    std::ostringstream OS;
+    std::string Type;
+    if (IsAssigned)
+      OS << "(";
+    printDerefOp(OS, C->getArg(0)->IgnoreCasts()->IgnoreParens(), &Type);
+    if (Name != "cudaMalloc3D" && Type != "NULL TYPE" && Type != "void *")
+      OS << " = (" << Type << ")";
+    else
+      OS << " = ";
+    emplaceTransformation(new InsertBeforeStmt(C, OS.str()));
     emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+    emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
+    std::ostringstream OS2;
+    printDerefOp(OS2, C->getArg(1)->IgnoreCasts()->IgnoreParens());
+    if (Name == "cudaMallocPitch") {
+      emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
+    }
+    if (IsAssigned) {
+      emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
   } else if (Name == "cudaMalloc3DArray") {
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
@@ -10191,10 +10250,12 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
 
     // if API is removed, then no need to add (*, 0)
-    // Currently, there are only cudaHostRegister and cudaHostUnregister
+    // There are some cases where (*, 0) has already been added.
     if (IsAssigned && Name.compare("cudaHostRegister") &&
         Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise") &&
-        Name.compare("cudaArrayGetInfo")) {
+        Name.compare("cudaArrayGetInfo") && Name.compare("cudaMalloc") &&
+        Name.compare("cudaMallocPitch") && Name.compare("cudaMalloc3D") &&
+        Name.compare("cublasAlloc")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&

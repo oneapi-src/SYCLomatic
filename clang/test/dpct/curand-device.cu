@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   //CHECK: oneapi::mkl::rng::device::mrg32k3a<2> *RandomStates;
   curandStateMRG32k3a_t *RandomStates;
   void *dev;
-  //CHECK: dpct::dpct_malloc((void**)&dev, size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
+  //CHECK: dev = dpct::dpct_malloc(size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
   //CHECK-NEXT: RandomStates = (oneapi::mkl::rng::device::mrg32k3a<2>*)dev;
   cudaMalloc((void**)&dev, size * sizeof(curandStateMRG32k3a_t));
   RandomStates = (curandStateMRG32k3a_t*)dev;

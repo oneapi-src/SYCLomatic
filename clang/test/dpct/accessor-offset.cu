@@ -28,7 +28,7 @@ void foo() {
 
   // No offset: use right after memory allocation
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:     q_ct1.submit(
@@ -50,7 +50,7 @@ void foo() {
 
   // Offset: compound assign operator (+=)
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -76,7 +76,7 @@ void foo() {
 
   // Offset: compound assign operator (-=)
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -102,7 +102,7 @@ void foo() {
 
   // Offset: assign operator (=)
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a = d_a + 2;
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -128,7 +128,7 @@ void foo() {
 
   // Offset: assign operator (=)
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a = d_a - 2;
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -155,7 +155,7 @@ void foo() {
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
   // CHECK-NEXT:   d_a = d_a;
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a + 1, n * sizeof(float));
+  // CHECK-NEXT:   *(&d_a + 1) = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
@@ -180,7 +180,7 @@ void foo() {
 
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a + 1);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
@@ -205,7 +205,7 @@ void foo() {
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
   // CHECK-NEXT:   d_a = d_a;
-  // CHECK-NEXT:   dpct::dpct_malloc(p, n * sizeof(float));
+  // CHECK-NEXT:   *p = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
@@ -230,7 +230,7 @@ void foo() {
 
   // No offset: ignore parens
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((&d_a), n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:     q_ct1.submit(
@@ -254,7 +254,7 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a -= 4;
   // CHECK-NEXT:     {
-  // CHECK-NEXT:       dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:       d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:     }
   // CHECK-NEXT:     {
   // CHECK-NEXT:         {
@@ -286,7 +286,7 @@ void foo() {
 
   // Offset: d_a is used as lvalue by passing its address to mod
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   mod(&d_a);
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -312,7 +312,7 @@ void foo() {
 
   // Offset: d_a is used as lvalue by passing its reference to mod2
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   mod2(d_a);
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
@@ -338,7 +338,7 @@ void foo() {
 
   // No offset: d_a is used as rvalue by passing its value to nonmod
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   nonmod(d_a);
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
@@ -364,7 +364,7 @@ void foo() {
   // operations, because it is used as lvalue; this is a trade-off between
   // correctness and complexity.
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   d_a = d_a + 2;
@@ -398,14 +398,14 @@ void foo() {
   // cudaMalloc makes d_a point to the beginning of a new piece of memory,
   // which makes the offset unnecessary.
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 4;
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   d_a = d_a + 8;
   // CHECK-NEXT:   d_a = d_a - 4;
   // CHECK-NEXT:   mod(&d_a);
   // CHECK-NEXT:   mod2(d_a);
-  // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:     q_ct1.submit(
@@ -435,7 +435,7 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   if (n > 23) {
-  // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:       q_ct1.submit(
@@ -499,7 +499,7 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   while (1) {
-  // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:       q_ct1.submit(
@@ -541,7 +541,7 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   for (; 1;) {
-  // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:       q_ct1.submit(
@@ -583,7 +583,7 @@ void foo() {
 
   // Offset: offsets are always there for global variables
   // CHECK: {
-  // CHECK-NEXT:   dpct::dpct_malloc((void **)&d_a_global, n * sizeof(float));
+  // CHECK-NEXT:   d_a_global = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_global_buf_ct0 = dpct::get_buffer_and_offset(d_a_global);
   // CHECK-NEXT:     size_t d_a_global_offset_ct0 = d_a_global_buf_ct0.second;

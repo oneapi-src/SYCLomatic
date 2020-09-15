@@ -23,6 +23,6 @@ void fooo() {
   // CHECK: sycl::range<3> extent = sycl::range<3>(size * sizeof(float), size, size);
   struct cudaExtent extent = make_cudaExtent(size * sizeof(float), size, size);
 
-  // CHECK: dpct::dpct_malloc(&srcGPU, extent);
+  // CHECK: srcGPU = dpct::dpct_malloc(extent);
   cudaMalloc3D(&srcGPU, extent);
 }

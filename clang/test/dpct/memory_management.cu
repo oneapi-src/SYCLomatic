@@ -15,11 +15,11 @@ void fooo() {
   float *d_A = NULL;
   cudaStream_t stream;
   cudaMemcpy3DParms parms;
-  // CHECK: dpct::dpct_malloc((void **)&d_A, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size);
   cudaMalloc((void **)&d_A, size);
-  // CHECK: dpct::dpct_malloc((void **)&d_A, &size, size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
-  // CHECK: dpct::dpct_malloc(&p_A, e);
+  // CHECK: p_A = dpct::dpct_malloc(e);
   cudaMalloc3D(&p_A, e);
   // CHECK: dpct::dpct_memset(d_A, 0xf, size);
   cudaMemset(d_A, 0xf, size);
@@ -139,7 +139,7 @@ cudaError_t mallocWrapper(void **buffer, size_t size) {
     // CHECK:/*
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:  return (dpct::dpct_malloc(buffer, size), 0);
+    // CHECK-NEXT:  return (*buffer = dpct::dpct_malloc(size), 0);
     return cudaMalloc(buffer, size);
   }
   if (1) {
@@ -148,14 +148,14 @@ cudaError_t mallocWrapper(void **buffer, size_t size) {
     // CHECK:/*
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:  return (dpct::dpct_malloc(&pitch, pitch_size), 0);
+    // CHECK-NEXT:  return (pitch = dpct::dpct_malloc(pitch_size), 0);
     return cudaMalloc3D(&pitch, pitch_size);
   }
   if (1) {
     // CHECK:/*
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:  return (dpct::dpct_malloc(buffer, &size, size, size), 0);
+    // CHECK-NEXT:  return (*buffer = dpct::dpct_malloc(size, size, size), 0);
     return cudaMallocPitch(buffer, &size, size, size);
   }
 }
@@ -171,43 +171,43 @@ void testCommas() {
   cudaPitchedPtr p_A;
   cudaExtent e;
   cudaMemcpy3DParms parms;
-  // CHECK:  dpct::dpct_malloc((void **)&d_A, size);
+  // CHECK:  d_A = (float *)dpct::dpct_malloc(size);
   cudaMalloc((void **)&d_A, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  int err = (dpct::dpct_malloc((void **)&d_A, size), 0);
+  // CHECK-NEXT:  int err = (d_A = (float *)dpct::dpct_malloc(size), 0);
   cudaError_t err = cudaMalloc((void **)&d_A, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((dpct::dpct_malloc((void **)&d_A, size), 0));
+  // CHECK-NEXT:  checkError((d_A = (float *)dpct::dpct_malloc(size), 0));
   checkError(cudaMalloc((void **)&d_A, size));
 
-  // CHECK: dpct::dpct_malloc((void **)&d_A, &size, size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (dpct::dpct_malloc((void **)&d_A, &size, size, size), 0);
+  // CHECK-NEXT:  err = (d_A = (float *)dpct::dpct_malloc(size, size, size), 0);
   err = cudaMallocPitch((void **)&d_A, &size, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((dpct::dpct_malloc((void **)&d_A, &size, size, size), 0));
+  // CHECK-NEXT:  checkError((d_A = (float *)dpct::dpct_malloc(size, size, size), 0));
   checkError(cudaMallocPitch((void **)&d_A, &size, size, size));
 
-  // CHECK: dpct::dpct_malloc(&p_A, e);
+  // CHECK: p_A = dpct::dpct_malloc(e);
   cudaMalloc3D(&p_A, e);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (dpct::dpct_malloc(&p_A, e), 0);
+  // CHECK-NEXT:  err = (p_A = dpct::dpct_malloc(e), 0);
   err = cudaMalloc3D(&p_A, e);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((dpct::dpct_malloc(&p_A, e), 0));
+  // CHECK-NEXT:  checkError((p_A = dpct::dpct_malloc(e), 0));
   checkError(cudaMalloc3D(&p_A, e));
 
   // CHECK:  dpct::dpct_memset(d_A, 0xf, size);

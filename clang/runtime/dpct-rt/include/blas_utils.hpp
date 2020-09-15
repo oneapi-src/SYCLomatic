@@ -92,7 +92,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       exec_queue, n, n, lda, stride_a, stride_ipiv, batch_size);
 
   T *a_buffer_ptr;
-  dpct_malloc((void **)&a_buffer_ptr, stride_a * batch_size * sizeof(T));
+  a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
 
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
@@ -205,8 +205,8 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       batch_size);
 
   T *a_buffer_ptr, *b_buffer_ptr;
-  dpct_malloc((void **)&a_buffer_ptr, stride_a * batch_size * sizeof(T));
-  dpct_malloc((void **)&b_buffer_ptr, stride_b * batch_size * sizeof(T));
+  a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
+  b_buffer_ptr = (T *)dpct_malloc(stride_b * batch_size * sizeof(T));
 
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
   T **host_b = (T **)malloc(batch_size * sizeof(T *));
@@ -319,7 +319,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       exec_queue, n, ldb, stride_b, stride_ipiv, batch_size);
 
   T *b_buffer_ptr;
-  dpct_malloc((void **)&b_buffer_ptr, stride_b * batch_size * sizeof(T));
+  b_buffer_ptr = (T *)dpct_malloc(stride_b * batch_size * sizeof(T));
 
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
   T **host_b = (T **)malloc(batch_size * sizeof(T *));
@@ -437,8 +437,8 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
       exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
 
   T *a_buffer_ptr, *tau_buffer_ptr;
-  dpct_malloc((void **)&a_buffer_ptr, stride_a * batch_size * sizeof(T));
-  dpct_malloc((void **)&tau_buffer_ptr, stride_tau * batch_size * sizeof(T));
+  a_buffer_ptr = (T *)dpct_malloc(stride_a * batch_size * sizeof(T));
+  tau_buffer_ptr = (T *)dpct_malloc(stride_tau * batch_size * sizeof(T));
 
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
   T **host_tau = (T **)malloc(batch_size * sizeof(T *));

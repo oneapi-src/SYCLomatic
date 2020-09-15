@@ -97,9 +97,9 @@ int main(int argc, char **argv) {
   float *d_array;
   float h_array[360];
 
-  // CHECK: dpct::dpct_malloc((void **)&d_array, sizeof(float) * size);
+  // CHECK: d_array = (float *)dpct::dpct_malloc(sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
-  // CHECK: dpct::dpct_malloc(&d_int, sizeof(int) * size);
+  // CHECK: d_int = (int *)dpct::dpct_malloc(sizeof(int) * size);
   cudaMalloc(&d_int, sizeof(int) * size);
 
   // CHECK: dpct::dpct_memset(d_array, 0, sizeof(float) * size);

@@ -222,24 +222,23 @@ public:
 };
 
 // malloc
-static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
+static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
 #ifdef DPCT_USM_LEVEL_NONE
-  *ptr = mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
+  return mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
 #else
-  *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
+  return cl::sycl::malloc_device(size, q.get_device(), q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
 }
 
 // malloc
-static void dpct_malloc(void **ptr, size_t size) {
-  dpct_malloc(ptr, size, get_default_queue());
+static void *dpct_malloc(size_t size) {
+  return dpct_malloc(size, get_default_queue());
 }
 
 #define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
-static inline void dpct_malloc(void **ptr, size_t *pitch, size_t x, size_t y,
-                               size_t z) {
-  *pitch = PITCH_DEFAULT_ALIGN(x);
-  dpct_malloc(ptr, *pitch * y * z);
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z) {
+  pitch = PITCH_DEFAULT_ALIGN(x);
+  return dpct_malloc(pitch * y * z);
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr in
@@ -529,36 +528,33 @@ static buffer_t get_buffer(const void *ptr) {
   return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
 }
 
-/// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
-/// set as a virtual pointer, which can map to the buffer.
-/// \param [out] ptr Point to pointer which need to malloc memory.
+/// Build a cl::sycl::buffer with \p Size.
 /// \param size Size in bytes.
-/// \returns no return value.
-template <typename T1, typename T2>
-static inline void dpct_malloc(T1 **ptr, T2 size) {
-  return detail::dpct_malloc(reinterpret_cast<void **>(ptr),
-                             static_cast<size_t>(size));
+/// \returns Pointer to the allocated memory.
+template <typename T>
+static inline void *dpct_malloc(T size) {
+  return detail::dpct_malloc(static_cast<size_t>(size));
 }
 
 /// Malloc 3D array on device with size of \p size.
-/// \param [out] pitch Pointer to pitch info which store the memory info.
-/// \param [out] size Malloc memory size.
-static inline void dpct_malloc(pitched_data *pitch, cl::sycl::range<3> size) {
-  *pitch = pitched_data(nullptr, 0, size.get(0), size.get(1));
-  detail::dpct_malloc(&pitch->data, &pitch->pitch, size.get(0), size.get(1),
+/// \param size Malloc memory size.
+/// \returns A pitched_data object which stores the memory info.
+static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
+  pitched_data pitch(nullptr, 0, size.get(0), size.get(1));
+  pitch.data = detail::dpct_malloc(pitch.pitch, size.get(0), size.get(1),
                       size.get(2));
+  return pitch;
 }
 
 /// Malloc 2D array on device with range of pitch, y. Pitch is the aligned
 /// size of x.
-/// \param [out] ptr Point to pointer which need to malloc memory.
 /// \param [out] pitch Aligned size of x in bytes.
 /// \param x Range in dim x.
 /// \param y Range in dim y.
 /// \param z Range in dim z.
-/// \returns no return value.
-static inline void dpct_malloc(void **ptr, size_t *pitch, size_t x, size_t y) {
-  return detail::dpct_malloc(ptr, pitch, x, y, 1);
+/// \returns Pointer to the allocated memory.
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y) {
+  return detail::dpct_malloc(pitch, x, y, 1);
 }
 
 /// free
@@ -985,7 +981,7 @@ private:
       return;
     }
 #endif
-    detail::dpct_malloc((void **)&_device_ptr, _size, q);
+    _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
   }
 
   size_t _size;
