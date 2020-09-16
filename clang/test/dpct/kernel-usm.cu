@@ -28,8 +28,8 @@ int main() {
   dim3 griddim = 2;
   dim3 threaddim = 32;
   int *karg1, *karg2;
-  // CHECK: karg1 = sycl::malloc_device<int>(32 , q_ct1);
-  // CHECK-NEXT: karg2 = sycl::malloc_device<int>(32 , q_ct1);
+  // CHECK: karg1 = sycl::malloc_device<int>(32, q_ct1);
+  // CHECK-NEXT: karg2 = sycl::malloc_device<int>(32, q_ct1);
   cudaMalloc(&karg1, 32 * sizeof(int));
   cudaMalloc(&karg2, 32 * sizeof(int));
 

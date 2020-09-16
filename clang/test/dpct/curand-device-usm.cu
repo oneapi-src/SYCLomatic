@@ -73,6 +73,17 @@ __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *Sta
   Image[pixel] = curand_normal_double(&States[id]);
 }
 
+#define CHECK(call)                                                            \
+{                                                                              \
+    const cudaError_t error = call;                                            \
+    if (error != cudaSuccess)                                                  \
+    {                                                                          \
+        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
+        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
+                cudaGetErrorString(error));                                    \
+    }                                                                          \
+}
+
 int main(int argc, char **argv) {
   int *dOut;
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);
@@ -88,11 +99,16 @@ int main(int argc, char **argv) {
   RandomStates = (curandState*)dev;
   //CHECK: RandomStates = (oneapi::mkl::rng::device::philox4x32x10<1> *)sycl::malloc_device(size * sizeof(oneapi::mkl::rng::device::philox4x32x10<1>) * 10, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
-  //CHECK: RandomStates = sycl::malloc_device<oneapi::mkl::rng::device::philox4x32x10<1>>(size , q_ct1);
+  //CHECK: RandomStates = sycl::malloc_device<oneapi::mkl::rng::device::philox4x32x10<1>>(size, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
 
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
   cuda_kernel_RNDnormalDitribution<<<16,32>>>(Image, RandomStates);
+
+  //CHECK: CHECK((dOut = sycl::malloc_device<int>(10, q_ct1), 0));
+  CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
+  //CHECK: CHECK((RandomStates = (oneapi::mkl::rng::device::philox4x32x10<1> *)sycl::malloc_device(sizeof(oneapi::mkl::rng::device::philox4x32x10<1>) * 10 * 10, q_ct1), 0));
+  CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
 
   return 0;
 }

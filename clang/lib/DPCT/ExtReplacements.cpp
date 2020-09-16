@@ -353,9 +353,12 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
         }
         NewReplText = NewReplText + std::string(MRes.suffix());
 
-        R.second = std::make_shared<ExtReplacement>(
+        auto Repl = std::make_shared<ExtReplacement>(
             FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
             nullptr);
+        Repl->setInsertPosition(
+            (dpct::InsertPosition)R.second->getInsertPosition());
+        R.second = Repl;
         continue;
       }
 

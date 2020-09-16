@@ -98,8 +98,8 @@ int main(int argc, char **argv) {
   int *d_int;
   float h_array[360];
 
-  // CHECK: d_array = sycl::malloc_device<float>( size, q_ct1);
-  // CHECK-NEXT: d_int = sycl::malloc_device<int>( size, q_ct1);
+  // CHECK: d_array = sycl::malloc_device<float>(size, q_ct1);
+  // CHECK-NEXT: d_int = sycl::malloc_device<int>(size, q_ct1);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
   cudaMalloc(&d_int, sizeof(int) * size);
 

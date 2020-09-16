@@ -171,7 +171,7 @@ private:
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
 //CHECK-NEXT:    */
-//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32 , q_ct1);
+//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~B(){
 //CHECK-NEXT:    delete rng;

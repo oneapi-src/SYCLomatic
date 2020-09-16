@@ -9239,26 +9239,25 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
 
   auto BO = dyn_cast<BinaryOperator>(SizeExpr);
   if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
-    SourceLocation RemoveBegin, RemoveEnd;
+    std::string Repl;
     if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
       // case 1: sizeof(b) * a
-      RemoveBegin = BO->getBeginLoc();
-      RemoveEnd = BO->getOperatorLoc();
+      Repl = getStmtSpelling(BO->getRHS());
     } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
       // case 2: a * sizeof(b)
-      RemoveBegin = BO->getOperatorLoc();
-      RemoveEnd = BO->getEndLoc();
+      Repl = getStmtSpelling(BO->getLHS());
     } else {
       return false;
     }
 
-    RemoveBegin =
-        DpctGlobalInfo::getSourceManager().getExpansionLoc(RemoveBegin);
-    RemoveEnd = DpctGlobalInfo::getSourceManager().getExpansionLoc(RemoveEnd);
+    SourceLocation RemoveBegin, RemoveEnd;
+    SourceRange RemoveRange = getStmtExpansionSourceRange(BO);
+    RemoveBegin = RemoveRange.getBegin();
+    RemoveEnd = RemoveRange.getEnd();
     RemoveEnd = RemoveEnd.getLocWithOffset(
         Lexer::MeasureTokenLength(RemoveEnd, DpctGlobalInfo::getSourceManager(),
                                   DpctGlobalInfo::getContext().getLangOpts()));
-    emplaceTransformation(replaceText(RemoveBegin, RemoveEnd, "",
+    emplaceTransformation(replaceText(RemoveBegin, RemoveEnd, std::move(Repl),
                                       DpctGlobalInfo::getSourceManager()));
     return true;
   } else {
