@@ -265,6 +265,11 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
                    "\" from the compilation database, check if the directory "
                    "exists and can be accessed by the tool.";
           break;
+  case MigrationErrorInconsistentFileInDatabase:
+    StatusString = "Error: The file name(s) in the \"command\" and \"file\" "
+                   "fields of the compilation database are inconsistent:\n" +
+                   Message;
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

@@ -88,7 +88,8 @@ CompilationDatabase::loadFromDirectory(StringRef BuildDirectory,
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
                                      std::string &ErrorMessage,
-                                     DatabaseStatus &ErrCode) {
+                                     DatabaseStatus &ErrCode,
+                                     std::string &CompilationDatabaseDir) {
 #else
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
@@ -108,7 +109,10 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
       ErrorMessage = LoadErrorMessage;
       return nullptr;
     }
-    if (DB) return DB;
+    if (DB) {
+      CompilationDatabaseDir = Directory.str();
+      return DB;
+    }
     if (!HasErrorMessage) {
       ErrorStream << "No compilation database found in " << Directory.str()
                   << " or any parent directory\n";
@@ -131,16 +135,24 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
   return nullptr;
 }
 
+#ifdef INTEL_CUSTOMIZATION
+std::unique_ptr<CompilationDatabase>
+CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
+                                          std::string &ErrorMessage,
+                                          std::string &CompilationDatabaseDir) {
+#else
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
                                           std::string &ErrorMessage) {
+#endif
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceFile));
   StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
 
 #ifdef INTEL_CUSTOMIZATION
   DatabaseStatus ErrCode;
   std::unique_ptr<CompilationDatabase> DB =
-      findCompilationDatabaseFromDirectory(Directory, ErrorMessage, ErrCode);
+      findCompilationDatabaseFromDirectory(Directory, ErrorMessage,
+                                           ErrCode, CompilationDatabaseDir);
   if (!DB)
     ErrorMessage =
         (ErrorMessage +
@@ -159,12 +171,13 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
 
 #ifdef INTEL_CUSTOMIZATION
 std::unique_ptr<CompilationDatabase>
-CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
-                                             std::string &ErrorMessage,
-                                             DatabaseStatus &ErrCode) {
+CompilationDatabase::autoDetectFromDirectory(
+    StringRef SourceDir, std::string &ErrorMessage, DatabaseStatus &ErrCode,
+    std::string &CompilationDatabaseDir) {
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
   std::unique_ptr<CompilationDatabase> DB =
-      findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage, ErrCode);
+      findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage, ErrCode,
+                                           CompilationDatabaseDir);
 
   if (!DB) {
     if (ErrCode == CannotParseDatabase

@@ -101,6 +101,7 @@ public:
 
 #ifdef INTEL_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
+  std::string &getCompilationsDir() { return CompilationsDir; }
 #endif
   /// Returns a reference to the loaded compilations database.
   CompilationDatabase &getCompilations() {
@@ -127,6 +128,9 @@ private:
                    const char *Overview);
 
   std::unique_ptr<CompilationDatabase> Compilations;
+#ifdef INTEL_CUSTOMIZATION
+  std::string CompilationsDir = "";
+#endif
   std::vector<std::string> SourcePathList;
   ArgumentsAdjuster Adjuster;
 };
