@@ -17,7 +17,7 @@
 #ifndef __DPCT_ITERATORS_H__
 #define __DPCT_ITERATORS_H__
 
-#include <dpstd/iterator>
+#include <oneapi/dpl/iterator>
 
 #include "functional.h"
 
@@ -28,8 +28,8 @@ using std::advance;
 using std::distance;
 
 template <typename T>
-dpstd::counting_iterator<T> make_counting_iterator(const T &input) {
-  return dpstd::counting_iterator<T>(input);
+oneapi::dpl::counting_iterator<T> make_counting_iterator(const T &input) {
+  return oneapi::dpl::counting_iterator<T>(input);
 }
 
 template <typename _Tp> class constant_iterator {
@@ -122,78 +122,6 @@ constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
   return constant_iterator<_Tp>(__value);
 }
 
-class discard_iterator {
-public:
-  typedef std::ptrdiff_t difference_type;
-  typedef decltype(std::ignore) value_type;
-  typedef void *pointer;
-  typedef value_type reference;
-  typedef std::random_access_iterator_tag iterator_category;
-  using is_passed_directly = std::true_type;
-
-  discard_iterator() : __my_position_() {}
-  explicit discard_iterator(difference_type __init) : __my_position_(__init) {}
-
-  auto operator*() const -> decltype(std::ignore) { return std::ignore; }
-  auto operator[](difference_type) const -> decltype(std::ignore) {
-    return std::ignore;
-  }
-
-  constexpr bool operator==(const discard_iterator &__it) const {
-    return __my_position_ - __it.__my_position_ == 0;
-  }
-  constexpr bool operator!=(const discard_iterator &__it) const {
-    return !(*this == __it);
-  }
-
-  bool operator<(const discard_iterator &__it) const {
-    return __my_position_ - __it.__my_position_ < 0;
-  }
-  bool operator>(const discard_iterator &__it) const {
-    return __my_position_ - __it.__my_position_ > 0;
-  }
-
-  difference_type operator-(const discard_iterator &__it) const {
-    return __my_position_ - __it.__my_position_;
-  }
-
-  discard_iterator &operator++() {
-    ++__my_position_;
-    return *this;
-  }
-  discard_iterator &operator--() {
-    --__my_position_;
-    return *this;
-  }
-  discard_iterator operator++(int) {
-    discard_iterator __it(__my_position_);
-    ++__my_position_;
-    return __it;
-  }
-  discard_iterator operator--(int) {
-    discard_iterator __it(__my_position_);
-    --__my_position_;
-    return __it;
-  }
-  discard_iterator &operator+=(difference_type __forward) {
-    __my_position_ += __forward;
-    return *this;
-  }
-  discard_iterator &operator-=(difference_type __backward) {
-    __my_position_ += __backward;
-    return *this;
-  }
-
-  discard_iterator operator+(difference_type __forward) const {
-    return discard_iterator(__my_position_ + __forward);
-  }
-  discard_iterator operator-(difference_type __backward) const {
-    return discard_iterator(__my_position_ - __backward);
-  }
-
-private:
-  difference_type __my_position_;
-};
 } // end namespace dpct
 
 #endif

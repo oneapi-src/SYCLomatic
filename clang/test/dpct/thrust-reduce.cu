@@ -15,7 +15,7 @@
 int main() {
   double sum;
   double *p;
-// CHECK:  dpct::device_ptr<double> dp(p);
+// CHECK:  dpct::device_pointer<double> dp(p);
   thrust::device_ptr<double> dp(p);
 // CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
@@ -30,10 +30,10 @@ public:
   }
 
   // CHECK:   inline T *raw() {
-  // CHECK-NEXT:   return dpct::raw_pointer_cast(this->data);
+  // CHECK-NEXT:   return dpct::get_raw_pointer(this->data);
   // CHECK-NEXT: }
   // CHECK-NEXT: inline const T *raw() const {
-  // CHECK-NEXT:   return dpct::raw_pointer_cast(this->data + 2);
+  // CHECK-NEXT:   return dpct::get_raw_pointer(this->data + 2);
   // CHECK-NEXT: }
   inline T *raw() {
     return thrust::raw_pointer_cast(this->data);

@@ -17,12 +17,12 @@
 #ifndef __DPCT_FUNCTIONAL_H__
 #define __DPCT_FUNCTIONAL_H__
 
-#include <dpstd/functional>
-#include <dpstd/iterator>
+#include <oneapi/dpl/functional>
+#include <oneapi/dpl/iterator>
 #include <functional>
 
-#ifdef __PSTL_BACKEND_SYCL
-#include <dpstd/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
+#ifndef ONEDPL_STANDARD_POLICIES_ONLY
+#include <oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
 #endif
 
 #include <tuple>
@@ -34,7 +34,7 @@ namespace internal {
 
 template <class _ExecPolicy, class _T>
 using enable_if_execution_policy =
-    typename std::enable_if<dpstd::execution::is_execution_policy<
+    typename std::enable_if<oneapi::dpl::execution::is_execution_policy<
                                 typename std::decay<_ExecPolicy>::type>::value,
                             _T>::type;
 
@@ -78,8 +78,8 @@ public:
   __buffer(std::size_t __n) : __buf(sycl::range<1>(__n)) {}
 
   // Return pointer to buffer, or  NULL if buffer could not be obtained.
-  auto get() -> decltype(dpstd::begin(__buf)) const {
-    return dpstd::begin(__buf);
+  auto get() -> decltype(oneapi::dpl::begin(__buf)) const {
+    return oneapi::dpl::begin(__buf);
   }
 };
 #else
@@ -114,15 +114,15 @@ template <typename Policy, typename NewName> struct rebind_policy {
 };
 
 template <typename KernelName, typename NewName>
-struct rebind_policy<dpstd::execution::device_policy<KernelName>, NewName> {
-  using type = dpstd::execution::device_policy<NewName>;
+struct rebind_policy<oneapi::dpl::execution::device_policy<KernelName>, NewName> {
+  using type = oneapi::dpl::execution::device_policy<NewName>;
 };
 
 #if _PSTL_FPGA_DEVICE
 template <unsigned int factor, typename KernelName, typename NewName>
-struct rebind_policy<dpstd::execution::fpga_policy<factor, KernelName>,
+struct rebind_policy<oneapi::dpl::execution::fpga_policy<factor, KernelName>,
                      NewName> {
-  using type = dpstd::execution::fpga_policy<factor, NewName>;
+  using type = oneapi::dpl::execution::fpga_policy<factor, NewName>;
 };
 #endif
 
@@ -198,9 +198,9 @@ private:
 };
 
 //[binary_pred](Ref a, Ref b){ return(binary_pred(get<0>(a),get<0>(b)));
-template <typename Predicate> struct unique_by_key_fun {
+template <typename Predicate> struct unique_fun {
   typedef bool result_of;
-  unique_by_key_fun(Predicate _pred) : pred(_pred) {}
+  unique_fun(Predicate _pred) : pred(_pred) {}
   template <typename _T> result_of operator()(_T &&a, _T &&b) const {
     using std::get;
     return pred(get<0>(a), get<0>(b));
@@ -244,8 +244,8 @@ private:
 template <typename T, typename Predicate, typename BinaryOperation>
 class transform_if_zip_mask_fun {
 public:
-  transform_if_zip_mask_fun(Predicate _pred = dpstd::identity(),
-                            BinaryOperation _op = dpstd::identity())
+  transform_if_zip_mask_fun(Predicate _pred = oneapi::dpl::identity(),
+                            BinaryOperation _op = oneapi::dpl::identity())
       : pred(_pred), op(_op) {}
   template <typename _T> void operator()(_T &&t) {
     using std::get;

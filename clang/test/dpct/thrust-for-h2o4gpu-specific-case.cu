@@ -13,7 +13,7 @@
 #include <thrust/device_vector.h>
 
 //CHECK: template <typename T>
-//CHECK-NEXT:void foo_cpy(dpct::device_vector<T, dpct::device_malloc_allocator<T>> &Do, dpct::device_vector<T, dpct::device_malloc_allocator<T>> &Di) {
+//CHECK-NEXT:void foo_cpy(dpct::device_vector<T, sycl::buffer_allocator<T>> &Do, dpct::device_vector<T, sycl::buffer_allocator<T>> &Di) {
 //CHECK-NEXT: return;
 //CHECK-NEXT:}
 template <typename T>
@@ -22,8 +22,8 @@ void foo_cpy(thrust::device_vector<T, thrust::device_malloc_allocator<T>> &Do, t
 }
 
 //CHECK: void foo_1() {
-//CHECK-NEXT: dpct::device_vector<int, dpct::device_malloc_allocator<int>> **tt=NULL;
-//CHECK-NEXT: dpct::device_vector<int, dpct::device_malloc_allocator<int>> *dd[10];
+//CHECK-NEXT: dpct::device_vector<int, sycl::buffer_allocator<int>> **tt=NULL;
+//CHECK-NEXT: dpct::device_vector<int, sycl::buffer_allocator<int>> *dd[10];
 //CHECK-NEXT: foo_cpy(*tt[0], *dd[0]);
 //CHECK-NEXT:}
 void foo_1() {

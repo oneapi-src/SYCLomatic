@@ -99,7 +99,7 @@ void foo() {
 
   //CHECK: std::vector<dpct::device_vector<int>> d(10);
   //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);
-  //CHECK-NEXT: auto min_costs_ptr = dpct::raw_pointer_cast(d[0].data());
+  //CHECK-NEXT: auto min_costs_ptr = dpct::get_raw_pointer(d[0].data());
   //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::make_device_policy(q_ct1), t, t + 10, [=] (int idx) { return true;});
   std::vector<thrust::device_vector<int>> d(10);
   auto t = thrust::make_counting_iterator(0);
@@ -110,7 +110,7 @@ void foo() {
   float *_de = NULL;
   float fill_value = 0.0;
 
-  //CHECK: dpct::device_ptr<float> dev_ptr = dpct::device_pointer_cast(static_cast<float *>(&_de[0]));
+  //CHECK: dpct::device_pointer<float> dev_ptr = dpct::get_device_pointer(static_cast<float *>(&_de[0]));
   //CHECK-NEXT: std::fill(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, dev_ptr + 10, fill_value);
   //CHECK-NEXT: std::fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, 10, fill_value);
   //CHECK-NEXT: float M_inner = dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, dev_ptr + 10, dev_ptr, 0.0f);
@@ -136,7 +136,7 @@ void foo() {
 
  {
   //CHECK: dpct::device_vector<int> a, b, c;
-  //CHECK-NEXT: dpct::sort_by_key(oneapi::dpl::execution::make_device_policy(q_ct1), a.begin(), b.end(), c.begin());
+  //CHECK-NEXT: dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), a.begin(), b.end(), c.begin());
   thrust::device_vector<int> a, b, c;
   thrust::sort_by_key(a.begin(), b.end(), c.begin());
  }
@@ -199,8 +199,8 @@ void foo() {
 
  {
   int data[10];
-  //CHECK: dpct::device_ptr<int> begin = dpct::device_pointer_cast(&data[0]);
-  //CHECK-NEXT: dpct::device_ptr<int> end=begin + 10;
+  //CHECK: dpct::device_pointer<int> begin = dpct::get_device_pointer(&data[0]);
+  //CHECK-NEXT: dpct::device_pointer<int> end=begin + 10;
   //CHECK-NEXT: bool h_result = std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: bool h_result_1 = std::transform_reduce(oneapi::dpl::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   thrust::device_ptr<int> begin = thrust::device_pointer_cast(&data[0]);

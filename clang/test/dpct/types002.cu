@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
   a = sizeof(device_vec);
   a = sizeof device_vec;
 
-  //CHECK:dpct::device_ptr<int> device_p;
-  //CHECK-NEXT:a = sizeof(dpct::device_ptr<int>);
+  //CHECK:dpct::device_pointer<int> device_p;
+  //CHECK-NEXT:a = sizeof(dpct::device_pointer<int>);
   //CHECK-NEXT:a = sizeof(device_p);
   //CHECK-NEXT:a = sizeof device_p;
   thrust::device_ptr<int> device_p;

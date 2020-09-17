@@ -18,11 +18,11 @@
 __global__ void kernel(thrust::complex<double> *det) {}
 
 int main() {
-// CHECK:  dpct::device_ptr<std::complex<double>> d_ptr = dpct::device_malloc<std::complex<double>>(1);
+// CHECK:  dpct::device_pointer<std::complex<double>> d_ptr = dpct::malloc_device<std::complex<double>>(1);
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
 // CHECK:  q_ct1.submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      auto thrust_raw_pointer_cast_d_ptr_ct0 = dpct::raw_pointer_cast(d_ptr);
+// CHECK-NEXT:      auto thrust_raw_pointer_cast_d_ptr_ct0 = dpct::get_raw_pointer(d_ptr);
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
@@ -32,8 +32,8 @@ int main() {
 // CHECK-NEXT:    });
   kernel<<<1,256>>>(thrust::raw_pointer_cast(d_ptr));
   std::complex<double> res;
-// CHECK:  q_ct1.memcpy(std::addressof(res), dpct::raw_pointer_cast(d_ptr), sizeof(std::complex<double>)).wait();
+// CHECK:  q_ct1.memcpy(std::addressof(res), dpct::get_raw_pointer(d_ptr), sizeof(std::complex<double>)).wait();
   cudaMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>), cudaMemcpyDeviceToHost);
-// CHECK:  dpct::device_free(d_ptr);
+// CHECK:  dpct::free_device(d_ptr);
   thrust::device_free(d_ptr);
 }

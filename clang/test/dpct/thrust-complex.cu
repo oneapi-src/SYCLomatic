@@ -58,7 +58,7 @@ int main() {
   thrust::complex<float> log = thrust::log(cf);
 // CHECK:   std::complex<double> exp = std::exp(cd);
   thrust::complex<double> exp = thrust::exp(cd);
-// CHECK:   dpct::device_ptr<std::complex<double>> dc_ptr = dpct::device_malloc<std::complex<double>>(1);
+// CHECK:   dpct::device_pointer<std::complex<double>> dc_ptr = dpct::malloc_device<std::complex<double>>(1);
   thrust::device_ptr<thrust::complex<double>> dc_ptr = thrust::device_malloc<thrust::complex<double>>(1);
 
 // CHECK:   C<std::complex<double>> c1 = F<std::complex<double>>();
@@ -131,7 +131,7 @@ int main() {
 #include <thrust/reduce.h>
 //CHECK: int foo(){
 //CHECK-NEXT:   double *p;
-//CHECK-NEXT:   dpct::device_ptr<double> dp(p);
+//CHECK-NEXT:   dpct::device_pointer<double> dp(p);
 //CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
 //CHECK-NEXT:   printf("sum = %f\n", sum);
 //CHECK-NEXT:   std::complex<float> c1(1.0);
