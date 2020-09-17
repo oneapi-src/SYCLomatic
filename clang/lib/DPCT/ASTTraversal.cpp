@@ -1051,8 +1051,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
                              hasAttr(attr::CUDAGlobal))),
                 hasDescendant(
                     callExpr(allOf(callee(functionDecl(isMigratedHostAPI())),
-                                   hasAncestor(returnStmt())))
-                        .bind("cccc"))))
+                                   hasAncestor(returnStmt()))))))
           .bind("inReturnHostAPI"),
       this);
 
@@ -11059,6 +11058,416 @@ const BinaryOperator *TextureRule::getAssignedBO(const Expr *E,
   }
   return nullptr;
 }
+
+void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
+  auto ObjectType = hasObjectExpression(
+      hasType(namedDecl(hasAnyName("cudaResourceDesc"))));
+  // myres.res.array.array = a;
+  auto AssignResArrayArray = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("array")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("array")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("ArrayMember"))))))))));
+  // myres.resType = cudaResourceTypeArray;
+  auto ArraySetCompound = binaryOperator(allOf(
+      isAssignmentOperator(),
+      hasLHS(memberExpr(allOf(ObjectType, member(hasName("resType"))))
+                 .bind("ResTypeMemberExpr")),
+      hasRHS(declRefExpr(
+          hasDeclaration(enumConstantDecl(hasName("cudaResourceTypeArray"))))),
+      hasParent(
+          compoundStmt(has(AssignResArrayArray.bind("AssignResArrayArray"))))));
+  MF.addMatcher(ArraySetCompound.bind("ArraySetCompound"), this);
+  //myres.res.pitch2D.devPtr = p;
+  auto AssignRes2DPtr = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("devPtr")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("pitch2D")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("PtrMember"))))))))));
+  //myres.res.pitch2D.desc = desc42;
+  auto AssignRes2DDesc = cxxOperatorCallExpr(
+      allOf(isAssignmentOperator(),
+            has(memberExpr(allOf(
+                member(hasName("desc")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("pitch2D")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("DescMember"))))))))));
+  //myres.res.pitch2D.width = sizeof(float4) * 32;
+  auto AssignRes2DWidth = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("width")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("pitch2D")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("WidthMember"))))))))));
+  //myres.res.pitch2D.height = 32;
+  auto AssignRes2DHeight = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("height")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("pitch2D")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("HeightMember"))))))))));
+  //myres.res.pitch2D.pitchInBytes = sizeof(float4) * 32;
+  auto AssignRes2DPitchInBytes = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("pitchInBytes")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("pitch2D")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("PitchMember"))))))))));
+  //myres.resType = cudaResourceTypePitch2D;
+  auto Pitch2DSetCompound = binaryOperator(allOf(
+      isAssignmentOperator(),
+      hasLHS(memberExpr(allOf(ObjectType, member(hasName("resType"))))
+                 .bind("ResTypeMemberExpr")),
+      hasRHS(declRefExpr(hasDeclaration(
+          enumConstantDecl(hasName("cudaResourceTypePitch2D"))))),
+      hasParent(compoundStmt(allOf(
+          has(AssignRes2DPtr.bind("AssignRes2DPtr")),
+          has(AssignRes2DDesc.bind("AssignRes2DDesc")),
+          has(AssignRes2DWidth.bind("AssignRes2DWidth")),
+          has(AssignRes2DHeight.bind("AssignRes2DHeight")),
+          has(AssignRes2DPitchInBytes.bind("AssignRes2DPitchInBytes")))))));
+  MF.addMatcher(Pitch2DSetCompound.bind("Pitch2DSetCompound"), this);
+  //myres.res.linear.devPtr = d_data21;
+  auto AssignResLinearPtr = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("devPtr")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("linear")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("PtrMember"))))))))));
+  //myres.res.linear.sizeInBytes = sizeof(float4) * 32;
+  auto AssignResLinearSize = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(
+                member(hasName("sizeInBytes")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("linear")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("SizeMember"))))))))));
+  //myres.res.linear.desc = desc42;
+  auto AssignResLinearDesc = cxxOperatorCallExpr(
+      allOf(isAssignmentOperator(),
+            has(memberExpr(allOf(
+                member(hasName("desc")),
+                hasObjectExpression(memberExpr(allOf(
+                    member(hasName("linear")),
+                    hasObjectExpression(
+                        memberExpr(allOf(ObjectType, member(hasName("res"))))
+                            .bind("DescMember"))))))))));
+  //myres.resType = cudaResourceTypeLinear;
+  auto LinearSetCompound = binaryOperator(
+      allOf(isAssignmentOperator(),
+            hasLHS(memberExpr(allOf(ObjectType, member(hasName("resType"))))
+                       .bind("ResTypeMemberExpr")),
+            hasRHS(declRefExpr(hasDeclaration(
+                enumConstantDecl(hasName("cudaResourceTypeLinear"))))),
+            hasParent(compoundStmt(
+                allOf(has(AssignResLinearPtr.bind("AssignResLinearPtr")),
+                      has(AssignResLinearSize.bind("AssignResLinearSize")),
+                      has(AssignResLinearDesc.bind("AssignResLinearDesc"))
+                )))));
+  MF.addMatcher(LinearSetCompound.bind("LinearSetCompound"), this);
+}
+
+void TextureMemberSetRule::removeRange(SourceRange R) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &LO = DpctGlobalInfo::getContext().getLangOpts();
+  auto End = R.getEnd();
+  End = End.getLocWithOffset(Lexer::MeasureTokenLength(End, SM, LO));
+  End = End.getLocWithOffset(Lexer::MeasureTokenLength(End, SM, LO));
+  emplaceTransformation(replaceText(R.getBegin(), End, "", SM));
+}
+
+void TextureMemberSetRule::run(const MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &LO = DpctGlobalInfo::getContext().getLangOpts();
+  if (auto BO = getNodeAsType<BinaryOperator>(Result, "Pitch2DSetCompound")) {
+    auto AssignPtrExpr =
+      getNodeAsType<BinaryOperator>(Result, "AssignRes2DPtr");
+    auto AssignWidthExpr =
+      getNodeAsType<BinaryOperator>(Result, "AssignRes2DWidth");
+    auto AssignHeightExpr =
+      getNodeAsType<BinaryOperator>(Result, "AssignRes2DHeight");
+    auto AssignDescExpr =
+      getNodeAsType<CXXOperatorCallExpr>(Result, "AssignRes2DDesc");
+    auto AssignPitchExpr =
+      getNodeAsType<BinaryOperator>(Result, "AssignRes2DPitchInBytes");
+    auto ResTypeMemberExpr =
+      getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
+    auto PtrMemberExpr = getNodeAsType<MemberExpr>(Result, "PtrMember");
+    auto WidthMemberExpr = getNodeAsType<MemberExpr>(Result, "WidthMember");
+    auto HeightMemberExpr = getNodeAsType<MemberExpr>(Result, "HeightMember");
+    auto PitchMemberExpr = getNodeAsType<MemberExpr>(Result, "PitchMember");
+    auto DescMemberExpr = getNodeAsType<MemberExpr>(Result, "DescMember");
+    // Compare the name of all resource obj
+    std::string ResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
+      ResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string PtrResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(PtrMemberExpr->getBase())) {
+      PtrResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string WidthResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(WidthMemberExpr->getBase())) {
+      WidthResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string HeightResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(HeightMemberExpr->getBase())) {
+      HeightResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string PitchResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(PitchMemberExpr->getBase())) {
+      PitchResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string DescResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(DescMemberExpr->getBase())) {
+      DescResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    if (ResName.compare(PtrResName) || ResName.compare(WidthResName) ||
+        ResName.compare(HeightResName) || ResName.compare(PitchResName) ||
+        ResName.compare(DescResName)) {
+      // Won't do pretty code if the resource name is different
+      return;
+    }
+    // Calculate insert location
+    std::string MemberOpt = ResTypeMemberExpr->isArrow() ? "->" : ".";
+    auto BORange = getStmtExpansionSourceRange(BO);
+    auto AssignPtrRange = getStmtExpansionSourceRange(AssignPtrExpr);
+    auto AssignWidthRange = getStmtExpansionSourceRange(AssignWidthExpr);
+    auto AssignHeightRange = getStmtExpansionSourceRange(AssignHeightExpr);
+    auto AssignPitchRange = getStmtExpansionSourceRange(AssignPitchExpr);
+    auto AssignDescRange = getStmtExpansionSourceRange(AssignDescExpr);
+    auto LastPos = BORange.getEnd();
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignPtrRange.getEnd()).second) {
+      LastPos = AssignPtrRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignWidthRange.getEnd()).second) {
+      LastPos = AssignWidthRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignHeightRange.getEnd()).second) {
+      LastPos = AssignHeightRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignPitchRange.getEnd()).second) {
+      LastPos = AssignPitchRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignDescRange.getEnd()).second) {
+      LastPos = AssignDescRange.getEnd();
+    }
+    // Skip the last token
+    LastPos =
+      LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Skip ";"
+    LastPos =
+      LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Generate insert str
+    ExprAnalysis EA;
+    EA.analyze(AssignPtrExpr->getRHS());
+    std::string AssignPtrRHS = EA.getReplacedString();
+    EA.analyze(AssignWidthExpr->getRHS());
+    std::string AssignWidthRHS = EA.getReplacedString();
+    EA.analyze(AssignHeightExpr->getRHS());
+    std::string AssignHeightRHS = EA.getReplacedString();
+    EA.analyze(AssignPitchExpr->getRHS());
+    std::string AssignPitchRHS = EA.getReplacedString();
+    EA.analyze(AssignDescExpr->getArg(1));
+    std::string AssignDescRHS = EA.getReplacedString();
+    std::string IndentStr = getIndent(AssignPtrExpr->getBeginLoc(), SM).str();
+    std::string InsertStr = getNL() + IndentStr + ResName + MemberOpt +
+                            "set_data(" + AssignPtrRHS + ", " + AssignWidthRHS +
+                            ", " + AssignHeightRHS + ", " + AssignPitchRHS +
+                            ", " + AssignDescRHS + ");";
+    // Remove all the assign expr
+    removeRange(BORange);
+    removeRange(AssignPtrRange);
+    removeRange(AssignWidthRange);
+    removeRange(AssignHeightRange);
+    removeRange(AssignPitchRange);
+    removeRange(AssignDescRange);
+    emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
+  } else if (auto BO = getNodeAsType<BinaryOperator>(Result, "LinearSetCompound")) {
+    auto AssignPtrExpr =
+        getNodeAsType<BinaryOperator>(Result, "AssignResLinearPtr");
+    auto AssignSizeExpr =
+        getNodeAsType<BinaryOperator>(Result, "AssignResLinearSize");
+    auto AssignDescExpr =
+        getNodeAsType<CXXOperatorCallExpr>(Result, "AssignResLinearDesc");
+    auto ResTypeMemberExpr =
+        getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
+    auto PtrMemberExpr = getNodeAsType<MemberExpr>(Result, "PtrMember");
+    auto SizeMemberExpr = getNodeAsType<MemberExpr>(Result, "SizeMember");
+    auto DescMemberExpr = getNodeAsType<MemberExpr>(Result, "DescMember");
+    // Compare the name of all resource obj
+    std::string ResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
+      ResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string PtrResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(PtrMemberExpr->getBase())) {
+      PtrResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string SizeResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(SizeMemberExpr->getBase())) {
+      SizeResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string DescResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(DescMemberExpr->getBase())) {
+      DescResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    if (ResName.compare(PtrResName) || ResName.compare(SizeResName) ||
+        ResName.compare(DescResName)) {
+      // Won't do pretty code if the resource name is different
+      return;
+    }
+    // Calculate insert location
+    std::string MemberOpt = ResTypeMemberExpr->isArrow() ? "->" : ".";
+    auto BORange = getStmtExpansionSourceRange(BO);
+    auto AssignPtrRange = getStmtExpansionSourceRange(AssignPtrExpr);
+    auto AssignSizeRange = getStmtExpansionSourceRange(AssignSizeExpr);
+    auto AssignDescRange = getStmtExpansionSourceRange(AssignDescExpr);
+    auto LastPos = BORange.getEnd();
+    if (SM.getDecomposedLoc(LastPos).second <
+        SM.getDecomposedLoc(AssignPtrRange.getEnd()).second) {
+      LastPos = AssignPtrRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+        SM.getDecomposedLoc(AssignSizeRange.getEnd()).second) {
+      LastPos = AssignSizeRange.getEnd();
+    }
+    if (SM.getDecomposedLoc(LastPos).second <
+        SM.getDecomposedLoc(AssignDescRange.getEnd()).second) {
+      LastPos = AssignDescRange.getEnd();
+    }
+    // Skip the last token
+    LastPos =
+        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Skip ";"
+    LastPos =
+        LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Generate insert str
+    ExprAnalysis EA;
+    EA.analyze(AssignPtrExpr->getRHS());
+    std::string AssignPtrRHS = EA.getReplacedString();
+    EA.analyze(AssignSizeExpr->getRHS());
+    std::string AssignSizeRHS = EA.getReplacedString();
+    EA.analyze(AssignDescExpr->getArg(1));
+    std::string AssignDescRHS = EA.getReplacedString();
+    std::string IndentStr = getIndent(AssignPtrExpr->getBeginLoc(), SM).str();
+    std::string InsertStr = getNL() + IndentStr + ResName + MemberOpt +
+                            "set_data(" + AssignPtrRHS + ", " + AssignSizeRHS +
+                            ", " + AssignDescRHS + ");";
+    // Remove all the assign expr
+    removeRange(BORange);
+    removeRange(AssignPtrRange);
+    removeRange(AssignSizeRange);
+    removeRange(AssignDescRange);
+    emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
+  } else if (auto BO = getNodeAsType<BinaryOperator>(Result, "ArraySetCompound")) {
+    auto AssignArrayExpr =
+      getNodeAsType<BinaryOperator>(Result, "AssignResArrayArray");
+    auto ResTypeMemberExpr =
+      getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
+    auto ArrayMemberExpr = getNodeAsType<MemberExpr>(Result, "ArrayMember");
+
+    // Compare the name of all resource obj
+    std::string ResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
+      ResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+    std::string ArrayResName = "";
+    if (auto DRE = dyn_cast<DeclRefExpr>(ArrayMemberExpr->getBase())) {
+      ArrayResName = DRE->getDecl()->getNameAsString();
+    } else {
+      return;
+    }
+
+    if (ResName.compare(ArrayResName)) {
+      // Won't do pretty code if the resource name is different
+      return;
+    }
+    // Calculate insert location
+    std::string MemberOpt = ResTypeMemberExpr->isArrow() ? "->" : ".";
+    auto BORange = getStmtExpansionSourceRange(BO);
+    auto AssignArrayRange = getStmtExpansionSourceRange(AssignArrayExpr);
+
+    auto LastPos = BORange.getEnd();
+    if (SM.getDecomposedLoc(LastPos).second <
+      SM.getDecomposedLoc(AssignArrayRange.getEnd()).second) {
+      LastPos = AssignArrayRange.getEnd();
+    }
+
+    // Skip the last token
+    LastPos =
+      LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Skip ";"
+    LastPos =
+      LastPos.getLocWithOffset(Lexer::MeasureTokenLength(LastPos, SM, LO));
+    // Generate insert str
+    ExprAnalysis EA;
+    EA.analyze(AssignArrayExpr->getRHS());
+    std::string AssignArrayRHS = EA.getReplacedString();
+    std::string IndentStr = getIndent(AssignArrayExpr->getBeginLoc(), SM).str();
+    std::string InsertStr = getNL() + IndentStr + ResName + MemberOpt +
+      "set_data(" + AssignArrayRHS + ");";
+    // Remove all the assign expr
+    removeRange(BORange);
+    removeRange(AssignArrayRange);
+
+    emplaceTransformation(new InsertText(LastPos, std::move(InsertStr)));
+  }
+}
+
+REGISTER_RULE(TextureMemberSetRule)
 
 void TextureRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher = varDecl(hasType(templateSpecializationType(

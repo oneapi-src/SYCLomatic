@@ -1292,6 +1292,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class TextureMemberSetRule : public NamedMigrationRule<TextureMemberSetRule> {
+public:
+  TextureMemberSetRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void removeRange(SourceRange R);
+};
+
 /// Texture migration rule
 class TextureRule : public NamedMigrationRule<TextureRule> {
   // Get the binary operator if E is lhs of an assign experssion.

@@ -44,9 +44,8 @@ void gather_force(const cudaTextureObject_t gridTexObj, cudaStream_t stream) {
 // CHECK: template <class T> void BindTextureObject(dpct::image_matrix_p &data, dpct::image_wrapper_base_p &tex) {
 // CHECK-NEXT:   dpct::image_data res42;
 // CHECK-NEXT:   dpct::sampling_info texDesc42;
-// CHECK-NEXT:   res42.type = dpct::image_data_type::matrix;
-// CHECK-NEXT:   res42.data = data;
-// CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
+// CHECK: res42.set_data(data);
+// CHECK:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
 // CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
 // CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
 // CHECK-NEXT:   texDesc42.filter_mode() = sycl::filtering_mode::nearest;
@@ -96,15 +95,9 @@ int main() {
   // CHECK-NEXT: dpct::image_wrapper_base_p tex42;
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::sampling_info texDesc42;
-  // CHECK-NEXT: res42.type = dpct::image_data_type::pitch;
-  // CHECK-NEXT: res42.data = d_data42;
-  // CHECK-NEXT: res42.chn = desc42;
-  // CHECK-NEXT: res42.x = sizeof(sycl::float4) * 32;
-  // CHECK-NEXT: res42.y = 32;
-  // CHECK-NEXT: res42.pitch = sizeof(sycl::float4) * 32;
-  // CHECK-NEXT: res42.type = dpct::image_data_type::matrix;
-  // CHECK-NEXT: res42.data = a42;
-  // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
+  // CHECK: res42.set_data(d_data42, sizeof(sycl::float4) * 32, 32, sizeof(sycl::float4) * 32, desc42);
+  // CHECK: res42.set_data(a42);
+  // CHECK: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.filter_mode() = sycl::filtering_mode::nearest;
@@ -235,4 +228,29 @@ int main() {
     // CHECK: funcT((delete tex21, 0));
     funcT(cudaDestroyTextureObject(tex21));
   }
+}
+
+void foo(){
+  cudaArray_t a42;
+  cudaResourceDesc res42;
+  //CHECK: res42.set_data(a42);
+  res42.resType = cudaResourceTypeArray;
+  res42.res.array.array = a42;
+
+  float4 *d_data42;
+  cudaChannelFormatDesc desc42 = cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindFloat);
+  //CHECK: res42.set_data(d_data42, sizeof(sycl::float4) * 32, 32, sizeof(sycl::float4) * 32, desc42);
+  res42.resType = cudaResourceTypePitch2D;
+  res42.res.pitch2D.devPtr = d_data42;
+  res42.res.pitch2D.desc = desc42;
+  res42.res.pitch2D.width = sizeof(float4) * 32;
+  res42.res.pitch2D.height = 32;
+  res42.res.pitch2D.pitchInBytes = sizeof(float4) * 32;
+
+  uint2 *d_data21;
+  //CHECK: res42.set_data(d_data21, sizeof(sycl::float4) * 32, desc42);
+  res42.resType = cudaResourceTypeLinear;
+  res42.res.linear.devPtr = d_data21;
+  res42.res.linear.sizeInBytes = sizeof(float4) * 32;
+  res42.res.linear.desc = desc42;
 }
