@@ -13,6 +13,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Utility.h"
+#include "Diagnostics.h"
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
@@ -114,6 +115,32 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
       End = End.getLocWithOffset(-1);
     }
+
+    if (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
+      ReplacementString.empty()) {
+      // Remove the callexpr spelling in macro define if it is outermost
+      if (isOuterMostMacro(TheStmt)) {
+        auto RangeDef = getStmtSpellingSourceRange(TheStmt);
+        auto BeginDef = RangeDef.getBegin();
+        auto EndDef = RangeDef.getEnd();
+        auto CallExprLength =
+          SM.getCharacterData(EndDef) - SM.getCharacterData(BeginDef) +
+          Lexer::MeasureTokenLength(EndDef, SM, Context.getLangOpts());
+        DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
+            ReplacementString, this));
+        // Emit warning message at the Exapnasion Location
+        auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(getHashStrFromLoc(BeginDef));
+        std::string MacroName = "";
+        if (ItMR != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          MacroName = ItMR->second->Name;
+          auto LocInfo = DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(TheStmt->getBeginLoc()));
+          DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+            Diagnostics::MACRO_REMOVED, true, MacroName);
+        }
+      }
+    }
+
 
     auto CallExprLength =
         SM.getCharacterData(End) - SM.getCharacterData(Begin) +

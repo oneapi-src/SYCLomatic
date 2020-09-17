@@ -7886,7 +7886,7 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, "0"));
+                          /*IsProcessMacro*/ true, "0"));
     } else {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
              MapNames::ITFName.at(FuncName), Msg->second);
