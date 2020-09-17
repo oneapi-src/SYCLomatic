@@ -11071,13 +11071,6 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
 }
 
 bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
-  auto TST = VD->getType()->getAs<TemplateSpecializationType>();
-
-  if (TST->getNumArgs() <= 2)
-    return false;
-
-  auto Arg2 = TST->getArg(2);
-
   if (auto FD =
           dyn_cast_or_null<FunctionDecl>(VD->getParentFunctionOrMethod())) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
