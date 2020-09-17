@@ -26,9 +26,7 @@ class MathTypeCastRewriter;
 class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
-class ReorderFunctionRewriter;
 class UnsupportFunctionRewriter;
-class TemplatedCallExprRewriter;
 
 /*
 Factory usage example:
@@ -85,13 +83,8 @@ using MathBinaryOperatorRewriterFactory =
     CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
 using WarpFunctionRewriterFactory =
     CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
-using ReorderFunctionRewriterFactory = CallExprRewriterFactory<
-    ReorderFunctionRewriter, std::string,
-    std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
-using TemplatedCallExprRewriterFactory =
-    CallExprRewriterFactory<TemplatedCallExprRewriter, std::string>;
 
 /// Base class for rewriting call expressions
 class CallExprRewriter {
@@ -338,43 +331,22 @@ protected:
   friend WarpFunctionRewriterFactory;
 };
 
-/// The rewriter for reordering function arguments
-class ReorderFunctionRewriter : public FuncCallExprRewriter {
-  const std::vector<unsigned> &RewriterArgsIdx;
-
-public:
-  ReorderFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                          StringRef TargetCalleeName,
-                          const std::vector<unsigned> &ArgsIdx)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName),
-        RewriterArgsIdx(ArgsIdx) {}
-
-  virtual Optional<std::string> rewrite() override;
-
-  friend ReorderFunctionRewriterFactory;
-};
-
-class TemplatedCallExprRewriter : public FuncCallExprRewriter {
-  std::vector<std::string> TemplateArgs;
-  void buildTemplateArgsList();
-  void buildTemplateArgsList(const ArrayRef<TemplateArgumentLoc> &Args);
-
-public:
-  TemplatedCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                            StringRef TargetCalleeName)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
-
-  virtual Optional<std::string> rewrite() override;
-
-  friend TemplatedCallExprRewriterFactory;
-};
-
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
   Val.print(Stream);
 }
 template <class StreamT> void print(StreamT &Stream, const Expr *E) {
   ExprAnalysis EA;
   print(Stream, EA, E);
+}
+template <class StreamT> void print(StreamT &Stream, StringRef Str) {
+  Stream << Str;
+}
+template <class StreamT> void print(StreamT &Stream, const std::string &Str) {
+  Stream << Str;
+}
+template <class StreamT>
+void print(StreamT &Stream, const TemplateArgumentInfo &Arg) {
+  print(Stream, Arg.getString());
 }
 template <class StreamT>
 void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
@@ -441,19 +413,41 @@ template <bool HasPrefixArg> class ArgsPrinter<HasPrefixArg> {
 
 public:
   template <class StreamT> void print(StreamT &) const {}
-  template <class StreamT> void printArg(StreamT &Stream, const Expr *E) const {
+  template <class StreamT>
+  void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
     dpct::print(Stream, A, E);
   }
-  template <class StreamT, class ArgT>
-  void printArg(StreamT &Stream, const ArgT &Arg) const {
+  template <class StreamT>
+  void printArg(std::false_type, StreamT &Stream, DerefExpr Arg) const {
     Arg.printArg(Stream, A);
   }
-  template <class StreamT>
-  void printComma(StreamT &Stream, std::true_type) const {
-    Stream << ", ";
+  template <class StreamT, class ArgT>
+  void printArg(std::false_type, StreamT &Stream, const ArgT &Arg) const {
+    dpct::print(Stream, Arg);
   }
-  template <class StreamT>
-  void printComma(StreamT &Stream, std::false_type) const {}
+  template <class StreamT, class ArgT>
+  void printArg(std::false_type, StreamT &Stream,
+                const std::vector<ArgT> &Vec) const {
+    if (Vec.empty())
+      return;
+    auto Itr = Vec.begin();
+    printArg(std::false_type(), Stream, *Itr);
+    while (++Itr != Vec.end()) {
+      printArg(std::true_type(), Stream, *Itr);
+    }
+  }
+  template <class StreamT, class ArgT>
+  void printArg(std::true_type, StreamT &Stream,
+                const std::vector<ArgT> &Vec) const {
+    for (auto &Arg : Vec) {
+      printArg(std::true_type(), Stream, Arg);
+    }
+  }
+  template <class StreamT, class ArgT>
+  void printArg(std::true_type, StreamT &Stream, ArgT &&Arg) const {
+    Stream << ", ";
+    printArg(std::false_type(), Stream, std::forward<ArgT>(Arg));
+  }
 
   ArgsPrinter() = default;
   ArgsPrinter(const ArgsPrinter &) {}
@@ -470,22 +464,7 @@ public:
       : Base(std::forward<InputRestArgsT>(RestArgs)...),
         First(std::forward<InputFirstArgT>(FirstArg)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Base::printComma(Stream, std::integral_constant<bool, HasPrefixArg>());
-    Base::printArg(Stream, First);
-    Base::print(Stream);
-  }
-};
-
-template <class... ArgsExtratorT>
-class CallArgsPrinter : public ArgsPrinter<false, ArgsExtratorT...> {
-  using Base = ArgsPrinter<false, ArgsExtratorT...>;
-
-public:
-  template <class... InputArgsT>
-  CallArgsPrinter(InputArgsT &&... Args)
-      : Base(std::forward<InputArgsT>(Args)...) {}
-  template <class StreamT> void print(StreamT &Stream) const {
-    ParensPrinter<StreamT> Parens(Stream);
+    Base::printArg(std::integral_constant<bool, HasPrefixArg>(), Stream, First);
     Base::print(Stream);
   }
 };
@@ -505,35 +484,59 @@ void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
   printMemberOp(Stream, IsArrow);
 }
 
-template <class... CallArgsT> class CallExprPrinter {
-  StringRef CalleeName;
-  CallArgsPrinter<CallArgsT...> Args;
+template <class CalleeT, class... CallArgsT> class CallExprPrinter {
+  CalleeT Callee;
+  ArgsPrinter<false, CallArgsT...> Args;
 
 public:
-  CallExprPrinter(StringRef Name, CallArgsT &&... Args)
-      : CalleeName(Name), Args(std::forward<CallArgsT>(Args)...) {}
+  CallExprPrinter(CalleeT Callee, CallArgsT &&... Args)
+      : Callee(Callee), Args(std::forward<CallArgsT>(Args)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << CalleeName;
+    dpct::print(Stream, Callee);
+    ParensPrinter<StreamT> Parens(Stream);
     Args.print(Stream);
   }
 };
-template <class BaseT, class... CallArgsT> class MemberCallPrinter {
+
+class TemplatedCallee {
+  StringRef CalleeName;
+  ArgsPrinter<false, std::vector<TemplateArgumentInfo>> TemplateArgs;
+
+public:
+  TemplatedCallee(StringRef Callee, std::vector<TemplateArgumentInfo> &&Args)
+      : CalleeName(Callee), TemplateArgs(std::move(Args)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, CalleeName);
+    Stream << "<";
+    TemplateArgs.print(Stream);
+    Stream << ">";
+  }
+};
+
+template <class BaseT> class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
   StringRef MemberName;
-  CallArgsPrinter<CallArgsT...> Args;
 
 public:
-  MemberCallPrinter(BaseT &&Base, bool IsArrow, StringRef MemberName,
-                    CallArgsT &&... Args)
-      : Base(std::forward<BaseT>(Base)), IsArrow(IsArrow),
-        MemberName(MemberName), Args(std::forward<CallArgsT>(Args)...) {}
+  MemberExprPrinter(BaseT Base, bool IsArrow, StringRef MemberName)
+      : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     printBase(Stream, Base, IsArrow);
     Stream << MemberName;
-    Args.print(Stream);
   }
+};
+
+template <class BaseT, class... CallArgsT>
+class MemberCallPrinter
+    : public CallExprPrinter<MemberExprPrinter<BaseT>, CallArgsT...> {
+public:
+  MemberCallPrinter(BaseT Base, bool IsArrow, StringRef MemberName,
+                    CallArgsT &&... Args)
+      : CallExprPrinter<MemberExprPrinter<BaseT>, CallArgsT...>(
+            MemberExprPrinter<BaseT>(Base, IsArrow, MemberName),
+            std::forward<CallArgsT>(Args)...) {}
 };
 
 template <class LValueT, class RValueT> class AssignExprPrinter {
@@ -567,7 +570,7 @@ public:
 };
 
 template <class Printer>
-class PrinterRewriter : public Printer, public CallExprRewriter {
+class PrinterRewriter : Printer, public CallExprRewriter {
 public:
   template <class... ArgsT>
   PrinterRewriter(const CallExpr *C, StringRef Source, ArgsT &&... Args)
@@ -578,6 +581,18 @@ public:
     Printer::print(OS);
     return Result;
   }
+};
+
+template <class... ArgsT>
+class TemplatedCallExprRewriter
+    : public PrinterRewriter<CallExprPrinter<TemplatedCallee, ArgsT...>> {
+public:
+  TemplatedCallExprRewriter(
+      const CallExpr *C, StringRef Source,
+      std::function<TemplatedCallee(const CallExpr *)> &CalleeCreator,
+      std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
+      : PrinterRewriter<CallExprPrinter<TemplatedCallee, ArgsT...>>(
+            C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
 };
 
 template <class BaseT, class... ArgsT>

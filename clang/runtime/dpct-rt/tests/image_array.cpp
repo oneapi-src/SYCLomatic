@@ -27,9 +27,9 @@ int main() {
   dpct::dpct_memcpy(device_buffer, host_buffer, 640 * 480 * 24 * sizeof(sycl::float4));
 
   dpct::image_channel chn2 =
-      dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
+      dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   dpct::image_channel chn4 =
-      dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
+      dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   chn4.set_channel_size(4, 32);
 
   dpct::image_matrix_p array1;

@@ -52,10 +52,10 @@ __global__ void kernel() {
 
 int main() {
 
-  // CHECK: dpct::image_channel halfChn = dpct::create_image_channel<sycl::cl_half>();
+  // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::cl_half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
 
-  // CHECK: dpct::image_channel float4Chn = dpct::create_image_channel<sycl::float4>();
+  // CHECK: dpct::image_channel float4Chn = dpct::image_channel::create<sycl::float4>();
   cudaChannelFormatDesc float4Chn = cudaCreateChannelDesc<float4>();
 
   auto tex42_ptr = &tex42;
@@ -94,7 +94,7 @@ int main() {
   // CHECK-NEXT: tex42.attach(a42);
   // CHECK-NEXT: tex42.attach(a42, tex42.channel());
   // CHECK-NEXT: tex42.attach(a42, tex42.channel());
-  // CHECK-NEXT: tex42.channel() = dpct::create_image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
+  // CHECK-NEXT: tex42.channel() = dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   float4 *d_data42;
   cudaArray_t a42;
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
@@ -118,7 +118,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
+  // CHECK-NEXT: dpct::image_channel desc21 = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;

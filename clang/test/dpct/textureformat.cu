@@ -34,13 +34,13 @@ int main()
   // CHECK: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel channelDesc = dpct::create_image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
+  // CHECK-NEXT: dpct::image_channel channelDesc = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindFloat);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::create_image_channel<sycl::float3>();
+  // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::image_channel::create<sycl::float3>();
   cudaChannelFormatDesc channelDesc1 = cudaCreateChannelDesc<float3>();
 
   cudaArray* cuArray;

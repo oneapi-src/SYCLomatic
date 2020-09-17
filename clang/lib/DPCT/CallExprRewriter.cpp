@@ -1054,67 +1054,6 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
-Optional<std::string> ReorderFunctionRewriter::rewrite() {
-  for (auto ArgIdx : RewriterArgsIdx) {
-    if (ArgIdx >= Call->getNumArgs())
-      continue;
-    if ((SourceCalleeName == "cudaBindTexture" ||
-         SourceCalleeName == "cudaBindTexture2D") &&
-        Call->getArg(1)->getType()->isPointerType() &&
-        (ArgIdx == 1 || ArgIdx == 3)) {
-      std::ostringstream OS;
-      printDerefOp(OS, Call->getArg(ArgIdx));
-      appendRewriteArg(OS.str());
-    } else {
-      appendRewriteArg(getMigratedArg(ArgIdx));
-    }
-  }
-  return buildRewriteString();
-}
-
-void TemplatedCallExprRewriter::buildTemplateArgsList() {
-  auto Callee = Call->getCallee()->IgnoreImplicitAsWritten();
-  if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
-    return buildTemplateArgsList(DRE->template_arguments());
-  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-    return buildTemplateArgsList(ULE->template_arguments());
-  }
-}
-
-void TemplatedCallExprRewriter::buildTemplateArgsList(
-    const ArrayRef<TemplateArgumentLoc> &Args) {
-  ExprAnalysis EA;
-  for (auto &Arg : Args) {
-    EA.analyze(Arg);
-    TemplateArgs.push_back(EA.getReplacedString());
-  }
-}
-
-Optional<std::string> TemplatedCallExprRewriter::rewrite() {
-  buildTemplateArgsList();
-  RewriteArgList = getMigratedArgs();
-  std::string Result;
-  llvm::raw_string_ostream OS(Result);
-  OS << TargetCalleeName;
-  if (!TemplateArgs.empty()) {
-    OS << "<";
-    for (size_t i = 0; i < TemplateArgs.size(); ++i) {
-      if (i)
-        OS << ", ";
-      OS << TemplateArgs[i];
-    }
-    OS << ">";
-  }
-  OS << "(";
-  for (size_t i = 0; i < RewriteArgList.size(); ++i) {
-    if (i)
-      OS << ", ";
-    OS << RewriteArgList[i];
-  }
-  OS << ")";
-  return OS.str();
-}
-
 DerefExpr DerefExpr::create(const Expr *E) {
   DerefExpr D;
   E = E->IgnoreImplicitAsWritten();
@@ -1177,22 +1116,43 @@ std::function<MemberCallPrinter<BaseT, CallArgsT...>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow, std::string Member,
                       std::function<CallArgsT(const CallExpr *)>... Args) {
-  return MemberCallPrinterCreator<BaseT, CallArgsT...>(
-      std::forward<std::function<BaseT(const CallExpr *)>>(BaseFunc), IsArrow,
-      Member,
-      std::forward<std::function<CallArgsT(const CallExpr *)>>(Args)...);
+  return MemberCallPrinterCreator<BaseT, CallArgsT...>(BaseFunc, IsArrow,
+                                                       Member, Args...);
 }
-template <class... CallArgsT>
-using CallExprPrinterCreator =
-    PrinterCreator<CallExprPrinter<CallArgsT...>, std::string,
-                   std::function<CallArgsT(const CallExpr *)>...>;
+
+PrinterCreator<
+    TemplatedCallee, std::string,
+    std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>
+makeTemplatedCalleeCreator(std::string CalleeName,
+                           std::initializer_list<size_t> Indexes) {
+  return PrinterCreator<
+      TemplatedCallee, std::string,
+      std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
+      CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+        ArrayRef<TemplateArgumentLoc> TemplateArgsList;
+        std::vector<TemplateArgumentInfo> Ret;
+        auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
+        if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+          TemplateArgsList = DRE->template_arguments();
+        } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+          TemplateArgsList = ULE->template_arguments();
+        }
+        for (auto Idx : Indexes) {
+          if (Idx < TemplateArgsList.size()) {
+            Ret.emplace_back(TemplateArgsList[Idx]);
+          }
+        }
+        return Ret;
+      });
+}
 
 template <class... CallArgsT>
-std::function<CallExprPrinter<CallArgsT...>(const CallExpr *)>
-makeCallExprCreator(std::string Name,
+std::function<CallExprPrinter<StringRef, CallArgsT...>(const CallExpr *)>
+makeCallExprCreator(std::string Callee,
                     std::function<CallArgsT(const CallExpr *)>... Args) {
-  return CallExprPrinterCreator<CallArgsT...>(
-      Name, std::forward<std::function<CallArgsT(const CallExpr *)>>(Args)...);
+  return PrinterCreator<CallExprPrinter<StringRef, CallArgsT...>, std::string,
+                        std::function<CallArgsT(const CallExpr *)>...>(Callee,
+                                                                       Args...);
 }
 
 /// Create AssignExprRewriterFactory with given argumens.
@@ -1211,6 +1171,26 @@ creatAssignExprRewriterFactory(
       SourceName,
       std::forward<std::function<LValue(const CallExpr *)>>(LValueCreator),
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
+}
+
+/// Create TemplatedCallExprRewriterFactory with given argumens.
+/// \p SourceName the source callee name of original call expr.
+/// \p CalleeCreator use to get templated callee from original call expr.
+/// \p ArgsCreator use to get call args from original call expr.
+template <class... ArgsT>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createTemplatedCallExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<TemplatedCallee(const CallExpr *)> CalleeCreator,
+    std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<TemplatedCallExprRewriter<ArgsT...>,
+                              std::function<TemplatedCallee(const CallExpr *)>,
+                              std::function<ArgsT(const CallExpr *)>...>>(
+      SourceName,
+      std::forward<std::function<TemplatedCallee(const CallExpr *)>>(
+          CalleeCreator),
+      std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
 /// Create MemberCallExprRewriterFactory with given argumens.
@@ -1410,8 +1390,12 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define POINTER_CHECKER(x) makePointerChecker(x)
+#define TEMPLATED_CALLEE(FuncName, ...)                                        \
+  makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
+#define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
+  { FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__) },
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
@@ -1462,13 +1446,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
   REWRITER_FACTORY_ENTRY(FuncName, MathUnsupportedRewriterFactory, FuncName)
 #define WARP_FUNC_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
-#define REORDER_FUNC_FACTORY_ENTRY(FuncName, RewriterName, ...)                \
-  REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionRewriterFactory,             \
-                         RewriterName, std::vector<unsigned>{__VA_ARGS__})
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
-#define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, RewriterName)                     \
-  REWRITER_FACTORY_ENTRY(FuncName, TemplatedCallExprRewriterFactory, RewriterName)
 
 const std::unordered_map<std::string,
 	std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1506,10 +1485,8 @@ const std::unordered_map<std::string,
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 #define ENTRY_BIND(SOURCEAPINAME, ...)            \
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-#define ENTRY_REORDER(SOURCEAPINAME, TARGETAPINAME, ...)            \
-  REORDER_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
-#define ENTRY_TEMPLATED(SOURCEAPINAME, TARGETAPINAME)                            \
-  TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
+  TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #include "APINamesTexture.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE

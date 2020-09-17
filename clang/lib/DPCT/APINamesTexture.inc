@@ -8,8 +8,12 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_TEMPLATED("cudaCreateChannelDesc", "dpct::create_image_channel")
-ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<" + MapNames::getClNamespace() + "::cl_half>")
+CONDITIONAL_FACTORY_ENTRY(
+    [](const CallExpr *C) -> bool { return C->getNumArgs(); },
+    ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::image_channel"),
+    ENTRY_TEMPLATED("cudaCreateChannelDesc",
+                    TEMPLATED_CALLEE("dpct::image_channel::create", {0})))
+ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::image_channel::create<" + MapNames::getClNamespace() + "::cl_half>")
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 	POINTER_CHECKER(0),

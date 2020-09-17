@@ -24,7 +24,7 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     dpct::create_image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
+  // CHECK-NEXT:     dpct::image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: resDescInput[instance].chn = channelDesc;
   // CHECK-NEXT: resDescInput[instance].y = pSize;
   // CHECK-NEXT: resDescInput[instance].x = rSize;

@@ -32,72 +32,8 @@ enum class image_channel_data_type {
   fp,
 };
 
-/// Image channel info, include channel number, order, data width and type
-class image_channel {
-public:
-  image_channel_data_type type = image_channel_data_type::signed_int;
-  /// Number of channels.
-  unsigned channel_num = 0;
-  /// Total size of all channels in bytes.
-  unsigned total_size = 0;
-
-  cl::sycl::image_channel_type get_channel_type() const {
-    auto channel_size = total_size / channel_num;
-    if (channel_size == 4) {
-      if (type == image_channel_data_type::signed_int)
-        return cl::sycl::image_channel_type::signed_int32;
-      else if (type == image_channel_data_type::unsigned_int)
-        return cl::sycl::image_channel_type::unsigned_int32;
-      else if (type == image_channel_data_type::fp)
-        return cl::sycl::image_channel_type::fp32;
-    } else if (channel_size == 2) {
-      if (type == image_channel_data_type::signed_int)
-        return cl::sycl::image_channel_type::signed_int16;
-      else if (type == image_channel_data_type::unsigned_int)
-        return cl::sycl::image_channel_type::unsigned_int16;
-      else if (type == image_channel_data_type::fp)
-        return cl::sycl::image_channel_type::fp16;
-    } else {
-      if (type == image_channel_data_type::signed_int)
-        return cl::sycl::image_channel_type::signed_int8;
-      else if (type == image_channel_data_type::unsigned_int)
-        return cl::sycl::image_channel_type::unsigned_int8;
-    }
-    assert(false && "unexpected channel data kind and channel size");
-    return cl::sycl::image_channel_type::signed_int32;
-  }
-
-  cl::sycl::image_channel_order get_channel_order() const {
-    switch (channel_num) {
-    case 1:
-      return cl::sycl::image_channel_order::r;
-    case 2:
-      return cl::sycl::image_channel_order::rg;
-    case 3:
-      return cl::sycl::image_channel_order::rgb;
-    case 4:
-      return cl::sycl::image_channel_order::rgba;
-    default:
-      return cl::sycl::image_channel_order::r;
-    }
-  }
-  /// Get the size for each channel in bits.
-  unsigned get_channel_size() const { return total_size * 8 / channel_num; }
-
-  /// Set channel size.
-  /// \param in_channel_num Channels number to set.
-  /// \param channel_size Size for each channel in bits.
-  void set_channel_size(unsigned in_channel_num,
-                        unsigned channel_size) {
-    if (in_channel_num < channel_num)
-      return;
-    channel_num = in_channel_num;
-    total_size = channel_size * channel_num / 8;
-  }
-};
-
+class image_channel;
 class image_wrapper_base;
-
 namespace detail {
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
@@ -197,15 +133,6 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
   }
 };
 
-static inline image_channel
-create_image_channel(int channel_size, int channel_num,
-                     image_channel_data_type data_type) {
-  image_channel channel;
-  channel.type = data_type;
-  channel.set_channel_size(channel_num, channel_size * 8);
-  return channel;
-}
-
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims);
 
@@ -221,32 +148,106 @@ template <class T, int Dimension, bool IsImageArray> struct attach_data;
 
 } // namespace detail
 
-/// Create image channel info.
-/// \param r Channel r width in bits.
-/// \param g Channel g width in bits. Should be same with \p r, or zero.
-/// \param b Channel b width in bits. Should be same with \p g, or zero.
-/// \param a Channel a width in bits. Should be same with \p b, or zero.
-/// \channel_kind Channel data type kind: signed int, unsigned int or float.
-static inline image_channel
-create_image_channel(int r, int g, int b, int a,
-                     image_channel_data_type data_type) {
-  if (a) {
-    return detail::create_image_channel(r / 8, 4, data_type);
-  } else if (b) {
-    return detail::create_image_channel(r / 8, 3, data_type);
-  } else if (g) {
-    return detail::create_image_channel(r / 8, 2, data_type);
-  } else {
-    return detail::create_image_channel(r / 8, 1, data_type);
-  }
-}
+/// Image channel info, include channel number, order, data width and type
+class image_channel {
+public:
+  image_channel_data_type type = image_channel_data_type::signed_int;
+  /// Number of channels.
+  unsigned channel_num = 0;
+  /// Total size of all channels in bytes.
+  unsigned total_size = 0;
 
-/// Create image channel info according to template argument \p T.
-template <class T> static inline image_channel create_image_channel() {
-  return detail::create_image_channel(sizeof(typename detail::image_trait<T>::elem_t),
-                              detail::image_trait<T>::channel_num,
-                              detail::image_trait<T>::data_type);
-}
+  /// Create image channel info according to template argument \p T.
+  template <class T> static image_channel create() {
+    image_channel channel;
+    channel.set_channel_size(detail::image_trait<T>::channel_num,
+                             sizeof(typename detail::image_trait<T>::elem_t) *
+                                 8);
+    channel.type = detail::image_trait<T>::data_type;
+    return channel;
+  }
+
+  image_channel() = default;
+
+  /// image_channel constructor.
+  /// \param r Channel r width in bits.
+  /// \param g Channel g width in bits. Should be same with \p r, or zero.
+  /// \param b Channel b width in bits. Should be same with \p g, or zero.
+  /// \param a Channel a width in bits. Should be same with \p b, or zero.
+  /// \param data_type Image channel data type: signed_nt, unsigned_int or fp.
+  image_channel(int r, int g, int b, int a, image_channel_data_type data_type) {
+    type = data_type;
+    if (a) {
+      assert(r == a && "DPC++ doesn't support different channel size");
+      assert(r == b && "DPC++ doesn't support different channel size");
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(4, a);
+    } else if (b) {
+      assert(r == b && "DPC++ doesn't support different channel size");
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(3, b);
+    } else if (g) {
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(2, g);
+    } else {
+      set_channel_size(1, r);
+    }
+  }
+
+  cl::sycl::image_channel_type get_channel_type() const {
+    auto channel_size = total_size / channel_num;
+    if (channel_size == 4) {
+      if (type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int32;
+      else if (type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int32;
+      else if (type == image_channel_data_type::fp)
+        return cl::sycl::image_channel_type::fp32;
+    } else if (channel_size == 2) {
+      if (type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int16;
+      else if (type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int16;
+      else if (type == image_channel_data_type::fp)
+        return cl::sycl::image_channel_type::fp16;
+    } else {
+      if (type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int8;
+      else if (type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int8;
+    }
+    assert(false && "unexpected channel data kind and channel size");
+    return cl::sycl::image_channel_type::signed_int32;
+  }
+
+  cl::sycl::image_channel_order get_channel_order() const {
+    switch (channel_num) {
+    case 1:
+      return cl::sycl::image_channel_order::r;
+    case 2:
+      return cl::sycl::image_channel_order::rg;
+    case 3:
+      return cl::sycl::image_channel_order::rgb;
+    case 4:
+      return cl::sycl::image_channel_order::rgba;
+    default:
+      return cl::sycl::image_channel_order::r;
+    }
+  }
+  /// Get the size for each channel in bits.
+  unsigned get_channel_size() const { return total_size * 8 / channel_num; }
+
+  /// Set channel size.
+  /// \param in_channel_num Channels number to set.
+  /// \param channel_size Size for each channel in bits.
+  void set_channel_size(unsigned in_channel_num,
+                        unsigned channel_size) {
+    if (in_channel_num < channel_num)
+      return;
+    channel_num = in_channel_num;
+    total_size = channel_size * channel_num / 8;
+  }
+};
 
 /// 2D or 3D matrix data for image.
 class image_matrix {
@@ -412,7 +413,7 @@ public:
       typename image_accessor_ext<T, IsImageArray ? (Dimension - 1) : Dimension,
                               IsImageArray>::accessor_t;
 
-  image_wrapper() { channel() = create_image_channel<T>(); }
+  image_wrapper() { channel() = image_channel::create<T>(); }
   ~image_wrapper() { detach(); }
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
