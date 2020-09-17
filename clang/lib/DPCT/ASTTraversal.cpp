@@ -9353,7 +9353,7 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
 /// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
 std::string
 MemoryMigrationRule::getFinalCastTypeNameStr(std::string CastTypeName) {
-  for (auto Pair : MapNames::DeviceRandomGeneratorTypeMap) {
+  for (auto &Pair : MapNames::DeviceRandomGeneratorTypeMap) {
     std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
     if (BeginLoc != std::string::npos) {
       return CastTypeName.replace(BeginLoc, Pair.first.size(),
