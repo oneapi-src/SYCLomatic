@@ -141,12 +141,14 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc21;
   // CHECK-NEXT: res21.type = dpct::image_data_type::linear;
   // CHECK-NEXT: res21.data = d_data21;
-  // CHECK-NEXT: res21.chn.type = dpct::image_channel_data_type::unsigned_int;
+  // CHECK-NEXT: res21.chn.set_data_type(dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: res21.chn.set_channel_size(1, sizeof(unsigned)*8); // bits per channel
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*2) res21.chn.set_channel_size(2, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*3) res21.chn.set_channel_size(3, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*4) res21.chn.set_channel_size(4, sizeof(unsigned)*8);
   // CHECK-NEXT: res21.x = 32*sizeof(sycl::uint2);
+  // CHECK-NEXT: unsigned chnX = res21.chn.get_channel_size();
+  // CHECK-NEXT: dpct::image_channel_data_type formatKind = res21.chn.get_data_type();
   // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -169,6 +171,8 @@ int main() {
   if (sizeof(uint2) >= sizeof(unsigned)*3) res21.res.linear.desc.z = sizeof(unsigned)*8;
   if (sizeof(uint2) >= sizeof(unsigned)*4) res21.res.linear.desc.w = sizeof(unsigned)*8;
   res21.res.linear.sizeInBytes = 32*sizeof(uint2);
+  unsigned chnX = res21.res.linear.desc.x;
+  cudaChannelFormatKind formatKind = res21.res.linear.desc.f;
   texDesc21.addressMode[0] = cudaAddressModeClamp;
   texDesc21.addressMode[1] = cudaAddressModeClamp;
   texDesc21.addressMode[2] = cudaAddressModeClamp;

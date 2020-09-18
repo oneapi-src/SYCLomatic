@@ -143,6 +143,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusolverEigMode_t", "oneapi::mkl::job"},
       {"cusolverStatus_t", "int"},
       {"cudaChannelFormatDesc", "dpct::image_channel"},
+      { "cudaChannelFormatKind", "dpct::image_channel_data_type" },
       {"cudaArray", "dpct::image_matrix"},
       {"cudaArray_t", "dpct::image_matrix_p"},
       {"cudaTextureDesc", "dpct::sampling_info"},

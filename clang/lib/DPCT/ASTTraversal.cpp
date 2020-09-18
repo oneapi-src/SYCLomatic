@@ -11011,6 +11011,16 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(RecognizeAPINameRule)
 
+TextModification *ReplaceMemberAssignAsSetMethod(const BinaryOperator *BO,
+                                                 const MemberExpr *ME,
+                                                 StringRef MethodName,
+                                                 StringRef ExtraArg = "") {
+  return new ReplaceToken(ME->getMemberLoc(), BO->getEndLoc(),
+                          buildString("set_", MethodName, "(", ExtraArg,
+                                      ExtraArg.empty() ? "" : ", ",
+                                      ExprAnalysis::ref(BO->getRHS()), ")"));
+}
+
 const BinaryOperator *TextureRule::getParentAsAssignedBO(const Expr *E,
                                                          ASTContext &Context) {
   auto Parents = Context.getParents(*E);
@@ -11083,8 +11093,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                     .bind("texMember"),
                 this);
   MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                            "cudaChannelFormatDesc", "cudaTextureDesc",
-                            "cudaResourceDesc", "cudaArray", "cudaArray_t"))))))
+                            "cudaChannelFormatDesc", "cudaChannelFormatKind",
+                            "cudaTextureDesc", "cudaResourceDesc", "cudaArray",
+                            "cudaArray_t"))))))
                     .bind("texType"),
                 this);
 
@@ -11229,24 +11240,21 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
       }
     } else if (BaseTy == "cudaChannelFormatDesc") {
-      if (ME->getMemberNameInfo().getAsString() == "f") {
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
-      } else if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
-        static std::map<std::string, std::string> ChannelOrderMap = {
-            {"x", "1"}, {"y", "2"}, {"z", "3"}, {"w", "4"}};
-        emplaceTransformation(new RenameFieldInMemberExpr(
-            ME,
-            buildString("set_channel_size(",
-                        ChannelOrderMap[ME->getMemberNameInfo().getAsString()],
-                        ", ", ExprAnalysis::ref(BO->getRHS()), ")")));
-        emplaceTransformation(new ReplaceToken(
-            Lexer::getLocForEndOfToken(BO->getLHS()->getEndLoc(), 0,
-                                       *Result.SourceManager,
-                                       Result.Context->getLangOpts()),
-            BO->getRHS()->getEndLoc(), ""));
+      static std::map<std::string, std::string> MethodNameMap = {
+          {"x", "channel_size"},
+          {"y", "channel_size"},
+          {"z", "channel_size"},
+          {"w", "channel_size"},
+          {"f", "data_type"}};
+      static std::map<std::string, std::string> ExtraArgMap = {
+          {"x", "1"}, {"y", "2"}, {"z", "3"}, {"w", "4"}, {"f", ""}};
+      std::string MemberName = ME->getMemberNameInfo().getAsString();
+      if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+        emplaceTransformation(ReplaceMemberAssignAsSetMethod(
+            BO, ME, MethodNameMap[MemberName], ExtraArgMap[MemberName]));
       } else {
-        emplaceTransformation(
-            new RenameFieldInMemberExpr(ME, "get_channel_size()"));
+        emplaceTransformation(new RenameFieldInMemberExpr(
+            ME, buildString("get_", MethodNameMap[MemberName], "()")));
       }
     } else {
       auto Field = ME->getMemberNameInfo().getAsString();

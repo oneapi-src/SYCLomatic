@@ -35,7 +35,10 @@ int main() {
       dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   dpct::image_channel chn4 =
       dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
+  chn4.set_data_type(dpct::image_channel_data_type::fp);
   chn4.set_channel_size(4, 32);
+  dpct::image_channel_data_type chn4_type = chn4.get_data_type();
+  unsigned chn4_size = chn4.get_channel_size();
 
   sycl::float4 *image_data2 = (sycl::float4 *)std::malloc(650 * 480 * sizeof(sycl::float4));
 
