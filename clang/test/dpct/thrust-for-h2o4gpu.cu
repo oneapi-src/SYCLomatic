@@ -210,3 +210,66 @@ void foo() {
 
  }
 }
+
+// CHECK: const std::vector<float> transform(
+// CHECK-NEXT:     const std::vector<int>& src, size_t width, size_t height, size_t pitch)
+// CHECK-NEXT: {
+// CHECK-NEXT:     const std::vector<float> result(100, 0);
+// CHECK-NEXT:     return result;
+// CHECK-NEXT: }
+const thrust::host_vector<float> transform(
+    const thrust::host_vector<int>& src, size_t width, size_t height, size_t pitch)
+{
+    const thrust::host_vector<float> result(100, 0);
+    return result;
+}
+
+// CHECK: template <typename T>
+// CHECK-NEXT: const std::vector<float> transformT(
+// CHECK-NEXT:     const std::vector<T>& src, size_t width, size_t height, size_t pitch)
+// CHECK-NEXT: {
+// CHECK-NEXT:     const std::vector<float> result(100, 0);
+// CHECK-NEXT:     return result;
+// CHECK-NEXT: }
+template <typename T>
+const thrust::host_vector<float> transformT(
+    const thrust::host_vector<T>& src, size_t width, size_t height, size_t pitch)
+{
+    const thrust::host_vector<float> result(100, 0);
+    return result;
+}
+
+// CHECK: const dpct::device_vector<float> transform(
+// CHECK-NEXT:     const dpct::device_vector<int>& src, size_t width, size_t height, size_t pitch)
+// CHECK-NEXT: {
+// CHECK-NEXT:     const dpct::device_vector<float> result(100, 0);
+// CHECK-NEXT:     return result;
+// CHECK-NEXT: }
+const thrust::device_vector<float> transform(
+    const thrust::device_vector<int>& src, size_t width, size_t height, size_t pitch)
+{
+    const thrust::device_vector<float> result(100, 0);
+    return result;
+}
+
+// CHECK: template <typename T>
+// CHECK-NEXT: const dpct::device_vector<float> transformT(
+// CHECK-NEXT:     const dpct::device_vector<T>& src, size_t width, size_t height, size_t pitch)
+// CHECK-NEXT: {
+// CHECK-NEXT:     const dpct::device_vector<float> result(100, 0);
+// CHECK-NEXT:     return result;
+// CHECK-NEXT: }
+template <typename T>
+const thrust::device_vector<float> transformT(
+    const thrust::device_vector<T>& src, size_t width, size_t height, size_t pitch)
+{
+    const thrust::device_vector<float> result(100, 0);
+    return result;
+}
+
+void test(){
+    // CHECK: const std::vector<float> d_actual;
+    const thrust::host_vector<float> d_actual;
+    // CHECK: const dpct::device_vector<float> d_actual2;
+    const thrust::device_vector<float> d_actual2;
+}

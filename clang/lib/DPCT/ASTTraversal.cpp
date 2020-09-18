@@ -2202,8 +2202,8 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     return false;
   }
   auto TypeNameStr = Tok.getRawIdentifier().str();
-  // skip to the next identifier after keyword "typename"
-  if (TypeNameStr == "typename") {
+  // skip to the next identifier after keyword "typename" or "const"
+  if (TypeNameStr == "typename" || TypeNameStr == "const") {
     Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).getValue();
     BeginLoc = Tok.getLocation();
   }
