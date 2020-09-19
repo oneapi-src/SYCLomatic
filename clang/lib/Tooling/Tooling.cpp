@@ -651,6 +651,26 @@ int ClangTool::run(ToolAction *Action) {
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
 #ifdef INTEL_CUSTOMIZATION
+      std::string Filename = CompileCommand.Filename;
+      if(!llvm::sys::path::is_absolute(Filename)) {
+          // To convert the relative path to absolute path.
+          llvm::SmallString<128> AbsPath(Filename);
+          llvm::sys::fs::make_absolute(AbsPath);
+          llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
+          Filename = std::string(AbsPath.str());
+      }
+      StringRef BaseName = llvm::sys::path::filename(Filename);
+
+      // Try to convert the path of input source file into absolute path, as
+      // relative path has the potential risk to change the working directory
+      // of in-memory VFS, which may result in an unexpected behavior.
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (StringRef(CommandLine[Index]).endswith(BaseName)) {
+          CommandLine[Index] = Filename;
+          break;
+        }
+      }
+
       for (int index = 0; index < SDKIncludePath.size(); index++) {
         if (SDKIncludePath[index] == '\\') {
           SDKIncludePath[index] = '/';
