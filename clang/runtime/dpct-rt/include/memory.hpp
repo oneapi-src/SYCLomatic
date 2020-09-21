@@ -528,16 +528,16 @@ static buffer_t get_buffer(const void *ptr) {
   return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
 }
 
-/// Build a cl::sycl::buffer with \p Size.
-/// \param size Size in bytes.
-/// \returns Pointer to the allocated memory.
+/// Allocate memory block on the device.
+/// \param num_bytes Number of bytes to allocate.
+/// \returns A pointer to the newly allocated memory.
 template <typename T>
-static inline void *dpct_malloc(T size) {
-  return detail::dpct_malloc(static_cast<size_t>(size));
+static inline void *dpct_malloc(T num_bytes) {
+  return detail::dpct_malloc(static_cast<size_t>(num_bytes));
 }
 
-/// Malloc 3D array on device with size of \p size.
-/// \param size Malloc memory size.
+/// Allocate memory block for 3D array on the device.
+/// \param size Size of of the memory block, in bytes.
 /// \returns A pitched_data object which stores the memory info.
 static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
   pitched_data pitch(nullptr, 0, size.get(0), size.get(1));
@@ -546,13 +546,11 @@ static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
   return pitch;
 }
 
-/// Malloc 2D array on device with range of pitch, y. Pitch is the aligned
-/// size of x.
+/// Allocate memory block for 2D array on the device.
 /// \param [out] pitch Aligned size of x in bytes.
 /// \param x Range in dim x.
 /// \param y Range in dim y.
-/// \param z Range in dim z.
-/// \returns Pointer to the allocated memory.
+/// \returns A pointer to the newly allocated memory.
 static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y) {
   return detail::dpct_malloc(pitch, x, y, 1);
 }
