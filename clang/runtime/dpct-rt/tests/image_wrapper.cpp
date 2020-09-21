@@ -24,9 +24,8 @@ int main() {
   for(int i = 0; i < 640 * 480 * 24; ++i) {
 	  host_buffer[i] = sycl::float4{10.0f, 10.0f, 10.0f, 10.0f};
   }
-  cl::sycl::float4 *device_buffer;
-  dpct::dpct_malloc(&device_buffer,
-                      640 * 480 * 24 * sizeof(cl::sycl::float4));
+  cl::sycl::float4 *device_buffer = (cl::sycl::float4 *)dpct::dpct_malloc(
+      640 * 480 * 24 * sizeof(cl::sycl::float4));
   dpct::dpct_memcpy(device_buffer, host_buffer, 640 * 480 * 24 * sizeof(sycl::float4));
 
   dpct::image_channel chn1 =
@@ -35,9 +34,9 @@ int main() {
       dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   dpct::image_channel chn4 =
       dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
-  chn4.set_data_type(dpct::image_channel_data_type::fp);
+  chn4.set_channel_data_type(dpct::image_channel_data_type::fp);
   chn4.set_channel_size(4, 32);
-  dpct::image_channel_data_type chn4_type = chn4.get_data_type();
+  dpct::image_channel_data_type chn4_type = chn4.get_channel_data_type();
   unsigned chn4_size = chn4.get_channel_size();
 
   sycl::float4 *image_data2 = (sycl::float4 *)std::malloc(650 * 480 * sizeof(sycl::float4));
@@ -62,17 +61,17 @@ int main() {
   res21.set_data(image_data2, 640, 480, 670, chn2);
   res21.set_data(array1);
 
-  tex42.addr_mode()=cl::sycl::addressing_mode::clamp;
-  texDesc21.addr_mode()=cl::sycl::addressing_mode::clamp;
-  tex13.addr_mode()=cl::sycl::addressing_mode::clamp;
+  tex42.set(cl::sycl::addressing_mode::clamp);
+  texDesc21.set(cl::sycl::addressing_mode::clamp);
+  tex13.set(cl::sycl::addressing_mode::clamp);
 
-  tex42.coord_normalized()=1;
-  texDesc21.coord_normalized()=1;
-  tex13.coord_normalized()=1;
+  tex42.set(cl::sycl::coordinate_normalization_mode::normalized);
+  texDesc21.set(cl::sycl::coordinate_normalization_mode::normalized);
+  tex13.set(cl::sycl::coordinate_normalization_mode::normalized);
 
-  tex42.filter_mode()=cl::sycl::filtering_mode::linear;
-  texDesc21.filter_mode()=cl::sycl::filtering_mode::linear;
-  tex13.filter_mode()=cl::sycl::filtering_mode::linear;
+  tex42.set(cl::sycl::filtering_mode::linear);
+  texDesc21.set(cl::sycl::filtering_mode::linear);
+  tex13.set(cl::sycl::filtering_mode::linear);
 
   tex21 = dpct::create_image_wrapper(res21, texDesc21);
 

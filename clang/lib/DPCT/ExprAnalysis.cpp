@@ -431,7 +431,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
-      addReplacement(ME->getMemberLoc(), FieldName + "()");
+      addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {

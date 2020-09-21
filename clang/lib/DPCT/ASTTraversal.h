@@ -1303,12 +1303,16 @@ public:
 /// Texture migration rule
 class TextureRule : public NamedMigrationRule<TextureRule> {
   // Get the binary operator if E is lhs of an assign experssion.
-  const BinaryOperator *getAssignedBO(const Expr *E, ASTContext &Context);
-  const BinaryOperator *getParentAsAssignedBO(const Expr *E,
+  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
+  const Expr *getParentAsAssignedBO(const Expr *E,
                                               ASTContext &Context);
+  bool removeExtraMemberAccess(const MemberExpr *ME);
+  void replaceNormalizedCoord(const MemberExpr *, const Expr *);
+  void replaceTextureMember(const MemberExpr *ME, ASTContext &Context,
+                            SourceManager &SM);
   void replaceResourceDataExpr(const MemberExpr *ME, const ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
-    return DpctGlobalInfo::findAncestor<MemberExpr>(S);
+    return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
   static MapNames::MapTy LinearResourceTypeNames;
   static MapNames::MapTy Pitched2DResourceTypeNames;

@@ -40,10 +40,10 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
   resDescInput[instance].res.pitch2D.pitchInBytes = pPitch;
 
   // CHECK: memset(&texDescInput[instance], 0, sizeof(texDescInput[instance]));
-  // CHECK-NEXT: texDescInput[instance].filter_mode() = sycl::filtering_mode::linear;
-  // CHECK-NEXT: texDescInput[instance].coord_normalized() = false;
-  // CHECK-NEXT: texDescInput[instance].addr_mode() = sycl::addressing_mode::clamp;
-  // CHECK-NEXT: texDescInput[instance].addr_mode() = sycl::addressing_mode::clamp;
+  // CHECK-NEXT: texDescInput[instance].set(sycl::filtering_mode::linear);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::coordinate_normalization_mode::unnormalized);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::addressing_mode::clamp);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::addressing_mode::clamp);
   // CHECK-NEXT: if (tex_Input[instance] != NULL) {
   // CHECK-NEXT:   delete tex_Input[instance];
   // CHECK-NEXT:   tex_Input[instance] = NULL;
@@ -68,10 +68,10 @@ void createTestTextureAlternative(int instance, unsigned char *d_In, int rSize,
   // CHECK-NEXT: resDescInput[instance].type = dpct::image_data_type::matrix;
   // CHECK-NEXT: resDescInput[instance].data = d_Input[instance];
   // CHECK-NEXT: memset(&texDescInput[instance], 0, sizeof(texDescInput[instance]));
-  // CHECK-NEXT: texDescInput[instance].filter_mode() = sycl::filtering_mode::linear;
-  // CHECK-NEXT: texDescInput[instance].coord_normalized() = false;
-  // CHECK-NEXT: texDescInput[instance].addr_mode() = sycl::addressing_mode::clamp;
-  // CHECK-NEXT: texDescInput[instance].addr_mode() = sycl::addressing_mode::clamp;
+  // CHECK-NEXT: texDescInput[instance].set(sycl::filtering_mode::linear);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::coordinate_normalization_mode::unnormalized);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::addressing_mode::clamp);
+  // CHECK-NEXT: texDescInput[instance].set(sycl::addressing_mode::clamp);
   memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
   resDescInput[instance].resType = cudaResourceTypeArray;
   resDescInput[instance].res.array.array = d_Input[instance];

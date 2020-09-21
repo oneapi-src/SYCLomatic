@@ -21,9 +21,8 @@ int main() {
   for(int i = 0; i < 640 * 480 * 24; ++i) {
 	  host_buffer[i] = sycl::float4{10.0f, 10.0f, 10.0f, 10.0f};
   }
-  cl::sycl::float4 *device_buffer;
-  dpct::dpct_malloc(&device_buffer,
-                      640 * 480 * 24 * sizeof(cl::sycl::float4));
+  cl::sycl::float4 *device_buffer = (cl::sycl::float4 *)dpct::dpct_malloc(
+      640 * 480 * 24 * sizeof(cl::sycl::float4));
   dpct::dpct_memcpy(device_buffer, host_buffer, 640 * 480 * 24 * sizeof(sycl::float4));
 
   dpct::image_channel chn2 =
@@ -50,14 +49,15 @@ int main() {
 
   tex43.attach(array3);
 
-  tex43.addr_mode()=cl::sycl::addressing_mode::clamp;
-  texDesc22.addr_mode()=cl::sycl::addressing_mode::clamp;
+  tex43.set(cl::sycl::addressing_mode::clamp);
+  texDesc22.set(cl::sycl::addressing_mode::clamp);
 
-  tex43.coord_normalized()=1;
-  texDesc22.coord_normalized()=1;
+  tex43.set(cl::sycl::coordinate_normalization_mode::normalized);
+  texDesc22.set(cl::sycl::coordinate_normalization_mode::unnormalized);
+  texDesc22.set_coordinate_normalization_mode(1);
 
-  tex43.filter_mode()=cl::sycl::filtering_mode::linear;
-  texDesc22.filter_mode()=cl::sycl::filtering_mode::linear;
+  tex43.set(cl::sycl::filtering_mode::linear);
+  texDesc22.set(cl::sycl::filtering_mode::linear);
 
   tex22 = dpct::create_image_wrapper(res22, texDesc22);
 

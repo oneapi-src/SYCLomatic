@@ -149,6 +149,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaTextureDesc", "dpct::sampling_info"},
       {"cudaResourceDesc", "dpct::image_data"},
       {"cudaTextureObject_t", "dpct::image_wrapper_base_p"},
+      {"cudaTextureAddressMode", getClNamespace() + "::addressing_mode"},
+      {"cudaTextureFilterMode", getClNamespace() + "::filtering_mode"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
       {"cusparseStatus_t", "int"},
@@ -2968,10 +2970,10 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
-    {"addressMode", "addr_mode"},
-    {"filterMode", "filter_mode"},
-    {"normalized", "coord_normalized"},
-    {"normalizedCoords", "coord_normalized"},
+    {"addressMode", "addressing_mode"},
+    {"filterMode", "filtering_mode"},
+    {"normalized", "coordinate_normalization_mode"},
+    {"normalizedCoords", "coordinate_normalization_mode"},
     {"channelDesc", "channel"}};
 
 // DeviceProp names mapping.

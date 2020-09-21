@@ -57,10 +57,10 @@ int main() {
   // CHECK-NEXT: dpct::image_channel desc42 = dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
-  // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex42.filter_mode() = sycl::filtering_mode::nearest;
+  // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex42.set(sycl::filtering_mode::nearest);
   // CHECK-NEXT: tex42.attach(a42, desc42);
   float4 *d_data42;
   cudaArray_t a42;
@@ -80,10 +80,10 @@ int main() {
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel desc21 = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
-  // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: tex21.filter_mode() = sycl::filtering_mode::linear;
+  // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: tex21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2), desc21);
   // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2));
   // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2), desc21);
@@ -133,9 +133,9 @@ int main() {
   cudaFree(d_data21);
 
   // CHECK:  dpct::image_wrapper<unsigned int, 1> tex_tmp;
-  // CHECK-NEXT:   tex_tmp.coord_normalized() = false;
-  // CHECK-NEXT:   tex_tmp.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT:   tex_tmp.filter_mode() = sycl::filtering_mode::nearest;
+  // CHECK-NEXT:   tex_tmp.set(sycl::coordinate_normalization_mode::unnormalized);
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT:   tex_tmp.set(sycl::filtering_mode::nearest);
   texture<unsigned int, 1, cudaReadModeElementType> tex_tmp;
   tex_tmp.normalized = false;
   tex_tmp.addressMode[0] = cudaAddressModeClamp;

@@ -44,11 +44,11 @@ void gather_force(const cudaTextureObject_t gridTexObj, cudaStream_t stream) {
 // CHECK: template <class T> void BindTextureObject(dpct::image_matrix_p &data, dpct::image_wrapper_base_p &tex) {
 // CHECK-NEXT:   dpct::image_data res42;
 // CHECK-NEXT:   dpct::sampling_info texDesc42;
-// CHECK: res42.set_data(data);
-// CHECK:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-// CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-// CHECK-NEXT:   texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-// CHECK-NEXT:   texDesc42.filter_mode() = sycl::filtering_mode::nearest;
+// CHECK:   res42.set_data(data);
+// CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+// CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+// CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+// CHECK-NEXT:   texDesc42.set(sycl::filtering_mode::nearest);
 // CHECK-NEXT:   tex = dpct::create_image_wrapper(res42, texDesc42);
 // CHECK-NEXT: }
 template <class T> void BindTextureObject(cudaArray_t &data, cudaTextureObject_t &tex) {
@@ -97,11 +97,11 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc42;
   // CHECK: res42.set_data(d_data42, sizeof(sycl::float4) * 32, 32, sizeof(sycl::float4) * 32, desc42);
   // CHECK: res42.set_data(a42);
-  // CHECK: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc42.filter_mode() = sycl::filtering_mode::nearest;
-  // CHECK-NEXT: texDesc42.coord_normalized() = 1;
+  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc42.set(sycl::filtering_mode::nearest);
+  // CHECK-NEXT: texDesc42.set(sycl::coordinate_normalization_mode::normalized);
   // CHECK-NEXT: tex42 = dpct::create_image_wrapper(res42, texDesc42);
   float4 *d_data42;
   cudaArray_t a42;
@@ -134,18 +134,18 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc21;
   // CHECK-NEXT: res21.type = dpct::image_data_type::linear;
   // CHECK-NEXT: res21.data = d_data21;
-  // CHECK-NEXT: res21.chn.set_data_type(dpct::image_channel_data_type::unsigned_int);
+  // CHECK-NEXT: res21.chn.set_channel_data_type(dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: res21.chn.set_channel_size(1, sizeof(unsigned)*8); // bits per channel
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*2) res21.chn.set_channel_size(2, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*3) res21.chn.set_channel_size(3, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*4) res21.chn.set_channel_size(4, sizeof(unsigned)*8);
   // CHECK-NEXT: res21.x = 32*sizeof(sycl::uint2);
   // CHECK-NEXT: unsigned chnX = res21.chn.get_channel_size();
-  // CHECK-NEXT: dpct::image_channel_data_type formatKind = res21.chn.get_data_type();
-  // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
-  // CHECK-NEXT: texDesc21.filter_mode() = sycl::filtering_mode::linear;
+  // CHECK-NEXT: dpct::image_channel_data_type formatKind = res21.chn.get_channel_data_type();
+  // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */

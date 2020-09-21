@@ -163,14 +163,14 @@ public:
     channel.set_channel_size(detail::image_trait<T>::channel_num,
                              sizeof(typename detail::image_trait<T>::elem_t) *
                                  8);
-    channel.set_data_type(detail::image_trait<T>::data_type);
+    channel.set_channel_data_type(detail::image_trait<T>::data_type);
     return channel;
   }
 
   image_channel() = default;
 
-  image_channel_data_type get_data_type() { return _type; }
-  void set_data_type(image_channel_data_type type) { _type = type; }
+  image_channel_data_type get_channel_data_type() { return _type; }
+  void set_channel_data_type(image_channel_data_type type) { _type = type; }
 
   unsigned get_total_size() { return _total_size; }
   unsigned get_channel_num() { return _channel_num; }
@@ -358,22 +358,39 @@ public:
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class sampling_info {
-  cl::sycl::addressing_mode _addr_mode = cl::sycl::addressing_mode::clamp_to_edge;
-  cl::sycl::filtering_mode _filter_mode = cl::sycl::filtering_mode::nearest;
-  bool _normalized = false;
+  cl::sycl::addressing_mode _addressing_mode =
+      cl::sycl::addressing_mode::clamp_to_edge;
+  cl::sycl::filtering_mode _filtering_mode = cl::sycl::filtering_mode::nearest;
+  cl::sycl::coordinate_normalization_mode _coordinate_normalization_mode =
+      cl::sycl::coordinate_normalization_mode::unnormalized;
 
 public:
-  inline cl::sycl::addressing_mode &addr_mode() { return _addr_mode; }
-  inline cl::sycl::filtering_mode &filter_mode() { return _filter_mode; }
-  inline bool &coord_normalized() {
-    return _normalized;
+  cl::sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
+  void set(cl::sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
+
+  cl::sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
+  void set(cl::sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
+
+  cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+    return _coordinate_normalization_mode;
   }
+  void set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _coordinate_normalization_mode = coordinate_normalization_mode;
+  }
+
+  bool is_coordinate_normalized() {
+    return _coordinate_normalization_mode ==
+           cl::sycl::coordinate_normalization_mode::normalized;
+  }
+  void set_coordinate_normalization_mode(int is_normalized) {
+    _coordinate_normalization_mode =
+        is_normalized ? cl::sycl::coordinate_normalization_mode::normalized
+                      : cl::sycl::coordinate_normalization_mode::unnormalized;
+  }
+
   cl::sycl::sampler get_sampler() {
-    return cl::sycl::sampler(
-        coord_normalized()
-            ? cl::sycl::coordinate_normalization_mode::normalized
-            : cl::sycl::coordinate_normalization_mode::unnormalized,
-        addr_mode(), filter_mode());
+    return cl::sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
+                             _filtering_mode);
   }
 };
 
@@ -393,14 +410,50 @@ public:
   const image_data &get_data() { return _data; }
   void set_data(image_data data) { _data = data; }
 
-  image_channel &channel() { return _data.chn; }
-  inline cl::sycl::addressing_mode &addr_mode() {
-    return _sampling_info.addr_mode();
+  image_channel get_channel() { return _data.chn; }
+  void set_channel(image_channel channel) { _data.chn = channel; }
+
+  image_channel_data_type get_channel_data_type() {
+    return _data.chn.get_channel_data_type();
   }
-  inline cl::sycl::filtering_mode &filter_mode() {
-    return _sampling_info.filter_mode();
+  void set_channel_data_type(image_channel_data_type type) {
+    _data.chn.set_channel_data_type(type);
   }
-  inline bool &coord_normalized() { return _sampling_info.coord_normalized(); }
+
+  unsigned get_channel_size() { return _data.chn.get_channel_size(); }
+  void set_channel_size(unsigned channel_num, unsigned channel_size) {
+    return _data.chn.set_channel_size(channel_num, channel_size);
+  }
+
+  cl::sycl::addressing_mode get_addressing_mode() {
+    return _sampling_info.get_addressing_mode();
+  }
+  void set(cl::sycl::addressing_mode addressing_mode) {
+    _sampling_info.set(addressing_mode);
+  }
+
+  cl::sycl::filtering_mode get_filtering_mode() {
+    return _sampling_info.get_filtering_mode();
+  }
+  void set(cl::sycl::filtering_mode filtering_mode) {
+    _sampling_info.set(filtering_mode);
+  }
+
+  cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+    return _sampling_info.get_coordinate_normalization_mode();
+  }
+  void
+  set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _sampling_info.set(coordinate_normalization_mode);
+  }
+
+  bool is_coordinate_normalized() {
+    return _sampling_info.is_coordinate_normalized();
+  }
+  void set_coordinate_normalization_mode(int is_normalized) {
+    _sampling_info.set_coordinate_normalization_mode(is_normalized);
+  }
+
   cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
 };
 inline image_wrapper_base::~image_wrapper_base() {}
@@ -419,7 +472,7 @@ public:
       typename image_accessor_ext<T, IsImageArray ? (Dimension - 1) : Dimension,
                               IsImageArray>::accessor_t;
 
-  image_wrapper() { channel() = image_channel::create<T>(); }
+  image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
@@ -442,7 +495,7 @@ public:
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count) {
-    attach(ptr, count, channel());
+    attach(ptr, count, get_channel());
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count, image_channel chn_desc) {
@@ -457,7 +510,7 @@ public:
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
-    attach(data, x, y, pitch, channel());
+    attach(data, x, y, pitch, get_channel());
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch, image_channel chn_desc) {

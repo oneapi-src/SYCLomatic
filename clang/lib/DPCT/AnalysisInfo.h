@@ -964,6 +964,12 @@ public:
           return Cur.get<TargetTy>();
         });
   }
+  template <class TargetTy, class NodeTy>
+  static const TargetTy *findParent(const NodeTy *Node) {
+    return findAncestor<TargetTy>(
+        Node,
+        [](const ast_type_traits::DynTypedNode &Cur) -> bool { return true; });
+  }
   template <class NodeTy>
   inline static const clang::FunctionDecl *
   getParentFunction(const NodeTy *Node) {
