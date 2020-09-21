@@ -590,7 +590,7 @@ public:
         nullptr));
   }
 
-  inline void setCallSpelling(const CallExpr* E) {
+  inline void setCallSpelling(const Expr* E) {
     auto LocInfo = getSpellingOffsetAndLength(E);
     CallSpellingBegin = LocInfo.first;
     CallSpellingEnd = CallSpellingBegin.getLocWithOffset(LocInfo.second);

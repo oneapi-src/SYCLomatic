@@ -9242,10 +9242,18 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
     std::string Repl;
     if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
       // case 1: sizeof(b) * a
-      Repl = getStmtSpelling(BO->getRHS());
+      ArgumentAnalysis AA;
+      AA.setCallSpelling(BO);
+      AA.analyze(BO->getRHS());
+      Repl = AA.getRewritePrefix() + AA.getRewriteString() +
+             AA.getRewritePostfix();
     } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
       // case 2: a * sizeof(b)
-      Repl = getStmtSpelling(BO->getLHS());
+      ArgumentAnalysis AA;
+      AA.setCallSpelling(BO);
+      AA.analyze(BO->getLHS());
+      Repl = AA.getRewritePrefix() + AA.getRewriteString() +
+             AA.getRewritePostfix();
     } else {
       return false;
     }

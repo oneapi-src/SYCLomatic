@@ -109,6 +109,10 @@ int main(int argc, char **argv) {
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
   //CHECK: CHECK((RandomStates = (oneapi::mkl::rng::device::philox4x32x10<1> *)sycl::malloc_device(sizeof(oneapi::mkl::rng::device::philox4x32x10<1>) * 10 * 10, q_ct1), 0));
   CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
+  //CHECK: sycl::range<3> grid(1, 1, 10);
+  dim3 grid(10, 1);
+  //CHECK: CHECK((dOut = sycl::malloc_device<int>(grid[2], q_ct1), 0));
+  CHECK(cudaMalloc((void **)&dOut, sizeof(int) * grid.x));
 
   return 0;
 }
