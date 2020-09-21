@@ -18,7 +18,7 @@ __global__ void transformKernel(float* output, cudaTextureObject_t texObj, int w
 }
 // CHECK: dpct::image_wrapper<sycl::float4, 2> tex42;
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
 // CHECK-NEXT: */
 // CHECK-NEXT: dpct::image_wrapper<sycl::float3, 2> tex32;
 static texture<float4, 2> tex42;
@@ -32,13 +32,13 @@ int main()
   int *h_data;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel channelDesc = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindFloat);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::image_channel::create<sycl::float3>();
   cudaChannelFormatDesc channelDesc1 = cudaCreateChannelDesc<float3>();

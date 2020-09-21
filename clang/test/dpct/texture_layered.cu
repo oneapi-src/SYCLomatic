@@ -16,14 +16,14 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 // CHECK: /*
-// CHECK: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
 // CHECK: */
 // CHECK: dpct::image_wrapper<int, 2, true> tex_no_ref;
 static texture<int, cudaTextureType1DLayered> tex_no_ref;
 // CHECK: dpct::image_wrapper<sycl::float4, 3, true> tex42;
 static texture<float4, cudaTextureType2DLayered> tex42;
 // CHECK: /*
-// CHECK: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+// CHECK: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
 // CHECK: */
 // CHECK: dpct::image_wrapper<sycl::uint2, 2, true> tex21;
 static texture<uint2, cudaTextureType1DLayered> tex21;
@@ -77,7 +77,7 @@ int main() {
   // CHECK: sycl::uint2 *d_data21;
   // CHECK-NEXT: d_data21 = (sycl::uint2 *)dpct::dpct_malloc(sizeof(sycl::uint2) * 32);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: Level-Zero API only support 4-channel image format layout.
+  // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel desc21 = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: tex21.addr_mode() = sycl::addressing_mode::clamp_to_edge;
