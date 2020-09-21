@@ -182,13 +182,6 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
     // check user provided value and give default value if required.
     if (RType == ReportTypeEnum::notsettype) {
       RType = ReportTypeEnum::stats;
-    } else if (!(RType == ReportTypeEnum::all ||
-                 RType == ReportTypeEnum::apis ||
-                 RType == ReportTypeEnum::stats ||
-                 RType == ReportTypeEnum::diags)) {
-      Success = false;
-      llvm::errs() << "error value provided in option: --report-type, use "
-                      "[all|apis|stats].\n\n";
     }
     // check the report format value
     if (RFormat == ReportFormatEnum::notsetformat) {
