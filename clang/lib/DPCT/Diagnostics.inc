@@ -135,7 +135,7 @@ DEF_COMMENT(HOST_DEVICE_CONSTANT, 1057, "Variable {0} was used in host code and 
 DEF_WARNING(API_NOT_OCCURRED_IN_AST, 1058, "\"%0\" is not migrated because it is not called in the code.")
 DEF_COMMENT(API_NOT_OCCURRED_IN_AST, 1058, "\"{0}\" is not migrated because it is not called in the code.")
 DEF_WARNING(UNSUPPORTED_IMAGE_FORMAT, 1059, "SYCL supports only 4-channel image format.")
-DEF_COMMENT(UNSUPPORTED_IMAGE_FORMAT, 1059, "SYCL supports only 4-channel image format.")
+DEF_COMMENT(UNSUPPORTED_IMAGE_FORMAT, 1059, "SYCL supports only 4-channel image format. Adjust the code.")
 DEF_WARNING(EXCEED_MAX_DIMENSION, 1060, "SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.")
 DEF_COMMENT(EXCEED_MAX_DIMENSION, 1060, "SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.")
 DEF_WARNING(MACRO_REMOVED, 1061, "Call to %0 macro was removed, since it contains only code, which is unnecessary in DPC++.")
