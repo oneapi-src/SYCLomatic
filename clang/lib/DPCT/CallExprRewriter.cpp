@@ -1124,7 +1124,7 @@ PrinterCreator<
     TemplatedCallee, std::string,
     std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>
 makeTemplatedCalleeCreator(std::string CalleeName,
-                           std::initializer_list<size_t> Indexes) {
+                           std::vector<size_t> Indexes) {
   return PrinterCreator<
       TemplatedCallee, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
