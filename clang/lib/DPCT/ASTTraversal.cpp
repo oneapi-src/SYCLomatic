@@ -11758,10 +11758,16 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaResourceDesc") {
       if (MemberName == "res") {
-        emplaceTransformation(new ReplaceToken(ME->getMemberLoc(), ""));
+        removeExtraMemberAccess(ME);
         replaceResourceDataExpr(getParentMemberExpr(ME), *Result.Context);
       } else if (MemberName == "resType") {
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
+        if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+          emplaceTransformation(
+              ReplaceMemberAssignAsSetMethod(BO, ME, "data_type"));
+        } else {
+          emplaceTransformation(
+              new RenameFieldInMemberExpr(ME, "get_data_type()"));
+        }
       }
     } else if (BaseTy == "cudaChannelFormatDesc") {
       static std::map<std::string, std::string> MethodNameMap = {
@@ -11794,18 +11800,23 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     ExprAnalysis A;
     A.analyze(CE);
     auto Name = CE->getDirectCallee()->getNameAsString();
-    if(Name == "cudaCreateChannelDesc") {
-      auto Callee = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
-      if(Callee) {
+    if (Name == "cudaCreateChannelDesc") {
+      auto Callee =
+          dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
+      if (Callee) {
         auto TemArg = Callee->template_arguments();
         if (TemArg.size() != 0) {
           auto ChnType = TemArg[0].getArgument().getAsType().getAsString();
           if (ChnType.back() != '4') {
-            report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+            report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
+                   true);
           }
-        } else if (getStmtSpelling(CE->getArg(0)) == "0" || getStmtSpelling(CE->getArg(1)) == "0"
-                   || getStmtSpelling(CE->getArg(2)) == "0" || getStmtSpelling(CE->getArg(3)) == "0") {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT, true);
+        } else if (getStmtSpelling(CE->getArg(0)) == "0" ||
+                   getStmtSpelling(CE->getArg(1)) == "0" ||
+                   getStmtSpelling(CE->getArg(2)) == "0" ||
+                   getStmtSpelling(CE->getArg(3)) == "0") {
+          report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
+                 true);
         }
       }
     }
@@ -11835,37 +11846,38 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
-                                          const ASTContext &Context) {
+                                          ASTContext &Context) {
   if (!ME)
     return;
   auto TopMember = getParentMemberExpr(ME);
   if (!TopMember)
     return;
-  auto ResName = ME->getMemberNameInfo().getAsString();
-  if (ResName == "array") {
-    emplaceTransformation(
-        new ReplaceToken(ME->getOperatorLoc(), TopMember->getEndLoc(), "data"));
-    if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(TopMember)) {
-      if (BO->getRHS()->IgnoreImplicitAsWritten() == TopMember) {
-        emplaceTransformation(
-            new InsertBeforeStmt(TopMember, "(dpct::image_matrix_p)"));
-      }
-    }
-  } else if (ResName == "linear") {
-    emplaceTransformation(new ReplaceToken(
-      ME->getOperatorLoc(), TopMember->getEndLoc(),
-      std::string(MapNames::findReplacedName(
-        LinearResourceTypeNames,
-        TopMember->getMemberNameInfo().getAsString()))));
-  } else if (ResName == "pitch2D") {
-    emplaceTransformation(new ReplaceToken(
-      ME->getOperatorLoc(), TopMember->getEndLoc(),
-      std::string(MapNames::findReplacedName(
-        Pitched2DResourceTypeNames,
-        TopMember->getMemberNameInfo().getAsString()))));
-  } else {
+
+  removeExtraMemberAccess(ME);
+
+  auto AssignedBO = getParentAsAssignedBO(TopMember, Context);
+  auto FieldName =
+      ResourceTypeNames[TopMember->getMemberNameInfo().getAsString()];
+  if (FieldName.empty()) {
     report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
            ME->getMemberDecl()->getName());
+  }
+
+  if (FieldName == "channel") {
+    if (removeExtraMemberAccess(TopMember))
+      return;
+  }
+
+  if (AssignedBO) {
+    emplaceTransformation(
+        ReplaceMemberAssignAsSetMethod(AssignedBO, TopMember, FieldName));
+  } else {
+    if (TopMember->getMemberNameInfo().getAsString() == "array") {
+      emplaceTransformation(
+          new InsertBeforeStmt(TopMember, "(dpct::image_matrix_p)"));
+    }
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(TopMember, buildString("get_", FieldName, "()")));
   }
 }
 

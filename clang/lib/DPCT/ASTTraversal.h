@@ -1310,12 +1310,11 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
   void replaceNormalizedCoord(const MemberExpr *, const Expr *);
   void replaceTextureMember(const MemberExpr *ME, ASTContext &Context,
                             SourceManager &SM);
-  void replaceResourceDataExpr(const MemberExpr *ME, const ASTContext &Context);
+  void replaceResourceDataExpr(const MemberExpr *ME, ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
     return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
-  static MapNames::MapTy LinearResourceTypeNames;
-  static MapNames::MapTy Pitched2DResourceTypeNames;
+  static MapNames::MapTy ResourceTypeNames;
 
 public:
   TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

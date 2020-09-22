@@ -18,17 +18,17 @@ cudaTextureObject_t tex_Input[MAX_INSTANCES] = {NULL};
 void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
                        int pPitch) {
   // CHECK: memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
-  // CHECK-NEXT: resDescInput[instance].type = dpct::image_data_type::pitch;
-  // CHECK-NEXT: resDescInput[instance].data = d_In;
+  // CHECK-NEXT: resDescInput[instance].set_data_type(dpct::image_data_type::pitch);
+  // CHECK-NEXT: resDescInput[instance].set_data_ptr(d_In);
   // CHECK-NEXT: dpct::image_channel channelDesc =
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format. Adjust the code.
   // CHECK-NEXT:     */
   // CHECK-NEXT:     dpct::image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
-  // CHECK-NEXT: resDescInput[instance].chn = channelDesc;
-  // CHECK-NEXT: resDescInput[instance].y = pSize;
-  // CHECK-NEXT: resDescInput[instance].x = rSize;
-  // CHECK-NEXT: resDescInput[instance].pitch = pPitch;
+  // CHECK-NEXT: resDescInput[instance].set_channel(channelDesc);
+  // CHECK-NEXT: resDescInput[instance].set_ysize(pSize);
+  // CHECK-NEXT: resDescInput[instance].set_xsize(rSize);
+  // CHECK-NEXT: resDescInput[instance].set_pitch(pPitch);
   memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
   resDescInput[instance].resType = cudaResourceTypePitch2D;
   resDescInput[instance].res.pitch2D.devPtr = d_In;
@@ -65,8 +65,8 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
 void createTestTextureAlternative(int instance, unsigned char *d_In, int rSize,
                                   int pSize, int pPitch) {
   // CHECK: memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
-  // CHECK-NEXT: resDescInput[instance].type = dpct::image_data_type::matrix;
-  // CHECK-NEXT: resDescInput[instance].data = d_Input[instance];
+  // CHECK-NEXT: resDescInput[instance].set_data_type(dpct::image_data_type::matrix);
+  // CHECK-NEXT: resDescInput[instance].set_data_ptr(d_Input[instance]);
   // CHECK-NEXT: memset(&texDescInput[instance], 0, sizeof(texDescInput[instance]));
   // CHECK-NEXT: texDescInput[instance].set(sycl::filtering_mode::linear);
   // CHECK-NEXT: texDescInput[instance].set(sycl::coordinate_normalization_mode::unnormalized);

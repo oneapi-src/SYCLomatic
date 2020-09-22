@@ -3,9 +3,9 @@
 #define DPCT_NAMED_LAMBDA
 #include <dpct/dpct.hpp>
 
-dpct::image_wrapper<cl::sycl::float4, 2> tex42;
-dpct::image_wrapper<cl::sycl::float2, 1> tex21;
-dpct::image_wrapper<unsigned short, 3> tex13;
+dpct::image_wrapper<cl::sycl::float4, 2> image42;
+dpct::image_wrapper<cl::sycl::float2, 1> image21;
+dpct::image_wrapper<unsigned short, 3> image13;
 
 void test_image(sycl::float4* out, dpct::image_accessor_ext<cl::sycl::float4, 2> acc42,
                   dpct::image_accessor_ext<cl::sycl::float2, 1> acc21,
@@ -51,29 +51,30 @@ int main() {
   dpct::dpct_memcpy(dpct::pitched_data(image_data2, 650 * sizeof(cl::sycl::float4), 640 * sizeof(cl::sycl::float4*), 480), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float4), 640 * 480 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float4), 1, 1));
   dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(unsigned short), 640 * 480 * 24 * sizeof(unsigned short), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(unsigned short), 1, 1));
 
-  tex42.attach(image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
-  tex13.attach(array3);
+  image42.attach(image_data2, 640 * sizeof(cl::sycl::float4), 480, 650 * sizeof(cl::sycl::float4));
+  image13.attach(array3);
 
-  dpct::image_wrapper_base *tex21;
+  dpct::image_wrapper_base *image21;
   dpct::image_data res21(array1);
-  dpct::sampling_info texDesc21;
+  dpct::sampling_info smpl21;
   res21.set_data(image_data2, 640, chn2);
   res21.set_data(image_data2, 640, 480, 670, chn2);
   res21.set_data(array1);
+  res21.set_data_ptr(array1);
 
-  tex42.set(cl::sycl::addressing_mode::clamp);
-  texDesc21.set(cl::sycl::addressing_mode::clamp);
-  tex13.set(cl::sycl::addressing_mode::clamp);
+  image42.set(cl::sycl::addressing_mode::clamp);
+  smpl21.set(cl::sycl::addressing_mode::clamp);
+  image13.set(cl::sycl::addressing_mode::clamp);
 
-  tex42.set(cl::sycl::coordinate_normalization_mode::normalized);
-  texDesc21.set(cl::sycl::coordinate_normalization_mode::normalized);
-  tex13.set(cl::sycl::coordinate_normalization_mode::normalized);
+  image42.set(cl::sycl::coordinate_normalization_mode::normalized);
+  smpl21.set(cl::sycl::coordinate_normalization_mode::normalized);
+  image13.set(cl::sycl::coordinate_normalization_mode::normalized);
 
-  tex42.set(cl::sycl::filtering_mode::linear);
-  texDesc21.set(cl::sycl::filtering_mode::linear);
-  tex13.set(cl::sycl::filtering_mode::linear);
+  image42.set(cl::sycl::filtering_mode::linear);
+  smpl21.set(cl::sycl::filtering_mode::linear);
+  image13.set(cl::sycl::filtering_mode::linear);
 
-  tex21 = dpct::create_image_wrapper(res21, texDesc21);
+  image21 = dpct::create_image_wrapper(res21, smpl21);
 
   sycl::float4 d[32];
   for(int i = 0; i < 32; ++i) {
@@ -82,13 +83,13 @@ int main() {
   {
     sycl::buffer<sycl::float4, 1> buf(d, sycl::range<1>(32));
     dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
-      auto acc42 = tex42.get_access(cgh);
-      auto acc13 = tex13.get_access(cgh);
-      auto acc21 = static_cast<dpct::image_wrapper<cl::sycl::float2, 1> *>(tex21)->get_access(cgh);
+      auto acc42 = image42.get_access(cgh);
+      auto acc13 = image13.get_access(cgh);
+      auto acc21 = static_cast<dpct::image_wrapper<cl::sycl::float2, 1> *>(image21)->get_access(cgh);
 
-      auto smpl42 = tex42.get_sampler();
-      auto smpl13 = tex13.get_sampler();
-      auto smpl21 = tex21->get_sampler();
+      auto smpl42 = image42.get_sampler();
+      auto smpl13 = image13.get_sampler();
+      auto smpl21 = image21->get_sampler();
 
       auto acc_out = buf.get_access<sycl::access::mode::read_write, sycl::access::target::global_buffer>(cgh);
 
@@ -103,10 +104,10 @@ int main() {
   printf("d[0]: x[%f] y[%f] z[%f] w[%f]\n", d[0].x(), d[0].y(), d[0].z(), d[0].w());
   printf("d[1]: x[%f] y[%f] z[%f] w[%f]\n", d[1].x(), d[1].y(), d[1].z(), d[1].w());
 
-  tex42.detach();
-  tex13.detach();
+  image42.detach();
+  image13.detach();
 
-  delete tex21;
+  delete image21;
   sycl::free(device_buffer, dpct::get_default_queue());
   std::free(host_buffer);
   std::free(image_data2);

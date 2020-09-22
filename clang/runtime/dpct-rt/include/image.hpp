@@ -321,7 +321,7 @@ enum class image_data_type { matrix, linear, pitch, unsupport };
 /// This class doesn't manage the data pointer.
 class image_data {
 public:
-  image_data() { type = image_data_type::unsupport; }
+  image_data() { _type = image_data_type::unsupport; }
   image_data(image_matrix_p matrix_data) { set_data(matrix_data); }
   image_data(void *data_ptr, size_t x_size, image_channel channel) {
     set_data(data_ptr, x_size, channel);
@@ -331,28 +331,60 @@ public:
     set_data(data_ptr, x_size, y_size, pitch_size, channel);
   }
   void set_data(image_matrix_p matrix_data) {
-    type = image_data_type::matrix;
-    data = matrix_data;
+    _type = image_data_type::matrix;
+    _data = matrix_data;
   }
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
-    type = image_data_type::linear;
-    data = data_ptr;
-    x = x_size;
-    chn = channel;
+    _type = image_data_type::linear;
+    _data = data_ptr;
+    _x = x_size;
+    _channel = channel;
   }
   void set_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
                 image_channel channel) {
-    type = image_data_type::pitch;
-    data = data_ptr;
-    x = x_size;
-    y = y_size;
-    pitch = pitch_size;
-    chn = channel;
+    _type = image_data_type::pitch;
+    _data = data_ptr;
+    _x = x_size;
+    _y = y_size;
+    _pitch = pitch_size;
+    _channel = channel;
   }
-  image_data_type type;
-  void *data = nullptr;
-  size_t x, y, pitch;
-  image_channel chn;
+
+  image_data_type get_data_type() { return _type; }
+  void set_data_type(image_data_type type) { _type = type; }
+
+  void *get_data_ptr() { return _data; }
+  void set_data_ptr(void *data) { _data = data; }
+
+  size_t get_xsize() { return _x; }
+  void set_xsize(size_t x) { _x = x; }
+
+  size_t get_ysize() { return _y; }
+  void set_ysize(size_t y) { _y = y; }
+
+  size_t get_pitch() { return _pitch; }
+  void set_pitch(size_t pitch) { _pitch = pitch; }
+
+  image_channel get_channel() { return _channel; }
+  void set_channel(image_channel channel) { _channel = channel; }
+
+  image_channel_data_type get_channel_data_type() {
+    return _channel.get_channel_data_type();
+  }
+  void set_channel_data_type(image_channel_data_type type) {
+    _channel.set_channel_data_type(type);
+  }
+
+  unsigned get_channel_size() { return _channel.get_channel_size(); }
+  void set_channel_size(unsigned channel_num, unsigned channel_size) {
+    return _channel.set_channel_size(channel_num, channel_size);
+  }
+
+private:
+  image_data_type _type;
+  void *_data = nullptr;
+  size_t _x, _y, _pitch;
+  image_channel _channel;
 };
 
 /// Image sampling info, include addressing mode, filtering mode and
@@ -410,19 +442,19 @@ public:
   const image_data &get_data() { return _data; }
   void set_data(image_data data) { _data = data; }
 
-  image_channel get_channel() { return _data.chn; }
-  void set_channel(image_channel channel) { _data.chn = channel; }
+  image_channel get_channel() { return _data.get_channel(); }
+  void set_channel(image_channel channel) { _data.set_channel(channel); }
 
   image_channel_data_type get_channel_data_type() {
-    return _data.chn.get_channel_data_type();
+    return _data.get_channel_data_type();
   }
   void set_channel_data_type(image_channel_data_type type) {
-    _data.chn.set_channel_data_type(type);
+    _data.set_channel_data_type(type);
   }
 
-  unsigned get_channel_size() { return _data.chn.get_channel_size(); }
+  unsigned get_channel_size() { return _data.get_channel_size(); }
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
-    return _data.chn.set_channel_size(channel_num, channel_size);
+    return _data.set_channel_size(channel_num, channel_size);
   }
 
   cl::sycl::addressing_mode get_addressing_mode() {
@@ -630,12 +662,12 @@ inline image_wrapper_base *create_image_wrapper(image_data data,
                               sampling_info info) {
   image_channel channel;
   int dims = 1;
-  if (data.type == image_data_type::matrix) {
-    auto matrix = (image_matrix_p)data.data;
+  if (data.get_data_type() == image_data_type::matrix) {
+    auto matrix = (image_matrix_p)data.get_data_ptr();
     channel = matrix->get_channel();
     dims = matrix->get_dims();
   } else {
-    channel = data.chn;
+    channel = data.get_channel();
   }
 
   if (auto ret = detail::create_image_wrapper(channel, dims)) {
@@ -651,24 +683,28 @@ namespace detail {
 template <class T, int Dimension, bool IsImageArray> struct attach_data {
   void operator()(image_wrapper<T, Dimension, IsImageArray> &in_image,
                   image_data data) {
-    assert(data.type == image_data_type::matrix);
-    in_image.attach((image_matrix_p)data.data);
+    assert(data.get_data_type() == image_data_type::matrix);
+    in_image.attach((image_matrix_p)data.get_data_ptr());
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
-  void operator()(image_wrapper<T, 1, IsImageArray> &in_image, image_data data) {
-    if (data.type == image_data_type::linear)
-      in_image.attach(data.data, data.x, data.chn);
-    else if (data.type == image_data_type::matrix)
-      in_image.attach((image_matrix_p)data.data);
+  void operator()(image_wrapper<T, 1, IsImageArray> &in_image,
+                  image_data data) {
+    if (data.get_data_type() == image_data_type::linear)
+      in_image.attach(data.get_data_ptr(), data.get_xsize(),
+                      data.get_channel());
+    else if (data.get_data_type() == image_data_type::matrix)
+      in_image.attach((image_matrix_p)data.get_data_ptr());
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
-  void operator()(image_wrapper<T, 2, IsImageArray> &in_image, image_data data) {
-    if (data.type == image_data_type::matrix)
-      in_image.attach((image_matrix_p)data.data);
-    else if (data.type == image_data_type::pitch)
-      in_image.attach(data.data, data.x, data.y, data.pitch, data.chn);
+  void operator()(image_wrapper<T, 2, IsImageArray> &in_image,
+                  image_data data) {
+    if (data.get_data_type() == image_data_type::matrix)
+      in_image.attach((image_matrix_p)data.get_data_ptr());
+    else if (data.get_data_type() == image_data_type::pitch)
+      in_image.attach(data.get_data_ptr(), data.get_xsize(), data.get_ysize(),
+                      data.get_pitch(), data.get_channel());
   }
 };
 
