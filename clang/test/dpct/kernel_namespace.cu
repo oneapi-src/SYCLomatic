@@ -82,3 +82,12 @@ void foo12() {
   aaa::bbb::k3<<<1,1>>>();
 }
 } // namespace ccc
+
+
+namespace {
+  __global__ void k4(){}
+}
+void foo13() {
+  // CHECK: k4();
+  k4<<<1,1>>>();
+}

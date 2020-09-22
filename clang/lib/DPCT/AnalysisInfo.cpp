@@ -1107,6 +1107,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   for (auto CalleeNamespace : CalleeNamespaceSeq) {
     if (FDNamespaceSeq.empty())
       break;
+
     if (CalleeNamespace == *FDIter) {
       FDIter++;
       FDNamespaceSeq.pop_front();
@@ -1117,6 +1118,10 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
   std::string Result;
   for (auto I : FDNamespaceSeq) {
+    // If I is empty, it means this namespace is an unnamed namespace. So its
+    // members have internal linkage. So just remove it.
+    if (I.empty())
+      continue;
     Result = Result + I + "::";
   }
 
