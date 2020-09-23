@@ -13,7 +13,7 @@
 
 namespace clang {
 namespace dpct {
-
+std::set<int> WarningIDs;
 namespace DiagnosticsUtils {
 unsigned int UniqueID = 0;
 std::unordered_map<std::string, std::unordered_set<std::string>>

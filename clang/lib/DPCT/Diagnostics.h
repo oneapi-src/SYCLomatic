@@ -40,7 +40,7 @@ struct DiagnosticsMessage;
 extern std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
-static std::set<int> WarningIDs;
+extern std::set<int> WarningIDs;
 
 struct DiagnosticsMessage {
   int ID;
