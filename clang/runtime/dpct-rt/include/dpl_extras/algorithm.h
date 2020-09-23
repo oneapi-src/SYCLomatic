@@ -56,7 +56,7 @@ Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   auto end =
       std::copy_if(policy1, make_zip_iterator(first, mask),
                    make_zip_iterator(last, mask + std::distance(first, last)),
-                   make_zip_iterator(_tmp.get(), discard_iterator()),
+                   make_zip_iterator(_tmp.get(), oneapi::dpl::discard_iterator()),
                    internal::negate_predicate_key_fun<Pred>(p));
   typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
       policy);
@@ -71,7 +71,7 @@ Iter3 remove_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   auto ret_val = std::remove_copy_if(
       std::forward<Policy>(policy), make_zip_iterator(first, mask),
       make_zip_iterator(last, mask + std::distance(first, last)),
-      make_zip_iterator(result, discard_iterator()),
+      make_zip_iterator(result, oneapi::dpl::discard_iterator()),
       internal::predicate_key_fun<Pred>(p));
   return std::get<0>(ret_val.base());
 }
@@ -142,7 +142,7 @@ Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   auto ret_val = std::copy_if(
       std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, mask),
       oneapi::dpl::make_zip_iterator(last, mask + std::distance(first, last)),
-      oneapi::dpl::make_zip_iterator(result, discard_iterator()),
+      oneapi::dpl::make_zip_iterator(result, oneapi::dpl::discard_iterator()),
       internal::predicate_key_fun<Pred>(pred));
   return std::get<0>(ret_val.base());
 }
@@ -310,8 +310,8 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
       oneapi::dpl::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      oneapi::dpl::make_zip_iterator(keys_first2, discard_iterator()),
-      oneapi::dpl::make_zip_iterator(keys_last2, discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_first2, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_last2, oneapi::dpl::discard_iterator()),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
   auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
@@ -330,8 +330,8 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
       oneapi::dpl::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      oneapi::dpl::make_zip_iterator(keys_first2, discard_iterator()),
-      oneapi::dpl::make_zip_iterator(keys_last2, discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_first2, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_last2, oneapi::dpl::discard_iterator()),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Comp>(comp));
   auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
@@ -477,8 +477,8 @@ stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   auto ret_val = std::partition_copy(
       std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, mask),
       oneapi::dpl::make_zip_iterator(last, mask + std::distance(first, last)),
-      oneapi::dpl::make_zip_iterator(out_true, discard_iterator()),
-      oneapi::dpl::make_zip_iterator(out_false, discard_iterator()),
+      oneapi::dpl::make_zip_iterator(out_true, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(out_false, oneapi::dpl::discard_iterator()),
       internal::predicate_key_fun<Pred>(p));
   return std::make_pair(std::get<0>(ret_val.first.base()),
                         std::get<0>(ret_val.second.base()));
