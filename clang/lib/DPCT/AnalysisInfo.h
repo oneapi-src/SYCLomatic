@@ -871,7 +871,8 @@ public:
     if (KCIndentWidthMap.empty())
       return DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
 
-    std::multimap<unsigned int, unsigned int> OccuranceIndentWidthMap;
+    std::multimap<unsigned int, unsigned int, std::greater<unsigned int>>
+        OccuranceIndentWidthMap;
     for (const auto &I : KCIndentWidthMap)
       OccuranceIndentWidthMap.insert(std::make_pair(I.second, I.first));
 
