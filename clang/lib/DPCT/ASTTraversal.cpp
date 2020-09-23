@@ -9373,12 +9373,27 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
 /// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
 std::string
 MemoryMigrationRule::getFinalCastTypeNameStr(std::string CastTypeName) {
+  // Since curandState and other state types have same prefix (e.g.,
+  // curandStateXORWOW_t), we need choose a result which matches longest.
+  std::map<size_t /*replaced length*/,
+           std::pair<std::string::size_type /*BeginLoc*/,
+                     std::string /*replacing text*/>,
+           std::greater<size_t>>
+      ReplaceLengthStringMap;
+
   for (auto &Pair : MapNames::DeviceRandomGeneratorTypeMap) {
     std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
     if (BeginLoc != std::string::npos) {
-      return CastTypeName.replace(BeginLoc, Pair.first.size(),
-                                  Pair.second + "<{{NEEDREPLACEV1}}>");
+      ReplaceLengthStringMap.insert(std::make_pair(
+          Pair.first.size(),
+          std::make_pair(BeginLoc, Pair.second + "<{{NEEDREPLACEV1}}>")));
     }
+  }
+
+  if (!ReplaceLengthStringMap.empty()) {
+    const auto BeginIter = ReplaceLengthStringMap.begin();
+    CastTypeName.replace(BeginIter->second.first, BeginIter->first,
+                         BeginIter->second.second);
   }
   return CastTypeName;
 }
@@ -9458,9 +9473,10 @@ void MemoryMigrationRule::mallocMigration(
         OS << "(";
       printDerefOp(OS, C->getArg(0)->IgnoreCasts()->IgnoreParens(), &Type);
       if (Type != "NULL TYPE" && Type != "void *")
-        OS << " = (" << Type << ")";
+        OS << " = (" << getFinalCastTypeNameStr(Type) << ")";
       else
         OS << " = ";
+
       emplaceTransformation(new InsertBeforeStmt(C, OS.str()));
       emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
       emplaceTransformation(removeArg(C, 0, *Result.SourceManager));

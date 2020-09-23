@@ -131,3 +131,28 @@ int main(int argc, char **argv) {
 __global__ void my_kernel5(          void  ) {
   __shared__ int a;
 }
+
+int foo() {
+  int size = 10;
+  //CHECK: oneapi::mkl::rng::device::mrg32k3a<2> *RandomStates;
+  curandStateMRG32k3a_t *RandomStates;
+  //CHECK: RandomStates = (oneapi::mkl::rng::device::mrg32k3a<2> *)dpct::dpct_malloc(size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
+  cudaMalloc((void**)&RandomStates, size * sizeof(curandStateMRG32k3a_t));
+
+  //CHECK: {
+  //CHECK-NEXT:   dpct::buffer_t RandomStates_buf_ct1 = dpct::get_buffer(RandomStates);
+  //CHECK-NEXT:   dpct::get_default_queue().submit(
+  //CHECK-NEXT:     [&](sycl::handler &cgh) {
+  //CHECK-NEXT:       auto RandomStates_acc_ct1 = RandomStates_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+  //CHECK-EMPTY:
+  //CHECK-NEXT:       cgh.parallel_for(
+  //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+  //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:           cuda_kernel_initRND(1234, (oneapi::mkl::rng::device::mrg32k3a<2> *)(&RandomStates_acc_ct1[0]), item_ct1);
+  //CHECK-NEXT:         });
+  //CHECK-NEXT:     });
+  //CHECK-NEXT: }
+  cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
+
+  return 0;
+}

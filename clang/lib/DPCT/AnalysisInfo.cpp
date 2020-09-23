@@ -423,6 +423,23 @@ void KernelCallExpr::buildKernelArgsStmt() {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
+
+      // If we found this is a RNG state type, we add the vec_size here.
+      std::string TypeStr = Arg.getTypeString();
+      if (Arg.IsDeviceRandomGeneratorType) {
+        if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
+          TypeStr = TypeStr + "<" +
+                    std::to_string(
+                        *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
+                    "> *";
+        } else {
+          DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                   Diagnostics::UNDEDUCED_TYPE, true,
+                                   "RNG engine");
+          TypeStr =
+              TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
+        }
+      }
       if (Arg.IsUsedAsLvalueAfterMalloc) {
         OuterStmts.emplace_back(
             buildString("std::pair<dpct::buffer_t, size_t> ", BufferName,
@@ -435,23 +452,6 @@ void KernelCallExpr::buildKernelArgsStmt() {
         OuterStmts.emplace_back(buildString("size_t ",
                                             Arg.getIdStringWithSuffix("offset"),
                                             " = ", BufferName, ".second;"));
-
-        // If we found this is a RNG state type, we add the vec_size here.
-        std::string TypeStr = Arg.getTypeString();
-        if (Arg.IsDeviceRandomGeneratorType) {
-          if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-            TypeStr = TypeStr + "<" +
-                      std::to_string(
-                          *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
-                      "> *";
-          } else {
-            DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                     Diagnostics::UNDEDUCED_TYPE, true,
-                                     "RNG engine");
-            TypeStr =
-                TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
-          }
-        }
 
         KernelStmts.emplace_back(buildString(
             TypeStr, Arg.getIdStringWithIndex(), " = (", TypeStr,
@@ -466,7 +466,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
             ".get_access<" + MapNames::getClNamespace() +
                 "::access::mode::read_write>(cgh);"));
-        KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
+
+        KernelArgs += buildString("(", TypeStr, ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0])");
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
