@@ -126,3 +126,8 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+// CHECK: void my_kernel5(          int *a  ) {
+__global__ void my_kernel5(          void  ) {
+  __shared__ int a;
+}

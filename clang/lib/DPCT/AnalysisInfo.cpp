@@ -1700,6 +1700,13 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
     }
   }
 
+  // Skip whitespace, e.g. void foo(        void) {}
+  //                                        |
+  //                                      need get here
+  if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
+    InsertLocation = TokOfHash.getLocation();
+  }
+
   ReplaceOffset = SM.getFileOffset(InsertLocation);
   if (FTL.getNumParams() == 0) {
     Token Tok;
