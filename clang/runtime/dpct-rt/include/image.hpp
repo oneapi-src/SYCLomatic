@@ -658,7 +658,7 @@ public:
 /// \return Pointer to image wrapper base class.
 /// \param data Image data used to create image wrapper.
 /// \param info Image sampling info used to create image wrapper.
-inline image_wrapper_base *create_image_wrapper(image_data data,
+static inline image_wrapper_base *create_image_wrapper(image_data data,
                               sampling_info info) {
   image_channel channel;
   int dims = 1;
