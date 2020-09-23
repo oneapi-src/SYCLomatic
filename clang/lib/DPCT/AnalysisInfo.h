@@ -3091,8 +3091,7 @@ private:
   bool isDefaultStream() {
     return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ");
   }
-  bool isIncludedFile(const std::string &CurrentFile,
-                      const std::string &CheckingFile);
+
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void buildNeedBracesInfo(const CallExpr *KernelCall);

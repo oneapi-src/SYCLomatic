@@ -2175,3 +2175,27 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
   return Result == 0 ? dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth
                      : Result;
 }
+
+bool isIncludedFile(const std::string &CurrentFile,
+                    const std::string &CheckingFile) {
+  auto CurrentFileInfo = dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
+  auto CheckingFileInfo =
+      dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
+
+  std::deque<std::shared_ptr<dpct::DpctFileInfo>> Q(
+      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
+      CurrentFileInfo->getIncludedFilesInfoSet().end());
+
+  while (!Q.empty()) {
+    if (Q.front() == nullptr) {
+      continue;
+    } else if (Q.front() == CheckingFileInfo) {
+      return true;
+    } else {
+      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
+               Q.front()->getIncludedFilesInfoSet().end());
+      Q.pop_front();
+    }
+  }
+  return false;
+}

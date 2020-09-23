@@ -1,11 +1,19 @@
-// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T %S/mf-kernel.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test.dp.cpp
 // RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-kernel.dp.cpp
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-kernel.dp.hpp
 // RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-extern.dp.hpp
+// RUN: FileCheck %S/mf-func-included.cu --match-full-lines --input-file %T/mf-func-included.dp.cpp
+// RUN: FileCheck %S/mf-func-mid-included.cu --match-full-lines --input-file %T/mf-func-mid-included.dp.cpp
 
+// CHECK: #include "mf-kernel.dp.hpp"
+// CHECK-NEXT#include "mf-extern.dp.hpp"
+// CHECK-NEXT#include "mf-func-included.dp.cpp"
+// CHECK-NEXT#include "mf-mid.dp.cpp"
 #include "mf-kernel.cuh"
 #include "mf-extern.cuh"
+#include "mf-func-included.cu"
+#include "mf-mid.cu"
 
 __global__ void cuda_hello(){
     test_foo();
@@ -69,5 +77,26 @@ int main(void) {
 
   float *h_C = (float *)malloc(size);
   call_constAdd(h_C, size);
+
+  // CHECK:  q_ct1.submit(
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class static_func_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:          static_func();
+  // CHECK-NEXT:        });
+  // CHECK-NEXT:    });
+  static_func<<<1, 1>>>();
+
+  // CHECK:  q_ct1.submit(
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class static_func_in_anonymous_namespace_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:          static_func_in_anonymous_namespace();
+  // CHECK-NEXT:        });
+  // CHECK-NEXT:    });
+  static_func_in_anonymous_namespace<<<1, 1>>>();
+
   return 0;
 }

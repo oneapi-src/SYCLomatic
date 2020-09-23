@@ -369,30 +369,6 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
   }
 }
 
-bool KernelCallExpr::isIncludedFile(const std::string &CurrentFile,
-                                    const std::string &CheckingFile) {
-  auto CurrentFileInfo = DpctGlobalInfo::getInstance().insertFile(CurrentFile);
-  auto CheckingFileInfo =
-      DpctGlobalInfo::getInstance().insertFile(CheckingFile);
-
-  std::deque<std::shared_ptr<DpctFileInfo>> Q(
-      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
-      CurrentFileInfo->getIncludedFilesInfoSet().end());
-
-  while (!Q.empty()) {
-    if (Q.front() == nullptr) {
-      continue;
-    } else if (Q.front() == CheckingFileInfo) {
-      return true;
-    } else {
-      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
-               Q.front()->getIncludedFilesInfoSet().end());
-      Q.pop_front();
-    }
-  }
-  return false;
-}
-
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
     if (VI->getType()->getDimension() > 1) {
@@ -1294,9 +1270,11 @@ void CallFunctionExpr::buildInfo() {
     return;
 
   const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
-  if (!DefFilePath.empty() && DefFilePath != getFilePath()) {
+  if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
+      !isIncludedFile(getFilePath(), DefFilePath)) {
     FuncInfo->setNeedSyclExternMacro();
   }
+
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
   mergeTextureObjectTypeInfo();
