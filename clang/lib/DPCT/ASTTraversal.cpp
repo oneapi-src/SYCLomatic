@@ -9271,10 +9271,20 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
   } else {
     // case 3: sizeof(b)
     if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
-      emplaceTransformation(new ReplaceStmt(SizeExpr, "1"));
+      SourceLocation RemoveBegin, RemoveEnd;
+      SourceRange RemoveRange = getStmtExpansionSourceRange(SizeExpr);
+      RemoveBegin = RemoveRange.getBegin();
+      RemoveEnd = RemoveRange.getEnd();
+      RemoveEnd = RemoveEnd.getLocWithOffset(
+        Lexer::MeasureTokenLength(RemoveEnd, DpctGlobalInfo::getSourceManager(),
+          DpctGlobalInfo::getContext().getLangOpts()));
+      emplaceTransformation(replaceText(RemoveBegin, RemoveEnd, "1",
+        DpctGlobalInfo::getSourceManager()));
+
       return true;
     }
   }
+
   return false;
 }
 

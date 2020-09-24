@@ -440,4 +440,5 @@ unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
 bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile);
+clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 #endif // DPCT_UTILITY_H

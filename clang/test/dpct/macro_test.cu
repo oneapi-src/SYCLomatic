@@ -95,9 +95,10 @@ void foo() {
   //CHECK: #define AA 3
   //CHECK-NEXT: #define MCALL                                                                  \
   //CHECK-NEXT: q_ct1.submit([&](sycl::handler &cgh) {                                       \
-  //CHECK-NEXT:   cgh.parallel_for(                                                          \
-  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * 2 * AA, 2 * AA),           \
-  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });                     \
+  //CHECK-NEXT:   cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *               \
+  //CHECK-NEXT:                                          sycl::range<3>(1, 1, 2 * AA),       \
+  //CHECK-NEXT:                                      sycl::range<3>(1, 1, 2 * AA)),          \
+  //CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });        \
   //CHECK-NEXT: });
   //CHECK-NEXT: MCALL
   #define AA 3
@@ -667,4 +668,17 @@ real *vx;
 real *vy;
 int id;
 real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+}
+
+//CHECK: #define CALL(call) call;
+//CHECK-NEXT: #define SIZE 8
+//CHECK-NEXT: void foo13(){
+//CHECK-NEXT:   int *a;
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, dpct::get_default_queue()));
+//CHECK-NEXT: }
+#define CALL(call) call;
+#define SIZE 8
+void foo13(){
+  int *a;
+  CALL(cudaMalloc(&a, SIZE * 10 * sizeof(int)));
 }

@@ -121,7 +121,6 @@ std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const
   SourceLocation SpellingBeginLoc, SpellingEndLoc;
   SpellingBeginLoc = SM.getSpellingLoc(E->getBeginLoc());
   SpellingEndLoc = SM.getSpellingLoc(E->getEndLoc());
-
   // Both Begin/End are not macro
   // or
   // SpellingBeginLoc and SpellingEndLoc are in the same macro define
@@ -133,16 +132,16 @@ std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const
                               SM.getCharacterData(SpellingBeginLoc) +
                               LastTokenLength);
   }
+  // If the expr is straddle, use the stmt expansion range
+  auto ExpansionBeginLoc = getStmtExpansionSourceRange(E).getBegin();
+  auto ExpansionEndLoc = getStmtExpansionSourceRange(E).getEnd();
 
-  // If the expr is straddle, use the expansion range
-  auto ExpansionBeginLoc = SM.getExpansionLoc(E->getBeginLoc());
-  auto ExpansionEndLoc = SM.getExpansionLoc(E->getEndLoc());
   auto LastTokenLength =
-    Lexer::MeasureTokenLength(ExpansionEndLoc, SM, Context.getLangOpts());
+      Lexer::MeasureTokenLength(ExpansionEndLoc, SM, Context.getLangOpts());
   return std::pair<SourceLocation, size_t>(
-    ExpansionBeginLoc, SM.getCharacterData(ExpansionEndLoc) -
-    SM.getCharacterData(ExpansionBeginLoc) +
-    LastTokenLength);
+      ExpansionBeginLoc, SM.getCharacterData(ExpansionEndLoc) -
+                             SM.getCharacterData(ExpansionBeginLoc) +
+                             LastTokenLength);
 }
 
 

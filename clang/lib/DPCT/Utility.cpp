@@ -1591,6 +1591,23 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
           getHashStrFromLoc(SpellingEnd));
 
+  if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
+      (BeginLoc.isFileID() && EndLoc.isMacroID())) {
+    return true;
+  }
+
+  // Different expansion but same define, e.g. AAA * AAA
+  if (BeginLoc.isMacroID() && EndLoc.isMacroID()) {
+    auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
+    auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
+    auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
+    auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
+    if (DLExpanBegin.first != DLExpanEnd.first ||
+      DLExpanBegin.second != DLExpanEnd.second) {
+      return true;
+    }
+  }
+
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
@@ -1623,7 +1640,9 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
 // Check if an Expr is partially in function-like macro
 bool isExprStraddle(const Stmt *S) {
-  return isLocationStraddle(S->getBeginLoc(), S->getEndLoc());
+  // Remove the outer func-like macro before checking straddle
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  return isLocationStraddle(Range.getBegin(), Range.getEnd());
 }
 
 /// Check the expression \p E is an address-of expression like "&aaa".

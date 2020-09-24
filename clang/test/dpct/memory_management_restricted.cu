@@ -252,4 +252,153 @@ void foobar() {
   // CHECK-NEXT: */
   // CHECK-NEXT: checkError((dpct::cpu_device().default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, cudaCpuDeviceId));
+
+
+#define QRNG_DIMENSIONS 3
+#define AAA(x)   (x + 2)
+#define BBB(x)   x * 2
+//CHECK: #define SIZEOF_FLOAT sizeof(float)
+//CHECK-NEXT: #define SIZEOF(x) sizeof(x)
+#define SIZEOF_FLOAT sizeof(float)
+#define SIZEOF(x) sizeof(x)
+
+
+  const int N = 1048576;
+  float *d_Output;
+
+
+  // a * sizeof
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * N * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * AAA(N), q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, N * AAA(N) * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * QRNG_DIMENSIONS, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, N * QRNG_DIMENSIONS * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF_FLOAT));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1);
+  cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF_FLOAT);
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF(float)));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1);
+  cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF(float));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * QRNG_DIMENSIONS, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * QRNG_DIMENSIONS * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * AAA(N), q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * AAA(N) * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * QRNG_DIMENSIONS, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * QRNG_DIMENSIONS * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * AAA(N), q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * AAA(N) * sizeof(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * SIZEOF_FLOAT));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * SIZEOF(float)));
+
+
+
+  //CHECK: d_Output = sycl::malloc_device<float>(AAA(N) * N, q_ct1);
+  cudaMalloc((void **)&d_Output, AAA(N) * N * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N * AAA(N), q_ct1);
+  cudaMalloc((void **)&d_Output, N * AAA(N) * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N * QRNG_DIMENSIONS, q_ct1);
+  cudaMalloc((void **)&d_Output, N * QRNG_DIMENSIONS * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1);
+  cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N * N, q_ct1);
+  cudaMalloc((void **)&d_Output, N * N * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * QRNG_DIMENSIONS, q_ct1);
+  cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * QRNG_DIMENSIONS * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(AAA(N) * AAA(N), q_ct1);
+  cudaMalloc((void **)&d_Output, AAA(N) * AAA(N) * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(AAA(N) * QRNG_DIMENSIONS, q_ct1);
+  cudaMalloc((void **)&d_Output, AAA(N) * QRNG_DIMENSIONS * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * AAA(N), q_ct1);
+  cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * AAA(N) * sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N * N, q_ct1);
+  cudaMalloc((void **)&d_Output, N * N * SIZEOF_FLOAT);
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N * N, q_ct1);
+  cudaMalloc((void **)&d_Output, N * N * SIZEOF(float));
+
+
+
+  // sizeof * a
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * QRNG_DIMENSIONS));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * N));
+
+  //CHECK: checkCudaErrors((d_Output = (float *)sycl::malloc_device(sizeof(float) * BBB(N), q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * BBB(N)));
+
+  //CHECK: d_Output = (float *)sycl::malloc_device(sizeof(float) * BBB(N), q_ct1);
+  cudaMalloc((void **)&d_Output, sizeof(float) * BBB(N));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N), q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * AAA(N)));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(AAA(N), q_ct1);
+  cudaMalloc((void **)&d_Output, sizeof(float) * AAA(N));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS, q_ct1);
+  cudaMalloc((void **)&d_Output, sizeof(float) * QRNG_DIMENSIONS);
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N, q_ct1);
+  cudaMalloc((void **)&d_Output, sizeof(float) * N);
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N, q_ct1);
+  cudaMalloc((void **)&d_Output, SIZEOF(float) * N);
+
+  //CHECK: d_Output = sycl::malloc_device<float>(N, q_ct1);
+  cudaMalloc((void **)&d_Output, SIZEOF_FLOAT * N);
+
+
+
+  // sizeof
+  //CHECK: d_Output = sycl::malloc_device<float>(1, q_ct1);
+  cudaMalloc((void **)&d_Output, sizeof(float));
+
+  //CHECK: d_Output = sycl::malloc_device<float>(1, q_ct1);
+  cudaMalloc((void **)&d_Output, SIZEOF_FLOAT);
+
+  //CHECK: d_Output = sycl::malloc_device<float>(1, q_ct1);
+  cudaMalloc((void **)&d_Output, SIZEOF(float));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, SIZEOF_FLOAT));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, SIZEOF(float)));
+
+  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float)));
 }
