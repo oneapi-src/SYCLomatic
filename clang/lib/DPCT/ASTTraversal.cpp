@@ -11181,6 +11181,13 @@ void TextureMemberSetRule::run(const MatchFinder::MatchResult &Result) {
     auto HeightMemberExpr = getNodeAsType<MemberExpr>(Result, "HeightMember");
     auto PitchMemberExpr = getNodeAsType<MemberExpr>(Result, "PitchMember");
     auto DescMemberExpr = getNodeAsType<MemberExpr>(Result, "DescMember");
+
+    if (!AssignPtrExpr || !AssignWidthExpr || !AssignHeightExpr ||
+        !AssignDescExpr || !AssignPitchExpr || !ResTypeMemberExpr ||
+        !PtrMemberExpr || !WidthMemberExpr || !HeightMemberExpr ||
+        !PitchMemberExpr || !DescMemberExpr)
+      return;
+
     // Compare the name of all resource obj
     std::string ResName = "";
     if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
@@ -11296,6 +11303,12 @@ void TextureMemberSetRule::run(const MatchFinder::MatchResult &Result) {
     auto PtrMemberExpr = getNodeAsType<MemberExpr>(Result, "PtrMember");
     auto SizeMemberExpr = getNodeAsType<MemberExpr>(Result, "SizeMember");
     auto DescMemberExpr = getNodeAsType<MemberExpr>(Result, "DescMember");
+
+    if (!BO || !AssignPtrExpr || !AssignSizeExpr || !AssignDescExpr ||
+        !ResTypeMemberExpr || !PtrMemberExpr || !SizeMemberExpr ||
+        !DescMemberExpr)
+      return;
+
     // Compare the name of all resource obj
     std::string ResName = "";
     if (auto DRE = dyn_cast<DeclRefExpr>(ResTypeMemberExpr->getBase())) {
@@ -11375,6 +11388,9 @@ void TextureMemberSetRule::run(const MatchFinder::MatchResult &Result) {
     auto ResTypeMemberExpr =
       getNodeAsType<MemberExpr>(Result, "ResTypeMemberExpr");
     auto ArrayMemberExpr = getNodeAsType<MemberExpr>(Result, "ArrayMember");
+
+    if (!BO || !AssignArrayExpr || !ResTypeMemberExpr || !ArrayMemberExpr)
+      return;
 
     // Compare the name of all resource obj
     std::string ResName = "";
