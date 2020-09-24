@@ -22,7 +22,7 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
   // CHECK-NEXT: resDescInput[instance].set_data_ptr(d_In);
   // CHECK-NEXT: dpct::image_channel channelDesc =
   // CHECK-NEXT:     /*
-  // CHECK-NEXT:     DPCT1059:{{[0-9]+}}: SYCL supports only 4-channel image format. Adjust the code.
+  // CHECK-NEXT:     DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
   // CHECK-NEXT:     */
   // CHECK-NEXT:     dpct::image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: resDescInput[instance].set_channel(channelDesc);

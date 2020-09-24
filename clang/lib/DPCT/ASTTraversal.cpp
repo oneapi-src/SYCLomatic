@@ -8698,8 +8698,8 @@ void MemVarRule::removeHostConstantWarning(Replacement &R){
 
   // warning text of Diagnostics::HOST_CONSTANT
   std::string Warning =
-      "Intel\\(R\\) DPC\\+\\+ Compatibility Tool did not detect that variable "
-      "[_a-zA-Z][_a-zA-Z0-9]+ is used in device code. If this variable is also "
+      "The Intel\\(R\\) DPC\\+\\+ Compatibility Tool did not detect the variable "
+      "[_a-zA-Z][_a-zA-Z0-9]+ used in device code. If this variable is also "
       "used in device code, you need to rewrite the code.";
   std::string Pattern =
       "/\\*\\s+DPCT" +

@@ -578,7 +578,7 @@ __global__ void foo11(){
 
 //CHECK: /*
 //CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 are migrated to the corresponding
-//CHECK-NEXT: fundamental types which cannot be inherited. You need to rewrite the code.
+//CHECK-NEXT: fundamental types, which cannot be inherited. You need to rewrite the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define VECTOR_TYPE_DEF(type)                                                  \
 //CHECK-NEXT:                                                                                \

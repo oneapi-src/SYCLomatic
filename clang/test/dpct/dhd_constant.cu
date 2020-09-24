@@ -11,18 +11,18 @@
 // RUN: rm -rf ./dhd_constant
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1057:{{[0-9]+}}: Variable aaa was used in host code and device code. Intel(R) DPC++
-// CHECK-NEXT: Compatibility Tool updated aaa type to be used in SYCL device code and generated
-// CHECK-NEXT: new aaa_host_ct1 to be used in host code. You need to update the host code
-// CHECK-NEXT: manually to use the new aaa_host_ct1.
+// CHECK-NEXT: DPCT1057:{{[0-9]+}}: Variable aaa was used in host code and device code. The Intel(R)
+// CHECK-NEXT: DPC++ Compatibility Tool updated aaa type to be used in SYCL device code and
+// CHECK-NEXT: generated new aaa_host_ct1 to be used in host code. You need to update the host
+// CHECK-NEXT: code manually to use the new aaa_host_ct1.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float aaa_host_ct1 = (float)(1ll << 40);
 // CHECK-NEXT: static dpct::constant_memory<const float, 0> aaa((float)(1ll << 40));
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1057:{{[0-9]+}}: Variable bbb was used in host code and device code. Intel(R) DPC++
-// CHECK-NEXT: Compatibility Tool updated bbb type to be used in SYCL device code and generated
-// CHECK-NEXT: new bbb_host_ct1 to be used in host code. You need to update the host code
-// CHECK-NEXT: manually to use the new bbb_host_ct1.
+// CHECK-NEXT: DPCT1057:{{[0-9]+}}: Variable bbb was used in host code and device code. The Intel(R)
+// CHECK-NEXT: DPC++ Compatibility Tool updated bbb type to be used in SYCL device code and
+// CHECK-NEXT: generated new bbb_host_ct1 to be used in host code. You need to update the host
+// CHECK-NEXT: code manually to use the new bbb_host_ct1.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float bbb_host_ct1 = (float)(1ll << 20);
 // CHECK-NEXT: static dpct::constant_memory<const float, 0> bbb((float)(1ll << 20));

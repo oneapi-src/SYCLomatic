@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
   // CHECK: printf"<<<\n");
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1061:{{[0-9]+}}: Call to CudaEvent macro was removed, since it contains only code, which is unnecessary in DPC++.
+  // CHECK-NEXT: DPCT1061:{{[0-9]+}}: Call to CudaEvent macro was removed, because it only contains code, which is unnecessary in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT: printf">>>\n");
   printf"<<<\n");
