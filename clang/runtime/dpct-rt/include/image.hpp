@@ -521,31 +521,31 @@ public:
     _image = matrix->create_image<Dimension>();
   }
   // Attach matrix data to this class.
-  void attach(image_matrix *matrix, image_channel chn_desc) {
+  void attach(image_matrix *matrix, image_channel channel) {
     detach();
-    _image = matrix->create_image<Dimension>(chn_desc);
+    _image = matrix->create_image<Dimension>(channel);
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count) {
     attach(ptr, count, get_channel());
   }
   // Attach linear data to this class.
-  void attach(void *ptr, size_t count, image_channel chn_desc) {
+  void attach(void *ptr, size_t count, image_channel channel) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     _image = new cl::sycl::image<Dimension>(
-        ptr, chn_desc.get_channel_order(), chn_desc.get_channel_type(),
-        cl::sycl::range<1>(count / chn_desc.get_total_size()));
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
+        cl::sycl::range<1>(count / channel.get_total_size()));
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
     attach(data, x, y, pitch, get_channel());
   }
   // Attach 2D data to this class.
-  void attach(void *data, size_t x, size_t y, size_t pitch, image_channel chn_desc) {
+  void attach(void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(data))
       data = get_buffer(data)
@@ -553,8 +553,8 @@ public:
                 .get_pointer();
     cl::sycl::range<1> pitch_range(pitch);
     _image = new cl::sycl::image<Dimension>(
-        data, chn_desc.get_channel_order(), chn_desc.get_channel_type(),
-        cl::sycl::range<2>(x / chn_desc.get_total_size(), y), pitch_range);
+        data, channel.get_channel_order(), channel.get_channel_type(),
+        cl::sycl::range<2>(x / channel.get_total_size(), y), pitch_range);
   }
   // Detach data.
   void detach() {
@@ -739,24 +739,24 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) 
 }
 
 /// Create image with channel info and specified dimensions.
-static image_wrapper_base *create_image_wrapper(image_channel chn, int dims) {
-  switch (chn.get_channel_type()) {
+static image_wrapper_base *create_image_wrapper(image_channel channel, int dims) {
+  switch (channel.get_channel_type()) {
   case cl::sycl::image_channel_type::fp16:
-    return create_image_wrapper<cl::sycl::cl_half>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_half>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::fp32:
-    return create_image_wrapper<cl::sycl::cl_float>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_float>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int8:
-    return create_image_wrapper<cl::sycl::cl_char>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_char>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int16:
-    return create_image_wrapper<cl::sycl::cl_short>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_short>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int32:
-    return create_image_wrapper<cl::sycl::cl_int>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_int>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int8:
-    return create_image_wrapper<cl::sycl::cl_uchar>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_uchar>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int16:
-    return create_image_wrapper<cl::sycl::cl_ushort>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_ushort>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int32:
-    return create_image_wrapper<cl::sycl::cl_uint>(chn.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::cl_uint>(channel.get_channel_num(), dims);
   default:
     return nullptr;
   }
