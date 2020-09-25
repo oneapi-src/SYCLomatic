@@ -1477,6 +1477,16 @@ bool isOuterMostMacro(const Stmt *E) {
   return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
 }
 
+bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
+  auto LocInfo1 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L1);
+  auto LocInfo2 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L2);
+  if (LocInfo1.first.compare(LocInfo2.first) ||
+      LocInfo1.second != LocInfo2.second) {
+    return false;
+  }
+  return true;
+}
+
 bool isInsideFunctionLikeMacro(
     const SourceLocation BeginLoc, const SourceLocation EndLoc,
     const std::shared_ptr<ast_type_traits::DynTypedNode> Parent) {
@@ -1489,10 +1499,12 @@ bool isInsideFunctionLikeMacro(
   // If the begin/end location are different macro expansions,
   // the expression is a combination of different macros
   // which makes it outer-most.
-  if (SM.getCharacterData(SM.getExpansionRange(BeginLoc).getEnd()) <
-      SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+  auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
+  auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
+  if (!isSameLocation(ExpansionBegin, ExpansionEnd)) {
     return false;
   }
+
 
   // Since SM.getExpansionLoc() will always return the range of the outer-most
   // macro. If the expanded location of the parent stmt and E are the same, E is
@@ -1502,15 +1514,14 @@ bool isInsideFunctionLikeMacro(
   // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
   if (Parent->getSourceRange().getBegin().isValid() &&
-    Parent->getSourceRange().getBegin().isMacroID()) {
-    if (getHashStrFromLoc(
-      SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
-        getHashStrFromLoc(SM.getExpansionLoc(BeginLoc))) {
+      Parent->getSourceRange().getBegin().isMacroID()) {
+    if (isSameLocation(SM.getExpansionLoc(Parent->getSourceRange().getBegin()),
+                       SM.getExpansionLoc(BeginLoc))) {
       if (Parent->getSourceRange().getEnd().isValid() &&
-        Parent->getSourceRange().getEnd().isMacroID()) {
-        if (getHashStrFromLoc(
-          SM.getExpansionLoc(Parent->getSourceRange().getEnd())) ==
-            getHashStrFromLoc(SM.getExpansionLoc(EndLoc))) {
+          Parent->getSourceRange().getEnd().isMacroID()) {
+        if (isSameLocation(
+                SM.getExpansionLoc(Parent->getSourceRange().getEnd()),
+                SM.getExpansionLoc(EndLoc))) {
           return true;
         }
       }
@@ -1538,42 +1549,49 @@ bool isInsideFunctionLikeMacro(
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
   auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getHashStrFromLoc(ImmediateExpansionBegin));
+    getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
-          getHashStrFromLoc(ImmediateExpansionEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
 
   // ExpansionBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getHashStrFromLoc(ImmediateExpansionBegin));
+    getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
-          getHashStrFromLoc(ImmediateSpellingEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
 
   // SpellingBegin & ExpansionEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getHashStrFromLoc(ImmediateSpellingBegin));
+    getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
-          getHashStrFromLoc(ImmediateExpansionEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
 
   // SpellingBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getHashStrFromLoc(ImmediateSpellingBegin));
-
+    getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      getHashStrFromLoc(It->second->ReplaceTokenEnd) ==
-          getHashStrFromLoc(ImmediateSpellingEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
 
@@ -1586,10 +1604,10 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-          getHashStrFromLoc(SpellingBegin));
+      getCombinedStrFromLoc(SpellingBegin));
   auto ItSpellingEnd =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-          getHashStrFromLoc(SpellingEnd));
+      getCombinedStrFromLoc(SpellingEnd));
 
   if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
       (BeginLoc.isFileID() && EndLoc.isMacroID())) {
@@ -1624,14 +1642,12 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
     return true;
   }
 
-  auto DLBeginToken =
-    SM.getDecomposedLoc(ItSpellingBegin->second->ReplaceTokenBegin);
-  auto DLEndToken =
-    SM.getDecomposedLoc(ItSpellingEnd->second->ReplaceTokenBegin);
   // If DL.first(the FileId) or DL.second(the location) is different which means
   // begin and end are in different macro define, straddle
-  if (DLBeginToken.first != DLEndToken.first ||
-    DLBeginToken.second != DLEndToken.second) {
+  if (ItSpellingBegin->second->FilePath.compare(
+          ItSpellingEnd->second->FilePath) ||
+      ItSpellingBegin->second->ReplaceTokenBeginOffset !=
+          ItSpellingEnd->second->ReplaceTokenBeginOffset) {
     return true;
   }
 
@@ -2217,4 +2233,9 @@ bool isIncludedFile(const std::string &CurrentFile,
     }
   }
   return false;
+}
+
+std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
+  auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
+  return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }

@@ -684,19 +684,24 @@ public:
   public:
     std::string Name;
     int NumTokens;
-    SourceLocation ReplaceTokenBegin;
-    SourceLocation ReplaceTokenEnd;
+    std::string FilePath;
+    unsigned ReplaceTokenBeginOffset;
+    unsigned ReplaceTokenEndOffset;
     SourceRange Range;
     bool IsInRoot;
     bool IsFunctionLike;
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInRoot, int TokenIndex) {
+      auto LocInfoBegin = DpctGlobalInfo::getLocInfo(
+          MI->getReplacementToken(0).getLocation());
+      auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
+        MI->getReplacementToken(MI->getNumTokens() - 1).getLocation());
       Name = ID->getName().str();
       NumTokens = MI->getNumTokens();
-      ReplaceTokenBegin = MI->getReplacementToken(0).getLocation();
-      ReplaceTokenEnd =
-          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation();
+      FilePath = LocInfoBegin.first;
+      ReplaceTokenBeginOffset = LocInfoBegin.second;
+      ReplaceTokenEndOffset = LocInfoEnd.second;
       this->Range = Range;
       this->IsInRoot = IsInRoot;
       this->IsFunctionLike = MI->getNumParams() > 0;
@@ -1444,7 +1449,7 @@ private:
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
     // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
     auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-        getHashStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
+      getCombinedStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());

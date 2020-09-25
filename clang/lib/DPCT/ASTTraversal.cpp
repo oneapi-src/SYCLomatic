@@ -159,18 +159,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     return;
   if (MD.getMacroInfo()->getNumTokens() > 0) {
     std::string HashKey = "";
-    if (MD.getMacroInfo()->getReplacementToken(0).getLocation().isValid())
-      HashKey = getHashStrFromLoc(SM.getSpellingLoc(
-          MD.getMacroInfo()->getReplacementToken(0).getLocation()));
-    else
+    if (MD.getMacroInfo()->getReplacementToken(0).getLocation().isValid()) {
+      HashKey = getCombinedStrFromLoc(
+          MD.getMacroInfo()->getReplacementToken(0).getLocation());
+    } else {
       HashKey = "InvalidLoc";
-
-    std::string Tok = "";
-    if (MacroNameTok.getIdentifierInfo())
-      Tok = MacroNameTok.getIdentifierInfo()->getName().str();
-
-    HashKey = HashKey + ":" + Tok + ":" +
-              std::to_string((int64_t)(MD.getMacroInfo()));
+    }
 
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
@@ -184,7 +178,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                 MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range,
                 IsInRoot, i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-            [getHashStrFromLoc(
+            [getCombinedStrFromLoc(
                 MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
       }
     }

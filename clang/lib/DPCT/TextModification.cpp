@@ -130,13 +130,15 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
           std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
             ReplacementString, this));
         // Emit warning message at the Exapnasion Location
-        auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(getHashStrFromLoc(BeginDef));
+        auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(BeginDef));
         std::string MacroName = "";
         if (ItMR != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
           MacroName = ItMR->second->Name;
-          auto LocInfo = DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(TheStmt->getBeginLoc()));
+          auto LocInfo = DpctGlobalInfo::getLocInfo(
+              SM.getExpansionLoc(TheStmt->getBeginLoc()));
           DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-            Diagnostics::MACRO_REMOVED, true, MacroName);
+                                   Diagnostics::MACRO_REMOVED, true, MacroName);
         }
       }
     }

@@ -705,7 +705,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   calleeSpelling = SM.getSpellingLoc(calleeSpelling);
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getHashStrFromLoc(calleeSpelling));
+    getCombinedStrFromLoc(calleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
   }
