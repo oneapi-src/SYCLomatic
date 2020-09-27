@@ -449,14 +449,13 @@ public:
       return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
     case MKL_BLAS_Solver:
       return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                          "<mkl_blas_sycl.hpp>", "<mkl_lapack_sycl.hpp>",
-                          "<mkl_sycl_types.hpp>", "<dpct/blas_utils.hpp>");
+                          "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
-                          "<mkl_rng_sycl.hpp>", "<mkl_rng_sycl_device.hpp>");
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
-                          "<mkl_spblas_sycl.hpp>", "<dpct/blas_utils.hpp>");
+                          "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
     case Numeric:
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
         "<numeric>");

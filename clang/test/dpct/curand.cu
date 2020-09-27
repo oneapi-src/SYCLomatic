@@ -6,7 +6,7 @@
 //CHECK:// CHECKME
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
-//CHECK:#include <mkl_rng_sycl.hpp>
+//CHECK:#include <oneapi/mkl.hpp>
 #include <cuda.h>
 #include <stdio.h>
 #include <curand.h>

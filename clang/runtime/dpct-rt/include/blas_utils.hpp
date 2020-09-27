@@ -22,7 +22,7 @@
 #include "memory.hpp"
 #include "util.hpp"
 #include <CL/sycl.hpp>
-#include <mkl_lapack_sycl.hpp>
+#include <oneapi/mkl.hpp>
 #include <utility>
 #include <vector>
 #include <thread>

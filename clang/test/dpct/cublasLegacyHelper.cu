@@ -3,9 +3,7 @@
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
-// CHECK: #include <mkl_blas_sycl.hpp>
-// CHECK-NEXT: #include <mkl_lapack_sycl.hpp>
-// CHECK-NEXT: #include <mkl_sycl_types.hpp>
+// CHECK: #include <oneapi/mkl.hpp>
 // CHECK: #include <complex>
 #include <cstdio>
 #include <cublas.h>
