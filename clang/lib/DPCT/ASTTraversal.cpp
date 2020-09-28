@@ -9552,6 +9552,9 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func) {
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+    if (Func->isImplicit() ||
+        Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
+      return;
     if (VD == nullptr)
       return;
 

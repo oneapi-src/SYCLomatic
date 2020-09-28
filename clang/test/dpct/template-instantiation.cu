@@ -65,18 +65,31 @@ template __global__ void kernel3<20>(int *);
 int main() {
     int *d;
     float2 *d1;
+    int4 *d2;
 
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
 // CHECK-NEXT:     sycl::accessor<sycl::float2, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
-// CHECK-EMPTY:     
+// CHECK-EMPTY:
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.get_pointer());
 // CHECK-NEXT:     });
-// CHECK-NEXT: });  
+// CHECK-NEXT: });
     kernel<float2><<<1,1>>>(d);
+
+// CHECK:      q_ct1.submit(
+// CHECK-NEXT:   [&](sycl::handler &cgh) {
+// CHECK-NEXT:     sycl::accessor<sycl::int4, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:     cgh.parallel_for(
+// CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.get_pointer());
+// CHECK-NEXT:     });
+// CHECK-NEXT: });
+    kernel<int4><<<1,1>>>(d);
     
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {

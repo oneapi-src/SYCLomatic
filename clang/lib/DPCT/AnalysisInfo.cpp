@@ -1816,7 +1816,9 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
   if (FD->getTemplateSpecializationKind() ==
       TSK_ExplicitInstantiationDefinition)
     return;
-  if (FD->isImplicit()) {
+
+  if (FD->isImplicit() ||
+      FD->getTemplateSpecializationKind() == TSK_ImplicitInstantiation) {
     auto &FuncInfo = getFuncInfo(FD);
     if (Info) {
       if (FuncInfo)
@@ -1978,7 +1980,8 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   if (auto Func =
           dyn_cast_or_null<FunctionDecl>(Var->getParentFunctionOrMethod())) {
     if (Func->getTemplateSpecializationKind() ==
-        TSK_ExplicitInstantiationDefinition)
+            TSK_ExplicitInstantiationDefinition ||
+        Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
       return std::shared_ptr<MemVarInfo>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
