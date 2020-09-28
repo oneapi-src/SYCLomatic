@@ -21,7 +21,7 @@
 #include <oneapi/dpl/iterator>
 #include <functional>
 
-#ifndef ONEDPL_STANDARD_POLICIES_ONLY
+#ifdef _ONEDPL_BACKEND_SYCL
 #include <oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
 #endif
 

@@ -17,7 +17,7 @@
 #ifndef __DPCT_MEMORY_H__
 #define __DPCT_MEMORY_H__
 
-#ifndef ONEDPL_STANDARD_POLICIES_ONLY
+#ifdef _ONEDPL_BACKEND_SYCL
 #include <CL/sycl.hpp>
 #endif
 
