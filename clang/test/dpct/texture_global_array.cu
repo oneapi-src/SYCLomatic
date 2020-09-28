@@ -26,8 +26,8 @@ void createTestTexture(int instance, unsigned char *d_In, int rSize, int pSize,
   // CHECK-NEXT:     */
   // CHECK-NEXT:     dpct::image_channel(8, 0, 0, 0, dpct::image_channel_data_type::unsigned_int);
   // CHECK-NEXT: resDescInput[instance].set_channel(channelDesc);
-  // CHECK-NEXT: resDescInput[instance].set_ysize(pSize);
-  // CHECK-NEXT: resDescInput[instance].set_xsize(rSize);
+  // CHECK-NEXT: resDescInput[instance].set_y(pSize);
+  // CHECK-NEXT: resDescInput[instance].set_x(rSize);
   // CHECK-NEXT: resDescInput[instance].set_pitch(pPitch);
   memset(&resDescInput[instance], 0, sizeof(resDescInput[instance]));
   resDescInput[instance].resType = cudaResourceTypePitch2D;

@@ -3082,11 +3082,11 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
 
 MapNames::MapTy TextureRule::ResourceTypeNames{
     {"devPtr", "data_ptr"},  {"desc", "channel"}, {"array", "data_ptr"},
-    {"width", "xsize"},      {"height", "ysize"}, {"pitchInBytes", "pitch"},
-    {"sizeInBytes", "xsize"}};
+    {"width", "x"},      {"height", "y"}, {"pitchInBytes", "pitch"},
+    {"sizeInBytes", "x"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
-    {"pitch", "pitch"}, {"ptr", "data"}, {"xsize", "x"}, {"ysize", "y"}};
+    {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};
 const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
     {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
 

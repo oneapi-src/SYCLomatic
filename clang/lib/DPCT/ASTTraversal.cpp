@@ -10512,6 +10512,37 @@ MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
 
 REGISTER_RULE(MemoryMigrationRule)
 
+TextModification *ReplaceMemberAssignAsSetMethod(SourceLocation EndLoc,
+                                                 const MemberExpr *ME,
+                                                 StringRef MethodName,
+                                                 StringRef ReplacedArg,
+                                                 StringRef ExtraArg = "") {
+  return new ReplaceToken(
+      ME->getMemberLoc(), EndLoc,
+      buildString("set", MethodName.empty() ? "" : "_", MethodName, "(",
+                  ExtraArg, ExtraArg.empty() ? "" : ", ", ReplacedArg, ")"));
+}
+
+TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
+                                                 const MemberExpr *ME,
+                                                 StringRef MethodName,
+                                                 StringRef ReplacedArg = "",
+                                                 StringRef ExtraArg = "") {
+  if (ReplacedArg.empty()) {
+    if (auto BO = dyn_cast<BinaryOperator>(E)) {
+      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
+                                            ExprAnalysis::ref(BO->getRHS()),
+                                            ExtraArg);
+    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
+                                            ExprAnalysis::ref(COCE->getArg(1)),
+                                            ExtraArg);
+    }
+  }
+  return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
+                                        ReplacedArg, ExtraArg);
+}
+
 void MemoryDataTypeRule::emplaceMemcpy3DDeclarations(const VarDecl *VD) {
   if (DpctGlobalInfo::isCommentsEnabled()) {
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
@@ -10614,9 +10645,17 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
     } else if (BaseName == "cudaPitchedPtr") {
       auto &Replace =
           MapNames::findReplacedName(PitchMemberNames, MemberName.str());
-      if (!Replace.empty())
-        emplaceTransformation(
-            new ReplaceToken(M->getMemberLoc(), std::string(Replace)));
+      if (Replace.empty())
+        return;
+      if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
+        if (BO->getOpcode() == BO_Assign) {
+          emplaceTransformation(
+              ReplaceMemberAssignAsSetMethod(BO, M, Replace));
+          return;
+        }
+      }
+      emplaceTransformation(new ReplaceToken(
+          M->getMemberLoc(), buildString("get_", Replace, "()")));
     }
   }
 }
@@ -11555,37 +11594,6 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                     .bind("unresolvedLookupExpr"),
                 this);
 
-}
-
-TextModification *ReplaceMemberAssignAsSetMethod(SourceLocation EndLoc,
-                                                 const MemberExpr *ME,
-                                                 StringRef MethodName,
-                                                 StringRef ReplacedArg,
-                                                 StringRef ExtraArg = "") {
-  return new ReplaceToken(
-      ME->getMemberLoc(), EndLoc,
-      buildString("set", MethodName.empty() ? "" : "_", MethodName, "(",
-                  ExtraArg, ExtraArg.empty() ? "" : ", ", ReplacedArg, ")"));
-}
-
-TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
-                                                 const MemberExpr *ME,
-                                                 StringRef MethodName,
-                                                 StringRef ReplacedArg = "",
-                                                 StringRef ExtraArg = "") {
-  if (ReplacedArg.empty()) {
-    if (auto BO = dyn_cast<BinaryOperator>(E)) {
-      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                            ExprAnalysis::ref(BO->getRHS()),
-                                            ExtraArg);
-    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                            ExprAnalysis::ref(COCE->getArg(1)),
-                                            ExtraArg);
-    }
-  }
-  return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                        ReplacedArg, ExtraArg);
 }
 
 bool TextureRule::removeExtraMemberAccess(const MemberExpr *ME) {

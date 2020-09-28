@@ -141,7 +141,7 @@ int main() {
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*2) res21.set_channel_size(2, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*3) res21.set_channel_size(3, sizeof(unsigned)*8);
   // CHECK-NEXT: if (sizeof(sycl::uint2) >= sizeof(unsigned)*4) res21.set_channel_size(4, sizeof(unsigned)*8);
-  // CHECK-NEXT: res21.set_xsize(32*sizeof(sycl::uint2));
+  // CHECK-NEXT: res21.set_x(32*sizeof(sycl::uint2));
   // CHECK-NEXT: unsigned chnX = res21.get_channel_size();
   // CHECK-NEXT: dpct::image_channel_data_type formatKind = res21.get_channel_data_type();
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);

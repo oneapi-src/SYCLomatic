@@ -356,11 +356,11 @@ public:
   void *get_data_ptr() { return _data; }
   void set_data_ptr(void *data) { _data = data; }
 
-  size_t get_xsize() { return _x; }
-  void set_xsize(size_t x) { _x = x; }
+  size_t get_x() { return _x; }
+  void set_x(size_t x) { _x = x; }
 
-  size_t get_ysize() { return _y; }
-  void set_ysize(size_t y) { _y = y; }
+  size_t get_y() { return _y; }
+  void set_y(size_t y) { _y = y; }
 
   size_t get_pitch() { return _pitch; }
   void set_pitch(size_t pitch) { _pitch = pitch; }
@@ -691,7 +691,7 @@ template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
   void operator()(image_wrapper<T, 1, IsImageArray> &in_image,
                   image_data data) {
     if (data.get_data_type() == image_data_type::linear)
-      in_image.attach(data.get_data_ptr(), data.get_xsize(),
+      in_image.attach(data.get_data_ptr(), data.get_x(),
                       data.get_channel());
     else if (data.get_data_type() == image_data_type::matrix)
       in_image.attach((image_matrix_p)data.get_data_ptr());
@@ -703,7 +703,7 @@ template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
     if (data.get_data_type() == image_data_type::matrix)
       in_image.attach((image_matrix_p)data.get_data_ptr());
     else if (data.get_data_type() == image_data_type::pitch)
-      in_image.attach(data.get_data_ptr(), data.get_xsize(), data.get_ysize(),
+      in_image.attach(data.get_data_ptr(), data.get_x(), data.get_y(),
                       data.get_pitch(), data.get_channel());
   }
 };

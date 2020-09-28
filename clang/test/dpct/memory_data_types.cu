@@ -4,6 +4,26 @@
 void foo(int *data, int x, int y) {
   // CHECK: dpct::pitched_data p1 = dpct::pitched_data(data, x, x, y);
   cudaPitchedPtr p1 = make_cudaPitchedPtr(data, x, x, y);
+
+  size_t p1_pitch, p1_x, p1_y;
+
+  // CHECK: data = (int *)p1.get_data_ptr();
+  // CHECK-NEXT: p1.set_data_ptr(data);
+  // CHECK-NEXT: p1_pitch = p1.get_pitch();
+  // CHECK-NEXT: p1.set_pitch(p1_pitch);
+  // CHECK-NEXT: p1_x = p1.get_x();
+  // CHECK-NEXT: p1.set_x(p1_x);
+  // CHECK-NEXT: p1_y = p1.get_y();
+  // CHECK-NEXT: p1.set_y(p1_y);
+  data = (int *)p1.ptr;
+  p1.ptr = data;
+  p1_pitch = p1.pitch;
+  p1.pitch = p1_pitch;
+  p1_x = p1.xsize;
+  p1.xsize = p1_x;
+  p1_y = p1.ysize;
+  p1.ysize = p1_y;
+
   // CHECK: sycl::range<3> extent = sycl::range<3>(x, y, 1);
   cudaExtent extent = make_cudaExtent(x, y, 1);
   // CHECK: sycl::id<3> pos = sycl::id<3>(0, 0, 0);

@@ -65,10 +65,23 @@ class pitched_data {
 public:
   pitched_data() : pitched_data(nullptr, 0, 0, 0) {}
   pitched_data(void *data, size_t pitch, size_t x, size_t y)
-      : data(data), pitch(pitch), x(x), y(y) {}
-  size_t pitch;
-  void *data;
-  size_t x, y;
+      : _data(data), _pitch(pitch), _x(x), _y(y) {}
+
+  void *get_data_ptr() { return _data; }
+  void set_data_ptr(void *data) { _data = data; }
+
+  size_t get_pitch() { return _pitch; }
+  void set_pitch(size_t pitch) { _pitch = pitch; }
+
+  size_t get_x() { return _x; }
+  void set_x(size_t x) { _x = x; };
+
+  size_t get_y() { return _y; }
+  void set_y(size_t y) { _y = y; }
+
+private:
+  void *_data;
+  size_t _pitch, _x, _y;
 };
 
 namespace detail {
@@ -283,13 +296,13 @@ static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
             cl::sycl::range<3> size) {
   cl::sycl::vector_class<cl::sycl::event> event_list;
-  size_t slice = data.pitch * data.y;
-  unsigned char *data_surface = (unsigned char *)data.data;
+  size_t slice = data.get_pitch() * data.get_y();
+  unsigned char *data_surface = (unsigned char *)data.get_data_ptr();
   for (size_t z = 0; z < size.get(2); ++z) {
     unsigned char *data_ptr = data_surface;
     for (size_t y = 0; y < size.get(1); ++y) {
       event_list.push_back(dpct_memset(q, data_ptr, value, size.get(0)));
-      data_ptr += data.pitch;
+      data_ptr += data.get_pitch();
     }
     data_surface += slice;
   }
@@ -485,9 +498,9 @@ static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
             pitched_data from, cl::sycl::id<3> from_id, cl::sycl::range<3> size,
             memcpy_direction direction = automatic) {
-  return dpct_memcpy(q, to.data, from.data,
-                     cl::sycl::range<3>(to.pitch, to.y, 1),
-                     cl::sycl::range<3>(from.pitch, from.y, 1), to_id, from_id,
+  return dpct_memcpy(q, to.get_data_ptr(), from.get_data_ptr(),
+                     cl::sycl::range<3>(to.get_pitch(), to.get_y(), 1),
+                     cl::sycl::range<3>(from.get_pitch(), from.get_y(), 1), to_id, from_id,
                      size, direction);
 }
 
@@ -541,8 +554,10 @@ static inline void *dpct_malloc(T num_bytes) {
 /// \returns A pitched_data object which stores the memory info.
 static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
   pitched_data pitch(nullptr, 0, size.get(0), size.get(1));
-  pitch.data = detail::dpct_malloc(pitch.pitch, size.get(0), size.get(1),
-                      size.get(2));
+  size_t pitch_size;
+  pitch.set_data_ptr(
+      detail::dpct_malloc(pitch_size, size.get(0), size.get(1), size.get(2)));
+  pitch.set_pitch(pitch_size);
   return pitch;
 }
 
