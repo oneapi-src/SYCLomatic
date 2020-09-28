@@ -651,6 +651,61 @@ int ClangTool::run(ToolAction *Action) {
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
 #ifdef INTEL_CUSTOMIZATION
+      std::string Filename = CompileCommand.Filename;
+      if(!llvm::sys::path::is_absolute(Filename)) {
+          // To convert the relative path to absolute path.
+          llvm::SmallString<128> AbsPath(Filename);
+          llvm::sys::fs::make_absolute(AbsPath);
+          llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
+          Filename = std::string(AbsPath.str());
+      }
+
+      if (!llvm::sys::path::has_filename(CompileCommand.Filename)) {
+        std::string CommandField = "";
+        for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+          CommandField = CommandField + CommandLine[Index] + " ";
+        }
+        if (!CommandField.empty())
+          CommandField.pop_back();
+
+        ClangToolOutputMessage = std::string(35, ' ') + CompilationDatabaseDir +
+                                 "/compile_commands.json:\n" +
+                                 std::string(35, ' ') +
+                                 "  -  \"command\" field: \"" + CommandField +
+                                 "\", \"file\" field: \"\"";
+        return -30 /*MigrationErrorInconsistentFileInDatabase*/;
+      }
+
+      StringRef BaseNameRef = llvm::sys::path::filename(Filename);
+      std::string BaseNameStr = BaseNameRef.str();
+      std::string ItemNameStr = "";
+      bool Matched = false;
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (!llvm::sys::path::has_filename(CommandLine[Index]))
+          continue;
+        StringRef ItemNameRef = llvm::sys::path::filename(CommandLine[Index]);
+        ItemNameStr = ItemNameRef.str();
+        if (ItemNameStr == BaseNameStr) {
+          Matched = true;
+          // Try to convert the path of input source file into absolute path, as
+          // relative path has the potential risk to change the working
+          // directory of in-memory VFS, which may result in an unexpected
+          // behavior.
+          CommandLine[Index] = Filename;
+          break;
+        }
+      }
+
+      if (!Matched) {
+        ClangToolOutputMessage = std::string(35, ' ') + CompilationDatabaseDir +
+                                 "/compile_commands.json:\n" +
+                                 std::string(35, ' ') +
+                                 "  -  \"command\" field: \"" + ItemNameStr +
+                                 "\", \"file\" field: \"" +
+                                 BaseNameStr + "\"";
+        return -30 /*MigrationErrorInconsistentFileInDatabase*/;
+      }
+
       for (int index = 0; index < SDKIncludePath.size(); index++) {
         if (SDKIncludePath[index] == '\\') {
           SDKIncludePath[index] = '/';

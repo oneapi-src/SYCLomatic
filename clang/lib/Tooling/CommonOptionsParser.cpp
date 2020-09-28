@@ -217,7 +217,7 @@ llvm::Error CommonOptionsParser::init(
     std::string BuildDir = Directory.str();
     DoParserHandle(BuildDir, VcxprojFile);
     Compilations = CompilationDatabase::autoDetectFromDirectory(
-        BuildDir, ErrorMessage, ErrCode);
+        BuildDir, ErrorMessage, ErrCode, CompilationsDir);
     clang::tooling::FormatSearchPath = BuildDir;
   }
 #endif
@@ -227,10 +227,13 @@ llvm::Error CommonOptionsParser::init(
     return llvm::Error::success();
   if (!Compilations) {
     if (!BuildPath.empty()) {
+#ifdef INTEL_CUSTOMIZATION
+      Compilations = CompilationDatabase::autoDetectFromDirectory(
+          BuildPath, ErrorMessage, ErrCode, CompilationsDir);
+      clang::tooling::FormatSearchPath = BuildPath;
+#else
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode);
-#ifdef INTEL_CUSTOMIZATION
-      clang::tooling::FormatSearchPath = BuildPath;
 #endif
     }
 #ifdef INTEL_CUSTOMIZATION
@@ -239,13 +242,14 @@ llvm::Error CommonOptionsParser::init(
     // continue.
     else if (BuildPath.empty() && SourcePathList.empty()) {
       Compilations = nullptr;
-    }
-#endif
+    } else {
+      Compilations = CompilationDatabase::autoDetectFromSource(
+          SourcePaths[0], ErrorMessage, CompilationsDir);
+      clang::tooling::FormatSearchPath = SourcePaths[0];
+#else
     else {
       Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0],
                                                                ErrorMessage);
-#ifdef INTEL_CUSTOMIZATION
-      clang::tooling::FormatSearchPath = SourcePaths[0];
 #endif
     }
     if (!Compilations) {

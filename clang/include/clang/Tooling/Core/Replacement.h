@@ -142,6 +142,8 @@ public:
   /// Returns a human readable string representation.
   std::string toString() const;
 #ifdef INTEL_CUSTOMIZATION
+  void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
+  bool getBlockLevelFormatFlag() { return BlockLevelFormatFlag; }
   void setNotFormatFlag() { NotFormatFlag = true; }
   bool getNotFormatFlag() { return NotFormatFlag; }
   dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
@@ -166,6 +168,7 @@ private:
   Range ReplacementRange;
   std::string ReplacementText;
 #ifdef INTEL_CUSTOMIZATION
+  bool BlockLevelFormatFlag = false;
   bool NotFormatFlag = false;
   // Record the __constant__ variable is used in host, device or hostdevice
   dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;

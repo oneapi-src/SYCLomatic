@@ -3459,3 +3459,37 @@ __device__ void foo() {
   ret = pow(d_initvalu_36, fp(1.6));
 }
 
+// CHECK: template <typename... T>
+// CHECK-NEXT: static void log(T... o)
+// CHECK-NEXT: {
+// CHECK-NEXT:   std::cout << "log" << std::endl;
+// CHECK-NEXT: }
+template <typename... T>
+static void log(T... o)
+{
+  std::cout << "log" << std::endl;
+}
+
+// CHECK: template <typename... T>
+// CHECK-NEXT: void log_log(bool cond, T... o)
+// CHECK-NEXT: {
+// CHECK-NEXT:   if (cond)
+// CHECK-NEXT:   {
+// CHECK-NEXT:     log(o...);
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+template <typename... T>
+void log_log(bool cond, T... o)
+{
+  if (cond)
+  {
+    log(o...);
+  }
+}
+
+// CHECK: int test_log() {
+// CHECK-NEXT:   log_log(true, "MJ", "23");
+// CHECK-NEXT: }
+int test_log() {
+  log_log(true, "MJ", "23");
+}

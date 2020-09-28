@@ -50,7 +50,7 @@ class IncludesCallbacks : public PPCallbacks {
   SourceManager &SM;
 
   std::unordered_set<std::string> SeenFiles;
-  bool DpstdHeaderInserted;
+  bool DplHeaderInserted;
   ASTTraversalManager &ATM;
   bool IsFileInCmd = true;
 
@@ -59,7 +59,7 @@ public:
                     IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
                     ASTTraversalManager &ATM)
       : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        DpstdHeaderInserted(false), ATM(ATM) {}
+        DplHeaderInserted(false), ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,
@@ -224,7 +224,7 @@ protected:
     auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
       auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
-        SM.getCharacterData(SM.getImmediateSpellingLoc(SL)));
+          getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch != dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInRoot){
           SL = ItMatch->second->NameTokenLoc;
@@ -406,10 +406,17 @@ protected:
   }
   void insertAroundRange(const SourceLocation &PrefixSL,
                          const SourceLocation &SuffixSL, std::string &&Prefix,
-                         std::string &&Suffix) {
+                         std::string &&Suffix,
+                         bool BlockLevelFormatFlag = false) {
     auto P = incPairID();
-    emplaceTransformation(new InsertText(PrefixSL, std::move(Prefix), P));
-    emplaceTransformation(new InsertText(SuffixSL, std::move(Suffix), P));
+    auto PIT = new InsertText(PrefixSL, std::move(Prefix), P);
+    auto SIT = new InsertText(SuffixSL, std::move(Suffix), P);
+    if (BlockLevelFormatFlag) {
+      PIT->setBlockLevelFormatFlag();
+      SIT->setBlockLevelFormatFlag();
+    }
+    emplaceTransformation(std::move(PIT));
+    emplaceTransformation(std::move(SIT));
   }
 };
 
@@ -456,8 +463,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
-
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
@@ -475,6 +480,9 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
+                           const CallExpr *C,
+                           const UnresolvedLookupExpr *ULExpr = NULL);
 };
 
 /// Migration rule for thrust constructor expressions
@@ -793,8 +801,9 @@ public:
         else
           InsertStr = PrefixInsertStr + CallExprReplStr + ";" +
                       SuffixInsertStr + getNL() + IndentStr;
-        emplaceTransformation(
-            new InsertText(OuterInsertLoc, std::move(InsertStr)));
+        auto IT = new InsertText(OuterInsertLoc, std::move(InsertStr));
+        IT->setBlockLevelFormatFlag();
+        emplaceTransformation(std::move(IT));
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
                OriginStmtType == "if" ? "an " + OriginStmtType
                                       : "a " + OriginStmtType);
@@ -811,13 +820,13 @@ public:
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
               std::string(";") + SuffixInsertStr + getNL() + IndentStr +
-                  "return 0;" + getNL() + IndentStr + std::string("}()"));
+                  "return 0;" + getNL() + IndentStr + std::string("}()"), true);
         } else {
           insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                             std::string("[&](){") + getNL() + IndentStr +
                                 PrefixInsertStr,
                             std::string(";") + SuffixInsertStr + getNL() +
-                                IndentStr + std::string("}()"));
+                                IndentStr + std::string("}()"), true);
         }
         if (IsHelperFunction)
           emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
@@ -834,11 +843,11 @@ public:
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
               std::string("{") + getNL() + IndentStr + PrefixInsertStr,
-              SuffixInsertStr + getNL() + IndentStr + std::string("}"));
+              SuffixInsertStr + getNL() + IndentStr + std::string("}"), true);
         else
           insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                             std::move(PrefixInsertStr),
-                            std::move(SuffixInsertStr));
+                            std::move(SuffixInsertStr), true);
       }
       if (IsHelperFunction)
         emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
@@ -1117,6 +1126,7 @@ private:
   void aggregateArgsToCtor(const CallExpr *C, const std::string &ClassName,
                            size_t StartArgIndex, size_t EndArgIndex,
                            const std::string &PaddingArgs, SourceManager &SM);
+  std::string getFinalCastTypeNameStr(std::string CastTypeName);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
     if (C->getNumArgs() > ArgIndex) {
       if (needExtraParens(C->getArg(ArgIndex)))
@@ -1282,18 +1292,29 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class TextureMemberSetRule : public NamedMigrationRule<TextureMemberSetRule> {
+public:
+  TextureMemberSetRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void removeRange(SourceRange R);
+};
+
 /// Texture migration rule
 class TextureRule : public NamedMigrationRule<TextureRule> {
   // Get the binary operator if E is lhs of an assign experssion.
-  const BinaryOperator *getAssignedBO(const Expr *E, ASTContext &Context);
-  const BinaryOperator *getParentAsAssignedBO(const Expr *E,
+  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
+  const Expr *getParentAsAssignedBO(const Expr *E,
                                               ASTContext &Context);
-  void replaceResourceDataExpr(const MemberExpr *ME, const ASTContext &Context);
+  bool removeExtraMemberAccess(const MemberExpr *ME);
+  void replaceNormalizedCoord(const MemberExpr *, const Expr *);
+  void replaceTextureMember(const MemberExpr *ME, ASTContext &Context,
+                            SourceManager &SM);
+  void replaceResourceDataExpr(const MemberExpr *ME, ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
-    return DpctGlobalInfo::findAncestor<MemberExpr>(S);
+    return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
-  static MapNames::MapTy LinearResourceTypeNames;
-  static MapNames::MapTy Pitched2DResourceTypeNames;
+  static MapNames::MapTy ResourceTypeNames;
 
 public:
   TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -1301,6 +1322,8 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
   static const MapNames::MapTy TextureMemberNames;
+private:
+  bool processTexVarDeclInDevice(const VarDecl *VD);
 };
 
 template <typename T> class RuleRegister {

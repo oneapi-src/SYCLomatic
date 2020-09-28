@@ -58,6 +58,7 @@ std::function<FormatRange()> formatRangeGetter = nullptr;
 void setFormatRangeGetterHandler(std::function<FormatRange()> Getter) {
   formatRangeGetter = Getter;
 }
+bool BlockLevelFormatFlag = false;
 } // namespace format
 } // namespace clang
 #endif

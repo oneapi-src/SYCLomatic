@@ -3,9 +3,7 @@
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
-// CHECK: #include <mkl_blas_sycl.hpp>
-// CHECK-NEXT: #include <mkl_lapack_sycl.hpp>
-// CHECK-NEXT: #include <mkl_sycl_types.hpp>
+// CHECK: #include <oneapi/mkl.hpp>
 // CHECK: #include <complex>
 #include <cstdio>
 #include <cublas.h>
@@ -104,15 +102,15 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0);
-  // CHECK-NEXT: dpct::dpct_malloc((void **)&d_A, (n)*(elemSize));
+  // CHECK-NEXT: status = (d_A = (float *)dpct::dpct_malloc((n)*(elemSize)), 0);
+  // CHECK-NEXT: d_A = (float *)dpct::dpct_malloc((n)*(elemSize));
   status = cublasAlloc(n, elemSize, (void **)&d_A);
   cublasAlloc(n, elemSize, (void **)&d_A);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: foo2((dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0));
+  // CHECK-NEXT: foo2((d_A = (float *)dpct::dpct_malloc((n)*(elemSize)), 0));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
   // CHECK: /*

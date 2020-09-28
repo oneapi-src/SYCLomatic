@@ -119,35 +119,38 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusparseMatrixType_t", "int"},
       {"cusparseOperation_t", "oneapi::mkl::transpose"},
       {"cusparseSolveAnalysisInfo_t", "int"},
-      {"thrust::device_ptr", "dpct::device_ptr"},
+      {"thrust::device_ptr", "dpct::device_pointer"},
       {"thrust::device_vector", "dpct::device_vector"},
-      {"thrust::device_malloc_allocator", "dpct::device_malloc_allocator"},
-      {"thrust::maximum", "dpstd::maximum"},
+      {"thrust::device_malloc_allocator", "sycl::buffer_allocator"},
+      {"thrust::maximum", "oneapi::dpl::maximum"},
       {"thrust::multiplies", "std::multiplies"},
       {"thrust::plus", "std::plus"},
-      {"thrust::seq", "dpstd::execution::seq"},
+      {"thrust::seq", "oneapi::dpl::execution::seq"},
       {"thrust::minus", "std::minus"},
       {"thrust::negate", "std::negate"},
-      {"thrust::identity", "dpstd::identity"},
+      {"thrust::identity", "oneapi::dpl::identity"},
       {"thrust::logical_or", "std::logical_or"},
       {"thrust::divides", "std::divides"},
       {"thrust::tuple", "std::tuple"},
       {"thrust::host_vector", "std::vector"},
       {"thrust::complex", "std::complex"},
-      {"thrust::counting_iterator", "dpstd::counting_iterator"},
-      {"thrust::permutation_iterator", "dpstd::permutation_iterator"},
-      {"thrust::transform_iterator", "dpstd::transform_iterator"},
+      {"thrust::counting_iterator", "oneapi::dpl::counting_iterator"},
+      {"thrust::permutation_iterator", "oneapi::dpl::permutation_iterator"},
+      {"thrust::transform_iterator", "oneapi::dpl::transform_iterator"},
       {"thrust::iterator_difference", "std::iterator_traits"},
       {"cusolverDnHandle_t", ClNamespace + "::queue*"},
       {"cusolverEigType_t", "int64_t"},
       {"cusolverEigMode_t", "oneapi::mkl::job"},
       {"cusolverStatus_t", "int"},
       {"cudaChannelFormatDesc", "dpct::image_channel"},
+      { "cudaChannelFormatKind", "dpct::image_channel_data_type" },
       {"cudaArray", "dpct::image_matrix"},
       {"cudaArray_t", "dpct::image_matrix_p"},
-      {"cudaTextureDesc", "dpct::image_info"},
+      {"cudaTextureDesc", "dpct::sampling_info"},
       {"cudaResourceDesc", "dpct::image_data"},
-      {"cudaTextureObject_t", "dpct::image_base_p"},
+      {"cudaTextureObject_t", "dpct::image_wrapper_base_p"},
+      {"cudaTextureAddressMode", getClNamespace() + "::addressing_mode"},
+      {"cudaTextureFilterMode", getClNamespace() + "::filtering_mode"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
       {"cusparseStatus_t", "int"},
@@ -190,13 +193,13 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaFilterModePoint", ClNamespace + "::filtering_mode::nearest"},
     {"cudaFilterModeLinear", ClNamespace + "::filtering_mode::linear"},
     // enum Channel Format Kind
-    {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
-    {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
-    {"cudaChannelFormatKindFloat", "dpct::channel_float"},
+    {"cudaChannelFormatKindSigned", "dpct::image_channel_data_type::signed_int"},
+    {"cudaChannelFormatKindUnsigned", "dpct::image_channel_data_type::unsigned_int"},
+    {"cudaChannelFormatKindFloat", "dpct::image_channel_data_type::fp"},
     // enum Resource Type
-    {"cudaResourceTypeArray", "dpct::data_matrix"},
-    {"cudaResourceTypeLinear", "dpct::data_linear"},
-    {"cudaResourceTypePitch2D", "dpct::data_pitch"},
+    {"cudaResourceTypeArray", "dpct::image_data_type::matrix"},
+    {"cudaResourceTypeLinear", "dpct::image_data_type::linear"},
+    {"cudaResourceTypePitch2D", "dpct::image_data_type::pitch"},
     // ...
   };
 
@@ -2920,8 +2923,7 @@ const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
     };
 
 // Atomic function names mapping
-const std::unordered_map<std::string, std::string>
-    AtomicFunctionRule::AtomicFuncNamesMap{
+const std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap{
         {"atomicAdd", "dpct::atomic_fetch_add"},
         {"atomicSub", "dpct::atomic_fetch_sub"},
         {"atomicAnd", "dpct::atomic_fetch_and"},
@@ -2940,8 +2942,8 @@ const MapNames::MapTy MapNames::Dim3MemberNamesMap{
 };
 
 const MapNames::MapTy MapNames::MacrosMap{
-    {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
-    {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"},      /**/
+    {"__CUDA_ARCH__", "DPCT_COMPATIBILITY_TEMP"}, /**/
+    {"__NVCC__", "DPCT_COMPATIBILITY_TEMP"},      /**/
     {"__CUDACC__", "CL_SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
@@ -2968,10 +2970,10 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
-    {"addressMode", "addr_mode"},
-    {"filterMode", "filter_mode"},
-    {"normalized", "coord_normalized"},
-    {"normalizedCoords", "coord_normalized"},
+    {"addressMode", "addressing_mode"},
+    {"filterMode", "filtering_mode"},
+    {"normalized", "coordinate_normalization_mode"},
+    {"normalizedCoords", "coordinate_normalization_mode"},
     {"channelDesc", "channel"}};
 
 // DeviceProp names mapping.
@@ -3071,14 +3073,10 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   return AllAPINames;
 }
 
-MapNames::MapTy TextureRule::Pitched2DResourceTypeNames{
-    {"devPtr", "data"},
-    {"desc", "chn"},
-    {"width", "x"},
-    {"height", "y"},
-    {"pitchInBytes", "pitch"}};
-MapNames::MapTy TextureRule::LinearResourceTypeNames{
-    {"devPtr", "data"}, {"sizeInBytes", "x"}, {"desc", "chn"}};
+MapNames::MapTy TextureRule::ResourceTypeNames{
+    {"devPtr", "data_ptr"},  {"desc", "channel"}, {"array", "data_ptr"},
+    {"width", "xsize"},      {"height", "ysize"}, {"pitchInBytes", "pitch"},
+    {"sizeInBytes", "xsize"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data"}, {"xsize", "x"}, {"ysize", "y"}};

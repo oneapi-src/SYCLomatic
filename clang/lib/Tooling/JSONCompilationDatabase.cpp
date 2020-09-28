@@ -378,6 +378,7 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
       }
       if (KeyValue == "directory") {
         Directory = ValueString;
+#ifndef INTEL_CUSTOMIZATION
       } else if (KeyValue == "arguments") {
         Command = std::vector<llvm::yaml::ScalarNode *>();
         for (auto &Argument : *SequenceString) {
@@ -388,13 +389,20 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           }
           Command->push_back(Scalar);
         }
+#endif
       } else if (KeyValue == "command") {
+#ifdef INTEL_CUSTOMIZATION
+        Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#else
         if (!Command)
           Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#endif
       } else if (KeyValue == "file") {
         File = ValueString;
+#ifndef INTEL_CUSTOMIZATION
       } else if (KeyValue == "output") {
         Output = ValueString;
+#endif
       } else {
         ErrorMessage = ("Unknown key: \"" +
                         KeyString->getRawValue() + "\"").str();

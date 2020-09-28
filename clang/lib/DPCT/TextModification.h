@@ -188,12 +188,26 @@ public:
   void setNewHostVarName(std::string N) { NewHostVarName = N; }
   void setIgnoreTM(bool Flag = true) { IgnoreTM = Flag; }
   bool isIgnoreTM() const { return IgnoreTM; }
+  bool getNotFormatFlag() const { return NotFormatFlag; }
+
+  // BlockLevelFormatFlag is used to decide which replacement need to be format
+  // second time.
+  // Each replacement should be processed by the first formatting (except the
+  // NotFormatFlag is ture). But because each line's indent is kept as same as
+  // the original code's indent, if the migration is one line => multi lines,
+  // the indent may be strange. So we do a second time format for these replacement,
+  // using unified IndentWidth to do the format.
+  // Currently, the replacement need second format are: kernel calls, warnings
+  // and some library APIs migraion.
+  void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
+  bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
 
 private:
   const TMID ID;
   Group Key;
   const char *ParentRuleID;
   unsigned PairID = 0;
+  bool BlockLevelFormatFlag = false;
   //below members are used for process __constant__ macro used in host and device
   unsigned int LineBeginOffset = 0;
   bool IgnoreTM = false;
@@ -201,6 +215,9 @@ private:
   unsigned int ConstantOffset = 0;
   std::string InitStr = "";
   std::string NewHostVarName = "";
+
+protected:
+  bool NotFormatFlag = false;
 };
 
 /// Insert string in given position.
@@ -635,29 +652,31 @@ class ReplaceText : public TextModification {
   // If ReplaceText replaces calls to compatibility APIs
   bool IsReplaceCompatibilityAPI;
   std::string OrigAPIName;
-  bool NotFormatFlag = false;
 
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName(""),
-        NotFormatFlag(false) {}
+        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {
+    this->NotFormatFlag = false;
+  }
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool NotFormatFlag)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName(""),
-        NotFormatFlag(NotFormatFlag) {}
+        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {
+    this->NotFormatFlag = NotFormatFlag;
+  }
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool IsReplaceCompatibilityAPI, std::string OrigAPIName)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)), IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName), NotFormatFlag(false) {}
+        OrigAPIName(OrigAPIName) {
+    this->NotFormatFlag = false;
+  }
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
-  bool getNotFormatFlag() const { return NotFormatFlag; }
 };
 
 } // namespace dpct

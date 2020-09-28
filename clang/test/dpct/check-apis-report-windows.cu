@@ -4,6 +4,11 @@
 // RUN: cat %T/check_apis_report.apis.csv >>%T/check_apis_report_csv_check_windows.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check_apis_report_csv_check_windows.txt %T/check_apis_report_csv_check_windows.txt
 
+// RUN: dpct  -output-file=output_file_all_windows.txt -report-type=apis -report-file-prefix=stdout -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: cat %S/check-apis-report_outputfile_ref_all_windows.txt > %T/check_output_file_all_windows.txt
+// RUN: cat %T/output_file_all_windows.txt >>%T/check_output_file_all_windows.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_output_file_all_windows.txt %T/check_output_file_all_windows.txt
+
 // RUN: dpct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_log_ref_windows.txt > %T/check_apis_report_check_windows.txt
 // RUN: cat %T/report.apis.log >>%T/check_apis_report_check_windows.txt

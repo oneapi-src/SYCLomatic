@@ -105,6 +105,8 @@ private:
         (First->getReplacementText() + Second->getReplacementText()).str(),
         nullptr);
     R->mergeConstantInfo(First);
+    if (First->getBlockLevelFormatFlag() || Second->getBlockLevelFormatFlag())
+      R->setBlockLevelFormatFlag();
     return R;
   }
   std::shared_ptr<ExtReplacement>

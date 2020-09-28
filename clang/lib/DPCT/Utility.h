@@ -219,7 +219,8 @@ int getCurrnetColumn(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
-clang::SourceRange getStmtSourceRange(const clang::Stmt *S);
+clang::SourceRange getStmtExpansionSourceRange(const clang::Stmt *S);
+clang::SourceRange getStmtSpellingSourceRange(const clang::Stmt *S);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);
@@ -376,8 +377,12 @@ bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
                   const clang::SourceManager &SM, bool &Invalid);
 clang::SourceRange getFunctionRange(const clang::CallExpr *CE);
 std::vector<clang::tooling::Range>
-calculateRangesWithFormatFlag(
+calculateRangesWithFormatFlag(const clang::tooling::Replacements &Replaces);
+std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Replaces);
+std::vector<clang::tooling::Range>
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
 
@@ -431,4 +436,10 @@ bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::SourceLocation Loc);
 bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::StringRef FilePath, size_t Offset);
+unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
+                                  clang::SourceLocation SL, bool &Flag);
+bool isIncludedFile(const std::string &CurrentFile,
+                    const std::string &CheckingFile);
+clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
+std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
 #endif // DPCT_UTILITY_H

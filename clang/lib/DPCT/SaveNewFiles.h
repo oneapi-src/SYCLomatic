@@ -66,6 +66,7 @@ enum ProcessStatus {
   MigrationErrorNoFileTypeAvail = -27,
   MigrationErrorInRootContainSDKFolder = -28,
   MigrationErrorCannotAccessDirInDatabase = -29,
+  MigrationErrorInconsistentFileInDatabase = -30,
 };
 
 /// Apply all generated replacements, and immediately save the results to

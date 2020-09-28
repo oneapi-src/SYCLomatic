@@ -44,15 +44,15 @@ SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager   *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
-std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
-std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
-std::map<MacroInfo *, bool> DpctGlobalInfo::MacroDefines;
+std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
@@ -61,6 +61,7 @@ std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
 unsigned int DpctGlobalInfo::IndentWidth = 0;
+std::map<unsigned int, unsigned int> DpctGlobalInfo::KCIndentWidthMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
@@ -206,6 +207,13 @@ void DpctFileInfo::buildReplacements() {
                                Diagnostics::UNSUPPORT_MATRIX_TYPE, true);
     }
   }
+
+  for (auto &AtomicInfo : AtomicMap) {
+    if (std::get<2>(AtomicInfo.second))
+      DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
+                               Diagnostics::API_NOT_OCCURRED_IN_AST, true,
+                               std::get<1>(AtomicInfo.second));
+  }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
@@ -284,7 +292,6 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       !LocalReversed && !ExecutionConfig.LocalDirectRef;
   ExecutionConfig.DeclGroupRange =
       LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
-  ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -348,7 +355,7 @@ void KernelCallExpr::addAccessorDecl() {
         Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::UNDEDUCED_TYPE, true,
-                                 "image_accessor");
+                                 "image_accessor_ext");
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
       SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
@@ -360,30 +367,6 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
   for (auto &VI : getVarMap().getMap(Scope)) {
     addAccessorDecl(VI.second);
   }
-}
-
-bool KernelCallExpr::isIncludedFile(const std::string &CurrentFile,
-                                    const std::string &CheckingFile) {
-  auto CurrentFileInfo = DpctGlobalInfo::getInstance().insertFile(CurrentFile);
-  auto CheckingFileInfo =
-      DpctGlobalInfo::getInstance().insertFile(CheckingFile);
-
-  std::deque<std::shared_ptr<DpctFileInfo>> Q(
-      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
-      CurrentFileInfo->getIncludedFilesInfoSet().end());
-
-  while (!Q.empty()) {
-    if (Q.front() == nullptr) {
-      continue;
-    } else if (Q.front() == CheckingFileInfo) {
-      return true;
-    } else {
-      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
-               Q.front()->getIncludedFilesInfoSet().end());
-      Q.pop_front();
-    }
-  }
-  return false;
 }
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
@@ -566,7 +549,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer.line(
         "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
         LocInfo.LocHash,
-        (hasWrittenTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
+        (hasTemplateArgs() ? (", " + getTemplateArguments(false, true)) : ""),
         ">>(");
   } else {
     Printer.line("cgh.parallel_for(");
@@ -578,9 +561,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   static std::string CanIgnoreRangeStr =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
       "(1, 1, 1)";
-  if (ExecutionConfig.DeclGlobalRange) {
-    Printer << "dpct_global_range";
-  } else if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
+  if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
     Printer << ExecutionConfig.LocalSize;
   } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr) {
     Printer << ExecutionConfig.GroupSize;
@@ -693,8 +674,10 @@ void KernelCallExpr::buildInfo() {
     DiagnosticsUtils::report(getFilePath(), getBegin(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true);
   // TODO: Output debug info.
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      getFilePath(), getBegin(), 0, getReplacement(), nullptr));
+  auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
+                                            getReplacement(), nullptr);
+  R->setBlockLevelFormatFlag();
+  DpctGlobalInfo::getInstance().addReplacement(R);
 }
 
 void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
@@ -722,7 +705,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   calleeSpelling = SM.getSpellingLoc(calleeSpelling);
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(calleeSpelling));
+    getCombinedStrFromLoc(calleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
   }
@@ -1100,6 +1083,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   for (auto CalleeNamespace : CalleeNamespaceSeq) {
     if (FDNamespaceSeq.empty())
       break;
+
     if (CalleeNamespace == *FDIter) {
       FDIter++;
       FDNamespaceSeq.pop_front();
@@ -1110,6 +1094,10 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
   std::string Result;
   for (auto I : FDNamespaceSeq) {
+    // If I is empty, it means this namespace is an unnamed namespace. So its
+    // members have internal linkage. So just remove it.
+    if (I.empty())
+      continue;
     Result = Result + I + "::";
   }
 
@@ -1241,6 +1229,27 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 
+std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
+    unsigned ArgIdx, const ArraySubscriptExpr *TexRef, bool isKernelCall) {
+  if (TextureObjectInfo::isTextureObject(TexRef)) {
+    if (auto Base =
+            dyn_cast<DeclRefExpr>(TexRef->getBase()->IgnoreImpCasts())) {
+      if (isKernelCall) {
+        if (auto VD = dyn_cast<VarDecl>(Base->getDecl())) {
+          return addTextureObjectArgInfo(
+              ArgIdx, std::make_shared<TextureObjectInfo>(
+                          VD, ExprAnalysis::ref(TexRef->getIdx())));
+        }
+      } else if (auto PVD = dyn_cast<ParmVarDecl>(Base->getDecl())) {
+        return addTextureObjectArgInfo(
+            ArgIdx, std::make_shared<TextureObjectInfo>(
+                        PVD, ExprAnalysis::ref(TexRef->getIdx())));
+      }
+    }
+  }
+  return std::shared_ptr<TextureObjectInfo>();
+}
+
 void CallFunctionExpr::mergeTextureObjectTypeInfo() {
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {
@@ -1261,9 +1270,11 @@ void CallFunctionExpr::buildInfo() {
     return;
 
   const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
-  if (!DefFilePath.empty() && DefFilePath != getFilePath()) {
+  if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
+      !isIncludedFile(getFilePath(), DefFilePath)) {
     FuncInfo->setNeedSyclExternMacro();
   }
+
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
   mergeTextureObjectTypeInfo();
@@ -1278,13 +1289,14 @@ void CallFunctionExpr::emplaceReplacement() {
                                          getExtraArguments(), nullptr));
 }
 
-std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
+std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
+                                                   bool WithScalarWrapped) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
-    if (TA.isNull() || !TA.isWritten())
+    if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
-    if (WithScalarWrapped && !TA.isType())
+    if (WithScalarWrapped && (!TA.isType() && !TA.isNull()))
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
     else
       appendString(OS, TA.getString(), ", ");
@@ -1420,7 +1432,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),
                                  Diagnostics::UNDEDUCED_TYPE, true,
-                                 "image_accessor");
+                                 "image_accessor_ext");
       }
       Obj->addParamDeclReplacement();
     }
@@ -1910,7 +1922,7 @@ MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = "dpct::device_memory";
+    static std::string DeviceMemory = "dpct::global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
@@ -1977,6 +1989,40 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
+                                             StmtList &AccList, StmtList &PtrList){
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  if (isShared()) {
+    auto Dimension = getType()->getDimension();
+    OS << MapNames::getClNamespace() + "::accessor<"
+       << getAccessorDataType() << ", " << Dimension
+       << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
+          MapNames::getClNamespace() + "::access::target::local> "
+       << getAccessorName() << "(";
+    if (Dimension > 1) {
+      OS << getRangeName() << ", ";
+    } else if (Dimension == 1) {
+      OS << getRangeClass()
+         << getType()->getRangeArgument(ExternMemSize, false) << ", ";
+    }
+    OS << "cgh);";
+    StmtWithWarning AccDecl(OS.str());
+    if(Dimension > 3) {
+      AccDecl.Warning = DiagnosticsUtils::getWarningText(Diagnostics::EXCEED_MAX_DIMENSION);
+      DiagnosticsUtils::report(getFilePath(), getOffset(), Diagnostics::EXCEED_MAX_DIMENSION, false);
+    }
+    AccList.emplace_back(std::move(AccDecl));
+  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+             AccMode != Accessor) {
+    PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
+                                     getConstVarName(), ".get_ptr();"));
+  } else {
+    AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
+                                     getConstVarName(), ".get_access(cgh);"));
+  }
+}
+
 template <class T>
 void removeDuplicateVar(GlobalMap<T> &VarMap,
                         std::unordered_set<std::string> &VarNames) {
@@ -1998,6 +2044,7 @@ void MemVarMap::removeDuplicateVar() {
   dpct::removeDuplicateVar(ExternVarMap, VarNames);
   dpct::removeDuplicateVar(TextureMap, VarNames);
 }
+
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }

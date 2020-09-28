@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call.dp.cpp --match-full-lines %s
 
@@ -76,10 +76,8 @@ void testReference(const int &i) {
   // CHECK-NEXT:  */
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
   // CHECK-NEXT:         });
@@ -102,14 +100,12 @@ struct TestThis {
     // CHECK-NEXT:  */
     // CHECK-NEXT:  dpct::get_default_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-    // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-    // CHECK-EMPTY:
     // CHECK-NEXT:       auto args_arg1_ct0 = args.arg1;
     // CHECK-NEXT:       auto args_arg2_ct1 = args.arg2;
     // CHECK-NEXT:       auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-    // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
+    // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
     // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           testKernel(args_arg1_ct0, args_arg2_ct1, item_ct1, arg3_ct2);
     // CHECK-NEXT:         });
@@ -142,10 +138,8 @@ int main() {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
@@ -365,10 +359,8 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          auto dpct_global_range = c * d;
-//CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(dpct_global_range, d),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(c * d, d),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -410,10 +402,8 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          auto dpct_global_range = c * d;
-//CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(dpct_global_range, d),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(c * d, d),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
 //CHECK-NEXT:              foo_kernel3(g_a_ct0);
@@ -839,4 +829,38 @@ template<typename TT>
 void foo2() {
   TT a;
   k12<TT><<<1,1>>>(a);
+}
+
+__global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){}
+int run_foo12() {
+  static int aa;
+  static int *bb;
+  static const int cc = 0;
+  static constexpr int dd = 0;
+
+  const int ci = 1;
+  int i = 2;
+
+  static const int ee = ci;
+  static constexpr int ff = ci;
+  static const int gg = i;
+  //CHECK:{
+  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> bb_buf_ct1 = dpct::get_buffer_and_offset(bb);
+  //CHECK-NEXT:  size_t bb_offset_ct1 = bb_buf_ct1.second;
+  //CHECK-NEXT:  dpct::get_default_queue().submit(
+  //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+  //CHECK-NEXT:      auto bb_acc_ct1 = bb_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-EMPTY:
+  //CHECK-NEXT:      auto aa_ct0 = aa;
+  //CHECK-NEXT:      auto gg_ct6 = gg;
+  //CHECK-EMPTY:
+  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:          int *bb_ct1 = (int *)(&bb_acc_ct1[0] + bb_offset_ct1);
+  //CHECK-NEXT:          my_kernel4(aa_ct0, bb_ct1, cc, dd, ee, ff, gg_ct6);
+  //CHECK-NEXT:        });
+  //CHECK-NEXT:    });
+  //CHECK-NEXT:}
+  my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }

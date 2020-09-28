@@ -47,9 +47,9 @@ void foo() {
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
   cudaMalloc((void **)&d_A, sizeof(d_A[0]));
   
-  // CHECK: dpct::dpct_malloc((void **)&d_A, &size, size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
-  // CHECK: dpct::dpct_malloc(&p_A, e);
+  // CHECK: p_A = dpct::dpct_malloc(e);
   cudaMalloc3D(&p_A, e);
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);

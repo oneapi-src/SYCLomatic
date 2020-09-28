@@ -34,7 +34,7 @@ void foo(int *data, int x, int y) {
   // CHECK: dpct::pitched_data p3;
   cudaPitchedPtr p3;
   
-  // CHECK: (dpct::dpct_malloc(&p3, sycl::range<3>(x, y, 1)), 0);
+  // CHECK: (p3 = dpct::dpct_malloc(sycl::range<3>(x, y, 1)), 0);
   cudaMalloc3D(&p3, make_cudaExtent(x, y, 1));
 
   // CHECK: p2_from_data_ct1 = dpct::pitched_data(data, x, x, y);

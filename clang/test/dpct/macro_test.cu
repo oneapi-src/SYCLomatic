@@ -61,9 +61,9 @@ void foo() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   DDD d3;
 
-// CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP
+// CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 #ifdef __CUDA_ARCH__
-  // CHECK: int CA = DPCPP_COMPATIBILITY_TEMP;
+  // CHECK: int CA = DPCT_COMPATIBILITY_TEMP;
   int CA = __CUDA_ARCH__;
 #endif
 
@@ -85,8 +85,7 @@ void foo() {
   //CHECK-NEXT: macro.
   //CHECK-NEXT: */
   //CHECK-NEXT: CALL((q_ct1.submit([&](sycl::handler &cgh) {
-  //CHECK-NEXT:   auto dpct_global_range = x * x;
-  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, x),
+  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(x * x, x),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:         foo_kernel();
   //CHECK-NEXT:       });
@@ -96,9 +95,10 @@ void foo() {
   //CHECK: #define AA 3
   //CHECK-NEXT: #define MCALL                                                                  \
   //CHECK-NEXT: q_ct1.submit([&](sycl::handler &cgh) {                                       \
-  //CHECK-NEXT:   cgh.parallel_for(                                                          \
-  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * 2 * AA, 2 * AA),           \
-  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });                     \
+  //CHECK-NEXT:   cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *               \
+  //CHECK-NEXT:                                          sycl::range<3>(1, 1, 2 * AA),       \
+  //CHECK-NEXT:                                      sycl::range<3>(1, 1, 2 * AA)),          \
+  //CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });        \
   //CHECK-NEXT: });
   //CHECK-NEXT: MCALL
   #define AA 3
@@ -212,14 +212,12 @@ double cosine = cos(2 * PI);
 MACRO_KC
 
 
-//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
+//CHECK: #define HARD_KC(NAME, a, b, c, d)                                                   \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
-//CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                              \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 //CHECK-NEXT:   /*
@@ -234,12 +232,10 @@ HARD_KC(foo3,3,2,1,0)
 
 //CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
-//CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(dpct_global_range, b),                  \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                  \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 #define MACRO_KC2(a,b,c,d) foo3<<<a, b, 0>>>(c,d);
@@ -582,8 +578,8 @@ __global__ void foo11(){
 }
 
 //CHECK: /*
-//CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 will be migrated to the corresponding
-//CHECK-NEXT: fundmental types which cannot be inherited. You may need to rewrite the code.
+//CHECK-NEXT: DPCT1055:{{[0-9]+}}: Vector types with size 1 are migrated to the corresponding
+//CHECK-NEXT: fundamental types, which cannot be inherited. You need to rewrite the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define VECTOR_TYPE_DEF(type)                                                  \
 //CHECK-NEXT:                                                                                \
@@ -654,3 +650,35 @@ __global__ void foo11(){
     };
 
 VECTOR_TYPE_DEF(int)
+
+//CHECK: typedef float real;
+//CHECK-NEXT: #define POW(x, y) sycl::pow(x, y)
+//CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
+//CHECK-NEXT: void foo12(){
+//CHECK-NEXT: real *vx;
+//CHECK-NEXT: real *vy;
+//CHECK-NEXT: int id;
+//CHECK-NEXT: real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+//CHECK-NEXT: }
+typedef float real;
+#define POW(x,y)    powf(x,y)
+#define SQRT(x)     sqrtf(x)
+__global__ void foo12(){
+real *vx;
+real *vy;
+int id;
+real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+}
+
+//CHECK: #define CALL(call) call;
+//CHECK-NEXT: #define SIZE 8
+//CHECK-NEXT: void foo13(){
+//CHECK-NEXT:   int *a;
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, dpct::get_default_queue()));
+//CHECK-NEXT: }
+#define CALL(call) call;
+#define SIZE 8
+void foo13(){
+  int *a;
+  CALL(cudaMalloc(&a, SIZE * 10 * sizeof(int)));
+}

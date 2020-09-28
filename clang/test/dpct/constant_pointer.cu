@@ -1,9 +1,9 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer.dp.cpp
 
-// CHECK: static dpct::device_memory<int, 1> schsfirst;
+// CHECK: static dpct::global_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: static dpct::device_memory<sycl::double2, 1> zm;
+// CHECK: static dpct::global_memory<sycl::double2, 1> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;

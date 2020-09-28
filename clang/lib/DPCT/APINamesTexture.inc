@@ -8,8 +8,12 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_TEMPLATED("cudaCreateChannelDesc", "dpct::create_image_channel")
-ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<" + MapNames::getClNamespace() + "::cl_half>")
+CONDITIONAL_FACTORY_ENTRY(
+    [](const CallExpr *C) -> bool { return C->getNumArgs(); },
+    ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::image_channel"),
+    ENTRY_TEMPLATED("cudaCreateChannelDesc",
+                    TEMPLATED_CALLEE("dpct::image_channel::create", {0})))
+ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::image_channel::create<" + MapNames::getClNamespace() + "::cl_half>")
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 	POINTER_CHECKER(0),
@@ -23,7 +27,7 @@ ASSIGNABLE_FACTORY(
                          MEMBER_CALL(ARG(1), true, "get_data")))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc",
                                         DEREF(0),
-                                        MEMBER_CALL(ARG(1), true, "get_info")))
+                                        MEMBER_CALL(ARG(1), true, "get_sampling_info")))
 
 ENTRY_TEXTURE("tex1D", 0x01, 1)
 ENTRY_TEXTURE("tex2D", 0x02, 1, 2)
@@ -39,11 +43,9 @@ ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
                               3 /*size in dimension y*/, 4 /*pitch*/))
 ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray", 0 /*start arg idx*/))
 
-ASSIGNABLE_FACTORY(ENTRY_REORDER("cudaCreateTextureObject",
-                                 "dpct::create_image",
-                                 0 /*ref of texture object*/,
-                                 1 /*ref of data desc*/,
-                                 2 /*ref of info desc*/))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
+                                        CALL("dpct::create_image_wrapper", DEREF(1),
+                                             DEREF(2))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::NOTSUPPORTED)

@@ -114,8 +114,14 @@ public:
   ///
   /// Looks for a compilation database in all parent paths of file 'SourceFile'
   /// by calling loadFromDirectory.
+#ifdef INTEL_CUSTOMIZATION
+  static std::unique_ptr<CompilationDatabase>
+  autoDetectFromSource(StringRef SourceFile, std::string &ErrorMessage,
+                       std::string &CompilationDatabaseDir);
+#else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromSource(StringRef SourceFile, std::string &ErrorMessage);
+#endif
 
   /// Tries to detect a compilation database location and load it.
   ///
@@ -124,7 +130,8 @@ public:
 #ifdef INTEL_CUSTOMIZATION
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage,
-                          DatabaseStatus &ErrCode);
+                          DatabaseStatus &ErrCode,
+                          std::string &CompilationDatabaseDir);
 #else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage);

@@ -61,10 +61,8 @@ void runTest() {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           const T *karg2_ct1 = (const T *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
@@ -87,10 +85,8 @@ void runTest() {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg3_acc_ct1 = karg3_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           T *karg3_ct1 = (T *)(&karg3_acc_ct1[0] + karg3_offset_ct1);
@@ -113,10 +109,8 @@ void runTest() {
   // CHECK-NEXT:       auto karg4_acc_ct0 = karg4_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg5_acc_ct1 = karg5_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const TestTemplate<T> *karg4_ct0 = (const TestTemplate<T> *)(&karg4_acc_ct0[0] + karg4_offset_ct0);
   // CHECK-NEXT:           TT *karg5_ct1 = (TT *)(&karg5_acc_ct1[0] + karg5_offset_ct1);
@@ -132,12 +126,10 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel<T>(karg1T, karg2T, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
@@ -152,12 +144,10 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
@@ -169,12 +159,10 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel<TT>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
@@ -203,10 +191,8 @@ int main() {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
-  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(dpct_global_range, threaddim),
+  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           const LA *karg1_ct0 = (const LA *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           const LA *karg2_ct1 = (const LA *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
@@ -258,7 +244,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0), cgh);
 // CHECK-NEXT:      sycl::accessor<double, 2, sycl::access::mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), dpct::accessor<double, dpct::local, 2>(bbb_acc_ct1, bbb_range_ct1));
@@ -315,16 +301,16 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, size), sycl::range<3>(0, 0, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo1(Image<T> &ptr, T value) {
-  my_kernel<T><<<8, size, 0, ptr.s>>>(ptr.dPtr);
+  my_kernel<<<8, size, 0, ptr.s>>>(ptr.dPtr);
 }
 
 // CHECK:template <typename T, int size>
@@ -334,14 +320,14 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo2(Image<T> &ptr, T value) {
-  my_kernel<T><<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
+  my_kernel<<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
 }

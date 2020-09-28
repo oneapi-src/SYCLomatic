@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   float *d_array;
   float h_array[360];
 
-  // CHECK: dpct::dpct_malloc((void **)&d_array, sizeof(float) * size);
+  // CHECK: d_array = (float *)dpct::dpct_malloc(sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was replaced with 0, because DPC++ currently does not support setting cache config on devices.

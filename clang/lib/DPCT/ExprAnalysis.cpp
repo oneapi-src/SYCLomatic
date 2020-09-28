@@ -121,7 +121,6 @@ std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const
   SourceLocation SpellingBeginLoc, SpellingEndLoc;
   SpellingBeginLoc = SM.getSpellingLoc(E->getBeginLoc());
   SpellingEndLoc = SM.getSpellingLoc(E->getEndLoc());
-
   // Both Begin/End are not macro
   // or
   // SpellingBeginLoc and SpellingEndLoc are in the same macro define
@@ -133,16 +132,16 @@ std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const
                               SM.getCharacterData(SpellingBeginLoc) +
                               LastTokenLength);
   }
+  // If the expr is straddle, use the stmt expansion range
+  auto ExpansionBeginLoc = getStmtExpansionSourceRange(E).getBegin();
+  auto ExpansionEndLoc = getStmtExpansionSourceRange(E).getEnd();
 
-  // If the expr is straddle, use the expansion range
-  auto ExpansionBeginLoc = SM.getExpansionLoc(E->getBeginLoc());
-  auto ExpansionEndLoc = SM.getExpansionLoc(E->getEndLoc());
   auto LastTokenLength =
-    Lexer::MeasureTokenLength(ExpansionEndLoc, SM, Context.getLangOpts());
+      Lexer::MeasureTokenLength(ExpansionEndLoc, SM, Context.getLangOpts());
   return std::pair<SourceLocation, size_t>(
-    ExpansionBeginLoc, SM.getCharacterData(ExpansionEndLoc) -
-    SM.getCharacterData(ExpansionBeginLoc) +
-    LastTokenLength);
+      ExpansionBeginLoc, SM.getCharacterData(ExpansionEndLoc) -
+                             SM.getCharacterData(ExpansionBeginLoc) +
+                             LastTokenLength);
 }
 
 
@@ -431,7 +430,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
-      addReplacement(ME->getMemberLoc(), FieldName + "()");
+      addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
@@ -618,7 +617,19 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     IsRedeclareRequired = true;
   } else if (!DRE->getDecl()->isInLocalScope()) {
     IsRedeclareRequired = true;
+  } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    bool PreviousFlag = IsRedeclareRequired;
+    if (VD->getStorageClass() == SC_Static) {
+      IsRedeclareRequired = true;
+      // exclude const variable with zero-init and const-init
+      if (VD->getType().isConstQualified()) {
+        if (VD->hasInit() && VD->checkInitIsICE()) {
+          IsRedeclareRequired = PreviousFlag;
+        }
+      }
+    }
   }
+
   // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
   // variables on device. They are migrated to objects, so need add get_ptr() by
   // setting IsDefinedOnDevice flag.
@@ -855,9 +866,21 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
       BeginCandidate =
         SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-        // Default use SpellingLoc
-        // e.g. M1(call(targetExpr))
-        BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+        // Multi-Level funclike special process
+        // e.g.
+        // #define M1(x) call1(x)
+        // #define M2(y) call2(y)
+        // M1(M2(3))
+        BeginCandidate = getStmtSpellingSourceRange(E).getBegin();
+        if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
+          if (!isExprStraddle(E)) {
+            // Default use SpellingLoc
+            // e.g. M1(call(targetExpr))
+            BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+          } else {
+            BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
+          }
+        }
       }
     }
   }
@@ -880,11 +903,21 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
         Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-        // Default use SpellingLoc
-        EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+        EndCandidate = getStmtSpellingSourceRange(E).getEnd();
         auto LastTokenLength =
           Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
         EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+        if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
+          if (!isExprStraddle(E)) {
+            // Default use SpellingLoc
+            EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+            auto LastTokenLength =
+              Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+            EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+          } else {
+            EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+          }
+        }
       }
     }
   }

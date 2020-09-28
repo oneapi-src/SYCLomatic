@@ -335,11 +335,32 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
     std::string OriginReplText = R.second->getReplacementText().str();
     std::string NewReplText;
 
-    std::regex RE("\\{\\{NEEDREPLACE[DQ][1-9][0-9]*\\}\\}");
+    std::regex RE("\\{\\{NEEDREPLACE[DQV][1-9][0-9]*\\}\\}");
     std::smatch MRes;
     if (std::regex_search(OriginReplText, MRes, RE)) {
       std::string MatchedStr = MRes.str();
       NewReplText = NewReplText + std::string(MRes.prefix());
+
+      if (MatchedStr.substr(13, 1) == "V") {
+        if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
+          NewReplText =
+              NewReplText +
+              std::to_string(
+                  *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin());
+        } else {
+          NewReplText =
+              NewReplText + "dpct_placeholder/*Fix the vec_size manually*/";
+        }
+        NewReplText = NewReplText + std::string(MRes.suffix());
+
+        auto Repl = std::make_shared<ExtReplacement>(
+            FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
+            nullptr);
+        Repl->setInsertPosition(
+            (dpct::InsertPosition)R.second->getInsertPosition());
+        R.second = Repl;
+        continue;
+      }
 
       // get the index from the placeholder string
       int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
@@ -371,9 +392,11 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
 
         // Using "NewReplText" to generate a new ExtReplacement, then replace
         // the old one in the ReplMap
-        R.second = std::make_shared<ExtReplacement>(
+        auto NewRepl = std::make_shared<ExtReplacement>(
             FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
             nullptr);
+        NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
+        R.second = NewRepl;
       }
     }
   }

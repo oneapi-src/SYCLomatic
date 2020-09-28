@@ -492,6 +492,10 @@ protected:
     return dispatch(MTE->getSubExpr());
   }
 
+  inline void analyzeExpr(const UnresolvedLookupExpr *ULE) {
+    RefString = ULE->getName().getAsString();
+  }
+
   inline void analyzeExpr(const PseudoObjectExpr *POE) {
     dispatch(POE->getResultExpr());
   }
@@ -586,7 +590,7 @@ public:
         nullptr));
   }
 
-  inline void setCallSpelling(const CallExpr* E) {
+  inline void setCallSpelling(const Expr* E) {
     auto LocInfo = getSpellingOffsetAndLength(E);
     CallSpellingBegin = LocInfo.first;
     CallSpellingEnd = CallSpellingBegin.getLocWithOffset(LocInfo.second);

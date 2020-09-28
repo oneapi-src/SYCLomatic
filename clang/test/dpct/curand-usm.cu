@@ -2,7 +2,7 @@
 //RUN: FileCheck --input-file %T/curand-usm.dp.cpp --match-full-lines %s
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
-//CHECK:#include <mkl_rng_sycl.hpp>
+//CHECK:#include <oneapi/mkl.hpp>
 #include <cuda.h>
 #include <stdio.h>
 #include <curand.h>
@@ -106,6 +106,13 @@ int main(){
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   curandGenerateUniform(rng2, d_data, 100*100);
 
+#define M 100
+#define N 200
+  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, M * N, d_data);
+  curandGenerateUniform(rng2, d_data, M * N);
+#undef M
+#undef N
+
   //CHECK:oneapi::mkl::rng::skip_ahead(*rng, 100);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -164,7 +171,7 @@ private:
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
 //CHECK-NEXT:    */
-//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32 , q_ct1);
+//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~B(){
 //CHECK-NEXT:    delete rng;

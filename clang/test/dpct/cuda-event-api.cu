@@ -13,6 +13,8 @@ void check(T result, char const *const func) {
 //CHECK: /*
 //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
 //CHECK-NEXT: */
+//CHECK-NEXT: #define CudaEvent(X)\
+
 #define CudaEvent(X)\
   cudaEventCreate(&X)
 
@@ -59,7 +61,14 @@ int main(int argc, char* argv[]) {
 
   int blocks = 32, threads = 32;
 
+  // CHECK: printf"<<<\n");
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1061:{{[0-9]+}}: Call to CudaEvent macro was removed, because it only contains code, which is unnecessary in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: printf">>>\n");
+  printf"<<<\n");
   CudaEvent(start);
+  printf">>>\n");
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.

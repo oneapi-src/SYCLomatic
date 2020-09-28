@@ -13,6 +13,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Utility.h"
+#include "Diagnostics.h"
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
@@ -115,13 +116,43 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       End = End.getLocWithOffset(-1);
     }
 
+    if (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
+      ReplacementString.empty()) {
+      // Remove the callexpr spelling in macro define if it is outermost
+      if (isOuterMostMacro(TheStmt)) {
+        auto RangeDef = getStmtSpellingSourceRange(TheStmt);
+        auto BeginDef = RangeDef.getBegin();
+        auto EndDef = RangeDef.getEnd();
+        auto CallExprLength =
+          SM.getCharacterData(EndDef) - SM.getCharacterData(BeginDef) +
+          Lexer::MeasureTokenLength(EndDef, SM, Context.getLangOpts());
+        DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
+            ReplacementString, this));
+        // Emit warning message at the Exapnasion Location
+        auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(BeginDef));
+        std::string MacroName = "";
+        if (ItMR != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          MacroName = ItMR->second->Name;
+          auto LocInfo = DpctGlobalInfo::getLocInfo(
+              SM.getExpansionLoc(TheStmt->getBeginLoc()));
+          DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                   Diagnostics::MACRO_REMOVED, true, MacroName);
+        }
+      }
+    }
+
+
     auto CallExprLength =
         SM.getCharacterData(End) - SM.getCharacterData(Begin) +
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     if (IsCleanup && ReplacementString.empty())
       return removeStmtWithCleanups(SM);
-    return std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
-                                            ReplacementString, this);
+    auto R = std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
+                                              ReplacementString, this);
+    R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    return R;
   } else {
     // When replacing a CallExpr with an empty string, also remove semicolons
     // and redundant spaces
@@ -130,8 +161,10 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
-                                            this);
+    auto R = std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                              this);
+    R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    return R;
   }
 }
 
@@ -395,6 +428,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
       // true means [Begin, End]
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
   R->setPairID(PairID);
+  R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   return R;
 }
 
@@ -673,7 +707,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
          OrigIndent + "*/" + NL)
             .str(),
         this);
-  ExtReplPtr->setConstantOffset(getConstantOffset());
+  ExtReplPtr->setConstantOffset(this->getConstantOffset());
+  ExtReplPtr->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   return ExtReplPtr;
 }
 

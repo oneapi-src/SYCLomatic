@@ -26,51 +26,14 @@
 
 namespace dpct {
 
-enum channel_data_kind {
-  channel_signed,
-  channel_unsigned,
-  channel_float,
+enum class image_channel_data_type {
+  signed_int,
+  unsigned_int,
+  fp,
 };
 
-/// Image channel info, include channel number, order, data width and type
-struct image_channel {
-  cl::sycl::image_channel_type type;
-  /// Channels number.
-  unsigned channel_nums;
-  /// Total size of all channels in bytes.
-  unsigned elem_size;
-
-  cl::sycl::image_channel_order get_channel_order() const {
-    switch (channel_nums) {
-    case 1:
-      return cl::sycl::image_channel_order::r;
-    case 2:
-      return cl::sycl::image_channel_order::rg;
-    case 3:
-      return cl::sycl::image_channel_order::rgb;
-    case 4:
-      return cl::sycl::image_channel_order::rgba;
-    default:
-      return cl::sycl::image_channel_order::r;
-    }
-  }
-  /// Get the size for each channel in bits.
-  unsigned get_channel_size() const { return elem_size * 8 / channel_nums; }
-
-  /// Set channel size.
-  /// \param in_channel_nums Channels number to set.
-  /// \param channel_size Size for each channel in bits.
-  void set_channel_size(unsigned in_channel_nums,
-                        unsigned channel_size) {
-    if (in_channel_nums < channel_nums)
-      return;
-    channel_nums = in_channel_nums;
-    elem_size = channel_size * channel_nums / 8;
-  }
-};
-
-class image_base;
-
+class image_channel;
+class image_wrapper_base;
 namespace detail {
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
@@ -88,11 +51,12 @@ template <class T> struct image_trait {
                          cl::sycl::access::target::image_array>;
   using data_t = T;
   using elem_t = T;
-  static constexpr channel_data_kind channel_kind =
+  static constexpr image_channel_data_type data_type =
       std::is_integral<T>::value
-          ? (std::is_signed<T>::value ? channel_signed : channel_unsigned)
-          : channel_float;
-  static constexpr int channel_nums = 1;
+          ? (std::is_signed<T>::value ? image_channel_data_type::signed_int
+                                      : image_channel_data_type::unsigned_int)
+          : image_channel_data_type::fp;
+  static constexpr int channel_num = 1;
 };
 template <>
 struct image_trait<cl::sycl::cl_uchar> : public image_trait<cl::sycl::cl_uint> {
@@ -122,19 +86,19 @@ struct image_trait<cl::sycl::vec<T, 1>> : public image_trait<T> {};
 template <class T>
 struct image_trait<cl::sycl::vec<T, 2>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 2>;
-  static constexpr int channel_nums = 2;
+  static constexpr int channel_num = 2;
 };
 
 template <class T>
 struct image_trait<cl::sycl::vec<T, 3>>
     : public image_trait<cl::sycl::vec<T, 4>> {
-  static constexpr int channel_nums = 3;
+  static constexpr int channel_num = 3;
 };
 
 template <class T>
 struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 4>;
-  static constexpr int channel_nums = 4;
+  static constexpr int channel_num = 4;
 };
 
 // Functor to fetch data from read result of an image accessor.
@@ -169,84 +133,134 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
   }
 };
 
-static inline image_channel
-create_image_channel(int elem_size, int channel_nums,
-                     channel_data_kind channel_kind) {
-  image_channel channel;
-  channel.elem_size = elem_size;
-  if (elem_size == 4) {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int32;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int32;
-    else if (channel_kind == channel_float)
-      channel.type = cl::sycl::image_channel_type::fp32;
-  } else if (elem_size == 2) {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int16;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int16;
-    else if (channel_kind == channel_float)
-      channel.type = cl::sycl::image_channel_type::fp16;
-  } else {
-    if (channel_kind == channel_signed)
-      channel.type = cl::sycl::image_channel_type::signed_int8;
-    else if (channel_kind == channel_unsigned)
-      channel.type = cl::sycl::image_channel_type::unsigned_int8;
-  }
-  channel.elem_size *= channel_nums;
-  channel.channel_nums = channel_nums;
-  return channel;
-}
-
 /// Create image according with given type \p T and \p dims.
-template <class T> static image_base *create_image(int dims);
+template <class T> static image_wrapper_base *create_image_wrapper(int dims);
 
 /// Create image with given data type \p T, channel order and dims
 template <class T>
-static image_base *create_image(unsigned channel_nums, int dims);
+static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 
 /// Create image with channel info and specified dimensions.
-static image_base *create_image(image_channel chn, int dims);
+static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 
 // Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data;
 
 } // namespace detail
 
-/// Create image channel info.
-/// \param r Channel r width in bits.
-/// \param g Channel g width in bits. Should be same with \p r, or zero.
-/// \param b Channel b width in bits. Should be same with \p g, or zero.
-/// \param a Channel a width in bits. Should be same with \p b, or zero.
-/// \channel_kind Channel data type kind: signed int, unsigned int or float.
-static inline image_channel
-create_image_channel(int r, int g, int b, int a,
-                     channel_data_kind channel_kind) {
-  if (a) {
-    return detail::create_image_channel(r / 8, 4, channel_kind);
-  } else if (b) {
-    return detail::create_image_channel(r / 8, 3, channel_kind);
-  } else if (g) {
-    return detail::create_image_channel(r / 8, 2, channel_kind);
-  } else {
-    return detail::create_image_channel(r / 8, 1, channel_kind);
-  }
-}
+/// Image channel info, include channel number, order, data width and type
+class image_channel {
+  image_channel_data_type _type = image_channel_data_type::signed_int;
+  /// Number of channels.
+  unsigned _channel_num = 0;
+  /// Total size of all channels in bytes.
+  unsigned _total_size = 0;
 
-/// Create image channel info according to template argument \p T.
-template <class T> static inline image_channel create_image_channel() {
-  return detail::create_image_channel(sizeof(typename detail::image_trait<T>::elem_t),
-                              detail::image_trait<T>::channel_nums,
-                              detail::image_trait<T>::channel_kind);
-}
+public:
+  /// Create image channel info according to template argument \p T.
+  template <class T> static image_channel create() {
+    image_channel channel;
+    channel.set_channel_size(detail::image_trait<T>::channel_num,
+                             sizeof(typename detail::image_trait<T>::elem_t) *
+                                 8);
+    channel.set_channel_data_type(detail::image_trait<T>::data_type);
+    return channel;
+  }
+
+  image_channel() = default;
+
+  image_channel_data_type get_channel_data_type() { return _type; }
+  void set_channel_data_type(image_channel_data_type type) { _type = type; }
+
+  unsigned get_total_size() { return _total_size; }
+  unsigned get_channel_num() { return _channel_num; }
+
+  /// image_channel constructor.
+  /// \param r Channel r width in bits.
+  /// \param g Channel g width in bits. Should be same with \p r, or zero.
+  /// \param b Channel b width in bits. Should be same with \p g, or zero.
+  /// \param a Channel a width in bits. Should be same with \p b, or zero.
+  /// \param data_type Image channel data type: signed_nt, unsigned_int or fp.
+  image_channel(int r, int g, int b, int a, image_channel_data_type data_type) {
+    _type = data_type;
+    if (a) {
+      assert(r == a && "DPC++ doesn't support different channel size");
+      assert(r == b && "DPC++ doesn't support different channel size");
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(4, a);
+    } else if (b) {
+      assert(r == b && "DPC++ doesn't support different channel size");
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(3, b);
+    } else if (g) {
+      assert(r == g && "DPC++ doesn't support different channel size");
+      set_channel_size(2, g);
+    } else {
+      set_channel_size(1, r);
+    }
+  }
+
+  cl::sycl::image_channel_type get_channel_type() const {
+    auto channel_size = _total_size / _channel_num;
+    if (channel_size == 4) {
+      if (_type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int32;
+      else if (_type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int32;
+      else if (_type == image_channel_data_type::fp)
+        return cl::sycl::image_channel_type::fp32;
+    } else if (channel_size == 2) {
+      if (_type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int16;
+      else if (_type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int16;
+      else if (_type == image_channel_data_type::fp)
+        return cl::sycl::image_channel_type::fp16;
+    } else {
+      if (_type == image_channel_data_type::signed_int)
+        return cl::sycl::image_channel_type::signed_int8;
+      else if (_type == image_channel_data_type::unsigned_int)
+        return cl::sycl::image_channel_type::unsigned_int8;
+    }
+    assert(false && "unexpected channel data kind and channel size");
+    return cl::sycl::image_channel_type::signed_int32;
+  }
+
+  cl::sycl::image_channel_order get_channel_order() const {
+    switch (_channel_num) {
+    case 1:
+      return cl::sycl::image_channel_order::r;
+    case 2:
+      return cl::sycl::image_channel_order::rg;
+    case 3:
+      return cl::sycl::image_channel_order::rgb;
+    case 4:
+      return cl::sycl::image_channel_order::rgba;
+    default:
+      return cl::sycl::image_channel_order::r;
+    }
+  }
+  /// Get the size for each channel in bits.
+  unsigned get_channel_size() const { return _total_size * 8 / _channel_num; }
+
+  /// Set channel size.
+  /// \param in_channel_num Channels number to set.
+  /// \param channel_size Size for each channel in bits.
+  void set_channel_size(unsigned in_channel_num,
+                        unsigned channel_size) {
+    if (in_channel_num < _channel_num)
+      return;
+    _channel_num = in_channel_num;
+    _total_size = channel_size * _channel_num / 8;
+  }
+};
 
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
   int _range[3] = {1, 1, 1};
   int _dims = 0;
-  void *_src = nullptr;
+  void *_host_data = nullptr;
 
   /// Set range of each dimension.
   template <int Dims> void set_range(cl::sycl::range<Dims> range) {
@@ -265,33 +279,21 @@ public:
   template <int Dim>
   image_matrix(image_channel channel, cl::sycl::range<Dim>range) : _channel(channel) {
     set_range(range);
-    _src = std::malloc(range.size() * _channel.elem_size);
+    _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
   /// Construct a new image class with the matrix data.
-  template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
-    return allocate_image<Dimension>(_channel);
+  template <int Dimension> cl::sycl::image<Dimension> *create_image() {
+    return create_image<Dimension>(_channel);
   }
   /// Construct a new image class with the matrix data.
   template <int Dimension>
-  cl::sycl::image<Dimension> *allocate_image(image_channel chn) {
+  cl::sycl::image<Dimension> *create_image(image_channel channel) {
     return new cl::sycl::image<Dimension>(
-        _src, chn.get_channel_order(), chn.type,
+        _host_data, channel.get_channel_order(), channel.get_channel_type(),
         get_range(make_index_sequence<Dimension>()),
         cl::sycl::property::image::use_host_ptr());
   }
-  /// Free the data.
-  void free() {
-    if (_src)
-      std::free(_src);
-    _src = nullptr;
-  }
 
-  /// Get data pointer with offset
-  inline void *get_data(size_t off_x, size_t off_y, size_t off_z) {
-    return (char *)_src +
-           (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
-               _channel.elem_size;
-  }
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
   /// Get range of the image.
@@ -302,106 +304,230 @@ public:
   inline int get_dims() { return _dims; }
   /// Convert to pitched data.
   pitched_data to_pitched_data() {
-    return pitched_data(_src, _range[0], _range[0], _range[1]);
+    return pitched_data(_host_data, _range[0], _range[0], _range[1]);
   }
 
-  ~image_matrix() { free(); }
+  ~image_matrix() {
+    if (_host_data)
+      std::free(_host_data);
+    _host_data = nullptr;
+  }
 };
 using image_matrix_p = image_matrix *;
 
-enum image_data_type { data_matrix, data_linear, data_pitch, data_unsupport };
+enum class image_data_type { matrix, linear, pitch, unsupport };
 
 /// Image data info.
+/// This class doesn't manage the data pointer.
 class image_data {
 public:
-  image_data_type type;
-  void *data;
-  size_t x, y, pitch;
-  image_channel chn;
+  image_data() { _type = image_data_type::unsupport; }
+  image_data(image_matrix_p matrix_data) { set_data(matrix_data); }
+  image_data(void *data_ptr, size_t x_size, image_channel channel) {
+    set_data(data_ptr, x_size, channel);
+  }
+  image_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
+             image_channel channel) {
+    set_data(data_ptr, x_size, y_size, pitch_size, channel);
+  }
+  void set_data(image_matrix_p matrix_data) {
+    _type = image_data_type::matrix;
+    _data = matrix_data;
+  }
+  void set_data(void *data_ptr, size_t x_size, image_channel channel) {
+    _type = image_data_type::linear;
+    _data = data_ptr;
+    _x = x_size;
+    _channel = channel;
+  }
+  void set_data(void *data_ptr, size_t x_size, size_t y_size, size_t pitch_size,
+                image_channel channel) {
+    _type = image_data_type::pitch;
+    _data = data_ptr;
+    _x = x_size;
+    _y = y_size;
+    _pitch = pitch_size;
+    _channel = channel;
+  }
+
+  image_data_type get_data_type() { return _type; }
+  void set_data_type(image_data_type type) { _type = type; }
+
+  void *get_data_ptr() { return _data; }
+  void set_data_ptr(void *data) { _data = data; }
+
+  size_t get_xsize() { return _x; }
+  void set_xsize(size_t x) { _x = x; }
+
+  size_t get_ysize() { return _y; }
+  void set_ysize(size_t y) { _y = y; }
+
+  size_t get_pitch() { return _pitch; }
+  void set_pitch(size_t pitch) { _pitch = pitch; }
+
+  image_channel get_channel() { return _channel; }
+  void set_channel(image_channel channel) { _channel = channel; }
+
+  image_channel_data_type get_channel_data_type() {
+    return _channel.get_channel_data_type();
+  }
+  void set_channel_data_type(image_channel_data_type type) {
+    _channel.set_channel_data_type(type);
+  }
+
+  unsigned get_channel_size() { return _channel.get_channel_size(); }
+  void set_channel_size(unsigned channel_num, unsigned channel_size) {
+    return _channel.set_channel_size(channel_num, channel_size);
+  }
+
+private:
+  image_data_type _type;
+  void *_data = nullptr;
+  size_t _x, _y, _pitch;
+  image_channel _channel;
 };
 
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
-class image_info {
-  cl::sycl::addressing_mode _addr_mode = cl::sycl::addressing_mode::clamp_to_edge;
-  cl::sycl::filtering_mode _filter_mode = cl::sycl::filtering_mode::nearest;
-  bool _normalized = false;
+class sampling_info {
+  cl::sycl::addressing_mode _addressing_mode =
+      cl::sycl::addressing_mode::clamp_to_edge;
+  cl::sycl::filtering_mode _filtering_mode = cl::sycl::filtering_mode::nearest;
+  cl::sycl::coordinate_normalization_mode _coordinate_normalization_mode =
+      cl::sycl::coordinate_normalization_mode::unnormalized;
 
 public:
-  inline cl::sycl::addressing_mode &addr_mode() { return _addr_mode; }
-  inline cl::sycl::filtering_mode &filter_mode() { return _filter_mode; }
-  inline bool &coord_normalized() {
-    return _normalized;
+  cl::sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
+  void set(cl::sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
+
+  cl::sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
+  void set(cl::sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
+
+  cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+    return _coordinate_normalization_mode;
   }
+  void set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _coordinate_normalization_mode = coordinate_normalization_mode;
+  }
+
+  bool is_coordinate_normalized() {
+    return _coordinate_normalization_mode ==
+           cl::sycl::coordinate_normalization_mode::normalized;
+  }
+  void set_coordinate_normalization_mode(int is_normalized) {
+    _coordinate_normalization_mode =
+        is_normalized ? cl::sycl::coordinate_normalization_mode::normalized
+                      : cl::sycl::coordinate_normalization_mode::unnormalized;
+  }
+
   cl::sycl::sampler get_sampler() {
-    return cl::sycl::sampler(
-        coord_normalized()
-            ? cl::sycl::coordinate_normalization_mode::normalized
-            : cl::sycl::coordinate_normalization_mode::unnormalized,
-        addr_mode(), filter_mode());
+    return cl::sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
+                             _filtering_mode);
   }
 };
 
 /// Image base class.
-class image_base : public image_info {
+class image_wrapper_base {
+  sampling_info _sampling_info;
   image_data _data;
 
 public:
-  virtual ~image_base() = 0;
+  virtual ~image_wrapper_base() = 0;
+  virtual void attach(image_data data) = 0;
 
-  // Set image info.
-  void set_info(image_info *info) {
-    *(static_cast<image_info *>(this)) = *info;
+  sampling_info get_sampling_info() { return _sampling_info; }
+  void set_sampling_info(sampling_info info) {
+    _sampling_info = info;
   }
-  // Set data info.
-  virtual void attach(image_data *data) { _data = *data; }
-  image_info get_info() { return *this; }
-  image_data get_data() { return _data; }
-};
-inline image_base::~image_base() {}
-using image_base_p = image_base *;
+  const image_data &get_data() { return _data; }
+  void set_data(image_data data) { _data = data; }
 
-template <class T, int Dimension, bool IsImageArray> class image_accessor;
+  image_channel get_channel() { return _data.get_channel(); }
+  void set_channel(image_channel channel) { _data.set_channel(channel); }
+
+  image_channel_data_type get_channel_data_type() {
+    return _data.get_channel_data_type();
+  }
+  void set_channel_data_type(image_channel_data_type type) {
+    _data.set_channel_data_type(type);
+  }
+
+  unsigned get_channel_size() { return _data.get_channel_size(); }
+  void set_channel_size(unsigned channel_num, unsigned channel_size) {
+    return _data.set_channel_size(channel_num, channel_size);
+  }
+
+  cl::sycl::addressing_mode get_addressing_mode() {
+    return _sampling_info.get_addressing_mode();
+  }
+  void set(cl::sycl::addressing_mode addressing_mode) {
+    _sampling_info.set(addressing_mode);
+  }
+
+  cl::sycl::filtering_mode get_filtering_mode() {
+    return _sampling_info.get_filtering_mode();
+  }
+  void set(cl::sycl::filtering_mode filtering_mode) {
+    _sampling_info.set(filtering_mode);
+  }
+
+  cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+    return _sampling_info.get_coordinate_normalization_mode();
+  }
+  void
+  set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    _sampling_info.set(coordinate_normalization_mode);
+  }
+
+  bool is_coordinate_normalized() {
+    return _sampling_info.is_coordinate_normalized();
+  }
+  void set_coordinate_normalization_mode(int is_normalized) {
+    _sampling_info.set_coordinate_normalization_mode(is_normalized);
+  }
+
+  cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
+};
+inline image_wrapper_base::~image_wrapper_base() {}
+using image_wrapper_base_p = image_wrapper_base *;
+
+template <class T, int Dimension, bool IsImageArray> class image_accessor_ext;
 
 template <class T, int Dimension, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
-template <class T, int Dimension, bool IsImageArray = false> class image : public image_base {
+template <class T, int Dimension, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   cl::sycl::image<Dimension> *_image = nullptr;
-  image_channel _chn;
-
-public:
-  ~image() { detach(); }
 
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
-      typename image_accessor<T, IsImageArray ? (Dimension - 1) : Dimension,
+      typename image_accessor_ext<T, IsImageArray ? (Dimension - 1) : Dimension,
                               IsImageArray>::accessor_t;
 
-  image() : _chn(create_image_channel<T>()) {}
+  image_wrapper() { set_channel(image_channel::create<T>()); }
+  ~image_wrapper() { detach(); }
   // Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return accessor_t(*_image, cgh);
   }
-  image_channel &channel() { return _chn; }
   // Set data info, attach the data to this class.
-  void attach(image_data *data) override {
-    image_base::attach(data);
-    detail::attach_data<T, Dimension, IsImageArray>()(this, data);
+  void attach(image_data data) override {
+    image_wrapper_base::set_data(data);
+    detail::attach_data<T, Dimension, IsImageArray>()(*this, get_data());
   }
   // Attach matrix data to this class.
-  void attach(image_matrix *data) {
+  void attach(image_matrix *matrix) {
     detach();
-    _image = data->allocate_image<Dimension>();
+    _image = matrix->create_image<Dimension>();
   }
   // Attach matrix data to this class.
-  void attach(image_matrix *data, image_channel chn_desc) {
+  void attach(image_matrix *matrix, image_channel chn_desc) {
     detach();
-    _image = data->allocate_image<Dimension>(chn_desc);
+    _image = matrix->create_image<Dimension>(chn_desc);
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count) {
-    attach(ptr, count, _chn);
+    attach(ptr, count, get_channel());
   }
   // Attach linear data to this class.
   void attach(void *ptr, size_t count, image_channel chn_desc) {
@@ -411,15 +537,15 @@ public:
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     _image = new cl::sycl::image<Dimension>(
-        ptr, chn_desc.get_channel_order(), chn_desc.type,
-        cl::sycl::range<1>(count / chn_desc.elem_size));
+        ptr, chn_desc.get_channel_order(), chn_desc.get_channel_type(),
+        cl::sycl::range<1>(count / chn_desc.get_total_size()));
   }
   // Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
-    attach(data, x, y, pitch, _chn);
+    attach(data, x, y, pitch, get_channel());
   }
   // Attach 2D data to this class.
-  void attach(void *data, size_t x, size_t y, size_t pitch, const image_channel &chn_desc) {
+  void attach(void *data, size_t x, size_t y, size_t pitch, image_channel chn_desc) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(data))
       data = get_buffer(data)
@@ -427,8 +553,8 @@ public:
                 .get_pointer();
     cl::sycl::range<1> pitch_range(pitch);
     _image = new cl::sycl::image<Dimension>(
-        data, chn_desc.get_channel_order(), chn_desc.type,
-        cl::sycl::range<2>(x / chn_desc.elem_size, y), pitch_range);
+        data, chn_desc.get_channel_order(), chn_desc.get_channel_type(),
+        cl::sycl::range<2>(x / chn_desc.get_total_size(), y), pitch_range);
   }
   // Detach data.
   void detach() {
@@ -440,7 +566,7 @@ public:
 
 /// Wrap sampler and image accessor together.
 template <class T, int Dimension, bool IsImageArray = false>
-class image_accessor {
+class image_accessor_ext {
 public:
   using accessor_t =
       typename detail::image_trait<T>::template accessor_t<Dimension>;
@@ -449,7 +575,7 @@ public:
   accessor_t _img_acc;
 
 public:
-  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+  image_accessor_ext(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
   // Read data from accessor.
@@ -489,7 +615,7 @@ public:
   }
 };
 
-template <class T, int Dimension> class image_accessor<T, Dimension, true> {
+template <class T, int Dimension> class image_accessor_ext<T, Dimension, true> {
 public:
   using accessor_t =
       typename detail::image_trait<T>::template array_accessor_t<Dimension>;
@@ -498,7 +624,7 @@ public:
   accessor_t _img_acc;
 
 public:
-  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+  image_accessor_ext(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
   // Read data from accessor.
@@ -528,104 +654,109 @@ public:
   }
 };
 
-/// Create image according to image data and image info.
-/// \param [out] image_p Point to a pointer of image base class.
-/// \param data Pointer to image data.
-/// \param info Pointer to image info.
-inline void create_image(image_base **image_p, image_data *data,
-                              image_info *info) {
+/// Create image according to image data and sampling info.
+/// \return Pointer to image wrapper base class.
+/// \param data Image data used to create image wrapper.
+/// \param info Image sampling info used to create image wrapper.
+static inline image_wrapper_base *create_image_wrapper(image_data data,
+                              sampling_info info) {
   image_channel channel;
   int dims = 1;
-  if (data->type == dpct::data_matrix) {
-    auto matrix = (image_matrix_p)data->data;
+  if (data.get_data_type() == image_data_type::matrix) {
+    auto matrix = (image_matrix_p)data.get_data_ptr();
     channel = matrix->get_channel();
     dims = matrix->get_dims();
   } else {
-    channel = data->chn;
+    channel = data.get_channel();
   }
 
-  if (auto _image = detail::create_image(channel, dims)) {
-    _image->set_info(info);
-    _image->attach(data);
-    *image_p = _image;
+  if (auto ret = detail::create_image_wrapper(channel, dims)) {
+    ret->set_sampling_info(info);
+    ret->attach(data);
+    return ret;
   }
+  return nullptr;
 }
 
 namespace detail {
 // Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data {
-  void operator()(image<T, Dimension, IsImageArray> *in_image,
-                  image_data *data) {
-    assert(data->type == data_matrix);
-    in_image->attach((image_matrix_p)data->data);
+  void operator()(image_wrapper<T, Dimension, IsImageArray> &in_image,
+                  image_data data) {
+    assert(data.get_data_type() == image_data_type::matrix);
+    in_image.attach((image_matrix_p)data.get_data_ptr());
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
-  void operator()(image<T, 1, IsImageArray> *in_image, image_data *data) {
-    if (data->type == data_linear)
-      in_image->attach(data->data, data->x, data->chn);
-    else if (data->type == data_matrix)
-      in_image->attach((image_matrix_p)data->data);
+  void operator()(image_wrapper<T, 1, IsImageArray> &in_image,
+                  image_data data) {
+    if (data.get_data_type() == image_data_type::linear)
+      in_image.attach(data.get_data_ptr(), data.get_xsize(),
+                      data.get_channel());
+    else if (data.get_data_type() == image_data_type::matrix)
+      in_image.attach((image_matrix_p)data.get_data_ptr());
   }
 };
 template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
-  void operator()(image<T, 2, IsImageArray> *in_image, image_data *data) {
-    if (data->type == data_matrix)
-      in_image->attach((image_matrix_p)data->data);
-    else if (data->type == data_pitch)
-      in_image->attach(data->data, data->x, data->y, data->pitch, data->chn);
+  void operator()(image_wrapper<T, 2, IsImageArray> &in_image,
+                  image_data data) {
+    if (data.get_data_type() == image_data_type::matrix)
+      in_image.attach((image_matrix_p)data.get_data_ptr());
+    else if (data.get_data_type() == image_data_type::pitch)
+      in_image.attach(data.get_data_ptr(), data.get_xsize(), data.get_ysize(),
+                      data.get_pitch(), data.get_channel());
   }
 };
 
 /// Create image according with given type \p T and \p dims.
-template <class T> static image_base *create_image(int dims) {
+template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {
   case 1:
-    return new image<T, 1>();
+    return new image_wrapper<T, 1>();
   case 2:
-    return new image<T, 2>();
+    return new image_wrapper<T, 2>();
   case 3:
-    return new image<T, 3>();
+    return new image_wrapper<T, 3>();
   default:
     return nullptr;
   }
 }
 /// Create image with given data type \p T, channel order and dims
 template <class T>
-static image_base *create_image(unsigned channel_nums, int dims) {
-  switch (channel_nums) {
+static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) {
+  switch (channel_num) {
   case 1:
-    return create_image<T>(dims);
+    return create_image_wrapper<T>(dims);
   case 2:
-    return create_image<cl::sycl::vec<T, 2>>(dims);
+    return create_image_wrapper<cl::sycl::vec<T, 2>>(dims);
   case 3:
-    return create_image<cl::sycl::vec<T, 3>>(dims);
+    return create_image_wrapper<cl::sycl::vec<T, 3>>(dims);
   case 4:
-    return create_image<cl::sycl::vec<T, 4>>(dims);
+    return create_image_wrapper<cl::sycl::vec<T, 4>>(dims);
   default:
     return nullptr;
   }
 }
 
 /// Create image with channel info and specified dimensions.
-static image_base *create_image(image_channel chn, int dims) {
-  switch (chn.type) {
+static image_wrapper_base *create_image_wrapper(image_channel chn, int dims) {
+  switch (chn.get_channel_type()) {
   case cl::sycl::image_channel_type::fp16:
-    return create_image<cl::sycl::cl_half>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_half>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::fp32:
-    return create_image<cl::sycl::cl_float>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_float>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int8:
-    return create_image<cl::sycl::cl_char>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_char>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int16:
-    return create_image<cl::sycl::cl_short>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_short>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int32:
-    return create_image<cl::sycl::cl_int>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_int>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int8:
-    return create_image<cl::sycl::cl_uchar>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_uchar>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int16:
-    return create_image<cl::sycl::cl_ushort>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_ushort>(chn.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int32:
-    return create_image<cl::sycl::cl_uint>(chn.channel_nums, dims);
+    return create_image_wrapper<cl::sycl::cl_uint>(chn.get_channel_num(), dims);
   default:
     return nullptr;
   }

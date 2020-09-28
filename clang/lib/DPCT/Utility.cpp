@@ -137,9 +137,11 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   return Buffer.substr(begin, end - begin);
 }
 
-SourceRange getStmtSourceRange(const Stmt *S) {
+SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
+  BeginLoc = S->getBeginLoc();
+  EndLoc = S->getEndLoc();
   if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
     BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
     EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
@@ -164,20 +166,36 @@ SourceRange getStmtSourceRange(const Stmt *S) {
       BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
       EndLoc = SM.getImmediateSpellingLoc(EndLoc);
     }
-    if (EndLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
-    if (BeginLoc.isMacroID()) {
-      // if the immediate spelling location of
-      // a macro arg is another macro, get the expansion loc
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-    }
-  } else {
-    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
-    EndLoc = SM.getExpansionLoc(S->getEndLoc());
   }
+  return SourceRange(BeginLoc, EndLoc);
+}
+
+SourceRange getStmtExpansionSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  auto BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
+  auto EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  return SourceRange(BeginLoc, EndLoc);
+}
+
+SourceRange getStmtSpellingSourceRange(const Stmt *S) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
+  // Remove outer function-like macro
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  auto BeginLoc = Range.getBegin();
+  auto EndLoc = Range.getEnd();
+  // For multi level macro, e.g.
+  // #define AAA a
+  // #define BBB AAA
+  // Keep finding the immediate expansion location
+  std::tie(BeginLoc, EndLoc) =
+      getTheOneBeforeLastImmediateExapansion(BeginLoc, EndLoc);
+  // For straddle expr, e.g.
+  // #define AAA a
+  // #define BBB 3 + AAA
+  std::tie(BeginLoc, EndLoc) =
+      getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
   return SourceRange(BeginLoc, EndLoc);
 }
 
@@ -201,7 +219,7 @@ std::string getStmtSpelling(const Stmt *S) {
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  auto StmtRange = getStmtSourceRange(S);
+  auto StmtRange = getStmtExpansionSourceRange(S);
 
   BeginLoc = StmtRange.getBegin();
   EndLoc = StmtRange.getEnd();
@@ -1307,33 +1325,77 @@ SourceRange getFunctionRange(const CallExpr *CE) {
   return SourceRange(Begin, End);
 }
 
-/// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
-/// \param Repls Replacements with format flags.
-/// \return The result ranges.
-std::vector<clang::tooling::Range>
-calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
-  std::vector<bool> NotFormatFlags;
+// If Flags[i] is true, then the range of Repls[i] will be calculated.
+static std::vector<clang::tooling::Range>
+calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
+                        std::vector<bool> Flags) {
   std::vector<clang::tooling::Range> Ranges;
 
   int Diff = 0;
   for (auto R : Repls) {
-    if (R.getNotFormatFlag())
-      NotFormatFlags.push_back(true);
-    else
-      NotFormatFlags.push_back(false);
     Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
                         /*length*/ R.getReplacementText().size());
-
     Diff = Diff + R.getReplacementText().size() - R.getLength();
   }
 
   std::vector<clang::tooling::Range> RangesAfterFilter;
   int Size = Ranges.size();
   for (int i = 0; i < Size; ++i) {
-    if (!NotFormatFlags[i])
+    if (Flags[i])
       RangesAfterFilter.push_back(Ranges[i]);
   }
   return RangesAfterFilter;
+}
+
+/// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
+/// \param Repls Replacements with format flags.
+/// \return The result ranges.
+std::vector<clang::tooling::Range>
+calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
+  std::vector<bool> FormatFlags;
+  for (auto R : Repls) {
+    if (R.getNotFormatFlag())
+      FormatFlags.push_back(false);
+    else
+      FormatFlags.push_back(true);
+  }
+  return calculateRangesWithFlag(Repls, FormatFlags);
+}
+
+/// Calculate the ranges of the input \p Repls which has set BlockLevelFormatFlags.
+/// \param Repls Replacements with lambda flags.
+/// \return The result ranges.
+std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
+    const clang::tooling::Replacements &Repls) {
+  std::vector<bool> BlockLevelFormatFlags;
+
+  for (auto R : Repls) {
+    if (R.getBlockLevelFormatFlag())
+      BlockLevelFormatFlags.push_back(true);
+    else
+      BlockLevelFormatFlags.push_back(false);
+  }
+
+  return calculateRangesWithFlag(Repls, BlockLevelFormatFlags);
+}
+
+/// Calculate the ranges of the input \p Ranges after \p Repls is applied to
+/// the files.
+/// \param Repls Replacements to apply.
+/// \param Ranges Ranges before applying the replacements.
+/// \return The result ranges.
+std::vector<clang::tooling::Range>
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                const std::vector<clang::tooling::Range> &Ranges) {
+  std::vector<clang::tooling::Range> Result;
+  for (auto R : Ranges) {
+    unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
+    unsigned int EOffset =
+        Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
+    // TODO: maybe need to check if BOffset <= EOffset, if not, then skip
+    Result.emplace_back(BOffset, EOffset - BOffset);
+  }
+  return Result;
 }
 
 /// Determine if \param S is assigned or not
@@ -1411,7 +1473,18 @@ bool isOuterMostMacro(const Stmt *E) {
     P->print(StreamP, CT.getPrintingPolicy());
     StreamP.flush();
   } while (!ExpandedParent.compare(ExpandedExpr));
+
   return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
+}
+
+bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
+  auto LocInfo1 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L1);
+  auto LocInfo2 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L2);
+  if (LocInfo1.first.compare(LocInfo2.first) ||
+      LocInfo1.second != LocInfo2.second) {
+    return false;
+  }
+  return true;
 }
 
 bool isInsideFunctionLikeMacro(
@@ -1426,10 +1499,12 @@ bool isInsideFunctionLikeMacro(
   // If the begin/end location are different macro expansions,
   // the expression is a combination of different macros
   // which makes it outer-most.
-  if (SM.getCharacterData(SM.getExpansionRange(BeginLoc).getEnd()) <
-      SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+  auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
+  auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
+  if (!isSameLocation(ExpansionBegin, ExpansionEnd)) {
     return false;
   }
+
 
   // Since SM.getExpansionLoc() will always return the range of the outer-most
   // macro. If the expanded location of the parent stmt and E are the same, E is
@@ -1439,15 +1514,14 @@ bool isInsideFunctionLikeMacro(
   // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
   if (Parent->getSourceRange().getBegin().isValid() &&
-    Parent->getSourceRange().getBegin().isMacroID()) {
-    if (SM.getCharacterData(
-      SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
-      SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
+      Parent->getSourceRange().getBegin().isMacroID()) {
+    if (isSameLocation(SM.getExpansionLoc(Parent->getSourceRange().getBegin()),
+                       SM.getExpansionLoc(BeginLoc))) {
       if (Parent->getSourceRange().getEnd().isValid() &&
-        Parent->getSourceRange().getEnd().isMacroID()) {
-        if (SM.getCharacterData(
-          SM.getExpansionLoc(Parent->getSourceRange().getEnd())) ==
-          SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+          Parent->getSourceRange().getEnd().isMacroID()) {
+        if (isSameLocation(
+                SM.getExpansionLoc(Parent->getSourceRange().getEnd()),
+                SM.getExpansionLoc(EndLoc))) {
           return true;
         }
       }
@@ -1463,48 +1537,61 @@ bool isInsideFunctionLikeMacro(
   // Should check if the expansion is the whole macro definition.
 
   // Get the location of "x" in "#define MacroA(x) = x"
-  SourceLocation ImmediateSpellingBegin = SM.getImmediateSpellingLoc(BeginLoc);
-  SourceLocation ImmediateSpellingEnd = SM.getImmediateSpellingLoc(EndLoc);
+  SourceLocation ImmediateSpellingBegin =
+      SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
+  SourceLocation ImmediateSpellingEnd =
+      SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
   SourceLocation ImmediateExpansionBegin =
-      SM.getImmediateExpansionRange(BeginLoc).getBegin();
+      SM.getSpellingLoc(SM.getImmediateExpansionRange(BeginLoc).getBegin());
   SourceLocation ImmediateExpansionEnd =
-      SM.getImmediateExpansionRange(EndLoc).getEnd();
+      SM.getSpellingLoc(SM.getImmediateExpansionRange(EndLoc).getEnd());
 
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
   auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateExpansionBegin));
+    getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateExpansionEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
+
   // ExpansionBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateExpansionBegin));
+    getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateSpellingEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
+
   // SpellingBegin & ExpansionEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateSpellingBegin));
+    getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateExpansionEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
+
   // SpellingBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(ImmediateSpellingBegin));
+    getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
-      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-          SM.getCharacterData(ImmediateSpellingEnd)) {
+      (!It->second->FilePath.compare(
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+       It->second->ReplaceTokenEndOffset ==
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
 
@@ -1517,10 +1604,27 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(SpellingBegin));
+      getCombinedStrFromLoc(SpellingBegin));
   auto ItSpellingEnd =
     dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(SpellingEnd));
+      getCombinedStrFromLoc(SpellingEnd));
+
+  if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
+      (BeginLoc.isFileID() && EndLoc.isMacroID())) {
+    return true;
+  }
+
+  // Different expansion but same define, e.g. AAA * AAA
+  if (BeginLoc.isMacroID() && EndLoc.isMacroID()) {
+    auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
+    auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
+    auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
+    auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
+    if (DLExpanBegin.first != DLExpanEnd.first ||
+      DLExpanBegin.second != DLExpanEnd.second) {
+      return true;
+    }
+  }
 
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==
@@ -1538,14 +1642,12 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
     return true;
   }
 
-  auto DLBeginToken =
-    SM.getDecomposedLoc(ItSpellingBegin->second->ReplaceTokenBegin);
-  auto DLEndToken =
-    SM.getDecomposedLoc(ItSpellingEnd->second->ReplaceTokenBegin);
   // If DL.first(the FileId) or DL.second(the location) is different which means
   // begin and end are in different macro define, straddle
-  if (DLBeginToken.first != DLEndToken.first ||
-    DLBeginToken.second != DLEndToken.second) {
+  if (ItSpellingBegin->second->FilePath.compare(
+          ItSpellingEnd->second->FilePath) ||
+      ItSpellingBegin->second->ReplaceTokenBeginOffset !=
+          ItSpellingEnd->second->ReplaceTokenBeginOffset) {
     return true;
   }
 
@@ -1554,7 +1656,9 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
 // Check if an Expr is partially in function-like macro
 bool isExprStraddle(const Stmt *S) {
-  return isLocationStraddle(S->getBeginLoc(), S->getEndLoc());
+  // Remove the outer func-like macro before checking straddle
+  auto Range = getRangeInsideFuncLikeMacro(S);
+  return isLocationStraddle(Range.getBegin(), Range.getEnd());
 }
 
 /// Check the expression \p E is an address-of expression like "&aaa".
@@ -2008,7 +2112,6 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginLevel = calculateExpansionLevel(BeginLoc);
   auto EndLevel = calculateExpansionLevel(EndLoc);
-
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&
@@ -2056,4 +2159,83 @@ bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
     return false;
   }
   return true;
+}
+
+unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
+                                  clang::SourceLocation SL, bool &Flag) {
+  Flag = true;
+  if (!Node)
+    return dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  std::string IndentStr = getIndent(SL, SM).str();
+  unsigned int Len = 0;
+  for (const auto &C : IndentStr) {
+    if (C == '\t')
+      Len = Len + dpct::DpctGlobalInfo::getCodeFormatStyle().TabWidth;
+    else
+      Len++;
+  }
+
+  unsigned int CompoundStmtCounter = 0;
+  clang::DynTypedNodeList Parents = Context.getParents(*Node);
+  while (!Parents.empty()) {
+    auto Cur = Parents[0];
+
+    if (Cur.get<clang::CompoundStmt>()) {
+      if (!Context.getParents(Cur).empty() &&
+          !Context.getParents(Cur)[0].get<clang::IfStmt>() &&
+          !Context.getParents(Cur)[0].get<clang::ForStmt>() &&
+          !Context.getParents(Cur)[0].get<clang::WhileStmt>()) {
+        CompoundStmtCounter++;
+      }
+    } else if (Cur.get<clang::IfStmt>() || Cur.get<clang::ForStmt>() ||
+               Cur.get<clang::WhileStmt>()) {
+      CompoundStmtCounter++;
+    }
+
+    Parents = Context.getParents(Cur);
+  }
+
+  unsigned int Result = 0;
+  if (CompoundStmtCounter) {
+    Result = Len / CompoundStmtCounter;
+    if (Len % CompoundStmtCounter != 0)
+      Flag = false;
+  } else {
+    Result = Len;
+  }
+
+  return Result == 0 ? dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth
+                     : Result;
+}
+
+bool isIncludedFile(const std::string &CurrentFile,
+                    const std::string &CheckingFile) {
+  auto CurrentFileInfo = dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
+  auto CheckingFileInfo =
+      dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
+
+  std::deque<std::shared_ptr<dpct::DpctFileInfo>> Q(
+      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
+      CurrentFileInfo->getIncludedFilesInfoSet().end());
+
+  while (!Q.empty()) {
+    if (Q.front() == nullptr) {
+      continue;
+    } else if (Q.front() == CheckingFileInfo) {
+      return true;
+    } else {
+      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
+               Q.front()->getIncludedFilesInfoSet().end());
+      Q.pop_front();
+    }
+  }
+  return false;
+}
+
+std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
+  auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
+  return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }

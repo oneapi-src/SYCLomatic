@@ -391,9 +391,17 @@ public:
   FileManager &getFiles() { return *Files; }
 
   llvm::ArrayRef<std::string> getSourcePaths() const { return SourcePaths; }
+#ifdef INTEL_CUSTOMIZATION
+  void setCompilationDatabaseDir(const std::string &Dir){
+    CompilationDatabaseDir = Dir;
+  }
+#endif
 
 private:
   const CompilationDatabase &Compilations;
+#ifdef INTEL_CUSTOMIZATION
+  std::string CompilationDatabaseDir = "";
+#endif
   std::vector<std::string> SourcePaths;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
 

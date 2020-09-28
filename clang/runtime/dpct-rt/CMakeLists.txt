@@ -7,20 +7,20 @@ set(dpct_rt_files
   include/image.hpp
   include/util.hpp
   include/blas_utils.hpp
-  include/dpstd_utils.hpp
+  include/dpl_utils.hpp
 )
 
 set(dpct_rt_dpstd_files
-  include/dpstd_extras/functional.h
-  include/dpstd_extras/memory.h
-  include/dpstd_extras/iterators.h
-  include/dpstd_extras/algorithm.h
-  include/dpstd_extras/numeric.h
-  include/dpstd_extras/vector.h
+  include/dpl_extras/functional.h
+  include/dpl_extras/memory.h
+  include/dpl_extras/iterators.h
+  include/dpl_extras/algorithm.h
+  include/dpl_extras/numeric.h
+  include/dpl_extras/vector.h
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)
-set(output_dpstd_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct/dpstd_extras)
+set(output_dpstd_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct/dpl_extras)
 
 set(out_files)
 foreach( f ${dpct_rt_files})
@@ -54,7 +54,7 @@ install(
   FILES ${dpct_rt_dpstd_files}
   COMPONENT dpct-headers
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  DESTINATION include/dpct/dpstd_extras)
+  DESTINATION include/dpct/dpl_extras)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-headers

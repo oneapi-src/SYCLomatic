@@ -32,6 +32,7 @@ namespace format {
 enum class FormatRange { migrated, all, none };
 extern std::function<FormatRange()> formatRangeGetter;
 void setFormatRangeGetterHandler(std::function<FormatRange()> Getter);
+extern bool BlockLevelFormatFlag;
 } // namespace format
 } // namespace clang
 #endif

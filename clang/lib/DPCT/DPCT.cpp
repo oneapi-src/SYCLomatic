@@ -1027,6 +1027,16 @@ int runDPCT(int argc, const char **argv) {
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());
+  std::string CompilationsDir = OptParser->getCompilationsDir();
+  if (!CompilationsDir.empty()) {
+    // To convert the relative path to absolute path.
+    llvm::SmallString<128> AbsPath(CompilationsDir);
+    llvm::sys::fs::make_absolute(AbsPath);
+    llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
+    CompilationsDir = std::string(AbsPath.str());
+  }
+
+  Tool.setCompilationDatabaseDir(CompilationsDir);
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
@@ -1088,6 +1098,10 @@ int runDPCT(int argc, const char **argv) {
     DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
                           ClangToolOutputMessage);
     return MigrationErrorCannotAccessDirInDatabase;
+  } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
+    DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
+                          ClangToolOutputMessage);
+    return MigrationErrorInconsistentFileInDatabase;
   }
 
   if (RunResult && StopOnParseErr) {

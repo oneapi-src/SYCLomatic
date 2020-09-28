@@ -3,7 +3,8 @@
 
 //CHECK: #include <CL/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
-//CHECK-NEXT: #include <mkl_rng_sycl_device.hpp>
+//CHECK-NEXT: #include <oneapi/mkl.hpp>
+//CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
 //CHECK-NEXT: #include <cstdio>
 //CHECK-NEXT: #include <time.h>
 #include <cuda.h>
@@ -81,7 +82,7 @@ int main(int argc, char **argv) {
   //CHECK: oneapi::mkl::rng::device::mrg32k3a<2> *RandomStates;
   curandStateMRG32k3a_t *RandomStates;
   void *dev;
-  //CHECK: dpct::dpct_malloc((void**)&dev, size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
+  //CHECK: dev = dpct::dpct_malloc(size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
   //CHECK-NEXT: RandomStates = (oneapi::mkl::rng::device::mrg32k3a<2>*)dev;
   cudaMalloc((void**)&dev, size * sizeof(curandStateMRG32k3a_t));
   RandomStates = (curandStateMRG32k3a_t*)dev;
