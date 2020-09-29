@@ -16,8 +16,8 @@ int main() {
     cudaStream_t stream;
 
     int ha[N], hb[N];
-    // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> start_ct1;
-    // CHECK: std::chrono::time_point<std::chrono::high_resolution_clock> stop_ct1;
+    // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
+    // CHECK: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
     cudaEvent_t start, stop;
     cudaError_t cudaStatus;
 
@@ -35,7 +35,7 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    // CHECK: start_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: start_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(start, 0);
 
     // CHECK: stop = q_ct1.memcpy(da, ha, N*sizeof(int));
@@ -48,7 +48,7 @@ int main() {
     // CHECK: stop.wait();
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
-    // CHECK: stop_ct1 = std::chrono::high_resolution_clock::now();
+    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(stop, 0);
     // CHECK: stop.wait_and_throw();
     cudaEventSynchronize(stop);

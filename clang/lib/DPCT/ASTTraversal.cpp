@@ -8022,7 +8022,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   auto &SM = DpctGlobalInfo::getSourceManager();
   std::string InsertStr = getNL();
   InsertStr += getIndent(MD->getBeginLoc(), SM).str();
-  InsertStr += "std::chrono::time_point<std::chrono::high_resolution_clock> ";
+  InsertStr += "std::chrono::time_point<std::chrono::steady_clock> ";
   InsertStr += getTimePointNameForEvent(CE->getArg(0), true);
   InsertStr += ";";
   auto Pair = std::make_pair(MD, InsertStr);
@@ -8033,7 +8033,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 
   // Replace event recording with std::chrono timing
   Repl << getTimePointNameForEvent(CE->getArg(0), false)
-       << " = std::chrono::high_resolution_clock::now()";
+       << " = std::chrono::steady_clock::now()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
