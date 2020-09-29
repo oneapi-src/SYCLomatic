@@ -751,6 +751,7 @@ public:
 
   std::vector<std::string> CallExprArguReplVec;
   std::string CallExprReplStr;
+  bool NeedWaitAPICall = false;
 
   std::string getFinalCallExprStr(std::string& FuncName) {
     std::string ResultStr;
@@ -760,14 +761,16 @@ public:
       ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
     }
 
-    return FuncName + "(*" + ResultStr + ")";
+    return FuncName + "(*" + ResultStr + ")" +
+           (NeedWaitAPICall ? ".wait()" : "");
   }
 
   void addWait(const std::string &FuncName, const CallExpr *CE,
+               std::string &PrefixInsertStr,
                std::string &SuffixInsertStr, const std::string &IndentStr) {
-    auto I = MapNames::SyncBLASFunc.find(FuncName);
-    if (I != MapNames::SyncBLASFunc.end()) {
-      ExprAnalysis EA(CE->getArg(I->second));
+    if (MapNames::SyncBLASFunc.find(FuncName) != MapNames::SyncBLASFunc.end()) {
+      auto SyncI = MapNames::SyncBLASFunc.find(FuncName);
+      ExprAnalysis EA(CE->getArg(SyncI->second));
       SuffixInsertStr = getNL() + IndentStr + "if(" +
                         MapNames::getClNamespace() + "::get_pointer_type(" +
                         EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
@@ -778,6 +781,61 @@ public:
                         "->get_context())!=" + MapNames::getClNamespace() +
                         "::usm::alloc::shared) " + CallExprArguReplVec[0] +
                         "->wait();" + SuffixInsertStr;
+    } else if (MapNames::MaySyncBLASFunc.find(FuncName) !=
+               MapNames::MaySyncBLASFunc.end()) {
+      auto MaySyncI = MapNames::MaySyncBLASFunc.find(FuncName);
+      int ArgIndex = MaySyncI->second.second;
+      std::string Type = MaySyncI->second.first;
+      ExprAnalysis EA(CE->getArg(ArgIndex));
+      std::string ResultTempPtr =
+          "res_temp_ptr_ct" +
+          std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+
+      std::string OriginType;
+      if (Type == "std::complex<float>") {
+        OriginType = MapNames::getClNamespace() + "::float2";
+        CallExprArguReplVec[ArgIndex] =
+            "(std::complex<float>*)" + ResultTempPtr;
+      } else if (Type == "std::complex<double>") {
+        OriginType = MapNames::getClNamespace() + "::double2";
+        CallExprArguReplVec[ArgIndex] =
+            "(std::complex<double>*)" + ResultTempPtr;
+      } else {
+        OriginType = Type;
+        CallExprArguReplVec[ArgIndex] = ResultTempPtr;
+      }
+
+      std::string IfStmtStr =
+          "if(" + MapNames::getClNamespace() + "::get_pointer_type(" +
+          EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
+          "->get_context())!=" + MapNames::getClNamespace() +
+          "::usm::alloc::device && " + MapNames::getClNamespace() +
+          "::get_pointer_type(" + EA.getReplacedString() + ", " +
+          CallExprArguReplVec[0] +
+          "->get_context())!=" + MapNames::getClNamespace() +
+          "::usm::alloc::shared) {";
+      PrefixInsertStr =
+          OriginType + "* " + ResultTempPtr + " = " + EA.getReplacedString() + ";" +
+          getNL() + IndentStr +
+          IfStmtStr +
+          getNL() + IndentStr +
+          "  " + ResultTempPtr + " = " + MapNames::getClNamespace() +
+          "::malloc_shared<" + OriginType + ">(1, dpct::get_default_queue());" +
+          getNL() + IndentStr +
+          "}" +
+          getNL() + IndentStr + PrefixInsertStr;
+      SuffixInsertStr =
+          getNL() + IndentStr +
+          IfStmtStr +
+          getNL() + IndentStr +
+          "  " + CallExprArguReplVec[0] + "->wait();"+
+          getNL() + IndentStr +
+          "  *" + EA.getReplacedString() + " = *" + ResultTempPtr + ";" +
+          getNL() + IndentStr +
+          "  " + MapNames::getClNamespace() + "::free(" + ResultTempPtr +
+          ", dpct::get_default_queue());" +
+          getNL() + IndentStr +
+          "}" + SuffixInsertStr;
     }
   }
 

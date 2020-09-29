@@ -5067,8 +5067,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // PrefixInsertStr: stmt + NL + indent
   // SuffixInsertStr: NL + indent + stmt
   std::string PrefixInsertStr, SuffixInsertStr;
+  // Clean below three member variables before starting migration
   CallExprArguReplVec.clear();
   CallExprReplStr = "";
+  NeedWaitAPICall = false;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
   if (MapNames::BatchedBLASFuncReplInfoMap.find(FuncName) !=
@@ -5915,7 +5917,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         CallExprArguReplVec[6] =
             "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
       }
-      addWait(FuncName, CE, SuffixInsertStr, IndentStr);
+      addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
+      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
+          MapNames::MustSyncBLASFunc.end())
+        NeedWaitAPICall = true;
     }
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
@@ -6024,7 +6029,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      addWait(FuncName, CE, SuffixInsertStr, IndentStr);
+      addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
+      if (MapNames::MustSyncBLASFunc.find(FuncName) !=
+          MapNames::MustSyncBLASFunc.end())
+        NeedWaitAPICall = true;
     }
 
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
