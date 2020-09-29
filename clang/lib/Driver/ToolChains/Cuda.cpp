@@ -94,7 +94,7 @@ static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
   } else if (Major == 10 && Minor == 2) {
     CV = CudaVersion::CUDA_102;
     return true;
-  } else if (Major == 11 && Minor == 0) {
+  } else if (Major == 11 && Minor == 0 || Major == 11 && Minor == 1) {
     CV = CudaVersion::CUDA_110;
     return true;
   }
@@ -148,8 +148,8 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   // In decreasing order so we prefer newer versions to older versions.
   #ifdef INTEL_CUSTOMIZATION
-  std::initializer_list<const char *> Versions = {"11.0","10.2", "10.1", "10.0", "9.2", "9.0",
-                                                   "8.0"};
+  std::initializer_list<const char *> Versions = {
+      "11.1", "11.0", "10.2", "10.1", "10.0", "9.2", "9.0", "8.0"};
   #else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
   #endif

@@ -278,8 +278,12 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
           std::string ParamType = "float";
           auto PVD = FD->getParamDecl(i);
-          if (PVD)
-            ParamType = PVD->getType().getAsString();
+          if (PVD) {
+            ParamType = PVD->getType()
+                            .getCanonicalType()
+                            .getUnqualifiedType()
+                            .getAsString();
+          }
           // Since isnan is overloaded for both float and double, so there is no
           // need to add type conversions for isnan.
           if (ArgT != ParamType && SourceCalleeName != "isnan") {
@@ -308,8 +312,12 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
           std::string ParamType = "double";
           auto PVD = FD->getParamDecl(i);
-          if (PVD)
-            ParamType = PVD->getType().getAsString();
+          if (PVD) {
+            ParamType = PVD->getType()
+                            .getCanonicalType()
+                            .getUnqualifiedType()
+                            .getAsString();
+          }
           if (ArgT != ParamType) {
             if (DRE || IL)
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
