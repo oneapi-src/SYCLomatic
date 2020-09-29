@@ -8178,7 +8178,10 @@ void EventAPICallRule::handleTimeMeasurement(
     if (auto *MemCall = dyn_cast<CallExpr>(*Iter)) {
       auto MemCallLoc = MemCall->getBeginLoc().getRawEncoding();
       if (MemCallLoc > RecordBeginLoc && MemCallLoc < RecordEndLoc) {
-        auto CalleeName = MemCall->getDirectCallee()->getName();
+        auto MemCallee = MemCall->getDirectCallee();
+        if(!MemCallee)
+          continue;
+        auto CalleeName = MemCallee->getName();
         if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
           auto &SM = DpctGlobalInfo::getSourceManager();
           if (USMLevel == UsmLevel::restricted) {
