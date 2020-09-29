@@ -768,19 +768,165 @@ public:
   void addWait(const std::string &FuncName, const CallExpr *CE,
                std::string &PrefixInsertStr,
                std::string &SuffixInsertStr, const std::string &IndentStr) {
-    if (MapNames::SyncBLASFunc.find(FuncName) != MapNames::SyncBLASFunc.end()) {
-      auto SyncI = MapNames::SyncBLASFunc.find(FuncName);
-      ExprAnalysis EA(CE->getArg(SyncI->second));
-      SuffixInsertStr = getNL() + IndentStr + "if(" +
-                        MapNames::getClNamespace() + "::get_pointer_type(" +
-                        EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
-                        "->get_context())!=" + MapNames::getClNamespace() +
-                        "::usm::alloc::device && " +
-                        MapNames::getClNamespace() + "::get_pointer_type(" +
-                        EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
-                        "->get_context())!=" + MapNames::getClNamespace() +
-                        "::usm::alloc::shared) " + CallExprArguReplVec[0] +
-                        "->wait();" + SuffixInsertStr;
+    auto getIfStmtStr = [=](const std::string Ptr) -> std::string {
+      return "if(" + MapNames::getClNamespace() + "::get_pointer_type(" + Ptr +
+             ", " + CallExprArguReplVec[0] +
+             "->get_context())!=" + MapNames::getClNamespace() +
+             "::usm::alloc::device && " + MapNames::getClNamespace() +
+             "::get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
+             "->get_context())!=" + MapNames::getClNamespace() +
+             "::usm::alloc::shared) {";
+    };
+
+    if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2" ||
+        FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2" ||
+        FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
+      std::string Prefix, Suffix;
+      // Use the second argument to check pointer type
+      ExprAnalysis EAPointer(CE->getArg(1));
+      std::string IfStmtStr = getIfStmtStr(EAPointer.getReplacedString());
+
+      auto declareTempArgs = [&](std::string &Var,
+                                 const std::string &ArgNamePrefix,
+                                 const std::string &Type, const int Idx) {
+        Var = ArgNamePrefix +
+              std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+        Prefix = Prefix + Type + "* " + Var + " = " +
+                 ExprAnalysis::ref(CE->getArg(Idx)) + ";" + getNL() + IndentStr;
+        if (Type == MapNames::getClNamespace() + "::float2")
+          CallExprArguReplVec[Idx] = "(std::complex<float>*)" + Var;
+        else if (Type == MapNames::getClNamespace() + "::double2")
+          CallExprArguReplVec[Idx] = "(std::complex<double>*)" + Var;
+        else
+          CallExprArguReplVec[Idx] = Var;
+      };
+      auto copyBack = [&](const std::string &Var, const std::string &Size,
+                          const std::string &Type, const int Idx) {
+        if (Size == "1")
+          Suffix = Suffix + getNL() + IndentStr + "  " +
+                   getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
+        else
+          Suffix = Suffix + getNL() + IndentStr +
+                   "  dpct::get_default_queue().memcpy(" +
+                   ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
+                   ", sizeof(" + Type + ")*" + Size + ").wait();";
+      };
+
+      if (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
+        std::string Type = (FuncName == "cublasSrotmg_v2") ? "float" : "double";
+        std::string D1Ptr, D2Ptr, X1Ptr, Y1Ptr, ParamPtr;
+
+        declareTempArgs(D1Ptr, "d1_ct", Type, 1);
+        declareTempArgs(D2Ptr, "d2_ct", Type, 2);
+        declareTempArgs(X1Ptr, "x1_ct", Type, 3);
+        declareTempArgs(ParamPtr, "param_ct", Type, 5);
+
+        Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
+        Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
+                 "::malloc_shared<" + Type +
+                 ">(8, dpct::get_default_queue());" + getNL() + IndentStr;
+        Prefix = Prefix + "  " + D2Ptr + " = " + D1Ptr + " + 1;" + getNL() +
+                 IndentStr;
+        Prefix = Prefix + "  " + X1Ptr + " = " + D1Ptr + " + 2;" + getNL() +
+                 IndentStr;
+        Prefix = Prefix + "  " + ParamPtr + " = " + D1Ptr + " + 3;" + getNL() +
+                 IndentStr;
+        Prefix = Prefix + "  *" + D1Ptr + " = " + getDrefName(CE->getArg(1)) +
+                 ";" + getNL() + IndentStr;
+        Prefix = Prefix + "  *" + D2Ptr + " = " + getDrefName(CE->getArg(2)) +
+                 ";" + getNL() + IndentStr;
+        Prefix = Prefix + "  *" + X1Ptr + " = " + getDrefName(CE->getArg(3)) +
+                 ";" + getNL() + IndentStr;
+
+        Prefix = Prefix + std::string("}") + getNL() + IndentStr;
+        Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
+                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+
+        copyBack(D1Ptr, "1", Type, 1);
+        copyBack(D2Ptr, "1", Type, 2);
+        copyBack(X1Ptr, "1", Type, 3);
+        copyBack(ParamPtr, "5", Type, 5);
+
+        Suffix = Suffix + getNL() + IndentStr + "  " +
+                 MapNames::getClNamespace() + "::free(" + D1Ptr +
+                 ", dpct::get_default_queue());";
+        Suffix = Suffix + getNL() + IndentStr + "}";
+      } else {
+        // cublasSrotg_v2, cublasDrotg_v2, cublasCrotg_v2 or cublasZrotg_v2
+        std::string Type, RealType;
+        if (FuncName == "cublasSrotg_v2") {
+          Type = "float";
+          RealType = "float";
+        } else if (FuncName == "cublasDrotg_v2") {
+          Type = "double";
+          RealType = "double";
+        } else if (FuncName == "cublasCrotg_v2") {
+          Type = MapNames::getClNamespace() + "::float2";
+          RealType = "float";
+        } else {
+          Type = MapNames::getClNamespace() + "::double2";
+          RealType = "double";
+        }
+
+        std::string APtr, BPtr, CPtr, SPtr;
+        declareTempArgs(APtr, "a_ct", Type, 1);
+        declareTempArgs(BPtr, "b_ct", Type, 2);
+        declareTempArgs(CPtr, "c_ct", RealType, 3);
+        declareTempArgs(SPtr, "s_ct", Type, 4);
+
+        Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
+        if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
+          Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
+                   "::malloc_shared<" + Type +
+                   ">(4, dpct::get_default_queue());" + getNL() + IndentStr;
+          Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
+                   IndentStr;
+          Prefix = Prefix + "  " + CPtr + " = " + APtr + " + 2;" + getNL() +
+                   IndentStr;
+          Prefix = Prefix + "  " + SPtr + " = " + APtr + " + 3;" + getNL() +
+                   IndentStr;
+        } else {
+          Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
+                   "::malloc_shared<" + Type +
+                   ">(3, dpct::get_default_queue());" + getNL() + IndentStr;
+          Prefix = Prefix + "  " + CPtr + " = " + MapNames::getClNamespace() +
+                   "::malloc_shared<" + RealType +
+                   ">(1, dpct::get_default_queue());" + getNL() + IndentStr;
+          Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
+                   IndentStr;
+          Prefix = Prefix + "  " + SPtr + " = " + APtr + " + 2;" + getNL() +
+                   IndentStr;
+        }
+        Prefix = Prefix + "  *" + APtr + " = " + getDrefName(CE->getArg(1)) +
+                 ";" + getNL() + IndentStr;
+        Prefix = Prefix + "  *" + BPtr + " = " + getDrefName(CE->getArg(2)) +
+                 ";" + getNL() + IndentStr;
+        Prefix = Prefix + "  *" + CPtr + " = " + getDrefName(CE->getArg(3)) +
+                 ";" + getNL() + IndentStr;
+        Prefix = Prefix + "  *" + SPtr + " = " + getDrefName(CE->getArg(4)) +
+                 ";" + getNL() + IndentStr;
+
+        Prefix = Prefix + std::string("}") + getNL() + IndentStr;
+        Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
+                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+
+        copyBack(APtr, "1", Type, 1);
+        copyBack(BPtr, "1", Type, 2);
+        copyBack(CPtr, "1", RealType, 3);
+        copyBack(SPtr, "1", Type, 4);
+
+        Suffix = Suffix + getNL() + IndentStr + "  " +
+                 MapNames::getClNamespace() + "::free(" + APtr +
+                 ", dpct::get_default_queue());";
+        if (FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2") {
+          Suffix = Suffix + getNL() + IndentStr + "  " +
+                   MapNames::getClNamespace() + "::free(" + CPtr +
+                   ", dpct::get_default_queue());";
+        }
+        Suffix = Suffix + getNL() + IndentStr + "}";
+      }
+      PrefixInsertStr = Prefix + PrefixInsertStr;
+      SuffixInsertStr = Suffix + SuffixInsertStr;
     } else if (MapNames::MaySyncBLASFunc.find(FuncName) !=
                MapNames::MaySyncBLASFunc.end()) {
       auto MaySyncI = MapNames::MaySyncBLASFunc.find(FuncName);
@@ -805,15 +951,8 @@ public:
         CallExprArguReplVec[ArgIndex] = ResultTempPtr;
       }
 
-      std::string IfStmtStr =
-          "if(" + MapNames::getClNamespace() + "::get_pointer_type(" +
-          EA.getReplacedString() + ", " + CallExprArguReplVec[0] +
-          "->get_context())!=" + MapNames::getClNamespace() +
-          "::usm::alloc::device && " + MapNames::getClNamespace() +
-          "::get_pointer_type(" + EA.getReplacedString() + ", " +
-          CallExprArguReplVec[0] +
-          "->get_context())!=" + MapNames::getClNamespace() +
-          "::usm::alloc::shared) {";
+      std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
+
       PrefixInsertStr =
           OriginType + "* " + ResultTempPtr + " = " + EA.getReplacedString() + ";" +
           getNL() + IndentStr +
@@ -830,7 +969,7 @@ public:
           getNL() + IndentStr +
           "  " + CallExprArguReplVec[0] + "->wait();"+
           getNL() + IndentStr +
-          "  *" + EA.getReplacedString() + " = *" + ResultTempPtr + ";" +
+          "  " + getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
           getNL() + IndentStr +
           "  " + MapNames::getClNamespace() + "::free(" + ResultTempPtr +
           ", dpct::get_default_queue());" +

@@ -2199,24 +2199,25 @@ const std::map<std::string, MapNames::BLASGemmExTypeInfo>
           MapNames::getClNamespace() + "::float2", "std::complex<float>",
           MapNames::getClNamespace() + "::float2", "std::complex<float>"}}};
 
-const std::map<std::string, int> MapNames::SyncBLASFunc{
-    {"cublasSasum_v2", 4},  {"cublasDasum_v2", 4}, {"cublasScasum_v2", 4},
-    {"cublasDzasum_v2", 4}, {"cublasSrotg_v2", 1}, {"cublasDrotg_v2", 1},
-    {"cublasCrotg_v2", 1},  {"cublasZrotg_v2", 1}, {"cublasSrotmg_v2", 4},
-    {"cublasDrotmg_v2", 4}, {"cublasSnrm2_v2", 4}, {"cublasDnrm2_v2", 4},
-    {"cublasScnrm2_v2", 4}, {"cublasDznrm2_v2", 4}};
-
 const std::set<std::string> MapNames::MustSyncBLASFunc{
     "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2", "cublasIzamax_v2",
     "cublasIsamin_v2", "cublasIdamin_v2", "cublasIcamin_v2", "cublasIzamin_v2"};
 
 const std::map<std::string, std::pair<std::string, int>>
-    MapNames::MaySyncBLASFunc{{"cublasSdot_v2", {"float", 6}},
+    MapNames::MaySyncBLASFunc{{"cublasSasum_v2", {"float", 4}},
+                              {"cublasDasum_v2", {"double", 4}},
+                              {"cublasScasum_v2", {"float", 4}},
+                              {"cublasDzasum_v2", {"double", 4}},
+                              {"cublasSdot_v2", {"float", 6}},
                               {"cublasDdot_v2", {"double", 6}},
                               {"cublasCdotu_v2", {"std::complex<float>", 6}},
                               {"cublasCdotc_v2", {"std::complex<float>", 6}},
                               {"cublasZdotu_v2", {"std::complex<double>", 6}},
-                              {"cublasZdotc_v2", {"std::complex<double>", 6}}};
+                              {"cublasZdotc_v2", {"std::complex<double>", 6}},
+                              {"cublasSnrm2_v2", {"float", 4}},
+                              {"cublasDnrm2_v2", {"double", 4}},
+                              {"cublasScnrm2_v2", {"float", 4}},
+                              {"cublasDznrm2_v2", {"double", 4}}};
 
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>

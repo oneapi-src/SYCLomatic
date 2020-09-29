@@ -5852,15 +5852,21 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             std::string ResultTempPtr =
                 "res_temp_ptr_ct" +
                 std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            std::string ResultTempHost =
+                "res_temp_host_ct" +
+                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
             PrefixInsertStr =
                 PrefixInsertStr + "int64_t* " + ResultTempPtr + " = " +
                 MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
                 "1, dpct::get_default_queue());" + getNL() + IndentStr;
-            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
-                              ExprAnalysis::ref(CE->getArg(i)) + " = (int)*" +
-                              ResultTempPtr + ";" + getNL() + IndentStr +
-                              MapNames::getClNamespace() + "::free(" +
-                              ResultTempPtr + ", dpct::get_default_queue());";
+            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
+                              ResultTempHost + " = (int)*" + ResultTempPtr +
+                              ";" + getNL() + IndentStr + "dpct::dpct_memcpy(" +
+                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                              ResultTempHost + ", sizeof(int));" + getNL() +
+                              IndentStr + MapNames::getClNamespace() +
+                              "::free(" + ResultTempPtr +
+                              ", dpct::get_default_queue());";
             CurrentArgumentRepl = ResultTempPtr;
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
@@ -5964,15 +5970,21 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             std::string ResultTempPtr =
                 "res_temp_ptr_ct" +
                 std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            std::string ResultTempHost =
+                "res_temp_host_ct" +
+                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
             PrefixInsertStr =
                 PrefixInsertStr + "int64_t* " + ResultTempPtr + " = " +
                 MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
                 "1, dpct::get_default_queue());" + getNL() + IndentStr;
-            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
-                              ExprAnalysis::ref(CE->getArg(i)) + " = (int)*" +
-                              ResultTempPtr + ";" + getNL() + IndentStr +
-                              MapNames::getClNamespace() + "::free(" +
-                              ResultTempPtr + ", dpct::get_default_queue());";
+            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
+                              ResultTempHost + " = (int)*" + ResultTempPtr +
+                              ";" + getNL() + IndentStr + "dpct::dpct_memcpy(" +
+                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                              ResultTempHost + ", sizeof(int));" + getNL() +
+                              IndentStr + MapNames::getClNamespace() +
+                              "::free(" + ResultTempPtr +
+                              ", dpct::get_default_queue());";
             CurrentArgumentRepl = ResultTempPtr;
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<float>" ||
