@@ -11,6 +11,13 @@
 #include <thrust/reduce.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <thrust/transform_reduce.h>
+
+template <typename T>
+struct square {
+// CHECK:  T operator()(const T& x) const { return x * x; }
+  __host__ __device__  T operator()(const T& x) const { return x * x; }
+};
 
 int main() {
   double sum;
@@ -19,6 +26,23 @@ int main() {
   thrust::device_ptr<double> dp(p);
 // CHECK:  sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
   sum = thrust::reduce(dp, dp + 10);
+}
+
+void check_transform_reduce() {
+// CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+  float x[4] = {1.0, 2.0, 3.0, 4.0};
+// CHECK:  dpct::device_vector<float> d_x(x, x + 4);
+  thrust::device_vector<float> d_x(x, x + 4);
+  square<float>        unary_op;
+// CHECK:  std::plus<float> binary_op;
+  thrust::plus<float> binary_op;
+  float init = 0;
+
+// CHECK:  float norm     = std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), init, binary_op, unary_op);
+  float norm     = thrust::transform_reduce(d_x.begin(), d_x.end(), unary_op, init, binary_op);
+// CHECK:  float normSqrt = std::sqrt(std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), init, binary_op, unary_op));
+  float normSqrt = std::sqrt(thrust::transform_reduce(d_x.begin(), d_x.end(), unary_op, init, binary_op));
 }
 
 template <typename T>

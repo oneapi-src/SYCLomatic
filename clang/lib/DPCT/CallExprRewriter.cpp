@@ -45,11 +45,50 @@ Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   OS << TargetCalleeName << "(";
-  for (auto &Arg : RewriteArgList)
-    OS << Arg << ", ";
-  OS.flush();
-  return RewriteArgList.empty() ? Result.append(")")
-                                : Result.replace(Result.length() - 2, 2, ")");
+  auto NumArgs = RewriteArgList.size();
+  if (SourceCalleeName != "transform_reduce" ||
+      (NumArgs != 5 && NumArgs != 6)) {
+    // default case is to keep the argument list in the same order
+    for (auto &Arg : RewriteArgList)
+      OS << Arg << ", ";
+    OS.flush();
+    return RewriteArgList.empty() ? Result.append(")")
+                                  : Result.replace(Result.length() - 2, 2, ")");
+  } else {
+    // Special handling of thrust::transform_reduce.  It needs to
+    // have the parameters re-ordered.  Needed to fix CTST-1792.
+    // This logic replicates the logic from ASTTraversal.cpp and
+    // that logic should be consolidated in just one place.  Probably here.
+    // TODO: Refactor/consolidate the handling of thrust:: function calls
+    // so the logic for doing so is not present in two places.  The change
+    // required for this refactoring is more omprehensive and not appropriate
+    // for the gold release, hence this temporary 'hack'
+    auto UniqueName = [](const Stmt *S) {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      SourceLocation Loc = S->getBeginLoc();
+      return getHashAsString(Loc.printToString(SM)).substr(0, 6);
+    };
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, Call, HelperFuncType::DefaultQueue);
+    std::string TemplateArg = "";
+    if (DpctGlobalInfo::isSyclNamedLambda())
+      TemplateArg = std::string("<class Policy_") + UniqueName(Call) + ">";
+    std::string Policy = "oneapi::dpl::execution::make_device_policy" +
+                         TemplateArg + "({{NEEDREPLACEQ" +
+                         std::to_string(Index) + "}})";
+    auto StartIndex = 0;
+    if (NumArgs == 6)
+      StartIndex = 1;
+    // args: (first, last, unary_op, init, binary_op)
+    // New args: (policy, first, last, init, binary_op, unary_op)
+    OS << Policy << ", " << RewriteArgList[StartIndex] << ", "
+       << RewriteArgList[StartIndex + 1] << ", "
+       << RewriteArgList[StartIndex + 3] << ", "
+       << RewriteArgList[StartIndex + 4] << ", "
+       << RewriteArgList[StartIndex + 2] << ")";
+    OS.flush();
+    return Result;
+  }
 }
 
 Optional<std::string> MathCallExprRewriter::rewrite() {
