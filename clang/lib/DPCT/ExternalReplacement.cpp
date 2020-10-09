@@ -121,7 +121,7 @@ int mergeExternalReps(std::string InRootSrcFilePath,
     mergeAndUniqueReps(Replaces, *PreTU);
   }
 
-  llvm::errs() << "Save out new version " << YamlFile << " file\n";
+  llvm::errs() << "Saved new version of " << YamlFile << " file\n";
   save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Replaces);
   return 0;
 }
