@@ -41,6 +41,9 @@ GS = chr(0x1d)
 RS = chr(0x1e)
 US = chr(0x1f)
 
+# This global set variable is used to record all the preprocess output files
+preproess_output_files = set()
+
 COMPILER_WRAPPER_CC = 'intercept-cc'
 COMPILER_WRAPPER_CXX = 'intercept-c++'
 TRACE_FILE_EXTENSION = '.cmd'  # same as in ear.c
@@ -107,15 +110,18 @@ def capture(args):
         for entry in entries:
             if not ('file' in entry):
                 key = entry['directory']
-            else:
+                if key not in occur_set:
+                    occur_set.add(key)
+                    entries_post.append(entry)
+            elif entry['file'] not in preproess_output_files:
                 if "-o" in entry['command']:
                     outfile = get_outfile(entry['command'])
                     key = entry['file'] + entry['directory'] + outfile
                 else:
                     key = entry['file'] + entry['directory']
-            if key not in occur_set:
-                occur_set.add(key)
-                entries_post.append(entry)
+                if key not in occur_set:
+                    occur_set.add(key)
+                    entries_post.append(entry)
 
         entries_post.reverse()
 
@@ -266,6 +272,11 @@ def format_entry(exec_trace):
                 'directory': exec_trace['directory'],
                 'command': encode(command),
             }
+
+        for preprocess_source in compilation.preprocess_output_files:
+            file_path = abspath(exec_trace['directory'], preprocess_source)
+            logging.debug('preprocess_file: %s,', file_path)
+            preproess_output_files.add(file_path)
 
         for source in compilation.files:
             command = [compiler, '-c'] + compilation.flags + [source]

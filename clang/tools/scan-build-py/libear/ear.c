@@ -492,7 +492,7 @@ static int generate_file(char * filename){
         perror("bear: generate_file fopen fail.");
         return -1;
     }
-    fprintf(fd, "emtpy-file");
+    fprintf(fd, "/*emtpy-file*/\n");
     if (fclose(fd)) {
         perror("bear: fclose");
         return -1;

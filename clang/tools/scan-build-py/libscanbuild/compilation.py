@@ -243,12 +243,21 @@ def parse_args(args):
     flags = []
     compiler = ''
     files = []
+    is_processing_cmd = False
+    preprocess_output_files = []
     for arg in args:
         # Remove comment options started with "#" in command line, like "# -gencode arch=compute_61,code=sm_61"
         if re.match(r'^\#', arg):
             arg_next = next(args, None)
             while(arg_next != None):
                  arg_next = next(args, None)
+        elif arg == '-o':
+            flags.append(arg)
+            arg_next = next(args, None)
+            if(arg_next != None):
+                flags.append(arg_next)
+                preprocess_output_files.append(arg_next)
+            pass
         # quit when compilation pass is not involved
         elif arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
             return None
@@ -270,6 +279,8 @@ def parse_args(args):
         # ignore some flags
         elif arg in IGNORED_FLAGS:
             count = IGNORED_FLAGS[arg]
+            if arg == '-cuda' or arg == '--cuda':
+                is_processing_cmd = True
             for _ in range(count):
                 if arg == '-Xcompiler' or arg == '--compiler-options'  \
                    or arg == '-Xarchive' or arg == '--archive-options' \
@@ -514,7 +525,10 @@ def parse_args(args):
         else:
            flags.append(arg)
 
-    return [flags, compiler, files]
+    if not is_processing_cmd:
+        preprocess_output_files = []
+
+    return [flags, compiler, files, preprocess_output_files]
 
 def split_command(command):
     """ Returns a value when the command is a compilation, None otherwise.
@@ -527,7 +541,7 @@ def split_command(command):
 
     # the result of this method
     result = collections.namedtuple('Compilation',
-                                    ['compiler', 'flags', 'files'])
+                                    ['compiler', 'flags', 'files', 'preprocess_output_files'])
     result.compiler = compiler_language(command)
     result.flags = []
     result.files = []
@@ -545,6 +559,8 @@ def split_command(command):
         if ret[1] != '':
             result.compiler = ret[1]
         result.files = ret[2]
+        result.preprocess_output_files = ret[3]
+
     #Append buildin cuda options for migration tool to identy right code path
     if result.compiler == 'cuda':
         result.flags.append("-D__CUDACC__=1")
