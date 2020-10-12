@@ -407,8 +407,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-  auto BaseType =
-      DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
+  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+  PP.PrintCanonicalTypes = true;
+  auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     std::string FieldName = ME->getMemberDecl()->getName().str();

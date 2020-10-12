@@ -4052,3 +4052,21 @@ void bar(){
   bar_ulonglong2 = (vulonglong2_ptr) a;
   bar_double2 = (vdouble2_ptr) a;
 }
+
+
+using VT = double2;
+typedef double2 VT2;
+
+void test() {
+  //CHECK: VT d2;
+  //CHECK-NEXT: if (std::abs(d2.x()) >= 0.01) {}
+  VT d2;
+  if (std::abs(d2.x) >= 0.01) {}
+}
+
+void test2() {
+  //CHECK: VT2 d2;
+  //CHECK-NEXT: if (std::abs(d2.x()) >= 0.01) {}
+  VT2 d2;
+  if (std::abs(d2.x) >= 0.01) {}
+}
