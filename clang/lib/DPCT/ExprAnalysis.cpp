@@ -475,12 +475,13 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     auto Result = Itr->second->create(CE)->rewrite();
     if (Result.hasValue()) {
       addReplacement(CE, Result.getValue());
+      return;
     }
-  } else {
-    // If the callee does not need rewrite, analyze the args
-    for (auto Arg : CE->arguments())
-      analyzeArgument(Arg);
   }
+  // If the callee does not need rewrite, analyze the args
+  for (auto Arg : CE->arguments())
+    analyzeArgument(Arg);
+
 }
 
 void ExprAnalysis::analyzeExpr(const CXXNamedCastExpr *NCE) {

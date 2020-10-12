@@ -189,7 +189,7 @@ HANDLE_GPU_ERROR(0);
 #define cbrt(x) pow((double)x,(double)(1.0/3.0))
   double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 
-// CHECK: #define NNBI(x) floor(x + 0.5)
+// CHECK: #define NNBI(x) floor(x+0.5)
 // CHECK-NEXT: NNBI(3.0);
 #define NNBI(x) floor(x+0.5)
 NNBI(3.0);

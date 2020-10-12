@@ -121,8 +121,12 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
 
   reportUnsupportedRoundingMode();
   RewriteArgList = getMigratedArgs();
-  setTargetCalleeName(getNewFuncName());
+  auto NewFuncName = getNewFuncName();
 
+  if(NewFuncName == SourceCalleeName)
+    return {};
+
+  setTargetCalleeName(NewFuncName);
   return buildRewriteString();
 }
 
