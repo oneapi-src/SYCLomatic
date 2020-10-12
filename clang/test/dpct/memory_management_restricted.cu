@@ -211,46 +211,46 @@ void foobar() {
   // CHECK: pi_mem_advice advice;
   cudaMemoryAdvise advice;
   int device;
-  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1));
+  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0);
   cudaMemAdvise(devPtr, count, advice, device);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1)), 0));
+  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, advice, device));
-  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, cudaMemoryAdvise(1), device));
-  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, (cudaMemoryAdvise)1, device));
-  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, static_cast<cudaMemoryAdvise>(1), device));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1)), 0);
+  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0);
   errorCode = cudaMemAdvise(devPtr, count, advice, device);
 
-  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY);
+  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0);
   cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0);
+  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0);
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError((dpct::cpu_device().default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  // CHECK-NEXT: checkError((dpct::cpu_device().default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, cudaCpuDeviceId));
 
 

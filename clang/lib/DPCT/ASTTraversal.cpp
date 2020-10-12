@@ -10151,44 +10151,11 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
     return;
   }
-  static std::map<std::string, std::string> AdviceMapping{
-      {"cudaMemAdviseSetReadMostly", "PI_MEM_ADVICE_SET_READ_MOSTLY"},
-      {"cudaMemAdviseUnsetReadMostly", "PI_MEM_ADVICE_CLEAR_READ_MOSTLY"},
-      {"cudaMemAdviseSetPreferredLocation", "PI_MEM_ADVICE_SET_PREFERRED_LOCATION"},
-      {"cudaMemAdviseUnsetPreferredLocation", "PI_MEM_ADVICE_CLEAR_PREFERRED_LOCATION"},
-      {"cudaMemAdviseSetAccessedBy", "PI_MEM_ADVICE_SET_ACCESSED_BY"},
-      {"cudaMemAdviseUnsetAccessedBy", "PI_MEM_ADVICE_CLEAR_ACCESSED_BY"}};
 
   auto Arg0Str = ExprAnalysis::ref(C->getArg(0));
   auto Arg1Str = ExprAnalysis::ref(C->getArg(1));
-  auto Arg2Str = ExprAnalysis::ref(C->getArg(2));
+  auto Arg2Str = "0";
   auto Arg3Str = ExprAnalysis::ref(C->getArg(3));
-  auto It = AdviceMapping.find(Arg2Str);
-  if (It != AdviceMapping.end()) {
-    Arg2Str = It->second;
-  } else {
-    // Simplify casts of IntegerLiterals to enums, e.g. cudaMemoryAdvise(1),
-    // (cudaMemoryAdvise)1, static_cast<cudaMemoryAdvise>(1) can be migrated to
-    // PI_MEM_ADVICE_SET_READ_MOSTLY.
-    Expr::EvalResult ER;
-    const Expr *SubE = nullptr;
-    if (auto CSCE = dyn_cast<CStyleCastExpr>(C->getArg(2))) {
-      SubE = CSCE->getSubExpr();
-    } else if (auto CXXSCE = dyn_cast<CXXStaticCastExpr>(C->getArg(2))) {
-      SubE = CXXSCE->getSubExpr();
-    } else if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(C->getArg(2))) {
-      SubE = CXXFCE->getSubExpr();
-    }
-    if (SubE && SubE->EvaluateAsInt(ER, *Result.Context)) {
-      static std::vector<std::string> Advices{
-          "PI_MEM_ADVICE_SET_READ_MOSTLY", "PI_MEM_ADVICE_CLEAR_READ_MOSTLY",
-          "PI_MEM_ADVICE_SET_PREFERRED_LOCATION", "PI_MEM_ADVICE_CLEAR_PREFERRED_LOCATION",
-          "PI_MEM_ADVICE_SET_ACCESSED_BY", "PI_MEM_ADVICE_CLEAR_ACCESSED_BY"};
-      Arg2Str = Advices[ER.Val.getInt().getExtValue() - 1];
-    } else {
-      Arg2Str = "pi_mem_advice(" + Arg2Str + " - 1)";
-    }
-  }
 
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
