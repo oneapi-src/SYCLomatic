@@ -29,6 +29,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <regex>
@@ -8215,9 +8216,15 @@ void EventAPICallRule::handleTimeMeasurement(
   if (!RecordBegin || !RecordEnd)
     return;
 
-  // Find the kernel calls between start and stop
+  // Find the kernel calls and async memory operations between start and stop
   auto RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
   auto RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
+  auto TimeElapsedLoc = CE->getBeginLoc().getRawEncoding();
+  std::vector<std::string> Events2Wait;
+  std::map<std::string, int> QueueCounter;
+  std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
+  bool DefaultQueueAdded = false;
+  auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
     const CUDAKernelCallExpr *KCall = nullptr;
     if (auto *Expr = dyn_cast<ExprWithCleanups>(*Iter)) {
@@ -8243,52 +8250,65 @@ void EventAPICallRule::handleTimeMeasurement(
 
     if (auto *MemCall = dyn_cast<CallExpr>(*Iter)) {
       auto MemCallLoc = MemCall->getBeginLoc().getRawEncoding();
+      auto MemCallee = MemCall->getDirectCallee();
+      if(!MemCallee)
+        continue;
+      auto CalleeName = MemCallee->getName();
       if (MemCallLoc > RecordBeginLoc && MemCallLoc < RecordEndLoc) {
-        auto MemCallee = MemCall->getDirectCallee();
-        if(!MemCallee)
-          continue;
-        auto CalleeName = MemCallee->getName();
         if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
-          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
+          bool IsDefaultStream = false;
+          // Need queue for default stream or stream 0, 1 and 2
+          if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+            IsDefaultStream = true;
+          } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
+            auto IL = dyn_cast<IntegerLiteral>(StreamArg);
+            auto V = IL->getValue().getZExtValue();
+            if (V >= 0 && V <= 2)
+              IsDefaultStream = true;
+          }
           if (USMLevel == UsmLevel::restricted) {
-            std::string EventName = ExprAnalysis::ref(CE->getArg(2));
-            emplaceTransformation(new InsertBeforeStmt(MemCall, EventName + " = "));
-            std::string SyncStmt = ";";
-            SyncStmt += getNL();
-            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
-            SyncStmt += EventName;
-            SyncStmt += ".wait()";
-            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
+            std::string EventName = getTempNameForExpr(CE->getArg(2));
+            std::string QueueName = IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
+            std::string NewEventName = EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
+            Events2Wait.push_back(NewEventName);
+            emplaceTransformation(new InsertBeforeStmt(MemCall, "sycl::event " + NewEventName + " = "));
           } else {
-            std::string SyncStmt = ";";
-            SyncStmt += getNL();
-            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
-            auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
-            bool NeedQueue = false;
-            // Need queue for default stream or stream 0, 1 and 2
-            if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
-              NeedQueue = true;
-            } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
-              auto IL = dyn_cast<IntegerLiteral>(StreamArg);
-              auto V = IL->getValue().getZExtValue();
-              if (V <= 2)
-                NeedQueue = true;
-            }
-            if (NeedQueue) {
+            std::tuple<bool, std::string, const CallExpr *> T;
+            if (IsDefaultStream && !DefaultQueueAdded) {
+              DefaultQueueAdded = true;
               if (checkWhetherIsDuplicate(MemCall, false))
                 continue;
               int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-              SyncStmt += "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-              SyncStmt += ".wait()";
+              std::ostringstream SyncStmt;
+              SyncStmt << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait();" << getNL();
               buildTempVariableMap(Index, MemCall, HelperFuncType::DefaultQueue);
-            } else {
-              SyncStmt += ExprAnalysis::ref(StreamArg) + "->wait()";
+              emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+            } else if (!IsDefaultStream) {
+              auto TempName = getTempNameForExpr(StreamArg);
+              Queues2Wait.emplace_back(TempName.substr(0, TempName.size() - 1), nullptr);
             }
-            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
           }
+        }
+      } else if (MemCallLoc > RecordEndLoc && MemCallLoc < TimeElapsedLoc) {
+        if (CalleeName == "cudaEventSynchronize") {
+          emplaceTransformation(new ReplaceStmt(MemCall, false, std::string("cudaEventSynchronize"), ""));
         }
       }
     }
+  }
+  for (auto NewEventName : Events2Wait) {
+    std::ostringstream SyncStmt;
+    SyncStmt << NewEventName << ".wait();" << getNL()
+             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+  }
+  for (auto T : Queues2Wait) {
+    std::ostringstream SyncStmt;
+    auto MemCall = std::get<1>(T);
+    SyncStmt << std::get<0>(T) << "->wait();" << getNL()
+             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
   }
 }
 

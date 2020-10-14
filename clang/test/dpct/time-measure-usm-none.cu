@@ -41,20 +41,18 @@ int main() {
     cudaEventRecord(start, 0);
 
     // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
-    // CHECK: q_ct1.wait();
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice);
     // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
-    // CHECK: q_ct1.wait();
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, 0);
     // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device, *stream);
-    // CHECK: stream->wait();
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
+    // CHECK: q_ct1.wait();
+    // CHECK: stream->wait();
     // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    cudaEventRecord(stop, 0);
-    // CHECK: stop.wait_and_throw();
-    cudaEventSynchronize(stop);
     // CHECK: elapsedTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
     cudaEventElapsedTime(&elapsedTime, start, stop);
 
     add<<<N, 1>>>(da, db);
