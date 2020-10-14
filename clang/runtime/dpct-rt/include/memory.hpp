@@ -44,13 +44,12 @@ enum memory_region {
   shared,      // memory which can be accessed by host and device
 };
 
-// Byte type to use.
 typedef uint8_t byte_t;
 
-// Buffer type to be used in Memory Management runtime.
+/// Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
-// Pitched 2D/3D memory data.
+/// Pitched 2D/3D memory data.
 class pitched_data {
 public:
   pitched_data() : pitched_data(nullptr, 0, 0, 0) {}
@@ -118,7 +117,7 @@ public:
   mem_mgr(mem_mgr &&) = delete;
   mem_mgr &operator=(mem_mgr &&) = delete;
 
-  // Allocate
+  /// Allocate
   void *mem_alloc(size_t size) {
     if (!size)
       return nullptr;
@@ -139,7 +138,7 @@ public:
     return result;
   }
 
-  // Deallocate
+  /// Deallocate
   void mem_free(const void *ptr) {
     if (!ptr)
       return;
@@ -148,23 +147,21 @@ public:
     m_map.erase(it);
   }
 
-  // map: device pointer -> allocation(buffer, alloc_prt, size)
+  /// map: device pointer -> allocation(buffer, alloc_ptr, size)
   allocation translate_ptr(const void *ptr) {
     std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     return it->second;
   }
 
-  // Check if the pointer represents device pointer or not.
+  /// Check if the pointer represents device pointer or not.
   bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return (mapped_address_space <= ptr) &&
            (ptr < mapped_address_space + mapped_region_size);
   }
 
-  // Singleton to return the instance mem_mgr.
-  // Using singleton enables header-only library, but may be problematic for
-  // thread safety.
+  /// Returns the instance of memory manager singleton.
   static mem_mgr &instance() {
     static mem_mgr m;
     return m;
@@ -177,8 +174,8 @@ private:
   byte_t *next_free;
   const size_t mapped_region_size = 128ull * 1024 * 1024 * 1024;
   const size_t alignment = 256;
-  // This padding may be defined to some positive value to debug
-  // out of bound accesses.
+  /// This padding may be defined to some positive value to debug
+  /// out of bound accesses.
   const size_t extra_padding = 0;
 
   std::map<byte_t *, allocation>::iterator get_map_iterator(const void *ptr) {
@@ -224,7 +221,6 @@ public:
   using pointer_t = T *;
 };
 
-// malloc
 static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
 #ifdef DPCT_USM_LEVEL_NONE
   return mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
@@ -233,7 +229,6 @@ static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
 #endif // DPCT_USM_LEVEL_NONE
 }
 
-// malloc
 static void *dpct_malloc(size_t size) {
   return dpct_malloc(size, get_default_queue());
 }
@@ -244,14 +239,13 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z) {
   return dpct_malloc(pitch * y * z);
 }
 
-/// Synchronously sets value to the first size bytes starting from dev_ptr in
-/// \param q. The function will return after the memset operation is completed.
+/// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
 ///
 /// \param q The queue in which the operation is done.
 /// \param dev_ptr Pointer to the device memory address.
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
-/// \returns no return value.
+/// \returns An event representing the memset operation.
 static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
                                           int value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -273,15 +267,14 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
 #endif // DPCT_USM_LEVEL_NONE
 }
 
-/// Sets value to the 3D memory region pointed by \p data in \p q. \p size
-/// specify the setted 3D memory size. The function will return after the memset
-/// operation is completed.
+/// Set \p value to the 3D memory region pointed by \p data in \p q. \p size
+/// specifies the 3D memory size to set.
 ///
 /// \param q The queue in which the operation is done.
 /// \param data Pointer to the device memory region.
 /// \param value Value to be set.
-/// \param size Specify the setted memory region.
-/// \returns no return value.
+/// \param size Memory region size.
+/// \returns An event list representing the memset operations..
 static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
             cl::sycl::range<3> size) {
@@ -307,7 +300,6 @@ dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
                      cl::sycl::range<3>(x, y, 1));
 }
 
-// memcpy
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
                                    const void *from_ptr, size_t size,
                                    memcpy_direction direction) {
@@ -506,7 +498,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 }
 } // namespace detail
 
-/// Get the buffer and the offset of a piece of memory pointed to by \param ptr.
+/// Get the buffer and the offset of a piece of memory pointed to by \p ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
 /// If NULL is passed as an argument, an exception will be thrown.
@@ -522,14 +514,14 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
   }
 }
 
-/// Get the data pointed by ptr as a 1D buffer reinterpreted as type T.
+/// Get the data pointed from \p ptr as a 1D buffer reinterpreted as type T.
 template <typename T> static cl::sycl::buffer<T> get_buffer(const void *ptr) {
   auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
   return alloc.buffer.reinterpret<T>(
       cl::sycl::range<1>(alloc.size / sizeof(T)));
 }
 
-/// Get the buffer of a piece of memory pointed to by \param ptr.
+/// Get the buffer of a piece of memory pointed to by \p ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
 /// \returns the buffer.
@@ -579,11 +571,11 @@ static inline void dpct_free(void *ptr) {
   }
 }
 
-/// Synchronously copies size bytes from the address specified by from_ptr to
-/// the address specified by to_ptr. The value of direction, which is used to
-/// specify the copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic. The function will return
-/// after the copy is completed.
+/// Synchronously copies \p size bytes from the address specified by \p from_ptr
+/// to the address specified by \p to_ptr. The value of \p direction is used to
+/// set the copy direction, it can be \a host_to_host, \a host_to_device,
+/// \a device_to_host, \a device_to_device or \a automatic. The function will
+/// return after the copy is completed.
 ///
 /// \param to_ptr Pointer to destination memory address.
 /// \param from_ptr Pointer to source memory address.
@@ -596,11 +588,11 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
       .wait();
 }
 
-/// Asynchronously copies size bytes from the address specified by from_ptr to
-/// the address specified by to_ptr. The value of direction, which is used to
-/// specify the copy direction, should be one of host_to_host,
-/// host_to_device, device_to_host, device_to_device, or automatic. The return
-/// of the function does NOT guarantee the copy is completed
+/// Asynchronously copies \p size bytes from the address specified by \p
+/// from_ptr to the address specified by \p to_ptr. The value of \p direction is
+/// used to set the copy direction, it can be \a host_to_host, \a
+/// host_to_device, \a device_to_host, \a device_to_device or \a automatic. The
+/// return of the function does NOT guarantee the copy is completed.
 ///
 /// \param to_ptr Pointer to destination memory address.
 /// \param from_ptr Pointer to source memory address.
@@ -614,13 +606,13 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
-/// Synchronously copies 2D matrix specified by x and y from the address
-/// specified by from_ptr to the address specified by to_ptr, while from_pitch
-/// and to_pitch are the range of dim x in bytes of the matrix specified by
-/// from_ptr and to_ptr, The value of direction, which is used to specify the
-/// copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic. The function will return
-/// after the copy is completed.
+/// Synchronously copies 2D matrix specified by \p x and \p y from the address
+/// specified by \p from_ptr to the address specified by \p to_ptr, while \p
+/// from_pitch and \p to_pitch are the range of dim x in bytes of the matrix
+/// specified by \p from_ptr and \p to_ptr. The value of \p direction is used to
+/// set the copy direction, it can be \a host_to_host, \a host_to_device, \a
+/// device_to_host, \a device_to_device or \a automatic. The function will
+/// return after the copy is completed.
 ///
 /// \param to_ptr Pointer to destination memory address.
 /// \param to_pitch Range of dim x in bytes of destination matrix.
@@ -639,13 +631,13 @@ static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
                                             y, direction));
 }
 
-/// Asynchronously copies 2D matrix specified by x and y from the address
-/// specified by from_ptr to the address specified by to_ptr, while from_pitch
-/// and to_pitch are the range of dim x in bytes of the matrix specified by
-/// from_ptr and to_ptr, The value of direction, which is used to specify the
-/// copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic. The return of the function
-/// does NOT guarantee the copy is completed
+/// Asynchronously copies 2D matrix specified by \p x and \p y from the address
+/// specified by \p from_ptr to the address specified by \p to_ptr, while \p
+/// \p from_pitch and \p to_pitch are the range of dim x in bytes of the matrix
+/// specified by \p from_ptr and \p to_ptr. The value of \p direction is used to
+/// set the copy direction, it can be \a host_to_host, \a host_to_device, \a
+/// device_to_host, \a device_to_device or \a automatic. The return of the
+/// function does NOT guarantee the copy is completed.
 ///
 /// \param to_ptr Pointer to destination memory address.
 /// \param to_pitch Range of dim x in bytes of destination matrix.
@@ -668,9 +660,9 @@ async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
 /// Synchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
 /// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
-/// Copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic is specified by the param.
-/// The function will return after the copy is completed.
+/// The value of \p direction is used to set the copy direction, it can be \a
+/// host_to_host, \a host_to_device, \a device_to_host, \a device_to_device or
+/// \a automatic. The function will return after the copy is completed.
 ///
 /// \param to Destination matrix info.
 /// \param to_pos Position of destination.
@@ -690,9 +682,10 @@ static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
 /// Asynchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
 /// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
-/// Copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic is specified by the param.
-/// The function will return after the copy is completed.
+/// The value of \p direction is used to set the copy direction, it can be \a
+/// host_to_host, \a host_to_device, \a device_to_host, \a device_to_device or
+/// \a automatic. The return of the function does NOT guarantee the copy is
+/// completed.
 ///
 /// \param to Destination matrix info.
 /// \param to_pos Position of destination.
@@ -710,8 +703,8 @@ async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 
-/// Synchronously sets value to the first size bytes starting from dev_ptr. The
-/// function will return after the memset operation is completed.
+/// Synchronously sets \p value to the first \p size bytes starting from \p
+/// dev_ptr. The function will return after the memset operation is completed.
 ///
 /// \param dev_ptr Pointer to the device memory address.
 /// \param value Value to be set.
@@ -721,9 +714,9 @@ static void dpct_memset(void *dev_ptr, int value, size_t size) {
   detail::dpct_memset(get_default_queue(), dev_ptr, value, size).wait();
 }
 
-/// Asynchronously sets value to the first size bytes starting from dev_ptr.
-/// The return of the function does NOT guarantee the memset operation is
-/// completed.
+/// Asynchronously sets \p value to the first \p size bytes starting from \p
+/// dev_ptr. The return of the function does NOT guarantee the memset operation
+/// is completed.
 ///
 /// \param dev_ptr Pointer to the device memory address.
 /// \param value Value to be set.
@@ -734,8 +727,8 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
   detail::dpct_memset(q, dev_ptr, value, size);
 }
 
-/// Sets value to the 2D memory region pointed by \p ptr in \p q. \p x and \p y
-/// specify the setted 2D memory size. \p pitch is the bytes in linear
+/// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
 /// dimension, including padding bytes. The function will return after the
 /// memset operation is completed.
 ///
@@ -751,8 +744,8 @@ static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
       detail::dpct_memset(get_default_queue(), ptr, pitch, val, x, y));
 }
 
-/// Sets value to the 2D memory region pointed by \p ptr in \p q. \p x and \p y
-/// specify the setted 2D memory size. \p pitch is the bytes in linear
+/// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
 /// dimension, including padding bytes. The return of the function does NOT
 /// guarantee the memset operation is completed.
 ///
@@ -769,7 +762,7 @@ static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
   detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
 
-/// Sets value to the 3D memory region specified by \p pitch in \p q. \p size
+/// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
 /// specify the setted 3D memory size. The function will return after the
 /// memset operation is completed.
 ///
@@ -783,7 +776,7 @@ static inline void dpct_memset(pitched_data pitch, int val,
       detail::dpct_memset(get_default_queue(), pitch, val, size));
 }
 
-/// Sets value to the 3D memory region specified by \p pitch in \p q. \p size
+/// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
 /// specify the setted 3D memory size. The return of the function does NOT
 /// guarantee the memset operation is completed.
 ///
@@ -798,7 +791,7 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
   detail::dpct_memset(q, pitch, val, size);
 }
 
-// dpct accessor used as kernel function and device function parameter
+/// dpct accessor used as device function parameter.
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {
 public:
@@ -846,7 +839,7 @@ private:
 };
 
 namespace detail {
-// Variable with address space of global or constant
+/// Device variable with address space of shared, global or constant.
 template <class T, memory_region Memory, size_t Dimension>
 class device_memory {
 public:
@@ -893,8 +886,8 @@ public:
     static_assert(
         (Memory == global) || (Memory == constant) || (Memory == shared),
         "device memory region should be global, constant or shared");
-    /// Make sure that singleton class mem_mgr and dev_mgr will destruct later
-    /// than this.
+    // Make sure that singleton class mem_mgr and dev_mgr will destruct later
+    // than this.
     detail::mem_mgr::instance();
     dev_mgr::instance();
   }
