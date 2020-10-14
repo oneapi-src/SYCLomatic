@@ -91,7 +91,7 @@ struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   static constexpr int channel_num = 4;
 };
 
-// Functor to fetch data from read result of an image accessor.
+/// Functor to fetch data from read result of an image accessor.
 template <class T> struct fetch_data {
   using return_t = typename image_trait<T>::data_t;
   using acc_data_t = typename image_trait<T>::acc_data_t;
@@ -133,7 +133,7 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 /// Create image with channel info and specified dimensions.
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 
-// Functor for attaching data to image class.
+/// Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data;
 
 } // namespace detail
@@ -308,7 +308,6 @@ using image_matrix_p = image_matrix *;
 enum class image_data_type { matrix, linear, pitch, unsupport };
 
 /// Image data info.
-/// This class doesn't manage the data pointer.
 class image_data {
 public:
   image_data() { _type = image_data_type::unsupport; }
@@ -496,30 +495,30 @@ public:
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
-  // Get image accessor.
+  /// Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return accessor_t(*_image, cgh);
   }
-  // Set data info, attach the data to this class.
+  /// Set data info, attach the data to this class.
   void attach(image_data data) override {
     image_wrapper_base::set_data(data);
     detail::attach_data<T, Dimension, IsImageArray>()(*this, get_data());
   }
-  // Attach matrix data to this class.
+  /// Attach matrix data to this class.
   void attach(image_matrix *matrix) {
     detach();
     _image = matrix->create_image<Dimension>();
   }
-  // Attach matrix data to this class.
+  /// Attach matrix data to this class.
   void attach(image_matrix *matrix, image_channel channel) {
     detach();
     _image = matrix->create_image<Dimension>(channel);
   }
-  // Attach linear data to this class.
+  /// Attach linear data to this class.
   void attach(void *ptr, size_t count) {
     attach(ptr, count, get_channel());
   }
-  // Attach linear data to this class.
+  /// Attach linear data to this class.
   void attach(void *ptr, size_t count, image_channel channel) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
@@ -530,11 +529,11 @@ public:
         ptr, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<1>(count / channel.get_total_size()));
   }
-  // Attach 2D data to this class.
+  /// Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
     attach(data, x, y, pitch, get_channel());
   }
-  // Attach 2D data to this class.
+  /// Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
     detach();
     if (detail::mem_mgr::instance().is_device_ptr(data))
@@ -546,7 +545,7 @@ public:
         data, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<2>(x / channel.get_total_size(), y), pitch_range);
   }
-  // Detach data.
+  /// Detach data.
   void detach() {
     if (_image)
       delete _image;
@@ -568,37 +567,37 @@ public:
   image_accessor_ext(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 3>
   typename std::enable_if<Available, data_t>::type read(float x, float y,
                                                         float z) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::float4(x, y, z, 0), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 3>
   typename std::enable_if<Available, data_t>::type read(int x, int y, int z) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::int4(x, y, z, 0), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 2>
   typename std::enable_if<Available, data_t>::type read(float x, float y) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::float2(x, y), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 2>
   typename std::enable_if<Available, data_t>::type read(int x, int y) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::int2(x, y), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 1>
   typename std::enable_if<Available, data_t>::type read(float x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 1>
   typename std::enable_if<Available, data_t>::type read(int x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
@@ -617,26 +616,26 @@ public:
   image_accessor_ext(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 2>
   typename std::enable_if<Available, data_t>::type read(int index, float x,
                                                         float y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(cl::sycl::float2(x, y), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 2>
   typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(cl::sycl::int2(x, y), _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 1>
   typename std::enable_if<Available, data_t>::type read(int index, float x) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(x, _sampler));
   }
-  // Read data from accessor.
+  /// Read data from accessor.
   template <bool Available = Dimension == 1>
   typename std::enable_if<Available, data_t>::type read(int index, int x) {
     return detail::fetch_data<T>()(
@@ -648,6 +647,7 @@ public:
 /// \return Pointer to image wrapper base class.
 /// \param data Image data used to create image wrapper.
 /// \param info Image sampling info used to create image wrapper.
+/// \returns Pointer to base class of created image wrapper object.
 static inline image_wrapper_base *create_image_wrapper(image_data data,
                               sampling_info info) {
   image_channel channel;
@@ -669,7 +669,7 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 namespace detail {
-// Functor for attaching data to image class.
+/// Functor for attaching data to image class.
 template <class T, int Dimension, bool IsImageArray> struct attach_data {
   void operator()(image_wrapper<T, Dimension, IsImageArray> &in_image,
                   image_data data) {

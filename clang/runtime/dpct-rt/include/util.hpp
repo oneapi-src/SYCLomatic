@@ -102,7 +102,7 @@ inline double cast_ints_to_double(int high32, int low32) {
 /// Compute fast_length for variable-length array
 /// \param [in] a The array
 /// \param [in] len Length of the array
-/// \return The computed fast_length
+/// \returns The computed fast_length
 inline float fast_length(const float *a, int len) {
   switch (len) {
   case 1:
@@ -124,12 +124,12 @@ inline float fast_length(const float *a, int len) {
 }
 
 /// Compute vectorized max for two values, with each value treated as a vector
-/// type S
+/// type \p S
 /// \param [in] S The type of the vector
 /// \param [in] T The type of the original values
 /// \param [in] a The first value
 /// \param [in] b The second value
-/// \return The vectorize max of the two values
+/// \returns The vectorized max of the two values
 template <typename S, typename T>
 inline T vectorized_max(T a, T b) {
   cl::sycl::vec<T, 1> v0{a}, v1{b};
@@ -141,12 +141,12 @@ inline T vectorized_max(T a, T b) {
 }
 
 /// Compute vectorized min for two values, with each value treated as a vector
-/// type S
+/// type \p S
 /// \param [in] S The type of the vector
 /// \param [in] T The type of the original values
 /// \param [in] a The first value
 /// \param [in] b The second value
-/// \return The vectorized min of the two values
+/// \returns The vectorized min of the two values
 template <typename S, typename T>
 inline T vectorized_min(T a, T b) {
   cl::sycl::vec<T, 1> v0{a}, v1{b};
@@ -158,12 +158,12 @@ inline T vectorized_min(T a, T b) {
 }
 
 /// Compute vectorized isgreater for two values, with each value treated as a
-/// vector type S
+/// vector type \p S
 /// \param [in] S The type of the vector
 /// \param [in] T The type of the original values
 /// \param [in] a The first value
 /// \param [in] b The second value
-/// \return The vectorized greater than of the two values
+/// \returns The vectorized greater than of the two values
 template <typename S, typename T>
 inline T vectorized_isgreater(T a, T b) {
   cl::sycl::vec<T, 1> v0{a}, v1{b};
@@ -178,7 +178,7 @@ inline T vectorized_isgreater(T a, T b) {
 /// treated as a vector of two unsigned short
 /// \param [in] a The first value
 /// \param [in] b The second value
-/// \return The vectorized greater than of the two values
+/// \returns The vectorized greater than of the two values
 template<>
 inline unsigned
 vectorized_isgreater<cl::sycl::ushort2, unsigned>(unsigned a, unsigned b) {

@@ -42,7 +42,7 @@ inline oneapi::mkl::transpose get_transpose(int t) {
   }
 }
 
-/// Get the value of \param s.
+/// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.
 /// \param [in] q The queue where the memory copy should be executed.
@@ -165,11 +165,11 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 /// \param [in] n The order of the matrices.
 /// \param [in] nrhs The number of right hand sides.
 /// \param [in] a Array of pointers to matrices.
-/// \param [in] lda The leading dimension of the matrices in \param a.
+/// \param [in] lda The leading dimension of the matrices in \p a.
 /// \param [in] ipiv An array stores the pivots.
 /// \param [in, out] b Array of pointers to matrices, whose columns are
 /// the right-hand sides for the systems of equations.
-/// \param [in] ldb The leading dimension of the matrices in \param b.
+/// \param [in] ldb The leading dimension of the matrices in \p b.
 /// \param [out] info A value stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
@@ -284,10 +284,10 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] n The order of the matrices.
 /// \param [in] a Array of pointers to matrices.
-/// \param [in] lda The leading dimension of the matrices in \param a.
+/// \param [in] lda The leading dimension of the matrices in \p a.
 /// \param [in] ipiv An array stores the pivots.
 /// \param [out] b Array of pointers to inverse matrices.
-/// \param [in] ldb The leading dimension of the matrices in \param b.
+/// \param [in] ldb The leading dimension of the matrices in \p b.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
@@ -404,7 +404,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 /// \param [in] n The number of columns in the matrices.
 /// \param [in, out] a Array of pointers to matrices. These
 /// matrices will be overwritten by the factorization data.
-/// \param [in] lda The leading dimension of the matrices in \param a.
+/// \param [in] lda The leading dimension of the matrices in \p a.
 /// \param [out] tau An array stores the scalars.
 /// \param [out] info A value stores the error information.
 /// \param [in] batch_size The size of the batch.

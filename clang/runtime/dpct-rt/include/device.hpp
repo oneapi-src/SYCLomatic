@@ -42,7 +42,6 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
   }
 };
 
-/// Device info
 class device_info {
 public:
   // get interface
@@ -364,7 +363,7 @@ public:
   }
   unsigned int device_count() { return _devs.size(); }
 
-  // Singleton to return the instance dev_mgr.
+  /// Returns the instance of device manager singleton.
   static dev_mgr &instance() {
     static dev_mgr d_m;
     return d_m;
@@ -406,9 +405,11 @@ private:
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
-  // DEFAULT_DEVICE_ID is used, if can not find in _thread2dev_map
+  /// DEFAULT_DEVICE_ID is used, if current_device_id() can not find current
+  /// thread id in _thread2dev_map, which means default device should be used
+  /// for the current thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
-  // thread-id to device-id map.
+  /// thread-id to device-id map.
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };

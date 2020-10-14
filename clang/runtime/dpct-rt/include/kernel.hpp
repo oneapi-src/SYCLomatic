@@ -25,5 +25,5 @@ static void get_kernel_function_info(kernel_function_info *kernel_info,
           .get_info<cl::sycl::info::device::max_work_group_size>();
 }
 
-}//namespace
+} // namespace dpct
 #endif // __DPCT_KERNEL_HPP__
