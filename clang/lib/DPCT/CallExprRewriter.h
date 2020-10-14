@@ -106,25 +106,34 @@ public:
 
   /// This function should be overwrited to implement call expression rewriting.
   virtual Optional<std::string> rewrite() = 0;
-
-protected:
-  std::vector<std::string> getMigratedArgs();
-  std::string getMigratedArg(unsigned Index);
-
-  StringRef getSourceCalleeName() { return SourceCalleeName; }
-
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
   inline void report(IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     TransformSetTy TS;
+    auto SL = Call->getBeginLoc();
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
+      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+        getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
+      if (ItMatch != dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+        if (ItMatch->second->IsInRoot) {
+          SL = ItMatch->second->NameTokenLoc;
+        }
+      }
+    }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        Call->getBeginLoc(), MsgID, DpctGlobalInfo::getCompilerInstance(), &TS,
-        UseTextBegin, std::forward<Ts>(Vals)...);
+      SL, MsgID, DpctGlobalInfo::getCompilerInstance(), &TS,
+      UseTextBegin, std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
-          T->getReplacement(DpctGlobalInfo::getContext()));
+        T->getReplacement(DpctGlobalInfo::getContext()));
   }
+protected:
+  std::vector<std::string> getMigratedArgs();
+  std::string getMigratedArg(unsigned Index);
+
+  StringRef getSourceCalleeName() { return SourceCalleeName; }
 };
 
 class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {

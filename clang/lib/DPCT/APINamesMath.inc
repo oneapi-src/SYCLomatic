@@ -256,8 +256,8 @@ ENTRY_EMULATED("rhypotf", MapNames::getClNamespace() + "::hypot")
 ENTRY_EMULATED("sincosf", MapNames::getClNamespace() + "::sincos")
 ENTRY_EMULATED("sincospif", MapNames::getClNamespace() + "::sincos")
 ENTRY_EMULATED("__sincosf", MapNames::getClNamespace() + "::sincos")
-ENTRY_EMULATED("powf", MapNames::getClNamespace() + "::pow")
-ENTRY_EMULATED("__powf", MapNames::getClNamespace() + "::pow")
+ENTRY_EMULATED("powf", MapNames::getClNamespace() + "::pow<float>")
+ENTRY_EMULATED("__powf", MapNames::getClNamespace() + "::pow<float>")
 
 // Double Precision Mathematical Functions
 ENTRY_EMULATED("frexp", MapNames::getClNamespace() + "::frexp")
@@ -268,7 +268,7 @@ ENTRY_EMULATED("remquo", MapNames::getClNamespace() + "::remquo")
 ENTRY_EMULATED("rhypot", MapNames::getClNamespace() + "::hypot")
 ENTRY_EMULATED("sincos", MapNames::getClNamespace() + "::sincos")
 ENTRY_EMULATED("sincospi", MapNames::getClNamespace() + "::sincos")
-ENTRY_EMULATED("pow", MapNames::getClNamespace() + "::pow")
+ENTRY_EMULATED("pow", MapNames::getClNamespace() + "::pow<double>")
 
 // Emulated Version 2
 ENTRY_EMULATED("erfcx", MapNames::getClNamespace() + "::erfc")
