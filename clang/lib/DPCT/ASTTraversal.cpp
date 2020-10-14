@@ -10151,7 +10151,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
     return;
   }
-
+  report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false);
   auto Arg0Str = ExprAnalysis::ref(C->getArg(0));
   auto Arg1Str = ExprAnalysis::ref(C->getArg(1));
   auto Arg2Str = "0";

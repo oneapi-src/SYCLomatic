@@ -142,3 +142,5 @@ DEF_WARNING(MACRO_REMOVED, 1061, "Call to %0 macro was removed, because it only 
 DEF_COMMENT(MACRO_REMOVED, 1061, "Call to {0} macro was removed, because it only contains code, which is unnecessary in DPC++.")
 DEF_WARNING(UNSUPPORTED_IMAGE_NORM_READ_MODE, 1062, "SYCL Image doesn't support normalized read mode.")
 DEF_COMMENT(UNSUPPORTED_IMAGE_NORM_READ_MODE, 1062, "SYCL Image doesn't support normalized read mode.")
+DEF_WARNING(DEFAULT_MEM_ADVICE, 1063, "Advice parameter is device-defined and was set to 0. You may need to adjust it.")
+DEF_COMMENT(DEFAULT_MEM_ADVICE, 1063, "Advice parameter is device-defined and was set to 0. You may need to adjust it.")
