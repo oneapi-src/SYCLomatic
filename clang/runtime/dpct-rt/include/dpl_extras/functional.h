@@ -92,7 +92,7 @@ template <typename _Tp> class __buffer {
 
 public:
   // Try to obtain buffer of given size to store objects of _Tp type
-  __buffer(const std::size_t __n) : _M_ptr(new _Tp[n]) {}
+  __buffer(const std::size_t __n) : _M_ptr(new _Tp[__n]) {}
 
   // Return pointer to buffer, or  NULL if buffer could not be obtained.
   _Tp *get() const { return _M_ptr.get(); }
