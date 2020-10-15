@@ -268,6 +268,7 @@ public:
   }
   pointer get() const { return ptr; }
   operator T *() { return ptr; }
+  operator T *() const { return ptr; }
 
   reference operator[](difference_type idx) { return ptr[idx]; }
   reference operator[](difference_type idx) const { return ptr[idx]; }

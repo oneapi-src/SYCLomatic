@@ -45,11 +45,11 @@ Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 
   typename internal::rebind_policy<policy_type, class RemoveIf1>::type policy1(
       policy);
-  auto end =
-      std::copy_if(policy1, make_zip_iterator(first, mask),
-                   make_zip_iterator(last, mask + std::distance(first, last)),
-                   make_zip_iterator(_tmp.get(), oneapi::dpl::discard_iterator()),
-                   internal::negate_predicate_key_fun<Pred>(p));
+  auto end = std::copy_if(
+      policy1, make_zip_iterator(first, mask),
+      make_zip_iterator(last, mask + std::distance(first, last)),
+      make_zip_iterator(_tmp.get(), oneapi::dpl::discard_iterator()),
+      internal::negate_predicate_key_fun<Pred>(p));
   typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
       policy);
   return std::copy(policy2, _tmp.get(), std::get<0>(end.base()), first);
@@ -78,8 +78,8 @@ std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
       oneapi::dpl::make_zip_iterator(
           keys_last, values_first + std::distance(keys_first, keys_last)),
       internal::compare_key_fun<BinaryPred>(binary_pred));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_first, values_first),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_first, values_first), ret_val);
   return std::make_pair(keys_first + n1, values_first + n1);
 }
 
@@ -104,8 +104,8 @@ std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
           keys_last, values_first + std::distance(keys_first, keys_last)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::unique_fun<BinaryPred>(binary_pred));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -168,11 +168,12 @@ template <class Policy, class Iter1, class Iter2, class Iter3,
           class UnaryOperation, class Pred>
 Iter3 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                    Iter3 result, UnaryOperation unary_op, Pred pred) {
+  using T = typename std::iterator_traits<Iter1>::value_type;
   using Ref1 = typename std::iterator_traits<Iter1>::reference;
   using Ref2 = typename std::iterator_traits<Iter2>::reference;
   return std::transform(
       std::forward<Policy>(policy), first, last, mask, result,
-      [pred, unary_op](Ref1 a, Ref2 s) { return pred(s) ? unary_op(a) : a; });
+      internal::transform_if_mask_fun<T, Pred, UnaryOperation>(pred, unary_op));
 }
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
@@ -181,7 +182,8 @@ Iter4 transform_if(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
                    Iter3 mask, Iter4 result, BinaryOperation binary_op,
                    Pred pred) {
   const auto n = std::distance(first1, last1);
-  using ZipIterator = typename oneapi::dpl::zip_iterator<Iter1, Iter2, Iter3, Iter4>;
+  using ZipIterator =
+      typename oneapi::dpl::zip_iterator<Iter1, Iter2, Iter3, Iter4>;
   using T = typename std::iterator_traits<ZipIterator>::value_type;
   std::for_each(
       std::forward<Policy>(policy),
@@ -231,10 +233,10 @@ merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
 template <class Policy, class Iter, class T>
 void iota(Policy &&policy, Iter first, Iter last, T init, T step) {
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
-  std::transform(std::forward<Policy>(policy),
-                 oneapi::dpl::counting_iterator<DiffSize>(0),
-                 oneapi::dpl::counting_iterator<DiffSize>(std::distance(first, last)),
-                 first, internal::sequence_fun<T>(init, step));
+  std::transform(
+      std::forward<Policy>(policy), oneapi::dpl::counting_iterator<DiffSize>(0),
+      oneapi::dpl::counting_iterator<DiffSize>(std::distance(first, last)),
+      first, internal::sequence_fun<T>(init, step));
 }
 
 template <class Policy, class Iter, class T>
@@ -285,10 +287,10 @@ void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
 template <class Policy, class Iter, class Operator>
 void for_each_index(Policy &&policy, Iter first, Iter last, Operator unary_op) {
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
-  std::transform(std::forward<Policy>(policy),
-                 oneapi::dpl::counting_iterator<DiffSize>(0),
-                 oneapi::dpl::counting_iterator<DiffSize>(std::distance(first, last)),
-                 first, unary_op);
+  std::transform(
+      std::forward<Policy>(policy), oneapi::dpl::counting_iterator<DiffSize>(0),
+      oneapi::dpl::counting_iterator<DiffSize>(std::distance(first, last)),
+      first, unary_op);
 }
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
@@ -302,12 +304,14 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
       oneapi::dpl::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      oneapi::dpl::make_zip_iterator(keys_first2, oneapi::dpl::discard_iterator()),
-      oneapi::dpl::make_zip_iterator(keys_last2, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_first2,
+                                     oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_last2,
+                                     oneapi::dpl::discard_iterator()),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -322,12 +326,14 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
       oneapi::dpl::make_zip_iterator(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
-      oneapi::dpl::make_zip_iterator(keys_first2, oneapi::dpl::discard_iterator()),
-      oneapi::dpl::make_zip_iterator(keys_last2, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_first2,
+                                     oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(keys_last2,
+                                     oneapi::dpl::discard_iterator()),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Comp>(comp));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -348,8 +354,8 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -370,8 +376,8 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Comp>(comp));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -391,8 +397,8 @@ set_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -413,8 +419,8 @@ std::pair<Iter5, Iter6> set_difference(Policy &&policy, Iter1 keys_first1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Comp>(comp));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -434,8 +440,8 @@ set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -456,8 +462,8 @@ set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           keys_last2, values_first2 + std::distance(keys_first2, keys_last2)),
       oneapi::dpl::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Comp>(comp));
-  auto n1 = std::distance(oneapi::dpl::make_zip_iterator(keys_result, values_result),
-                          ret_val);
+  auto n1 = std::distance(
+      oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
 
@@ -470,7 +476,8 @@ stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
       std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, mask),
       oneapi::dpl::make_zip_iterator(last, mask + std::distance(first, last)),
       oneapi::dpl::make_zip_iterator(out_true, oneapi::dpl::discard_iterator()),
-      oneapi::dpl::make_zip_iterator(out_false, oneapi::dpl::discard_iterator()),
+      oneapi::dpl::make_zip_iterator(out_false,
+                                     oneapi::dpl::discard_iterator()),
       internal::predicate_key_fun<Pred>(p));
   return std::make_pair(std::get<0>(ret_val.first.base()),
                         std::get<0>(ret_val.second.base()));
@@ -504,10 +511,12 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   std::copy(std::forward<Policy>(policy), mask,
             mask + std::distance(first, last), _tmp.get());
 
-  auto ret_val = std::stable_partition(
-      std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, _tmp.get()),
-      oneapi::dpl::make_zip_iterator(last, _tmp.get() + std::distance(first, last)),
-      internal::predicate_key_fun<Pred>(p));
+  auto ret_val =
+      std::stable_partition(std::forward<Policy>(policy),
+                            oneapi::dpl::make_zip_iterator(first, _tmp.get()),
+                            oneapi::dpl::make_zip_iterator(
+                                last, _tmp.get() + std::distance(first, last)),
+                            internal::predicate_key_fun<Pred>(p));
   return std::get<0>(ret_val.base());
 }
 

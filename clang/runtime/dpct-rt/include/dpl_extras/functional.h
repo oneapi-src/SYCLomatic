@@ -9,9 +9,9 @@
 #ifndef __DPCT_FUNCTIONAL_H__
 #define __DPCT_FUNCTIONAL_H__
 
+#include <functional>
 #include <oneapi/dpl/functional>
 #include <oneapi/dpl/iterator>
-#include <functional>
 
 #ifdef _ONEDPL_BACKEND_SYCL
 #include <oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
@@ -30,7 +30,7 @@ using enable_if_execution_policy =
                                 typename std::decay<_ExecPolicy>::type>::value,
                             _T>::type;
 
-#if _PSTL_CPP14_INTEGER_SEQUENCE_PRESENT
+#if _ONEDPL_CPP14_INTEGER_SEQUENCE_PRESENT
 
 template <std::size_t... _Sp>
 using index_sequence = std::index_sequence<_Sp...>;
@@ -57,7 +57,7 @@ using make_index_sequence = typename make_index_sequence_impl<_Np>::type;
 // Some of our algorithms need to start with raw memory buffer,
 // not an initialized array, because initialization/destruction
 // would make the span be at least O(N).
-#if _PSTL_BACKEND_SYCL
+#if _ONEDPL_BACKEND_SYCL
 template <typename _Tp> class __buffer {
   cl::sycl::buffer<_Tp, 1> __buf;
 
@@ -106,11 +106,12 @@ template <typename Policy, typename NewName> struct rebind_policy {
 };
 
 template <typename KernelName, typename NewName>
-struct rebind_policy<oneapi::dpl::execution::device_policy<KernelName>, NewName> {
+struct rebind_policy<oneapi::dpl::execution::device_policy<KernelName>,
+                     NewName> {
   using type = oneapi::dpl::execution::device_policy<NewName>;
 };
 
-#if _PSTL_FPGA_DEVICE
+#if _ONEDPL_FPGA_DEVICE
 template <unsigned int factor, typename KernelName, typename NewName>
 struct rebind_policy<oneapi::dpl::execution::fpga_policy<factor, KernelName>,
                      NewName> {
@@ -233,13 +234,28 @@ private:
   Operator op;
 };
 
+//[pred, op](Ref1 a, Ref2 s) { return pred(s) ? op(a) : a; });
+template <typename T, typename Predicate, typename Operator>
+struct transform_if_mask_fun {
+  typedef T result_of;
+  transform_if_mask_fun(Predicate _pred, Operator _op) : pred(_pred), op(_op) {}
+  template <typename M>
+  result_of operator()(const T &input, const M &mask) const {
+    return pred(mask) ? op(input) : input;
+  }
+
+private:
+  Predicate pred;
+  Operator op;
+};
+
 template <typename T, typename Predicate, typename BinaryOperation>
 class transform_if_zip_mask_fun {
 public:
   transform_if_zip_mask_fun(Predicate _pred = oneapi::dpl::identity(),
                             BinaryOperation _op = oneapi::dpl::identity())
       : pred(_pred), op(_op) {}
-  template <typename _T> void operator()(_T &&t) {
+  template <typename _T> void operator()(_T &&t) const {
     using std::get;
     if (pred(get<2>(t)))
       get<3>(t) = op(get<0>(t), get<1>(t));

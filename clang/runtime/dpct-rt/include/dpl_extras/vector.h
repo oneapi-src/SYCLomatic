@@ -108,8 +108,8 @@ public:
     _size = std::distance(first, last);
     _capacity = 2 * _size;
     _storage = _alloc.allocate(_capacity);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
-              last, begin());
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              first, last, begin());
   }
 
   template <typename OtherAllocator>
@@ -216,8 +216,8 @@ public:
                                  InputIterator>::type last) {
     auto n = std::distance(first, last);
     resize(n);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), first,
-              last, begin());
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              first, last, begin());
   }
   void clear(void) { _size = 0; }
   bool empty(void) const { return (size() == 0); }
@@ -235,11 +235,11 @@ public:
     auto m = std::distance(last, end());
     auto tmp = _alloc.allocate(m);
     // copy remainder to temporary buffer.
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), last,
-              end(), tmp);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              last, end(), tmp);
     // override (erase) subsequence in storage.
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), tmp,
-              tmp + m, first);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              tmp, tmp + m, first);
     _alloc.deallocate(tmp, m);
     _size -= n;
     return begin() + first.get_idx() + n;
@@ -271,8 +271,8 @@ public:
       std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
                 position, position + n, x);
 
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), tmp,
-                tmp + m, position + n);
+      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                tmp, tmp + m, position + n);
       _alloc.deallocate(tmp, m);
     }
   }
@@ -299,8 +299,8 @@ public:
 
       std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
                 first, last, position);
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()), tmp,
-                tmp + m, position + n);
+      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                tmp, tmp + m, position + n);
       _alloc.deallocate(tmp, m);
     }
   }
@@ -345,8 +345,9 @@ public:
       : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {}
   explicit device_vector(size_type n, const T &value)
       : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {
-    std::fill(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(_buffer),
-              oneapi::dpl::begin(_buffer) + n, T(value));
+    std::fill(oneapi::dpl::execution::dpcpp_default,
+              oneapi::dpl::begin(_buffer), oneapi::dpl::begin(_buffer) + n,
+              T(value));
   }
   device_vector(const device_vector &other)
       : _buffer(other._buffer), _size(other.size()) {}
@@ -372,7 +373,8 @@ public:
     // Copy assignment operator:
     _size = other.size();
     Buffer tmp{Range(_size)};
-    std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(other.get_buffer()),
+    std::copy(oneapi::dpl::execution::dpcpp_default,
+              oneapi::dpl::begin(other.get_buffer()),
               oneapi::dpl::end(other.get_buffer()), oneapi::dpl::begin(tmp));
     _buffer = tmp;
     return *this;
@@ -421,8 +423,9 @@ public:
       // create new buffer (allocate for new size)
       Buffer tmp{Range(n)};
       // copy content (old buffer to new buffer)
-      std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(_buffer),
-                oneapi::dpl::end(_buffer), oneapi::dpl::begin(tmp));
+      std::copy(oneapi::dpl::execution::dpcpp_default,
+                oneapi::dpl::begin(_buffer), oneapi::dpl::end(_buffer),
+                oneapi::dpl::begin(tmp));
       // deallocate old memory
       _buffer = tmp;
     }
@@ -451,8 +454,9 @@ public:
   void shrink_to_fit(void) {
     if (_size != capacity()) {
       Buffer tmp{Range(_size)};
-      std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(_buffer),
-                oneapi::dpl::end(_buffer), oneapi::dpl::begin(tmp));
+      std::copy(oneapi::dpl::execution::dpcpp_default,
+                oneapi::dpl::begin(_buffer), oneapi::dpl::end(_buffer),
+                oneapi::dpl::begin(tmp));
       _buffer = tmp;
     }
   }
@@ -484,7 +488,8 @@ public:
     }
     Buffer tmp{Range(std::distance(last, end()))};
     // copy remainder to temporary buffer.
-    std::copy(oneapi::dpl::execution::dpcpp_default, last, end(), oneapi::dpl::begin(tmp));
+    std::copy(oneapi::dpl::execution::dpcpp_default, last, end(),
+              oneapi::dpl::begin(tmp));
     // override (erase) subsequence in storage.
     std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(tmp),
               oneapi::dpl::end(tmp), first);
@@ -513,7 +518,8 @@ public:
       // resizing might invalidate position
       position = begin() + position.get_idx();
 
-      std::fill(oneapi::dpl::execution::dpcpp_default, position, position + n, x);
+      std::fill(oneapi::dpl::execution::dpcpp_default, position, position + n,
+                x);
 
       std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(tmp),
                 oneapi::dpl::end(tmp), position + n);
