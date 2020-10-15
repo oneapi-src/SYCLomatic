@@ -519,11 +519,17 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 /// Get the buffer and the offset of a piece of memory pointed to by \param ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
+/// If NULL is passed as an argument, an exception will be thrown.
 /// \returns a pair containing both the buffer and the offset.
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
-  auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
-  size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
-  return std::make_pair(alloc.buffer, offset);
+  if (ptr) {
+    auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+    size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
+    return std::make_pair(alloc.buffer, offset);
+  } else {
+    throw std::runtime_error(
+        "NULL pointer argument in get_buffer_and_offset function is invalid");
+  }
 }
 
 /// Get the data pointed by ptr as a 1D buffer reinterpreted as type T.
