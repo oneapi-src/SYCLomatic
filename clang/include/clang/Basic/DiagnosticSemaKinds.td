@@ -1829,8 +1829,11 @@ def err_missing_default_ctor : Error<
   "cannot use constructor inherited from base class %4;}0 "
   "%select{base class|member}2 %3 %select{which|which|of %1}0 "
   "does not have a default constructor">;
+
+//INTEL_CUSTOMIZATION begin
 def note_due_to_dllexported_class : Note<
-  "due to %0 being dllexported%select{|; try compiling in C++11 mode}1">;
+  "due to %0 being dllexported%select{|; try migrating in C++11 mode}1">;
+//INTEL_CUSTOMIZATION end
 
 def err_illegal_union_or_anon_struct_member : Error<
   "%select{anonymous struct|union}0 member %1 has a non-trivial "

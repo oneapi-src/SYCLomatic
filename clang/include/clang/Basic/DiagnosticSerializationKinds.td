@@ -58,8 +58,11 @@ def err_pch_version_too_new : Error<
     "PCH file uses a newer PCH format that cannot be read">;
 def err_pch_different_branch : Error<
     "PCH file built from a different branch (%0) than the compiler (%1)">;
+
+//INTEL_CUSTOMIZATION begin
 def err_pch_with_compiler_errors : Error<
-    "PCH file contains compiler errors">;
+    "PCH file contains syntax errors">;
+//INTEL_CUSTOMIZATION end
 
 def err_module_file_conflict : Error<
   "module '%0' is defined in both '%1' and '%2'">, DefaultFatal;
