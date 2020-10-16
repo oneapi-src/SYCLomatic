@@ -5073,10 +5073,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // PrefixInsertStr: stmt + NL + indent
   // SuffixInsertStr: NL + indent + stmt
   std::string PrefixInsertStr, SuffixInsertStr;
-  // Clean below three member variables before starting migration
+  // Clean below five member variables before starting migration
   CallExprArguReplVec.clear();
   CallExprReplStr = "";
   NeedWaitAPICall = false;
+  SyncAPIBufferAssignmentInThenBlock.clear();
+  SyncAPIBufferAssignmentInElseBlock.clear();
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
   if (MapNames::BatchedBLASFuncReplInfoMap.find(FuncName) !=
@@ -5880,10 +5882,28 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          BufferName = getBufferNameAndDeclStr(
-              CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
-              BufferDecl);
-          PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
+              i == MaySyncAPIIter->second.second) {
+            BufferName =
+                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
+                std::to_string(
+                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
+                                    BufferName, MaySyncAPIIter->second.first);
+          } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            BufferName =
+                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
+                std::to_string(
+                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
+                                    BufferName, "int");
+          } else {
+            BufferName = getBufferNameAndDeclStr(
+                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
+                BufferDecl);
+            PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          }
 
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             std::string ResultTempBuf =
@@ -5933,6 +5953,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (MapNames::MustSyncBLASFunc.find(FuncName) !=
           MapNames::MustSyncBLASFunc.end())
         NeedWaitAPICall = true;
+    } else {
+      printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
 
@@ -6004,10 +6026,28 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         } else {
           std::string BufferDecl = "";
           std::string BufferName = "";
-          BufferName = getBufferNameAndDeclStr(
-              CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
-              BufferDecl);
-          PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
+              i == MaySyncAPIIter->second.second) {
+            BufferName =
+                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
+                std::to_string(
+                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
+                                    BufferName, MaySyncAPIIter->second.first);
+          } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            BufferName =
+                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
+                std::to_string(
+                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
+                                    BufferName, "int");
+          } else {
+            BufferName = getBufferNameAndDeclStr(
+                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
+                BufferDecl);
+            PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          }
 
           if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
             std::string ResultTempBuf =
@@ -6051,6 +6091,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (MapNames::MustSyncBLASFunc.find(FuncName) !=
           MapNames::MustSyncBLASFunc.end())
         NeedWaitAPICall = true;
+    } else {
+      printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
     }
 
     CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;

@@ -39,8 +39,13 @@ int main() {
   //cublasI<t>amax
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -49,8 +54,13 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
@@ -59,8 +69,13 @@ int main() {
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -69,8 +84,13 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
@@ -80,8 +100,13 @@ int main() {
   //cublasI<t>amin
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -90,8 +115,13 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
@@ -100,8 +130,13 @@ int main() {
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -110,8 +145,13 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
@@ -121,7 +161,12 @@ int main() {
   //cublas<t>asum
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -129,7 +174,12 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::asum(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasSasum(handle, n, x_S, incx, result_S);
@@ -137,7 +187,12 @@ int main() {
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -145,7 +200,12 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::asum(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasDasum(handle, n, x_D, incx, result_D);
@@ -221,7 +281,12 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} =  sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -230,7 +295,12 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} =  sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::dot(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasSdot(handle, n, x_S, incx, y_S, incy, result_S);
@@ -239,7 +309,12 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} =  sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -248,7 +323,12 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} =  sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::dot(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasDdot(handle, n, x_D, incx, y_D, incy, result_D);
@@ -257,7 +337,12 @@ int main() {
   //cublas<t>nrm2
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -265,7 +350,12 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::nrm2(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasSnrm2(handle, n, x_S, incx, result_S);
@@ -273,7 +363,12 @@ int main() {
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
@@ -281,7 +376,12 @@ int main() {
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::nrm2(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasDnrm2(handle, n, x_D, incx, result_D);

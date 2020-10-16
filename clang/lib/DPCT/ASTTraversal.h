@@ -978,6 +978,83 @@ public:
     }
   }
 
+  std::vector<std::string> SyncAPIBufferAssignmentInThenBlock;
+  std::vector<std::string> SyncAPIBufferAssignmentInElseBlock;
+  void processSyncAPIBufferArg(const std::string &FuncName, const CallExpr *CE,
+                               std::string &PrefixInsertStr,
+                               const std::string &IndentStr,
+                               const std::string &BufferName,
+                               const std::string &Type) {
+    PrefixInsertStr = PrefixInsertStr + "auto " + BufferName +
+                      " = sycl::buffer<" + Type + ">(" +
+                      MapNames::getClNamespace() + "::range<1>(1));" + getNL() +
+                      IndentStr;
+    int ArgIndex;
+    std::string PointerStr;
+
+    auto addStmt = [&]() {
+      SyncAPIBufferAssignmentInThenBlock.emplace_back(
+          BufferName + " = dpct::get_buffer<" + Type + ">(" + PointerStr +
+          ");");
+      SyncAPIBufferAssignmentInElseBlock.emplace_back(
+          BufferName + " = " + MapNames::getClNamespace() + "::buffer<" + Type +
+          ">(" +
+          ((Type == "std::complex<float>" || Type == "std::complex<double>")
+               ? std::string("(" + Type + "*)")
+               : "") +
+          PointerStr + ", " + MapNames::getClNamespace() + "::range<1>(1));");
+    };
+
+    if (MapNames::MaySyncBLASFunc.find(FuncName) !=
+        MapNames::MaySyncBLASFunc.end()) {
+      auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+      ArgIndex = MaySyncAPIIter->second.second;
+      PointerStr = ExprAnalysis::ref(CE->getArg(ArgIndex));
+      addStmt();
+    } else if (MapNames::MustSyncBLASFunc.find(FuncName) !=
+               MapNames::MustSyncBLASFunc.end()) {
+      ArgIndex = 4;
+      PointerStr = ExprAnalysis::ref(CE->getArg(ArgIndex));
+      addStmt();
+    }
+  }
+
+  void printIfStmt(const std::string &FuncName, const CallExpr *CE,
+                   std::string &PrefixInsertStr, const std::string &IndentStr) {
+    std::string PointerStr;
+
+    auto getBlockStr = [&](std::vector<std::string> Stmts) -> std::string {
+      std::string Res;
+      for (const auto &Stmt : Stmts) {
+        Res = Res + "  " + Stmt + getNL() + IndentStr;
+      }
+      return Res;
+    };
+
+    auto assembleIfStmt = [&]() {
+      std::string IfStmtStr =
+          "if (dpct::detail::mem_mgr::instance().is_device_ptr(" + PointerStr +
+          ")) {" + getNL() + IndentStr +
+          getBlockStr(SyncAPIBufferAssignmentInThenBlock) + "} else {" +
+          getNL() + IndentStr +
+          getBlockStr(SyncAPIBufferAssignmentInElseBlock) + "}" + getNL() +
+          IndentStr;
+
+      PrefixInsertStr = PrefixInsertStr + IfStmtStr;
+    };
+
+    if (MapNames::MaySyncBLASFunc.find(FuncName) !=
+        MapNames::MaySyncBLASFunc.end()) {
+      auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+      PointerStr = ExprAnalysis::ref(CE->getArg(MaySyncAPIIter->second.second));
+      assembleIfStmt();
+    } else if (MapNames::MustSyncBLASFunc.find(FuncName) !=
+               MapNames::MustSyncBLASFunc.end()) {
+      PointerStr = ExprAnalysis::ref(CE->getArg(4));
+      assembleIfStmt();
+    }
+  }
+
   void
   applyMigrationText(bool NeedUseLambda, bool IsMacroArg, bool CanAvoidBrace,
                      bool CanAvoidUsingLambda, std::string OriginStmtType,

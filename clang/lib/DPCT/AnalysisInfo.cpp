@@ -138,7 +138,7 @@ void DpctFileInfo::buildReplacements() {
 
   // Traver all the global variables stored one by one to check if its name is
   // same with normal global variable's name in host side, if the one is found,
-  // postfix "_ct" is added to this __constant__ symbol’s name.
+  // postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (auto Entry : MemVarMap) {
     if (Entry.second->isIgnore())
