@@ -2219,6 +2219,28 @@ const std::map<std::string, std::pair<std::string, int>>
                               {"cublasScnrm2_v2", {"float", 4}},
                               {"cublasDznrm2_v2", {"double", 4}}};
 
+// This map is only used for non-usm.
+const std::map<std::string, std::map<int, std::string>>
+    MapNames::MaySyncBLASFuncWithMultiArgs{
+        {"cublasSrotg_v2",
+         {{1, "float"}, {2, "float"}, {3, "float"}, {4, "float"}}},
+        {"cublasDrotg_v2",
+         {{1, "double"}, {2, "double"}, {3, "double"}, {4, "double"}}},
+        {"cublasCrotg_v2",
+         {{1, "std::complex<float>"},
+          {2, "std::complex<float>"},
+          {3, "float"},
+          {4, "std::complex<float>"}}},
+        {"cublasZrotg_v2",
+         {{1, "std::complex<double>"},
+          {2, "std::complex<double>"},
+          {3, "double"},
+          {4, "std::complex<double>"}}},
+        {"cublasSrotmg_v2",
+         {{1, "float"}, {2, "float"}, {3, "float"}, {5, "float"}}},
+        {"cublasDrotmg_v2",
+         {{1, "double"}, {2, "double"}, {3, "double"}, {5, "double"}}}};
+
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>
     MapNames::SOLVERFuncReplInfoMap{

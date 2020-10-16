@@ -5883,21 +5883,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           std::string BufferDecl = "";
           std::string BufferName = "";
           auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          auto MaySyncAPIIWithMultiArgsIter =
+              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
           if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
               i == MaySyncAPIIter->second.second) {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, MaySyncAPIIter->second.first);
+            BufferName = processSyncAPIBufferArg(
+                FuncName, CE, PrefixInsertStr, IndentStr,
+                MaySyncAPIIter->second.first, i);
+          } else if (MaySyncAPIIWithMultiArgsIter !=
+                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, ArgIter->second, i);
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, "int");
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, "int", i);
           } else {
             BufferName = getBufferNameAndDeclStr(
                 CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
@@ -6027,21 +6029,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           std::string BufferDecl = "";
           std::string BufferName = "";
           auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          auto MaySyncAPIIWithMultiArgsIter =
+              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
           if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
               i == MaySyncAPIIter->second.second) {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, MaySyncAPIIter->second.first);
+            BufferName = processSyncAPIBufferArg(
+                FuncName, CE, PrefixInsertStr, IndentStr,
+                MaySyncAPIIter->second.first, i);
+          } else if (MaySyncAPIIWithMultiArgsIter !=
+                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, ArgIter->second, i);
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, "int");
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, "int", i);
           } else {
             BufferName = getBufferNameAndDeclStr(
                 CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
