@@ -69,8 +69,12 @@ def err_fe_dependency_file_requires_MT : Error<
     "-dependency-file requires at least one -MT or -MQ option">;
 def err_fe_invalid_plugin_name : Error<
     "unable to find plugin '%0'">;
+
+//INTEL_CUSTOMIZATION begin
 def err_fe_expected_compiler_job : Error<
-    "unable to handle compilation, expected exactly one compiler job in '%0'">;
+    "unable to handle migration, expected exactly one migration job in '%0'">;
+//INTEL_CUSTOMIZATION end
+
 def err_fe_expected_clang_command : Error<
     "expected a clang compiler command">;
 def err_fe_remap_missing_to_file : Error<
@@ -173,16 +177,20 @@ def warn_incompatible_analyzer_plugin_api : Warning<
 def note_incompatible_analyzer_plugin_api : Note<
     "current API version is '%0', but plugin was compiled with version '%1'">;
 
+//INTEL_CUSTOMIZATION begin
 def err_module_build_requires_fmodules : Error<
-  "module compilation requires '-fmodules'">;
+  "migration of code with module requires '--extra-arg=\"-fmodules\"'">;
 def err_module_interface_requires_cpp_modules : Error<
-  "module interface compilation requires '-std=c++20' or '-fmodules-ts'">;
+  "migration of code with module interface requires '--extra-arg=\"-std=c++20\"' or"
+  " '--extra-arg=\"-fmodules-ts\"'">;
 def err_header_module_requires_modules : Error<
-  "header module compilation requires '-fmodules', '-std=c++20', or "
-  "'-fmodules-ts'">;
+  "migration of code with header module requires '--extra-arg=\"-fmodules\", '--extra-arg=\"-std=c++20\"' or"
+  " '--extra-arg=\"-fmodules-ts\"'">;
 def warn_module_config_mismatch : Warning<
-  "module file %0 cannot be loaded due to a configuration mismatch with the current "
-  "compilation">, InGroup<DiagGroup<"module-file-config-mismatch">>, DefaultError;
+  "module file %0 cannot be loaded due to a configuration mismatch">,
+  InGroup<DiagGroup<"module-file-config-mismatch">>, DefaultError;
+//INTEL_CUSTOMIZATION end
+
 def err_module_map_not_found : Error<"module map file '%0' not found">,
   DefaultFatal;
 def err_missing_module_name : Error<

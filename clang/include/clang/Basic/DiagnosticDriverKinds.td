@@ -75,7 +75,11 @@ def err_drv_cuda_host_arch : Error<"unsupported architecture '%0' for host compi
 def err_drv_no_sycl_libspirv : Error<
   "cannot find `libspirv-nvptx64--nvidiacl.bc`. Provide path to libspirv library via "
   "-fsycl-libspirv-path, or pass -fno-sycl-libspirv to build without linking with libspirv.">;
-def err_drv_mix_cuda_hip : Error<"Mixed Cuda and HIP compilation is not supported.">;
+
+//INTEL_CUSTOMIZATION begin
+def err_drv_mix_cuda_hip : Error<"Mixed Cuda and HIP migration is not supported.">;
+//INTEL_CUSTOMIZATION end
+
 def err_drv_invalid_thread_model_for_target : Error<
   "invalid thread model '%0' in '%1' for this target">;
 def err_drv_invalid_linker_name : Error<
@@ -145,8 +149,12 @@ def err_drv_clang_unsupported_opt_cxx_darwin_i386 : Error<
   "the clang compiler does not support '%0' for C++ on Darwin/i386">;
 def err_drv_clang_unsupported_opt_pg_darwin: Error<
   "the clang compiler does not support -pg option on %select{Darwin|versions of OS X 10.9 and later}0">;
+
+//INTEL_CUSTOMIZATION begin
 def err_drv_clang_unsupported_opt_faltivec : Error<
-  "the clang compiler does not support '%0', %1">;
+  "Intel(R) DPC++ Compatibility Tool does not support '%0', %1">;
+//INTEL_CUSTOMIZATION end
+
 def err_drv_command_failed : Error<
   "%0 command failed with exit code %1 (use -v to see invocation)">;
 def err_drv_compilationdatabase : Error<
@@ -313,17 +321,25 @@ def warn_drv_input_file_unused_by_cpp : Warning<
 def warn_drv_preprocessed_input_file_unused : Warning<
   "%0: previously preprocessed input%select{ unused when '%2' is present|}1">,
   InGroup<UnusedCommandLineArgument>;
+
+//INTEL_CUSTOMIZATION begin
 def warn_drv_unused_argument : Warning<
-  "argument unused during compilation: '%0'">,
+  "argument unused during migration: '%0'">,
   InGroup<UnusedCommandLineArgument>;
+//INTEL_CUSTOMIZATION end
+
 def warn_drv_empty_joined_argument : Warning<
   "joined argument expects additional value: '%0'">,
   InGroup<UnusedCommandLineArgument>;
 def warn_drv_diagnostics_hotness_requires_pgo : Warning<
   "argument '%0' requires profile-guided optimization information">,
   InGroup<UnusedCommandLineArgument>;
+
+//INTEL_CUSTOMIZATION begin
 def warn_drv_clang_unsupported : Warning<
-  "the clang compiler does not support '%0'">;
+  "Intel(R) DPC++ Compatibility Tool does not support '%0'">;
+//INTEL_CUSTOMIZATION end
+
 def warn_drv_deprecated_arg : Warning<
   "argument '%0' is deprecated, use '%1' instead">, InGroup<Deprecated>;
 def warn_drv_assuming_mfloat_abi_is : Warning<
