@@ -1340,13 +1340,14 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
     Expr = ASE->getBase();
   }
 
-  if(auto CSCE = dyn_cast<CStyleCastExpr>(Expr)){
+  if (auto CSCE = dyn_cast<CStyleCastExpr>(Expr)) {
     Expr = CSCE->getSubExpr();
   }
 
   const clang::Expr *AssignedExpr = NULL;
-  const FunctionDecl *FuncDecl =NULL;
-  if (auto DRE = dyn_cast<DeclRefExpr>(Expr->IgnoreImplicitAsWritten())) {
+  const FunctionDecl *FuncDecl = NULL;
+  if (auto DRE = dyn_cast<DeclRefExpr>(
+          Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
     if (isa<ParmVarDecl>(DRE->getDecl()))
       return;
 
@@ -1372,6 +1373,11 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
         }
       }
     }
+  } else if (auto BO = dyn_cast<BinaryOperator>(
+                 Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
+
+    GetShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    GetShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
   }
 
   if (AssignedExpr) {

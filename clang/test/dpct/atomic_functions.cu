@@ -516,3 +516,20 @@ __shared__ unsigned int temp[256];
 // CHECK-NEXT: */
 // CHECK-NEXT: #define ATOMIC_ADD( x, v )  atomicAdd( &x, v );
 #define ATOMIC_ADD( x, v )  atomicAdd( &x, v );
+
+#define NUM_SYMBOLS 2
+
+// CHECK:static void vlc_encode_kernel_sm64huff(uint8_t *dpct_local) {
+// CHECK-NEXT:  unsigned int a = 1;
+// CHECK-NEXT:  unsigned int kc = 1;
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
+// CHECK-NEXT:  unsigned int* as			= (unsigned int*)(sm+2*NUM_SYMBOLS);
+// CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&as[kc])).fetch_or(a);
+// CHECK-NEXT:}
+__global__ static void vlc_encode_kernel_sm64huff() {
+  unsigned int a = 1;
+  unsigned int kc = 1;
+  extern __shared__ unsigned int sm[];
+  unsigned int* as			= (unsigned int*)(sm+2*NUM_SYMBOLS);
+  atomicOr(&as[kc], a);
+}
