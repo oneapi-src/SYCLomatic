@@ -614,7 +614,13 @@ namespace clang {
 namespace tooling {
 
 bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
+#ifdef INTEL_CUSTOMIZATION
+  // Add declared "volatile" to remove warning "variable ‘Result’ might be
+  // clobbered by ‘longjmp’ or ‘vfork’ "
+  volatile bool Result = true;
+#else
   bool Result = true;
+#endif
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
 #ifdef INTEL_CUSTOMIZATION
     CheckPointStageCore = 4;

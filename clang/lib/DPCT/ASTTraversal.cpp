@@ -1089,7 +1089,7 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
     return;
   auto TVD = getAssistNodeAsType<VarDecl>(Result, "targetVarDecl");
   auto TLHS = getAssistNodeAsType<DeclRefExpr>(Result, "targetLHS");
-  const ValueDecl *TD;
+  const ValueDecl *TD = nullptr;
   if (TVD || TLHS) {
     TD = TVD ? TVD : TLHS->getDecl();
   }
@@ -3159,8 +3159,8 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
     if (!CE->getDirectCallee())
       return;
-    const llvm::StringRef FuncName = CE->getDirectCallee()->getName();
-    assert(FuncName.startswith("make_") &&
+
+    assert(CE->getDirectCallee()->getName().startswith("make_") &&
            "Found non make_<vector type> function");
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), getReplaceTypeName(CE->getType().getAsString())));
@@ -8148,7 +8148,7 @@ bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
     return IsEventArgArraySubscriptExpr(UO->getSubExpr());
   if (auto PE = dyn_cast<ParenExpr>(E))
     return IsEventArgArraySubscriptExpr(PE->getSubExpr());
-  if (auto ASE = dyn_cast<ArraySubscriptExpr>(E))
+  if (dyn_cast<ArraySubscriptExpr>(E))
     return true;
   return false;
 }
@@ -8265,7 +8265,7 @@ void EventAPICallRule::handleTimeMeasurement(
             } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
               auto IL = dyn_cast<IntegerLiteral>(StreamArg);
               auto V = IL->getValue().getZExtValue();
-              if (V >= 0 && V <= 2)
+              if (V <= 2)
                 NeedQueue = true;
             }
             if (NeedQueue) {
@@ -11771,8 +11771,7 @@ bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
 
-  if (const UnresolvedLookupExpr *ULExpr =
-          getAssistNodeAsType<UnresolvedLookupExpr>(Result,
+  if (getAssistNodeAsType<UnresolvedLookupExpr>(Result,
                                                     "unresolvedLookupExpr")) {
     const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
     ExprAnalysis A;

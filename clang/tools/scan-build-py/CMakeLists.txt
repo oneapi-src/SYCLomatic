@@ -23,7 +23,7 @@ target_include_directories(ear PRIVATE libear/)
 target_link_libraries(ear PRIVATE
     "-ldl -lpthread -shared -Wl,-soname,libear.so")
 target_compile_options(ear PRIVATE
-    "-DNDEBUG -O3 -fPIC -std=c99 -D_GNU_SOURCE")
+    "-std=c99")
 install(TARGETS ear
     LIBRARY
     DESTINATION libear

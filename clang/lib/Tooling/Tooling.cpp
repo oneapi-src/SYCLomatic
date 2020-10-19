@@ -706,7 +706,7 @@ int ClangTool::run(ToolAction *Action) {
         return -30 /*MigrationErrorInconsistentFileInDatabase*/;
       }
 
-      for (int index = 0; index < SDKIncludePath.size(); index++) {
+      for (size_t index = 0; index < SDKIncludePath.size(); index++) {
         if (SDKIncludePath[index] == '\\') {
           SDKIncludePath[index] = '/';
         }

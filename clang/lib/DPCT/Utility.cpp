@@ -179,7 +179,6 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
 }
 
 SourceRange getStmtSpellingSourceRange(const Stmt *S) {
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
   // Remove outer function-like macro
   auto Range = getRangeInsideFuncLikeMacro(S);

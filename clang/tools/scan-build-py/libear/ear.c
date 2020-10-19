@@ -936,7 +936,7 @@ char * replace_binary_name(const char *src, const char *pos){
 
     // To handle the situation that \psrc is
     // "CPATH=...;/path/to/nvcc" and "cd /path/to/dir && /path/to/nvcc"
-    char *pos_prefix = pos - strlen("nvcc");
+    const char *pos_prefix = pos - strlen("nvcc");
     for (; pos_prefix != src; pos_prefix--) {
         if (*pos_prefix == ';' || *pos_prefix == '&') {
             pos_prefix++;

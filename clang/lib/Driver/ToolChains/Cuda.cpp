@@ -215,8 +215,6 @@ CudaInstallationDetector::CudaInstallationDetector(
       Candidates.emplace_back(D.SysRoot + "/usr/lib/cuda");
   }
 
-  bool NoCudaLib = Args.hasArg(options::OPT_nogpulib);
-
 #ifdef INTEL_CUSTOMIZATION
   if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
@@ -258,6 +256,8 @@ CudaInstallationDetector::CudaInstallationDetector(
       continue;
     }
 #else
+  bool NoCudaLib = Args.hasArg(options::OPT_nogpulib);
+
   for (const auto &Candidate : Candidates) {
     InstallPath = Candidate.Path;
     if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
