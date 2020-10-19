@@ -419,8 +419,7 @@ static AnalyticsImpl &getAnalyticsImplInstance() {
 
   params.appName = "Intel(R) DPC++ Compatibility Tool";
   std::string AppVersion = std::string(DPCT_VERSION_MAJOR) + "." +
-                           std::string(DPCT_VERSION_MINOR) + "-" +
-                           std::string(DPCT_VERSION_PATCH);
+    std::string(DPCT_VERSION_MINOR) + ".";
   params.appVersion = AppVersion.c_str();
   params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
   // params.uuidPersistenceProvider = &uuidProvider;
