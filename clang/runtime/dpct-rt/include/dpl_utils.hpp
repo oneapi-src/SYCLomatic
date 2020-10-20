@@ -10,7 +10,6 @@
 #define __DPL_UTILS_HPP
 
 #define _ONEDPL_BACKEND_SYCL 1
-#define __PSTL_BACKEND_SYCL 1
 #define __USE_DPCT 1
 
 #include <oneapi/dpl/execution>
