@@ -678,16 +678,16 @@ int main(int argc, char *argv[])
 
 
     //CHECK: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<float>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<float>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
@@ -699,7 +699,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -707,7 +707,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&U_f);
     //CHECK-NEXT: auto VT_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&VT_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSgesvd_bufferSize(*cusolverH, m, n, &Lwork);
     cusolverDnSgesvd_bufferSize(*cusolverH, m, n, &Lwork);
@@ -715,16 +715,16 @@ int main(int argc, char *argv[])
     cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<double>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<double>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&U_d);
     //CHECK-NEXT: auto VT_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&VT_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDgesvd_bufferSize(*cusolverH, m, n, &Lwork);
     cusolverDnDgesvd_bufferSize(*cusolverH, m, n, &Lwork);
@@ -752,16 +752,16 @@ int main(int argc, char *argv[])
     cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -781,7 +781,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&U_c);
     //CHECK-NEXT: auto VT_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&VT_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCgesvd_bufferSize(*cusolverH, m, n, &Lwork);
     cusolverDnCgesvd_bufferSize(*cusolverH, m, n, &Lwork);
@@ -789,16 +789,16 @@ int main(int argc, char *argv[])
     cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobu;
-    //CHECK-NEXT: oneapi::mkl::job job_ct_mkl_jobvt;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
+    //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
@@ -810,7 +810,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
+    //CHECK-NEXT: status = (oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -818,7 +818,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&U_z);
     //CHECK-NEXT: auto VT_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&VT_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZgesvd_bufferSize(*cusolverH, m, n, &Lwork);
     cusolverDnZgesvd_bufferSize(*cusolverH, m, n, &Lwork);

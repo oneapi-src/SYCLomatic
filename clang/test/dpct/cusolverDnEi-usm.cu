@@ -147,10 +147,10 @@ int main(int argc, char *argv[])
     cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnZungtr(*cusolverH, uplo, n, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
-    //CHECK: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, (float*)&A_f, lda, (float*)&S_f, (float*)&U_f, ldu, (float*)&VT_f, ldvt, (float*)&workspace_f, Lwork);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, (double*)&A_d, lda, (double*)&S_d, (double*)&U_d, ldu, (double*)&VT_d, ldvt, (double*)&workspace_d, Lwork);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, (std::complex<float>*)&A_c, lda, (float*)&S_f, (std::complex<float>*)&U_c, ldu, (std::complex<float>*)&VT_c, ldvt, (std::complex<float>*)&workspace_c, Lwork);
-    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::job)jobu, (oneapi::mkl::job)jobvt, m, n, (std::complex<double>*)&A_z, lda, (double*)&S_d, (std::complex<double>*)&U_z, ldu, (std::complex<double>*)&VT_z, ldvt, (std::complex<double>*)&workspace_z, Lwork);
+    //CHECK: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, (float*)&A_f, lda, (float*)&S_f, (float*)&U_f, ldu, (float*)&VT_f, ldvt, (float*)&workspace_f, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, (double*)&A_d, lda, (double*)&S_d, (double*)&U_d, ldu, (double*)&VT_d, ldvt, (double*)&workspace_d, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, (std::complex<float>*)&A_c, lda, (float*)&S_f, (std::complex<float>*)&U_c, ldu, (std::complex<float>*)&VT_c, ldvt, (std::complex<float>*)&workspace_c, Lwork);
+    //CHECK-NEXT: oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, (std::complex<double>*)&A_z, lda, (double*)&S_d, (std::complex<double>*)&U_z, ldu, (std::complex<double>*)&VT_z, ldvt, (std::complex<double>*)&workspace_z, Lwork);
     cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
     cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
     cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
