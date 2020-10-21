@@ -13,7 +13,7 @@
 #include <oneapi/dpl/functional>
 #include <oneapi/dpl/iterator>
 
-#ifdef _ONEDPL_BACKEND_SYCL
+#if ONEDPL_USE_DPCPP_BACKEND
 #include <oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
 #endif
 
@@ -57,7 +57,7 @@ using make_index_sequence = typename make_index_sequence_impl<_Np>::type;
 // Some of our algorithms need to start with raw memory buffer,
 // not an initialized array, because initialization/destruction
 // would make the span be at least O(N).
-#if _ONEDPL_BACKEND_SYCL
+#if ONEDPL_USE_DPCPP_BACKEND
 template <typename _Tp> class __buffer {
   cl::sycl::buffer<_Tp, 1> __buf;
 

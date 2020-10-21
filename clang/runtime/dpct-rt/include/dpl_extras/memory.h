@@ -9,9 +9,7 @@
 #ifndef __DPCT_MEMORY_H__
 #define __DPCT_MEMORY_H__
 
-#ifdef _ONEDPL_BACKEND_SYCL
 #include <CL/sycl.hpp>
-#endif
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
