@@ -636,6 +636,16 @@ void IncludesCallbacks::InclusionDirective(
     }
   }
 
+  // If CudaPath is in /usr/include,
+  // for all the include files without following pattern, keep it
+  if (!CudaPath.compare(0, 12, "/usr/include", 12)) {
+    if (!FileName.startswith("cuda") && !FileName.startswith("cusolver") &&
+        !FileName.startswith("cublas") && !FileName.startswith("cusparse") &&
+        !FileName.startswith("curand")) {
+      return;
+    }
+  }
+
   // Replace the complete include directive with an empty string.
   // Also remove the trailing spaces to end of the line.
   TransformSet.emplace_back(new ReplaceInclude(
