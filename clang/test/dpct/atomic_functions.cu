@@ -533,3 +533,19 @@ __global__ static void vlc_encode_kernel_sm64huff() {
   unsigned int* as			= (unsigned int*)(sm+2*NUM_SYMBOLS);
   atomicOr(&as[kc], a);
 }
+
+// CHECK:void addByte(unsigned int *s_WarpHist, unsigned int data) {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1039:19: The generated code assumes that "s_WarpHist + data" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  */
+// CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(s_WarpHist + data)).fetch_add(1);
+// CHECK-NEXT:}
+__device__ void addByte(unsigned int *s_WarpHist, unsigned int data) {
+  atomicAdd(s_WarpHist + data, 1);
+}
+
+__global__ void histogram256Kernel() {
+__shared__ unsigned int s_Hist[100];
+  unsigned int *s_WarpHist= s_Hist + (threadIdx.x >> 1) * 10;
+  addByte(s_WarpHist, 1000);
+}

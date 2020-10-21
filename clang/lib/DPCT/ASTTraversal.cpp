@@ -1348,8 +1348,10 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
   const FunctionDecl *FuncDecl = NULL;
   if (auto DRE = dyn_cast<DeclRefExpr>(
           Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
-    if (isa<ParmVarDecl>(DRE->getDecl()))
+    if (isa<ParmVarDecl>(DRE->getDecl())) {
+      NeedReport = true;
       return;
+    }
 
     if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
       if (VD->hasAttr<CUDASharedAttr>()) {
