@@ -1646,15 +1646,19 @@ void ThrustFunctionRule::thrustFuncMigration(
     return;
   auto NewName = ReplInfo->second.ReplName;
 
-    // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
-    // thrust::count, thrust::equal) called in device function , should be
-    // migrated to oneapi::dpl APIs without a policy on the DPC++ side
-    if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
-          ArgT.find("execution_policy_base") != std::string::npos) {
-        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-      }
+  bool hasExecutionPolicy =
+      (ArgT == "ExecutionPolicy") ||
+      (ArgT.find("execution_policy_base") != std::string::npos);
+
+  // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
+  // thrust::count, thrust::equal) called in device function , should be
+  // migrated to oneapi::dpl APIs without a policy on the DPC++ side
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+        ArgT.find("execution_policy_base") != std::string::npos) {
+      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
     }
+  }
 
   if (ArgT != "ExecutionPolicy" && ThrustFuncName == "copy_if" &&
       (ArgT.find("execution_policy_base") == std::string::npos &&
@@ -1688,8 +1692,7 @@ void ThrustFunctionRule::thrustFuncMigration(
       emplaceTransformation(new InsertAfterStmt(CE->getArg(5), std::move(Str)));
     }
 
-    if (ArgT.find("execution_policy_base") != std::string::npos ||
-        ArgT == "ExecutionPolicy") {
+    if (hasExecutionPolicy) {
       if (ULExpr) {
         emplaceTransformation(new ReplaceToken(
             ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
@@ -1722,8 +1725,30 @@ void ThrustFunctionRule::thrustFuncMigration(
     emplaceTransformation(
         new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
 
-  } else if (ArgT.find("execution_policy_base") != std::string::npos ||
-             ArgT == "ExecutionPolicy") {
+  } else if (ThrustFuncName == "binary_search" &&
+             (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
+    // Currently, we do not support migration of 4 of the 8 overloaded versions
+    // of thrust::binary_search.  The ones we do not support are the ones
+    // searching for a single value instead of a vector of values
+    //
+    // Supported parameter profiles:
+    // 1. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
+    // 2. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
+    // 3. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
+    // 4. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
+    //
+    // Not supported parameter profiles:
+    // 1. (policy, firstIt, lastIt, value)
+    // 2. (firstIt, lastIt, value)
+    // 3. (policy, firstIt, lastIt, value, comp)
+    // 4. (firstIt, lastIt, value, comp)
+    //
+    // The logic in the above if condition filters out the ones
+    // currently not supported and issues a warning
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false);
+    return;
+
+  } else if (hasExecutionPolicy) {
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
     return;
