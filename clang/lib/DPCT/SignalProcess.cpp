@@ -181,7 +181,7 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 void InstallSignalHandle(void) {
 #if  defined(__linux__)
   SetHandler(FaultHandler);
-#elif defined(_WIN64);
+#elif defined(_WIN64)
   SetHandler();
 #endif
 }
