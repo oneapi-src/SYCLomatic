@@ -992,7 +992,7 @@ void foobar() {
 
   int *devPtr;
   size_t count;
-  // CHECK: pi_mem_advice advice;
+  // CHECK: int advice;
   cudaMemoryAdvise advice;
   int device;
   // CHECK: /*
@@ -1016,19 +1016,28 @@ void foobar() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaMemAdvise(devPtr, count, 0, device);
   cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError(cudaMemAdvise(devPtr, count, 0, device));
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, 0, device);
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 }
 

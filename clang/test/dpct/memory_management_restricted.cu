@@ -208,22 +208,25 @@ void foobar() {
 
   int *devPtr;
   size_t count;
-  // CHECK: pi_mem_advice advice;
-  cudaMemoryAdvise advice;
-  int device;
   // CHECK: /*
   // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0);
+  // CHECK-NEXT: int advice = 0;
+  cudaMemoryAdvise advice = cudaMemAdviseSetReadMostly;
+  int device;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_device(device).default_queue().mem_advise(devPtr, count, advice);
   cudaMemAdvise(devPtr, count, advice, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined. You may need to adjust it.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0));
+  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, advice), 0));
   checkError(cudaMemAdvise(devPtr, count, advice, device));
   // CHECK: /*
   // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
@@ -251,12 +254,12 @@ void foobar() {
   checkError(cudaMemAdvise(devPtr, count, static_cast<cudaMemoryAdvise>(1), device));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined. You may need to adjust it.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, 0), 0);
+  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, advice), 0);
   errorCode = cudaMemAdvise(devPtr, count, advice, device);
 
   // CHECK: /*

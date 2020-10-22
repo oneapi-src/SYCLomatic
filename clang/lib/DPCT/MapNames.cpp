@@ -156,7 +156,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusparseStatus_t", "int"},
       {"cusparseMatDescr_t", "oneapi::mkl::index_base"},
       {"cusparseHandle_t", ClNamespace + "::queue*"},
-      {"cudaMemoryAdvise", "pi_mem_advice"},
+      {"cudaMemoryAdvise", "int"},
       {"cudaPos", ClNamespace + "::id<3>"},
       {"cudaExtent", ClNamespace + "::range<3>"},
       {"cudaPitchedPtr", "dpct::pitched_data"},
@@ -179,11 +179,11 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaDevAttrClockRate", "get_max_clock_frequency"},
     {"cudaDevAttrIntegrated", "get_integrated"},
     // enum Memcpy Kind
-    {"cudaMemcpyHostToHost", "host_to_host"},
-    {"cudaMemcpyHostToDevice", "host_to_device"},
-    {"cudaMemcpyDeviceToHost", "device_to_host"},
-    {"cudaMemcpyDeviceToDevice", "device_to_device"},
-    {"cudaMemcpyDefault", "automatic"},
+    {"cudaMemcpyHostToHost", "dpct::host_to_host"},
+    {"cudaMemcpyHostToDevice", "dpct::host_to_device"},
+    {"cudaMemcpyDeviceToHost", "dpct::device_to_host"},
+    {"cudaMemcpyDeviceToDevice", "dpct::device_to_device"},
+    {"cudaMemcpyDefault", "dpct::automatic"},
     // enum Texture Address Mode
     {"cudaAddressModeWrap", ClNamespace + "::addressing_mode::repeat"},
     {"cudaAddressModeClamp", ClNamespace + "::addressing_mode::clamp_to_edge"},
@@ -200,6 +200,13 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaResourceTypeArray", "dpct::image_data_type::matrix"},
     {"cudaResourceTypeLinear", "dpct::image_data_type::linear"},
     {"cudaResourceTypePitch2D", "dpct::image_data_type::pitch"},
+    // enum cudaMemoryAdvise
+    {"cudaMemAdviseSetReadMostly", "0"},
+    {"cudaMemAdviseUnsetReadMostly", "0"},
+    {"cudaMemAdviseSetPreferredLocation", "0"},
+    {"cudaMemAdviseUnsetPreferredLocation", "0"},
+    {"cudaMemAdviseSetAccessedBy", "0"},
+    {"cudaMemAdviseUnsetAccessedBy", "0"},
     // ...
   };
 

@@ -3472,8 +3472,9 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaComputeMode", "cudaMemcpyKind"))))))
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(
+                                hasAnyName("cudaComputeMode", "cudaMemcpyKind",
+                                           "cudaMemoryAdvise"))))))
                     .bind("EnumConstant"),
                 this);
 
@@ -3586,6 +3587,11 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
+  } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
+    if (ET->getDecl()->getName() == "cudaMemoryAdvise") {
+      report(E->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
+             " and was set to 0");
+    }
   }
   auto Search = EnumNamesMap.find(EnumName);
   if (Search == EnumNamesMap.end()) {
@@ -3593,7 +3599,7 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  emplaceTransformation(new ReplaceStmt(E, "dpct::" + Search->second));
+  emplaceTransformation(new ReplaceStmt(E, Search->second));
 }
 
 REGISTER_RULE(EnumConstantRule)
@@ -9862,7 +9868,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
       if(Search == EnumConstantRule::EnumNamesMap.end())
         return;
       Direction = nullptr;
-      DirectionName = "dpct::" + Search->second;
+      DirectionName = Search->second;
     }
   }
 
@@ -10247,11 +10253,33 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
     return;
   }
-  report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false);
+  auto Arg2Expr = C->getArg(2);
+  if (auto NamedCaster = dyn_cast<ExplicitCastExpr>(Arg2Expr)) {
+    if (NamedCaster->getTypeAsWritten()->isIntegerType()) {
+      Arg2Expr = NamedCaster->getSubExpr();
+    } else if (DpctGlobalInfo::getUnqualifiedTypeName(
+                   NamedCaster->getTypeAsWritten()) == "cudaMemoryAdvise" &&
+               NamedCaster->getSubExpr()->getType()->isIntegerType()) {
+      Arg2Expr = NamedCaster->getSubExpr();
+    }
+  }
   auto Arg0Str = ExprAnalysis::ref(C->getArg(0));
   auto Arg1Str = ExprAnalysis::ref(C->getArg(1));
-  auto Arg2Str = "0";
   auto Arg3Str = ExprAnalysis::ref(C->getArg(3));
+
+  std::string Arg2Str;
+  if (Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass) {
+    Arg2Str = "0";
+  } else {
+    Arg2Str = ExprAnalysis::ref(Arg2Expr);
+  }
+
+  if (Arg2Str == "0") {
+    report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
+           " and was set to 0");
+  } else {
+    report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false, "");
+  }
 
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
@@ -10543,7 +10571,7 @@ void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
             EnumConstantRule::EnumNamesMap, Enum->getName().str());
         if (!ReplaceDirection.empty()) {
           emplaceTransformation(
-              new ReplaceStmt(DRE, "dpct::" + ReplaceDirection));
+              new ReplaceStmt(DRE, ReplaceDirection));
         }
       }
     }
