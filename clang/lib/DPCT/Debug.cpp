@@ -159,9 +159,6 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
 
   std::string StatusString;
   switch (Status) {
-  case MigrationSuccessExpParingOrRuntimeErr:
-    StatusString = "Migration process completed, except parsing/runtime error(s)";
-    break;
   case MigrationSucceeded:
     StatusString = "Migration process completed";
     break;
@@ -229,17 +226,6 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Prefix contains special characters;"
                    " only alphabetical characters, digits and underscore "
                    "character are allowed";
-    break;
-  case MigrationErrorNameTooLong:
-#if defined(_WIN32)
-    StatusString =
-        "Error: File name is too long; should be less than _MAX_FNAME (" +
-        std::to_string(_MAX_FNAME) + ")";
-#else
-    StatusString =
-        "Error: File name is too long; should be less than NAME_MAX (" +
-        std::to_string(NAME_MAX) + ")";
-#endif
     break;
   case MigrationErrorPrefixTooLong:
     StatusString = "Error: Prefix is too long; should be less than 128 characters";
