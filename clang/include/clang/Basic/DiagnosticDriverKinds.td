@@ -71,7 +71,11 @@ def err_drv_cuda_version_unsupported : Error<
 def warn_drv_unknown_cuda_version: Warning<
   "Unknown CUDA version %0. Assuming the latest supported version %1">,
   InGroup<CudaUnknownVersion>;
-def err_drv_cuda_host_arch : Error<"unsupported architecture '%0' for host compilation.">;
+
+//INTEL_CUSTOMIZATION begin
+def err_drv_cuda_host_arch : Error<"unsupported option -target '%0'.">;
+//INTEL_CUSTOMIZATION end
+
 def err_drv_no_sycl_libspirv : Error<
   "cannot find `libspirv-nvptx64--nvidiacl.bc`. Provide path to libspirv library via "
   "-fsycl-libspirv-path, or pass -fno-sycl-libspirv to build without linking with libspirv.">;
