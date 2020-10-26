@@ -655,9 +655,8 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
 //CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
 //CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Call expression of function pow is in macro definition and has
-//CHECK-NEXT: different migration result in more than one expansion. You may need to adjust
-//CHECK-NEXT: it.
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in macro definition and is not valid for
+//CHECK-NEXT: all macro uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
 //CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
