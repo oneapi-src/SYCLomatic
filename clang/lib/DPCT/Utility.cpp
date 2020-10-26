@@ -2242,6 +2242,7 @@ bool isIncludedFile(const std::string &CurrentFile,
 
   while (!Q.empty()) {
     if (Q.front() == nullptr) {
+      Q.pop_front();
       continue;
     } else if (Q.front() == CheckingFileInfo) {
       return true;
@@ -2303,3 +2304,43 @@ const DeclaratorDecl *getHandleVar(const Expr *Arg) {
   return nullptr;
 }
 
+clang::RecordDecl *getRecordDecl(clang::QualType QT) {
+  clang::QualType PointeeType;
+
+  if (const auto *PT = QT->getAs<clang::PointerType>())
+    PointeeType = PT->getPointeeType();
+  else if (const auto *RT = QT->getAs<clang::ReferenceType>())
+    PointeeType = RT->getPointeeType();
+  else
+    return QT->getAsRecordDecl();
+
+  if (const auto *RT = PointeeType->getAs<clang::RecordType>())
+    return dyn_cast<clang::RecordDecl>(RT->getDecl());
+
+  return nullptr;
+}
+
+bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
+  std::deque<const clang::RecordDecl *> Q;
+  Q.push_back(getRecordDecl(DRE->getType()));
+
+  while (!Q.empty()) {
+    if (Q.front() == nullptr) {
+      Q.pop_front();
+      continue;
+    } else {
+      for (const auto &I : Q.front()->fields()) {
+        if (I->getType()->isPointerType()) {
+          return true;
+        }
+      }
+      for (const auto &I : Q.front()->decls()) {
+        if (const clang::RecordDecl *RD = dyn_cast<clang::RecordDecl>(I)) {
+          Q.insert(Q.end(), RD);
+        }
+      }
+      Q.pop_front();
+    }
+  }
+  return false;
+}

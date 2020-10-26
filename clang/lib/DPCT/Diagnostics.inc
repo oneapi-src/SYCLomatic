@@ -154,3 +154,5 @@ DEF_WARNING(UNSUPPORTED_PARAM, 1067, "The argument %0 is not supported in the mi
 DEF_COMMENT(UNSUPPORTED_PARAM, 1067, "The argument {0} is not supported in the migrated API. You may need to adjust the code.")
 DEF_WARNING(UNDEDUCED_PARAM, 1068, "The argument of the %0 could not be deduced. You need to update this code.")
 DEF_COMMENT(UNDEDUCED_PARAM, 1068, "The argument of the {0} could not be deduced. You need to update this code.")
+DEF_WARNING(VIRTUAL_POINTER, 1069, "The argument %0 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with \"usm-level=restricted\".")
+DEF_COMMENT(VIRTUAL_POINTER, 1069, "The argument {0} of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with \"usm-level=restricted\".")

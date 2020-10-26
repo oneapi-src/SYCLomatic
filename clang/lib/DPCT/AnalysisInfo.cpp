@@ -434,6 +434,12 @@ void KernelCallExpr::buildKernelArgsStmt() {
     if(ArgCounter != 0)
       KernelArgs += ", ";
 
+    if (Arg.IsDoublePointer) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Diagnostics::VIRTUAL_POINTER, true,
+                               Arg.getArgString());
+    }
+
     if (Arg.TryGetBuffer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
@@ -455,6 +461,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
               TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
         }
       }
+
       if (Arg.IsUsedAsLvalueAfterMalloc) {
         OuterStmts.emplace_back(
             buildString("std::pair<dpct::buffer_t, size_t> ", BufferName,

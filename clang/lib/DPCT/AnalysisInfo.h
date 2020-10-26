@@ -2967,6 +2967,9 @@ private:
       TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsPointer = Analysis.IsPointer;
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+        IsDoublePointer = Analysis.IsDoublePointer;
+      }
 
       if (IsPointer) {
         QualType PointerType;
@@ -3063,6 +3066,7 @@ private:
     int Index;
     int ArgSize = 0;
     bool IsDeviceRandomGeneratorType = false;
+    bool IsDoublePointer = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };

@@ -667,6 +667,10 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       }
     }
   }
+
+  if (checkPointerInStructRecursively(DRE))
+    IsDoublePointer = true;
+
   Base::analyzeExpr(DRE);
 }
 
@@ -711,6 +715,9 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {
   IsPointer = Expression->getType()->isPointerType();
+  if (IsPointer) {
+    IsDoublePointer = Expression->getType()->getPointeeType()->isPointerType();
+  }
   TryGetBuffer = IsPointer && DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
                  !isNullPtr(Expression);
   IsRedeclareRequired = false;

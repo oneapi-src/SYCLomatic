@@ -630,6 +630,7 @@ public:
   bool IsRedeclareRequired;
   bool IsPointer;
   bool TryGetBuffer = false;
+  bool IsDoublePointer = false;
 
   KernelArgumentAnalysis(bool IsInMacroDefine)
       : ArgumentAnalysis(IsInMacroDefine) {}

@@ -10,6 +10,9 @@ __global__ void foo_kernel(T** R)
 
 //CHECK: void foo(float* R[])
 //CHECK-NEXT: {
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1069:{{[0-9]+}}: The argument R of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+//CHECK-NEXT:   */
 //CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> R_buf_ct0 = dpct::get_buffer_and_offset(R);
 //CHECK-NEXT:     size_t R_offset_ct0 = R_buf_ct0.second;
 //CHECK-NEXT:     dpct::get_default_queue().submit(
