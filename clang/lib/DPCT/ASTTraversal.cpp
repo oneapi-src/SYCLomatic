@@ -8305,7 +8305,7 @@ void EventAPICallRule::handleTimeMeasurement(
           } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
             auto IL = dyn_cast<IntegerLiteral>(StreamArg);
             auto V = IL->getValue().getZExtValue();
-            if (V >= 0 && V <= 2)
+            if (V <= 2) // V should be 0, 1 or 2
               IsDefaultStream = true;
           }
           if (USMLevel == UsmLevel::restricted) {
@@ -8346,7 +8346,6 @@ void EventAPICallRule::handleTimeMeasurement(
   }
   for (auto T : Queues2Wait) {
     std::ostringstream SyncStmt;
-    auto MemCall = std::get<1>(T);
     SyncStmt << std::get<0>(T) << "->wait();" << getNL()
              << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
     emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));

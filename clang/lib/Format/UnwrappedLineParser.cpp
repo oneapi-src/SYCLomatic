@@ -1085,7 +1085,7 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
     return;
   }
 #else
-  return addUnwrappedLine();
+    return addUnwrappedLine();
 #endif
   bool NextMustBeValue = mustBeJSIdentOrValue(Keywords, Next);
   bool NextEndsTemplateExpr =
@@ -1208,7 +1208,6 @@ void UnwrappedLineParser::parseStructuralElement() {
     if (FormatTok->Tok.is(tok::string_literal)) {
       nextToken();
       if (FormatTok->Tok.is(tok::l_brace)) {
-
 #ifdef INTEL_CUSTOMIZATION
         if (!Style.IndentExternBlock) {
           if ((formatRangeGetter() == FormatRange::all &&
@@ -2949,7 +2948,11 @@ bool UnwrappedLineParser::addUnwrappedLine(bool MustAdd) {
 void UnwrappedLineParser::addUnwrappedLine() {
 #endif
   if (Line->Tokens.empty())
+#ifdef INTEL_CUSTOMIZATION
     return false;
+#else
+    return;
+#endif
   LLVM_DEBUG({
     if (CurrentLines == &Lines)
       printDebugInfo(*Line);
@@ -2971,7 +2974,11 @@ void UnwrappedLineParser::addUnwrappedLine() {
   }
   // Disconnect the current token from the last token on the previous line.
   FormatTok->Previous = nullptr;
+#ifdef INTEL_CUSTOMIZATION
   return true;
+#else
+  return;
+#endif
 }
 
 bool UnwrappedLineParser::eof() const { return FormatTok->Tok.is(tok::eof); }
