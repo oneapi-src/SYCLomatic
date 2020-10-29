@@ -1228,33 +1228,66 @@ static void DiagnoseMismatchedSelectors(Sema &S, SourceLocation AtLoc,
   }
 }
 
-static void HelperToDiagnoseDirectSelectorsExpr(Sema &S, SourceLocation AtLoc,
-                                                Selector Sel,
-                                                ObjCMethodList &MethList,
-                                                bool &onlyDirect) {
+static ObjCMethodDecl *LookupDirectMethodInMethodList(Sema &S, Selector Sel,
+                                                      ObjCMethodList &MethList,
+                                                      bool &onlyDirect,
+                                                      bool &anyDirect) {
+  (void)Sel;
   ObjCMethodList *M = &MethList;
-  for (M = M->getNext(); M; M = M->getNext()) {
+  ObjCMethodDecl *DirectMethod = nullptr;
+  for (; M; M = M->getNext()) {
     ObjCMethodDecl *Method = M->getMethod();
-    if (Method->getSelector() != Sel)
+    if (!Method)
       continue;
-    if (!Method->isDirectMethod())
+    assert(Method->getSelector() == Sel && "Method with wrong selector in method list");
+    if (Method->isDirectMethod()) {
+      anyDirect = true;
+      DirectMethod = Method;
+    } else
       onlyDirect = false;
   }
+
+  return DirectMethod;
 }
 
-static void DiagnoseDirectSelectorsExpr(Sema &S, SourceLocation AtLoc,
-                                        Selector Sel, bool &onlyDirect) {
-  for (Sema::GlobalMethodPool::iterator b = S.MethodPool.begin(),
-       e = S.MethodPool.end(); b != e; b++) {
-    // first, instance methods
-    ObjCMethodList &InstMethList = b->second.first;
-    HelperToDiagnoseDirectSelectorsExpr(S, AtLoc, Sel, InstMethList,
-                                        onlyDirect);
+// Search the global pool for (potentially) direct methods matching the given
+// selector. If a non-direct method is found, set \param onlyDirect to false. If
+// a direct method is found, set \param anyDirect to true. Returns a direct
+// method, if any.
+static ObjCMethodDecl *LookupDirectMethodInGlobalPool(Sema &S, Selector Sel,
+                                                      bool &onlyDirect,
+                                                      bool &anyDirect) {
+  auto Iter = S.MethodPool.find(Sel);
+  if (Iter == S.MethodPool.end())
+    return nullptr;
 
-    // second, class methods
-    ObjCMethodList &ClsMethList = b->second.second;
-    HelperToDiagnoseDirectSelectorsExpr(S, AtLoc, Sel, ClsMethList, onlyDirect);
-  }
+  ObjCMethodDecl *DirectInstance = LookupDirectMethodInMethodList(
+      S, Sel, Iter->second.first, onlyDirect, anyDirect);
+  ObjCMethodDecl *DirectClass = LookupDirectMethodInMethodList(
+      S, Sel, Iter->second.second, onlyDirect, anyDirect);
+
+  return DirectInstance ? DirectInstance : DirectClass;
+}
+
+static ObjCMethodDecl *findMethodInCurrentClass(Sema &S, Selector Sel) {
+  auto *CurMD = S.getCurMethodDecl();
+  if (!CurMD)
+    return nullptr;
+  ObjCInterfaceDecl *IFace = CurMD->getClassInterface();
+
+  // The language enforce that only one direct method is present in a given
+  // class, so we just need to find one method in the current class to know
+  // whether Sel is potentially direct in this context.
+  if (ObjCMethodDecl *MD = IFace->lookupMethod(Sel, /*isInstance=*/true))
+    return MD;
+  if (ObjCMethodDecl *MD = IFace->lookupPrivateMethod(Sel, /*isInstance=*/true))
+    return MD;
+  if (ObjCMethodDecl *MD = IFace->lookupMethod(Sel, /*isInstance=*/false))
+    return MD;
+  if (ObjCMethodDecl *MD = IFace->lookupPrivateMethod(Sel, /*isInstance=*/false))
+    return MD;
+
+  return nullptr;
 }
 
 ExprResult Sema::ParseObjCSelectorExpression(Selector Sel,
@@ -1280,15 +1313,38 @@ ExprResult Sema::ParseObjCSelectorExpression(Selector Sel,
     } else
         Diag(SelLoc, diag::warn_undeclared_selector) << Sel;
   } else {
-    bool onlyDirect = Method->isDirectMethod();
-    DiagnoseDirectSelectorsExpr(*this, AtLoc, Sel, onlyDirect);
     DiagnoseMismatchedSelectors(*this, AtLoc, Method, LParenLoc, RParenLoc,
                                 WarnMultipleSelectors);
+
+    bool onlyDirect = true;
+    bool anyDirect = false;
+    ObjCMethodDecl *GlobalDirectMethod =
+        LookupDirectMethodInGlobalPool(*this, Sel, onlyDirect, anyDirect);
+
     if (onlyDirect) {
       Diag(AtLoc, diag::err_direct_selector_expression)
           << Method->getSelector();
       Diag(Method->getLocation(), diag::note_direct_method_declared_at)
           << Method->getDeclName();
+    } else if (anyDirect) {
+      // If we saw any direct methods, see if we see a direct member of the
+      // current class. If so, the @selector will likely be used to refer to
+      // this direct method.
+      ObjCMethodDecl *LikelyTargetMethod = findMethodInCurrentClass(*this, Sel);
+      if (LikelyTargetMethod && LikelyTargetMethod->isDirectMethod()) {
+        Diag(AtLoc, diag::warn_potentially_direct_selector_expression) << Sel;
+        Diag(LikelyTargetMethod->getLocation(),
+             diag::note_direct_method_declared_at)
+            << LikelyTargetMethod->getDeclName();
+      } else if (!LikelyTargetMethod) {
+        // Otherwise, emit the "strict" variant of this diagnostic, unless
+        // LikelyTargetMethod is non-direct.
+        Diag(AtLoc, diag::warn_strict_potentially_direct_selector_expression)
+            << Sel;
+        Diag(GlobalDirectMethod->getLocation(),
+             diag::note_direct_method_declared_at)
+            << GlobalDirectMethod->getDeclName();
+      }
     }
   }
 
@@ -1338,6 +1394,9 @@ ExprResult Sema::ParseObjCProtocolExpression(IdentifierInfo *ProtocolId,
     Diag(ProtoLoc, diag::err_undeclared_protocol) << ProtocolId;
     return true;
   }
+  if (PDecl->isNonRuntimeProtocol())
+    Diag(ProtoLoc, diag::err_objc_non_runtime_protocol_in_protocol_expr)
+        << PDecl;
   if (!PDecl->hasDefinition()) {
     Diag(ProtoLoc, diag::err_atprotocol_protocol) << PDecl;
     Diag(PDecl->getLocation(), diag::note_entity_declared_at) << PDecl;
@@ -2389,8 +2448,8 @@ static void applyCocoaAPICheck(Sema &S, const ObjCMessageExpr *Msg,
   SourceManager &SM = S.SourceMgr;
   edit::Commit ECommit(SM, S.LangOpts);
   if (refactor(Msg,*S.NSAPIObj, ECommit)) {
-    DiagnosticBuilder Builder = S.Diag(MsgLoc, DiagID)
-                        << Msg->getSelector() << Msg->getSourceRange();
+    auto Builder = S.Diag(MsgLoc, DiagID)
+                   << Msg->getSelector() << Msg->getSourceRange();
     // FIXME: Don't emit diagnostic at all if fixits are non-commitable.
     if (!ECommit.isCommitable())
       return;
@@ -3083,9 +3142,8 @@ ExprResult Sema::BuildInstanceMessage(Expr *Receiver,
     if (ReceiverType->isObjCClassType() && !isImplicit &&
         !(Receiver->isObjCSelfExpr() && getLangOpts().ObjCAutoRefCount)) {
       {
-        DiagnosticBuilder Builder =
-            Diag(Receiver->getExprLoc(),
-                 diag::err_messaging_class_with_direct_method);
+        auto Builder = Diag(Receiver->getExprLoc(),
+                            diag::err_messaging_class_with_direct_method);
         if (Receiver->isObjCSelfExpr()) {
           Builder.AddFixItHint(FixItHint::CreateReplacement(
               RecRange, Method->getClassInterface()->getName()));
@@ -3097,7 +3155,7 @@ ExprResult Sema::BuildInstanceMessage(Expr *Receiver,
 
     if (SuperLoc.isValid()) {
       {
-        DiagnosticBuilder Builder =
+        auto Builder =
             Diag(SuperLoc, diag::err_messaging_super_with_direct_method);
         if (ReceiverType->isObjCClassType()) {
           Builder.AddFixItHint(FixItHint::CreateReplacement(
@@ -3680,15 +3738,11 @@ bool Sema::isKnownName(StringRef name) {
   return LookupName(R, TUScope, false);
 }
 
-static void addFixitForObjCARCConversion(Sema &S,
-                                         DiagnosticBuilder &DiagB,
-                                         Sema::CheckedConversionKind CCK,
-                                         SourceLocation afterLParen,
-                                         QualType castType,
-                                         Expr *castExpr,
-                                         Expr *realCast,
-                                         const char *bridgeKeyword,
-                                         const char *CFBridgeName) {
+template <typename DiagBuilderT>
+static void addFixitForObjCARCConversion(
+    Sema &S, DiagBuilderT &DiagB, Sema::CheckedConversionKind CCK,
+    SourceLocation afterLParen, QualType castType, Expr *castExpr,
+    Expr *realCast, const char *bridgeKeyword, const char *CFBridgeName) {
   // We handle C-style and implicit casts here.
   switch (CCK) {
   case Sema::CCK_ImplicitConversion:
@@ -3865,9 +3919,9 @@ diagnoseObjCARCConversion(Sema &S, SourceRange castRange,
     assert(CreateRule != ACC_bottom && "This cast should already be accepted.");
     if (CreateRule != ACC_plusOne)
     {
-      DiagnosticBuilder DiagB =
-        (CCK != Sema::CCK_OtherCast) ? S.Diag(noteLoc, diag::note_arc_bridge)
-                              : S.Diag(noteLoc, diag::note_arc_cstyle_bridge);
+      auto DiagB = (CCK != Sema::CCK_OtherCast)
+                       ? S.Diag(noteLoc, diag::note_arc_bridge)
+                       : S.Diag(noteLoc, diag::note_arc_cstyle_bridge);
 
       addFixitForObjCARCConversion(S, DiagB, CCK, afterLParen,
                                    castType, castExpr, realCast, "__bridge ",
@@ -3875,12 +3929,12 @@ diagnoseObjCARCConversion(Sema &S, SourceRange castRange,
     }
     if (CreateRule != ACC_plusZero)
     {
-      DiagnosticBuilder DiagB =
-        (CCK == Sema::CCK_OtherCast && !br) ?
-          S.Diag(noteLoc, diag::note_arc_cstyle_bridge_transfer) << castExprType :
-          S.Diag(br ? castExpr->getExprLoc() : noteLoc,
-                 diag::note_arc_bridge_transfer)
-            << castExprType << br;
+      auto DiagB = (CCK == Sema::CCK_OtherCast && !br)
+                       ? S.Diag(noteLoc, diag::note_arc_cstyle_bridge_transfer)
+                             << castExprType
+                       : S.Diag(br ? castExpr->getExprLoc() : noteLoc,
+                                diag::note_arc_bridge_transfer)
+                             << castExprType << br;
 
       addFixitForObjCARCConversion(S, DiagB, CCK, afterLParen,
                                    castType, castExpr, realCast, "__bridge_transfer ",
@@ -3906,21 +3960,21 @@ diagnoseObjCARCConversion(Sema &S, SourceRange castRange,
     assert(CreateRule != ACC_bottom && "This cast should already be accepted.");
     if (CreateRule != ACC_plusOne)
     {
-      DiagnosticBuilder DiagB =
-      (CCK != Sema::CCK_OtherCast) ? S.Diag(noteLoc, diag::note_arc_bridge)
-                               : S.Diag(noteLoc, diag::note_arc_cstyle_bridge);
+      auto DiagB = (CCK != Sema::CCK_OtherCast)
+                       ? S.Diag(noteLoc, diag::note_arc_bridge)
+                       : S.Diag(noteLoc, diag::note_arc_cstyle_bridge);
       addFixitForObjCARCConversion(S, DiagB, CCK, afterLParen,
                                    castType, castExpr, realCast, "__bridge ",
                                    nullptr);
     }
     if (CreateRule != ACC_plusZero)
     {
-      DiagnosticBuilder DiagB =
-        (CCK == Sema::CCK_OtherCast && !br) ?
-          S.Diag(noteLoc, diag::note_arc_cstyle_bridge_retained) << castType :
-          S.Diag(br ? castExpr->getExprLoc() : noteLoc,
-                 diag::note_arc_bridge_retained)
-            << castType << br;
+      auto DiagB = (CCK == Sema::CCK_OtherCast && !br)
+                       ? S.Diag(noteLoc, diag::note_arc_cstyle_bridge_retained)
+                             << castType
+                       : S.Diag(br ? castExpr->getExprLoc() : noteLoc,
+                                diag::note_arc_bridge_retained)
+                             << castType << br;
 
       addFixitForObjCARCConversion(S, DiagB, CCK, afterLParen,
                                    castType, castExpr, realCast, "__bridge_retained ",
@@ -4406,8 +4460,8 @@ Sema::CheckObjCConversion(SourceRange castRange, QualType castType,
   // If the result is +1, consume it here.
   case ACC_plusOne:
     castExpr = ImplicitCastExpr::Create(Context, castExpr->getType(),
-                                        CK_ARCConsumeObject, castExpr,
-                                        nullptr, VK_RValue);
+                                        CK_ARCConsumeObject, castExpr, nullptr,
+                                        VK_RValue, FPOptionsOverride());
     Cleanup.setExprNeedsCleanups(true);
     return ACR_okay;
   }
@@ -4487,7 +4541,8 @@ Expr *Sema::stripARCUnbridgedCast(Expr *e) {
     Expr *sub = stripARCUnbridgedCast(uo->getSubExpr());
     return UnaryOperator::Create(Context, sub, UO_Extension, sub->getType(),
                                  sub->getValueKind(), sub->getObjectKind(),
-                                 uo->getOperatorLoc(), false, CurFPFeatures);
+                                 uo->getOperatorLoc(), false,
+                                 CurFPFeatureOverrides());
   } else if (GenericSelectionExpr *gse = dyn_cast<GenericSelectionExpr>(e)) {
     assert(!gse->isResultDependent());
 
@@ -4632,9 +4687,9 @@ ExprResult Sema::BuildObjCBridgedCast(SourceLocation LParenLoc,
 
     case OBC_BridgeRetained:
       // Produce the object before casting it.
-      SubExpr = ImplicitCastExpr::Create(Context, FromType,
-                                         CK_ARCProduceObject,
-                                         SubExpr, nullptr, VK_RValue);
+      SubExpr = ImplicitCastExpr::Create(Context, FromType, CK_ARCProduceObject,
+                                         SubExpr, nullptr, VK_RValue,
+                                         FPOptionsOverride());
       break;
 
     case OBC_BridgeTransfer: {
@@ -4673,7 +4728,7 @@ ExprResult Sema::BuildObjCBridgedCast(SourceLocation LParenLoc,
   if (MustConsume) {
     Cleanup.setExprNeedsCleanups(true);
     Result = ImplicitCastExpr::Create(Context, T, CK_ARCConsumeObject, Result,
-                                      nullptr, VK_RValue);
+                                      nullptr, VK_RValue, FPOptionsOverride());
   }
 
   return Result;

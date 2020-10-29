@@ -79,6 +79,7 @@
 #include "llvm/Analysis/ConstantFolding.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/ScalarEvolutionDivision.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/ValueTracking.h"
@@ -242,7 +243,7 @@ LLVM_DUMP_METHOD void SCEV::dump() const {
 #endif
 
 void SCEV::print(raw_ostream &OS) const {
-  switch (static_cast<SCEVTypes>(getSCEVType())) {
+  switch (getSCEVType()) {
   case scConstant:
     cast<SCEVConstant>(this)->getValue()->printAsOperand(OS, false);
     return;
@@ -303,6 +304,8 @@ void SCEV::print(raw_ostream &OS) const {
     case scSMinExpr:
       OpStr = " smin ";
       break;
+    default:
+      llvm_unreachable("There are no other nary expression types.");
     }
     OS << "(";
     for (SCEVNAryExpr::op_iterator I = NAry->op_begin(), E = NAry->op_end();
@@ -319,6 +322,10 @@ void SCEV::print(raw_ostream &OS) const {
         OS << "<nuw>";
       if (NAry->hasNoSignedWrap())
         OS << "<nsw>";
+      break;
+    default:
+      // Nothing to print for other nary expressions.
+      break;
     }
     return;
   }
@@ -360,13 +367,13 @@ void SCEV::print(raw_ostream &OS) const {
 }
 
 Type *SCEV::getType() const {
-  switch (static_cast<SCEVTypes>(getSCEVType())) {
+  switch (getSCEVType()) {
   case scConstant:
     return cast<SCEVConstant>(this)->getType();
   case scTruncate:
   case scZeroExtend:
   case scSignExtend:
-    return cast<SCEVCastExpr>(this)->getType();
+    return cast<SCEVIntegralCastExpr>(this)->getType();
   case scAddRecExpr:
   case scMulExpr:
   case scUMaxExpr:
@@ -444,28 +451,31 @@ ScalarEvolution::getConstant(Type *Ty, uint64_t V, bool isSigned) {
   return getConstant(ConstantInt::get(ITy, V, isSigned));
 }
 
-SCEVCastExpr::SCEVCastExpr(const FoldingSetNodeIDRef ID,
-                           unsigned SCEVTy, const SCEV *op, Type *ty)
-  : SCEV(ID, SCEVTy, computeExpressionSize(op)), Op(op), Ty(ty) {}
+SCEVIntegralCastExpr::SCEVIntegralCastExpr(const FoldingSetNodeIDRef ID,
+                                           SCEVTypes SCEVTy, const SCEV *op,
+                                           Type *ty)
+    : SCEV(ID, SCEVTy, computeExpressionSize(op)), Ty(ty) {
+  Operands[0] = op;
+}
 
-SCEVTruncateExpr::SCEVTruncateExpr(const FoldingSetNodeIDRef ID,
-                                   const SCEV *op, Type *ty)
-  : SCEVCastExpr(ID, scTruncate, op, ty) {
-  assert(Op->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
+SCEVTruncateExpr::SCEVTruncateExpr(const FoldingSetNodeIDRef ID, const SCEV *op,
+                                   Type *ty)
+    : SCEVIntegralCastExpr(ID, scTruncate, op, ty) {
+  assert(getOperand()->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
          "Cannot truncate non-integer value!");
 }
 
 SCEVZeroExtendExpr::SCEVZeroExtendExpr(const FoldingSetNodeIDRef ID,
                                        const SCEV *op, Type *ty)
-  : SCEVCastExpr(ID, scZeroExtend, op, ty) {
-  assert(Op->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
+    : SCEVIntegralCastExpr(ID, scZeroExtend, op, ty) {
+  assert(getOperand()->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
          "Cannot zero extend non-integer value!");
 }
 
 SCEVSignExtendExpr::SCEVSignExtendExpr(const FoldingSetNodeIDRef ID,
                                        const SCEV *op, Type *ty)
-  : SCEVCastExpr(ID, scSignExtend, op, ty) {
-  assert(Op->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
+    : SCEVIntegralCastExpr(ID, scSignExtend, op, ty) {
+  assert(getOperand()->getType()->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
          "Cannot sign extend non-integer value!");
 }
 
@@ -664,7 +674,7 @@ static int CompareSCEVComplexity(
     return 0;
 
   // Primarily, sort the SCEVs by their getSCEVType().
-  unsigned LType = LHS->getSCEVType(), RType = RHS->getSCEVType();
+  SCEVTypes LType = LHS->getSCEVType(), RType = RHS->getSCEVType();
   if (LType != RType)
     return (int)LType - (int)RType;
 
@@ -673,7 +683,7 @@ static int CompareSCEVComplexity(
   // Aside from the getSCEVType() ordering, the particular ordering
   // isn't very important except that it's beneficial to be consistent,
   // so that (a + b) and (b + a) don't end up as different expressions.
-  switch (static_cast<SCEVTypes>(LType)) {
+  switch (LType) {
   case scUnknown: {
     const SCEVUnknown *LU = cast<SCEVUnknown>(LHS);
     const SCEVUnknown *RU = cast<SCEVUnknown>(RHS);
@@ -778,8 +788,8 @@ static int CompareSCEVComplexity(
   case scTruncate:
   case scZeroExtend:
   case scSignExtend: {
-    const SCEVCastExpr *LC = cast<SCEVCastExpr>(LHS);
-    const SCEVCastExpr *RC = cast<SCEVCastExpr>(RHS);
+    const SCEVIntegralCastExpr *LC = cast<SCEVIntegralCastExpr>(LHS);
+    const SCEVIntegralCastExpr *RC = cast<SCEVIntegralCastExpr>(RHS);
 
     // Compare cast expressions by operand.
     int X = CompareSCEVComplexity(EqCacheSCEV, EqCacheValue, LI,
@@ -847,30 +857,6 @@ static void GroupByComplexity(SmallVectorImpl<const SCEV *> &Ops,
   }
 }
 
-// Returns the size of the SCEV S.
-static inline int sizeOfSCEV(const SCEV *S) {
-  struct FindSCEVSize {
-    int Size = 0;
-
-    FindSCEVSize() = default;
-
-    bool follow(const SCEV *S) {
-      ++Size;
-      // Keep looking at all operands of S.
-      return true;
-    }
-
-    bool isDone() const {
-      return false;
-    }
-  };
-
-  FindSCEVSize F;
-  SCEVTraversal<FindSCEVSize> ST(F);
-  ST.visitAll(S);
-  return F.Size;
-}
-
 /// Returns true if \p Ops contains a huge SCEV (the subtree of S contains at
 /// least HugeExprThreshold nodes).
 static bool hasHugeExpression(ArrayRef<const SCEV *> Ops) {
@@ -878,238 +864,6 @@ static bool hasHugeExpression(ArrayRef<const SCEV *> Ops) {
     return S->getExpressionSize() >= HugeExprThreshold;
   });
 }
-
-namespace {
-
-struct SCEVDivision : public SCEVVisitor<SCEVDivision, void> {
-public:
-  // Computes the Quotient and Remainder of the division of Numerator by
-  // Denominator.
-  static void divide(ScalarEvolution &SE, const SCEV *Numerator,
-                     const SCEV *Denominator, const SCEV **Quotient,
-                     const SCEV **Remainder) {
-    assert(Numerator && Denominator && "Uninitialized SCEV");
-
-    SCEVDivision D(SE, Numerator, Denominator);
-
-    // Check for the trivial case here to avoid having to check for it in the
-    // rest of the code.
-    if (Numerator == Denominator) {
-      *Quotient = D.One;
-      *Remainder = D.Zero;
-      return;
-    }
-
-    if (Numerator->isZero()) {
-      *Quotient = D.Zero;
-      *Remainder = D.Zero;
-      return;
-    }
-
-    // A simple case when N/1. The quotient is N.
-    if (Denominator->isOne()) {
-      *Quotient = Numerator;
-      *Remainder = D.Zero;
-      return;
-    }
-
-    // Split the Denominator when it is a product.
-    if (const SCEVMulExpr *T = dyn_cast<SCEVMulExpr>(Denominator)) {
-      const SCEV *Q, *R;
-      *Quotient = Numerator;
-      for (const SCEV *Op : T->operands()) {
-        divide(SE, *Quotient, Op, &Q, &R);
-        *Quotient = Q;
-
-        // Bail out when the Numerator is not divisible by one of the terms of
-        // the Denominator.
-        if (!R->isZero()) {
-          *Quotient = D.Zero;
-          *Remainder = Numerator;
-          return;
-        }
-      }
-      *Remainder = D.Zero;
-      return;
-    }
-
-    D.visit(Numerator);
-    *Quotient = D.Quotient;
-    *Remainder = D.Remainder;
-  }
-
-  // Except in the trivial case described above, we do not know how to divide
-  // Expr by Denominator for the following functions with empty implementation.
-  void visitTruncateExpr(const SCEVTruncateExpr *Numerator) {}
-  void visitZeroExtendExpr(const SCEVZeroExtendExpr *Numerator) {}
-  void visitSignExtendExpr(const SCEVSignExtendExpr *Numerator) {}
-  void visitUDivExpr(const SCEVUDivExpr *Numerator) {}
-  void visitSMaxExpr(const SCEVSMaxExpr *Numerator) {}
-  void visitUMaxExpr(const SCEVUMaxExpr *Numerator) {}
-  void visitSMinExpr(const SCEVSMinExpr *Numerator) {}
-  void visitUMinExpr(const SCEVUMinExpr *Numerator) {}
-  void visitUnknown(const SCEVUnknown *Numerator) {}
-  void visitCouldNotCompute(const SCEVCouldNotCompute *Numerator) {}
-
-  void visitConstant(const SCEVConstant *Numerator) {
-    if (const SCEVConstant *D = dyn_cast<SCEVConstant>(Denominator)) {
-      APInt NumeratorVal = Numerator->getAPInt();
-      APInt DenominatorVal = D->getAPInt();
-      uint32_t NumeratorBW = NumeratorVal.getBitWidth();
-      uint32_t DenominatorBW = DenominatorVal.getBitWidth();
-
-      if (NumeratorBW > DenominatorBW)
-        DenominatorVal = DenominatorVal.sext(NumeratorBW);
-      else if (NumeratorBW < DenominatorBW)
-        NumeratorVal = NumeratorVal.sext(DenominatorBW);
-
-      APInt QuotientVal(NumeratorVal.getBitWidth(), 0);
-      APInt RemainderVal(NumeratorVal.getBitWidth(), 0);
-      APInt::sdivrem(NumeratorVal, DenominatorVal, QuotientVal, RemainderVal);
-      Quotient = SE.getConstant(QuotientVal);
-      Remainder = SE.getConstant(RemainderVal);
-      return;
-    }
-  }
-
-  void visitAddRecExpr(const SCEVAddRecExpr *Numerator) {
-    const SCEV *StartQ, *StartR, *StepQ, *StepR;
-    if (!Numerator->isAffine())
-      return cannotDivide(Numerator);
-    divide(SE, Numerator->getStart(), Denominator, &StartQ, &StartR);
-    divide(SE, Numerator->getStepRecurrence(SE), Denominator, &StepQ, &StepR);
-    // Bail out if the types do not match.
-    Type *Ty = Denominator->getType();
-    if (Ty != StartQ->getType() || Ty != StartR->getType() ||
-        Ty != StepQ->getType() || Ty != StepR->getType())
-      return cannotDivide(Numerator);
-    Quotient = SE.getAddRecExpr(StartQ, StepQ, Numerator->getLoop(),
-                                Numerator->getNoWrapFlags());
-    Remainder = SE.getAddRecExpr(StartR, StepR, Numerator->getLoop(),
-                                 Numerator->getNoWrapFlags());
-  }
-
-  void visitAddExpr(const SCEVAddExpr *Numerator) {
-    SmallVector<const SCEV *, 2> Qs, Rs;
-    Type *Ty = Denominator->getType();
-
-    for (const SCEV *Op : Numerator->operands()) {
-      const SCEV *Q, *R;
-      divide(SE, Op, Denominator, &Q, &R);
-
-      // Bail out if types do not match.
-      if (Ty != Q->getType() || Ty != R->getType())
-        return cannotDivide(Numerator);
-
-      Qs.push_back(Q);
-      Rs.push_back(R);
-    }
-
-    if (Qs.size() == 1) {
-      Quotient = Qs[0];
-      Remainder = Rs[0];
-      return;
-    }
-
-    Quotient = SE.getAddExpr(Qs);
-    Remainder = SE.getAddExpr(Rs);
-  }
-
-  void visitMulExpr(const SCEVMulExpr *Numerator) {
-    SmallVector<const SCEV *, 2> Qs;
-    Type *Ty = Denominator->getType();
-
-    bool FoundDenominatorTerm = false;
-    for (const SCEV *Op : Numerator->operands()) {
-      // Bail out if types do not match.
-      if (Ty != Op->getType())
-        return cannotDivide(Numerator);
-
-      if (FoundDenominatorTerm) {
-        Qs.push_back(Op);
-        continue;
-      }
-
-      // Check whether Denominator divides one of the product operands.
-      const SCEV *Q, *R;
-      divide(SE, Op, Denominator, &Q, &R);
-      if (!R->isZero()) {
-        Qs.push_back(Op);
-        continue;
-      }
-
-      // Bail out if types do not match.
-      if (Ty != Q->getType())
-        return cannotDivide(Numerator);
-
-      FoundDenominatorTerm = true;
-      Qs.push_back(Q);
-    }
-
-    if (FoundDenominatorTerm) {
-      Remainder = Zero;
-      if (Qs.size() == 1)
-        Quotient = Qs[0];
-      else
-        Quotient = SE.getMulExpr(Qs);
-      return;
-    }
-
-    if (!isa<SCEVUnknown>(Denominator))
-      return cannotDivide(Numerator);
-
-    // The Remainder is obtained by replacing Denominator by 0 in Numerator.
-    ValueToValueMap RewriteMap;
-    RewriteMap[cast<SCEVUnknown>(Denominator)->getValue()] =
-        cast<SCEVConstant>(Zero)->getValue();
-    Remainder = SCEVParameterRewriter::rewrite(Numerator, SE, RewriteMap, true);
-
-    if (Remainder->isZero()) {
-      // The Quotient is obtained by replacing Denominator by 1 in Numerator.
-      RewriteMap[cast<SCEVUnknown>(Denominator)->getValue()] =
-          cast<SCEVConstant>(One)->getValue();
-      Quotient =
-          SCEVParameterRewriter::rewrite(Numerator, SE, RewriteMap, true);
-      return;
-    }
-
-    // Quotient is (Numerator - Remainder) divided by Denominator.
-    const SCEV *Q, *R;
-    const SCEV *Diff = SE.getMinusSCEV(Numerator, Remainder);
-    // This SCEV does not seem to simplify: fail the division here.
-    if (sizeOfSCEV(Diff) > sizeOfSCEV(Numerator))
-      return cannotDivide(Numerator);
-    divide(SE, Diff, Denominator, &Q, &R);
-    if (R != Zero)
-      return cannotDivide(Numerator);
-    Quotient = Q;
-  }
-
-private:
-  SCEVDivision(ScalarEvolution &S, const SCEV *Numerator,
-               const SCEV *Denominator)
-      : SE(S), Denominator(Denominator) {
-    Zero = SE.getZero(Denominator->getType());
-    One = SE.getOne(Denominator->getType());
-
-    // We generally do not know how to divide Expr by Denominator. We
-    // initialize the division to a "cannot divide" state to simplify the rest
-    // of the code.
-    cannotDivide(Numerator);
-  }
-
-  // Convenience function for giving up on the division. We set the quotient to
-  // be equal to zero and the remainder to be equal to the numerator.
-  void cannotDivide(const SCEV *Numerator) {
-    Quotient = Zero;
-    Remainder = Numerator;
-  }
-
-  ScalarEvolution &SE;
-  const SCEV *Denominator, *Quotient, *Remainder, *Zero, *One;
-};
-
-} // end anonymous namespace
 
 //===----------------------------------------------------------------------===//
 //                      Simple SCEV method implementations
@@ -1305,7 +1059,8 @@ const SCEV *ScalarEvolution::getTruncateExpr(const SCEV *Op, Type *Ty,
     for (unsigned i = 0, e = CommOp->getNumOperands(); i != e && numTruncs < 2;
          ++i) {
       const SCEV *S = getTruncateExpr(CommOp->getOperand(i), Ty, Depth + 1);
-      if (!isa<SCEVCastExpr>(CommOp->getOperand(i)) && isa<SCEVTruncateExpr>(S))
+      if (!isa<SCEVIntegralCastExpr>(CommOp->getOperand(i)) &&
+          isa<SCEVTruncateExpr>(S))
         numTruncs++;
       Operands.push_back(S);
     }
@@ -1608,7 +1363,7 @@ bool ScalarEvolution::proveNoWrapByVaryingStart(const SCEV *Start,
 static APInt extractConstantWithoutWrapping(ScalarEvolution &SE,
                                             const SCEVConstant *ConstantTerm,
                                             const SCEVAddExpr *WholeAddExpr) {
-  const APInt C = ConstantTerm->getAPInt();
+  const APInt &C = ConstantTerm->getAPInt();
   const unsigned BitWidth = C.getBitWidth();
   // Find number of trailing zeros of (x + y + ...) w/o the C first:
   uint32_t TZ = BitWidth;
@@ -3576,7 +3331,7 @@ ScalarEvolution::getGEPExpr(GEPOperator *GEP,
 }
 
 std::tuple<SCEV *, FoldingSetNodeID, void *>
-ScalarEvolution::findExistingSCEVInCache(int SCEVType,
+ScalarEvolution::findExistingSCEVInCache(SCEVTypes SCEVType,
                                          ArrayRef<const SCEV *> Ops) {
   FoldingSetNodeID ID;
   void *IP = nullptr;
@@ -3587,7 +3342,17 @@ ScalarEvolution::findExistingSCEVInCache(int SCEVType,
       UniqueSCEVs.FindNodeOrInsertPos(ID, IP), std::move(ID), IP);
 }
 
-const SCEV *ScalarEvolution::getMinMaxExpr(unsigned Kind,
+const SCEV *ScalarEvolution::getAbsExpr(const SCEV *Op, bool IsNSW) {
+  SCEV::NoWrapFlags Flags = IsNSW ? SCEV::FlagNSW : SCEV::FlagAnyWrap;
+  return getSMaxExpr(Op, getNegativeSCEV(Op, Flags));
+}
+
+const SCEV *ScalarEvolution::getSignumExpr(const SCEV *Op) {
+  Type *Ty = Op->getType();
+  return getSMinExpr(getSMaxExpr(Op, getMinusOne(Ty)), getOne(Ty));
+}
+
+const SCEV *ScalarEvolution::getMinMaxExpr(SCEVTypes Kind,
                                            SmallVectorImpl<const SCEV *> &Ops) {
   assert(!Ops.empty() && "Cannot get empty (u|s)(min|max)!");
   if (Ops.size() == 1) return Ops[0];
@@ -3711,8 +3476,8 @@ const SCEV *ScalarEvolution::getMinMaxExpr(unsigned Kind,
     return ExistingSCEV;
   const SCEV **O = SCEVAllocator.Allocate<const SCEV *>(Ops.size());
   std::uninitialized_copy(Ops.begin(), Ops.end(), O);
-  SCEV *S = new (SCEVAllocator) SCEVMinMaxExpr(
-      ID.Intern(SCEVAllocator), static_cast<SCEVTypes>(Kind), O, Ops.size());
+  SCEV *S = new (SCEVAllocator)
+      SCEVMinMaxExpr(ID.Intern(SCEVAllocator), Kind, O, Ops.size());
 
   UniqueSCEVs.InsertNode(S, IP);
   addToLoopUseLists(S);
@@ -3860,7 +3625,8 @@ bool ScalarEvolution::containsAddRecurrence(const SCEV *S) {
   if (I != HasRecMap.end())
     return I->second;
 
-  bool FoundAddRec = SCEVExprContains(S, isa<SCEVAddRecExpr, const SCEV *>);
+  bool FoundAddRec =
+      SCEVExprContains(S, [](const SCEV *S) { return isa<SCEVAddRecExpr>(S); });
   HasRecMap.insert({S, FoundAddRec});
   return FoundAddRec;
 }
@@ -3998,8 +3764,7 @@ const SCEV *ScalarEvolution::getNegativeSCEV(const SCEV *V,
 
   Type *Ty = V->getType();
   Ty = getEffectiveSCEVType(Ty);
-  return getMulExpr(
-      V, getConstant(cast<ConstantInt>(Constant::getAllOnesValue(Ty))), Flags);
+  return getMulExpr(V, getMinusOne(Ty), Flags);
 }
 
 /// If Expr computes ~A, return A else return nullptr
@@ -4033,9 +3798,8 @@ const SCEV *ScalarEvolution::getNotSCEV(const SCEV *V) {
           return (const SCEV *)nullptr;
         MatchedOperands.push_back(Matched);
       }
-      return getMinMaxExpr(
-          SCEVMinMaxExpr::negate(static_cast<SCEVTypes>(MME->getSCEVType())),
-          MatchedOperands);
+      return getMinMaxExpr(SCEVMinMaxExpr::negate(MME->getSCEVType()),
+                           MatchedOperands);
     };
     if (const SCEV *Replaced = MatchMinMaxNegation(MME))
       return Replaced;
@@ -4043,9 +3807,7 @@ const SCEV *ScalarEvolution::getNotSCEV(const SCEV *V) {
 
   Type *Ty = V->getType();
   Ty = getEffectiveSCEVType(Ty);
-  const SCEV *AllOnes =
-                   getConstant(cast<ConstantInt>(Constant::getAllOnesValue(Ty)));
-  return getMinusSCEV(AllOnes, V);
+  return getMinusSCEV(getMinusOne(Ty), V);
 }
 
 const SCEV *ScalarEvolution::getMinusSCEV(const SCEV *LHS, const SCEV *RHS,
@@ -4192,6 +3954,7 @@ const SCEV *ScalarEvolution::getUMinFromMismatchedTypes(
       MaxType = getWiderType(MaxType, S->getType());
     else
       MaxType = S->getType();
+  assert(MaxType && "Failed to find maximum type!");
 
   // Extend all ops to max type.
   SmallVector<const SCEV *, 2> PromotedOps;
@@ -4207,23 +3970,25 @@ const SCEV *ScalarEvolution::getPointerBase(const SCEV *V) {
   if (!V->getType()->isPointerTy())
     return V;
 
-  if (const SCEVCastExpr *Cast = dyn_cast<SCEVCastExpr>(V)) {
-    return getPointerBase(Cast->getOperand());
-  } else if (const SCEVNAryExpr *NAry = dyn_cast<SCEVNAryExpr>(V)) {
-    const SCEV *PtrOp = nullptr;
-    for (const SCEV *NAryOp : NAry->operands()) {
-      if (NAryOp->getType()->isPointerTy()) {
-        // Cannot find the base of an expression with multiple pointer operands.
-        if (PtrOp)
-          return V;
-        PtrOp = NAryOp;
+  while (true) {
+    if (const SCEVIntegralCastExpr *Cast = dyn_cast<SCEVIntegralCastExpr>(V)) {
+      V = Cast->getOperand();
+    } else if (const SCEVNAryExpr *NAry = dyn_cast<SCEVNAryExpr>(V)) {
+      const SCEV *PtrOp = nullptr;
+      for (const SCEV *NAryOp : NAry->operands()) {
+        if (NAryOp->getType()->isPointerTy()) {
+          // Cannot find the base of an expression with multiple pointer ops.
+          if (PtrOp)
+            return V;
+          PtrOp = NAryOp;
+        }
       }
-    }
-    if (!PtrOp)
+      if (!PtrOp) // All operands were non-pointer.
+        return V;
+      V = PtrOp;
+    } else // Not something we can look further into.
       return V;
-    return getPointerBase(PtrOp);
   }
-  return V;
 }
 
 /// Push users of the given Instruction onto the given Worklist.
@@ -4520,6 +4285,7 @@ struct BinaryOp {
   Value *RHS;
   bool IsNSW = false;
   bool IsNUW = false;
+  bool IsExact = false;
 
   /// Op is set if this BinaryOp corresponds to a concrete LLVM instruction or
   /// constant expression.
@@ -4532,11 +4298,14 @@ struct BinaryOp {
       IsNSW = OBO->hasNoSignedWrap();
       IsNUW = OBO->hasNoUnsignedWrap();
     }
+    if (auto *PEO = dyn_cast<PossiblyExactOperator>(Op))
+      IsExact = PEO->isExact();
   }
 
   explicit BinaryOp(unsigned Opcode, Value *LHS, Value *RHS, bool IsNSW = false,
-                    bool IsNUW = false)
-      : Opcode(Opcode), LHS(LHS), RHS(RHS), IsNSW(IsNSW), IsNUW(IsNUW) {}
+                    bool IsNUW = false, bool IsExact = false)
+      : Opcode(Opcode), LHS(LHS), RHS(RHS), IsNSW(IsNSW), IsNUW(IsNUW),
+        IsExact(IsExact) {}
 };
 
 } // end anonymous namespace
@@ -5272,7 +5041,7 @@ static bool IsAvailableOnEntry(const Loop *L, DominatorTree &DT, const SCEV *S,
         // We do not try to smart about these at all.
         return setUnavailable();
       }
-      llvm_unreachable("switch should be fully covered!");
+      llvm_unreachable("Unknown SCEV kind!");
     }
 
     bool isDone() { return TraversalDone; }
@@ -5749,16 +5518,14 @@ ScalarEvolution::getRangeRef(const SCEV *S,
         auto RangeFromAffine = getRangeForAffineAR(
             AddRec->getStart(), AddRec->getStepRecurrence(*this), MaxBECount,
             BitWidth);
-        if (!RangeFromAffine.isFullSet())
-          ConservativeResult =
-              ConservativeResult.intersectWith(RangeFromAffine, RangeType);
+        ConservativeResult =
+            ConservativeResult.intersectWith(RangeFromAffine, RangeType);
 
         auto RangeFromFactoring = getRangeViaFactoring(
             AddRec->getStart(), AddRec->getStepRecurrence(*this), MaxBECount,
             BitWidth);
-        if (!RangeFromFactoring.isFullSet())
-          ConservativeResult =
-              ConservativeResult.intersectWith(RangeFromFactoring, RangeType);
+        ConservativeResult =
+            ConservativeResult.intersectWith(RangeFromFactoring, RangeType);
       }
     }
 
@@ -5961,7 +5728,7 @@ ConstantRange ScalarEvolution::getRangeViaFactoring(const SCEV *Start,
       }
 
       // Peel off a cast operation
-      if (auto *SCast = dyn_cast<SCEVCastExpr>(S)) {
+      if (auto *SCast = dyn_cast<SCEVIntegralCastExpr>(S)) {
         CastOp = SCast->getSCEVType();
         S = SCast->getOperand();
       }
@@ -6162,7 +5929,7 @@ bool ScalarEvolution::isAddRecNeverPoison(const Instruction *I, const Loop *L) {
     const Instruction *Poison = PoisonStack.pop_back_val();
 
     for (auto *PoisonUser : Poison->users()) {
-      if (propagatesPoison(cast<Instruction>(PoisonUser))) {
+      if (propagatesPoison(cast<Operator>(PoisonUser))) {
         if (Pushed.insert(cast<Instruction>(PoisonUser)).second)
           PoisonStack.push_back(cast<Instruction>(PoisonUser));
       } else if (auto *BI = dyn_cast<BranchInst>(PoisonUser)) {
@@ -6389,15 +6156,8 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
         if (GetMinTrailingZeros(LHS) >=
             (CIVal.getBitWidth() - CIVal.countLeadingZeros())) {
           // Build a plain add SCEV.
-          const SCEV *S = getAddExpr(LHS, getSCEV(CI));
-          // If the LHS of the add was an addrec and it has no-wrap flags,
-          // transfer the no-wrap flags, since an or won't introduce a wrap.
-          if (const SCEVAddRecExpr *NewAR = dyn_cast<SCEVAddRecExpr>(S)) {
-            const SCEVAddRecExpr *OldAR = cast<SCEVAddRecExpr>(LHS);
-            const_cast<SCEVAddRecExpr *>(NewAR)->setNoWrapFlags(
-                OldAR->getNoWrapFlags());
-          }
-          return S;
+          return getAddExpr(LHS, getSCEV(CI),
+                            (SCEV::NoWrapFlags)(SCEV::FlagNUW | SCEV::FlagNSW));
         }
       }
       break;
@@ -6453,15 +6213,19 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
         if (SA->getValue().uge(BitWidth))
           break;
 
-        // It is currently not resolved how to interpret NSW for left
-        // shift by BitWidth - 1, so we avoid applying flags in that
-        // case. Remove this check (or this comment) once the situation
-        // is resolved. See
-        // http://lists.llvm.org/pipermail/llvm-dev/2015-April/084195.html
-        // and http://reviews.llvm.org/D8890 .
+        // We can safely preserve the nuw flag in all cases. It's also safe to
+        // turn a nuw nsw shl into a nuw nsw mul. However, nsw in isolation
+        // requires special handling. It can be preserved as long as we're not
+        // left shifting by bitwidth - 1.
         auto Flags = SCEV::FlagAnyWrap;
-        if (BO->Op && SA->getValue().ult(BitWidth - 1))
-          Flags = getNoWrapFlagsFromUB(BO->Op);
+        if (BO->Op) {
+          auto MulFlags = getNoWrapFlagsFromUB(BO->Op);
+          if ((MulFlags & SCEV::FlagNSW) &&
+              ((MulFlags & SCEV::FlagNUW) || SA->getValue().ult(BitWidth - 1)))
+            Flags = (SCEV::NoWrapFlags)(Flags | SCEV::FlagNSW);
+          if (MulFlags & SCEV::FlagNUW)
+            Flags = (SCEV::NoWrapFlags)(Flags | SCEV::FlagNUW);
+        }
 
         Constant *X = ConstantInt::get(
             getContext(), APInt::getOneBitSet(BitWidth, SA->getZExtValue()));
@@ -6519,6 +6283,15 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
           }
         }
       }
+      if (BO->IsExact) {
+        // Given exact arithmetic in-bounds right-shift by a constant,
+        // we can lower it into:  (abs(x) EXACT/u (1<<C)) * signum(x)
+        const SCEV *X = getSCEV(BO->LHS);
+        const SCEV *AbsX = getAbsExpr(X, /*IsNSW=*/false);
+        APInt Mult = APInt::getOneBitSet(BitWidth, AShrAmt);
+        const SCEV *Div = getUDivExactExpr(AbsX, getConstant(Mult));
+        return getMulExpr(Div, getSignumExpr(X), SCEV::FlagNSW);
+      }
       break;
     }
     }
@@ -6555,6 +6328,20 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
       return getSCEV(U->getOperand(0));
     break;
 
+  case Instruction::SDiv:
+    // If both operands are non-negative, this is just an udiv.
+    if (isKnownNonNegative(getSCEV(U->getOperand(0))) &&
+        isKnownNonNegative(getSCEV(U->getOperand(1))))
+      return getUDivExpr(getSCEV(U->getOperand(0)), getSCEV(U->getOperand(1)));
+    break;
+
+  case Instruction::SRem:
+    // If both operands are non-negative, this is just an urem.
+    if (isKnownNonNegative(getSCEV(U->getOperand(0))) &&
+        isKnownNonNegative(getSCEV(U->getOperand(1))))
+      return getURemExpr(getSCEV(U->getOperand(0)), getSCEV(U->getOperand(1)));
+    break;
+
   // It's tempting to handle inttoptr and ptrtoint as no-ops, however this can
   // lead to pointer expressions which cannot safely be expanded to GEPs,
   // because ScalarEvolution doesn't respect the GEP aliasing rules when
@@ -6580,6 +6367,41 @@ const SCEV *ScalarEvolution::createSCEV(Value *V) {
   case Instruction::Invoke:
     if (Value *RV = cast<CallBase>(U)->getReturnedArgOperand())
       return getSCEV(RV);
+
+    if (auto *II = dyn_cast<IntrinsicInst>(U)) {
+      switch (II->getIntrinsicID()) {
+      case Intrinsic::abs:
+        return getAbsExpr(
+            getSCEV(II->getArgOperand(0)),
+            /*IsNSW=*/cast<ConstantInt>(II->getArgOperand(1))->isOne());
+      case Intrinsic::umax:
+        return getUMaxExpr(getSCEV(II->getArgOperand(0)),
+                           getSCEV(II->getArgOperand(1)));
+      case Intrinsic::umin:
+        return getUMinExpr(getSCEV(II->getArgOperand(0)),
+                           getSCEV(II->getArgOperand(1)));
+      case Intrinsic::smax:
+        return getSMaxExpr(getSCEV(II->getArgOperand(0)),
+                           getSCEV(II->getArgOperand(1)));
+      case Intrinsic::smin:
+        return getSMinExpr(getSCEV(II->getArgOperand(0)),
+                           getSCEV(II->getArgOperand(1)));
+      case Intrinsic::usub_sat: {
+        const SCEV *X = getSCEV(II->getArgOperand(0));
+        const SCEV *Y = getSCEV(II->getArgOperand(1));
+        const SCEV *ClampedY = getUMinExpr(X, Y);
+        return getMinusSCEV(X, ClampedY, SCEV::FlagNUW);
+      }
+      case Intrinsic::uadd_sat: {
+        const SCEV *X = getSCEV(II->getArgOperand(0));
+        const SCEV *Y = getSCEV(II->getArgOperand(1));
+        const SCEV *ClampedX = getUMinExpr(X, getNotSCEV(Y));
+        return getAddExpr(ClampedX, Y, SCEV::FlagNUW);
+      }
+      default:
+        break;
+      }
+    }
     break;
   }
 
@@ -6612,8 +6434,9 @@ unsigned ScalarEvolution::getSmallConstantTripCount(const Loop *L) {
   return 0;
 }
 
-unsigned ScalarEvolution::getSmallConstantTripCount(const Loop *L,
-                                                    BasicBlock *ExitingBlock) {
+unsigned
+ScalarEvolution::getSmallConstantTripCount(const Loop *L,
+                                           const BasicBlock *ExitingBlock) {
   assert(ExitingBlock && "Must pass a non-null exiting block!");
   assert(L->isLoopExiting(ExitingBlock) &&
          "Exiting block must actually branch out of the loop!");
@@ -6650,7 +6473,7 @@ unsigned ScalarEvolution::getSmallConstantTripMultiple(const Loop *L) {
 /// that control exits the loop via ExitingBlock.
 unsigned
 ScalarEvolution::getSmallConstantTripMultiple(const Loop *L,
-                                              BasicBlock *ExitingBlock) {
+                                              const BasicBlock *ExitingBlock) {
   assert(ExitingBlock && "Must pass a non-null exiting block!");
   assert(L->isLoopExiting(ExitingBlock) &&
          "Exiting block must actually branch out of the loop!");
@@ -6681,7 +6504,7 @@ ScalarEvolution::getSmallConstantTripMultiple(const Loop *L,
 }
 
 const SCEV *ScalarEvolution::getExitCount(const Loop *L,
-                                          BasicBlock *ExitingBlock,
+                                          const BasicBlock *ExitingBlock,
                                           ExitCountKind Kind) {
   switch (Kind) {
   case Exact:
@@ -6964,6 +6787,10 @@ void ScalarEvolution::forgetValue(Value *V) {
   }
 }
 
+void ScalarEvolution::forgetLoopDispositions(const Loop *L) {
+  LoopDispositions.clear();
+}
+
 /// Get the exact loop backedge taken count considering all loop exits. A
 /// computable result can only be returned for loops with all exiting blocks
 /// dominating the latch. howFarToZero assumes that the limit of each loop test
@@ -7006,7 +6833,7 @@ ScalarEvolution::BackedgeTakenInfo::getExact(const Loop *L, ScalarEvolution *SE,
 
 /// Get the exact not taken count for this loop exit.
 const SCEV *
-ScalarEvolution::BackedgeTakenInfo::getExact(BasicBlock *ExitingBlock,
+ScalarEvolution::BackedgeTakenInfo::getExact(const BasicBlock *ExitingBlock,
                                              ScalarEvolution *SE) const {
   for (auto &ENT : ExitNotTaken)
     if (ENT.ExitingBlock == ExitingBlock && ENT.hasAlwaysTruePredicate())
@@ -7016,7 +6843,7 @@ ScalarEvolution::BackedgeTakenInfo::getExact(BasicBlock *ExitingBlock,
 }
 
 const SCEV *
-ScalarEvolution::BackedgeTakenInfo::getMax(BasicBlock *ExitingBlock,
+ScalarEvolution::BackedgeTakenInfo::getMax(const BasicBlock *ExitingBlock,
                                            ScalarEvolution *SE) const {
   for (auto &ENT : ExitNotTaken)
     if (ENT.ExitingBlock == ExitingBlock && ENT.hasAlwaysTruePredicate())
@@ -8148,100 +7975,103 @@ const SCEV *ScalarEvolution::getSCEVAtScope(const SCEV *V, const Loop *L) {
 /// SCEVConstant, because SCEVConstant is restricted to ConstantInt.
 /// Returns NULL if the SCEV isn't representable as a Constant.
 static Constant *BuildConstantFromSCEV(const SCEV *V) {
-  switch (static_cast<SCEVTypes>(V->getSCEVType())) {
-    case scCouldNotCompute:
-    case scAddRecExpr:
-      break;
-    case scConstant:
-      return cast<SCEVConstant>(V)->getValue();
-    case scUnknown:
-      return dyn_cast<Constant>(cast<SCEVUnknown>(V)->getValue());
-    case scSignExtend: {
-      const SCEVSignExtendExpr *SS = cast<SCEVSignExtendExpr>(V);
-      if (Constant *CastOp = BuildConstantFromSCEV(SS->getOperand()))
-        return ConstantExpr::getSExt(CastOp, SS->getType());
-      break;
-    }
-    case scZeroExtend: {
-      const SCEVZeroExtendExpr *SZ = cast<SCEVZeroExtendExpr>(V);
-      if (Constant *CastOp = BuildConstantFromSCEV(SZ->getOperand()))
-        return ConstantExpr::getZExt(CastOp, SZ->getType());
-      break;
-    }
-    case scTruncate: {
-      const SCEVTruncateExpr *ST = cast<SCEVTruncateExpr>(V);
-      if (Constant *CastOp = BuildConstantFromSCEV(ST->getOperand()))
-        return ConstantExpr::getTrunc(CastOp, ST->getType());
-      break;
-    }
-    case scAddExpr: {
-      const SCEVAddExpr *SA = cast<SCEVAddExpr>(V);
-      if (Constant *C = BuildConstantFromSCEV(SA->getOperand(0))) {
-        if (PointerType *PTy = dyn_cast<PointerType>(C->getType())) {
-          unsigned AS = PTy->getAddressSpace();
+  switch (V->getSCEVType()) {
+  case scCouldNotCompute:
+  case scAddRecExpr:
+    return nullptr;
+  case scConstant:
+    return cast<SCEVConstant>(V)->getValue();
+  case scUnknown:
+    return dyn_cast<Constant>(cast<SCEVUnknown>(V)->getValue());
+  case scSignExtend: {
+    const SCEVSignExtendExpr *SS = cast<SCEVSignExtendExpr>(V);
+    if (Constant *CastOp = BuildConstantFromSCEV(SS->getOperand()))
+      return ConstantExpr::getSExt(CastOp, SS->getType());
+    return nullptr;
+  }
+  case scZeroExtend: {
+    const SCEVZeroExtendExpr *SZ = cast<SCEVZeroExtendExpr>(V);
+    if (Constant *CastOp = BuildConstantFromSCEV(SZ->getOperand()))
+      return ConstantExpr::getZExt(CastOp, SZ->getType());
+    return nullptr;
+  }
+  case scTruncate: {
+    const SCEVTruncateExpr *ST = cast<SCEVTruncateExpr>(V);
+    if (Constant *CastOp = BuildConstantFromSCEV(ST->getOperand()))
+      return ConstantExpr::getTrunc(CastOp, ST->getType());
+    return nullptr;
+  }
+  case scAddExpr: {
+    const SCEVAddExpr *SA = cast<SCEVAddExpr>(V);
+    if (Constant *C = BuildConstantFromSCEV(SA->getOperand(0))) {
+      if (PointerType *PTy = dyn_cast<PointerType>(C->getType())) {
+        unsigned AS = PTy->getAddressSpace();
+        Type *DestPtrTy = Type::getInt8PtrTy(C->getContext(), AS);
+        C = ConstantExpr::getBitCast(C, DestPtrTy);
+      }
+      for (unsigned i = 1, e = SA->getNumOperands(); i != e; ++i) {
+        Constant *C2 = BuildConstantFromSCEV(SA->getOperand(i));
+        if (!C2)
+          return nullptr;
+
+        // First pointer!
+        if (!C->getType()->isPointerTy() && C2->getType()->isPointerTy()) {
+          unsigned AS = C2->getType()->getPointerAddressSpace();
+          std::swap(C, C2);
           Type *DestPtrTy = Type::getInt8PtrTy(C->getContext(), AS);
+          // The offsets have been converted to bytes.  We can add bytes to an
+          // i8* by GEP with the byte count in the first index.
           C = ConstantExpr::getBitCast(C, DestPtrTy);
         }
-        for (unsigned i = 1, e = SA->getNumOperands(); i != e; ++i) {
-          Constant *C2 = BuildConstantFromSCEV(SA->getOperand(i));
-          if (!C2) return nullptr;
 
-          // First pointer!
-          if (!C->getType()->isPointerTy() && C2->getType()->isPointerTy()) {
-            unsigned AS = C2->getType()->getPointerAddressSpace();
-            std::swap(C, C2);
-            Type *DestPtrTy = Type::getInt8PtrTy(C->getContext(), AS);
-            // The offsets have been converted to bytes.  We can add bytes to an
-            // i8* by GEP with the byte count in the first index.
-            C = ConstantExpr::getBitCast(C, DestPtrTy);
-          }
+        // Don't bother trying to sum two pointers. We probably can't
+        // statically compute a load that results from it anyway.
+        if (C2->getType()->isPointerTy())
+          return nullptr;
 
-          // Don't bother trying to sum two pointers. We probably can't
-          // statically compute a load that results from it anyway.
-          if (C2->getType()->isPointerTy())
-            return nullptr;
-
-          if (PointerType *PTy = dyn_cast<PointerType>(C->getType())) {
-            if (PTy->getElementType()->isStructTy())
-              C2 = ConstantExpr::getIntegerCast(
-                  C2, Type::getInt32Ty(C->getContext()), true);
-            C = ConstantExpr::getGetElementPtr(PTy->getElementType(), C, C2);
-          } else
-            C = ConstantExpr::getAdd(C, C2);
-        }
-        return C;
+        if (PointerType *PTy = dyn_cast<PointerType>(C->getType())) {
+          if (PTy->getElementType()->isStructTy())
+            C2 = ConstantExpr::getIntegerCast(
+                C2, Type::getInt32Ty(C->getContext()), true);
+          C = ConstantExpr::getGetElementPtr(PTy->getElementType(), C, C2);
+        } else
+          C = ConstantExpr::getAdd(C, C2);
       }
-      break;
+      return C;
     }
-    case scMulExpr: {
-      const SCEVMulExpr *SM = cast<SCEVMulExpr>(V);
-      if (Constant *C = BuildConstantFromSCEV(SM->getOperand(0))) {
-        // Don't bother with pointers at all.
-        if (C->getType()->isPointerTy()) return nullptr;
-        for (unsigned i = 1, e = SM->getNumOperands(); i != e; ++i) {
-          Constant *C2 = BuildConstantFromSCEV(SM->getOperand(i));
-          if (!C2 || C2->getType()->isPointerTy()) return nullptr;
-          C = ConstantExpr::getMul(C, C2);
-        }
-        return C;
-      }
-      break;
-    }
-    case scUDivExpr: {
-      const SCEVUDivExpr *SU = cast<SCEVUDivExpr>(V);
-      if (Constant *LHS = BuildConstantFromSCEV(SU->getLHS()))
-        if (Constant *RHS = BuildConstantFromSCEV(SU->getRHS()))
-          if (LHS->getType() == RHS->getType())
-            return ConstantExpr::getUDiv(LHS, RHS);
-      break;
-    }
-    case scSMaxExpr:
-    case scUMaxExpr:
-    case scSMinExpr:
-    case scUMinExpr:
-      break; // TODO: smax, umax, smin, umax.
+    return nullptr;
   }
-  return nullptr;
+  case scMulExpr: {
+    const SCEVMulExpr *SM = cast<SCEVMulExpr>(V);
+    if (Constant *C = BuildConstantFromSCEV(SM->getOperand(0))) {
+      // Don't bother with pointers at all.
+      if (C->getType()->isPointerTy())
+        return nullptr;
+      for (unsigned i = 1, e = SM->getNumOperands(); i != e; ++i) {
+        Constant *C2 = BuildConstantFromSCEV(SM->getOperand(i));
+        if (!C2 || C2->getType()->isPointerTy())
+          return nullptr;
+        C = ConstantExpr::getMul(C, C2);
+      }
+      return C;
+    }
+    return nullptr;
+  }
+  case scUDivExpr: {
+    const SCEVUDivExpr *SU = cast<SCEVUDivExpr>(V);
+    if (Constant *LHS = BuildConstantFromSCEV(SU->getLHS()))
+      if (Constant *RHS = BuildConstantFromSCEV(SU->getRHS()))
+        if (LHS->getType() == RHS->getType())
+          return ConstantExpr::getUDiv(LHS, RHS);
+    return nullptr;
+  }
+  case scSMaxExpr:
+  case scUMaxExpr:
+  case scSMinExpr:
+  case scUMinExpr:
+    return nullptr; // TODO: smax, umax, smin, umax.
+  }
+  llvm_unreachable("Unknown SCEV kind!");
 }
 
 const SCEV *ScalarEvolution::computeSCEVAtScope(const SCEV *V, const Loop *L) {
@@ -8252,22 +8082,22 @@ const SCEV *ScalarEvolution::computeSCEVAtScope(const SCEV *V, const Loop *L) {
   if (const SCEVUnknown *SU = dyn_cast<SCEVUnknown>(V)) {
     if (Instruction *I = dyn_cast<Instruction>(SU->getValue())) {
       if (PHINode *PN = dyn_cast<PHINode>(I)) {
-        const Loop *LI = this->LI[I->getParent()];
+        const Loop *CurrLoop = this->LI[I->getParent()];
         // Looking for loop exit value.
-        if (LI && LI->getParentLoop() == L &&
-            PN->getParent() == LI->getHeader()) {
+        if (CurrLoop && CurrLoop->getParentLoop() == L &&
+            PN->getParent() == CurrLoop->getHeader()) {
           // Okay, there is no closed form solution for the PHI node.  Check
           // to see if the loop that contains it has a known backedge-taken
           // count.  If so, we may be able to force computation of the exit
           // value.
-          const SCEV *BackedgeTakenCount = getBackedgeTakenCount(LI);
+          const SCEV *BackedgeTakenCount = getBackedgeTakenCount(CurrLoop);
           // This trivial case can show up in some degenerate cases where
           // the incoming IR has not yet been fully simplified.
           if (BackedgeTakenCount->isZero()) {
             Value *InitValue = nullptr;
             bool MultipleInitValues = false;
             for (unsigned i = 0; i < PN->getNumIncomingValues(); i++) {
-              if (!LI->contains(PN->getIncomingBlock(i))) {
+              if (!CurrLoop->contains(PN->getIncomingBlock(i))) {
                 if (!InitValue)
                   InitValue = PN->getIncomingValue(i);
                 else if (InitValue != PN->getIncomingValue(i)) {
@@ -8285,17 +8115,18 @@ const SCEV *ScalarEvolution::computeSCEVAtScope(const SCEV *V, const Loop *L) {
               isKnownPositive(BackedgeTakenCount) &&
               PN->getNumIncomingValues() == 2) {
 
-            unsigned InLoopPred = LI->contains(PN->getIncomingBlock(0)) ? 0 : 1;
+            unsigned InLoopPred =
+                CurrLoop->contains(PN->getIncomingBlock(0)) ? 0 : 1;
             Value *BackedgeVal = PN->getIncomingValue(InLoopPred);
-            if (LI->isLoopInvariant(BackedgeVal))
+            if (CurrLoop->isLoopInvariant(BackedgeVal))
               return getSCEV(BackedgeVal);
           }
           if (auto *BTCC = dyn_cast<SCEVConstant>(BackedgeTakenCount)) {
             // Okay, we know how many times the containing loop executes.  If
             // this is a constant evolving PHI node, get the final value at
             // the specified iteration number.
-            Constant *RV =
-                getConstantEvolutionLoopExitValue(PN, BTCC->getAPInt(), LI);
+            Constant *RV = getConstantEvolutionLoopExitValue(
+                PN, BTCC->getAPInt(), CurrLoop);
             if (RV) return getSCEV(RV);
           }
         }
@@ -8351,9 +8182,10 @@ const SCEV *ScalarEvolution::computeSCEVAtScope(const SCEV *V, const Loop *L) {
           if (const CmpInst *CI = dyn_cast<CmpInst>(I))
             C = ConstantFoldCompareInstOperands(CI->getPredicate(), Operands[0],
                                                 Operands[1], DL, &TLI);
-          else if (const LoadInst *LI = dyn_cast<LoadInst>(I)) {
-            if (!LI->isVolatile())
-              C = ConstantFoldLoadFromConstPtr(Operands[0], LI->getType(), DL);
+          else if (const LoadInst *Load = dyn_cast<LoadInst>(I)) {
+            if (!Load->isVolatile())
+              C = ConstantFoldLoadFromConstPtr(Operands[0], Load->getType(),
+                                               DL);
           } else
             C = ConstantFoldInstOperands(I, Operands, DL, &TLI);
           if (!C) return V;
@@ -8884,7 +8716,10 @@ ScalarEvolution::howFarToZero(const SCEV *V, const Loop *L, bool ControlsExit,
   // 1*N = -Start; -1*N = Start (mod 2^BW), so:
   //   N = Distance (as unsigned)
   if (StepC->getValue()->isOne() || StepC->getValue()->isMinusOne()) {
-    APInt MaxBECount = getUnsignedRangeMax(Distance);
+    APInt MaxBECount = getUnsignedRangeMax(applyLoopGuards(Distance, L));
+    APInt MaxBECountBase = getUnsignedRangeMax(Distance);
+    if (MaxBECountBase.ult(MaxBECount))
+      MaxBECount = MaxBECountBase;
 
     // When a loop like "for (int i = 0; i != n; ++i) { /* body */ }" is rotated,
     // we end up with a loop whose backedge-taken count is n - 1.  Detect this
@@ -8949,18 +8784,19 @@ ScalarEvolution::howFarToNonZero(const SCEV *V, const Loop *L) {
   return getCouldNotCompute();
 }
 
-std::pair<BasicBlock *, BasicBlock *>
-ScalarEvolution::getPredecessorWithUniqueSuccessorForBB(BasicBlock *BB) {
+std::pair<const BasicBlock *, const BasicBlock *>
+ScalarEvolution::getPredecessorWithUniqueSuccessorForBB(const BasicBlock *BB)
+    const {
   // If the block has a unique predecessor, then there is no path from the
   // predecessor to the block that does not go through the direct edge
   // from the predecessor to the block.
-  if (BasicBlock *Pred = BB->getSinglePredecessor())
+  if (const BasicBlock *Pred = BB->getSinglePredecessor())
     return {Pred, BB};
 
   // A loop's header is defined to be a block that dominates the loop.
   // If the header has a unique predecessor outside the loop, it must be
   // a block that has exactly one successor that can reach the loop.
-  if (Loop *L = LI.getLoopFor(BB))
+  if (const Loop *L = LI.getLoopFor(BB))
     return {L->getLoopPredecessor(), L->getHeader()};
 
   return {nullptr, nullptr};
@@ -9289,6 +9125,14 @@ bool ScalarEvolution::isKnownPredicate(ICmpInst::Predicate Pred,
   return isKnownViaNonRecursiveReasoning(Pred, LHS, RHS);
 }
 
+bool ScalarEvolution::isKnownPredicateAt(ICmpInst::Predicate Pred,
+                                         const SCEV *LHS, const SCEV *RHS,
+                                         const Instruction *Context) {
+  // TODO: Analyze guards and assumes from Context's block.
+  return isKnownPredicate(Pred, LHS, RHS) ||
+         isBasicBlockEntryGuardedByCond(Context->getParent(), Pred, LHS, RHS);
+}
+
 bool ScalarEvolution::isKnownOnEveryIteration(ICmpInst::Predicate Pred,
                                               const SCEVAddRecExpr *LHS,
                                               const SCEV *RHS) {
@@ -9506,6 +9350,24 @@ bool ScalarEvolution::isKnownPredicateViaNoOverflow(ICmpInst::Predicate Pred,
     if (MatchBinaryAddToConst(LHS, RHS, C, SCEV::FlagNSW) && C.isNegative())
       return true;
     break;
+
+  case ICmpInst::ICMP_UGE:
+    std::swap(LHS, RHS);
+    LLVM_FALLTHROUGH;
+  case ICmpInst::ICMP_ULE:
+    // X u<= (X + C)<nuw> for any C
+    if (MatchBinaryAddToConst(RHS, LHS, C, SCEV::FlagNUW))
+      return true;
+    break;
+
+  case ICmpInst::ICMP_UGT:
+    std::swap(LHS, RHS);
+    LLVM_FALLTHROUGH;
+  case ICmpInst::ICMP_ULT:
+    // X u< (X + C)<nuw> if C != 0
+    if (MatchBinaryAddToConst(RHS, LHS, C, SCEV::FlagNUW) && !C.isNullValue())
+      return true;
+    break;
   }
 
   return false;
@@ -9533,14 +9395,14 @@ bool ScalarEvolution::isKnownPredicateViaSplitting(ICmpInst::Predicate Pred,
          isKnownPredicate(CmpInst::ICMP_SLT, LHS, RHS);
 }
 
-bool ScalarEvolution::isImpliedViaGuard(BasicBlock *BB,
+bool ScalarEvolution::isImpliedViaGuard(const BasicBlock *BB,
                                         ICmpInst::Predicate Pred,
                                         const SCEV *LHS, const SCEV *RHS) {
   // No need to even try if we know the module has no guards.
   if (!HasGuards)
     return false;
 
-  return any_of(*BB, [&](Instruction &I) {
+  return any_of(*BB, [&](const Instruction &I) {
     using namespace llvm::PatternMatch;
 
     Value *Condition;
@@ -9663,23 +9525,13 @@ ScalarEvolution::isLoopBackedgeGuardedByCond(const Loop *L,
   return false;
 }
 
-bool
-ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
-                                          ICmpInst::Predicate Pred,
-                                          const SCEV *LHS, const SCEV *RHS) {
-  // Interpret a null as meaning no loop, where there is obviously no guard
-  // (interprocedural conditions notwithstanding).
-  if (!L) return false;
-
+bool ScalarEvolution::isBasicBlockEntryGuardedByCond(const BasicBlock *BB,
+                                                     ICmpInst::Predicate Pred,
+                                                     const SCEV *LHS,
+                                                     const SCEV *RHS) {
   if (VerifyIR)
-    assert(!verifyFunction(*L->getHeader()->getParent(), &dbgs()) &&
+    assert(!verifyFunction(*BB->getParent(), &dbgs()) &&
            "This cannot be done on broken IR!");
-
-  // Both LHS and RHS must be available at loop entry.
-  assert(isAvailableAtLoopEntry(LHS, L) &&
-         "LHS is not available at Loop Entry");
-  assert(isAvailableAtLoopEntry(RHS, L) &&
-         "RHS is not available at Loop Entry");
 
   if (isKnownViaNonRecursiveReasoning(Pred, LHS, RHS))
     return true;
@@ -9704,7 +9556,7 @@ ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
   }
 
   // Try to prove (Pred, LHS, RHS) using isImpliedViaGuard.
-  auto ProveViaGuard = [&](BasicBlock *Block) {
+  auto ProveViaGuard = [&](const BasicBlock *Block) {
     if (isImpliedViaGuard(Block, Pred, LHS, RHS))
       return true;
     if (ProvingStrictComparison) {
@@ -9721,35 +9573,39 @@ ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
   };
 
   // Try to prove (Pred, LHS, RHS) using isImpliedCond.
-  auto ProveViaCond = [&](Value *Condition, bool Inverse) {
-    if (isImpliedCond(Pred, LHS, RHS, Condition, Inverse))
+  auto ProveViaCond = [&](const Value *Condition, bool Inverse) {
+    const Instruction *Context = &BB->front();
+    if (isImpliedCond(Pred, LHS, RHS, Condition, Inverse, Context))
       return true;
     if (ProvingStrictComparison) {
       if (!ProvedNonStrictComparison)
-        ProvedNonStrictComparison =
-            isImpliedCond(NonStrictPredicate, LHS, RHS, Condition, Inverse);
+        ProvedNonStrictComparison = isImpliedCond(NonStrictPredicate, LHS, RHS,
+                                                  Condition, Inverse, Context);
       if (!ProvedNonEquality)
-        ProvedNonEquality =
-            isImpliedCond(ICmpInst::ICMP_NE, LHS, RHS, Condition, Inverse);
+        ProvedNonEquality = isImpliedCond(ICmpInst::ICMP_NE, LHS, RHS,
+                                          Condition, Inverse, Context);
       if (ProvedNonStrictComparison && ProvedNonEquality)
         return true;
     }
     return false;
   };
 
-  // Starting at the loop predecessor, climb up the predecessor chain, as long
+  // Starting at the block's predecessor, climb up the predecessor chain, as long
   // as there are predecessors that can be found that have unique successors
-  // leading to the original header.
-  for (std::pair<BasicBlock *, BasicBlock *>
-         Pair(L->getLoopPredecessor(), L->getHeader());
-       Pair.first;
-       Pair = getPredecessorWithUniqueSuccessorForBB(Pair.first)) {
-
+  // leading to the original block.
+  const Loop *ContainingLoop = LI.getLoopFor(BB);
+  const BasicBlock *PredBB;
+  if (ContainingLoop && ContainingLoop->getHeader() == BB)
+    PredBB = ContainingLoop->getLoopPredecessor();
+  else
+    PredBB = BB->getSinglePredecessor();
+  for (std::pair<const BasicBlock *, const BasicBlock *> Pair(PredBB, BB);
+       Pair.first; Pair = getPredecessorWithUniqueSuccessorForBB(Pair.first)) {
     if (ProveViaGuard(Pair.first))
       return true;
 
-    BranchInst *LoopEntryPredicate =
-      dyn_cast<BranchInst>(Pair.first->getTerminator());
+    const BranchInst *LoopEntryPredicate =
+        dyn_cast<BranchInst>(Pair.first->getTerminator());
     if (!LoopEntryPredicate ||
         LoopEntryPredicate->isUnconditional())
       continue;
@@ -9764,7 +9620,7 @@ ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
     if (!AssumeVH)
       continue;
     auto *CI = cast<CallInst>(AssumeVH);
-    if (!DT.dominates(CI, L->getHeader()))
+    if (!DT.dominates(CI, BB))
       continue;
 
     if (ProveViaCond(CI->getArgOperand(0), false))
@@ -9774,10 +9630,27 @@ ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
   return false;
 }
 
-bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred,
-                                    const SCEV *LHS, const SCEV *RHS,
-                                    Value *FoundCondValue,
-                                    bool Inverse) {
+bool ScalarEvolution::isLoopEntryGuardedByCond(const Loop *L,
+                                               ICmpInst::Predicate Pred,
+                                               const SCEV *LHS,
+                                               const SCEV *RHS) {
+  // Interpret a null as meaning no loop, where there is obviously no guard
+  // (interprocedural conditions notwithstanding).
+  if (!L)
+    return false;
+
+  // Both LHS and RHS must be available at loop entry.
+  assert(isAvailableAtLoopEntry(LHS, L) &&
+         "LHS is not available at Loop Entry");
+  assert(isAvailableAtLoopEntry(RHS, L) &&
+         "RHS is not available at Loop Entry");
+  return isBasicBlockEntryGuardedByCond(L->getHeader(), Pred, LHS, RHS);
+}
+
+bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
+                                    const SCEV *RHS,
+                                    const Value *FoundCondValue, bool Inverse,
+                                    const Instruction *Context) {
   if (!PendingLoopPredicates.insert(FoundCondValue).second)
     return false;
 
@@ -9785,19 +9658,23 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred,
       make_scope_exit([&]() { PendingLoopPredicates.erase(FoundCondValue); });
 
   // Recursively handle And and Or conditions.
-  if (BinaryOperator *BO = dyn_cast<BinaryOperator>(FoundCondValue)) {
+  if (const BinaryOperator *BO = dyn_cast<BinaryOperator>(FoundCondValue)) {
     if (BO->getOpcode() == Instruction::And) {
       if (!Inverse)
-        return isImpliedCond(Pred, LHS, RHS, BO->getOperand(0), Inverse) ||
-               isImpliedCond(Pred, LHS, RHS, BO->getOperand(1), Inverse);
+        return isImpliedCond(Pred, LHS, RHS, BO->getOperand(0), Inverse,
+                             Context) ||
+               isImpliedCond(Pred, LHS, RHS, BO->getOperand(1), Inverse,
+                             Context);
     } else if (BO->getOpcode() == Instruction::Or) {
       if (Inverse)
-        return isImpliedCond(Pred, LHS, RHS, BO->getOperand(0), Inverse) ||
-               isImpliedCond(Pred, LHS, RHS, BO->getOperand(1), Inverse);
+        return isImpliedCond(Pred, LHS, RHS, BO->getOperand(0), Inverse,
+                             Context) ||
+               isImpliedCond(Pred, LHS, RHS, BO->getOperand(1), Inverse,
+                             Context);
     }
   }
 
-  ICmpInst *ICI = dyn_cast<ICmpInst>(FoundCondValue);
+  const ICmpInst *ICI = dyn_cast<ICmpInst>(FoundCondValue);
   if (!ICI) return false;
 
   // Now that we found a conditional branch that dominates the loop or controls
@@ -9811,14 +9688,14 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred,
   const SCEV *FoundLHS = getSCEV(ICI->getOperand(0));
   const SCEV *FoundRHS = getSCEV(ICI->getOperand(1));
 
-  return isImpliedCond(Pred, LHS, RHS, FoundPred, FoundLHS, FoundRHS);
+  return isImpliedCond(Pred, LHS, RHS, FoundPred, FoundLHS, FoundRHS, Context);
 }
 
 bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
                                     const SCEV *RHS,
                                     ICmpInst::Predicate FoundPred,
-                                    const SCEV *FoundLHS,
-                                    const SCEV *FoundRHS) {
+                                    const SCEV *FoundLHS, const SCEV *FoundRHS,
+                                    const Instruction *Context) {
   // Balance the types.
   if (getTypeSizeInBits(LHS->getType()) <
       getTypeSizeInBits(FoundLHS->getType())) {
@@ -9839,7 +9716,17 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
       FoundRHS = getZeroExtendExpr(FoundRHS, LHS->getType());
     }
   }
+  return isImpliedCondBalancedTypes(Pred, LHS, RHS, FoundPred, FoundLHS,
+                                    FoundRHS, Context);
+}
 
+bool ScalarEvolution::isImpliedCondBalancedTypes(
+    ICmpInst::Predicate Pred, const SCEV *LHS, const SCEV *RHS,
+    ICmpInst::Predicate FoundPred, const SCEV *FoundLHS, const SCEV *FoundRHS,
+    const Instruction *Context) {
+  assert(getTypeSizeInBits(LHS->getType()) ==
+             getTypeSizeInBits(FoundLHS->getType()) &&
+         "Types should be balanced!");
   // Canonicalize the query to match the way instcombine will have
   // canonicalized the comparison.
   if (SimplifyICmpOperands(Pred, LHS, RHS))
@@ -9862,16 +9749,16 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
 
   // Check whether the found predicate is the same as the desired predicate.
   if (FoundPred == Pred)
-    return isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS);
+    return isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS, Context);
 
   // Check whether swapping the found predicate makes it the same as the
   // desired predicate.
   if (ICmpInst::getSwappedPredicate(FoundPred) == Pred) {
     if (isa<SCEVConstant>(RHS))
-      return isImpliedCondOperands(Pred, LHS, RHS, FoundRHS, FoundLHS);
+      return isImpliedCondOperands(Pred, LHS, RHS, FoundRHS, FoundLHS, Context);
     else
-      return isImpliedCondOperands(ICmpInst::getSwappedPredicate(Pred),
-                                   RHS, LHS, FoundLHS, FoundRHS);
+      return isImpliedCondOperands(ICmpInst::getSwappedPredicate(Pred), RHS,
+                                   LHS, FoundLHS, FoundRHS, Context);
   }
 
   // Unsigned comparison is the same as signed comparison when both the operands
@@ -9879,7 +9766,7 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
   if (CmpInst::isUnsigned(FoundPred) &&
       CmpInst::getSignedPredicate(FoundPred) == Pred &&
       isKnownNonNegative(FoundLHS) && isKnownNonNegative(FoundRHS))
-    return isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS);
+    return isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS, Context);
 
   // Check if we can make progress by sharpening ranges.
   if (FoundPred == ICmpInst::ICMP_NE &&
@@ -9916,8 +9803,8 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
         case ICmpInst::ICMP_UGE:
           // We know V `Pred` SharperMin.  If this implies LHS `Pred`
           // RHS, we're done.
-          if (isImpliedCondOperands(Pred, LHS, RHS, V,
-                                    getConstant(SharperMin)))
+          if (isImpliedCondOperands(Pred, LHS, RHS, V, getConstant(SharperMin),
+                                    Context))
             return true;
           LLVM_FALLTHROUGH;
 
@@ -9932,9 +9819,25 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
           //
           // If V `Pred` Min implies LHS `Pred` RHS, we're done.
 
-          if (isImpliedCondOperands(Pred, LHS, RHS, V, getConstant(Min)))
+          if (isImpliedCondOperands(Pred, LHS, RHS, V, getConstant(Min),
+                                    Context))
+            return true;
+          break;
+
+        // `LHS < RHS` and `LHS <= RHS` are handled in the same way as `RHS > LHS` and `RHS >= LHS` respectively.
+        case ICmpInst::ICMP_SLE:
+        case ICmpInst::ICMP_ULE:
+          if (isImpliedCondOperands(CmpInst::getSwappedPredicate(Pred), RHS,
+                                    LHS, V, getConstant(SharperMin), Context))
             return true;
           LLVM_FALLTHROUGH;
+
+        case ICmpInst::ICMP_SLT:
+        case ICmpInst::ICMP_ULT:
+          if (isImpliedCondOperands(CmpInst::getSwappedPredicate(Pred), RHS,
+                                    LHS, V, getConstant(Min), Context))
+            return true;
+          break;
 
         default:
           // No change
@@ -9946,11 +9849,12 @@ bool ScalarEvolution::isImpliedCond(ICmpInst::Predicate Pred, const SCEV *LHS,
   // Check whether the actual condition is beyond sufficient.
   if (FoundPred == ICmpInst::ICMP_EQ)
     if (ICmpInst::isTrueWhenEqual(Pred))
-      if (isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS))
+      if (isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, FoundRHS, Context))
         return true;
   if (Pred == ICmpInst::ICMP_NE)
     if (!ICmpInst::isTrueWhenEqual(FoundPred))
-      if (isImpliedCondOperands(FoundPred, LHS, RHS, FoundLHS, FoundRHS))
+      if (isImpliedCondOperands(FoundPred, LHS, RHS, FoundLHS, FoundRHS,
+                                Context))
         return true;
 
   // Otherwise assume the worst.
@@ -10027,6 +9931,51 @@ Optional<APInt> ScalarEvolution::computeConstantDifference(const SCEV *More,
     return C2->getAPInt() - C1->getAPInt();
 
   return None;
+}
+
+bool ScalarEvolution::isImpliedCondOperandsViaAddRecStart(
+    ICmpInst::Predicate Pred, const SCEV *LHS, const SCEV *RHS,
+    const SCEV *FoundLHS, const SCEV *FoundRHS, const Instruction *Context) {
+  // Try to recognize the following pattern:
+  //
+  //   FoundRHS = ...
+  // ...
+  // loop:
+  //   FoundLHS = {Start,+,W}
+  // context_bb: // Basic block from the same loop
+  //   known(Pred, FoundLHS, FoundRHS)
+  //
+  // If some predicate is known in the context of a loop, it is also known on
+  // each iteration of this loop, including the first iteration. Therefore, in
+  // this case, `FoundLHS Pred FoundRHS` implies `Start Pred FoundRHS`. Try to
+  // prove the original pred using this fact.
+  if (!Context)
+    return false;
+  const BasicBlock *ContextBB = Context->getParent();
+  // Make sure AR varies in the context block.
+  if (auto *AR = dyn_cast<SCEVAddRecExpr>(FoundLHS)) {
+    const Loop *L = AR->getLoop();
+    // Make sure that context belongs to the loop and executes on 1st iteration
+    // (if it ever executes at all).
+    if (!L->contains(ContextBB) || !DT.dominates(ContextBB, L->getLoopLatch()))
+      return false;
+    if (!isAvailableAtLoopEntry(FoundRHS, AR->getLoop()))
+      return false;
+    return isImpliedCondOperands(Pred, LHS, RHS, AR->getStart(), FoundRHS);
+  }
+
+  if (auto *AR = dyn_cast<SCEVAddRecExpr>(FoundRHS)) {
+    const Loop *L = AR->getLoop();
+    // Make sure that context belongs to the loop and executes on 1st iteration
+    // (if it ever executes at all).
+    if (!L->contains(ContextBB) || !DT.dominates(ContextBB, L->getLoopLatch()))
+      return false;
+    if (!isAvailableAtLoopEntry(FoundLHS, AR->getLoop()))
+      return false;
+    return isImpliedCondOperands(Pred, LHS, RHS, FoundLHS, AR->getStart());
+  }
+
+  return false;
 }
 
 bool ScalarEvolution::isImpliedCondOperandsViaNoOverflow(
@@ -10219,11 +10168,16 @@ bool ScalarEvolution::isImpliedViaMerge(ICmpInst::Predicate Pred,
 bool ScalarEvolution::isImpliedCondOperands(ICmpInst::Predicate Pred,
                                             const SCEV *LHS, const SCEV *RHS,
                                             const SCEV *FoundLHS,
-                                            const SCEV *FoundRHS) {
+                                            const SCEV *FoundRHS,
+                                            const Instruction *Context) {
   if (isImpliedCondOperandsViaRanges(Pred, LHS, RHS, FoundLHS, FoundRHS))
     return true;
 
   if (isImpliedCondOperandsViaNoOverflow(Pred, LHS, RHS, FoundLHS, FoundRHS))
+    return true;
+
+  if (isImpliedCondOperandsViaAddRecStart(Pred, LHS, RHS, FoundLHS, FoundRHS,
+                                          Context))
     return true;
 
   return isImpliedCondOperandsHelper(Pred, LHS, RHS,
@@ -10324,13 +10278,31 @@ bool ScalarEvolution::isImpliedViaOperations(ICmpInst::Predicate Pred,
   // We want to avoid hurting the compile time with analysis of too big trees.
   if (Depth > MaxSCEVOperationsImplicationDepth)
     return false;
-  // We only want to work with ICMP_SGT comparison so far.
-  // TODO: Extend to ICMP_UGT?
-  if (Pred == ICmpInst::ICMP_SLT) {
-    Pred = ICmpInst::ICMP_SGT;
+
+  // We only want to work with GT comparison so far.
+  if (Pred == ICmpInst::ICMP_ULT || Pred == ICmpInst::ICMP_SLT) {
+    Pred = CmpInst::getSwappedPredicate(Pred);
     std::swap(LHS, RHS);
     std::swap(FoundLHS, FoundRHS);
   }
+
+  // For unsigned, try to reduce it to corresponding signed comparison.
+  if (Pred == ICmpInst::ICMP_UGT)
+    // We can replace unsigned predicate with its signed counterpart if all
+    // involved values are non-negative.
+    // TODO: We could have better support for unsigned.
+    if (isKnownNonNegative(FoundLHS) && isKnownNonNegative(FoundRHS)) {
+      // Knowing that both FoundLHS and FoundRHS are non-negative, and knowing
+      // FoundLHS >u FoundRHS, we also know that FoundLHS >s FoundRHS. Let us
+      // use this fact to prove that LHS and RHS are non-negative.
+      const SCEV *MinusOne = getMinusOne(LHS->getType());
+      if (isImpliedCondOperands(ICmpInst::ICMP_SGT, LHS, MinusOne, FoundLHS,
+                                FoundRHS) &&
+          isImpliedCondOperands(ICmpInst::ICMP_SGT, RHS, MinusOne, FoundLHS,
+                                FoundRHS))
+        Pred = ICmpInst::ICMP_SGT;
+    }
+
   if (Pred != ICmpInst::ICMP_SGT)
     return false;
 
@@ -10370,7 +10342,7 @@ bool ScalarEvolution::isImpliedViaOperations(ICmpInst::Predicate Pred,
 
     auto *LL = LHSAddExpr->getOperand(0);
     auto *LR = LHSAddExpr->getOperand(1);
-    auto *MinusOne = getNegativeSCEV(getOne(RHS->getType()));
+    auto *MinusOne = getMinusOne(RHS->getType());
 
     // Checks that S1 >= 0 && S2 > RHS, trivially or using the found context.
     auto IsSumGreaterThanRHS = [&](const SCEV *S1, const SCEV *S2) {
@@ -10443,7 +10415,7 @@ bool ScalarEvolution::isImpliedViaOperations(ICmpInst::Predicate Pred,
       // 1. If FoundLHS is negative, then the result is 0.
       // 2. If FoundLHS is non-negative, then the result is non-negative.
       // Anyways, the result is non-negative.
-      auto *MinusOne = getNegativeSCEV(getOne(WTy));
+      auto *MinusOne = getMinusOne(WTy);
       auto *NegDenomMinusOne = getMinusSCEV(MinusOne, DenominatorExt);
       if (isKnownNegative(RHS) &&
           IsSGTViaContext(FoundRHSExt, NegDenomMinusOne))
@@ -10798,7 +10770,13 @@ ScalarEvolution::howManyLessThans(const SCEV *LHS, const SCEV *RHS,
   if (isLoopEntryGuardedByCond(L, Cond, getMinusSCEV(Start, Stride), RHS))
     BECount = BECountIfBackedgeTaken;
   else {
-    End = IsSigned ? getSMaxExpr(RHS, Start) : getUMaxExpr(RHS, Start);
+    // If we know that RHS >= Start in the context of loop, then we know that
+    // max(RHS, Start) = RHS at this point.
+    if (isLoopEntryGuardedByCond(
+            L, IsSigned ? ICmpInst::ICMP_SGE : ICmpInst::ICMP_UGE, RHS, Start))
+      End = RHS;
+    else
+      End = IsSigned ? getSMaxExpr(RHS, Start) : getUMaxExpr(RHS, Start);
     BECount = computeBECount(getMinusSCEV(End, Start), Stride, false);
   }
 
@@ -10865,8 +10843,15 @@ ScalarEvolution::howManyGreaterThans(const SCEV *LHS, const SCEV *RHS,
 
   const SCEV *Start = IV->getStart();
   const SCEV *End = RHS;
-  if (!isLoopEntryGuardedByCond(L, Cond, getAddExpr(Start, Stride), RHS))
-    End = IsSigned ? getSMinExpr(RHS, Start) : getUMinExpr(RHS, Start);
+  if (!isLoopEntryGuardedByCond(L, Cond, getAddExpr(Start, Stride), RHS)) {
+    // If we know that Start >= RHS in the context of loop, then we know that
+    // min(RHS, Start) = RHS at this point.
+    if (isLoopEntryGuardedByCond(
+            L, IsSigned ? ICmpInst::ICMP_SGE : ICmpInst::ICMP_UGE, Start, RHS))
+      End = RHS;
+    else
+      End = IsSigned ? getSMinExpr(RHS, Start) : getUMinExpr(RHS, Start);
+  }
 
   const SCEV *BECount = computeBECount(getMinusSCEV(Start, End), Stride, false);
 
@@ -11204,8 +11189,9 @@ static bool findArrayDimensionsRec(ScalarEvolution &SE,
 // Returns true when one of the SCEVs of Terms contains a SCEVUnknown parameter.
 static inline bool containsParameters(SmallVectorImpl<const SCEV *> &Terms) {
   for (const SCEV *T : Terms)
-    if (SCEVExprContains(T, isa<SCEVUnknown, const SCEV *>))
+    if (SCEVExprContains(T, [](const SCEV *S) { return isa<SCEVUnknown>(S); }))
       return true;
+
   return false;
 }
 
@@ -11813,13 +11799,13 @@ ScalarEvolution::getLoopDisposition(const SCEV *S, const Loop *L) {
 
 ScalarEvolution::LoopDisposition
 ScalarEvolution::computeLoopDisposition(const SCEV *S, const Loop *L) {
-  switch (static_cast<SCEVTypes>(S->getSCEVType())) {
+  switch (S->getSCEVType()) {
   case scConstant:
     return LoopInvariant;
   case scTruncate:
   case scZeroExtend:
   case scSignExtend:
-    return getLoopDisposition(cast<SCEVCastExpr>(S)->getOperand(), L);
+    return getLoopDisposition(cast<SCEVIntegralCastExpr>(S)->getOperand(), L);
   case scAddRecExpr: {
     const SCEVAddRecExpr *AR = cast<SCEVAddRecExpr>(S);
 
@@ -11920,13 +11906,13 @@ ScalarEvolution::getBlockDisposition(const SCEV *S, const BasicBlock *BB) {
 
 ScalarEvolution::BlockDisposition
 ScalarEvolution::computeBlockDisposition(const SCEV *S, const BasicBlock *BB) {
-  switch (static_cast<SCEVTypes>(S->getSCEVType())) {
+  switch (S->getSCEVType()) {
   case scConstant:
     return ProperlyDominatesBlock;
   case scTruncate:
   case scZeroExtend:
   case scSignExtend:
-    return getBlockDisposition(cast<SCEVCastExpr>(S)->getOperand(), BB);
+    return getBlockDisposition(cast<SCEVIntegralCastExpr>(S)->getOperand(), BB);
   case scAddRecExpr: {
     // This uses a "dominates" query instead of "properly dominates" query
     // to test for proper dominance too, because the instruction which
@@ -12138,6 +12124,25 @@ void ScalarEvolution::verify() const {
       std::abort();
     }
   }
+
+  // Collect all valid loops currently in LoopInfo.
+  SmallPtrSet<Loop *, 32> ValidLoops;
+  SmallVector<Loop *, 32> Worklist(LI.begin(), LI.end());
+  while (!Worklist.empty()) {
+    Loop *L = Worklist.pop_back_val();
+    if (ValidLoops.contains(L))
+      continue;
+    ValidLoops.insert(L);
+    Worklist.append(L->begin(), L->end());
+  }
+  // Check for SCEV expressions referencing invalid/deleted loops.
+  for (auto &KV : ValueExprMap) {
+    auto *AR = dyn_cast<SCEVAddRecExpr>(KV.second);
+    if (!AR)
+      continue;
+    assert(ValidLoops.contains(AR->getLoop()) &&
+           "AddRec references invalid loop");
+  }
 }
 
 bool ScalarEvolution::invalidate(
@@ -12170,6 +12175,11 @@ ScalarEvolutionVerifierPass::run(Function &F, FunctionAnalysisManager &AM) {
 
 PreservedAnalyses
 ScalarEvolutionPrinterPass::run(Function &F, FunctionAnalysisManager &AM) {
+  // For compatibility with opt's -analyze feature under legacy pass manager
+  // which was not ported to NPM. This keeps tests using
+  // update_analyze_test_checks.py working.
+  OS << "Printing analysis 'Scalar Evolution Analysis' for function '"
+     << F.getName() << "':\n";
   AM.getResult<ScalarEvolutionAnalysis>(F).print(OS);
   return PreservedAnalyses::all();
 }
@@ -12702,4 +12712,146 @@ bool ScalarEvolution::matchURem(const SCEV *Expr, const SCEV *&LHS,
            MatchURemWithDivisor(getNegativeSCEV(Mul->getOperand(1))) ||
            MatchURemWithDivisor(getNegativeSCEV(Mul->getOperand(0)));
   return false;
+}
+
+const SCEV* ScalarEvolution::computeMaxBackedgeTakenCount(const Loop *L) {
+  SmallVector<BasicBlock*, 16> ExitingBlocks;
+  L->getExitingBlocks(ExitingBlocks);
+
+  // Form an expression for the maximum exit count possible for this loop. We
+  // merge the max and exact information to approximate a version of
+  // getConstantMaxBackedgeTakenCount which isn't restricted to just constants.
+  SmallVector<const SCEV*, 4> ExitCounts;
+  for (BasicBlock *ExitingBB : ExitingBlocks) {
+    const SCEV *ExitCount = getExitCount(L, ExitingBB);
+    if (isa<SCEVCouldNotCompute>(ExitCount))
+      ExitCount = getExitCount(L, ExitingBB,
+                                  ScalarEvolution::ConstantMaximum);
+    if (!isa<SCEVCouldNotCompute>(ExitCount)) {
+      assert(DT.dominates(ExitingBB, L->getLoopLatch()) &&
+             "We should only have known counts for exiting blocks that "
+             "dominate latch!");
+      ExitCounts.push_back(ExitCount);
+    }
+  }
+  if (ExitCounts.empty())
+    return getCouldNotCompute();
+  return getUMinFromMismatchedTypes(ExitCounts);
+}
+
+/// This rewriter is similar to SCEVParameterRewriter (it replaces SCEVUnknown
+/// components following the Map (Value -> SCEV)), but skips AddRecExpr because
+/// we cannot guarantee that the replacement is loop invariant in the loop of
+/// the AddRec.
+class SCEVLoopGuardRewriter : public SCEVRewriteVisitor<SCEVLoopGuardRewriter> {
+  ValueToSCEVMapTy &Map;
+
+public:
+  SCEVLoopGuardRewriter(ScalarEvolution &SE, ValueToSCEVMapTy &M)
+      : SCEVRewriteVisitor(SE), Map(M) {}
+
+  const SCEV *visitAddRecExpr(const SCEVAddRecExpr *Expr) { return Expr; }
+
+  const SCEV *visitUnknown(const SCEVUnknown *Expr) {
+    auto I = Map.find(Expr->getValue());
+    if (I == Map.end())
+      return Expr;
+    return I->second;
+  }
+};
+
+const SCEV *ScalarEvolution::applyLoopGuards(const SCEV *Expr, const Loop *L) {
+  auto CollectCondition = [&](ICmpInst::Predicate Predicate, const SCEV *LHS,
+                              const SCEV *RHS, ValueToSCEVMapTy &RewriteMap) {
+    if (!isa<SCEVUnknown>(LHS)) {
+      std::swap(LHS, RHS);
+      Predicate = CmpInst::getSwappedPredicate(Predicate);
+    }
+
+    // For now, limit to conditions that provide information about unknown
+    // expressions.
+    auto *LHSUnknown = dyn_cast<SCEVUnknown>(LHS);
+    if (!LHSUnknown)
+      return;
+
+    // TODO: use information from more predicates.
+    switch (Predicate) {
+    case CmpInst::ICMP_ULT: {
+      if (!containsAddRecurrence(RHS)) {
+        const SCEV *Base = LHS;
+        auto I = RewriteMap.find(LHSUnknown->getValue());
+        if (I != RewriteMap.end())
+          Base = I->second;
+
+        RewriteMap[LHSUnknown->getValue()] =
+            getUMinExpr(Base, getMinusSCEV(RHS, getOne(RHS->getType())));
+      }
+      break;
+    }
+    case CmpInst::ICMP_ULE: {
+      if (!containsAddRecurrence(RHS)) {
+        const SCEV *Base = LHS;
+        auto I = RewriteMap.find(LHSUnknown->getValue());
+        if (I != RewriteMap.end())
+          Base = I->second;
+        RewriteMap[LHSUnknown->getValue()] = getUMinExpr(Base, RHS);
+      }
+      break;
+    }
+    case CmpInst::ICMP_EQ:
+      if (isa<SCEVConstant>(RHS))
+        RewriteMap[LHSUnknown->getValue()] = RHS;
+      break;
+    case CmpInst::ICMP_NE:
+      if (isa<SCEVConstant>(RHS) &&
+          cast<SCEVConstant>(RHS)->getValue()->isNullValue())
+        RewriteMap[LHSUnknown->getValue()] =
+            getUMaxExpr(LHS, getOne(RHS->getType()));
+      break;
+    default:
+      break;
+    }
+  };
+  // Starting at the loop predecessor, climb up the predecessor chain, as long
+  // as there are predecessors that can be found that have unique successors
+  // leading to the original header.
+  // TODO: share this logic with isLoopEntryGuardedByCond.
+  ValueToSCEVMapTy RewriteMap;
+  for (std::pair<const BasicBlock *, const BasicBlock *> Pair(
+           L->getLoopPredecessor(), L->getHeader());
+       Pair.first; Pair = getPredecessorWithUniqueSuccessorForBB(Pair.first)) {
+
+    const BranchInst *LoopEntryPredicate =
+        dyn_cast<BranchInst>(Pair.first->getTerminator());
+    if (!LoopEntryPredicate || LoopEntryPredicate->isUnconditional())
+      continue;
+
+    // TODO: use information from more complex conditions, e.g. AND expressions.
+    auto *Cmp = dyn_cast<ICmpInst>(LoopEntryPredicate->getCondition());
+    if (!Cmp)
+      continue;
+
+    auto Predicate = Cmp->getPredicate();
+    if (LoopEntryPredicate->getSuccessor(1) == Pair.second)
+      Predicate = CmpInst::getInversePredicate(Predicate);
+    CollectCondition(Predicate, getSCEV(Cmp->getOperand(0)),
+                     getSCEV(Cmp->getOperand(1)), RewriteMap);
+  }
+
+  // Also collect information from assumptions dominating the loop.
+  for (auto &AssumeVH : AC.assumptions()) {
+    if (!AssumeVH)
+      continue;
+    auto *AssumeI = cast<CallInst>(AssumeVH);
+    auto *Cmp = dyn_cast<ICmpInst>(AssumeI->getOperand(0));
+    if (!Cmp || !DT.dominates(AssumeI, L->getHeader()))
+      continue;
+    CollectCondition(Cmp->getPredicate(), getSCEV(Cmp->getOperand(0)),
+                     getSCEV(Cmp->getOperand(1)), RewriteMap);
+  }
+
+  if (RewriteMap.empty())
+    return Expr;
+  SCEVLoopGuardRewriter Rewriter(*this, RewriteMap);
+  return Rewriter.visit(Expr);
 }

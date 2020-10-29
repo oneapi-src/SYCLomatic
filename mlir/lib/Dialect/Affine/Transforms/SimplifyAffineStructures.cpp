@@ -93,16 +93,7 @@ void SimplifyAffineStructures::runOnFunction() {
 
     // The simplification of the attribute will likely simplify the op. Try to
     // fold / apply canonicalization patterns when we have affine dialect ops.
-    if (isa<AffineForOp>(op) || isa<AffineIfOp>(op) || isa<AffineApplyOp>(op))
+    if (isa<AffineForOp, AffineIfOp, AffineApplyOp>(op))
       applyOpPatternsAndFold(op, patterns);
   });
-
-  // Turn memrefs' non-identity layouts maps into ones with identity. Collect
-  // alloc ops first and then process since normalizeMemRef replaces/erases ops
-  // during memref rewriting.
-  SmallVector<AllocOp, 4> allocOps;
-  func.walk([&](AllocOp op) { allocOps.push_back(op); });
-  for (auto allocOp : allocOps) {
-    normalizeMemRef(allocOp);
-  }
 }

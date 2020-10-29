@@ -10,6 +10,7 @@ import string
 import subprocess
 import sys
 import threading
+import time
 
 
 def dump_memory(base_addr, data, num_per_line, outfile):
@@ -112,6 +113,7 @@ class DebugCommunication(object):
         self.initialize_body = None
         self.thread_stop_reasons = {}
         self.breakpoint_events = []
+        self.module_events = {}
         self.sequence = 1
         self.threads = None
         self.recv_thread.start()
@@ -132,6 +134,9 @@ class DebugCommunication(object):
         if command['seq'] != response['request_seq']:
             raise ValueError('seq mismatch in response')
 
+    def get_active_modules(self):
+        return self.module_events
+        
     def get_output(self, category, timeout=0.0, clear=True):
         self.output_condition.acquire()
         output = None
@@ -147,6 +152,15 @@ class DebugCommunication(object):
                     del self.output[category]
         self.output_condition.release()
         return output
+
+    def collect_output(self, category, duration, clear=True):
+        end_time = time.time() + duration
+        collected_output = ""
+        while end_time > time.time():
+            output = self.get_output(category, timeout=0.25, clear=clear)
+            if output:
+                collected_output += output
+        return collected_output if collected_output else None
 
     def enqueue_recv_packet(self, packet):
         self.recv_condition.acquire()
@@ -208,6 +222,15 @@ class DebugCommunication(object):
                 self.breakpoint_events.append(packet)
                 # no need to add 'breakpoint' event packets to our packets list
                 return keepGoing
+            elif event == 'module':
+                reason = body['reason']
+                if (reason == 'new' or reason == 'changed'):
+                    self.module_events[body['module']['name']] = body['module']
+                elif reason == 'removed':
+                    if body['module']['name'] in self.module_events:
+                        self.module_events.pop(body['module']['name'])
+                return keepGoing
+
         elif packet_type == 'response':
             if packet['command'] == 'disconnect':
                 keepGoing = False
@@ -277,12 +300,29 @@ class DebugCommunication(object):
         self.send_packet(command)
         done = False
         while not done:
-            response = self.recv_packet(filter_type='response')
-            if response is None:
+            response_or_request = self.recv_packet(filter_type=['response', 'request'])
+            if response_or_request is None:
                 desc = 'no response for "%s"' % (command['command'])
                 raise ValueError(desc)
-            self.validate_response(command, response)
-            return response
+            if response_or_request['type'] == 'response':
+                self.validate_response(command, response_or_request)
+                return response_or_request
+            else:
+                if response_or_request['command'] == 'runInTerminal':
+                    subprocess.Popen(response_or_request['arguments']['args'], 
+                        env=response_or_request['arguments']['env'])
+                    self.send_packet({
+                        "type": "response",
+                        "seq": -1,
+                        "request_seq": response_or_request['seq'],
+                        "success": True,
+                        "command": "runInTerminal",
+                        "body": {}
+                    }, set_sequence=False)
+                else:
+                    desc = 'unkonwn reverse request "%s"' % (response_or_request['command'])
+                    raise ValueError(desc)
+            
         return None
 
     def wait_for_event(self, filter=None, timeout=None):
@@ -450,7 +490,8 @@ class DebugCommunication(object):
     def request_attach(self, program=None, pid=None, waitFor=None, trace=None,
                        initCommands=None, preRunCommands=None,
                        stopCommands=None, exitCommands=None,
-                       attachCommands=None, coreFile=None):
+                       attachCommands=None, terminateCommands=None,
+                       coreFile=None):
         args_dict = {}
         if pid is not None:
             args_dict['pid'] = pid
@@ -469,6 +510,8 @@ class DebugCommunication(object):
             args_dict['stopCommands'] = stopCommands
         if exitCommands:
             args_dict['exitCommands'] = exitCommands
+        if terminateCommands:
+            args_dict['terminateCommands'] = terminateCommands
         if attachCommands:
             args_dict['attachCommands'] = attachCommands
         if coreFile:
@@ -571,8 +614,10 @@ class DebugCommunication(object):
                        stopOnEntry=False, disableASLR=True,
                        disableSTDIO=False, shellExpandArguments=False,
                        trace=False, initCommands=None, preRunCommands=None,
-                       stopCommands=None, exitCommands=None, sourcePath=None,
-                       debuggerRoot=None, launchCommands=None, sourceMap=None):
+                       stopCommands=None, exitCommands=None,
+                       terminateCommands=None ,sourcePath=None,
+                       debuggerRoot=None, launchCommands=None, sourceMap=None,
+                       runInTerminal=False):
         args_dict = {
             'program': program
         }
@@ -601,6 +646,8 @@ class DebugCommunication(object):
             args_dict['stopCommands'] = stopCommands
         if exitCommands:
             args_dict['exitCommands'] = exitCommands
+        if terminateCommands:
+            args_dict['terminateCommands'] = terminateCommands
         if sourcePath:
             args_dict['sourcePath'] = sourcePath
         if debuggerRoot:
@@ -609,6 +656,8 @@ class DebugCommunication(object):
             args_dict['launchCommands'] = launchCommands
         if sourceMap:
             args_dict['sourceMap'] = sourceMap
+        if runInTerminal:
+            args_dict['runInTerminal'] = runInTerminal
         command_dict = {
             'command': 'launch',
             'type': 'request',
@@ -679,24 +728,26 @@ class DebugCommunication(object):
     def request_setBreakpoints(self, file_path, line_array, condition=None,
                                hitCondition=None):
         (dir, base) = os.path.split(file_path)
-        breakpoints = []
-        for line in line_array:
-            bp = {'line': line}
-            if condition is not None:
-                bp['condition'] = condition
-            if hitCondition is not None:
-                bp['hitCondition'] = hitCondition
-            breakpoints.append(bp)
         source_dict = {
             'name': base,
             'path': file_path
         }
         args_dict = {
             'source': source_dict,
-            'breakpoints': breakpoints,
-            'lines': '%s' % (line_array),
             'sourceModified': False,
         }
+        if line_array is not None:
+            args_dict['lines'] = '%s' % line_array
+            breakpoints = []
+            for line in line_array:
+                bp = {'line': line}
+                if condition is not None:
+                    bp['condition'] = condition
+                if hitCondition is not None:
+                    bp['hitCondition'] = hitCondition
+                breakpoints.append(bp)
+            args_dict['breakpoints'] = breakpoints
+
         command_dict = {
             'command': 'setBreakpoints',
             'type': 'request',
@@ -731,6 +782,16 @@ class DebugCommunication(object):
         }
         return self.send_recv(command_dict)
 
+    def request_getCompileUnits(self, moduleId):
+        args_dict = {'moduleId': moduleId}
+        command_dict = {
+            'command': 'getCompileUnits',
+            'type': 'request',
+            'arguments': args_dict
+        }
+        response = self.send_recv(command_dict)
+        return response
+        
     def request_completions(self, text):
         args_dict = {
             'text': text,
@@ -905,7 +966,8 @@ def run_vscode(dbg, args, options):
                                       initCommands=options.initCmds,
                                       preRunCommands=options.preRunCmds,
                                       stopCommands=options.stopCmds,
-                                      exitCommands=options.exitCmds)
+                                      exitCommands=options.exitCmds,
+                                      terminateCommands=options.terminateCmds)
     else:
         response = dbg.request_launch(options.program,
                                       args=args,
@@ -916,7 +978,8 @@ def run_vscode(dbg, args, options):
                                       initCommands=options.initCmds,
                                       preRunCommands=options.preRunCmds,
                                       stopCommands=options.stopCmds,
-                                      exitCommands=options.exitCmds)
+                                      exitCommands=options.exitCmds,
+                                      terminateCommands=options.terminateCmds)
 
     if response['success']:
         if options.sourceBreakpoints:
@@ -1088,6 +1151,15 @@ def main():
         default=[],
         help=('Specify a LLDB command that will be executed when the process '
               'exits. Can be specified more than once.'))
+
+    parser.add_option(
+        '--terminateCommand',
+        type='string',
+        action='append',
+        dest='terminateCmds',
+        default=[],
+        help=('Specify a LLDB command that will be executed when the debugging '
+              'session is terminated. Can be specified more than once.'))
 
     parser.add_option(
         '--env',

@@ -335,28 +335,27 @@ static_assert(sizeof(ParamIdx) == sizeof(ParamIdx::SerialType),
 struct ParsedTargetAttr {
   std::vector<std::string> Features;
   StringRef Architecture;
+  StringRef Tune;
   StringRef BranchProtection;
   bool DuplicateArchitecture = false;
+  bool DuplicateTune = false;
   bool operator ==(const ParsedTargetAttr &Other) const {
     return DuplicateArchitecture == Other.DuplicateArchitecture &&
-           Architecture == Other.Architecture && Features == Other.Features;
+           DuplicateTune == Other.DuplicateTune &&
+           Architecture == Other.Architecture &&
+           Tune == Other.Tune &&
+           BranchProtection == Other.BranchProtection &&
+           Features == Other.Features;
   }
 };
 
 #include "clang/AST/Attrs.inc"
 
-inline const DiagnosticBuilder &operator<<(const DiagnosticBuilder &DB,
-                                           const Attr *At) {
+inline const StreamingDiagnostic &operator<<(const StreamingDiagnostic &DB,
+                                             const Attr *At) {
   DB.AddTaggedVal(reinterpret_cast<intptr_t>(At),
                   DiagnosticsEngine::ak_attr);
   return DB;
-}
-
-inline const PartialDiagnostic &operator<<(const PartialDiagnostic &PD,
-                                           const Attr *At) {
-  PD.AddTaggedVal(reinterpret_cast<intptr_t>(At),
-                  DiagnosticsEngine::ak_attr);
-  return PD;
 }
 }  // end namespace clang
 

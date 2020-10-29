@@ -17,8 +17,6 @@ class PlatformWindows : public RemoteAwarePlatform {
 public:
   PlatformWindows(bool is_host);
 
-  ~PlatformWindows() override;
-
   static void Initialize();
 
   static void Terminate();
@@ -65,9 +63,6 @@ public:
   void CalculateTrapHandlerSymbolNames() override {}
 
   ConstString GetFullNameForDylib(ConstString basename) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(PlatformWindows);
 };
 
 } // namespace lldb_private

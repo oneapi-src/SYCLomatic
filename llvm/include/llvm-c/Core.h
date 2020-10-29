@@ -146,7 +146,6 @@ typedef enum {
 typedef enum {
   LLVMVoidTypeKind,      /**< type with no size */
   LLVMHalfTypeKind,      /**< 16 bit floating point type */
-  LLVMBFloatTypeKind,    /**< 16 bit brain floating point type */
   LLVMFloatTypeKind,     /**< 32 bit floating point type */
   LLVMDoubleTypeKind,    /**< 64 bit floating point type */
   LLVMX86_FP80TypeKind,  /**< 80 bit floating point type (X87) */
@@ -162,7 +161,8 @@ typedef enum {
   LLVMMetadataTypeKind,  /**< Metadata */
   LLVMX86_MMXTypeKind,   /**< X86 MMX */
   LLVMTokenTypeKind,     /**< Tokens */
-  LLVMScalableVectorTypeKind /**< Scalable SIMD vector type */
+  LLVMScalableVectorTypeKind, /**< Scalable SIMD vector type */
+  LLVMBFloatTypeKind     /**< 16 bit brain floating point type */
 } LLVMTypeKind;
 
 typedef enum {
@@ -3636,7 +3636,7 @@ void LLVMAddDestination(LLVMValueRef IndirectBr, LLVMBasicBlockRef Dest);
 /* Get the number of clauses on the landingpad instruction */
 unsigned LLVMGetNumClauses(LLVMValueRef LandingPad);
 
-/* Get the value of the clause at idnex Idx on the landingpad instruction */
+/* Get the value of the clause at index Idx on the landingpad instruction */
 LLVMValueRef LLVMGetClause(LLVMValueRef LandingPad, unsigned Idx);
 
 /* Add a catch or filter clause to the landingpad instruction */
@@ -3936,6 +3936,26 @@ LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr,
                                     LLVMAtomicOrdering SuccessOrdering,
                                     LLVMAtomicOrdering FailureOrdering,
                                     LLVMBool SingleThread);
+
+/**
+ * Get the number of elements in the mask of a ShuffleVector instruction.
+ */
+unsigned LLVMGetNumMaskElements(LLVMValueRef ShuffleVectorInst);
+
+/**
+ * \returns a constant that specifies that the result of a \c ShuffleVectorInst
+ * is undefined.
+ */
+int LLVMGetUndefMaskElem(void);
+
+/**
+ * Get the mask value at position Elt in the mask of a ShuffleVector
+ * instruction.
+ *
+ * \Returns the result of \c LLVMGetUndefMaskElem() if the mask value is undef
+ * at that position.
+ */
+int LLVMGetMaskValue(LLVMValueRef ShuffleVectorInst, unsigned Elt);
 
 LLVMBool LLVMIsAtomicSingleThread(LLVMValueRef AtomicInst);
 void LLVMSetAtomicSingleThread(LLVMValueRef AtomicInst, LLVMBool SingleThread);

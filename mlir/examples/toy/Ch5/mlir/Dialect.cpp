@@ -75,7 +75,8 @@ struct ToyInlinerInterface : public DialectInlinerInterface {
 
 /// Dialect creation, the instance will be owned by the context. This is the
 /// point of registration of custom types and operations for the dialect.
-ToyDialect::ToyDialect(mlir::MLIRContext *ctx) : mlir::Dialect("toy", ctx) {
+ToyDialect::ToyDialect(mlir::MLIRContext *ctx)
+    : mlir::Dialect(getDialectNamespace(), ctx, TypeID::get<ToyDialect>()) {
   addOperations<
 #define GET_OP_LIST
 #include "toy/Ops.cpp.inc"
@@ -148,7 +149,7 @@ void ConstantOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
   ConstantOp::build(builder, state, dataType, dataAttribute);
 }
 
-/// The 'OpAsmPrinter' class provides a collection of methods for parsing
+/// The 'OpAsmParser' class provides a collection of methods for parsing
 /// various punctuation, as well as attributes, operands, types, etc. Each of
 /// these methods returns a `ParseResult`. This class is a wrapper around
 /// `LogicalResult` that can be converted to a boolean `true` value on failure,
@@ -166,7 +167,7 @@ static mlir::ParseResult parseConstantOp(mlir::OpAsmParser &parser,
   return success();
 }
 
-/// The 'OpAsmPrinter' class is a stream that will allows for formatting
+/// The 'OpAsmPrinter' class is a stream that allows for formatting
 /// strings, attributes, operands, types, etc.
 static void print(mlir::OpAsmPrinter &printer, ConstantOp op) {
   printer << "toy.constant ";

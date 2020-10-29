@@ -369,17 +369,16 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
       }
       auto *ValueString = dyn_cast<llvm::yaml::ScalarNode>(Value);
       auto *SequenceString = dyn_cast<llvm::yaml::SequenceNode>(Value);
-      if (KeyValue == "arguments" && !SequenceString) {
-        ErrorMessage = "Expected sequence as value.";
+      if (KeyValue == "arguments") {
+        if (!SequenceString) {
+          ErrorMessage = "Expected sequence as value.";
+          return false;
+        }
+#ifdef INTEL_CUSTOMIZATION
+        ErrorMessage =
+          ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
         return false;
-      } else if (KeyValue != "arguments" && !ValueString) {
-        ErrorMessage = "Expected string as value.";
-        return false;
-      }
-      if (KeyValue == "directory") {
-        Directory = ValueString;
-#ifndef INTEL_CUSTOMIZATION
-      } else if (KeyValue == "arguments") {
+#else
         Command = std::vector<llvm::yaml::ScalarNode *>();
         for (auto &Argument : *SequenceString) {
           auto *Scalar = dyn_cast<llvm::yaml::ScalarNode>(&Argument);
@@ -390,23 +389,31 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           Command->push_back(Scalar);
         }
 #endif
-      } else if (KeyValue == "command") {
-#ifdef INTEL_CUSTOMIZATION
-        Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
-#else
-        if (!Command)
-          Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
-#endif
-      } else if (KeyValue == "file") {
-        File = ValueString;
-#ifndef INTEL_CUSTOMIZATION
-      } else if (KeyValue == "output") {
-        Output = ValueString;
-#endif
       } else {
-        ErrorMessage = ("Unknown key: \"" +
-                        KeyString->getRawValue() + "\"").str();
-        return false;
+        if (!ValueString) {
+          ErrorMessage = "Expected string as value.";
+          return false;
+        }
+        if (KeyValue == "directory") {
+          Directory = ValueString;
+        } else if (KeyValue == "command") {
+#ifdef INTEL_CUSTOMIZATION
+          Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#else
+          if (!Command)
+            Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#endif
+        } else if (KeyValue == "file") {
+          File = ValueString;
+#ifndef INTEL_CUSTOMIZATION
+        } else if (KeyValue == "output") {
+          Output = ValueString;
+#endif
+        } else {
+          ErrorMessage =
+              ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
+          return false;
+        }
       }
     }
 

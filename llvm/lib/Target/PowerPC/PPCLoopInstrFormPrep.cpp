@@ -244,10 +244,10 @@ INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(ScalarEvolutionWrapperPass)
 INITIALIZE_PASS_END(PPCLoopInstrFormPrep, DEBUG_TYPE, name, false, false)
 
-static const std::string PHINodeNameSuffix    = ".phi";
-static const std::string CastNodeNameSuffix   = ".cast";
-static const std::string GEPNodeIncNameSuffix = ".inc";
-static const std::string GEPNodeOffNameSuffix = ".off";
+static constexpr StringRef PHINodeNameSuffix    = ".phi";
+static constexpr StringRef CastNodeNameSuffix   = ".cast";
+static constexpr StringRef GEPNodeIncNameSuffix = ".inc";
+static constexpr StringRef GEPNodeOffNameSuffix = ".off";
 
 FunctionPass *llvm::createPPCLoopInstrFormPrepPass(PPCTargetMachine &TM) {
   return new PPCLoopInstrFormPrep(TM);
@@ -263,7 +263,7 @@ static bool IsPtrInBounds(Value *BasePtr) {
   return false;
 }
 
-static std::string getInstrName(const Value *I, const std::string Suffix) {
+static std::string getInstrName(const Value *I, StringRef Suffix) {
   assert(I && "Invalid paramater!");
   if (I->hasName())
     return (I->getName() + Suffix).str();
@@ -606,6 +606,10 @@ bool PPCLoopInstrFormPrep::rewriteLoadStores(Loop *L, Bucket &BucketChain,
       NewBasePtr = NewPHI;
   }
 
+  // Clear the rewriter cache, because values that are in the rewriter's cache
+  // can be deleted below, causing the AssertingVH in the cache to trigger.
+  SCEVE.clear();
+
   if (Instruction *IDel = dyn_cast<Instruction>(BasePtr))
     BBChanged.insert(IDel->getParent());
   BasePtr->replaceAllUsesWith(NewBasePtr);
@@ -791,7 +795,7 @@ bool PPCLoopInstrFormPrep::runOnLoop(Loop *L) {
   bool MadeChange = false;
 
   // Only prep. the inner-most loop
-  if (!L->empty())
+  if (!L->isInnermost())
     return MadeChange;
 
   // Return if already done enough preparation.

@@ -322,26 +322,26 @@ protected:
 
     unsigned : NumExprBits;
 
-    /// The kind of result that is trail-allocated.
+    /// The kind of result that is tail-allocated.
     unsigned ResultKind : 2;
 
-    /// Kind of Result as defined by APValue::Kind
+    /// The kind of Result as defined by APValue::Kind.
     unsigned APValueKind : 4;
 
-    /// When ResultKind == RSK_Int64. whether the trail-allocated integer is
-    /// signed.
+    /// When ResultKind == RSK_Int64, true if the tail-allocated integer is
+    /// unsigned.
     unsigned IsUnsigned : 1;
 
-    /// When ResultKind == RSK_Int64. the BitWidth of the trail-allocated
-    /// integer. 7 bits because it is the minimal number of bit to represent a
-    /// value from 0 to 64 (the size of the trail-allocated number).
+    /// When ResultKind == RSK_Int64. the BitWidth of the tail-allocated
+    /// integer. 7 bits because it is the minimal number of bits to represent a
+    /// value from 0 to 64 (the size of the tail-allocated integer).
     unsigned BitWidth : 7;
 
-    /// When ResultKind == RSK_APValue. Wether the ASTContext will cleanup the
-    /// destructor on the trail-allocated APValue.
+    /// When ResultKind == RSK_APValue, true if the ASTContext will cleanup the
+    /// tail-allocated APValue.
     unsigned HasCleanup : 1;
 
-    /// Whether this ConstantExpr was created for immediate invocation.
+    /// True if this ConstantExpr was created for immediate invocation.
     unsigned IsImmediateInvocation : 1;
   };
 
@@ -445,8 +445,9 @@ protected:
     unsigned IsType : 1; // true if operand is a type, false if an expression.
   };
 
-  class ArraySubscriptExprBitfields {
+  class ArrayOrMatrixSubscriptExprBitfields {
     friend class ArraySubscriptExpr;
+    friend class MatrixSubscriptExpr;
 
     unsigned : NumExprBits;
 
@@ -463,8 +464,11 @@ protected:
     /// True if the callee of the call expression was found using ADL.
     unsigned UsesADL : 1;
 
+    /// True if the call expression has some floating-point features.
+    unsigned HasFPFeatures : 1;
+
     /// Padding used to align OffsetToTrailingObjects to a byte multiple.
-    unsigned : 24 - 2 - NumExprBits;
+    unsigned : 24 - 3 - NumExprBits;
 
     /// The offset in bytes from the this pointer to the start of the
     /// trailing objects belonging to CallExpr. Intentionally byte sized
@@ -516,6 +520,9 @@ protected:
 
     unsigned Kind : 6;
     unsigned PartOfExplicitCast : 1; // Only set for ImplicitCastExpr.
+
+    /// True if the call expression has some floating-point features.
+    unsigned HasFPFeatures : 1;
 
     /// The number of CXXBaseSpecifiers in the cast. 14 bits would be enough
     /// here. ([implimits] Direct and indirect base classes [16384]).
@@ -613,9 +620,6 @@ protected:
     /// The kind of this overloaded operator. One of the enumerator
     /// value of OverloadedOperatorKind.
     unsigned OperatorKind : 6;
-
-    // Only meaningful for floating point types.
-    unsigned FPFeatures : 14;
   };
 
   class CXXRewrittenBinaryOperatorBitfields {
@@ -774,8 +778,10 @@ protected:
     /// the trait evaluated true or false.
     unsigned Value : 1;
 
-    /// The number of arguments to this type trait.
-    unsigned NumArgs : 32 - 8 - 1 - NumExprBits;
+    /// The number of arguments to this type trait. According to [implimits]
+    /// 8 bits would be enough, but we require (and test for) at least 16 bits
+    /// to mirror FunctionType.
+    unsigned NumArgs;
   };
 
   class DependentScopeDeclRefExprBitfields {
@@ -924,6 +930,28 @@ protected:
     SourceLocation NameLoc;
   };
 
+  class LambdaExprBitfields {
+    friend class ASTStmtReader;
+    friend class ASTStmtWriter;
+    friend class LambdaExpr;
+
+    unsigned : NumExprBits;
+
+    /// The default capture kind, which is a value of type
+    /// LambdaCaptureDefault.
+    unsigned CaptureDefault : 2;
+
+    /// Whether this lambda had an explicit parameter list vs. an
+    /// implicit (and empty) parameter list.
+    unsigned ExplicitParams : 1;
+
+    /// Whether this lambda had the result type explicitly specified.
+    unsigned ExplicitResultType : 1;
+
+    /// The number of captures.
+    unsigned NumCaptures : 16;
+  };
+
   class RequiresExprBitfields {
     friend class ASTStmtReader;
     friend class ASTStmtWriter;
@@ -999,7 +1027,7 @@ protected:
     CharacterLiteralBitfields CharacterLiteralBits;
     UnaryOperatorBitfields UnaryOperatorBits;
     UnaryExprOrTypeTraitExprBitfields UnaryExprOrTypeTraitExprBits;
-    ArraySubscriptExprBitfields ArraySubscriptExprBits;
+    ArrayOrMatrixSubscriptExprBitfields ArrayOrMatrixSubscriptExprBits;
     CallExprBitfields CallExprBits;
     MemberExprBitfields MemberExprBits;
     CastExprBitfields CastExprBits;
@@ -1036,6 +1064,7 @@ protected:
     UnresolvedMemberExprBitfields UnresolvedMemberExprBits;
     CXXNoexceptExprBitfields CXXNoexceptExprBits;
     SubstNonTypeTemplateParmExprBitfields SubstNonTypeTemplateParmExprBits;
+    LambdaExprBitfields LambdaExprBits;
     RequiresExprBitfields RequiresExprBits;
 
     // C++ Coroutines TS expressions
@@ -1071,6 +1100,14 @@ public:
   /// type, that will be filled in later (e.g., by some
   /// de-serialization).
   struct EmptyShell {};
+
+  /// The likelihood of a branch being taken.
+  enum Likelihood {
+    LH_Unlikely = -1, ///< Branch has the [[unlikely]] attribute.
+    LH_None,          ///< No attribute set or branches of the IfStmt have
+                      ///< the same attribute.
+    LH_Likely         ///< Branch has the [[likely]] attribute.
+  };
 
 protected:
   /// Iterator for iterating over Stmt * arrays that contain only T *.
@@ -1140,12 +1177,27 @@ public:
   static void EnableStatistics();
   static void PrintStats();
 
+  /// \returns the likelihood of a set of attributes.
+  static Likelihood getLikelihood(ArrayRef<const Attr *> Attrs);
+
+  /// \returns the likelihood of a statement.
+  static Likelihood getLikelihood(const Stmt *S);
+
+  /// \returns the likelihood of the 'then' branch of an 'if' statement. The
+  /// 'else' branch is required to determine whether both branches specify the
+  /// same likelihood, which affects the result.
+  static Likelihood getLikelihood(const Stmt *Then, const Stmt *Else);
+
+  /// \returns whether the likelihood of the branches of an if statement are
+  /// conflicting. When the first element is \c true there's a conflict and
+  /// the Attr's are the conflicting attributes of the Then and Else Stmt.
+  static std::tuple<bool, const Attr *, const Attr *>
+  determineLikelihoodConflict(const Stmt *Then, const Stmt *Else);
+
   /// Dumps the specified AST fragment and all subtrees to
   /// \c llvm::errs().
   void dump() const;
-  void dump(SourceManager &SM) const;
-  void dump(raw_ostream &OS, SourceManager &SM) const;
-  void dump(raw_ostream &OS) const;
+  void dump(raw_ostream &OS, const ASTContext &Context) const;
 
   /// \return Unique reproducible object identifier
   int64_t getID(const ASTContext &Context) const;
@@ -1871,6 +1923,8 @@ class IfStmt final
   //    Present if and only if hasElseStorage().
   enum { InitOffset = 0, ThenOffsetFromCond = 1, ElseOffsetFromCond = 2 };
   enum { NumMandatoryStmtPtr = 2 };
+  SourceLocation LParenLoc;
+  SourceLocation RParenLoc;
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr + hasElseStorage() + hasVarStorage() +
@@ -1891,7 +1945,8 @@ class IfStmt final
 
   /// Build an if/then/else statement.
   IfStmt(const ASTContext &Ctx, SourceLocation IL, bool IsConstexpr, Stmt *Init,
-         VarDecl *Var, Expr *Cond, Stmt *Then, SourceLocation EL, Stmt *Else);
+         VarDecl *Var, Expr *Cond, SourceLocation LParenLoc,
+         SourceLocation RParenLoc, Stmt *Then, SourceLocation EL, Stmt *Else);
 
   /// Build an empty if/then/else statement.
   explicit IfStmt(EmptyShell Empty, bool HasElse, bool HasVar, bool HasInit);
@@ -1900,7 +1955,8 @@ public:
   /// Create an IfStmt.
   static IfStmt *Create(const ASTContext &Ctx, SourceLocation IL,
                         bool IsConstexpr, Stmt *Init, VarDecl *Var, Expr *Cond,
-                        Stmt *Then, SourceLocation EL = SourceLocation(),
+                        SourceLocation LPL, SourceLocation RPL, Stmt *Then,
+                        SourceLocation EL = SourceLocation(),
                         Stmt *Else = nullptr);
 
   /// Create an empty IfStmt optionally with storage for an else statement,
@@ -2030,6 +2086,10 @@ public:
       return getElse()->getEndLoc();
     return getThen()->getEndLoc();
   }
+  SourceLocation getLParenLoc() const { return LParenLoc; }
+  void setLParenLoc(SourceLocation Loc) { LParenLoc = Loc; }
+  SourceLocation getRParenLoc() const { return RParenLoc; }
+  void setRParenLoc(SourceLocation Loc) { RParenLoc = Loc; }
 
   // Iterators over subexpressions.  The iterators will include iterating
   // over the initialization expression referenced by the condition variable.
@@ -2077,6 +2137,8 @@ class SwitchStmt final : public Stmt,
   //    Always present.
   enum { InitOffset = 0, BodyOffsetFromCond = 1 };
   enum { NumMandatoryStmtPtr = 2 };
+  SourceLocation LParenLoc;
+  SourceLocation RParenLoc;
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr + hasInitStorage() + hasVarStorage();
@@ -2090,7 +2152,8 @@ class SwitchStmt final : public Stmt,
   unsigned bodyOffset() const { return condOffset() + BodyOffsetFromCond; }
 
   /// Build a switch statement.
-  SwitchStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond);
+  SwitchStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond,
+             SourceLocation LParenLoc, SourceLocation RParenLoc);
 
   /// Build a empty switch statement.
   explicit SwitchStmt(EmptyShell Empty, bool HasInit, bool HasVar);
@@ -2098,7 +2161,8 @@ class SwitchStmt final : public Stmt,
 public:
   /// Create a switch statement.
   static SwitchStmt *Create(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                            Expr *Cond);
+                            Expr *Cond, SourceLocation LParenLoc,
+                            SourceLocation RParenLoc);
 
   /// Create an empty switch statement optionally with storage for
   /// an init expression and a condition variable.
@@ -2186,6 +2250,10 @@ public:
 
   SourceLocation getSwitchLoc() const { return SwitchStmtBits.SwitchLoc; }
   void setSwitchLoc(SourceLocation L) { SwitchStmtBits.SwitchLoc = L; }
+  SourceLocation getLParenLoc() const { return LParenLoc; }
+  void setLParenLoc(SourceLocation Loc) { LParenLoc = Loc; }
+  SourceLocation getRParenLoc() const { return RParenLoc; }
+  void setRParenLoc(SourceLocation Loc) { RParenLoc = Loc; }
 
   void setBody(Stmt *S, SourceLocation SL) {
     setBody(S);
@@ -2256,6 +2324,8 @@ class WhileStmt final : public Stmt,
   enum { VarOffset = 0, BodyOffsetFromCond = 1 };
   enum { NumMandatoryStmtPtr = 2 };
 
+  SourceLocation LParenLoc, RParenLoc;
+
   unsigned varOffset() const { return VarOffset; }
   unsigned condOffset() const { return VarOffset + hasVarStorage(); }
   unsigned bodyOffset() const { return condOffset() + BodyOffsetFromCond; }
@@ -2266,7 +2336,8 @@ class WhileStmt final : public Stmt,
 
   /// Build a while statement.
   WhileStmt(const ASTContext &Ctx, VarDecl *Var, Expr *Cond, Stmt *Body,
-            SourceLocation WL);
+            SourceLocation WL, SourceLocation LParenLoc,
+            SourceLocation RParenLoc);
 
   /// Build an empty while statement.
   explicit WhileStmt(EmptyShell Empty, bool HasVar);
@@ -2274,7 +2345,8 @@ class WhileStmt final : public Stmt,
 public:
   /// Create a while statement.
   static WhileStmt *Create(const ASTContext &Ctx, VarDecl *Var, Expr *Cond,
-                           Stmt *Body, SourceLocation WL);
+                           Stmt *Body, SourceLocation WL,
+                           SourceLocation LParenLoc, SourceLocation RParenLoc);
 
   /// Create an empty while statement optionally with storage for
   /// a condition variable.
@@ -2337,6 +2409,11 @@ public:
 
   SourceLocation getWhileLoc() const { return WhileStmtBits.WhileLoc; }
   void setWhileLoc(SourceLocation L) { WhileStmtBits.WhileLoc = L; }
+
+  SourceLocation getLParenLoc() const { return LParenLoc; }
+  void setLParenLoc(SourceLocation L) { LParenLoc = L; }
+  SourceLocation getRParenLoc() const { return RParenLoc; }
+  void setRParenLoc(SourceLocation L) { RParenLoc = L; }
 
   SourceLocation getBeginLoc() const { return getWhileLoc(); }
   SourceLocation getEndLoc() const LLVM_READONLY {

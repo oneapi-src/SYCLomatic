@@ -427,14 +427,10 @@ __global__ void foo() {
 
 template <typename T> struct S {};
 
-// CHECK: template <>
-// CHECK-NEXT: struct S<sycl::queue *> {};
-// CHECK-NEXT: template <>
-// CHECK-NEXT: struct S<sycl::queue> {};
-// CHECK-NEXT: template <>
-// CHECK-NEXT: struct S<sycl::float2> {};
-// CHECK-NEXT: template <>
-// CHECK-NEXT: struct S<sycl::float4> {};
+// CHECK: template <> struct S<sycl::queue *> {};
+// CHECK-NEXT: template <> struct S<sycl::queue> {};
+// CHECK-NEXT: template <> struct S<sycl::float2> {};
+// CHECK-NEXT: template <> struct S<sycl::float4> {};
 template <> struct S<cudaStream_t> {};
 template <> struct S<CUstream_st> {};
 template <> struct S<float2> {};
@@ -512,14 +508,10 @@ void fun2() {
 
 // CHECK:template <>
 // CHECK-NEXT:struct S<int &&> {};
-// CHECK-NEXT:template <>
-// CHECK-NEXT:struct S<int> {};
-// CHECK-NEXT:template <>
-// CHECK-NEXT:struct S<int *> {};
-// CHECK-NEXT:template <>
-// CHECK-NEXT:struct S<int &> {};
-// CHECK-NEXT:template <>
-// CHECK-NEXT:struct S<int &&> {};
+// CHECK-NEXT:template <> struct S<int> {};
+// CHECK-NEXT:template <> struct S<int *> {};
+// CHECK-NEXT:template <> struct S<int &> {};
+// CHECK-NEXT:template <> struct S<int &&> {};
 template <>
 struct S<int &&> {};
 template <> struct S<cudaError_t> {};

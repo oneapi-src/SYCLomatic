@@ -89,7 +89,7 @@ module attributes {gpu.container_module} {
 module attributes {gpu.container_module} {
   module @kernels {
     // expected-error@+1 {{'gpu.func' op expects parent op 'gpu.module'}}
-    gpu.func @kernel_1(%arg1 : !llvm<"float*">) {
+    gpu.func @kernel_1(%arg1 : !llvm.ptr<float>) {
       gpu.return
     }
   }
@@ -128,16 +128,16 @@ module attributes {gpu.container_module} {
 
 module attributes {gpu.container_module} {
   module @kernels {
-    gpu.func @kernel_1(%arg1 : !llvm<"float*">) kernel {
+    gpu.func @kernel_1(%arg1 : !llvm.ptr<float>) kernel {
       gpu.return
     }
   }
 
-  func @launch_func_missing_kernel_attr(%sz : index, %arg : !llvm<"float*">) {
+  func @launch_func_missing_kernel_attr(%sz : index, %arg : !llvm.ptr<float>) {
     // expected-error@+1 {{kernel module 'kernels' is undefined}}
     "gpu.launch_func"(%sz, %sz, %sz, %sz, %sz, %sz, %arg)
     {kernel = @kernels::@kernel_1}
-        : (index, index, index, index, index, index, !llvm<"float*">) -> ()
+        : (index, index, index, index, index, index, !llvm.ptr<float>) -> ()
     return
   }
 }
@@ -146,16 +146,16 @@ module attributes {gpu.container_module} {
 
 module attributes {gpu.container_module} {
   gpu.module @kernels {
-    gpu.func @kernel_1(%arg1 : !llvm<"float*">) {
+    gpu.func @kernel_1(%arg1 : !llvm.ptr<float>) {
       gpu.return
     }
   }
 
-  func @launch_func_missing_kernel_attr(%sz : index, %arg : !llvm<"float*">) {
+  func @launch_func_missing_kernel_attr(%sz : index, %arg : !llvm.ptr<float>) {
     // expected-error@+1 {{kernel function is missing the 'gpu.kernel' attribute}}
     "gpu.launch_func"(%sz, %sz, %sz, %sz, %sz, %sz, %arg)
     {kernel = @kernels::@kernel_1}
-        : (index, index, index, index, index, index, !llvm<"float*">) -> ()
+        : (index, index, index, index, index, index, !llvm.ptr<float>) -> ()
     return
   }
 }
@@ -164,17 +164,17 @@ module attributes {gpu.container_module} {
 
 module attributes {gpu.container_module} {
   gpu.module @kernels {
-    gpu.func @kernel_1(%arg1 : !llvm<"float*">) kernel {
+    gpu.func @kernel_1(%arg1 : !llvm.ptr<float>) kernel {
       gpu.return
     }
   }
 
-  func @launch_func_kernel_operand_size(%sz : index, %arg : !llvm<"float*">) {
+  func @launch_func_kernel_operand_size(%sz : index, %arg : !llvm.ptr<float>) {
     // expected-error@+1 {{got 2 kernel operands but expected 1}}
     "gpu.launch_func"(%sz, %sz, %sz, %sz, %sz, %sz, %arg, %arg)
         {kernel = @kernels::@kernel_1}
-        : (index, index, index, index, index, index, !llvm<"float*">,
-           !llvm<"float*">) -> ()
+        : (index, index, index, index, index, index, !llvm.ptr<float>,
+           !llvm.ptr<float>) -> ()
     return
   }
 }
@@ -254,7 +254,7 @@ func @reduce_op_and_body(%arg0 : f32) {
 // -----
 
 func @reduce_invalid_op(%arg0 : f32) {
-  // expected-error@+1 {{gpu.all_reduce' op attribute 'op' failed to satisfy constraint}}
+  // expected-error@+1 {{attribute 'op' failed to satisfy constraint}}
   %res = "gpu.all_reduce"(%arg0) ({}) {op = "foo"} : (f32) -> (f32)
   return
 }
@@ -321,14 +321,14 @@ func @reduce_incorrect_yield(%arg0 : f32) {
 // -----
 
 func @shuffle_mismatching_type(%arg0 : f32, %arg1 : i32, %arg2 : i32) {
-  // expected-error@+1 {{'gpu.shuffle' op requires the same type for value operand and result}}
+  // expected-error@+1 {{requires the same type for value operand and result}}
   %shfl, %pred = "gpu.shuffle"(%arg0, %arg1, %arg2) { mode = "xor" } : (f32, i32, i32) -> (i32, i1)
 }
 
 // -----
 
 func @shuffle_unsupported_type(%arg0 : index, %arg1 : i32, %arg2 : i32) {
-  // expected-error@+1 {{'gpu.shuffle' op requires value operand type to be f32 or i32}}
+  // expected-error@+1 {{requires value operand type to be f32 or i32}}
   %shfl, %pred = gpu.shuffle %arg0, %arg1, %arg2 xor : index
 }
 
@@ -422,4 +422,30 @@ module {
       gpu.return
     }
   }
+}
+
+// -----
+
+module {
+  gpu.module @gpu_funcs {
+    // expected-error @+1 {{'gpu.func' op expected at least 5 arguments to body region}}
+    "gpu.func"() ( {
+    ^bb0(%arg0: f32, %arg1: memref<?xf32>, %arg2: memref<5xf32, 3>, %arg3: memref<5xf32, 5>):
+      "gpu.return"() : () -> ()
+    } ) {gpu.kernel, sym_name = "kernel_1", type = (f32, memref<?xf32>) -> (), workgroup_attributions = 3: i64} : () -> ()
+  }
+}
+
+// -----
+
+func @sync_wait_with_result() {
+  // expected-error @+1 {{cannot name an operation with no results}}
+  %t = gpu.wait
+}
+
+// -----
+
+func @async_wait_without_result() {
+  // expected-error @+1 {{custom op 'gpu.wait' needs to be named when marked 'async'}}
+  gpu.wait async
 }

@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <algorithm>
+
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/helpers.hpp>
 #include <CL/sycl/detail/kernel_desc.hpp>
@@ -85,7 +87,15 @@ event handler::finalize() {
     break;
   case detail::CG::CODEPLAY_HOST_TASK:
     CommandGroup.reset(new detail::CGHostTask(
-        std::move(MHostTask), std::move(MArgs), std::move(MArgsStorage),
+        std::move(MHostTask), MQueue, MQueue->getContextImplPtr(),
+        std::move(MArgs), std::move(MArgsStorage), std::move(MAccStorage),
+        std::move(MSharedPtrStorage), std::move(MRequirements),
+        std::move(MEvents), MCGType, MCodeLoc));
+    break;
+  case detail::CG::BARRIER:
+  case detail::CG::BARRIER_WAITLIST:
+    CommandGroup.reset(new detail::CGBarrier(
+        std::move(MEventsWaitWithBarrier), std::move(MArgsStorage),
         std::move(MAccStorage), std::move(MSharedPtrStorage),
         std::move(MRequirements), std::move(MEvents), MCGType, MCodeLoc));
     break;
@@ -103,6 +113,21 @@ event handler::finalize() {
 
   MLastEvent = detail::createSyclObjFromImpl<event>(Event);
   return MLastEvent;
+}
+
+void handler::associateWithHandler(detail::AccessorBaseHost *AccBase,
+                                   access::target AccTarget) {
+  detail::AccessorImplPtr AccImpl = detail::getSyclObjImpl(*AccBase);
+  detail::Requirement *Req = AccImpl.get();
+  // Add accessor to the list of requirements.
+  MRequirements.push_back(Req);
+  // Store copy of the accessor.
+  MAccStorage.push_back(std::move(AccImpl));
+  // Add an accessor to the handler list of associated accessors.
+  // For associated accessors index does not means nothing.
+  MAssociatedAccesors.emplace_back(detail::kernel_param_kind_t::kind_accessor,
+                                   Req, static_cast<int>(AccTarget),
+                                   /*index*/ 0);
 }
 
 void handler::processArg(void *Ptr, const detail::kernel_param_kind_t &Kind,
@@ -133,7 +158,11 @@ void handler::processArg(void *Ptr, const detail::kernel_param_kind_t &Kind,
         AccImpl->resize(MNDRDesc.GlobalSize.size());
       }
       MArgs.emplace_back(Kind, AccImpl, Size, Index + IndexShift);
-      if (!IsKernelCreatedFromSource) {
+
+      // TODO ESIMD currently does not suport offset, memory and access ranges -
+      // accessor::init for ESIMD-mode accessor has a single field, translated
+      // to a single kernel argument set above.
+      if (!AccImpl->MIsESIMDAcc && !IsKernelCreatedFromSource) {
         // Dimensionality of the buffer is 1 when dimensionality of the
         // accessor is 0.
         const size_t SizeAccField =
@@ -264,6 +293,38 @@ void handler::extractArgsAndReqsFromLambda(
 // method inside the library and returns the result.
 string_class handler::getKernelName() {
   return MKernel->get_info<info::kernel::function_name>();
+}
+
+void handler::barrier(const vector_class<event> &WaitList) {
+  throwIfActionIsCreated();
+  MCGType = detail::CG::BARRIER_WAITLIST;
+  MEventsWaitWithBarrier.resize(WaitList.size());
+  std::transform(
+      WaitList.begin(), WaitList.end(), MEventsWaitWithBarrier.begin(),
+      [](const event &Event) { return detail::getSyclObjImpl(Event); });
+}
+
+void handler::memcpy(void *Dest, const void *Src, size_t Count) {
+  throwIfActionIsCreated();
+  MSrcPtr = const_cast<void *>(Src);
+  MDstPtr = Dest;
+  MLength = Count;
+  MCGType = detail::CG::COPY_USM;
+}
+
+void handler::memset(void *Dest, int Value, size_t Count) {
+  throwIfActionIsCreated();
+  MDstPtr = Dest;
+  MPattern.push_back(static_cast<char>(Value));
+  MLength = Count;
+  MCGType = detail::CG::FILL_USM;
+}
+
+void handler::prefetch(const void *Ptr, size_t Count) {
+  throwIfActionIsCreated();
+  MDstPtr = const_cast<void *>(Ptr);
+  MLength = Count;
+  MCGType = detail::CG::PREFETCH_USM;
 }
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

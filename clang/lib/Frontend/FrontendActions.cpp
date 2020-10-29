@@ -79,7 +79,8 @@ ASTDumpAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   const FrontendOptions &Opts = CI.getFrontendOpts();
   return CreateASTDumper(nullptr /*Dump to stdout.*/, Opts.ASTDumpFilter,
                          Opts.ASTDumpDecls, Opts.ASTDumpAll,
-                         Opts.ASTDumpLookups, Opts.ASTDumpFormat);
+                         Opts.ASTDumpLookups, Opts.ASTDumpDeclTypes,
+                         Opts.ASTDumpFormat);
 }
 
 std::unique_ptr<ASTConsumer>
@@ -260,7 +261,7 @@ bool GenerateHeaderModuleAction::PrepareToExecuteAction(
     if (FIF.getKind().getFormat() != InputKind::Source || !FIF.isFile()) {
       CI.getDiagnostics().Report(diag::err_module_header_file_not_found)
           << (FIF.isFile() ? FIF.getFile()
-                           : FIF.getBuffer()->getBufferIdentifier());
+                           : FIF.getBuffer().getBufferIdentifier());
       return true;
     }
 
@@ -274,7 +275,8 @@ bool GenerateHeaderModuleAction::PrepareToExecuteAction(
 
   // Set that buffer up as our "real" input.
   Inputs.clear();
-  Inputs.push_back(FrontendInputFile(Buffer.get(), Kind, /*IsSystem*/false));
+  Inputs.push_back(
+      FrontendInputFile(Buffer->getMemBufferRef(), Kind, /*IsSystem*/ false));
 
   return GenerateModuleAction::PrepareToExecuteAction(CI);
 }
@@ -434,6 +436,10 @@ private:
       return "RequirementInstantiation";
     case CodeSynthesisContext::NestedRequirementConstraintsCheck:
       return "NestedRequirementConstraintsCheck";
+    case CodeSynthesisContext::InitializingStructuredBinding:
+      return "InitializingStructuredBinding";
+    case CodeSynthesisContext::MarkingClassDllexported:
+      return "MarkingClassDllexported";
     }
     return "";
   }
@@ -556,6 +562,7 @@ namespace {
       Out.indent(2) << "Target options:\n";
       Out.indent(4) << "  Triple: " << TargetOpts.Triple << "\n";
       Out.indent(4) << "  CPU: " << TargetOpts.CPU << "\n";
+      Out.indent(4) << "  TuneCPU: " << TargetOpts.TuneCPU << "\n";
       Out.indent(4) << "  ABI: " << TargetOpts.ABI << "\n";
 
       if (!TargetOpts.FeaturesAsWritten.empty()) {
@@ -744,7 +751,7 @@ void DumpRawTokensAction::ExecuteAction() {
   SourceManager &SM = PP.getSourceManager();
 
   // Start lexing the specified input file.
-  const llvm::MemoryBuffer *FromFile = SM.getBuffer(SM.getMainFileID());
+  llvm::MemoryBufferRef FromFile = SM.getBufferOrFake(SM.getMainFileID());
   Lexer RawLex(SM.getMainFileID(), FromFile, SM, PP.getLangOpts());
   RawLex.SetKeepWhitespaceMode(true);
 
@@ -799,11 +806,9 @@ void PrintPreprocessedAction::ExecuteAction() {
   // concern, so if we scan for too long, we'll just assume the file should
   // be opened in binary mode.
   bool BinaryMode = true;
-  bool InvalidFile = false;
   const SourceManager& SM = CI.getSourceManager();
-  const llvm::MemoryBuffer *Buffer = SM.getBuffer(SM.getMainFileID(),
-                                                     &InvalidFile);
-  if (!InvalidFile) {
+  if (llvm::Optional<llvm::MemoryBufferRef> Buffer =
+          SM.getBufferOrNone(SM.getMainFileID())) {
     const char *cur = Buffer->getBufferStart();
     const char *end = Buffer->getBufferEnd();
     const char *next = (cur != end) ? cur + 1 : end;
@@ -931,12 +936,12 @@ void DumpCompilerOptionsAction::ExecuteAction() {
 void PrintDependencyDirectivesSourceMinimizerAction::ExecuteAction() {
   CompilerInstance &CI = getCompilerInstance();
   SourceManager &SM = CI.getPreprocessor().getSourceManager();
-  const llvm::MemoryBuffer *FromFile = SM.getBuffer(SM.getMainFileID());
+  llvm::MemoryBufferRef FromFile = SM.getBufferOrFake(SM.getMainFileID());
 
   llvm::SmallString<1024> Output;
   llvm::SmallVector<minimize_source_to_dependency_directives::Token, 32> Toks;
   if (minimizeSourceToDependencyDirectives(
-          FromFile->getBuffer(), Output, Toks, &CI.getDiagnostics(),
+          FromFile.getBuffer(), Output, Toks, &CI.getDiagnostics(),
           SM.getLocForStartOfFile(SM.getMainFileID()))) {
     assert(CI.getDiagnostics().hasErrorOccurred() &&
            "no errors reported for failure");

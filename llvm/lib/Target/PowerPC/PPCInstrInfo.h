@@ -122,10 +122,6 @@ enum SpillOpcodeKey {
   SOK_VSXVectorSpill,
   SOK_VectorFloat8Spill,
   SOK_VectorFloat4Spill,
-  SOK_VRSaveSpill,
-  SOK_QuadFloat8Spill,
-  SOK_QuadFloat4Spill,
-  SOK_QuadBitSpill,
   SOK_SpillToVSR,
   SOK_SPESpill,
   SOK_LastOpcodeSpill // This must be last on the enum.
@@ -136,7 +132,6 @@ enum SpillOpcodeKey {
   {                                                                            \
     PPC::LWZ, PPC::LD, PPC::LFD, PPC::LFS, PPC::RESTORE_CR,                    \
         PPC::RESTORE_CRBIT, PPC::LVX, PPC::LXVD2X, PPC::LXSDX, PPC::LXSSPX,    \
-        PPC::RESTORE_VRSAVE, PPC::QVLFDX, PPC::QVLFSXs, PPC::QVLFDXb,          \
         PPC::SPILLTOVSR_LD, PPC::EVLDD                                         \
   }
 
@@ -144,23 +139,20 @@ enum SpillOpcodeKey {
   {                                                                            \
     PPC::LWZ, PPC::LD, PPC::LFD, PPC::LFS, PPC::RESTORE_CR,                    \
         PPC::RESTORE_CRBIT, PPC::LVX, PPC::LXV, PPC::DFLOADf64,                \
-        PPC::DFLOADf32, PPC::RESTORE_VRSAVE, PPC::QVLFDX, PPC::QVLFSXs,        \
-        PPC::QVLFDXb, PPC::SPILLTOVSR_LD                                       \
+        PPC::DFLOADf32, PPC::SPILLTOVSR_LD                                     \
   }
 
 #define Pwr8StoreOpcodes                                                       \
   {                                                                            \
     PPC::STW, PPC::STD, PPC::STFD, PPC::STFS, PPC::SPILL_CR, PPC::SPILL_CRBIT, \
-        PPC::STVX, PPC::STXVD2X, PPC::STXSDX, PPC::STXSSPX, PPC::SPILL_VRSAVE, \
-        PPC::QVSTFDX, PPC::QVSTFSXs, PPC::QVSTFDXb, PPC::SPILLTOVSR_ST,        \
-        PPC::EVSTDD                                                            \
+        PPC::STVX, PPC::STXVD2X, PPC::STXSDX, PPC::STXSSPX,                    \
+        PPC::SPILLTOVSR_ST, PPC::EVSTDD                                        \
   }
 
 #define Pwr9StoreOpcodes                                                       \
   {                                                                            \
     PPC::STW, PPC::STD, PPC::STFD, PPC::STFS, PPC::SPILL_CR, PPC::SPILL_CRBIT, \
         PPC::STVX, PPC::STXV, PPC::DFSTOREf64, PPC::DFSTOREf32,                \
-        PPC::SPILL_VRSAVE, PPC::QVSTFDX, PPC::QVSTFSXs, PPC::QVSTFDXb,         \
         PPC::SPILLTOVSR_ST                                                     \
   }
 
@@ -187,13 +179,21 @@ class PPCInstrInfo : public PPCGenInstrInfo {
                             const TargetRegisterClass *RC,
                             SmallVectorImpl<MachineInstr *> &NewMIs) const;
 
-  // If the inst has imm-form and one of its operand is produced by a LI,
-  // put the imm into the inst directly and remove the LI if possible.
+  // Replace the instruction with single LI if possible. \p DefMI must be LI or
+  // LI8.
+  bool simplifyToLI(MachineInstr &MI, MachineInstr &DefMI,
+                    unsigned OpNoForForwarding, MachineInstr **KilledDef) const;
+  // If the inst is imm-form and its register operand is produced by a ADDI, put
+  // the imm into the inst directly and remove the ADDI if possible.
+  bool transformToNewImmFormFedByAdd(MachineInstr &MI, MachineInstr &DefMI,
+                                     unsigned OpNoForForwarding) const;
+  // If the inst is x-form and has imm-form and one of its operand is produced
+  // by a LI, put the imm into the inst directly and remove the LI if possible.
   bool transformToImmFormFedByLI(MachineInstr &MI, const ImmInstrInfo &III,
-                                 unsigned ConstantOpNo, MachineInstr &DefMI,
-                                 int64_t Imm) const;
-  // If the inst has imm-form and one of its operand is produced by an
-  // add-immediate, try to transform it when possible.
+                                 unsigned ConstantOpNo,
+                                 MachineInstr &DefMI) const;
+  // If the inst is x-form and has imm-form and one of its operand is produced
+  // by an add-immediate, try to transform it when possible.
   bool transformToImmFormFedByAdd(MachineInstr &MI, const ImmInstrInfo &III,
                                   unsigned ConstantOpNo, MachineInstr &DefMI,
                                   bool KillDefMI) const;
@@ -217,7 +217,8 @@ class PPCInstrInfo : public PPCGenInstrInfo {
   bool isImmElgibleForForwarding(const MachineOperand &ImmMO,
                                  const MachineInstr &DefMI,
                                  const ImmInstrInfo &III,
-                                 int64_t &Imm) const;
+                                 int64_t &Imm,
+                                 int64_t BaseImm = 0) const;
   bool isRegElgibleForForwarding(const MachineOperand &RegMO,
                                  const MachineInstr &DefMI,
                                  const MachineInstr &MI, bool KillDefMI,
@@ -225,6 +226,11 @@ class PPCInstrInfo : public PPCGenInstrInfo {
   unsigned getSpillTarget() const;
   const unsigned *getStoreOpcodesForSpillArray() const;
   const unsigned *getLoadOpcodesForSpillArray() const;
+  int16_t getFMAOpIdxInfo(unsigned Opcode) const;
+  void reassociateFMA(MachineInstr &Root, MachineCombinerPattern Pattern,
+                      SmallVectorImpl<MachineInstr *> &InsInstrs,
+                      SmallVectorImpl<MachineInstr *> &DelInstrs,
+                      DenseMap<unsigned, unsigned> &InstrIdxForVirtReg) const;
   virtual void anchor();
 
 protected:
@@ -259,10 +265,10 @@ public:
   }
 
   static bool isSameClassPhysRegCopy(unsigned Opcode) {
-    unsigned CopyOpcodes[] =
-      { PPC::OR, PPC::OR8, PPC::FMR, PPC::VOR, PPC::XXLOR, PPC::XXLORf,
-        PPC::XSCPSGNDP, PPC::MCRF, PPC::QVFMR, PPC::QVFMRs, PPC::QVFMRb,
-        PPC::CROR, PPC::EVOR, -1U };
+    unsigned CopyOpcodes[] = {PPC::OR,        PPC::OR8,   PPC::FMR,
+                              PPC::VOR,       PPC::XXLOR, PPC::XXLORf,
+                              PPC::XSCPSGNDP, PPC::MCRF,  PPC::CROR,
+                              PPC::EVOR,      -1U};
     for (int i = 0; CopyOpcodes[i] != -1U; i++)
       if (Opcode == CopyOpcodes[i])
         return true;
@@ -304,6 +310,20 @@ public:
     return true;
   }
 
+  /// When getMachineCombinerPatterns() finds patterns, this function generates
+  /// the instructions that could replace the original code sequence
+  void genAlternativeCodeSequence(
+      MachineInstr &Root, MachineCombinerPattern Pattern,
+      SmallVectorImpl<MachineInstr *> &InsInstrs,
+      SmallVectorImpl<MachineInstr *> &DelInstrs,
+      DenseMap<unsigned, unsigned> &InstrIdxForVirtReg) const override;
+
+  /// Return true when there is potentially a faster code sequence for a fma
+  /// chain ending in \p Root. All potential patterns are output in the \p
+  /// P array.
+  bool getFMAPatterns(MachineInstr &Root,
+                      SmallVectorImpl<MachineCombinerPattern> &P) const;
+
   /// Return true when there is potentially a faster code sequence
   /// for an instruction chain ending in <Root>. All potential patterns are
   /// output in the <Pattern> array.
@@ -312,6 +332,16 @@ public:
       SmallVectorImpl<MachineCombinerPattern> &P) const override;
 
   bool isAssociativeAndCommutative(const MachineInstr &Inst) const override;
+
+  /// On PowerPC, we try to reassociate FMA chain which will increase
+  /// instruction size. Set extension resource length limit to 1 for edge case.
+  /// Resource Length is calculated by scaled resource usage in getCycles().
+  /// Because of the division in getCycles(), it returns different cycles due to
+  /// legacy scaled resource usage. So new resource length may be same with
+  /// legacy or 1 bigger than legacy.
+  /// We need to execlude the 1 bigger case even the resource length is not
+  /// perserved for more FMA chain reassociations on PowerPC.
+  int getExtendResourceLenLimit() const override { return 1; }
 
   void setSpecialOperandAttr(MachineInstr &OldMI1, MachineInstr &OldMI2,
                              MachineInstr &NewMI1,
@@ -432,6 +462,10 @@ public:
   // Predication support.
   bool isPredicated(const MachineInstr &MI) const override;
 
+  bool isSchedulingBoundary(const MachineInstr &MI,
+                            const MachineBasicBlock *MBB,
+                            const MachineFunction &MF) const override;
+
   bool PredicateInstruction(MachineInstr &MI,
                             ArrayRef<MachineOperand> Pred) const override;
 
@@ -458,6 +492,20 @@ public:
                                     const MachineOperand *&BaseOp,
                                     int64_t &Offset, unsigned &Width,
                                     const TargetRegisterInfo *TRI) const;
+
+  /// Get the base operand and byte offset of an instruction that reads/writes
+  /// memory.
+  bool getMemOperandsWithOffsetWidth(
+      const MachineInstr &LdSt,
+      SmallVectorImpl<const MachineOperand *> &BaseOps, int64_t &Offset,
+      bool &OffsetIsScalable, unsigned &Width,
+      const TargetRegisterInfo *TRI) const override;
+
+  /// Returns true if the two given memory operations should be scheduled
+  /// adjacent.
+  bool shouldClusterMemOps(ArrayRef<const MachineOperand *> BaseOps1,
+                           ArrayRef<const MachineOperand *> BaseOps2,
+                           unsigned NumLoads, unsigned NumBytes) const override;
 
   /// Return true if two MIs access different memory addresses and false
   /// otherwise
@@ -527,15 +575,21 @@ public:
                              int64_t OffsetImm) const;
 
   /// Fixup killed/dead flag for register \p RegNo between instructions [\p
-  /// StartMI, \p EndMI]. Some PostRA transformations may violate register
-  /// killed/dead flags semantics, this function can be called to fix up. Before
-  /// calling this function,
+  /// StartMI, \p EndMI]. Some pre-RA or post-RA transformations may violate
+  /// register killed/dead flags semantics, this function can be called to fix
+  /// up. Before calling this function,
   /// 1. Ensure that \p RegNo liveness is killed after instruction \p EndMI.
   /// 2. Ensure that there is no new definition between (\p StartMI, \p EndMI)
-  ///    and possible definition for \p RegNo is \p StartMI or \p EndMI.
-  /// 3. Ensure that all instructions between [\p StartMI, \p EndMI] are in same
-  ///    basic block.
-  void fixupIsDeadOrKill(MachineInstr &StartMI, MachineInstr &EndMI,
+  ///    and possible definition for \p RegNo is \p StartMI or \p EndMI. For
+  ///    pre-RA cases, definition may be \p StartMI through COPY, \p StartMI
+  ///    will be adjust to true definition.
+  /// 3. We can do accurate fixup for the case when all instructions between
+  ///    [\p StartMI, \p EndMI] are in same basic block.
+  /// 4. For the case when \p StartMI and \p EndMI are not in same basic block,
+  ///    we conservatively clear kill flag for all uses of \p RegNo for pre-RA
+  ///    and for post-RA, we give an assertion as without reaching definition
+  ///    analysis post-RA, \p StartMI and \p EndMI are hard to keep right.
+  void fixupIsDeadOrKill(MachineInstr *StartMI, MachineInstr *EndMI,
                          unsigned RegNo) const;
   void replaceInstrWithLI(MachineInstr &MI, const LoadImmediateInfo &LII) const;
   void replaceInstrOperandWithImm(MachineInstr &MI, unsigned OpNo,

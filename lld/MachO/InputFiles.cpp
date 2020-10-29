@@ -43,15 +43,20 @@
 
 #include "InputFiles.h"
 #include "Config.h"
+#include "DriverUtils.h"
 #include "ExportTrie.h"
 #include "InputSection.h"
+#include "MachOStructs.h"
+#include "ObjC.h"
 #include "OutputSection.h"
+#include "OutputSegment.h"
 #include "SymbolTable.h"
 #include "Symbols.h"
 #include "Target.h"
 
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Memory.h"
+#include "llvm/ADT/iterator.h"
 #include "llvm/BinaryFormat/MachO.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -113,7 +118,7 @@ Optional<MemoryBufferRef> macho::readFile(StringRef path) {
   return None;
 }
 
-static const load_command *findCommand(const mach_header_64 *hdr,
+const load_command *macho::findCommand(const mach_header_64 *hdr,
                                        uint32_t type) {
   const uint8_t *p =
       reinterpret_cast<const uint8_t *>(hdr) + sizeof(mach_header_64);
@@ -134,9 +139,12 @@ void InputFile::parseSections(ArrayRef<section_64> sections) {
   for (const section_64 &sec : sections) {
     InputSection *isec = make<InputSection>();
     isec->file = this;
-    isec->name = StringRef(sec.sectname, strnlen(sec.sectname, 16));
-    isec->segname = StringRef(sec.segname, strnlen(sec.segname, 16));
-    isec->data = {buf + sec.offset, static_cast<size_t>(sec.size)};
+    isec->name =
+        StringRef(sec.sectname, strnlen(sec.sectname, sizeof(sec.sectname)));
+    isec->segname =
+        StringRef(sec.segname, strnlen(sec.segname, sizeof(sec.segname)));
+    isec->data = {isZeroFill(sec.flags) ? nullptr : buf + sec.offset,
+                  static_cast<size_t>(sec.size)};
     if (sec.align >= 32)
       error("alignment " + std::to_string(sec.align) + " of section " +
             isec->name + " is too large");
@@ -164,80 +172,113 @@ static InputSection *findContainingSubsection(SubsectionMap &map,
 void InputFile::parseRelocations(const section_64 &sec,
                                  SubsectionMap &subsecMap) {
   auto *buf = reinterpret_cast<const uint8_t *>(mb.getBufferStart());
-  ArrayRef<any_relocation_info> relInfos(
+  ArrayRef<any_relocation_info> anyRelInfos(
       reinterpret_cast<const any_relocation_info *>(buf + sec.reloff),
       sec.nreloc);
 
-  for (const any_relocation_info &anyRel : relInfos) {
-    if (anyRel.r_word0 & R_SCATTERED)
+  for (const any_relocation_info &anyRelInfo : anyRelInfos) {
+    if (anyRelInfo.r_word0 & R_SCATTERED)
       fatal("TODO: Scattered relocations not supported");
 
-    auto rel = reinterpret_cast<const relocation_info &>(anyRel);
+    auto relInfo = reinterpret_cast<const relocation_info &>(anyRelInfo);
 
     Reloc r;
-    r.type = rel.r_type;
-    r.pcrel = rel.r_pcrel;
-    uint32_t secRelOffset = rel.r_address;
-    uint64_t rawAddend =
-        target->getImplicitAddend(buf + sec.offset + secRelOffset, r.type);
+    r.type = relInfo.r_type;
+    r.pcrel = relInfo.r_pcrel;
+    r.length = relInfo.r_length;
+    uint64_t rawAddend = target->getImplicitAddend(mb, sec, relInfo);
 
-    if (rel.r_extern) {
-      r.target = symbols[rel.r_symbolnum];
+    if (relInfo.r_extern) {
+      r.referent = symbols[relInfo.r_symbolnum];
       r.addend = rawAddend;
     } else {
-      if (!rel.r_pcrel)
-        fatal("TODO: Only pcrel section relocations are supported");
-
-      if (rel.r_symbolnum == 0 || rel.r_symbolnum > subsections.size())
+      if (relInfo.r_symbolnum == 0 || relInfo.r_symbolnum > subsections.size())
         fatal("invalid section index in relocation for offset " +
               std::to_string(r.offset) + " in section " + sec.sectname +
               " of " + getName());
 
-      SubsectionMap &targetSubsecMap = subsections[rel.r_symbolnum - 1];
-      const section_64 &targetSec = sectionHeaders[rel.r_symbolnum - 1];
-      // The implicit addend for pcrel section relocations is the pcrel offset
-      // in terms of the addresses in the input file. Here we adjust it so that
-      // it describes the offset from the start of the target section.
-      // TODO: Figure out what to do for non-pcrel section relocations.
-      // TODO: The offset of 4 is probably not right for ARM64, nor for
-      //       relocations with r_length != 2.
-      uint32_t targetOffset =
-          sec.addr + secRelOffset + 4 + rawAddend - targetSec.addr;
-      r.target = findContainingSubsection(targetSubsecMap, &targetOffset);
-      r.addend = targetOffset;
+      SubsectionMap &referentSubsecMap = subsections[relInfo.r_symbolnum - 1];
+      const section_64 &referentSec = sectionHeaders[relInfo.r_symbolnum - 1];
+      uint32_t referentOffset;
+      if (relInfo.r_pcrel) {
+        // The implicit addend for pcrel section relocations is the pcrel offset
+        // in terms of the addresses in the input file. Here we adjust it so
+        // that it describes the offset from the start of the referent section.
+        // TODO: The offset of 4 is probably not right for ARM64, nor for
+        //       relocations with r_length != 2.
+        referentOffset =
+            sec.addr + relInfo.r_address + 4 + rawAddend - referentSec.addr;
+      } else {
+        // The addend for a non-pcrel relocation is its absolute address.
+        referentOffset = rawAddend - referentSec.addr;
+      }
+      r.referent = findContainingSubsection(referentSubsecMap, &referentOffset);
+      r.addend = referentOffset;
     }
 
-    InputSection *subsec = findContainingSubsection(subsecMap, &secRelOffset);
-    r.offset = secRelOffset;
+    r.offset = relInfo.r_address;
+    InputSection *subsec = findContainingSubsection(subsecMap, &r.offset);
     subsec->relocs.push_back(r);
   }
 }
 
-void InputFile::parseSymbols(ArrayRef<nlist_64> nList, const char *strtab,
-                             bool subsectionsViaSymbols) {
+static macho::Symbol *createDefined(const structs::nlist_64 &sym,
+                                    StringRef name, InputSection *isec,
+                                    uint32_t value) {
+  if (sym.n_type & N_EXT)
+    // Global defined symbol
+    return symtab->addDefined(name, isec, value, sym.n_desc & N_WEAK_DEF);
+  // Local defined symbol
+  return make<Defined>(name, isec, value, sym.n_desc & N_WEAK_DEF,
+                       /*isExternal=*/false);
+}
+
+// Absolute symbols are defined symbols that do not have an associated
+// InputSection. They cannot be weak.
+static macho::Symbol *createAbsolute(const structs::nlist_64 &sym,
+                                     StringRef name) {
+  if (sym.n_type & N_EXT)
+    return symtab->addDefined(name, nullptr, sym.n_value, /*isWeakDef=*/false);
+  return make<Defined>(name, nullptr, sym.n_value, /*isWeakDef=*/false,
+                       /*isExternal=*/false);
+}
+
+macho::Symbol *InputFile::parseNonSectionSymbol(const structs::nlist_64 &sym,
+                                                StringRef name) {
+  uint8_t type = sym.n_type & N_TYPE;
+  switch (type) {
+  case N_UNDF:
+    return sym.n_value == 0
+               ? symtab->addUndefined(name)
+               : symtab->addCommon(name, this, sym.n_value,
+                                   1 << GET_COMM_ALIGN(sym.n_desc));
+  case N_ABS:
+    return createAbsolute(sym, name);
+  case N_PBUD:
+  case N_INDR:
+    error("TODO: support symbols of type " + std::to_string(type));
+    return nullptr;
+  case N_SECT:
+    llvm_unreachable(
+        "N_SECT symbols should not be passed to parseNonSectionSymbol");
+  default:
+    llvm_unreachable("invalid symbol type");
+  }
+}
+
+void InputFile::parseSymbols(ArrayRef<structs::nlist_64> nList,
+                             const char *strtab, bool subsectionsViaSymbols) {
   // resize(), not reserve(), because we are going to create N_ALT_ENTRY symbols
   // out-of-sequence.
   symbols.resize(nList.size());
   std::vector<size_t> altEntrySymIdxs;
 
-  auto createDefined = [&](const nlist_64 &sym, InputSection *isec,
-                           uint32_t value) -> Symbol * {
-    StringRef name = strtab + sym.n_strx;
-    if (sym.n_type & N_EXT)
-      // Global defined symbol
-      return symtab->addDefined(name, isec, value);
-    else
-      // Local defined symbol
-      return make<Defined>(name, isec, value);
-  };
-
   for (size_t i = 0, n = nList.size(); i < n; ++i) {
-    const nlist_64 &sym = nList[i];
+    const structs::nlist_64 &sym = nList[i];
+    StringRef name = strtab + sym.n_strx;
 
-    // Undefined symbol
-    if (!sym.n_sect) {
-      StringRef name = strtab + sym.n_strx;
-      symbols[i] = symtab->addUndefined(name);
+    if ((sym.n_type & N_TYPE) != N_SECT) {
+      symbols[i] = parseNonSectionSymbol(sym, name);
       continue;
     }
 
@@ -249,7 +290,7 @@ void InputFile::parseSymbols(ArrayRef<nlist_64> nList, const char *strtab,
     // use the same subsection. Otherwise, we must split the sections along
     // symbol boundaries.
     if (!subsectionsViaSymbols) {
-      symbols[i] = createDefined(sym, subsecMap[0], offset);
+      symbols[i] = createDefined(sym, name, subsecMap[0], offset);
       continue;
     }
 
@@ -271,7 +312,7 @@ void InputFile::parseSymbols(ArrayRef<nlist_64> nList, const char *strtab,
     if (firstSize == 0) {
       // Alias of an existing symbol, or the first symbol in the section. These
       // are handled by reusing the existing section.
-      symbols[i] = createDefined(sym, firstIsec, 0);
+      symbols[i] = createDefined(sym, name, firstIsec, 0);
       continue;
     }
 
@@ -287,16 +328,29 @@ void InputFile::parseSymbols(ArrayRef<nlist_64> nList, const char *strtab,
 
     subsecMap[offset] = secondIsec;
     // By construction, the symbol will be at offset zero in the new section.
-    symbols[i] = createDefined(sym, secondIsec, 0);
+    symbols[i] = createDefined(sym, name, secondIsec, 0);
   }
 
   for (size_t idx : altEntrySymIdxs) {
-    const nlist_64 &sym = nList[idx];
+    const structs::nlist_64 &sym = nList[idx];
+    StringRef name = strtab + sym.n_strx;
     SubsectionMap &subsecMap = subsections[sym.n_sect - 1];
     uint32_t off = sym.n_value - sectionHeaders[sym.n_sect - 1].addr;
     InputSection *subsec = findContainingSubsection(subsecMap, &off);
-    symbols[idx] = createDefined(sym, subsec, off);
+    symbols[idx] = createDefined(sym, name, subsec, off);
   }
+}
+
+OpaqueFile::OpaqueFile(MemoryBufferRef mb, StringRef segName,
+                       StringRef sectName)
+    : InputFile(OpaqueKind, mb) {
+  InputSection *isec = make<InputSection>();
+  isec->file = this;
+  isec->name = sectName.take_front(16);
+  isec->segname = segName.take_front(16);
+  const auto *buf = reinterpret_cast<const uint8_t *>(mb.getBufferStart());
+  isec->data = {buf, mb.getBufferSize()};
+  subsections.push_back({{0, isec}});
 }
 
 ObjFile::ObjFile(MemoryBufferRef mb) : InputFile(ObjKind, mb) {
@@ -313,8 +367,8 @@ ObjFile::ObjFile(MemoryBufferRef mb) : InputFile(ObjKind, mb) {
   // TODO: Error on missing LC_SYMTAB?
   if (const load_command *cmd = findCommand(hdr, LC_SYMTAB)) {
     auto *c = reinterpret_cast<const symtab_command *>(cmd);
-    ArrayRef<nlist_64> nList(
-        reinterpret_cast<const nlist_64 *>(buf + c->symoff), c->nsyms);
+    ArrayRef<structs::nlist_64> nList(
+        reinterpret_cast<const structs::nlist_64 *>(buf + c->symoff), c->nsyms);
     const char *strtab = reinterpret_cast<const char *>(buf) + c->stroff;
     bool subsectionsViaSymbols = hdr->flags & MH_SUBSECTIONS_VIA_SYMBOLS;
     parseSymbols(nList, strtab, subsectionsViaSymbols);
@@ -324,6 +378,60 @@ ObjFile::ObjFile(MemoryBufferRef mb) : InputFile(ObjKind, mb) {
   // parsed all the symbols.
   for (size_t i = 0, n = subsections.size(); i < n; ++i)
     parseRelocations(sectionHeaders[i], subsections[i]);
+}
+
+// The path can point to either a dylib or a .tbd file.
+static Optional<DylibFile *> loadDylib(StringRef path, DylibFile *umbrella) {
+  Optional<MemoryBufferRef> mbref = readFile(path);
+  if (!mbref) {
+    error("could not read dylib file at " + path);
+    return {};
+  }
+
+  file_magic magic = identify_magic(mbref->getBuffer());
+  if (magic == file_magic::tapi_file)
+    return makeDylibFromTAPI(*mbref, umbrella);
+  assert(magic == file_magic::macho_dynamically_linked_shared_lib);
+  return make<DylibFile>(*mbref, umbrella);
+}
+
+// TBD files are parsed into a series of TAPI documents (InterfaceFiles), with
+// the first document storing child pointers to the rest of them. When we are
+// processing a given TBD file, we store that top-level document here. When
+// processing re-exports, we search its children for potentially matching
+// documents in the same TBD file. Note that the children themselves don't
+// point to further documents, i.e. this is a two-level tree.
+//
+// ld64 allows a TAPI re-export to reference documents nested within other TBD
+// files, but that seems like a strange design, so this is an intentional
+// deviation.
+const InterfaceFile *currentTopLevelTapi = nullptr;
+
+// Re-exports can either refer to on-disk files, or to documents within .tbd
+// files.
+static Optional<DylibFile *> loadReexport(StringRef path, DylibFile *umbrella) {
+  if (path::is_absolute(path, path::Style::posix))
+    for (StringRef root : config->systemLibraryRoots)
+      if (Optional<std::string> dylibPath =
+              resolveDylibPath((root + path).str()))
+        return loadDylib(*dylibPath, umbrella);
+
+  // TODO: Expand @loader_path, @executable_path etc
+
+  if (currentTopLevelTapi) {
+    for (InterfaceFile &child :
+         make_pointee_range(currentTopLevelTapi->documents())) {
+      if (path == child.getInstallName())
+        return make<DylibFile>(child, umbrella);
+      assert(child.documents().empty());
+    }
+  }
+
+  if (Optional<std::string> dylibPath = resolveDylibPath(path))
+    return loadDylib(*dylibPath, umbrella);
+
+  error("unable to locate re-export with install name " + path);
+  return {};
 }
 
 DylibFile::DylibFile(MemoryBufferRef mb, DylibFile *umbrella)
@@ -344,11 +452,17 @@ DylibFile::DylibFile(MemoryBufferRef mb, DylibFile *umbrella)
   }
 
   // Initialize symbols.
+  // TODO: if a re-exported dylib is public (lives in /usr/lib or
+  // /System/Library/Frameworks), we should bind to its symbols directly
+  // instead of the re-exporting umbrella library.
   if (const load_command *cmd = findCommand(hdr, LC_DYLD_INFO_ONLY)) {
     auto *c = reinterpret_cast<const dyld_info_command *>(cmd);
     parseTrie(buf + c->export_off, c->export_size,
               [&](const Twine &name, uint64_t flags) {
-                symbols.push_back(symtab->addDylib(saver.save(name), umbrella));
+                bool isWeakDef = flags & EXPORT_SYMBOL_FLAGS_WEAK_DEFINITION;
+                bool isTlv = flags & EXPORT_SYMBOL_FLAGS_KIND_THREAD_LOCAL;
+                symbols.push_back(symtab->addDylib(saver.save(name), umbrella,
+                                                   isWeakDef, isTlv));
               });
   } else {
     error("LC_DYLD_INFO_ONLY not found in " + getName());
@@ -369,24 +483,60 @@ DylibFile::DylibFile(MemoryBufferRef mb, DylibFile *umbrella)
     auto *c = reinterpret_cast<const dylib_command *>(cmd);
     StringRef reexportPath =
         reinterpret_cast<const char *>(c) + read32le(&c->dylib.name);
-    // TODO: Expand @loader_path, @executable_path etc in reexportPath
-    Optional<MemoryBufferRef> buffer = readFile(reexportPath);
-    if (!buffer) {
-      error("unable to read re-exported dylib at " + reexportPath);
-      return;
-    }
-    reexported.push_back(make<DylibFile>(*buffer, umbrella));
+    if (Optional<DylibFile *> reexport = loadReexport(reexportPath, umbrella))
+      reexported.push_back(*reexport);
   }
 }
 
-DylibFile::DylibFile() : InputFile(DylibKind, MemoryBufferRef()) {}
+DylibFile::DylibFile(const InterfaceFile &interface, DylibFile *umbrella)
+    : InputFile(DylibKind, interface) {
+  if (umbrella == nullptr)
+    umbrella = this;
 
-DylibFile *DylibFile::createLibSystemMock() {
-  auto *file = make<DylibFile>();
-  file->mb = MemoryBufferRef("", "/usr/lib/libSystem.B.dylib");
-  file->dylibName = "/usr/lib/libSystem.B.dylib";
-  file->symbols.push_back(symtab->addDylib("dyld_stub_binder", file));
-  return file;
+  dylibName = saver.save(interface.getInstallName());
+  auto addSymbol = [&](const Twine &name) -> void {
+    symbols.push_back(symtab->addDylib(saver.save(name), umbrella,
+                                       /*isWeakDef=*/false,
+                                       /*isTlv=*/false));
+  };
+  // TODO(compnerd) filter out symbols based on the target platform
+  // TODO: handle weak defs, thread locals
+  for (const auto symbol : interface.symbols()) {
+    if (!symbol->getArchitectures().has(config->arch))
+      continue;
+
+    switch (symbol->getKind()) {
+    case SymbolKind::GlobalSymbol:
+      addSymbol(symbol->getName());
+      break;
+    case SymbolKind::ObjectiveCClass:
+      // XXX ld64 only creates these symbols when -ObjC is passed in. We may
+      // want to emulate that.
+      addSymbol(objc::klass + symbol->getName());
+      addSymbol(objc::metaclass + symbol->getName());
+      break;
+    case SymbolKind::ObjectiveCClassEHType:
+      addSymbol(objc::ehtype + symbol->getName());
+      break;
+    case SymbolKind::ObjectiveCInstanceVariable:
+      addSymbol(objc::ivar + symbol->getName());
+      break;
+    }
+  }
+
+  bool isTopLevelTapi = false;
+  if (currentTopLevelTapi == nullptr) {
+    currentTopLevelTapi = &interface;
+    isTopLevelTapi = true;
+  }
+
+  for (InterfaceFileRef intfRef : interface.reexportedLibraries())
+    if (Optional<DylibFile *> reexport =
+            loadReexport(intfRef.getInstallName(), umbrella))
+      reexported.push_back(*reexport);
+
+  if (isTopLevelTapi)
+    currentTopLevelTapi = nullptr;
 }
 
 ArchiveFile::ArchiveFile(std::unique_ptr<llvm::object::Archive> &&f)

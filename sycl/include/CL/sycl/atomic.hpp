@@ -19,7 +19,7 @@
 #endif
 #include <type_traits>
 
-#define STATIC_ASSERT_NOT_FLOAT(T)                                             \
+#define __SYCL_STATIC_ASSERT_NOT_FLOAT(T)                                      \
   static_assert(!std::is_same<T, float>::value,                                \
                 "SYCL atomic function not available for float type")
 
@@ -46,14 +46,20 @@ template <typename T> struct IsValidAtomicType {
 };
 
 template <cl::sycl::access::address_space AS> struct IsValidAtomicAddressSpace {
-  static constexpr bool value = (AS == access::address_space::global_space ||
-                                 AS == access::address_space::local_space);
+  static constexpr bool value =
+      (AS == access::address_space::global_space ||
+       AS == access::address_space::local_space ||
+       AS == access::address_space::global_device_space);
 };
 
 // Type trait to translate a cl::sycl::access::address_space to
 // a SPIR-V memory scope
 template <access::address_space AS> struct GetSpirvMemoryScope {};
 template <> struct GetSpirvMemoryScope<access::address_space::global_space> {
+  static constexpr auto scope = __spv::Scope::Device;
+};
+template <>
+struct GetSpirvMemoryScope<access::address_space::global_device_space> {
   static constexpr auto scope = __spv::Scope::Device;
 };
 template <> struct GetSpirvMemoryScope<access::address_space::local_space> {
@@ -167,13 +173,14 @@ namespace sycl {
 template <typename T, access::address_space addressSpace =
                           access::address_space::global_space>
 class atomic {
+  friend class atomic<T, access::address_space::global_space>;
   static_assert(detail::IsValidAtomicType<T>::value,
-                "Invalid SYCL atomic type.  Valid types are: int, "
-                "unsigned int, long, unsigned long, long long,  unsigned "
+                "Invalid SYCL atomic type. Valid types are: int, "
+                "unsigned int, long, unsigned long, long long, unsigned "
                 "long long, float");
   static_assert(detail::IsValidAtomicAddressSpace<addressSpace>::value,
-                "Invalid SYCL atomic address_space.  Valid address spaces are: "
-                "global_space, local_space");
+                "Invalid SYCL atomic address_space. Valid address spaces are: "
+                "global_space, local_space, global_device_space");
   static constexpr auto SpirvScope =
       detail::GetSpirvMemoryScope<addressSpace>::scope;
 
@@ -190,6 +197,25 @@ public:
     static_assert(sizeof(T) == sizeof(pointerT),
                   "T and pointerT must be same size");
   }
+
+#ifdef __ENABLE_USM_ADDR_SPACE__
+  // Create atomic in global_space with one from global_device_space
+  template <access::address_space _Space = addressSpace,
+            typename = typename std::enable_if<
+                _Space == addressSpace &&
+                addressSpace == access::address_space::global_space>::type>
+  atomic(const atomic<T, access::address_space::global_device_space> &RHS) {
+    Ptr = RHS.Ptr;
+  }
+
+  template <access::address_space _Space = addressSpace,
+            typename = typename std::enable_if<
+                _Space == addressSpace &&
+                addressSpace == access::address_space::global_space>::type>
+  atomic(atomic<T, access::address_space::global_device_space> &&RHS) {
+    Ptr = RHS.Ptr;
+  }
+#endif // __ENABLE_USM_ADDR_SPACE__
 
   void store(T Operand, memory_order Order = memory_order::relaxed) {
     __spirv_AtomicStore(
@@ -231,7 +257,7 @@ public:
   compare_exchange_strong(T &Expected, T Desired,
                           memory_order SuccessOrder = memory_order::relaxed,
                           memory_order FailOrder = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
 #ifdef __SYCL_DEVICE_ONLY__
     T Value = __spirv_AtomicCompareExchange(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(SuccessOrder),
@@ -250,43 +276,43 @@ public:
   }
 
   T fetch_add(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicIAdd(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_sub(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicISub(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_and(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicAnd(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_or(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicOr(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_xor(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicXor(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_min(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicMin(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
 
   T fetch_max(T Operand, memory_order Order = memory_order::relaxed) {
-    STATIC_ASSERT_NOT_FLOAT(T);
+    __SYCL_STATIC_ASSERT_NOT_FLOAT(T);
     return __spirv_AtomicMax(
         Ptr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order), Operand);
   }
@@ -371,4 +397,4 @@ T atomic_fetch_max(atomic<T, addressSpace> Object, T Operand,
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)
 
-#undef STATIC_ASSERT_NOT_FLOAT
+#undef __SYCL_STATIC_ASSERT_NOT_FLOAT

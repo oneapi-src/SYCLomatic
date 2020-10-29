@@ -76,6 +76,11 @@ static cl::opt<bool> DisablePromoteAllocaToLDS(
   cl::desc("Disable promote alloca to LDS"),
   cl::init(false));
 
+static cl::opt<unsigned> PromoteAllocaToVectorLimit(
+  "amdgpu-promote-alloca-to-vector-limit",
+  cl::desc("Maximum byte size to consider promote alloca to vector"),
+  cl::init(0));
+
 // FIXME: This can create globals so should be a module pass.
 class AMDGPUPromoteAlloca : public FunctionPass {
 private:
@@ -86,6 +91,7 @@ private:
   // FIXME: This should be per-kernel.
   uint32_t LocalMemLimit = 0;
   uint32_t CurrentLocalMemUsage = 0;
+  unsigned MaxVGPRs;
 
   bool IsAMDGCN = false;
   bool IsAMDHSA = false;
@@ -129,6 +135,9 @@ public:
 };
 
 class AMDGPUPromoteAllocaToVector : public FunctionPass {
+private:
+  unsigned MaxVGPRs;
+
 public:
   static char ID;
 
@@ -185,6 +194,13 @@ bool AMDGPUPromoteAlloca::runOnFunction(Function &F) {
   const AMDGPUSubtarget &ST = AMDGPUSubtarget::get(*TM, F);
   if (!ST.isPromoteAllocaEnabled())
     return false;
+
+  if (IsAMDGCN) {
+    const GCNSubtarget &ST = TM->getSubtarget<GCNSubtarget>(F);
+    MaxVGPRs = ST.getMaxNumVGPRs(ST.getWavesPerEU(F).first);
+  } else {
+    MaxVGPRs = 128;
+  }
 
   bool SufficientLDS = hasSufficientLocalMem(F);
   bool Changed = false;
@@ -409,7 +425,8 @@ static bool canVectorizeInst(Instruction *Inst, User *User,
   }
 }
 
-static bool tryPromoteAllocaToVector(AllocaInst *Alloca, const DataLayout &DL) {
+static bool tryPromoteAllocaToVector(AllocaInst *Alloca, const DataLayout &DL,
+                                     unsigned MaxVGPRs) {
 
   if (DisablePromoteAllocaToVector) {
     LLVM_DEBUG(dbgs() << "  Promotion alloca to vector is disabled\n");
@@ -422,6 +439,16 @@ static bool tryPromoteAllocaToVector(AllocaInst *Alloca, const DataLayout &DL) {
     if (VectorType::isValidElementType(ArrayTy->getElementType()) &&
         ArrayTy->getNumElements() > 0)
       VectorTy = arrayTypeToVecType(ArrayTy);
+  }
+
+  // Use up to 1/4 of available register budget for vectorization.
+  unsigned Limit = PromoteAllocaToVectorLimit ? PromoteAllocaToVectorLimit * 8
+                                              : (MaxVGPRs * 32);
+
+  if (DL.getTypeSizeInBits(AllocaTy) * 4 > Limit) {
+    LLVM_DEBUG(dbgs() << "  Alloca too big for vectorization with "
+                      << MaxVGPRs << " registers available\n");
+    return false;
   }
 
   LLVM_DEBUG(dbgs() << "Alloca candidate for vectorization\n");
@@ -508,7 +535,7 @@ static bool tryPromoteAllocaToVector(AllocaInst *Alloca, const DataLayout &DL) {
       Value *VecValue = Builder.CreateLoad(VectorTy, BitCast);
       Value *ExtractElement = Builder.CreateExtractElement(VecValue, Index);
       if (Inst->getType() != VecEltTy)
-        ExtractElement = Builder.CreateBitCast(ExtractElement, Inst->getType());
+        ExtractElement = Builder.CreateBitOrPointerCast(ExtractElement, Inst->getType());
       Inst->replaceAllUsesWith(ExtractElement);
       Inst->eraseFromParent();
       break;
@@ -529,7 +556,7 @@ static bool tryPromoteAllocaToVector(AllocaInst *Alloca, const DataLayout &DL) {
       Value *VecValue = Builder.CreateLoad(VectorTy, BitCast);
       Value *Elt = SI->getValueOperand();
       if (Elt->getType() != VecEltTy)
-        Elt = Builder.CreateBitCast(Elt, VecEltTy);
+        Elt = Builder.CreateBitOrPointerCast(Elt, VecEltTy);
       Value *NewVecValue = Builder.CreateInsertElement(VecValue, Elt, Index);
       Builder.CreateStore(NewVecValue, BitCast);
       Inst->eraseFromParent();
@@ -578,7 +605,7 @@ bool AMDGPUPromoteAlloca::binaryOpIsDerivedFromSameAlloca(Value *BaseAlloca,
   if (isa<ConstantPointerNull>(OtherOp))
     return true;
 
-  Value *OtherObj = GetUnderlyingObject(OtherOp, *DL);
+  Value *OtherObj = getUnderlyingObject(OtherOp);
   if (!isa<AllocaInst>(OtherObj))
     return false;
 
@@ -722,34 +749,77 @@ bool AMDGPUPromoteAlloca::hasSufficientLocalMem(const Function &F) {
   if (LocalMemLimit == 0)
     return false;
 
-  const DataLayout &DL = Mod->getDataLayout();
+  SmallVector<const Constant *, 16> Stack;
+  SmallPtrSet<const Constant *, 8> VisitedConstants;
+  SmallPtrSet<const GlobalVariable *, 8> UsedLDS;
 
-  // Check how much local memory is being used by global objects
-  CurrentLocalMemUsage = 0;
+  auto visitUsers = [&](const GlobalVariable *GV, const Constant *Val) -> bool {
+    for (const User *U : Val->users()) {
+      if (const Instruction *Use = dyn_cast<Instruction>(U)) {
+        if (Use->getParent()->getParent() == &F)
+          return true;
+      } else {
+        const Constant *C = cast<Constant>(U);
+        if (VisitedConstants.insert(C).second)
+          Stack.push_back(C);
+      }
+    }
+
+    return false;
+  };
+
   for (GlobalVariable &GV : Mod->globals()) {
     if (GV.getAddressSpace() != AMDGPUAS::LOCAL_ADDRESS)
       continue;
 
-    for (const User *U : GV.users()) {
-      const Instruction *Use = dyn_cast<Instruction>(U);
-      if (!Use)
-        continue;
+    if (visitUsers(&GV, &GV)) {
+      UsedLDS.insert(&GV);
+      Stack.clear();
+      continue;
+    }
 
-      if (Use->getParent()->getParent() == &F) {
-        unsigned Align = GV.getAlignment();
-        if (Align == 0)
-          Align = DL.getABITypeAlignment(GV.getValueType());
-
-        // FIXME: Try to account for padding here. The padding is currently
-        // determined from the inverse order of uses in the function. I'm not
-        // sure if the use list order is in any way connected to this, so the
-        // total reported size is likely incorrect.
-        uint64_t AllocSize = DL.getTypeAllocSize(GV.getValueType());
-        CurrentLocalMemUsage = alignTo(CurrentLocalMemUsage, Align);
-        CurrentLocalMemUsage += AllocSize;
+    // For any ConstantExpr uses, we need to recursively search the users until
+    // we see a function.
+    while (!Stack.empty()) {
+      const Constant *C = Stack.pop_back_val();
+      if (visitUsers(&GV, C)) {
+        UsedLDS.insert(&GV);
+        Stack.clear();
         break;
       }
     }
+  }
+
+  const DataLayout &DL = Mod->getDataLayout();
+  SmallVector<std::pair<uint64_t, Align>, 16> AllocatedSizes;
+  AllocatedSizes.reserve(UsedLDS.size());
+
+  for (const GlobalVariable *GV : UsedLDS) {
+    Align Alignment =
+        DL.getValueOrABITypeAlignment(GV->getAlign(), GV->getValueType());
+    uint64_t AllocSize = DL.getTypeAllocSize(GV->getValueType());
+    AllocatedSizes.emplace_back(AllocSize, Alignment);
+  }
+
+  // Sort to try to estimate the worst case alignment padding
+  //
+  // FIXME: We should really do something to fix the addresses to a more optimal
+  // value instead
+  llvm::sort(AllocatedSizes.begin(), AllocatedSizes.end(),
+             [](std::pair<uint64_t, Align> LHS, std::pair<uint64_t, Align> RHS) {
+               return LHS.second < RHS.second;
+             });
+
+  // Check how much local memory is being used by global objects
+  CurrentLocalMemUsage = 0;
+
+  // FIXME: Try to account for padding here. The real padding and address is
+  // currently determined from the inverse order of uses in the function when
+  // legalizing, which could also potentially change. We try to estimate the
+  // worst case here, but we probably should fix the addresses earlier.
+  for (auto Alloc : AllocatedSizes) {
+    CurrentLocalMemUsage = alignTo(CurrentLocalMemUsage, Alloc.second);
+    CurrentLocalMemUsage += Alloc.first;
   }
 
   unsigned MaxOccupancy = ST.getOccupancyWithLocalMemSize(CurrentLocalMemUsage,
@@ -807,7 +877,7 @@ bool AMDGPUPromoteAlloca::handleAlloca(AllocaInst &I, bool SufficientLDS) {
 
   LLVM_DEBUG(dbgs() << "Trying to promote " << I << '\n');
 
-  if (tryPromoteAllocaToVector(&I, DL))
+  if (tryPromoteAllocaToVector(&I, DL, MaxVGPRs))
     return true; // Promoted to vector.
 
   if (DisablePromoteAllocaToLDS)
@@ -837,9 +907,8 @@ bool AMDGPUPromoteAlloca::handleAlloca(AllocaInst &I, bool SufficientLDS) {
   const AMDGPUSubtarget &ST = AMDGPUSubtarget::get(*TM, ContainingFunction);
   unsigned WorkGroupSize = ST.getFlatWorkGroupSizes(ContainingFunction).second;
 
-  unsigned Align = I.getAlignment();
-  if (Align == 0)
-    Align = DL.getABITypeAlignment(I.getAllocatedType());
+  Align Alignment =
+      DL.getValueOrABITypeAlignment(I.getAlign(), I.getAllocatedType());
 
   // FIXME: This computed padding is likely wrong since it depends on inverse
   // usage order.
@@ -847,7 +916,7 @@ bool AMDGPUPromoteAlloca::handleAlloca(AllocaInst &I, bool SufficientLDS) {
   // FIXME: It is also possible that if we're allowed to use all of the memory
   // could could end up using more than the maximum due to alignment padding.
 
-  uint32_t NewSize = alignTo(CurrentLocalMemUsage, Align);
+  uint32_t NewSize = alignTo(CurrentLocalMemUsage, Alignment);
   uint32_t AllocSize = WorkGroupSize * DL.getTypeAllocSize(AllocaTy);
   NewSize += AllocSize;
 
@@ -1018,6 +1087,23 @@ bool AMDGPUPromoteAllocaToVector::runOnFunction(Function &F) {
   if (skipFunction(F) || DisablePromoteAllocaToVector)
     return false;
 
+  const TargetMachine *TM;
+  if (auto *TPC = getAnalysisIfAvailable<TargetPassConfig>())
+    TM = &TPC->getTM<TargetMachine>();
+  else
+    return false;
+
+  const AMDGPUSubtarget &ST = AMDGPUSubtarget::get(*TM, F);
+  if (!ST.isPromoteAllocaEnabled())
+    return false;
+
+  if (TM->getTargetTriple().getArch() == Triple::amdgcn) {
+    const GCNSubtarget &ST = TM->getSubtarget<GCNSubtarget>(F);
+    MaxVGPRs = ST.getMaxNumVGPRs(ST.getWavesPerEU(F).first);
+  } else {
+    MaxVGPRs = 128;
+  }
+
   bool Changed = false;
   BasicBlock &EntryBB = *F.begin();
 
@@ -1044,7 +1130,7 @@ bool AMDGPUPromoteAllocaToVector::handleAlloca(AllocaInst &I) {
   LLVM_DEBUG(dbgs() << "Trying to promote " << I << '\n');
 
   Module *Mod = I.getParent()->getParent()->getParent();
-  return tryPromoteAllocaToVector(&I, Mod->getDataLayout());
+  return tryPromoteAllocaToVector(&I, Mod->getDataLayout(), MaxVGPRs);
 }
 
 FunctionPass *llvm::createAMDGPUPromoteAlloca() {

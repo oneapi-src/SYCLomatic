@@ -281,6 +281,7 @@ public:
   static const TST TST_int128 = clang::TST_int128;
   static const TST TST_extint = clang::TST_extint;
   static const TST TST_half = clang::TST_half;
+  static const TST TST_BFloat16 = clang::TST_BFloat16;
   static const TST TST_float = clang::TST_float;
   static const TST TST_double = clang::TST_double;
   static const TST TST_float16 = clang::TST_Float16;
@@ -2434,10 +2435,21 @@ public:
         return true;
     return false;
   }
+  /// Get the trailing return type appearing (at any level) within this
+  /// declarator.
+  ParsedType getTrailingReturnType() const {
+    for (const auto &Chunk : type_objects())
+      if (Chunk.Kind == DeclaratorChunk::Function &&
+          Chunk.Fun.hasTrailingReturnType())
+        return Chunk.Fun.getTrailingReturnType();
+    return ParsedType();
+  }
 
   /// \brief Sets a trailing requires clause for this declarator.
   void setTrailingRequiresClause(Expr *TRC) {
     TrailingRequiresClause = TRC;
+
+    SetRangeEnd(TRC->getEndLoc());
   }
 
   /// \brief Sets a trailing requires clause for this declarator.

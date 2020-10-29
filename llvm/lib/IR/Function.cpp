@@ -20,6 +20,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/IR/AbstractCallSite.h"
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
@@ -101,6 +102,12 @@ bool Argument::hasByValAttr() const {
   return hasAttribute(Attribute::ByVal);
 }
 
+bool Argument::hasByRefAttr() const {
+  if (!getType()->isPointerTy())
+    return false;
+  return hasAttribute(Attribute::ByRef);
+}
+
 bool Argument::hasSwiftSelfAttr() const {
   return getParent()->hasParamAttribute(getArgNo(), Attribute::SwiftSelf);
 }
@@ -120,12 +127,60 @@ bool Argument::hasPreallocatedAttr() const {
   return hasAttribute(Attribute::Preallocated);
 }
 
-bool Argument::hasPassPointeeByValueAttr() const {
+bool Argument::hasPassPointeeByValueCopyAttr() const {
   if (!getType()->isPointerTy()) return false;
   AttributeList Attrs = getParent()->getAttributes();
   return Attrs.hasParamAttribute(getArgNo(), Attribute::ByVal) ||
          Attrs.hasParamAttribute(getArgNo(), Attribute::InAlloca) ||
          Attrs.hasParamAttribute(getArgNo(), Attribute::Preallocated);
+}
+
+bool Argument::hasPointeeInMemoryValueAttr() const {
+  if (!getType()->isPointerTy())
+    return false;
+  AttributeList Attrs = getParent()->getAttributes();
+  return Attrs.hasParamAttribute(getArgNo(), Attribute::ByVal) ||
+         Attrs.hasParamAttribute(getArgNo(), Attribute::StructRet) ||
+         Attrs.hasParamAttribute(getArgNo(), Attribute::InAlloca) ||
+         Attrs.hasParamAttribute(getArgNo(), Attribute::Preallocated) ||
+         Attrs.hasParamAttribute(getArgNo(), Attribute::ByRef);
+}
+
+/// For a byval, sret, inalloca, or preallocated parameter, get the in-memory
+/// parameter type.
+static Type *getMemoryParamAllocType(AttributeSet ParamAttrs, Type *ArgTy) {
+  // FIXME: All the type carrying attributes are mutually exclusive, so there
+  // should be a single query to get the stored type that handles any of them.
+  if (Type *ByValTy = ParamAttrs.getByValType())
+    return ByValTy;
+  if (Type *ByRefTy = ParamAttrs.getByRefType())
+    return ByRefTy;
+  if (Type *PreAllocTy = ParamAttrs.getPreallocatedType())
+    return PreAllocTy;
+
+  // FIXME: sret and inalloca always depends on pointee element type. It's also
+  // possible for byval to miss it.
+  if (ParamAttrs.hasAttribute(Attribute::InAlloca) ||
+      ParamAttrs.hasAttribute(Attribute::ByVal) ||
+      ParamAttrs.hasAttribute(Attribute::StructRet) ||
+      ParamAttrs.hasAttribute(Attribute::Preallocated))
+    return cast<PointerType>(ArgTy)->getElementType();
+
+  return nullptr;
+}
+
+uint64_t Argument::getPassPointeeByValueCopySize(const DataLayout &DL) const {
+  AttributeSet ParamAttrs =
+      getParent()->getAttributes().getParamAttributes(getArgNo());
+  if (Type *MemTy = getMemoryParamAllocType(ParamAttrs, getType()))
+    return DL.getTypeAllocSize(MemTy);
+  return 0;
+}
+
+Type *Argument::getPointeeInMemoryValueType() const {
+  AttributeSet ParamAttrs =
+      getParent()->getAttributes().getParamAttributes(getArgNo());
+  return getMemoryParamAllocType(ParamAttrs, getType());
 }
 
 unsigned Argument::getParamAlignment() const {
@@ -141,6 +196,16 @@ MaybeAlign Argument::getParamAlign() const {
 Type *Argument::getParamByValType() const {
   assert(getType()->isPointerTy() && "Only pointers have byval types");
   return getParent()->getParamByValType(getArgNo());
+}
+
+Type *Argument::getParamStructRetType() const {
+  assert(getType()->isPointerTy() && "Only pointers have sret types");
+  return getParent()->getParamStructRetType(getArgNo());
+}
+
+Type *Argument::getParamByRefType() const {
+  assert(getType()->isPointerTy() && "Only pointers have byval types");
+  return getParent()->getParamByRefType(getArgNo());
 }
 
 uint64_t Argument::getDereferenceableBytes() const {
@@ -512,6 +577,21 @@ void Function::addDereferenceableOrNullParamAttr(unsigned ArgNo,
   setAttributes(PAL);
 }
 
+DenormalMode Function::getDenormalMode(const fltSemantics &FPType) const {
+  if (&FPType == &APFloat::IEEEsingle()) {
+    Attribute Attr = getFnAttribute("denormal-fp-math-f32");
+    StringRef Val = Attr.getValueAsString();
+    if (!Val.empty())
+      return parseDenormalFPAttribute(Val);
+
+    // If the f32 variant of the attribute isn't specified, try to use the
+    // generic one.
+  }
+
+  Attribute Attr = getFnAttribute("denormal-fp-math");
+  return parseDenormalFPAttribute(Attr.getValueAsString());
+}
+
 const std::string &Function::getGC() const {
   assert(hasGC() && "Function has no collector");
   return getContext().getGC(*this);
@@ -559,6 +639,10 @@ static const char * const IntrinsicNameTable[] = {
 #define GET_INTRINSIC_TARGET_DATA
 #include "llvm/IR/IntrinsicImpl.inc"
 #undef GET_INTRINSIC_TARGET_DATA
+
+bool Function::isTargetIntrinsic() const {
+  return IntID > TargetInfos[0].Count;
+}
 
 /// Find the segment of \c IntrinsicNameTable for intrinsics with the same
 /// target as \c Name, or the generic table if \c Name is not target specific.
@@ -652,9 +736,10 @@ static std::string getMangledTypeStr(Type* Ty) {
     Result += "f";
   } else if (VectorType* VTy = dyn_cast<VectorType>(Ty)) {
     ElementCount EC = VTy->getElementCount();
-    if (EC.Scalable)
+    if (EC.isScalable())
       Result += "nx";
-    Result += "v" + utostr(EC.Min) + getMangledTypeStr(VTy->getElementType());
+    Result += "v" + utostr(EC.getKnownMinValue()) +
+              getMangledTypeStr(VTy->getElementType());
   } else if (Ty) {
     switch (Ty->getTypeID()) {
     default: llvm_unreachable("Unhandled type");
@@ -748,18 +833,17 @@ enum IIT_Info {
   IIT_SUBDIVIDE4_ARG = 45,
   IIT_VEC_OF_BITCASTS_TO_INT = 46,
   IIT_V128 = 47,
-  IIT_BF16 = 48
+  IIT_BF16 = 48,
+  IIT_STRUCT9 = 49,
+  IIT_V256 = 50
 };
 
 static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
+                      IIT_Info LastInfo,
                       SmallVectorImpl<Intrinsic::IITDescriptor> &OutputTable) {
   using namespace Intrinsic;
 
-  bool IsScalableVector = false;
-  if (NextElt > 0) {
-    IIT_Info LastInfo = IIT_Info(Infos[NextElt - 1]);
-    IsScalableVector = (LastInfo == IIT_SCALABLE_VEC);
-  }
+  bool IsScalableVector = (LastInfo == IIT_SCALABLE_VEC);
 
   IIT_Info Info = IIT_Info(Infos[NextElt++]);
   unsigned StructElts = 2;
@@ -815,52 +899,56 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
     return;
   case IIT_V1:
     OutputTable.push_back(IITDescriptor::getVector(1, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V2:
     OutputTable.push_back(IITDescriptor::getVector(2, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V4:
     OutputTable.push_back(IITDescriptor::getVector(4, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V8:
     OutputTable.push_back(IITDescriptor::getVector(8, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V16:
     OutputTable.push_back(IITDescriptor::getVector(16, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V32:
     OutputTable.push_back(IITDescriptor::getVector(32, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V64:
     OutputTable.push_back(IITDescriptor::getVector(64, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V128:
     OutputTable.push_back(IITDescriptor::getVector(128, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
+    return;
+  case IIT_V256:
+    OutputTable.push_back(IITDescriptor::getVector(256, IsScalableVector));
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V512:
     OutputTable.push_back(IITDescriptor::getVector(512, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V1024:
     OutputTable.push_back(IITDescriptor::getVector(1024, IsScalableVector));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_PTR:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer, 0));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_ANYPTR: {  // [ANYPTR addrspace, subtype]
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer,
                                              Infos[NextElt++]));
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   }
   case IIT_ARG: {
@@ -913,6 +1001,7 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
   case IIT_EMPTYSTRUCT:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Struct, 0));
     return;
+  case IIT_STRUCT9: ++StructElts; LLVM_FALLTHROUGH;
   case IIT_STRUCT8: ++StructElts; LLVM_FALLTHROUGH;
   case IIT_STRUCT7: ++StructElts; LLVM_FALLTHROUGH;
   case IIT_STRUCT6: ++StructElts; LLVM_FALLTHROUGH;
@@ -923,7 +1012,7 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Struct,StructElts));
 
     for (unsigned i = 0; i != StructElts; ++i)
-      DecodeIITType(NextElt, Infos, OutputTable);
+      DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   }
   case IIT_SUBDIVIDE2_ARG: {
@@ -945,7 +1034,7 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
     return;
   }
   case IIT_SCALABLE_VEC: {
-    DecodeIITType(NextElt, Infos, OutputTable);
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   }
   case IIT_VEC_OF_BITCASTS_TO_INT: {
@@ -990,9 +1079,9 @@ void Intrinsic::getIntrinsicInfoTableEntries(ID id,
   }
 
   // Okay, decode the table into the output vector of IITDescriptors.
-  DecodeIITType(NextElt, IITEntries, T);
+  DecodeIITType(NextElt, IITEntries, IIT_Done, T);
   while (NextElt != IITEntries.size() && IITEntries[NextElt] != 0)
-    DecodeIITType(NextElt, IITEntries, T);
+    DecodeIITType(NextElt, IITEntries, IIT_Done, T);
 }
 
 static Type *DecodeFixedType(ArrayRef<Intrinsic::IITDescriptor> &Infos,
@@ -1337,10 +1426,10 @@ static bool matchIntrinsicType(
       // Verify the overloaded type "matches" the Ref type.
       // i.e. Ty is a vector with the same width as Ref.
       // Composed of pointers to the same element type as Ref.
-      VectorType *ReferenceType = dyn_cast<VectorType>(ArgTys[RefArgNumber]);
-      VectorType *ThisArgVecTy = dyn_cast<VectorType>(Ty);
+      auto *ReferenceType = dyn_cast<VectorType>(ArgTys[RefArgNumber]);
+      auto *ThisArgVecTy = dyn_cast<VectorType>(Ty);
       if (!ThisArgVecTy || !ReferenceType ||
-          (ReferenceType->getNumElements() != ThisArgVecTy->getNumElements()))
+          (ReferenceType->getElementCount() != ThisArgVecTy->getElementCount()))
         return true;
       PointerType *ThisArgEltTy =
           dyn_cast<PointerType>(ThisArgVecTy->getElementType());
@@ -1427,42 +1516,60 @@ Intrinsic::matchIntrinsicVarArg(bool isVarArg,
   return true;
 }
 
-Optional<Function*> Intrinsic::remangleIntrinsicFunction(Function *F) {
+bool Intrinsic::getIntrinsicSignature(Function *F,
+                                      SmallVectorImpl<Type *> &ArgTys) {
   Intrinsic::ID ID = F->getIntrinsicID();
   if (!ID)
+    return false;
+
+  SmallVector<Intrinsic::IITDescriptor, 8> Table;
+  getIntrinsicInfoTableEntries(ID, Table);
+  ArrayRef<Intrinsic::IITDescriptor> TableRef = Table;
+
+  if (Intrinsic::matchIntrinsicSignature(F->getFunctionType(), TableRef,
+                                         ArgTys) !=
+      Intrinsic::MatchIntrinsicTypesResult::MatchIntrinsicTypes_Match) {
+    return false;
+  }
+  if (Intrinsic::matchIntrinsicVarArg(F->getFunctionType()->isVarArg(),
+                                      TableRef))
+    return false;
+  return true;
+}
+
+Optional<Function *> Intrinsic::remangleIntrinsicFunction(Function *F) {
+  SmallVector<Type *, 4> ArgTys;
+  if (!getIntrinsicSignature(F, ArgTys))
     return None;
 
-  FunctionType *FTy = F->getFunctionType();
-  // Accumulate an array of overloaded types for the given intrinsic
-  SmallVector<Type *, 4> ArgTys;
-  {
-    SmallVector<Intrinsic::IITDescriptor, 8> Table;
-    getIntrinsicInfoTableEntries(ID, Table);
-    ArrayRef<Intrinsic::IITDescriptor> TableRef = Table;
-
-    if (Intrinsic::matchIntrinsicSignature(FTy, TableRef, ArgTys))
-      return None;
-    if (Intrinsic::matchIntrinsicVarArg(FTy->isVarArg(), TableRef))
-      return None;
-  }
-
+  Intrinsic::ID ID = F->getIntrinsicID();
   StringRef Name = F->getName();
   if (Name == Intrinsic::getName(ID, ArgTys))
     return None;
 
   auto NewDecl = Intrinsic::getDeclaration(F->getParent(), ID, ArgTys);
   NewDecl->setCallingConv(F->getCallingConv());
-  assert(NewDecl->getFunctionType() == FTy && "Shouldn't change the signature");
+  assert(NewDecl->getFunctionType() == F->getFunctionType() &&
+         "Shouldn't change the signature");
   return NewDecl;
 }
 
 /// hasAddressTaken - returns true if there are any uses of this function
-/// other than direct calls or invokes to it.
-bool Function::hasAddressTaken(const User* *PutOffender) const {
+/// other than direct calls or invokes to it. Optionally ignores callback
+/// uses.
+bool Function::hasAddressTaken(const User **PutOffender,
+                               bool IgnoreCallbackUses) const {
   for (const Use &U : uses()) {
     const User *FU = U.getUser();
     if (isa<BlockAddress>(FU))
       continue;
+
+    if (IgnoreCallbackUses) {
+      AbstractCallSite ACS(&U);
+      if (ACS && ACS.isCallbackCall())
+        continue;
+    }
+
     const auto *Call = dyn_cast<CallBase>(FU);
     if (!Call) {
       if (PutOffender)

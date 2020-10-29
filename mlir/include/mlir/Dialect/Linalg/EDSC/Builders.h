@@ -14,8 +14,6 @@
 #define MLIR_DIALECT_LINALG_EDSC_BUILDERS_H_
 
 #include "mlir/Dialect/Linalg/IR/LinalgOps.h"
-// TODO(ntv): Needed for SubViewOp::Range, clean this up.
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Utils/StructuredOpsUtils.h"
 #include "mlir/EDSC/Builders.h"
 #include "mlir/IR/AffineExpr.h"
@@ -24,41 +22,16 @@
 namespace mlir {
 class AffineForOp;
 class BlockArgument;
-class SubViewOp;
 
 namespace scf {
 class ParallelOp;
 } // namespace scf
 
 namespace edsc {
-class AffineLoopNestBuilder;
-class LoopNestBuilder;
-class ParallelLoopNestBuilder;
+inline void defaultRegionBuilder(ValueRange args) {}
 
-/// Helper template class for building scf.for and affine.loop nests from
-/// ranges.
-template <typename LoopTy> class GenericLoopNestRangeBuilder {
-public:
-  GenericLoopNestRangeBuilder(MutableArrayRef<Value> ivs,
-                              ArrayRef<SubViewOp::Range> ranges);
-  void operator()(std::function<void(void)> fun = nullptr) { (*builder)(fun); }
-
-private:
-  using LoopOrAffineLoopBuilder =
-      typename std::conditional_t<std::is_same<LoopTy, AffineForOp>::value,
-                                  AffineLoopNestBuilder, LoopNestBuilder>;
-  using BuilderType =
-      typename std::conditional_t<std::is_same<LoopTy, scf::ParallelOp>::value,
-                                  ParallelLoopNestBuilder,
-                                  LoopOrAffineLoopBuilder>;
-
-  std::unique_ptr<BuilderType> builder;
-};
-
-inline void defaultRegionBuilder(ArrayRef<BlockArgument> args) {}
-
-/// Build a `linalg.generic` op with the specified `inputs`, `outputs` and
-/// `region`.
+/// Build a `linalg.generic` op with the specified `inputs`, `outputBuffers`,
+/// `initTensors`, `resultTensorsTypes` and `region`.
 ///
 /// `otherValues` and `otherAttributes` may be passed and will be appended as
 /// operands and attributes respectively.
@@ -68,16 +41,16 @@ inline void defaultRegionBuilder(ArrayRef<BlockArgument> args) {}
 ///
 /// 1. `inputs` may contain StructuredIndexed that capture either buffer or
 /// tensor values.
-/// 2. `outputs` may contain StructuredIndexed that capture either buffer values
-/// or tensor types. If both buffer values and tensor types are present, then
-/// all buffer values must appear before any tensor type. Without this
-/// restriction output tensor results would need to be reordered, which would
-/// result in surprising behavior when combined with region definition.
+/// 2. `outputsBuffers` may contain StructuredIndexed that capture buffer
+/// values.
+/// 3. `initTensors` contain tensor values, without indexing maps.
+/// 4. `resultTensorTypes` may contain StructuredIndexed that capture return
+/// tensor types.
 Operation *makeGenericLinalgOp(
     ArrayRef<IteratorType> iteratorTypes, ArrayRef<StructuredIndexed> inputs,
-    ArrayRef<StructuredIndexed> outputs,
-    function_ref<void(ArrayRef<BlockArgument>)> regionBuilder =
-        defaultRegionBuilder,
+    ArrayRef<StructuredIndexed> outputBuffers, ArrayRef<Value> initTensors,
+    ArrayRef<StructuredIndexed> resultTensorTypes,
+    function_ref<void(ValueRange)> regionBuilder = defaultRegionBuilder,
     ArrayRef<Value> otherValues = {}, ArrayRef<Attribute> otherAttributes = {});
 
 namespace ops {
@@ -89,13 +62,13 @@ using edsc::StructuredIndexed;
 
 /// Build the body of a region to compute a scalar multiply, under the current
 /// ScopedContext, at the current insert point.
-void mulRegionBuilder(ArrayRef<BlockArgument> args);
+void mulRegionBuilder(ValueRange args);
 
 /// Build the body of a region to compute a scalar multiply-accumulate, under
 /// the current ScopedContext, at the current insert point.
-void macRegionBuilder(ArrayRef<BlockArgument> args);
+void macRegionBuilder(ValueRange args);
 
-/// TODO(ntv): In the future we should tie these implementations to something in
+/// TODO: In the future we should tie these implementations to something in
 /// Tablegen that generates the proper interfaces and the proper sugared named
 /// ops.
 
@@ -147,9 +120,9 @@ Operation *linalg_generic_pointwise_max(StructuredIndexed I1,
                                         StructuredIndexed I2,
                                         StructuredIndexed O);
 
-// TODO(ntv): Implement more useful pointwise operations on a per-need basis.
+// TODO: Implement more useful pointwise operations on a per-need basis.
 
-using MatmulRegionBuilder = function_ref<void(ArrayRef<BlockArgument> args)>;
+using MatmulRegionBuilder = function_ref<void(ValueRange args)>;
 
 /// Build a linalg.generic, under the current ScopedContext, at the current
 /// insert point, that computes:
@@ -161,18 +134,6 @@ using MatmulRegionBuilder = function_ref<void(ArrayRef<BlockArgument> args)>;
 Operation *
 linalg_generic_matmul(Value vA, Value vB, Value vC,
                       MatmulRegionBuilder regionBuilder = macRegionBuilder);
-
-/// Build a linalg.generic, under the current ScopedContext, at the current
-/// insert point, that computes:
-/// ```
-///    (m, n, k) = (par, par, seq)
-///    |
-///    |  C(m, n) = sum_k(A(m, k) * B(k, n))
-/// ```
-/// and returns the tensor `C`.
-Operation *
-linalg_generic_matmul(Value vA, Value vB, RankedTensorType tC,
-                      MatmulRegionBuilder regionBuilder = mulRegionBuilder);
 
 /// Build a linalg.generic, under the current ScopedContext, at the current
 /// insert point, that computes:
@@ -215,7 +176,7 @@ linalg_generic_matmul(Container values,
 ///
 /// For now `...` must be empty (i.e. only 2-D convolutions are supported).
 ///
-// TODO(ntv) Extend convolution rank with some template magic.
+// TODO: Extend convolution rank with some template magic.
 Operation *linalg_generic_conv_nhwc(Value vI, Value vW, Value vO,
                                     ArrayRef<int> strides = {},
                                     ArrayRef<int> dilations = {});
@@ -250,7 +211,7 @@ Operation *linalg_generic_conv_nhwc(Container values,
 ///
 /// For now `...` must be empty (i.e. only 2-D convolutions are supported).
 ///
-// TODO(ntv) Extend convolution rank with some template magic.
+// TODO: Extend convolution rank with some template magic.
 Operation *linalg_generic_dilated_conv_nhwc(Value vI, Value vW, Value vO,
                                             int depth_multiplier = 1,
                                             ArrayRef<int> strides = {},

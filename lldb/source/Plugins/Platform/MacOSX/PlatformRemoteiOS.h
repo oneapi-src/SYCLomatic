@@ -20,8 +20,6 @@ class PlatformRemoteiOS : public PlatformRemoteDarwinDevice {
 public:
   PlatformRemoteiOS();
 
-  ~PlatformRemoteiOS() override = default;
-
   // Class Functions
   static lldb::PlatformSP CreateInstance(bool force,
                                          const lldb_private::ArchSpec *arch);
@@ -55,9 +53,6 @@ protected:
   void GetDeviceSupportDirectoryNames (std::vector<std::string> &dirnames) override;
 
   std::string GetPlatformName () override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(PlatformRemoteiOS);
 };
 
 #endif // LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMREMOTEIOS_H

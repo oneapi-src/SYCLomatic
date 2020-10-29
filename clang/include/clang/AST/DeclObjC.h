@@ -320,6 +320,13 @@ public:
     return const_cast<ObjCMethodDecl*>(this)->getClassInterface();
   }
 
+  /// If this method is declared or implemented in a category, return
+  /// that category.
+  ObjCCategoryDecl *getCategory();
+  const ObjCCategoryDecl *getCategory() const {
+    return const_cast<ObjCMethodDecl*>(this)->getCategory();
+  }
+
   Selector getSelector() const { return getDeclName().getObjCSelector(); }
 
   QualType getReturnType() const { return MethodDeclType; }
@@ -2171,6 +2178,14 @@ public:
     data().ReferencedProtocols.set(List, Num, Locs, C);
   }
 
+  /// This is true iff the protocol is tagged with the
+  /// `objc_non_runtime_protocol` attribute.
+  bool isNonRuntimeProtocol() const;
+
+  /// Get the set of all protocols implied by this protocols inheritance
+  /// hierarchy.
+  void getImpliedProtocols(llvm::DenseSet<const ObjCProtocolDecl *> &IPs) const;
+
   ObjCProtocolDecl *lookupProtocolNamed(IdentifierInfo *PName);
 
   // Lookup a method. First, we search locally. If a method isn't
@@ -2883,11 +2898,11 @@ ObjCInterfaceDecl::filtered_category_iterator<Filter>::operator++() {
 }
 
 inline bool ObjCInterfaceDecl::isVisibleCategory(ObjCCategoryDecl *Cat) {
-  return !Cat->isHidden();
+  return Cat->isUnconditionallyVisible();
 }
 
 inline bool ObjCInterfaceDecl::isVisibleExtension(ObjCCategoryDecl *Cat) {
-  return Cat->IsClassExtension() && !Cat->isHidden();
+  return Cat->IsClassExtension() && Cat->isUnconditionallyVisible();
 }
 
 inline bool ObjCInterfaceDecl::isKnownExtension(ObjCCategoryDecl *Cat) {

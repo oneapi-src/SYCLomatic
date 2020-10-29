@@ -7,7 +7,6 @@ set(LIBCXXABI_SOURCES
   cxa_exception_storage.cpp
   cxa_guard.cpp
   cxa_handlers.cpp
-  cxa_unexpected.cpp
   cxa_vector.cpp
   cxa_virtual.cpp
   # C++ STL files
@@ -21,7 +20,9 @@ set(LIBCXXABI_SOURCES
 )
 
 if (LIBCXXABI_ENABLE_NEW_DELETE_DEFINITIONS)
-  list(APPEND LIBCXXABI_SOURCES stdlib_new_delete.cpp)
+  list(APPEND LIBCXXABI_SOURCES
+    stdlib_new_delete.cpp
+  )
 endif()
 
 if (LIBCXXABI_ENABLE_EXCEPTIONS)
@@ -135,6 +136,17 @@ if ( APPLE )
       add_link_flags("-Wl,-rpath,${LIBDIR}")
     endif()
   endif()
+
+  # Make sure we link in CrashReporterClient if we find it -- it's used by
+  # abort() on Apple platforms when building the system dylib.
+  find_library(CrashReporterClient NAMES libCrashReporterClient.a
+                                   PATHS "${CMAKE_OSX_SYSROOT}/usr/local/lib")
+  if (CrashReporterClient)
+    message(STATUS "Linking with CrashReporterClient at ${CrashReporterClient}")
+    add_library_flags("${CrashReporterClient}")
+  else()
+    message(STATUS "Could not find CrashReporterClient, not linking against it")
+  endif()
 endif()
 
 split_list(LIBCXXABI_COMPILE_FLAGS)
@@ -165,7 +177,7 @@ if (LIBCXXABI_ENABLE_SHARED)
                           CXX_EXTENSIONS
                             OFF
                           CXX_STANDARD
-                            11
+                            17
                           CXX_STANDARD_REQUIRED
                             ON
                           COMPILE_FLAGS
@@ -192,19 +204,27 @@ if (LIBCXXABI_ENABLE_SHARED)
 
   # -exported_symbols_list is only available on Apple platforms
   if (APPLE)
-    target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../lib/itanium-base.exp")
+    function(export_symbols file)
+      target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${file}")
+    endfunction()
+    function(reexport_symbols file)
+      export_symbols("${file}")
+      target_link_libraries(cxxabi_shared INTERFACE "-Wl,-reexported_symbols_list,${file}")
+    endfunction()
+
+    export_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/itanium-base.exp")
 
     if (LIBCXXABI_ENABLE_NEW_DELETE_DEFINITIONS)
-      target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../lib/new-delete.exp")
+      reexport_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/new-delete.exp")
     endif()
 
     if (LIBCXXABI_ENABLE_EXCEPTIONS)
-      target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../lib/exceptions.exp")
+      reexport_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/exceptions.exp")
 
       if ("${CMAKE_OSX_ARCHITECTURES}" MATCHES "^(armv6|armv7|armv7s)$")
-        target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../lib/personality-sjlj.exp")
+        reexport_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/personality-sjlj.exp")
       else()
-        target_link_libraries(cxxabi_shared PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../lib/personality-v0.exp")
+        reexport_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/personality-v0.exp")
       endif()
     endif()
   endif()
@@ -222,7 +242,7 @@ if (LIBCXXABI_ENABLE_STATIC)
                           CXX_EXTENSIONS
                             OFF
                           CXX_STANDARD
-                            11
+                            17
                           CXX_STANDARD_REQUIRED
                             ON
                           COMPILE_FLAGS

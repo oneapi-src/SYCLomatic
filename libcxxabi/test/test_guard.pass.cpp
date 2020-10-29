@@ -14,6 +14,8 @@
 #include <thread>
 #endif
 
+#include "test_macros.h"
+
 // Ensure that we initialize each variable once and only once.
 namespace test1 {
     static int run_count = 0;
@@ -40,7 +42,7 @@ namespace test1 {
 // When initialization fails, ensure that we try to initialize it again next
 // time.
 namespace test2 {
-#ifndef LIBCXXABI_HAS_NO_EXCEPTIONS
+#ifndef TEST_HAS_NO_EXCEPTIONS
     static int run_count = 0;
     int increment() {
         ++run_count;
@@ -134,7 +136,7 @@ namespace test5 {
 }
 #endif /* _LIBCXXABI_HAS_NO_THREADS */
 
-int main()
+int main(int, char**)
 {
     test1::test();
     test2::test();
@@ -143,4 +145,6 @@ int main()
     test4::test();
     test5::test();
 #endif
+
+    return 0;
 }

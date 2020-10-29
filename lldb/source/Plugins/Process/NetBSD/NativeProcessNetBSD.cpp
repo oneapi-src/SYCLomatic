@@ -95,7 +95,7 @@ NativeProcessNetBSD::Factory::Launch(ProcessLaunchInfo &launch_info,
            Info.GetArchitecture().GetArchitectureName());
 
   std::unique_ptr<NativeProcessNetBSD> process_up(new NativeProcessNetBSD(
-      pid, launch_info.GetPTY().ReleaseMasterFileDescriptor(), native_delegate,
+      pid, launch_info.GetPTY().ReleasePrimaryFileDescriptor(), native_delegate,
       Info.GetArchitecture(), mainloop));
 
   // Enable event reporting
@@ -682,15 +682,6 @@ Status NativeProcessNetBSD::PopulateMemoryRegionCache() {
   // We support memory retrieval, remember that.
   m_supports_mem_region = LazyBool::eLazyBoolYes;
   return Status();
-}
-
-Status NativeProcessNetBSD::AllocateMemory(size_t size, uint32_t permissions,
-                                           lldb::addr_t &addr) {
-  return Status("Unimplemented");
-}
-
-Status NativeProcessNetBSD::DeallocateMemory(lldb::addr_t addr) {
-  return Status("Unimplemented");
 }
 
 lldb::addr_t NativeProcessNetBSD::GetSharedLibraryInfoAddress() {

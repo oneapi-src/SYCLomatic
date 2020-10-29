@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <CL/sycl/aspects.hpp>
 #include <CL/sycl/backend_types.hpp>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/export.hpp>
@@ -176,9 +177,16 @@ public:
   /// \return a native handle, the type of which defined by the backend.
   template <backend BackendName>
   auto get_native() const -> typename interop<BackendName, device>::type {
-    return static_cast<typename interop<BackendName, device>::type>(
-        getNative());
+    return (typename interop<BackendName, device>::type)getNative();
   }
+
+  /// Indicates if the SYCL device has the given feature.
+  ///
+  /// \param Aspect is one of the values in Table 4.20 of the SYCL 2020
+  /// Provisional Spec.
+  ///
+  /// \return true if the SYCL device has the given feature.
+  bool has(aspect Aspect) const;
 
 private:
   shared_ptr_class<detail::device_impl> impl;

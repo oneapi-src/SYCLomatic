@@ -311,7 +311,8 @@ private:
     // Try to merge a control statement block with left brace wrapped
     if (I[1]->First->is(tok::l_brace) &&
         (TheLine->First->isOneOf(tok::kw_if, tok::kw_while, tok::kw_for,
-                                 tok::kw_switch, tok::kw_try, tok::kw_do) ||
+                                 tok::kw_switch, tok::kw_try, tok::kw_do,
+                                 TT_ForEachMacro) ||
          (TheLine->First->is(tok::r_brace) && TheLine->First->Next &&
           TheLine->First->Next->isOneOf(tok::kw_else, tok::kw_catch))) &&
         Style.BraceWrapping.AfterControlStatement ==
@@ -344,21 +345,21 @@ private:
                  ? 1
                  : 0;
     }
+#ifdef INTEL_CUSTOMIZATION
+    // Add below code to resolve pulldown failure.
+    // Ref: https://reviews.llvm.org/D71512
+
     // Try to merge either empty or one-line block if is precedeed by control
     // statement token
-    if (TheLine->First->is(tok::l_brace) && TheLine->First == TheLine->Last &&
-        I != AnnotatedLines.begin() &&
-        I[-1]->First->isOneOf(tok::kw_if, tok::kw_while, tok::kw_for)) {
-      unsigned MergedLines = 0;
-      if (Style.AllowShortBlocksOnASingleLine != FormatStyle::SBS_Never) {
-        MergedLines = tryMergeSimpleBlock(I - 1, E, Limit);
-        // If we managed to merge the block, discard the first merged line
-        // since we are merging starting from I.
-        if (MergedLines > 0)
-          --MergedLines;
+    if (formatRangeGetter() == FormatRange::migrated &&
+        !clang::format::BlockLevelFormatFlag) {
+      if (TheLine->First->is(tok::l_brace) && TheLine->First == TheLine->Last &&
+          I != AnnotatedLines.begin() &&
+          I[-1]->First->isOneOf(tok::kw_if, tok::kw_while, tok::kw_for)) {
+        return 0;
       }
-      return MergedLines;
     }
+#endif 
     // Don't merge block with left brace wrapped after ObjC special blocks
     if (TheLine->First->is(tok::l_brace) && I != AnnotatedLines.begin() &&
         I[-1]->First->is(tok::at) && I[-1]->First->Next) {
@@ -623,7 +624,7 @@ private:
         if (I[1]->Last->is(TT_LineComment))
           return 0;
         do {
-          if (Tok->is(tok::l_brace) && Tok->BlockKind != BK_BracedInit)
+          if (Tok->is(tok::l_brace) && Tok->isNot(BK_BracedInit))
             return 0;
           Tok = Tok->Next;
         } while (Tok);
@@ -784,8 +785,8 @@ protected:
                       unsigned &Penalty) {
     const FormatToken *LBrace = State.NextToken->getPreviousNonComment();
     FormatToken &Previous = *State.NextToken->Previous;
-    if (!LBrace || LBrace->isNot(tok::l_brace) ||
-        LBrace->BlockKind != BK_Block || Previous.Children.size() == 0)
+    if (!LBrace || LBrace->isNot(tok::l_brace) || LBrace->isNot(BK_Block) ||
+        Previous.Children.size() == 0)
       // The previous token does not open a block. Nothing to do. We don't
       // assert so that we can simply call this function for all tokens.
       return true;
@@ -996,7 +997,7 @@ private:
         // State already examined with lower penalty.
         continue;
 
-      FormatDecision LastFormat = Node->State.NextToken->Decision;
+      FormatDecision LastFormat = Node->State.NextToken->getDecision();
       if (LastFormat == FD_Unformatted || LastFormat == FD_Continue)
         addNextStateToQueue(Penalty, Node, /*NewLine=*/false, &Count, &Queue);
       if (LastFormat == FD_Unformatted || LastFormat == FD_Break)
@@ -1279,7 +1280,8 @@ void UnwrappedLineFormatter::formatFirstToken(
 
   // If in Whitemsmiths mode, indent start and end of blocks
   if (Style.BreakBeforeBraces == FormatStyle::BS_Whitesmiths) {
-    if (RootToken.isOneOf(tok::l_brace, tok::r_brace, tok::kw_case))
+    if (RootToken.isOneOf(tok::l_brace, tok::r_brace, tok::kw_case,
+                          tok::kw_default))
       Indent += Style.IndentWidth;
   }
 

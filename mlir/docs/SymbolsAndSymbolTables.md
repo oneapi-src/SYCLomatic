@@ -37,10 +37,10 @@ link, or use, to the symbol. An example of a `Symbol` operation is
 
 ### Defining a Symbol
 
-A `Symbol` operation may use the `OpTrait::Symbol` trait to provide the
-necessary verification and accessors, but this is not required as some
-operations, such as `module`, conditionally define a symbol. `Symbol`s must have
-the following properties:
+A `Symbol` operation should use the `SymbolOpInterface` interface to provide the
+necessary verification and accessors; it also supports
+operations, such as `module`, that conditionally define a symbol. `Symbol`s must
+have the following properties:
 
 *   A `StringAttr` attribute named
     'SymbolTable::getSymbolAttrName()'(`sym_name`).
@@ -141,6 +141,10 @@ such an operation.
 See the `LangRef` definition of the
 [`SymbolRefAttr`](LangRef.md#symbol-reference-attribute) for more information
 about the structure of this attribute.
+
+Operations that reference a `Symbol` and want to perform verification and
+general mutation of the symbol should implement the `SymbolUserOpInterface` to
+ensure that symbol accesses are legal and efficient.
 
 ### Manipulating a Symbol
 

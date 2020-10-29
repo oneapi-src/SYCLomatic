@@ -59,15 +59,27 @@ struct Edge {
 
 struct ExportInfo {
   uint64_t address;
-  // TODO: Add proper support for re-exports & stub-and-resolver flags.
+  uint8_t flags = 0;
+  ExportInfo(const Symbol &sym, uint64_t imageBase)
+      : address(sym.getVA() - imageBase) {
+    // Set the symbol type.
+    if (sym.isWeakDef())
+      flags |= EXPORT_SYMBOL_FLAGS_WEAK_DEFINITION;
+    // TODO: Add proper support for re-exports & stub-and-resolver flags.
+
+    // Set the symbol kind.
+    if (sym.isTlv()) {
+      flags |= EXPORT_SYMBOL_FLAGS_KIND_THREAD_LOCAL;
+    } else if (auto *defined = dyn_cast<Defined>(&sym)) {
+      if (defined->isAbsolute())
+        flags |= EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE;
+    }
+  }
 };
 
 } // namespace
 
-namespace lld {
-namespace macho {
-
-struct TrieNode {
+struct macho::TrieNode {
   std::vector<Edge> edges;
   Optional<ExportInfo> info;
   // Estimated offset from the start of the serialized trie to the current node.
@@ -86,9 +98,8 @@ bool TrieNode::updateOffset(size_t &nextOffset) {
   // node.
   size_t nodeSize;
   if (info) {
-    uint64_t flags = 0;
     uint32_t terminalSize =
-        getULEB128Size(flags) + getULEB128Size(info->address);
+        getULEB128Size(info->flags) + getULEB128Size(info->address);
     // Overall node size so far is the uleb128 size of the length of the symbol
     // info + the symbol info itself.
     nodeSize = terminalSize + getULEB128Size(terminalSize);
@@ -113,11 +124,10 @@ void TrieNode::writeTo(uint8_t *buf) const {
   buf += offset;
   if (info) {
     // TrieNodes with Symbol info: size, flags address
-    uint64_t flags = 0; // TODO: emit proper flags
     uint32_t terminalSize =
-        getULEB128Size(flags) + getULEB128Size(info->address);
+        getULEB128Size(info->flags) + getULEB128Size(info->address);
     buf += encodeULEB128(terminalSize, buf);
-    buf += encodeULEB128(flags, buf);
+    buf += encodeULEB128(info->flags, buf);
     buf += encodeULEB128(info->address, buf);
   } else {
     // TrieNode with no Symbol info.
@@ -197,7 +207,7 @@ tailcall:
 
   if (isTerminal) {
     assert(j - i == 1); // no duplicate symbols
-    node->info = {pivotSymbol->getVA()};
+    node->info = ExportInfo(*pivotSymbol, imageBase);
   } else {
     // This is the tail-call-optimized version of the following:
     // sortAndBuild(vec.slice(i, j - i), node, lastPos, pos + 1);
@@ -277,13 +287,10 @@ void TrieParser::parse(const uint8_t *buf, const Twine &cumulativeString) {
   }
 }
 
-void parseTrie(const uint8_t *buf, size_t size,
-               const TrieEntryCallback &callback) {
+void macho::parseTrie(const uint8_t *buf, size_t size,
+                      const TrieEntryCallback &callback) {
   if (size == 0)
     return;
 
   TrieParser(buf, size, callback).parse();
 }
-
-} // namespace macho
-} // namespace lld

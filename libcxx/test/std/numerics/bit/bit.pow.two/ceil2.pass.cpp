@@ -6,7 +6,7 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-// UNSUPPORTED: c++98, c++03, c++11, c++14, c++17
+// UNSUPPORTED: c++03, c++11, c++14, c++17
 
 // template <class T>
 //   constexpr T ceil2(T x) noexcept;
@@ -62,7 +62,7 @@ void runtime_test()
     assert( std::ceil2(T(69)) == T(128));
 }
 
-int main()
+int main(int, char**)
 {
 
     {
@@ -145,4 +145,6 @@ int main()
 #ifndef _LIBCPP_HAS_NO_INT128
     runtime_test<__uint128_t>();
 #endif
+
+    return 0;
 }

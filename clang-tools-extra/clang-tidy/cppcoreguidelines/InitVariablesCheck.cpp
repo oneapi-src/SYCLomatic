@@ -10,6 +10,8 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Lex/PPCallbacks.h"
+#include "clang/Lex/Preprocessor.h"
 
 using namespace clang::ast_matchers;
 
@@ -24,16 +26,21 @@ AST_MATCHER(VarDecl, isLocalVarDecl) { return Node.isLocalVarDecl(); }
 InitVariablesCheck::InitVariablesCheck(StringRef Name,
                                        ClangTidyContext *Context)
     : ClangTidyCheck(Name, Context),
-      IncludeStyle(Options.getLocalOrGlobal("IncludeStyle",
-                                            utils::IncludeSorter::getMapping(),
-                                            utils::IncludeSorter::IS_LLVM)),
-      MathHeader(Options.get("MathHeader", "math.h")) {}
+      IncludeInserter(Options.getLocalOrGlobal("IncludeStyle",
+                                               utils::IncludeSorter::IS_LLVM)),
+      MathHeader(Options.get("MathHeader", "<math.h>")) {}
+
+void InitVariablesCheck::storeOptions(ClangTidyOptions::OptionMap &Opts) {
+  Options.store(Opts, "IncludeStyle", IncludeInserter.getStyle());
+  Options.store(Opts, "MathHeader", MathHeader);
+}
 
 void InitVariablesCheck::registerMatchers(MatchFinder *Finder) {
   std::string BadDecl = "badDecl";
   Finder->addMatcher(
       varDecl(unless(hasInitializer(anything())), unless(isInstantiated()),
               isLocalVarDecl(), unless(isStaticLocal()), isDefinition(),
+              unless(hasParent(cxxCatchStmt())),
               optionally(hasParent(declStmt(hasParent(
                   cxxForRangeStmt(hasLoopVariable(varDecl().bind(BadDecl))))))),
               unless(equalsBoundNode(BadDecl)))
@@ -44,9 +51,7 @@ void InitVariablesCheck::registerMatchers(MatchFinder *Finder) {
 void InitVariablesCheck::registerPPCallbacks(const SourceManager &SM,
                                              Preprocessor *PP,
                                              Preprocessor *ModuleExpanderPP) {
-  IncludeInserter =
-      std::make_unique<utils::IncludeInserter>(SM, getLangOpts(), IncludeStyle);
-  PP->addPPCallbacks(IncludeInserter->CreatePPCallbacks());
+  IncludeInserter.registerPreprocessor(PP);
 }
 
 void InitVariablesCheck::check(const MatchFinder::MatchResult &Result) {
@@ -97,12 +102,11 @@ void InitVariablesCheck::check(const MatchFinder::MatchResult &Result) {
                    MatchedDecl->getName().size()),
                InitializationString);
     if (AddMathInclude) {
-      Diagnostic << IncludeInserter->CreateIncludeInsertion(
-          Source.getFileID(MatchedDecl->getBeginLoc()), MathHeader, false);
+      Diagnostic << IncludeInserter.createIncludeInsertion(
+          Source.getFileID(MatchedDecl->getBeginLoc()), MathHeader);
     }
   }
 }
-
 } // namespace cppcoreguidelines
 } // namespace tidy
 } // namespace clang

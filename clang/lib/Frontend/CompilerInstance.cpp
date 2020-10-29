@@ -346,10 +346,16 @@ static void InitializeFileRemapping(DiagnosticsEngine &Diags,
       continue;
     }
 
-    // Override the contents of the "from" file with the contents of
-    // the "to" file.
-    SourceMgr.overrideFileContents(FromFile, RB.second,
-                                   InitOpts.RetainRemappedFileBuffers);
+    // Override the contents of the "from" file with the contents of the
+    // "to" file. If the caller owns the buffers, then pass a MemoryBufferRef;
+    // otherwise, pass as a std::unique_ptr<MemoryBuffer> to transfer ownership
+    // to the SourceManager.
+    if (InitOpts.RetainRemappedFileBuffers)
+      SourceMgr.overrideFileContents(FromFile, RB.second->getMemBufferRef());
+    else
+      SourceMgr.overrideFileContents(
+          FromFile, std::unique_ptr<llvm::MemoryBuffer>(
+                        const_cast<llvm::MemoryBuffer *>(RB.second)));
   }
 
   // Remap files in the source manager (with other files).
@@ -815,17 +821,15 @@ std::unique_ptr<llvm::raw_pwrite_stream> CompilerInstance::createOutputFile(
 // Initialization Utilities
 
 bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input){
-  return InitializeSourceManager(
-      Input, getDiagnostics(), getFileManager(), getSourceManager(),
-      hasPreprocessor() ? &getPreprocessor().getHeaderSearchInfo() : nullptr,
-      getDependencyOutputOpts(), getFrontendOpts());
+  return InitializeSourceManager(Input, getDiagnostics(), getFileManager(),
+                                 getSourceManager());
 }
 
 // static
-bool CompilerInstance::InitializeSourceManager(
-    const FrontendInputFile &Input, DiagnosticsEngine &Diags,
-    FileManager &FileMgr, SourceManager &SourceMgr, HeaderSearch *HS,
-    DependencyOutputOptions &DepOpts, const FrontendOptions &Opts) {
+bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input,
+                                               DiagnosticsEngine &Diags,
+                                               FileManager &FileMgr,
+                                               SourceManager &SourceMgr) {
   SrcMgr::CharacteristicKind Kind =
       Input.getKind().getFormat() == InputKind::ModuleMap
           ? Input.isSystem() ? SrcMgr::C_System_ModuleMap
@@ -833,8 +837,7 @@ bool CompilerInstance::InitializeSourceManager(
           : Input.isSystem() ? SrcMgr::C_System : SrcMgr::C_User;
 
   if (Input.isBuffer()) {
-    SourceMgr.setMainFileID(SourceMgr.createFileID(SourceManager::Unowned,
-                                                   Input.getBuffer(), Kind));
+    SourceMgr.setMainFileID(SourceMgr.createFileID(Input.getBuffer(), Kind));
     assert(SourceMgr.getMainFileID().isValid() &&
            "Couldn't establish MainFileID!");
     return true;
@@ -935,6 +938,19 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     setAuxTarget(TargetInfo::CreateTargetInfo(getDiagnostics(), TO));
   }
 
+  if (!getTarget().hasStrictFP() && !getLangOpts().ExpStrictFP) {
+    if (getLangOpts().getFPRoundingMode() !=
+        llvm::RoundingMode::NearestTiesToEven) {
+      getDiagnostics().Report(diag::warn_fe_backend_unsupported_fp_rounding);
+      getLangOpts().setFPRoundingMode(llvm::RoundingMode::NearestTiesToEven);
+    }
+    if (getLangOpts().getFPExceptionMode() != LangOptions::FPE_Ignore) {
+      getDiagnostics().Report(diag::warn_fe_backend_unsupported_fp_exceptions);
+      getLangOpts().setFPExceptionMode(LangOptions::FPE_Ignore);
+    }
+    // FIXME: can we disable FEnvAccess?
+  }
+
   // Inform the target of the language options.
   //
   // FIXME: We shouldn't need to do this, the target should be immutable once
@@ -944,8 +960,10 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
   // Adjust target options based on codegen options.
   getTarget().adjustTargetOptions(getCodeGenOpts(), getTargetOpts());
 
-  if (auto *Aux = getAuxTarget())
+  if (auto *Aux = getAuxTarget()) {
+    Aux->adjust(getLangOpts());
     getTarget().setAuxTarget(Aux);
+  }
 
   // rewriter project will change target built-in bool type from its default.
   if (getFrontendOpts().ProgramAction == frontend::RewriteObjC)

@@ -1,7 +1,7 @@
-// RUN: %clang_cc1 -I %S/Inputs -fsycl -fsycl-is-device -triple spir64-unknown-unknown-sycldevice -fsycl-int-header=%t.h %s -fsyntax-only
+// RUN: %clang_cc1 -fsycl -fsycl-is-device -triple spir64-unknown-unknown-sycldevice -fsycl-int-header=%t.h %s -fsyntax-only
 // RUN: FileCheck -input-file=%t.h %s
 
-#include "sycl.hpp"
+#include "Inputs/sycl.hpp"
 
 enum unscoped_enum : int {
   val_1,
@@ -40,43 +40,43 @@ enum class no_type_set {
 template <no_namespace_int EnumType>
 class dummy_functor_1 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <no_namespace_short EnumType>
 class dummy_functor_2 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <internal::namespace_short EnumType>
 class dummy_functor_3 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <enum_in_anonNS EnumType>
 class dummy_functor_4 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <no_type_set EnumType>
 class dummy_functor_5 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <unscoped_enum EnumType>
 class dummy_functor_6 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 template <typename EnumType>
 class dummy_functor_7 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 namespace type_argument_template_enum {
@@ -105,7 +105,7 @@ class Baz;
 template <typename EnumTypeOut, template <EnumValueIn EnumValue, typename EnumTypeIn> class T>
 class dummy_functor_8 {
 public:
-  void operator()() {}
+  void operator()() const {}
 };
 
 int main() {
@@ -197,14 +197,14 @@ int main() {
 // CHECK: template <EnumValueIn EnumValue, typename EnumTypeIn> class Baz;
 // CHECK: template <typename EnumTypeOut, template <EnumValueIn EnumValue, typename EnumTypeIn> class T> class dummy_functor_8;
 // CHECK: Specializations of KernelInfo for kernel function types:
-// CHECK: template <> struct KernelInfo<::dummy_functor_1<(no_namespace_int)0>>
-// CHECK: template <> struct KernelInfo<::dummy_functor_2<(no_namespace_short)1>>
-// CHECK: template <> struct KernelInfo<::dummy_functor_3<(internal::namespace_short)1>>
-// CHECK: template <> struct KernelInfo<::dummy_functor_4<(enum_in_anonNS)1>>
-// CHECK: template <> struct KernelInfo<::dummy_functor_5<(no_type_set)0>>
-// CHECK: template <> struct KernelInfo<::dummy_functor_6<(unscoped_enum)0>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_1<static_cast<::no_namespace_int>(0)>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_2<static_cast<::no_namespace_short>(1)>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_3<static_cast<::internal::namespace_short>(1)>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_4<static_cast<::enum_in_anonNS>(1)>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_5<static_cast<::no_type_set>(0)>>
+// CHECK: template <> struct KernelInfo<::dummy_functor_6<static_cast<::unscoped_enum>(0)>>
 // CHECK: template <> struct KernelInfo<::dummy_functor_7<::no_namespace_int>>
 // CHECK: template <> struct KernelInfo<::dummy_functor_7<::internal::namespace_short>>
-// CHECK: template <> struct KernelInfo<::T1<::T2<(type_argument_template_enum::E)0>>>
+// CHECK: template <> struct KernelInfo<::T1<::T2<static_cast<::type_argument_template_enum::E>(0)>>>
 // CHECK: template <> struct KernelInfo<::T1<::T3<::type_argument_template_enum::E>>>
 // CHECK: template <> struct KernelInfo<::dummy_functor_8<::EnumTypeOut, Baz>>

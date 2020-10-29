@@ -67,7 +67,6 @@ typedef struct struct_of_structs_arg
     int i2;
 } struct_of_structs_arg_t;
 
-// CHECK: %union.transparent_u = type { i32 }
 typedef union
 {
   int b1;
@@ -237,7 +236,7 @@ __kernel void kernel_test_struct_of_arrays_arg(struct_of_arrays_arg_t arg1) { }
 // CHECK: void @kernel_struct_of_structs_arg(%struct.struct_of_structs_arg %arg1.coerce)
 __kernel void kernel_struct_of_structs_arg(struct_of_structs_arg_t arg1) { }
 
-// CHECK: void @test_kernel_transparent_union_arg(%union.transparent_u %u.coerce)
+// CHECK: void @test_kernel_transparent_union_arg(i32 %u.coerce)
 __kernel void test_kernel_transparent_union_arg(transparent_u u) { }
 
 // CHECK: void @kernel_single_array_element_struct_arg(%struct.single_array_element_struct_arg %arg1.coerce)
@@ -404,14 +403,14 @@ struct_arr16 func_ret_struct_arr16()
   return s;
 }
 
-// CHECK: define void @func_ret_struct_arr32(%struct.struct_arr32 addrspace(5)* noalias nocapture sret align 4 %agg.result)
+// CHECK: define void @func_ret_struct_arr32(%struct.struct_arr32 addrspace(5)* noalias nocapture sret(%struct.struct_arr32) align 4 %agg.result)
 struct_arr32 func_ret_struct_arr32()
 {
   struct_arr32 s = { 0 };
   return s;
 }
 
-// CHECK: define void @func_ret_struct_arr33(%struct.struct_arr33 addrspace(5)* noalias nocapture sret align 4 %agg.result)
+// CHECK: define void @func_ret_struct_arr33(%struct.struct_arr33 addrspace(5)* noalias nocapture sret(%struct.struct_arr33) align 4 %agg.result)
 struct_arr33 func_ret_struct_arr33()
 {
   struct_arr33 s = { 0 };
@@ -440,7 +439,7 @@ different_size_type_pair func_different_size_type_pair_ret()
   return s;
 }
 
-// CHECK: define void @func_flexible_array_ret(%struct.flexible_array addrspace(5)* noalias nocapture sret align 4 %agg.result)
+// CHECK: define void @func_flexible_array_ret(%struct.flexible_array addrspace(5)* noalias nocapture sret(%struct.flexible_array) align 4 %agg.result)
 flexible_array func_flexible_array_ret()
 {
   flexible_array s = { 0 };

@@ -96,13 +96,16 @@ set(LIBCXX_ENABLE_SHARED                    OFF CACHE BOOL "")
 set(LIBCXX_CXX_ABI                          "libcxxabi" CACHE STRING "")
 set(LIBCXX_CXX_ABI_INCLUDE_PATHS            "${LLVM_PROJECT_DIR}/libcxxabi/include" CACHE PATH "")
 set(LIBCXX_CXX_ABI_LIBRARY_PATH             "${CMAKE_BINARY_DIR}/lib/${LIBCXX_TARGET_TRIPLE}/c++" CACHE PATH "")
+set(LIBCXX_ENABLE_NEW_DELETE_DEFINITIONS    ON CACHE BOOL "")
 
 set(BUILTINS_CMAKE_ARGS                     "-DCMAKE_SYSTEM_NAME=Linux;-DCMAKE_AR=${CMAKE_AR}" CACHE STRING "")
 set(RUNTIMES_CMAKE_ARGS                     "-DCMAKE_SYSTEM_NAME=Linux;-DCMAKE_AR=${CMAKE_AR}" CACHE STRING "")
 
+find_package(Python3 COMPONENTS Interpreter)
+
 # Remote test configuration.
 if(DEFINED REMOTE_TEST_HOST)
-  set(DEFAULT_TEST_EXECUTOR                 "SSHExecutor('${REMOTE_TEST_HOST}', '${REMOTE_TEST_USER}')")
+  set(DEFAULT_TEST_EXECUTOR                 "\\\"${Python3_EXECUTABLE}\\\" \\\"${LLVM_PROJECT_DIR}/libcxx/utils/ssh.py\\\" --host='${REMOTE_TEST_USER}@${REMOTE_TEST_HOST}'")
   set(DEFAULT_TEST_TARGET_INFO              "libcxx.test.target_info.LinuxRemoteTI")
 
   # Allow override with the custom values.

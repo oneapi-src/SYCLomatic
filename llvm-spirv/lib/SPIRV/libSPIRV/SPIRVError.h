@@ -41,6 +41,7 @@
 
 #include "SPIRVDebug.h"
 #include "SPIRVUtil.h"
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -113,10 +114,20 @@ inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
   if (SPIRVDbgErrorMsgIncludesSourceInfo && FileName)
     SS << " [Src: " << FileName << ":" << LineNo << " " << CondString << " ]";
   setError(ErrCode, SS.str());
-  if (SPIRVDbgAbortOnError) {
+  switch (SPIRVDbgError) {
+  case SPIRVDbgErrorHandlingKinds::Abort:
+    std::cerr << SS.str() << std::endl;
+    abort();
+    break;
+  case SPIRVDbgErrorHandlingKinds::Exit:
+    std::cerr << SS.str() << std::endl;
+    std::exit(ErrCode);
+    break;
+  case SPIRVDbgErrorHandlingKinds::Ignore:
+    // Still print info about the error into debug output stream
     spvdbgs() << SS.str() << '\n';
     spvdbgs().flush();
-    abort();
+    break;
   }
   return Cond;
 }

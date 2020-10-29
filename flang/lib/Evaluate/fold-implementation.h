@@ -12,7 +12,6 @@
 #include "character.h"
 #include "host.h"
 #include "int-power.h"
-#include "intrinsics-library-templates.h"
 #include "flang/Common/indirection.h"
 #include "flang/Common/template.h"
 #include "flang/Common/unwrap.h"
@@ -22,6 +21,8 @@
 #include "flang/Evaluate/expression.h"
 #include "flang/Evaluate/fold.h"
 #include "flang/Evaluate/formatting.h"
+#include "flang/Evaluate/intrinsics-library.h"
+#include "flang/Evaluate/intrinsics.h"
 #include "flang/Evaluate/shape.h"
 #include "flang/Evaluate/tools.h"
 #include "flang/Evaluate/traverse.h"
@@ -69,6 +70,24 @@ private:
 std::optional<Constant<SubscriptInteger>> GetConstantSubscript(
     FoldingContext &, Subscript &, const NamedEntity &, int dim);
 
+// Helper to use host runtime on scalars for folding.
+template <typename TR, typename... TA>
+std::optional<std::function<Scalar<TR>(FoldingContext &, Scalar<TA>...)>>
+GetHostRuntimeWrapper(const std::string &name) {
+  std::vector<DynamicType> argTypes{TA{}.GetType()...};
+  if (auto hostWrapper{GetHostRuntimeWrapper(name, TR{}.GetType(), argTypes)}) {
+    return [hostWrapper](
+               FoldingContext &context, Scalar<TA>... args) -> Scalar<TR> {
+      std::vector<Expr<SomeType>> genericArgs{
+          AsGenericExpr(Constant<TA>{args})...};
+      return GetScalarConstantValue<TR>(
+          (*hostWrapper)(context, std::move(genericArgs)))
+          .value();
+    };
+  }
+  return std::nullopt;
+}
+
 // FoldOperation() rewrites expression tree nodes.
 // If there is any possibility that the rewritten node will
 // not have the same representation type, the result of
@@ -114,9 +133,8 @@ Expr<T> FoldOperation(FoldingContext &context, Designator<T> &&designator) {
   return Folder<T>{context}.Folding(std::move(designator));
 }
 
-template <int KIND>
-Expr<Type<TypeCategory::Integer, KIND>> FoldOperation(
-    FoldingContext &, TypeParamInquiry<KIND> &&);
+Expr<TypeParamInquiry::Result> FoldOperation(
+    FoldingContext &, TypeParamInquiry &&);
 Expr<ImpliedDoIndex::Result> FoldOperation(
     FoldingContext &context, ImpliedDoIndex &&);
 template <typename T>
@@ -150,11 +168,9 @@ std::optional<Expr<T>> Folder<T>::GetNamedConstantValue(const Symbol &symbol0) {
               if (symbol.Rank() > 0) {
                 if (constant->Rank() == 0) {
                   // scalar expansion
-                  if (auto symShape{GetShape(context_, symbol)}) {
-                    if (auto extents{AsConstantExtents(context_, *symShape)}) {
-                      *constant = constant->Reshape(std::move(*extents));
-                      CHECK(constant->Rank() == symbol.Rank());
-                    }
+                  if (auto extents{GetConstantExtents(context_, symbol)}) {
+                    *constant = constant->Reshape(std::move(*extents));
+                    CHECK(constant->Rank() == symbol.Rank());
                   }
                 }
                 if (constant->Rank() == symbol.Rank()) {
@@ -298,8 +314,8 @@ std::optional<Constant<T>> Folder<T>::ApplyComponent(
     Constant<SomeDerived> &&structures, const Symbol &component,
     const std::vector<Constant<SubscriptInteger>> *subscripts) {
   if (auto scalar{structures.GetScalarValue()}) {
-    if (auto *expr{scalar->Find(component)}) {
-      if (const Constant<T> *value{UnwrapConstantValue<T>(*expr)}) {
+    if (std::optional<Expr<SomeType>> expr{scalar->Find(component)}) {
+      if (const Constant<T> *value{UnwrapConstantValue<T>(expr.value())}) {
         if (!subscripts) {
           return std::move(*value);
         } else {
@@ -316,12 +332,12 @@ std::optional<Constant<T>> Folder<T>::ApplyComponent(
     ConstantSubscripts at{structures.lbounds()};
     do {
       StructureConstructor scalar{structures.At(at)};
-      if (auto *expr{scalar.Find(component)}) {
-        if (const Constant<T> *value{UnwrapConstantValue<T>(*expr)}) {
+      if (std::optional<Expr<SomeType>> expr{scalar.Find(component)}) {
+        if (const Constant<T> *value{UnwrapConstantValue<T>(expr.value())}) {
           if (!array.get()) {
             // This technique ensures that character length or derived type
             // information is propagated to the array constructor.
-            auto *typedExpr{UnwrapExpr<Expr<T>>(*expr)};
+            auto *typedExpr{UnwrapExpr<Expr<T>>(expr.value())};
             CHECK(typedExpr);
             array = std::make_unique<ArrayConstructor<T>>(*typedExpr);
           }
@@ -602,9 +618,9 @@ std::optional<std::vector<A>> GetIntegerVector(const B &x) {
 // gets re-folded.
 template <typename T> Expr<T> MakeInvalidIntrinsic(FunctionRef<T> &&funcRef) {
   SpecificIntrinsic invalid{std::get<SpecificIntrinsic>(funcRef.proc().u)};
-  invalid.name = "(invalid intrinsic function call)";
+  invalid.name = IntrinsicProcTable::InvalidName;
   return Expr<T>{FunctionRef<T>{ProcedureDesignator{std::move(invalid)},
-      ActualArguments{ActualArgument{AsGenericExpr(std::move(funcRef))}}}};
+      ActualArguments{std::move(funcRef.arguments())}}};
 }
 
 template <typename T> Expr<T> Folder<T>::Reshape(FunctionRef<T> &&funcRef) {
@@ -617,8 +633,13 @@ template <typename T> Expr<T> Folder<T>::Reshape(FunctionRef<T> &&funcRef) {
   std::optional<std::vector<int>> order{GetIntegerVector<int>(args[3])};
   if (!source || !shape || (args[2] && !pad) || (args[3] && !order)) {
     return Expr<T>{std::move(funcRef)}; // Non-constant arguments
-  } else if (!IsValidShape(shape.value())) {
-    context_.messages().Say("Invalid SHAPE in RESHAPE"_en_US);
+  } else if (shape.value().size() > common::maxRank) {
+    context_.messages().Say(
+        "Size of 'shape=' argument must not be greater than %d"_err_en_US,
+        common::maxRank);
+  } else if (HasNegativeExtent(shape.value())) {
+    context_.messages().Say(
+        "'shape=' argument must not have a negative extent"_err_en_US);
   } else {
     int rank{GetRank(shape.value())};
     std::size_t resultElements{TotalElementCount(shape.value())};
@@ -628,12 +649,13 @@ template <typename T> Expr<T> Folder<T>::Reshape(FunctionRef<T> &&funcRef) {
     }
     std::vector<int> *dimOrderPtr{dimOrder ? &dimOrder.value() : nullptr};
     if (order && !dimOrder) {
-      context_.messages().Say("Invalid ORDER in RESHAPE"_en_US);
+      context_.messages().Say("Invalid 'order=' argument in RESHAPE"_err_en_US);
     } else if (resultElements > source->size() && (!pad || pad->empty())) {
-      context_.messages().Say("Too few SOURCE elements in RESHAPE and PAD"
-                              "is not present or has null size"_en_US);
+      context_.messages().Say(
+          "Too few elements in 'source=' argument and 'pad=' "
+          "argument is not present or has null size"_err_en_US);
     } else {
-      Constant<T> result{!source->empty()
+      Constant<T> result{!source->empty() || !pad
               ? source->Reshape(std::move(shape.value()))
               : pad->Reshape(std::move(shape.value()))};
       ConstantSubscripts subscripts{result.lbounds()};
@@ -656,13 +678,15 @@ template <typename T>
 Expr<T> FoldMINorMAX(
     FoldingContext &context, FunctionRef<T> &&funcRef, Ordering order) {
   std::vector<Constant<T> *> constantArgs;
+  // Call Folding on all arguments, even if some are not constant,
+  // to make operand promotion explicit.
   for (auto &arg : funcRef.arguments()) {
     if (auto *cst{Folder<T>{context}.Folding(arg)}) {
       constantArgs.push_back(cst);
-    } else {
-      return Expr<T>(std::move(funcRef));
     }
   }
+  if (constantArgs.size() != funcRef.arguments().size())
+    return Expr<T>(std::move(funcRef));
   CHECK(constantArgs.size() > 0);
   Expr<T> result{std::move(*constantArgs[0])};
   for (std::size_t i{1}; i < constantArgs.size(); ++i) {
@@ -670,6 +694,52 @@ Expr<T> FoldMINorMAX(
     result = FoldOperation(context, std::move(extremum));
   }
   return result;
+}
+
+// For AMAX0, AMIN0, AMAX1, AMIN1, DMAX1, DMIN1, MAX0, MIN0, MAX1, and MIN1
+// a special care has to be taken to insert the conversion on the result
+// of the MIN/MAX. This is made slightly more complex by the extension
+// supported by f18 that arguments may have different kinds. This implies
+// that the created MIN/MAX result type cannot be deduced from the standard but
+// has to be deduced from the arguments.
+// e.g. AMAX0(int8, int4) is rewritten to REAL(MAX(int8, INT(int4, 8)))).
+template <typename T>
+Expr<T> RewriteSpecificMINorMAX(
+    FoldingContext &context, FunctionRef<T> &&funcRef) {
+  ActualArguments &args{funcRef.arguments()};
+  auto &intrinsic{DEREF(std::get_if<SpecificIntrinsic>(&funcRef.proc().u))};
+  // Rewrite MAX1(args) to INT(MAX(args)) and fold. Same logic for MIN1.
+  // Find result type for max/min based on the arguments.
+  DynamicType resultType{args[0].value().GetType().value()};
+  auto *resultTypeArg{&args[0]};
+  for (auto j{args.size() - 1}; j > 0; --j) {
+    DynamicType type{args[j].value().GetType().value()};
+    if (type.category() == resultType.category()) {
+      if (type.kind() > resultType.kind()) {
+        resultTypeArg = &args[j];
+        resultType = type;
+      }
+    } else if (resultType.category() == TypeCategory::Integer) {
+      // Handle mixed real/integer arguments: all the previous arguments were
+      // integers and this one is real. The type of the MAX/MIN result will
+      // be the one of the real argument.
+      resultTypeArg = &args[j];
+      resultType = type;
+    }
+  }
+  intrinsic.name =
+      intrinsic.name.find("max") != std::string::npos ? "max"s : "min"s;
+  intrinsic.characteristics.value().functionResult.value().SetType(resultType);
+  auto insertConversion{[&](const auto &x) -> Expr<T> {
+    using TR = ResultType<decltype(x)>;
+    FunctionRef<TR> maxRef{std::move(funcRef.proc()), std::move(args)};
+    return Fold(context, ConvertToType<T>(AsCategoryExpr(std::move(maxRef))));
+  }};
+  if (auto *sx{UnwrapExpr<Expr<SomeReal>>(*resultTypeArg)}) {
+    return std::visit(insertConversion, sx->u);
+  }
+  auto &sx{DEREF(UnwrapExpr<Expr<SomeInteger>>(*resultTypeArg))};
+  return std::visit(insertConversion, sx.u);
 }
 
 template <typename T>
@@ -1028,22 +1098,6 @@ auto ApplyElementwise(
           }});
 }
 
-// Predicate: is a scalar expression suitable for naive scalar expansion
-// in the flattening of an array expression?
-// TODO: capture such scalar expansions in temporaries, flatten everything
-struct UnexpandabilityFindingVisitor
-    : public AnyTraverse<UnexpandabilityFindingVisitor> {
-  using Base = AnyTraverse<UnexpandabilityFindingVisitor>;
-  using Base::operator();
-  UnexpandabilityFindingVisitor() : Base{*this} {}
-  template <typename T> bool operator()(const FunctionRef<T> &) { return true; }
-  bool operator()(const CoarrayRef &) { return true; }
-};
-
-template <typename T> bool IsExpandableScalar(const Expr<T> &expr) {
-  return !UnexpandabilityFindingVisitor{}(expr);
-}
-
 template <typename DERIVED, typename RESULT, typename LEFT, typename RIGHT>
 auto ApplyElementwise(FoldingContext &context,
     Operation<DERIVED, RESULT, LEFT, RIGHT> &operation,
@@ -1118,11 +1172,20 @@ Expr<TO> FoldOperation(
   if (auto array{ApplyElementwise(context, convert)}) {
     return *array;
   }
+  struct {
+    FoldingContext &context;
+    Convert<TO, FROMCAT> &convert;
+  } msvcWorkaround{context, convert};
   return std::visit(
-      [&](auto &kindExpr) -> Expr<TO> {
+      [&msvcWorkaround](auto &kindExpr) -> Expr<TO> {
         using Operand = ResultType<decltype(kindExpr)>;
+        // This variable is a workaround for msvc which emits an error when
+        // using the FROMCAT template parameter below.
+        TypeCategory constexpr FromCat{FROMCAT};
+        auto &convert{msvcWorkaround.convert};
         char buffer[64];
         if (auto value{GetScalarConstantValue<Operand>(kindExpr)}) {
+          FoldingContext &context{msvcWorkaround.context};
           if constexpr (TO::category == TypeCategory::Integer) {
             if constexpr (Operand::category == TypeCategory::Integer) {
               auto converted{Scalar<TO>::ConvertSigned(*value)};
@@ -1177,7 +1240,7 @@ Expr<TO> FoldOperation(
             return Expr<TO>{value->IsTrue()};
           }
         } else if constexpr (std::is_same_v<Operand, TO> &&
-            FROMCAT != TypeCategory::Character) {
+            FromCat != TypeCategory::Character) {
           return std::move(kindExpr); // remove needless conversion
         }
         return Expr<TO>{std::move(convert)};
@@ -1365,8 +1428,7 @@ Expr<T> FoldOperation(FoldingContext &context, Power<T> &&x) {
       }
       return Expr<T>{Constant<T>{power.power}};
     } else {
-      if (auto callable{context.hostIntrinsicsLibrary()
-                            .GetHostProcedureWrapper<Scalar, T, T, T>("pow")}) {
+      if (auto callable{GetHostRuntimeWrapper<T, T, T>("pow")}) {
         return Expr<T>{
             Constant<T>{(*callable)(context, folded->first, folded->second)}};
       } else {

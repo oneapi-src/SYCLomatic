@@ -250,3 +250,39 @@ unsigned u_const = -2.5hk;                // expected-warning{{implicit conversi
 char c_const = 256.0uk;                   // expected-warning{{implicit conversion from 256.0 cannot fit within the range of values for 'char'}}
 short _Accum sa_const5 = 256;             // expected-warning{{implicit conversion from 256 cannot fit within the range of values for 'short _Accum'}}
 unsigned short _Accum usa_const2 = -2;    // expected-warning{{implicit conversion from -2 cannot fit within the range of values for 'unsigned short _Accum'}}
+
+short _Accum add_ovf1 = 255.0hk + 20.0hk;                     // expected-warning {{overflow in expression; result is -237.0 with type 'short _Accum'}}
+short _Accum add_ovf2 = 10 + 0.5hr;                           // expected-warning {{overflow in expression; result is 0.5 with type 'short _Fract'}}
+short _Accum sub_ovf1 = 16.0uhk - 32.0uhk;                    // expected-warning {{overflow in expression; result is 240.0 with type 'unsigned short _Accum'}}
+short _Accum sub_ovf2 = -255.0hk - 20;                        // expected-warning {{overflow in expression; result is 237.0 with type 'short _Accum'}}
+short _Accum mul_ovf1 = 200.0uhk * 10.0uhk;                   // expected-warning {{overflow in expression; result is 208.0 with type 'unsigned short _Accum'}}
+short _Accum mul_ovf2 = (-0.5hr - 0.5hr) * (-0.5hr - 0.5hr);  // expected-warning {{overflow in expression; result is -1.0 with type 'short _Fract'}}
+short _Accum div_ovf1 = 255.0hk / 0.5hk;                      // expected-warning {{overflow in expression; result is -2.0 with type 'short _Accum'}}
+
+short _Accum shl_ovf1 = 255.0hk << 8;           // expected-warning {{overflow in expression; result is -256.0 with type 'short _Accum'}}
+short _Fract shl_ovf2 = -0.25hr << 3;           // expected-warning {{overflow in expression; result is 0.0 with type 'short _Fract'}}
+unsigned short _Accum shl_ovf3 = 100.5uhk << 3; // expected-warning {{overflow in expression; result is 36.0 with type 'unsigned short _Accum'}}
+short _Fract shl_ovf4 = 0.25hr << 2;            // expected-warning {{overflow in expression; result is -1.0 with type 'short _Fract'}}
+
+_Accum shl_bw1 = 0.000091552734375k << 32;                   // expected-warning {{shift count >= width of type}} \
+                                                                 expected-warning {{overflow in expression; result is -65536.0 with type '_Accum'}}
+unsigned _Fract shl_bw2 = 0.65ur << 16;                      // expected-warning {{shift count >= width of type}} \
+                                                                 expected-warning {{overflow in expression; result is 0.0 with type 'unsigned _Fract'}}
+_Sat short _Accum shl_bw3 = (_Sat short _Accum)80.0hk << 17; // expected-warning {{shift count >= width of type}}
+short _Accum shr_bw1 = 1.0hk >> 17;                          // expected-warning {{shift count >= width of type}}
+
+_Accum shl_neg1 = 25.5k << -5;  // expected-warning {{shift count is negative}} \
+                                                              // expected-warning {{overflow in expression; result is 0.0 with type '_Accum'}}
+_Accum shr_neg1 = 8.75k >> -9;  // expected-warning {{shift count is negative}}
+_Fract shl_neg2 = 0.25r << -17; // expected-warning {{shift count is negative}} \
+                                                              // expected-warning {{overflow in expression; result is 0.0 with type '_Fract'}}
+
+// No warnings for saturation
+short _Fract add_sat  = (_Sat short _Fract)0.5hr + 0.5hr;
+short _Accum sub_sat  = (_Sat short _Accum)-200.0hk - 80.0hk;
+short _Accum mul_sat  = (_Sat short _Accum)80.0hk * 10.0hk;
+short _Fract div_sat  = (_Sat short _Fract)0.9hr / 0.1hr;
+short _Accum shl_sat = (_Sat short _Accum)200.0hk << 5;
+
+// Division by zero
+short _Accum div_zero = 4.5k / 0.0lr;  // expected-error {{initializer element is not a compile-time constant}}

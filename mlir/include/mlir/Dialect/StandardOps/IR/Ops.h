@@ -21,6 +21,7 @@
 #include "mlir/Interfaces/CallInterfaces.h"
 #include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
+#include "mlir/Interfaces/VectorInterfaces.h"
 #include "mlir/Interfaces/ViewLikeInterface.h"
 
 // Pull in all enum type definitions and utility function declarations.
@@ -31,6 +32,17 @@ class AffineMap;
 class Builder;
 class FuncOp;
 class OpBuilder;
+
+/// Auxiliary range data structure to unpack the offset, size and stride
+/// operands of the SubViewOp / SubTensorOp into a list of triples.
+/// Such a list of triple is sometimes more convenient to manipulate.
+struct Range {
+  Value offset;
+  Value size;
+  Value stride;
+};
+
+raw_ostream &operator<<(raw_ostream &os, Range &range);
 
 #define GET_OP_CLASSES
 #include "mlir/Dialect/StandardOps/IR/Ops.h.inc"
@@ -128,9 +140,9 @@ public:
 //   dma_start %src[%i, %j], %dst[%k, %l], %num_elements, %tag[%idx], %stride,
 //             %num_elt_per_stride :
 //
-// TODO(mlir-team): add additional operands to allow source and destination
-// striding, and multiple stride levels.
-// TODO(andydavis) Consider replacing src/dst memref indices with view memrefs.
+// TODO: add additional operands to allow source and destination striding, and
+// multiple stride levels.
+// TODO: Consider replacing src/dst memref indices with view memrefs.
 class DmaStartOp
     : public Op<DmaStartOp, OpTrait::VariadicOperands, OpTrait::ZeroResult> {
 public:
@@ -289,6 +301,18 @@ public:
   LogicalResult verify();
 };
 
+/// Given an `originalShape` and a `reducedShape` assumed to be a subset of
+/// `originalShape` with some `1` entries erased, return the vector of booleans
+/// that specifies which of the entries of `originalShape` are keep to obtain
+/// `reducedShape`. The returned mask can be applied as a projection to
+/// `originalShape` to obtain the `reducedShape`. This mask is useful to track
+/// which dimensions must be kept when e.g. compute MemRef strides under
+/// rank-reducing operations. Return None if reducedShape cannot be obtained
+/// by dropping only `1` entries in `originalShape`.
+llvm::Optional<SmallVector<bool, 4>>
+computeRankReductionMask(ArrayRef<int64_t> originalShape,
+                         ArrayRef<int64_t> reducedShape);
+
 /// Prints dimension and symbol list.
 void printDimAndSymbolList(Operation::operand_iterator begin,
                            Operation::operand_iterator end, unsigned numDims,
@@ -299,13 +323,11 @@ ParseResult parseDimAndSymbolList(OpAsmParser &parser,
                                   SmallVectorImpl<Value> &operands,
                                   unsigned &numDims);
 
-raw_ostream &operator<<(raw_ostream &os, SubViewOp::Range &range);
-
 /// Determines whether MemRefCastOp casts to a more dynamic version of the
 /// source memref. This is useful to to fold a memref_cast into a consuming op
 /// and implement canonicalization patterns for ops in different dialects that
 /// may consume the results of memref_cast operations. Such foldable memref_cast
-/// operations are typically inserted as `view` and `subview` ops are
+/// operations are typically inserted as `view` and `subview` ops and are
 /// canonicalized, to preserve the type compatibility of their uses.
 ///
 /// Returns true when all conditions are met:
@@ -339,6 +361,41 @@ raw_ostream &operator<<(raw_ostream &os, SubViewOp::Range &range);
 ///   consumer %0 ... : memref<?x16xf32, affine_map<(i, j)->(16 * i + j)>>
 /// ```
 bool canFoldIntoConsumerOp(MemRefCastOp castOp);
+
+/// Counterpart of `canFoldIntoConsumerOp(MemRefCastOp castOp)` for tensors.
+/// Determines whether TensorCastOp casts to a more dynamic version of the
+/// source tensor. This is useful to fold a tensor_cast into a consuming op and
+/// implement canonicalization patterns for ops in different dialects that may
+/// consume the results of tensor_cast operations. Such foldable tensor_cast
+/// operations are typically inserted as `subtensor` ops and are canonicalized,
+/// to preserve the type compatibility of their uses.
+///
+/// Returns true when all conditions are met:
+/// 1. source and result are ranked tensors with same element type and rank.
+/// 2. the tensor type has more static information than the result
+///
+/// Example:
+/// ```mlir
+///   %1 = tensor_cast %0 : tensor<8x16xf32> to tensor<?x?xf32>
+///   %2 = consumer %1 ... : tensor<?x?xf32> ...
+/// ```
+///
+/// folds into:
+///
+/// ```mlir
+///   %2 = consumer %0 ... : tensor<8x16xf32> ...
+/// ```
+bool canFoldIntoConsumerOp(TensorCastOp castOp);
+
+/// Compute `lhs` `pred` `rhs`, where `pred` is one of the known integer
+/// comparison predicates.
+bool applyCmpPredicate(CmpIPredicate predicate, const APInt &lhs,
+                       const APInt &rhs);
+
+/// Compute `lhs` `pred` `rhs`, where `pred` is one of the known floating point
+/// comparison predicates.
+bool applyCmpPredicate(CmpFPredicate predicate, const APFloat &lhs,
+                       const APFloat &rhs);
 } // end namespace mlir
 
 #endif // MLIR_DIALECT_IR_STANDARDOPS_IR_OPS_H

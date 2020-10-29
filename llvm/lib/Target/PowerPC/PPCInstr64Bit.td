@@ -145,9 +145,12 @@ let isCall = 1, PPC970_Unit = 7, Defs = [LR8] in {
       // it does use R2 then it is just a caller saved register. Therefore it is
       // safe to emit only the bl and not the nop for this instruction. The
       // linker will not try to restore R2 after the call.
-      def BL8_NOTOC : IForm_and_DForm_4_zero<18, 0, 1, 24, (outs),
-                                             (ins calltarget:$func),
-                                             "bl $func", IIC_BrB, []>;
+      def BL8_NOTOC : IForm<18, 0, 1, (outs),
+                            (ins calltarget:$func),
+                            "bl $func", IIC_BrB, []>;
+      def BL8_NOTOC_TLS : IForm<18, 0, 1, (outs),
+                                (ins tlscall:$func),
+                                "bl $func", IIC_BrB, []>;
     }
   }
   let Uses = [CTR8, RM] in {
@@ -425,6 +428,24 @@ def DYNALLOC8 : PPCEmitTimePseudo<(outs g8rc:$result), (ins g8rc:$negsize, memri
                              (PPCdynalloc i64:$negsize, iaddr:$fpsi))]>;
 def DYNAREAOFFSET8 : PPCEmitTimePseudo<(outs i64imm:$result), (ins memri:$fpsi), "#DYNAREAOFFSET8",
                        [(set i64:$result, (PPCdynareaoffset iaddr:$fpsi))]>;
+// Probed alloca to support stack clash protection.
+let Defs = [X1], Uses = [X1], hasNoSchedulingInfo = 1 in {
+def PROBED_ALLOCA_64 : PPCCustomInserterPseudo<(outs g8rc:$result),
+                         (ins g8rc:$negsize, memri:$fpsi), "#PROBED_ALLOCA_64",
+                           [(set i64:$result,
+                             (PPCprobedalloca i64:$negsize, iaddr:$fpsi))]>;
+def PREPARE_PROBED_ALLOCA_64 : PPCEmitTimePseudo<(outs
+    g8rc:$fp, g8rc:$actual_negsize),
+    (ins g8rc:$negsize, memri:$fpsi), "#PREPARE_PROBED_ALLOCA_64", []>;
+def PREPARE_PROBED_ALLOCA_NEGSIZE_SAME_REG_64 : PPCEmitTimePseudo<(outs
+    g8rc:$fp, g8rc:$actual_negsize),
+    (ins g8rc:$negsize, memri:$fpsi),
+    "#PREPARE_PROBED_ALLOCA_NEGSIZE_SAME_REG_64", []>,
+    RegConstraint<"$actual_negsize = $negsize">;
+def PROBED_STACKALLOC_64 : PPCEmitTimePseudo<(outs g8rc:$scratch, g8rc:$temp),
+    (ins i64imm:$stacksize),
+    "#PROBED_STACKALLOC_64", []>;
+}
 
 let hasSideEffects = 0 in {
 let Defs = [LR8] in {
@@ -960,6 +981,69 @@ def : InstAlias<"xnop", (XORI8 X0, X0, 0)>;
 def : InstAlias<"cntlzw $rA, $rS", (CNTLZW8 g8rc:$rA, g8rc:$rS)>;
 def : InstAlias<"cntlzw. $rA, $rS", (CNTLZW8_rec g8rc:$rA, g8rc:$rS)>;
 
+def : InstAlias<"mtxer $Rx", (MTSPR8 1, g8rc:$Rx)>;
+def : InstAlias<"mfxer $Rx", (MFSPR8 g8rc:$Rx, 1)>;
+
+def : InstAlias<"mtudscr $Rx", (MTSPR8 3, g8rc:$Rx)>;
+def : InstAlias<"mfudscr $Rx", (MFSPR8 g8rc:$Rx, 3)>;
+
+def : InstAlias<"mfrtcu $Rx", (MFSPR8 g8rc:$Rx, 4)>;
+def : InstAlias<"mfrtcl $Rx", (MFSPR8 g8rc:$Rx, 5)>;
+
+def : InstAlias<"mtlr $Rx", (MTSPR8 8, g8rc:$Rx)>;
+def : InstAlias<"mflr $Rx", (MFSPR8 g8rc:$Rx, 8)>;
+
+def : InstAlias<"mtctr $Rx", (MTSPR8 9, g8rc:$Rx)>;
+def : InstAlias<"mfctr $Rx", (MFSPR8 g8rc:$Rx, 9)>;
+
+def : InstAlias<"mtuamr $Rx", (MTSPR8 13, g8rc:$Rx)>;
+def : InstAlias<"mfuamr $Rx", (MFSPR8 g8rc:$Rx, 13)>;
+
+def : InstAlias<"mtdscr $Rx", (MTSPR8 17, g8rc:$Rx)>;
+def : InstAlias<"mfdscr $Rx", (MFSPR8 g8rc:$Rx, 17)>;
+
+def : InstAlias<"mtdsisr $Rx", (MTSPR8 18, g8rc:$Rx)>;
+def : InstAlias<"mfdsisr $Rx", (MFSPR8 g8rc:$Rx, 18)>;
+
+def : InstAlias<"mtdar $Rx", (MTSPR8 19, g8rc:$Rx)>;
+def : InstAlias<"mfdar $Rx", (MFSPR8 g8rc:$Rx, 19)>;
+
+def : InstAlias<"mtdec $Rx", (MTSPR8 22, g8rc:$Rx)>;
+def : InstAlias<"mfdec $Rx", (MFSPR8 g8rc:$Rx, 22)>;
+
+def : InstAlias<"mtsdr1 $Rx", (MTSPR8 25, g8rc:$Rx)>;
+def : InstAlias<"mfsdr1 $Rx", (MFSPR8 g8rc:$Rx, 25)>;
+
+def : InstAlias<"mtsrr0 $Rx", (MTSPR8 26, g8rc:$Rx)>;
+def : InstAlias<"mfsrr0 $Rx", (MFSPR8 g8rc:$Rx, 26)>;
+
+def : InstAlias<"mtsrr1 $Rx", (MTSPR8 27, g8rc:$Rx)>;
+def : InstAlias<"mfsrr1 $Rx", (MFSPR8 g8rc:$Rx, 27)>;
+
+def : InstAlias<"mtcfar $Rx", (MTSPR8 28, g8rc:$Rx)>;
+def : InstAlias<"mfcfar $Rx", (MFSPR8 g8rc:$Rx, 28)>;
+
+def : InstAlias<"mtamr $Rx", (MTSPR8 29, g8rc:$Rx)>;
+def : InstAlias<"mfamr $Rx", (MFSPR8 g8rc:$Rx, 29)>;
+
+foreach SPRG = 0-3 in {
+  def : InstAlias<"mfsprg $RT, "#SPRG, (MFSPR8 g8rc:$RT, !add(SPRG, 272))>;
+  def : InstAlias<"mfsprg"#SPRG#" $RT", (MFSPR8 g8rc:$RT, !add(SPRG, 272))>;
+  def : InstAlias<"mtsprg "#SPRG#", $RT", (MTSPR8 !add(SPRG, 272), g8rc:$RT)>;
+  def : InstAlias<"mtsprg"#SPRG#" $RT", (MTSPR8 !add(SPRG, 272), g8rc:$RT)>;
+}
+
+def : InstAlias<"mfasr $RT", (MFSPR8 g8rc:$RT, 280)>;
+def : InstAlias<"mtasr $RT", (MTSPR8 280, g8rc:$RT)>;
+
+def : InstAlias<"mttbl $Rx", (MTSPR8 284, g8rc:$Rx)>;
+def : InstAlias<"mttbu $Rx", (MTSPR8 285, g8rc:$Rx)>;
+
+def : InstAlias<"mfpvr $RT", (MFSPR8 g8rc:$RT, 287)>;
+
+def : InstAlias<"mfspefscr $Rx", (MFSPR8 g8rc:$Rx, 512)>;
+def : InstAlias<"mtspefscr $Rx", (MTSPR8 512, g8rc:$Rx)>;
+
 //===----------------------------------------------------------------------===//
 // Load/Store instructions.
 //
@@ -1248,6 +1332,11 @@ def ADDIdtprelL : PPCEmitTimePseudo<(outs g8rc:$rD), (ins g8rc_nox0:$reg, s16imm
                          [(set i64:$rD,
                            (PPCaddiDtprelL i64:$reg, tglobaltlsaddr:$disp))]>,
                   isPPC64;
+def PADDIdtprel : PPCEmitTimePseudo<(outs g8rc:$rD), (ins g8rc_nox0:$reg, s16imm64:$disp),
+                          "#PADDIdtprel",
+                          [(set i64:$rD,
+                            (PPCpaddiDtprel i64:$reg, tglobaltlsaddr:$disp))]>,
+                  isPPC64;
 
 let PPC970_Unit = 2 in {
 let Interpretation64Bit = 1, isCodeGenOnly = 1 in {
@@ -1363,11 +1452,11 @@ def : Pat<(pre_store i64:$rS, iPTR:$ptrreg, iPTR:$ptroff),
 //
 
 
-let PPC970_Unit = 3, hasSideEffects = 0,
+let PPC970_Unit = 3, hasSideEffects = 0, mayRaiseFPException = 1,
     Uses = [RM] in {  // FPU Operations.
 defm FCFID  : XForm_26r<63, 846, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fcfid", "$frD, $frB", IIC_FPGeneral,
-                        [(set f64:$frD, (PPCfcfid f64:$frB))]>, isPPC64;
+                        [(set f64:$frD, (PPCany_fcfid f64:$frB))]>, isPPC64;
 defm FCTID  : XForm_26r<63, 814, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fctid", "$frD, $frB", IIC_FPGeneral,
                         []>, isPPC64;
@@ -1376,23 +1465,23 @@ defm FCTIDU : XForm_26r<63, 942, (outs f8rc:$frD), (ins f8rc:$frB),
                         []>, isPPC64;
 defm FCTIDZ : XForm_26r<63, 815, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fctidz", "$frD, $frB", IIC_FPGeneral,
-                        [(set f64:$frD, (PPCfctidz f64:$frB))]>, isPPC64;
+                        [(set f64:$frD, (PPCany_fctidz f64:$frB))]>, isPPC64;
 
 defm FCFIDU  : XForm_26r<63, 974, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fcfidu", "$frD, $frB", IIC_FPGeneral,
-                        [(set f64:$frD, (PPCfcfidu f64:$frB))]>, isPPC64;
+                        [(set f64:$frD, (PPCany_fcfidu f64:$frB))]>, isPPC64;
 defm FCFIDS  : XForm_26r<59, 846, (outs f4rc:$frD), (ins f8rc:$frB),
                         "fcfids", "$frD, $frB", IIC_FPGeneral,
-                        [(set f32:$frD, (PPCfcfids f64:$frB))]>, isPPC64;
+                        [(set f32:$frD, (PPCany_fcfids f64:$frB))]>, isPPC64;
 defm FCFIDUS : XForm_26r<59, 974, (outs f4rc:$frD), (ins f8rc:$frB),
                         "fcfidus", "$frD, $frB", IIC_FPGeneral,
-                        [(set f32:$frD, (PPCfcfidus f64:$frB))]>, isPPC64;
+                        [(set f32:$frD, (PPCany_fcfidus f64:$frB))]>, isPPC64;
 defm FCTIDUZ : XForm_26r<63, 943, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fctiduz", "$frD, $frB", IIC_FPGeneral,
-                        [(set f64:$frD, (PPCfctiduz f64:$frB))]>, isPPC64;
+                        [(set f64:$frD, (PPCany_fctiduz f64:$frB))]>, isPPC64;
 defm FCTIWUZ : XForm_26r<63, 143, (outs f8rc:$frD), (ins f8rc:$frB),
                         "fctiwuz", "$frD, $frB", IIC_FPGeneral,
-                        [(set f64:$frD, (PPCfctiwuz f64:$frB))]>, isPPC64;
+                        [(set f64:$frD, (PPCany_fctiwuz f64:$frB))]>, isPPC64;
 }
 
 

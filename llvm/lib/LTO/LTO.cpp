@@ -13,6 +13,7 @@
 #include "llvm/LTO/LTO.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/StackSafetyAnalysis.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Bitcode/BitcodeReader.h"
@@ -139,8 +140,17 @@ void llvm::computeLTOCacheKey(
   // Include the hash for the current module
   auto ModHash = Index.getModuleHash(ModuleID);
   Hasher.update(ArrayRef<uint8_t>((uint8_t *)&ModHash[0], sizeof(ModHash)));
+
+  std::vector<uint64_t> ExportsGUID;
+  ExportsGUID.reserve(ExportList.size());
   for (const auto &VI : ExportList) {
     auto GUID = VI.getGUID();
+    ExportsGUID.push_back(GUID);
+  }
+
+  // Sort the export list elements GUIDs.
+  llvm::sort(ExportsGUID);
+  for (uint64_t GUID : ExportsGUID) {
     // The export list can impact the internalization, be conservative here
     Hasher.update(ArrayRef<uint8_t>((uint8_t *)&GUID, sizeof(GUID)));
   }
@@ -148,12 +158,23 @@ void llvm::computeLTOCacheKey(
   // Include the hash for every module we import functions from. The set of
   // imported symbols for each module may affect code generation and is
   // sensitive to link order, so include that as well.
-  for (auto &Entry : ImportList) {
-    auto ModHash = Index.getModuleHash(Entry.first());
+  using ImportMapIteratorTy = FunctionImporter::ImportMapTy::const_iterator;
+  std::vector<ImportMapIteratorTy> ImportModulesVector;
+  ImportModulesVector.reserve(ImportList.size());
+
+  for (ImportMapIteratorTy It = ImportList.begin(); It != ImportList.end();
+       ++It) {
+    ImportModulesVector.push_back(It);
+  }
+  llvm::sort(ImportModulesVector,
+             [](const ImportMapIteratorTy &Lhs, const ImportMapIteratorTy &Rhs)
+                 -> bool { return Lhs->getKey() < Rhs->getKey(); });
+  for (const ImportMapIteratorTy &EntryIt : ImportModulesVector) {
+    auto ModHash = Index.getModuleHash(EntryIt->first());
     Hasher.update(ArrayRef<uint8_t>((uint8_t *)&ModHash[0], sizeof(ModHash)));
 
-    AddUint64(Entry.second.size());
-    for (auto &Fn : Entry.second)
+    AddUint64(EntryIt->second.size());
+    for (auto &Fn : EntryIt->second)
       AddUint64(Fn);
   }
 
@@ -777,7 +798,7 @@ Error LTO::linkRegularLTO(RegularLTOState::AddedModule Mod,
   for (GlobalValue *GV : Mod.Keep) {
     if (LivenessFromIndex && !ThinLTO.CombinedIndex.isGUIDLive(GV->getGUID())) {
       if (Function *F = dyn_cast<Function>(GV)) {
-        OptimizationRemarkEmitter ORE(F);
+        OptimizationRemarkEmitter ORE(F, nullptr);
         ORE.emit(OptimizationRemark(DEBUG_TYPE, "deadfunction", F)
                  << ore::NV("Function", F)
                  << " not added to the combined module ");
@@ -850,12 +871,28 @@ Error LTO::addThinLTO(BitcodeModule BM, ArrayRef<InputFile::Symbol> Syms,
         "Expected at most one ThinLTO module per bitcode file",
         inconvertibleErrorCode());
 
+  if (!Conf.ThinLTOModulesToCompile.empty()) {
+    if (!ThinLTO.ModulesToCompile)
+      ThinLTO.ModulesToCompile = ModuleMapType();
+    // This is a fuzzy name matching where only modules with name containing the
+    // specified switch values are going to be compiled.
+    for (const std::string &Name : Conf.ThinLTOModulesToCompile) {
+      if (BM.getModuleIdentifier().contains(Name)) {
+        ThinLTO.ModulesToCompile->insert({BM.getModuleIdentifier(), BM});
+        llvm::errs() << "[ThinLTO] Selecting " << BM.getModuleIdentifier()
+                     << " to compile\n";
+      }
+    }
+  }
+
   return Error::success();
 }
 
 unsigned LTO::getMaxTasks() const {
   CalledGetMaxTasks = true;
-  return RegularLTO.ParallelCodeGenParallelismLevel + ThinLTO.ModuleMap.size();
+  auto ModuleCount = ThinLTO.ModulesToCompile ? ThinLTO.ModulesToCompile->size()
+                                              : ThinLTO.ModuleMap.size();
+  return RegularLTO.ParallelCodeGenParallelismLevel + ModuleCount;
 }
 
 // If only some of the modules were split, we cannot correctly handle
@@ -1070,6 +1107,7 @@ public:
       const std::map<GlobalValue::GUID, GlobalValue::LinkageTypes> &ResolvedODR,
       MapVector<StringRef, BitcodeModule> &ModuleMap) = 0;
   virtual Error wait() = 0;
+  virtual unsigned getThreadCount() = 0;
 };
 
 namespace {
@@ -1184,6 +1222,10 @@ public:
     else
       return Error::success();
   }
+
+  unsigned getThreadCount() override {
+    return BackendThreadPool.getThreadCount();
+  }
 };
 } // end anonymous namespace
 
@@ -1272,6 +1314,10 @@ public:
   }
 
   Error wait() override { return Error::success(); }
+
+  // WriteIndexesThinBackend should always return 1 to prevent module
+  // re-ordering and avoid non-determinism in the final link.
+  unsigned getThreadCount() override { return 1; }
 };
 } // end anonymous namespace
 
@@ -1291,6 +1337,11 @@ Error LTO::runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
                       const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols) {
   if (ThinLTO.ModuleMap.empty())
     return Error::success();
+
+  if (ThinLTO.ModulesToCompile && ThinLTO.ModulesToCompile->empty()) {
+    llvm::errs() << "warning: [ThinLTO] No module compiled\n";
+    return Error::success();
+  }
 
   if (Conf.CombinedIndexHook &&
       !Conf.CombinedIndexHook(ThinLTO.CombinedIndex, GUIDPreservedSymbols))
@@ -1392,21 +1443,46 @@ Error LTO::runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
   thinLTOResolvePrevailingInIndex(ThinLTO.CombinedIndex, isPrevailing,
                                   recordNewLinkage, GUIDPreservedSymbols);
 
+  generateParamAccessSummary(ThinLTO.CombinedIndex);
+
   std::unique_ptr<ThinBackendProc> BackendProc =
       ThinLTO.Backend(Conf, ThinLTO.CombinedIndex, ModuleToDefinedGVSummaries,
                       AddStream, Cache);
 
-  // Tasks 0 through ParallelCodeGenParallelismLevel-1 are reserved for combined
-  // module and parallel code generation partitions.
-  unsigned Task = RegularLTO.ParallelCodeGenParallelismLevel;
-  for (auto &Mod : ThinLTO.ModuleMap) {
-    if (Error E = BackendProc->start(Task, Mod.second, ImportLists[Mod.first],
-                                     ExportLists[Mod.first],
-                                     ResolvedODR[Mod.first], ThinLTO.ModuleMap))
-      return E;
-    ++Task;
-  }
+  auto &ModuleMap =
+      ThinLTO.ModulesToCompile ? *ThinLTO.ModulesToCompile : ThinLTO.ModuleMap;
 
+  auto ProcessOneModule = [&](int I) -> Error {
+    auto &Mod = *(ModuleMap.begin() + I);
+    // Tasks 0 through ParallelCodeGenParallelismLevel-1 are reserved for
+    // combined module and parallel code generation partitions.
+    return BackendProc->start(RegularLTO.ParallelCodeGenParallelismLevel + I,
+                              Mod.second, ImportLists[Mod.first],
+                              ExportLists[Mod.first], ResolvedODR[Mod.first],
+                              ThinLTO.ModuleMap);
+  };
+
+  if (BackendProc->getThreadCount() == 1) {
+    // Process the modules in the order they were provided on the command-line.
+    // It is important for this codepath to be used for WriteIndexesThinBackend,
+    // to ensure the emitted LinkedObjectsFile lists ThinLTO objects in the same
+    // order as the inputs, which otherwise would affect the final link order.
+    for (int I = 0, E = ModuleMap.size(); I != E; ++I)
+      if (Error E = ProcessOneModule(I))
+        return E;
+  } else {
+    // When executing in parallel, process largest bitsize modules first to
+    // improve parallelism, and avoid starving the thread pool near the end.
+    // This saves about 15 sec on a 36-core machine while link `clang.exe` (out
+    // of 100 sec).
+    std::vector<BitcodeModule *> ModulesVec;
+    ModulesVec.reserve(ModuleMap.size());
+    for (auto &Mod : ModuleMap)
+      ModulesVec.push_back(&Mod.second);
+    for (int I : generateModulesOrdering(ModulesVec))
+      if (Error E = ProcessOneModule(I))
+        return E;
+  }
   return BackendProc->wait();
 }
 
@@ -1447,4 +1523,19 @@ lto::setupStatsFile(StringRef StatsFilename) {
 
   StatsFile->keep();
   return std::move(StatsFile);
+}
+
+// Compute the ordering we will process the inputs: the rough heuristic here
+// is to sort them per size so that the largest module get schedule as soon as
+// possible. This is purely a compile-time optimization.
+std::vector<int> lto::generateModulesOrdering(ArrayRef<BitcodeModule *> R) {
+  std::vector<int> ModulesOrdering;
+  ModulesOrdering.resize(R.size());
+  std::iota(ModulesOrdering.begin(), ModulesOrdering.end(), 0);
+  llvm::sort(ModulesOrdering, [&](int LeftIndex, int RightIndex) {
+    auto LSize = R[LeftIndex]->getBuffer().size();
+    auto RSize = R[RightIndex]->getBuffer().size();
+    return LSize > RSize;
+  });
+  return ModulesOrdering;
 }

@@ -437,6 +437,8 @@ bool RecurrenceDescriptor::AddReductionVar(PHINode *Phi, RecurrenceKind Kind,
     //       instructions that are a part of the reduction. The vectorizer cost
     //       model could then apply the recurrence type to these instructions,
     //       without needing a white list of instructions to ignore.
+    //       This may also be useful for the inloop reductions, if it can be
+    //       kept simple enough.
     collectCastsToIgnore(TheLoop, ExitInstruction, RecurrenceType, CastInsts);
   }
 
@@ -746,6 +748,7 @@ bool RecurrenceDescriptor::isFirstOrderRecurrence(
 /// This function returns the identity element (or neutral element) for
 /// the operation K.
 Constant *RecurrenceDescriptor::getRecurrenceIdentity(RecurrenceKind K,
+                                                      MinMaxRecurrenceKind MK,
                                                       Type *Tp) {
   switch (K) {
   case RK_IntegerXor:
@@ -765,6 +768,26 @@ Constant *RecurrenceDescriptor::getRecurrenceIdentity(RecurrenceKind K,
   case RK_FloatAdd:
     // Adding zero to a number does not change it.
     return ConstantFP::get(Tp, 0.0L);
+  case RK_IntegerMinMax:
+  case RK_FloatMinMax:
+    switch (MK) {
+    case MRK_UIntMin:
+      return ConstantInt::get(Tp, -1);
+    case MRK_UIntMax:
+      return ConstantInt::get(Tp, 0);
+    case MRK_SIntMin:
+      return ConstantInt::get(
+          Tp, APInt::getSignedMaxValue(Tp->getIntegerBitWidth()));
+    case MRK_SIntMax:
+      return ConstantInt::get(
+          Tp, APInt::getSignedMinValue(Tp->getIntegerBitWidth()));
+    case MRK_FloatMin:
+      return ConstantFP::getInfinity(Tp, true);
+    case MRK_FloatMax:
+      return ConstantFP::getInfinity(Tp, false);
+    default:
+      llvm_unreachable("Unknown recurrence kind");
+    }
   default:
     llvm_unreachable("Unknown recurrence kind");
   }
@@ -794,6 +817,76 @@ unsigned RecurrenceDescriptor::getRecurrenceBinOp(RecurrenceKind Kind) {
   default:
     llvm_unreachable("Unknown recurrence operation");
   }
+}
+
+SmallVector<Instruction *, 4>
+RecurrenceDescriptor::getReductionOpChain(PHINode *Phi, Loop *L) const {
+  SmallVector<Instruction *, 4> ReductionOperations;
+  unsigned RedOp = getRecurrenceBinOp(Kind);
+
+  // Search down from the Phi to the LoopExitInstr, looking for instructions
+  // with a single user of the correct type for the reduction.
+
+  // Note that we check that the type of the operand is correct for each item in
+  // the chain, including the last (the loop exit value). This can come up from
+  // sub, which would otherwise be treated as an add reduction. MinMax also need
+  // to check for a pair of icmp/select, for which we use getNextInstruction and
+  // isCorrectOpcode functions to step the right number of instruction, and
+  // check the icmp/select pair.
+  // FIXME: We also do not attempt to look through Phi/Select's yet, which might
+  // be part of the reduction chain, or attempt to looks through And's to find a
+  // smaller bitwidth. Subs are also currently not allowed (which are usually
+  // treated as part of a add reduction) as they are expected to generally be
+  // more expensive than out-of-loop reductions, and need to be costed more
+  // carefully.
+  unsigned ExpectedUses = 1;
+  if (RedOp == Instruction::ICmp || RedOp == Instruction::FCmp)
+    ExpectedUses = 2;
+
+  auto getNextInstruction = [&](Instruction *Cur) {
+    if (RedOp == Instruction::ICmp || RedOp == Instruction::FCmp) {
+      // We are expecting a icmp/select pair, which we go to the next select
+      // instruction if we can. We already know that Cur has 2 uses.
+      if (isa<SelectInst>(*Cur->user_begin()))
+        return cast<Instruction>(*Cur->user_begin());
+      else
+        return cast<Instruction>(*std::next(Cur->user_begin()));
+    }
+    return cast<Instruction>(*Cur->user_begin());
+  };
+  auto isCorrectOpcode = [&](Instruction *Cur) {
+    if (RedOp == Instruction::ICmp || RedOp == Instruction::FCmp) {
+      Value *LHS, *RHS;
+      return SelectPatternResult::isMinOrMax(
+          matchSelectPattern(Cur, LHS, RHS).Flavor);
+    }
+    return Cur->getOpcode() == RedOp;
+  };
+
+  // The loop exit instruction we check first (as a quick test) but add last. We
+  // check the opcode is correct (and dont allow them to be Subs) and that they
+  // have expected to have the expected number of uses. They will have one use
+  // from the phi and one from a LCSSA value, no matter the type.
+  if (!isCorrectOpcode(LoopExitInstr) || !LoopExitInstr->hasNUses(2))
+    return {};
+
+  // Check that the Phi has one (or two for min/max) uses.
+  if (!Phi->hasNUses(ExpectedUses))
+    return {};
+  Instruction *Cur = getNextInstruction(Phi);
+
+  // Each other instruction in the chain should have the expected number of uses
+  // and be the correct opcode.
+  while (Cur != LoopExitInstr) {
+    if (!isCorrectOpcode(Cur) || !Cur->hasNUses(ExpectedUses))
+      return {};
+
+    ReductionOperations.push_back(Cur);
+    Cur = getNextInstruction(Cur);
+  }
+
+  ReductionOperations.push_back(Cur);
+  return ReductionOperations;
 }
 
 InductionDescriptor::InductionDescriptor(Value *Start, InductionKind K,

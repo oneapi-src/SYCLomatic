@@ -592,6 +592,10 @@ static Option *LookupNearestOption(StringRef Arg,
                                            ie = OptionsMap.end();
        it != ie; ++it) {
     Option *O = it->second;
+    // Do not suggest really hidden options (not shown in any help).
+    if (O->getOptionHiddenFlag() == ReallyHidden)
+      continue;
+
     SmallVector<StringRef, 16> OptionNames;
     O->getExtraOptionNames(OptionNames);
     if (O->hasArgStr())
@@ -1247,6 +1251,22 @@ bool cl::ExpandResponseFiles(StringSaver &Saver, TokenizerCallback Tokenizer,
   return AllExpanded;
 }
 
+bool cl::expandResponseFiles(int Argc, const char *const *Argv,
+                             const char *EnvVar, StringSaver &Saver,
+                             SmallVectorImpl<const char *> &NewArgv) {
+  auto Tokenize = Triple(sys::getProcessTriple()).isOSWindows()
+                      ? cl::TokenizeWindowsCommandLine
+                      : cl::TokenizeGNUCommandLine;
+  // The environment variable specifies initial options.
+  if (EnvVar)
+    if (llvm::Optional<std::string> EnvValue = sys::Process::GetEnv(EnvVar))
+      Tokenize(*EnvValue, Saver, NewArgv, /*MarkEOLs=*/false);
+
+  // Command line options can override the environment variable.
+  NewArgv.append(Argv + 1, Argv + Argc);
+  return ExpandResponseFiles(Saver, Tokenize, NewArgv);
+}
+
 bool cl::readConfigFile(StringRef CfgFile, StringSaver &Saver,
                         SmallVectorImpl<const char *> &Argv) {
   SmallString<128> AbsPath;
@@ -1265,36 +1285,6 @@ bool cl::readConfigFile(StringRef CfgFile, StringSaver &Saver,
   }
   return ExpandResponseFiles(Saver, cl::tokenizeConfigFile, Argv,
                              /*MarkEOLs*/ false, /*RelativeNames*/ true);
-}
-
-/// ParseEnvironmentOptions - An alternative entry point to the
-/// CommandLine library, which allows you to read the program's name
-/// from the caller (as PROGNAME) and its command-line arguments from
-/// an environment variable (whose name is given in ENVVAR).
-///
-void cl::ParseEnvironmentOptions(const char *progName, const char *envVar,
-                                 const char *Overview) {
-  // Check args.
-  assert(progName && "Program name not specified");
-  assert(envVar && "Environment variable name missing");
-
-  // Get the environment variable they want us to parse options out of.
-  llvm::Optional<std::string> envValue = sys::Process::GetEnv(StringRef(envVar));
-  if (!envValue)
-    return;
-
-  // Get program's "name", which we wouldn't know without the caller
-  // telling us.
-  SmallVector<const char *, 20> newArgv;
-  BumpPtrAllocator A;
-  StringSaver Saver(A);
-  newArgv.push_back(Saver.save(progName).data());
-
-  // Parse the value of the environment variable into a "command line"
-  // and hand it off to ParseCommandLineOptions().
-  TokenizeGNUCommandLine(*envValue, Saver, newArgv);
-  int newArgc = static_cast<int>(newArgv.size());
-  ParseCommandLineOptions(newArgc, &newArgv[0], StringRef(Overview));
 }
 
 bool cl::ParseCommandLineOptions(int argc, const char *const *argv,
@@ -1787,9 +1777,10 @@ void basic_parser_impl::printOptionInfo(const Option &O,
   if (!ValName.empty()) {
     if (O.getMiscFlags() & PositionalEatsArgs) {
       outs() << " <" << getValueStr(O, ValName) << ">...";
-    } else {
+    } else if (O.getValueExpectedFlag() == ValueOptional)
+      outs() << "[=<" << getValueStr(O, ValName) << ">]";
+    else
       outs() << "=<" << getValueStr(O, ValName) << '>';
-    }
   }
 
   Option::printHelpStr(O.HelpStr, GlobalWidth, getOptionWidth(O));
@@ -2569,7 +2560,7 @@ public:
     // information.
     if (ExtraVersionPrinters != nullptr) {
       outs() << '\n';
-      for (auto I : *ExtraVersionPrinters)
+      for (const auto &I : *ExtraVersionPrinters)
         I(outs());
     }
 

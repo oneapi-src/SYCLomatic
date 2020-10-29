@@ -204,7 +204,7 @@ void SymbolContext::GetDescription(Stream *s, lldb::DescriptionLevel level,
     Type *func_type = function->GetType();
     if (func_type) {
       s->Indent("   FuncType: ");
-      func_type->GetDescription(s, level, false);
+      func_type->GetDescription(s, level, false, target);
       s->EOL();
     }
   }
@@ -968,7 +968,7 @@ bool SymbolContextSpecifier::AddSpecification(const char *spec_string,
     // CompUnits can't necessarily be resolved here, since an inlined function
     // might show up in a number of CompUnits.  Instead we just convert to a
     // FileSpec and store it away.
-    m_file_spec_up.reset(new FileSpec(spec_string));
+    m_file_spec_up = std::make_unique<FileSpec>(spec_string);
     m_type |= eFileSpecified;
     break;
   case eLineStartSpecified:
@@ -1010,11 +1010,15 @@ void SymbolContextSpecifier::Clear() {
   m_type = eNothingSpecified;
 }
 
-bool SymbolContextSpecifier::SymbolContextMatches(SymbolContext &sc) {
+bool SymbolContextSpecifier::SymbolContextMatches(const SymbolContext &sc) {
   if (m_type == eNothingSpecified)
     return true;
 
-  if (m_target_sp.get() != sc.target_sp.get())
+  // Only compare targets if this specifier has one and it's not the Dummy
+  // target.  Otherwise if a specifier gets made in the dummy target and
+  // copied over we'll artificially fail the comparision.
+  if (m_target_sp && !m_target_sp->IsDummyTarget() &&
+      m_target_sp != sc.target_sp)
     return false;
 
   if (m_type & eModuleSpecified) {

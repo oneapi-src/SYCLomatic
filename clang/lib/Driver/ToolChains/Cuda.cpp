@@ -147,12 +147,13 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
-  #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {
       "11.1", "11.0", "10.2", "10.1", "10.0", "9.2", "9.0", "8.0"};
-  #else
+#else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
-  #endif
+#endif
+  auto &FS = D.getVFS();
 #ifdef INTEL_CUSTOMIZATION
   if (HasSDKPathOption) {
     Candidates.emplace_back(RealSDKPath);
@@ -208,7 +209,7 @@ CudaInstallationDetector::CudaInstallationDetector(
     for (const char *Ver : Versions)
       Candidates.emplace_back(D.SysRoot + "/usr/local/cuda-" + Ver);
 
-    Distro Dist(D.getVFS(), llvm::Triple(llvm::sys::getProcessTriple()));
+    Distro Dist(FS, llvm::Triple(llvm::sys::getProcessTriple()));
     if (Dist.IsDebian() || Dist.IsUbuntu())
       // Special case for Debian to have nvidia-cuda-toolkit work
       // out of the box. More info on http://bugs.debian.org/882505
@@ -221,7 +222,6 @@ CudaInstallationDetector::CudaInstallationDetector(
     if (RealSDKIncludePath.empty() ||
         !D.getVFS().exists(RealSDKIncludePath))
       return;
-    auto &FS = D.getVFS();
     if (!(FS.exists(RealSDKIncludePath + "/cuda_runtime.h") &&
           FS.exists(RealSDKIncludePath + "/cuda.h")))
       return;
@@ -233,41 +233,44 @@ CudaInstallationDetector::CudaInstallationDetector(
       return;
     IsValid = true;
   } else {
-  for (const auto &Candidate : Candidates) {
-    InstallPath = Candidate.Path;
-    if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
-      continue;
+    for (const auto &Candidate : Candidates) {
+      InstallPath = Candidate.Path;
+      if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
+        continue;
 
-    auto &FS = D.getVFS();
-    bool IsFound = false;
-    if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
-        FS.exists(InstallPath + "/include/cuda.h")) {
-      IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
-      if (!IsFound)
+      bool IsFound = false;
+      if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
+          FS.exists(InstallPath + "/include/cuda.h")) {
+        IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
+        if (!IsFound)
+          continue;
+        InstallPath = InstallPath + "/include/";
+        IncludePath = InstallPath;
+      } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
+                 FS.exists(InstallPath + "/cuda.h")) {
+        IsFound = ParseSDKVersionFile(InstallPath + "/cuda.h", Version);
+        if (!IsFound)
+          continue;
+        IncludePath = InstallPath;
+      } else {
         continue;
-      InstallPath = InstallPath + "/include/";
-      IncludePath = InstallPath;
-    } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
-               FS.exists(InstallPath + "/cuda.h")) {
-      IsFound = ParseSDKVersionFile(InstallPath + "/cuda.h", Version);
-      if (!IsFound)
-        continue;
-      IncludePath = InstallPath;
-    } else {
-      continue;
+      }
+
+      IsValid = true;
+      break;
     }
+  }
 #else
   bool NoCudaLib = Args.hasArg(options::OPT_nogpulib);
 
   for (const auto &Candidate : Candidates) {
     InstallPath = Candidate.Path;
-    if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
+    if (InstallPath.empty() || !FS.exists(InstallPath))
       continue;
     BinPath = InstallPath + "/bin";
     IncludePath = InstallPath + "/include";
     LibDevicePath = InstallPath + "/nvvm/libdevice";
 
-    auto &FS = D.getVFS();
     if (!(FS.exists(IncludePath) && FS.exists(BinPath)))
       continue;
     bool CheckLibDevice = (!NoCudaLib || Candidate.StrictChecking);
@@ -312,7 +315,8 @@ CudaInstallationDetector::CudaInstallationDetector(
       }
     } else {
       std::error_code EC;
-      for (llvm::sys::fs::directory_iterator LI(LibDevicePath, EC), LE;
+      for (llvm::vfs::directory_iterator LI = FS.dir_begin(LibDevicePath, EC),
+                                         LE;
            !EC && LI != LE; LI = LI.increment(EC)) {
         StringRef FilePath = LI->path();
         StringRef FileName = llvm::sys::path::filename(FilePath);
@@ -358,11 +362,8 @@ CudaInstallationDetector::CudaInstallationDetector(
     // -nocudalib hasn't been specified.
     if (LibDeviceMap.empty() && !NoCudaLib)
       continue;
-#endif
     IsValid = true;
     break;
-  }
-#ifdef INTEL_CUSTOMIZATION
   }
 #endif
 }
@@ -379,7 +380,7 @@ void CudaInstallationDetector::AddCudaIncludeArgs(
     CC1Args.push_back(DriverArgs.MakeArgString(P));
   }
 
-  if (DriverArgs.hasArg(options::OPT_nocudainc))
+  if (DriverArgs.hasArg(options::OPT_nogpuinc))
     return;
 
   if (!isValid()) {
@@ -396,13 +397,13 @@ void CudaInstallationDetector::AddCudaIncludeArgs(
 void CudaInstallationDetector::CheckCudaVersionSupportsArch(
     CudaArch Arch) const {
   if (Arch == CudaArch::UNKNOWN || Version == CudaVersion::UNKNOWN ||
-      ArchsWithBadVersion.count(Arch) > 0)
+      ArchsWithBadVersion[(int)Arch])
     return;
 
   auto MinVersion = MinVersionForCudaArch(Arch);
   auto MaxVersion = MaxVersionForCudaArch(Arch);
   if (Version < MinVersion || Version > MaxVersion) {
-    ArchsWithBadVersion.insert(Arch);
+    ArchsWithBadVersion[(int)Arch] = true;
     D.Diag(diag::err_drv_cuda_version_unsupported)
         << CudaArchToString(Arch) << CudaVersionToString(MinVersion)
         << CudaVersionToString(MaxVersion) << InstallPath
@@ -565,7 +566,11 @@ void NVPTX::Assembler::ConstructJob(Compilation &C, const JobAction &JA,
     Exec = A->getValue();
   else
     Exec = Args.MakeArgString(TC.GetProgramPath("ptxas"));
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(
+      JA, *this,
+      ResponseFileSupport{ResponseFileSupport::RF_Full, llvm::sys::WEM_UTF8,
+                          "--options-file"},
+      Exec, CmdArgs, Inputs, Output));
 }
 
 static bool shouldIncludePTX(const ArgList &Args, const char *gpu_arch) {
@@ -630,7 +635,11 @@ void NVPTX::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(Args.MakeArgString(A));
 
   const char *Exec = Args.MakeArgString(TC.GetProgramPath("fatbinary"));
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(
+      JA, *this,
+      ResponseFileSupport{ResponseFileSupport::RF_Full, llvm::sys::WEM_UTF8,
+                          "--options-file"},
+      Exec, CmdArgs, Inputs, Output));
 }
 
 void NVPTX::OpenMPLinker::ConstructJob(Compilation &C, const JobAction &JA,
@@ -707,7 +716,11 @@ void NVPTX::OpenMPLinker::ConstructJob(Compilation &C, const JobAction &JA,
 
   const char *Exec =
       Args.MakeArgString(getToolChain().GetProgramPath("nvlink"));
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(
+      JA, *this,
+      ResponseFileSupport{ResponseFileSupport::RF_Full, llvm::sys::WEM_UTF8,
+                          "--options-file"},
+      Exec, CmdArgs, Inputs, Output));
 }
 
 /// CUDA toolchain.  Our assembler is ptxas, and our "linker" is fatbinary,
@@ -956,7 +969,7 @@ void CudaToolChain::adjustDebugInfoKind(
 void CudaToolChain::AddCudaIncludeArgs(const ArgList &DriverArgs,
                                        ArgStringList &CC1Args) const {
   // Check our CUDA version if we're going to include the CUDA headers.
-  if (!DriverArgs.hasArg(options::OPT_nocudainc) &&
+  if (!DriverArgs.hasArg(options::OPT_nogpuinc) &&
       !DriverArgs.hasArg(options::OPT_no_cuda_version_check)) {
     StringRef Arch = DriverArgs.getLastArgValue(options::OPT_march_EQ);
     assert(!Arch.empty() && "Must have an explicit GPU arch.");

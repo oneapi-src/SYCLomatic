@@ -20,6 +20,7 @@
 #include <CL/sycl/detail/type_traits.hpp>
 #include <CL/sycl/group.hpp>
 #include <CL/sycl/id.hpp>
+#include <CL/sycl/interop_handle.hpp>
 #include <CL/sycl/interop_handler.hpp>
 #include <CL/sycl/kernel.hpp>
 #include <CL/sycl/nd_item.hpp>
@@ -33,15 +34,13 @@
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 
-// Forward declaration
+// Forward declarations
 class queue;
 namespace detail {
 class queue_impl;
 } // namespace detail
 
 namespace detail {
-
-using namespace cl;
 
 class stream_impl;
 /// Base class for all types of command groups.
@@ -54,6 +53,8 @@ public:
     COPY_ACC_TO_PTR,
     COPY_PTR_TO_ACC,
     COPY_ACC_TO_ACC,
+    BARRIER,
+    BARRIER_WAITLIST,
     FILL,
     UPDATE_HOST,
     RUN_ON_HOST_INTEL,
@@ -154,6 +155,7 @@ public:
   vector_class<shared_ptr_class<detail::stream_impl>> getStreams() const {
     return MStreams;
   }
+  void clearStreams() { MStreams.clear(); }
 };
 
 /// "Copy memory" command group class.
@@ -304,9 +306,16 @@ public:
 class CGHostTask : public CG {
 public:
   std::unique_ptr<HostTask> MHostTask;
+  // queue for host-interop task
+  shared_ptr_class<detail::queue_impl> MQueue;
+  // context for host-interop task
+  shared_ptr_class<detail::context_impl> MContext;
   vector_class<ArgDesc> MArgs;
 
-  CGHostTask(std::unique_ptr<HostTask> HostTask, vector_class<ArgDesc> Args,
+  CGHostTask(std::unique_ptr<HostTask> HostTask,
+             std::shared_ptr<detail::queue_impl> Queue,
+             std::shared_ptr<detail::context_impl> Context,
+             vector_class<ArgDesc> Args,
              std::vector<std::vector<char>> ArgsStorage,
              std::vector<detail::AccessorImplPtr> AccStorage,
              std::vector<std::shared_ptr<const void>> SharedPtrStorage,
@@ -316,7 +325,25 @@ public:
       : CG(Type, std::move(ArgsStorage), std::move(AccStorage),
            std::move(SharedPtrStorage), std::move(Requirements),
            std::move(Events), std::move(loc)),
-        MHostTask(std::move(HostTask)), MArgs(std::move(Args)) {}
+        MHostTask(std::move(HostTask)), MQueue(Queue), MContext(Context),
+        MArgs(std::move(Args)) {}
+};
+
+class CGBarrier : public CG {
+public:
+  vector_class<detail::EventImplPtr> MEventsWaitWithBarrier;
+
+  CGBarrier(vector_class<detail::EventImplPtr> EventsWaitWithBarrier,
+            std::vector<std::vector<char>> ArgsStorage,
+            std::vector<detail::AccessorImplPtr> AccStorage,
+            std::vector<std::shared_ptr<const void>> SharedPtrStorage,
+            std::vector<Requirement *> Requirements,
+            std::vector<detail::EventImplPtr> Events, CGTYPE Type,
+            detail::code_location loc = {})
+      : CG(Type, std::move(ArgsStorage), std::move(AccStorage),
+           std::move(SharedPtrStorage), std::move(Requirements),
+           std::move(Events), std::move(loc)),
+        MEventsWaitWithBarrier(std::move(EventsWaitWithBarrier)) {}
 };
 
 } // namespace detail

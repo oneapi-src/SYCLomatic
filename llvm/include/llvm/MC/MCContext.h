@@ -57,6 +57,7 @@ namespace llvm {
   class MCSymbol;
   class MCSymbolELF;
   class MCSymbolWasm;
+  class MCSymbolXCOFF;
   class SMLoc;
   class SourceMgr;
 
@@ -96,6 +97,7 @@ namespace llvm {
     SpecificBumpPtrAllocator<MCSectionMachO> MachOAllocator;
     SpecificBumpPtrAllocator<MCSectionWasm> WasmAllocator;
     SpecificBumpPtrAllocator<MCSectionXCOFF> XCOFFAllocator;
+    SpecificBumpPtrAllocator<MCInst> MCInstAllocator;
 
     /// Bindings of names to symbols.
     SymbolTable Symbols;
@@ -184,6 +186,9 @@ namespace llvm {
 
     /// The maximum version of dwarf that we should emit.
     uint16_t DwarfVersion = 4;
+
+    /// The format of dwarf that we emit.
+    dwarf::DwarfFormat DwarfFormat = dwarf::DWARF32;
 
     /// Honor temporary labels, this is useful for debugging semantic
     /// differences between temporary and non-temporary labels (primarily on
@@ -305,6 +310,9 @@ namespace llvm {
                                        unsigned UniqueID,
                                        const MCSymbolELF *LinkedToSym);
 
+    MCSymbolXCOFF *createXCOFFSymbolImpl(const StringMapEntry<bool> *Name,
+                                         bool IsTemporary);
+
     /// Map of currently defined macros.
     StringMap<MCAsmMacro> MacroMap;
 
@@ -372,6 +380,11 @@ namespace llvm {
     void reset();
 
     /// @}
+
+    /// \name McInst Management
+
+    /// Create and return a new MC instruction.
+    MCInst *createMCInst();
 
     /// \name Symbol Management
     /// @{
@@ -552,7 +565,6 @@ namespace llvm {
     MCSectionXCOFF *getXCOFFSection(StringRef Section,
                                     XCOFF::StorageMappingClass MappingClass,
                                     XCOFF::SymbolType CSectType,
-                                    XCOFF::StorageClass StorageClass,
                                     SectionKind K,
                                     const char *BeginSymName = nullptr);
 
@@ -694,10 +706,8 @@ namespace llvm {
     void setDwarfDebugProducer(StringRef S) { DwarfDebugProducer = S; }
     StringRef getDwarfDebugProducer() { return DwarfDebugProducer; }
 
-    dwarf::DwarfFormat getDwarfFormat() const {
-      // TODO: Support DWARF64
-      return dwarf::DWARF32;
-    }
+    void setDwarfFormat(dwarf::DwarfFormat f) { DwarfFormat = f; }
+    dwarf::DwarfFormat getDwarfFormat() const { return DwarfFormat; }
 
     void setDwarfVersion(uint16_t v) { DwarfVersion = v; }
     uint16_t getDwarfVersion() const { return DwarfVersion; }

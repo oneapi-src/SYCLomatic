@@ -8,7 +8,7 @@ endif()
 # Setup Project
 #===============================================================================
 
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.13.4)
 
 if(POLICY CMP0042)
   cmake_policy(SET CMP0042 NEW) # Set MACOSX_RPATH=YES by default
@@ -21,6 +21,11 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
   )
 
+set(LIBCXXABI_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
+set(LIBCXXABI_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
+set(LIBCXXABI_LIBCXX_PATH "${CMAKE_CURRENT_LIST_DIR}/../libcxx" CACHE PATH
+        "Specify path to libc++ source.")
+
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXXABI_STANDALONE_BUILD)
   project(libcxxabi CXX C)
 
@@ -28,6 +33,16 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXXABI_STANDALONE_B
   set(PACKAGE_VERSION 11.0.0git)
   set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
+
+  # Add the CMake module path of libcxx so we can reuse HandleOutOfTreeLLVM.cmake
+  set(LIBCXXABI_LIBCXX_CMAKE_PATH "${LIBCXXABI_LIBCXX_PATH}/cmake/Modules")
+  list(APPEND CMAKE_MODULE_PATH "${LIBCXXABI_LIBCXX_CMAKE_PATH}")
+
+  # In a standalone build, we don't have llvm to automatically generate the
+  # llvm-lit script for us.  So we need to provide an explicit directory that
+  # the configurator should write the script into.
+  set(LIBCXXABI_STANDALONE_BUILD 1)
+  set(LLVM_LIT_OUTPUT_DIR "${LIBCXXABI_BINARY_DIR}/bin")
 
   # Find the LLVM sources and simulate LLVM CMake options.
   include(HandleOutOfTreeLLVM)
@@ -72,13 +87,10 @@ When the dynamic_cast would normally fail, this option will cause the \
 library to try comparing the type_info names to see if they are equal \
 instead." OFF)
 
-# FIXME: This option should default to off. Unfortunatly GCC 4.9 fails to link
-# programs to due undefined references to new/delete in libc++abi. Once this
-# has been fixed or worked around the default value should be changed.
-# See https://reviews.llvm.org/D68269 for more details.
 option(LIBCXXABI_ENABLE_NEW_DELETE_DEFINITIONS
-    "Build libc++abi with definitions for operator new/delete. Normally libc++
-    provides these definitions" ON)
+  "Build libc++abi with definitions for operator new/delete. These are normally
+   defined in libc++abi, but it is also possible to define them in libc++, in
+   which case the definition in libc++abi should be turned off." ON)
 option(LIBCXXABI_BUILD_32_BITS "Build 32 bit libc++abi." ${LLVM_BUILD_32_BITS})
 option(LIBCXXABI_INCLUDE_TESTS "Generate build targets for the libc++abi unit tests." ${LLVM_INCLUDE_TESTS})
 set(LIBCXXABI_LIBDIR_SUFFIX "${LLVM_LIBDIR_SUFFIX}" CACHE STRING
@@ -126,56 +138,17 @@ if (NOT LIBCXXABI_ENABLE_SHARED AND NOT LIBCXXABI_ENABLE_STATIC)
   message(FATAL_ERROR "libc++abi must be built as either a shared or static library.")
 endif()
 
-if (LLVM_EXTERNAL_LIBCXX_SOURCE_DIR)
-  set(LIBCXXABI_LIBCXX_SRC_DIRS ${LLVM_EXTERNAL_LIBCXX_SOURCE_DIR})
-else()
-  set(LIBCXXABI_LIBCXX_SRC_DIRS
-    "${LLVM_MAIN_SRC_DIR}/projects/libcxx"
-    "${LLVM_MAIN_SRC_DIR}/runtimes/libcxx"
-    "${LLVM_MAIN_SRC_DIR}/../libcxx"
-    )
-endif()
-
-set(LIBCXXABI_LIBCXX_INCLUDE_DIRS "")
-foreach(dir ${LIBCXXABI_LIBCXX_SRC_DIRS})
-  list(APPEND LIBCXXABI_LIBCXX_INCLUDE_DIRS "${dir}/include")
-endforeach()
-
-find_path(
-  LIBCXXABI_LIBCXX_INCLUDES
-  __config
-  PATHS ${LIBCXXABI_LIBCXX_INCLUDES}
-        ${LIBCXXABI_LIBCXX_PATH}/include
-        ${CMAKE_BINARY_DIR}/${LIBCXXABI_LIBCXX_INCLUDES}
-        ${LIBCXXABI_LIBCXX_INCLUDE_DIRS}
-        ${LLVM_INCLUDE_DIR}/c++/v1
-  NO_DEFAULT_PATH
-  NO_CMAKE_FIND_ROOT_PATH
-  )
-
-set(LIBCXXABI_LIBCXX_INCLUDES "${LIBCXXABI_LIBCXX_INCLUDES}" CACHE PATH
-    "Specify path to libc++ includes." FORCE)
-
-find_path(
-  LIBCXXABI_LIBCXX_PATH
-  utils/libcxx/test/__init__.py
-  PATHS ${LIBCXXABI_LIBCXX_PATH}
-        ${LIBCXXABI_LIBCXX_INCLUDES}/../
-        ${LIBCXXABI_LIBCXX_SRC_DIRS}
-  NO_DEFAULT_PATH
-  NO_CMAKE_FIND_ROOT_PATH
-  )
-
-if (LIBCXXABI_LIBCXX_PATH STREQUAL "LIBCXXABI_LIBCXX_PATH-NOTFOUND")
-  message(WARNING "LIBCXXABI_LIBCXX_PATH was not specified and couldn't be infered.")
-  set(LIBCXXABI_LIBCXX_PATH "")
-endif()
-
-set(LIBCXXABI_LIBCXX_PATH "${LIBCXXABI_LIBCXX_PATH}" CACHE PATH
-    "Specify path to libc++ source." FORCE)
+set(LIBCXXABI_LIBCXX_INCLUDES "${LIBCXXABI_LIBCXX_PATH}/include" CACHE PATH
+    "Specify path to libc++ includes.")
+message(STATUS "Libc++abi will be using libc++ includes from ${LIBCXXABI_LIBCXX_INCLUDES}")
 
 option(LIBCXXABI_HERMETIC_STATIC_LIBRARY
   "Do not export any symbols from the static library." OFF)
+
+set(LIBCXXABI_TEST_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/test/lit.site.cfg.in" CACHE STRING
+    "The Lit testing configuration to use when running the tests.")
+set(LIBCXXABI_TEST_PARAMS "" CACHE STRING
+    "A list of parameters to run the Lit test suite with.")
 
 #===============================================================================
 # Configure System
@@ -187,13 +160,6 @@ set(CMAKE_MODULE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
   ${CMAKE_MODULE_PATH}
   )
-
-set(LIBCXXABI_COMPILER    ${CMAKE_CXX_COMPILER})
-set(LIBCXXABI_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
-set(LIBCXXABI_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
-
-string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" CLANG_VERSION
-       ${PACKAGE_VERSION})
 
 if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
   set(LIBCXXABI_LIBRARY_DIR ${LLVM_LIBRARY_OUTPUT_INTDIR}/${LLVM_DEFAULT_TARGET_TRIPLE}/c++)
@@ -289,6 +255,8 @@ if (LIBCXXABI_HAS_NOSTDINCXX_FLAG)
   # See: https://gitlab.kitware.com/cmake/cmake/issues/19227
   set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "")
   # Remove -stdlib flags to prevent them from causing an unused flag warning.
+  string(REPLACE "--stdlib=libc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  string(REPLACE "--stdlib=libstdc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE "-stdlib=libc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE "-stdlib=libstdc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
@@ -324,6 +292,8 @@ add_compile_flags_if_supported(-Wunused-variable)
 add_compile_flags_if_supported(-Wwrite-strings)
 add_compile_flags_if_supported(-Wundef)
 
+add_compile_flags_if_supported(-Wno-suggest-override)
+
 if (LIBCXXABI_ENABLE_WERROR)
   add_compile_flags_if_supported(-Werror)
   add_compile_flags_if_supported(-WX)
@@ -346,7 +316,6 @@ if (LIBCXXABI_ENABLE_EXCEPTIONS)
   # Do we really need to be run through the C compiler ?
   add_c_compile_flags_if_supported(-funwind-tables)
 else()
-  add_definitions(-D_LIBCXXABI_NO_EXCEPTIONS)
   add_compile_flags_if_supported(-fno-exceptions)
   add_compile_flags_if_supported(-EHs-)
   add_compile_flags_if_supported(-EHa-)
@@ -369,10 +338,6 @@ else()
     list(APPEND LIBCXXABI_COMPILE_FLAGS -DNDEBUG)
   endif()
 endif()
-# Static library
-if (NOT LIBCXXABI_ENABLE_SHARED)
-  list(APPEND LIBCXXABI_COMPILE_FLAGS -D_LIBCPP_BUILD_STATIC)
-endif()
 
 # Threading
 if (NOT LIBCXXABI_ENABLE_THREADS)
@@ -392,6 +357,7 @@ if (NOT LIBCXXABI_ENABLE_THREADS)
                         " is also set to ON.")
   endif()
   add_definitions(-D_LIBCXXABI_HAS_NO_THREADS)
+  add_definitions(-D_LIBCPP_HAS_NO_THREADS)
 endif()
 
 if (LIBCXXABI_HAS_EXTERNAL_THREAD_API)
@@ -512,20 +478,6 @@ endif()
 add_subdirectory(src)
 
 if (LIBCXXABI_INCLUDE_TESTS)
-  if (LIBCXXABI_STANDALONE_BUILD AND NOT LIBCXXABI_ENABLE_SHARED)
-    # We can't reasonably test the system C++ library with a static
-    # libc++abi.  We either need to be able to replace libc++abi at
-    # run time (with a shared libc++abi), or we need to be able to
-    # replace the C++ runtime (with a non- standalone build).
-    message(WARNING "The libc++abi tests aren't valid when libc++abi "
-                    "is built standalone (i.e. outside of "
-                    "llvm/projects/libcxxabi ) and is built without "
-                    "a shared library.  Either build a shared "
-                    "library, build libc++abi at the same time as "
-                    "you build libc++, or do without testing.  No "
-                    "check target will be available!")
-  else()
-    add_subdirectory(test)
-    add_subdirectory(fuzz)
-  endif()
+  add_subdirectory(test)
+  add_subdirectory(fuzz)
 endif()

@@ -11,6 +11,8 @@
 
 #include "flang/Common/Fortran.h"
 #include "flang/ISO_Fortran_binding.h"
+#include <optional>
+#include <utility>
 
 namespace Fortran::runtime {
 
@@ -20,12 +22,12 @@ class TypeCode {
 public:
   TypeCode() {}
   explicit TypeCode(ISO::CFI_type_t t) : raw_{t} {}
-  TypeCode(TypeCategory, int);
+  TypeCode(TypeCategory, int kind);
 
   int raw() const { return raw_; }
 
   constexpr bool IsValid() const {
-    return raw_ >= CFI_type_signed_char && raw_ <= CFI_type_struct;
+    return raw_ >= CFI_type_signed_char && raw_ <= CFI_TYPE_LAST;
   }
   constexpr bool IsInteger() const {
     return raw_ >= CFI_type_signed_char && raw_ <= CFI_type_ptrdiff_t;
@@ -37,30 +39,18 @@ public:
     return raw_ >= CFI_type_float_Complex &&
         raw_ <= CFI_type_long_double_Complex;
   }
-  constexpr bool IsCharacter() const { return raw_ == CFI_type_char; }
-  constexpr bool IsLogical() const { return raw_ == CFI_type_Bool; }
+  constexpr bool IsCharacter() const {
+    return raw_ == CFI_type_char || raw_ == CFI_type_char16_t ||
+        raw_ == CFI_type_char32_t;
+  }
+  constexpr bool IsLogical() const {
+    return raw_ == CFI_type_Bool ||
+        (raw_ >= CFI_type_int_fast8_t && raw_ <= CFI_type_int_fast64_t);
+  }
   constexpr bool IsDerived() const { return raw_ == CFI_type_struct; }
-
   constexpr bool IsIntrinsic() const { return IsValid() && !IsDerived(); }
 
-  constexpr TypeCategory Categorize() const {
-    if (IsInteger()) {
-      return TypeCategory::Integer;
-    }
-    if (IsReal()) {
-      return TypeCategory::Real;
-    }
-    if (IsComplex()) {
-      return TypeCategory::Complex;
-    }
-    if (IsCharacter()) {
-      return TypeCategory::Character;
-    }
-    if (IsLogical()) {
-      return TypeCategory::Logical;
-    }
-    return TypeCategory::Derived;
-  }
+  std::optional<std::pair<TypeCategory, int>> GetCategoryAndKind() const;
 
 private:
   ISO::CFI_type_t raw_{CFI_type_other};

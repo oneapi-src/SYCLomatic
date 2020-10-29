@@ -1,5 +1,5 @@
-; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=kaveri -mattr=-code-object-v3 -enable-ipra=0 -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,VARABI %s
-; RUN: llc -amdgpu-fixed-function-abi -mtriple=amdgcn-amd-amdhsa -mcpu=kaveri -mattr=-code-object-v3 -enable-ipra=0 -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,FIXEDABI %s
+; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=kaveri --amdhsa-code-object-version=2 -enable-ipra=0 -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,VARABI %s
+; RUN: llc -amdgpu-fixed-function-abi -mtriple=amdgcn-amd-amdhsa -mcpu=kaveri --amdhsa-code-object-version=2 -enable-ipra=0 -verify-machineinstrs < %s | FileCheck -enable-var-scope -check-prefixes=GCN,FIXEDABI %s
 
 ; GCN-LABEL: {{^}}use_workitem_id_x:
 ; GCN: s_waitcnt
@@ -625,10 +625,9 @@ define void @too_many_args_use_workitem_id_x_byval(
 
 ; FIXEDABI: v_mov_b32_e32 [[K0:v[0-9]+]], 0x3e7
 ; FIXEDABI: buffer_store_dword [[K0]], off, s[0:3], 0 offset:4{{$}}
-
 ; FIXEDABI: s_movk_i32 s32, 0x400{{$}}
-
 ; FIXEDABI: v_mov_b32_e32 [[K1:v[0-9]+]], 0x140
+
 ; FIXEDABI: buffer_store_dword [[K1]], off, s[0:3], s32{{$}}
 
 ; FIXME: Why this reload?
@@ -671,7 +670,6 @@ define amdgpu_kernel void @kern_call_too_many_args_use_workitem_id_x_byval() #1 
 ; FIXED-ABI-NOT: v31
 ; FIXEDABI: v_mov_b32_e32 [[K0:v[0-9]+]], 0x3e7{{$}}
 ; FIXEDABI: buffer_store_dword [[K0]], off, s[0:3], s33{{$}}
-
 ; FIXEDABI: v_mov_b32_e32 [[K1:v[0-9]+]], 0x140{{$}}
 ; FIXEDABI: buffer_store_dword [[K1]], off, s[0:3], s32{{$}}
 ; FIXEDABI: buffer_load_dword [[RELOAD_BYVAL:v[0-9]+]], off, s[0:3], s33{{$}}

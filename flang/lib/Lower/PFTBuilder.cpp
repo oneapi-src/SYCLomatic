@@ -64,8 +64,11 @@ struct UnwrapStmt<parser::UnlabeledStatement<A>> {
 class PFTBuilder {
 public:
   PFTBuilder(const semantics::SemanticsContext &semanticsContext)
-      : pgm{std::make_unique<lower::pft::Program>()},
-        parentVariantStack{*pgm.get()}, semanticsContext{semanticsContext} {}
+      : pgm{std::make_unique<lower::pft::Program>()}, semanticsContext{
+                                                          semanticsContext} {
+    lower::pft::ParentVariant parent{*pgm.get()};
+    parentVariantStack.push_back(parent);
+  }
 
   /// Get the result
   std::unique_ptr<lower::pft::Program> result() { return std::move(pgm); }
@@ -170,13 +173,24 @@ private:
 
   void exitModule() {
     parentVariantStack.pop_back();
-    resetFunctionList();
+    resetFunctionState();
+  }
+
+  /// Ensure that a function has a branch target after the last user statement.
+  void endFunctionBody() {
+    if (lastLexicalEvaluation) {
+      static const parser::ContinueStmt endTarget{};
+      addEvaluation(
+          lower::pft::Evaluation{endTarget, parentVariantStack.back(), {}, {}});
+      lastLexicalEvaluation = nullptr;
+    }
   }
 
   /// Initialize a new function-like unit and make it the builder's focus.
   template <typename A>
   bool enterFunction(const A &func,
                      const semantics::SemanticsContext &semanticsContext) {
+    endFunctionBody(); // enclosing host subprogram body, if any
     auto &unit = addFunction(lower::pft::FunctionLikeUnit{
         func, parentVariantStack.back(), semanticsContext});
     labelEvaluationMap = &unit.labelEvaluationMap;
@@ -188,17 +202,13 @@ private:
   }
 
   void exitFunction() {
-    // Guarantee that there is a branch target after the last user statement.
-    static const parser::ContinueStmt endTarget{};
-    addEvaluation(
-        lower::pft::Evaluation{endTarget, parentVariantStack.back(), {}, {}});
-    lastLexicalEvaluation = nullptr;
+    endFunctionBody();
     analyzeBranches(nullptr, *evaluationListStack.back()); // add branch links
     popEvaluationList();
     labelEvaluationMap = nullptr;
     assignSymbolLabelMap = nullptr;
     parentVariantStack.pop_back();
-    resetFunctionList();
+    resetFunctionState();
   }
 
   /// Initialize a new construct and make it the builder's focus.
@@ -219,12 +229,14 @@ private:
     constructAndDirectiveStack.pop_back();
   }
 
-  /// Reset functionList to an enclosing function's functionList.
-  void resetFunctionList() {
+  /// Reset function state to that of an enclosing host function.
+  void resetFunctionState() {
     if (!parentVariantStack.empty()) {
       parentVariantStack.back().visit(common::visitors{
           [&](lower::pft::FunctionLikeUnit &p) {
             functionList = &p.nestedFunctions;
+            labelEvaluationMap = &p.labelEvaluationMap;
+            assignSymbolLabelMap = &p.assignSymbolLabelMap;
           },
           [&](lower::pft::ModuleLikeUnit &p) {
             functionList = &p.nestedFunctions;
@@ -346,13 +358,10 @@ private:
 
   /// Set the exit of a construct, possibly from multiple enclosing constructs.
   void setConstructExit(lower::pft::Evaluation &eval) {
-    eval.constructExit = eval.evaluationList->back().lexicalSuccessor;
-    if (eval.constructExit && eval.constructExit->isNopConstructStmt()) {
-      eval.constructExit = eval.constructExit->parentConstruct->constructExit;
-    }
-    assert(eval.constructExit && "missing construct exit");
+    eval.constructExit = &eval.evaluationList->back().nonNopSuccessor();
   }
 
+  /// Mark the target of a branch as a new block.
   void markBranchTarget(lower::pft::Evaluation &sourceEvaluation,
                         lower::pft::Evaluation &targetEvaluation) {
     sourceEvaluation.isUnstructured = true;
@@ -360,6 +369,22 @@ private:
       sourceEvaluation.controlSuccessor = &targetEvaluation;
     }
     targetEvaluation.isNewBlock = true;
+    // If this is a branch into the body of a construct (usually illegal,
+    // but allowed in some legacy cases), then the targetEvaluation and its
+    // ancestors must be marked as unstructured.
+    auto *sourceConstruct = sourceEvaluation.parentConstruct;
+    auto *targetConstruct = targetEvaluation.parentConstruct;
+    if (targetEvaluation.isConstructStmt() &&
+        &targetConstruct->getFirstNestedEvaluation() == &targetEvaluation)
+      // A branch to an initial constructStmt is a branch to the construct.
+      targetConstruct = targetConstruct->parentConstruct;
+    if (targetConstruct) {
+      while (sourceConstruct && sourceConstruct != targetConstruct)
+        sourceConstruct = sourceConstruct->parentConstruct;
+      if (sourceConstruct != targetConstruct)
+        for (auto *eval = &targetEvaluation; eval; eval = eval->parentConstruct)
+          eval->isUnstructured = true;
+    }
   }
   void markBranchTarget(lower::pft::Evaluation &sourceEvaluation,
                         parser::Label label) {
@@ -370,20 +395,9 @@ private:
     markBranchTarget(sourceEvaluation, *targetEvaluation);
   }
 
-  /// Return the first non-nop successor of an evaluation, possibly exiting
-  /// from one or more enclosing constructs.
-  lower::pft::Evaluation *exitSuccessor(lower::pft::Evaluation &eval) {
-    lower::pft::Evaluation *successor{eval.lexicalSuccessor};
-    if (successor && successor->isNopConstructStmt()) {
-      successor = successor->parentConstruct->constructExit;
-    }
-    assert(successor && "missing exit successor");
-    return successor;
-  }
-
-  /// Mark the exit successor of an Evaluation as a new block.
+  /// Mark the successor of an Evaluation as a new block.
   void markSuccessorAsNewBlock(lower::pft::Evaluation &eval) {
-    exitSuccessor(eval)->isNewBlock = true;
+    eval.nonNopSuccessor().isNewBlock = true;
   }
 
   template <typename A>
@@ -521,7 +535,8 @@ private:
           [&](const parser::AssignedGotoStmt &) {
             // Although this statement is a branch, it doesn't have any
             // explicit control successors.  So the code at the end of the
-            // loop won't mark the exit successor.  Do that here.
+            // loop won't mark the successor.  Do that here.
+            eval.isUnstructured = true;
             markSuccessorAsNewBlock(eval);
           },
 
@@ -542,7 +557,7 @@ private:
             lastConstructStmtEvaluation = &eval;
           },
           [&](const parser::EndSelectStmt &) {
-            eval.lexicalSuccessor->isNewBlock = true;
+            eval.nonNopSuccessor().isNewBlock = true;
             lastConstructStmtEvaluation = nullptr;
           },
           [&](const parser::ChangeTeamStmt &s) {
@@ -563,7 +578,7 @@ private:
               eval.isUnstructured = true; // infinite loop
               return;
             }
-            eval.lexicalSuccessor->isNewBlock = true;
+            eval.nonNopSuccessor().isNewBlock = true;
             eval.controlSuccessor = &evaluationList.back();
             if (std::holds_alternative<parser::ScalarLogicalExpr>(control->u)) {
               eval.isUnstructured = true; // while loop
@@ -702,7 +717,7 @@ private:
           markSuccessorAsNewBlock(eval);
           lastIfStmtEvaluation->isUnstructured = true;
         }
-        lastIfStmtEvaluation->controlSuccessor = exitSuccessor(eval);
+        lastIfStmtEvaluation->controlSuccessor = &eval.nonNopSuccessor();
         lastIfStmtEvaluation = nullptr;
       }
 
@@ -718,7 +733,7 @@ private:
         parentConstruct->isUnstructured = true;
       }
 
-      // The lexical successor of a branch starts a new block.
+      // The successor of a branch starts a new block.
       if (eval.controlSuccessor && eval.isActionStmt() &&
           eval.lowerAsUnstructured()) {
         markSuccessorAsNewBlock(eval);
@@ -893,11 +908,15 @@ private:
 template <typename A, typename T>
 static lower::pft::FunctionLikeUnit::FunctionStatement
 getFunctionStmt(const T &func) {
-  return std::get<parser::Statement<A>>(func.t);
+  lower::pft::FunctionLikeUnit::FunctionStatement result{
+      std::get<parser::Statement<A>>(func.t)};
+  return result;
 }
 template <typename A, typename T>
 static lower::pft::ModuleLikeUnit::ModuleStatement getModuleStmt(const T &mod) {
-  return std::get<parser::Statement<A>>(mod.t);
+  lower::pft::ModuleLikeUnit::ModuleStatement result{
+      std::get<parser::Statement<A>>(mod.t)};
+  return result;
 }
 
 static const semantics::Symbol *getSymbol(
@@ -1041,6 +1060,16 @@ private:
 
 void Fortran::lower::pft::FunctionLikeUnit::processSymbolTable(
     const semantics::Scope &scope) {
+  // TODO: handle equivalence and common blocks
+  if (!scope.equivalenceSets().empty()) {
+    llvm::errs() << "TODO: equivalence not yet handled in lowering.\n"
+                 << "note: equivalence used in "
+                 << (scope.GetName() && !scope.GetName()->empty()
+                         ? scope.GetName()->ToString()
+                         : "unnamed program"s)
+                 << "\n";
+    exit(1);
+  }
   SymbolDependenceDepth sdd{varList};
   for (const auto &iter : scope)
     sdd.analyze(iter.second.get());
@@ -1056,7 +1085,8 @@ Fortran::lower::pft::FunctionLikeUnit::FunctionLikeUnit(
   const auto &ps{
       std::get<std::optional<parser::Statement<parser::ProgramStmt>>>(func.t)};
   if (ps.has_value()) {
-    beginStmt = ps.value();
+    FunctionStatement begin{ps.value()};
+    beginStmt = begin;
     symbol = getSymbol(beginStmt);
     processSymbolTable(*symbol->scope());
   } else {

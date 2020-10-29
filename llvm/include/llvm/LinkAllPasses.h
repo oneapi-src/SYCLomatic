@@ -37,6 +37,7 @@
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/SYCLLowerIR/LowerESIMD.h"
 #include "llvm/SYCLLowerIR/LowerWGScope.h"
 #include "llvm/Support/Valgrind.h"
 #include "llvm/Transforms/AggressiveInstCombine/AggressiveInstCombine.h"
@@ -90,12 +91,11 @@ namespace {
       (void) llvm::createLibCallsShrinkWrapPass();
       (void) llvm::createCalledValuePropagationPass();
       (void) llvm::createConstantMergePass();
-      (void) llvm::createConstantPropagationPass();
       (void) llvm::createControlHeightReductionLegacyPass();
       (void) llvm::createCostModelAnalysisPass();
       (void) llvm::createDeadArgEliminationPass();
+      (void) llvm::createDeadArgEliminationSYCLPass();
       (void) llvm::createDeadCodeEliminationPass();
-      (void) llvm::createDeadInstEliminationPass();
       (void) llvm::createDeadStoreEliminationPass();
       (void) llvm::createDependenceAnalysisWrapperPass();
       (void) llvm::createDomOnlyPrinterPass();
@@ -117,7 +117,6 @@ namespace {
       (void) llvm::createGlobalsAAWrapperPass();
       (void) llvm::createGuardWideningPass();
       (void) llvm::createLoopGuardWideningPass();
-      (void) llvm::createIPConstantPropagationPass();
       (void) llvm::createIPSCCPPass();
       (void) llvm::createInductiveRangeCheckEliminationPass();
       (void) llvm::createIndVarSimplifyPass();
@@ -131,6 +130,7 @@ namespace {
       (void) llvm::createLazyValueInfoPass();
       (void) llvm::createLoopExtractorPass();
       (void) llvm::createLoopInterchangePass();
+      (void) llvm::createLoopFlattenPass();
       (void) llvm::createLoopPredicationPass();
       (void) llvm::createLoopSimplifyPass();
       (void) llvm::createLoopSimplifyCFGPass();
@@ -201,13 +201,16 @@ namespace {
       (void) llvm::createMergeICmpsLegacyPass();
       (void) llvm::createExpandMemCmpPass();
       (void)llvm::createSYCLLowerWGScopePass();
+      (void)llvm::createSYCLLowerESIMDPass();
+      (void)llvm::createESIMDLowerLoadStorePass();
+      (void)llvm::createESIMDLowerVecArgPass();
       std::string buf;
       llvm::raw_string_ostream os(buf);
       (void) llvm::createPrintModulePass(os);
       (void) llvm::createPrintFunctionPass(os);
       (void) llvm::createModuleDebugInfoPrinterPass();
       (void) llvm::createPartialInliningPass();
-      (void) llvm::createLintPass();
+      (void) llvm::createLintLegacyPassPass();
       (void) llvm::createSinkingPass();
       (void) llvm::createLowerAtomicPass();
       (void) llvm::createCorrelatedValuePropagationPass();

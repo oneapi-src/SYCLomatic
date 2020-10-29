@@ -178,27 +178,49 @@ func @contains_regions(%cond : i1) {
 // block is used in another.
 
 // CHECK-LABEL: func @mismatch_loop(
-// CHECK-SAME: %[[ARG:.*]]: i1
-func @mismatch_loop(%cond : i1) {
-  // CHECK: cond_br %{{.*}}, ^bb1(%[[ARG]] : i1), ^bb2
+// CHECK-SAME: %[[ARG:.*]]: i1, %[[ARG2:.*]]: i1
+func @mismatch_loop(%cond : i1, %cond2 : i1) {
+  // CHECK: cond_br %{{.*}}, ^bb1(%[[ARG2]] : i1), ^bb2
 
   cond_br %cond, ^bb2, ^bb3
 
 ^bb1:
-  // CHECK: ^bb1(%[[ARG2:.*]]: i1):
+  // CHECK: ^bb1(%[[ARG3:.*]]: i1):
   // CHECK-NEXT: %[[LOOP_CARRY:.*]] = "foo.op"
-  // CHECK-NEXT: cond_br %[[ARG2]], ^bb1(%[[LOOP_CARRY]] : i1), ^bb2
+  // CHECK-NEXT: cond_br %[[ARG3]], ^bb1(%[[LOOP_CARRY]] : i1), ^bb2
 
   %ignored = "foo.op"() : () -> (i1)
-  cond_br %cond2, ^bb1, ^bb3
+  cond_br %cond3, ^bb1, ^bb3
 
 ^bb2:
-  %cond2 = "foo.op"() : () -> (i1)
-  cond_br %cond, ^bb1, ^bb3
+  %cond3 = "foo.op"() : () -> (i1)
+  cond_br %cond2, ^bb1, ^bb3
 
 ^bb3:
   // CHECK: ^bb2:
   // CHECK-NEXT: return
 
   return
+}
+
+// Check that blocks are not merged if the types of the operands differ.
+
+// CHECK-LABEL: func @mismatch_operand_types(
+func @mismatch_operand_types(%arg0 : i1, %arg1 : memref<i32>, %arg2 : memref<i1>) {
+  %c0_i32 = constant 0 : i32
+  %true = constant true
+  br ^bb1
+
+^bb1:
+  cond_br %arg0, ^bb2, ^bb3
+
+^bb2:
+  // CHECK: store %{{.*}}, %{{.*}} : memref<i32>
+  store %c0_i32, %arg1[] : memref<i32>
+  br ^bb1
+
+^bb3:
+  // CHECK: store %{{.*}}, %{{.*}} : memref<i1>
+  store %true, %arg2[] : memref<i1>
+  br ^bb1
 }

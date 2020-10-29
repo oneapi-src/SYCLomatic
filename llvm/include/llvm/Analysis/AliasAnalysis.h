@@ -349,6 +349,12 @@ public:
   IsCapturedCacheT IsCapturedCache;
 
   AAQueryInfo() : AliasCache(), IsCapturedCache() {}
+
+  AliasResult updateResult(const LocPair &Locs, AliasResult Result) {
+    auto It = AliasCache.find(Locs);
+    assert(It != AliasCache.end() && "Entry must have existed");
+    return It->second = Result;
+  }
 };
 
 class BatchAAResults;
@@ -846,6 +852,13 @@ public:
   }
   FunctionModRefBehavior getModRefBehavior(const CallBase *Call) {
     return AA.getModRefBehavior(Call);
+  }
+  bool isMustAlias(const MemoryLocation &LocA, const MemoryLocation &LocB) {
+    return alias(LocA, LocB) == MustAlias;
+  }
+  bool isMustAlias(const Value *V1, const Value *V2) {
+    return alias(MemoryLocation(V1, LocationSize::precise(1)),
+                 MemoryLocation(V2, LocationSize::precise(1))) == MustAlias;
   }
 };
 

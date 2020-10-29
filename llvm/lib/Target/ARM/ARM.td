@@ -594,6 +594,12 @@ def ProcA75     : SubtargetFeature<"a75", "ARMProcFamily", "CortexA75",
                                    "Cortex-A75 ARM processors", []>;
 def ProcA76     : SubtargetFeature<"a76", "ARMProcFamily", "CortexA76",
                                    "Cortex-A76 ARM processors", []>;
+def ProcA77     : SubtargetFeature<"a77", "ARMProcFamily", "CortexA77",
+                                   "Cortex-A77 ARM processors", []>;
+def ProcA78     : SubtargetFeature<"cortex-a78", "ARMProcFamily", "CortexA78",
+                                   "Cortex-A78 ARM processors", []>;
+def ProcX1      : SubtargetFeature<"cortex-x1", "ARMProcFamily", "CortexX1",
+                                   "Cortex-X1 ARM processors", []>;
 
 def ProcKrait   : SubtargetFeature<"krait", "ARMProcFamily", "Krait",
                                    "Qualcomm Krait processors", []>;
@@ -885,9 +891,34 @@ include "ARMPredicates.td"
 include "ARMSchedule.td"
 
 //===----------------------------------------------------------------------===//
+// Register File Description
+//===----------------------------------------------------------------------===//
+
+include "ARMRegisterInfo.td"
+include "ARMRegisterBanks.td"
+include "ARMCallingConv.td"
+
+//===----------------------------------------------------------------------===//
+// Instruction Descriptions
+//===----------------------------------------------------------------------===//
+
+include "ARMInstrInfo.td"
+def ARMInstrInfo : InstrInfo;
+
+//===----------------------------------------------------------------------===//
+// ARM schedules
+//
+include "ARMScheduleV6.td"
+include "ARMScheduleA8.td"
+include "ARMScheduleA9.td"
+include "ARMScheduleSwift.td"
+include "ARMScheduleR52.td"
+include "ARMScheduleA57.td"
+include "ARMScheduleM4.td"
+
+//===----------------------------------------------------------------------===//
 // ARM processors
 //
-
 // Dummy CPU, used to target architectures
 def : ProcessorModel<"generic",     CortexA8Model,      []>;
 
@@ -1224,6 +1255,30 @@ def : ProcNoItin<"cortex-a76ae",                        [ARMv82a, ProcA76,
                                                          FeatureFullFP16,
                                                          FeatureDotProd]>;
 
+def : ProcNoItin<"cortex-a77",                          [ARMv82a, ProcA77,
+                                                         FeatureHWDivThumb,
+                                                         FeatureHWDivARM,
+                                                         FeatureCrypto,
+                                                         FeatureCRC,
+                                                         FeatureFullFP16,
+                                                         FeatureDotProd]>;
+
+def : ProcNoItin<"cortex-a78",                          [ARMv82a, ProcA78,
+                                                         FeatureHWDivThumb,
+                                                         FeatureHWDivARM,
+                                                         FeatureCrypto,
+                                                         FeatureCRC,
+                                                         FeatureFullFP16,
+                                                         FeatureDotProd]>;
+
+def : ProcNoItin<"cortex-x1",                           [ARMv82a, ProcX1,
+                                                         FeatureHWDivThumb,
+                                                         FeatureHWDivARM,
+                                                         FeatureCrypto,
+                                                         FeatureCRC,
+                                                         FeatureFullFP16,
+                                                         FeatureDotProd]>;
+
 def : ProcNoItin<"neoverse-n1",                         [ARMv82a,
                                                          FeatureHWDivThumb,
                                                          FeatureHWDivARM,
@@ -1264,21 +1319,6 @@ def : ProcNoItin<"kryo",                                [ARMv8a, ProcKryo,
 def : ProcessorModel<"cortex-r52", CortexR52Model,      [ARMv8r, ProcR52,
                                                          FeatureUseMISched,
                                                          FeatureFPAO]>;
-
-//===----------------------------------------------------------------------===//
-// Register File Description
-//===----------------------------------------------------------------------===//
-
-include "ARMRegisterInfo.td"
-include "ARMRegisterBanks.td"
-include "ARMCallingConv.td"
-
-//===----------------------------------------------------------------------===//
-// Instruction Descriptions
-//===----------------------------------------------------------------------===//
-
-include "ARMInstrInfo.td"
-def ARMInstrInfo : InstrInfo;
 
 //===----------------------------------------------------------------------===//
 // Declare the target which we are implementing

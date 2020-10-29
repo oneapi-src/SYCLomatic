@@ -1,8 +1,8 @@
 # RUN: llvm-mc -triple x86_64-unknown-linux %s -filetype=obj -o %t.o
 # RUN: not llvm-dwarfdump -v -debug-info %t.o 2> %t.err | FileCheck %s
-# RUN: FileCheck %s --input-file %t.err --check-prefix=ERR
+# RUN: FileCheck %s --input-file %t.err --check-prefix=ERR --implicit-check-not=error
 # RUN: not llvm-dwarfdump -lookup 10 %t.o 2> %t2.err
-# RUN: FileCheck %s --input-file %t2.err --check-prefix=ERR
+# RUN: FileCheck %s --input-file %t2.err --check-prefix=ERR --implicit-check-not=error
 # RUN: llvm-dwarfdump -debug-rnglists %t.o | \
 # RUN:   FileCheck %s --check-prefix=RNGLISTS
 
@@ -209,13 +209,13 @@ Range1_end:
 # CHECK-NEXT: DW_AT_ranges [DW_FORM_rnglistx] (indexed (0x1) rangelist = 0x00000025
 # CHECK-NEXT: [0x0000002a, 0x00000034))
 
-#ERR: error: parsing a range list table: did not detect a valid list table with base = 0x8
-#ERR: error: decoding address ranges: missing or invalid range list table
+#ERR: error: decoding address ranges: invalid range list offset 0x4000500000008
 #ERR: error: decoding address ranges: invalid range list offset 0xfa0
 
 # RNGLISTS:      .debug_rnglists contents:
 # RNGLISTS:      range list header:
 # RNGLISTS-SAME:   length = 0x0000000000000031,
+# RNGLISTS-SAME:   format = DWARF64,
 # RNGLISTS-SAME:   version = 0x0005,
 # RNGLISTS-SAME:   addr_size = 0x04,
 # RNGLISTS-SAME:   seg_size = 0x00,
@@ -234,6 +234,7 @@ Range1_end:
 # RNGLISTS:      .debug_rnglists.dwo contents:
 # RNGLISTS:      range list header:
 # RNGLISTS-SAME:   length = 0x0000000000000022,
+# RNGLISTS-SAME:   format = DWARF64,
 # RNGLISTS-SAME:   version = 0x0005,
 # RNGLISTS-SAME:   addr_size = 0x04,
 # RNGLISTS-SAME:   seg_size = 0x00,

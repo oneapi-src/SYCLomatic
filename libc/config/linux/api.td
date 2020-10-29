@@ -2,6 +2,7 @@ include "config/public_api.td"
 
 include "spec/gnu_ext.td"
 include "spec/linux.td"
+include "spec/llvm_libc_ext.td"
 include "spec/posix.td"
 include "spec/stdc.td"
 
@@ -85,6 +86,9 @@ def AssertAPI : PublicAPI<"assert.h"> {
   ];
 }
 
+def CTypeAPI : PublicAPI<"ctype.h"> {
+}
+
 def MathErrHandlingMacro : MacroDef<"math_errhandling"> {
   let Defn = [{
     #ifndef math_errhandling
@@ -148,44 +152,9 @@ def MathAPI : PublicAPI<"math.h"> {
     DoubleT,
     FloatT,
   ];
-  let Functions = [
-   "cosf",
-   "fabs",
-   "fabsf",
-   "expf",
-   "exp2f",
-   "round",
-   "sincosf",
-   "sinf",
-  ];
 }
 
 def StringAPI : PublicAPI<"string.h"> {
-  let Functions = [
-    "memcpy",
-    "memmove",
-    "memcmp",
-    "memchr",
-    "memset",
-    "strcpy",
-    "strncpy",
-    "strcat",
-    "strncat",
-    "strcmp",
-    "strcoll",
-    "strncmp",
-    "strxfrm",
-    "strchr",
-    "strcspn",
-    "strpbrk",
-    "strrchr",
-    "strspn",
-    "strstr",
-    "strtok",
-    "strerror",
-    "strlen",
-  ];
-
   let TypeDeclarations = [
     SizeT,
   ];
@@ -200,17 +169,9 @@ def StdIOAPI : PublicAPI<"stdio.h"> {
     SizeT,
     FILE,
   ];
-
-  let Functions = [
-    "fwrite",
-  ];
 }
 
 def StdlibAPI : PublicAPI<"stdlib.h"> {
-  let Functions = [
-    "_Exit",
-    "abort",
-  ];
 }
 
 def ErrnoAPI : PublicAPI<"errno.h"> {
@@ -256,11 +217,6 @@ def SysMManAPI : PublicAPI<"sys/mman.h"> {
     SizeT,
     OffT,
   ];
-
-  let Functions = [
-    "mmap",
-    "munmap",
-  ];
 }
 
 def StructSigactionDefn : TypeDecl<"struct sigaction"> {
@@ -287,17 +243,6 @@ def SignalAPI : PublicAPI<"signal.h"> {
   let TypeDeclarations = [
     StructSigactionDefn,
     SighandlerTDefn,
-  ];
-
-  let Functions = [
-    "raise",
-    "sigaction",
-    "sigdelset",
-    "sigprocmask",
-    "sigemptyset",
-    "sigaddset",
-    "sigfillset",
-    "signal",
   ];
 }
 
@@ -348,24 +293,11 @@ def ThreadsAPI : PublicAPI<"threads.h"> {
     "thrd_error",
     "thrd_nomem",
   ];
-
-  let Functions = [
-    "call_once",
-    "mtx_init",
-    "mtx_lock",
-    "mtx_unlock",
-    "thrd_create",
-    "thrd_join",
-  ];
 }
 
 def UniStdAPI : PublicAPI<"unistd.h"> {
   let TypeDeclarations = [
     SSizeT,
     SizeT,
-  ];
-
-  let Functions = [
-    "write",
   ];
 }

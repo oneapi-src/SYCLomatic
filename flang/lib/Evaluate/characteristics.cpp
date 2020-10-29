@@ -65,7 +65,14 @@ std::optional<TypeAndShape> TypeAndShape::Characterize(
   return std::visit(
       common::visitors{
           [&](const semantics::ObjectEntityDetails &object) {
-            return Characterize(object);
+            auto result{Characterize(object)};
+            if (result &&
+                result->type().category() == TypeCategory::Character) {
+              if (auto len{DataRef{symbol}.LEN()}) {
+                result->set_LEN(Fold(context, std::move(*len)));
+              }
+            }
+            return result;
           },
           [&](const semantics::ProcEntityDetails &proc) {
             const semantics::ProcInterface &interface{proc.interface()};
@@ -106,7 +113,15 @@ std::optional<TypeAndShape> TypeAndShape::Characterize(
     const semantics::AssocEntityDetails &assoc, FoldingContext &context) {
   if (auto type{DynamicType::From(assoc.type())}) {
     if (auto shape{GetShape(context, assoc.expr())}) {
-      return TypeAndShape{std::move(*type), std::move(*shape)};
+      TypeAndShape result{std::move(*type), std::move(*shape)};
+      if (type->category() == TypeCategory::Character) {
+        if (const auto *chExpr{UnwrapExpr<Expr<SomeCharacter>>(assoc.expr())}) {
+          if (auto len{chExpr->LEN()}) {
+            result.set_LEN(Fold(context, std::move(*len)));
+          }
+        }
+      }
+      return std::move(result);
     }
   }
   return std::nullopt;
@@ -121,19 +136,38 @@ std::optional<TypeAndShape> TypeAndShape::Characterize(
   }
 }
 
+std::optional<TypeAndShape> TypeAndShape::Characterize(
+    const ActualArgument &arg, FoldingContext &context) {
+  return Characterize(arg.UnwrapExpr(), context);
+}
+
 bool TypeAndShape::IsCompatibleWith(parser::ContextualMessages &messages,
     const TypeAndShape &that, const char *thisIs, const char *thatIs,
     bool isElemental) const {
-  const auto &len{that.LEN()};
-  if (!type_.IsTypeCompatibleWith(that.type_)) {
+  if (!type_.IsTkCompatibleWith(that.type_)) {
+    const auto &len{that.LEN()};
     messages.Say(
         "%1$s type '%2$s' is not compatible with %3$s type '%4$s'"_err_en_US,
         thatIs, that.type_.AsFortran(len ? len->AsFortran() : ""), thisIs,
-        type_.AsFortran());
+        type_.AsFortran(LEN_ ? LEN_->AsFortran() : ""));
     return false;
   }
   return isElemental ||
       CheckConformance(messages, shape_, that.shape_, thisIs, thatIs);
+}
+
+std::optional<Expr<SubscriptInteger>> TypeAndShape::MeasureSizeInBytes(
+    FoldingContext *foldingContext) const {
+  if (type_.category() == TypeCategory::Character && LEN_) {
+    Expr<SubscriptInteger> result{
+        common::Clone(*LEN_) * Expr<SubscriptInteger>{type_.kind()}};
+    if (foldingContext) {
+      result = Fold(*foldingContext, std::move(result));
+    }
+    return result;
+  } else {
+    return type_.MeasureSizeInBytes(foldingContext);
+  }
 }
 
 void TypeAndShape::AcquireShape(const semantics::ObjectEntityDetails &object) {
@@ -173,7 +207,7 @@ void TypeAndShape::AcquireLEN() {
   if (type_.category() == TypeCategory::Character) {
     if (const auto *param{type_.charLength()}) {
       if (const auto &intExpr{param->GetExplicit()}) {
-        LEN_ = *intExpr;
+        LEN_ = ConvertToType<SubscriptInteger>(common::Clone(*intExpr));
       }
     }
   }
@@ -183,7 +217,7 @@ llvm::raw_ostream &TypeAndShape::Dump(llvm::raw_ostream &o) const {
   o << type_.AsFortran(LEN_ ? LEN_->AsFortran() : "");
   attrs_.Dump(o, EnumToString);
   if (!shape_.empty()) {
-    o << " dimension(";
+    o << " dimension";
     char sep{'('};
     for (const auto &expr : shape_) {
       o << sep;
@@ -347,7 +381,11 @@ std::optional<DummyArgument> DummyArgument::FromActual(
                 DummyDataObject{
                     TypeAndShape{DynamicType::TypelessIntrinsicArgument()}});
           },
-          [](const NullPointer &) { return std::optional<DummyArgument>{}; },
+          [&](const NullPointer &) {
+            return std::make_optional<DummyArgument>(std::move(name),
+                DummyDataObject{
+                    TypeAndShape{DynamicType::TypelessIntrinsicArgument()}});
+          },
           [&](const ProcedureDesignator &designator) {
             if (auto proc{Procedure::Characterize(
                     designator, context.intrinsics())}) {
@@ -410,12 +448,37 @@ void DummyArgument::SetOptional(bool value) {
       u);
 }
 
+void DummyArgument::SetIntent(common::Intent intent) {
+  std::visit(common::visitors{
+                 [intent](DummyDataObject &data) { data.intent = intent; },
+                 [intent](DummyProcedure &proc) { proc.intent = intent; },
+                 [](AlternateReturn &) { DIE("cannot set intent"); },
+             },
+      u);
+}
+
+common::Intent DummyArgument::GetIntent() const {
+  return std::visit(common::visitors{
+                        [](const DummyDataObject &data) { return data.intent; },
+                        [](const DummyProcedure &proc) { return proc.intent; },
+                        [](const AlternateReturn &) -> common::Intent {
+                          DIE("Alternate return have no intent");
+                        },
+                    },
+      u);
+}
+
 bool DummyArgument::CanBePassedViaImplicitInterface() const {
   if (const auto *object{std::get_if<DummyDataObject>(&u)}) {
     return object->CanBePassedViaImplicitInterface();
   } else {
     return true;
   }
+}
+
+bool DummyArgument::IsTypelessIntrinsicDummy() const {
+  const auto *argObj{std::get_if<characteristics::DummyDataObject>(&u)};
+  return argObj && argObj->type.type().IsTypelessIntrinsicArgument();
 }
 
 llvm::raw_ostream &DummyArgument::Dump(llvm::raw_ostream &o) const {
@@ -440,8 +503,8 @@ bool FunctionResult::operator==(const FunctionResult &that) const {
 
 std::optional<FunctionResult> FunctionResult::Characterize(
     const Symbol &symbol, const IntrinsicProcTable &intrinsics) {
-  if (const auto *obj{symbol.detailsIf<semantics::ObjectEntityDetails>()}) {
-    if (auto type{TypeAndShape::Characterize(*obj)}) {
+  if (const auto *object{symbol.detailsIf<semantics::ObjectEntityDetails>()}) {
+    if (auto type{TypeAndShape::Characterize(*object)}) {
       FunctionResult result{std::move(*type)};
       CopyAttrs<FunctionResult, FunctionResult::Attr>(symbol, result,
           {
@@ -480,6 +543,8 @@ bool FunctionResult::CanBeReturnedViaImplicitInterface() const {
         if (const auto *param{type.charLength()}) {
           if (const auto &expr{param->GetExplicit()}) {
             return IsConstantExpr(*expr); // 15.4.2.2(4)(c)
+          } else if (param->isAssumed()) {
+            return true;
           }
         }
         return false;
@@ -563,8 +628,9 @@ bool Procedure::CanOverride(
 }
 
 std::optional<Procedure> Procedure::Characterize(
-    const semantics::Symbol &symbol, const IntrinsicProcTable &intrinsics) {
+    const semantics::Symbol &original, const IntrinsicProcTable &intrinsics) {
   Procedure result;
+  const auto &symbol{ResolveAssociations(original)};
   CopyAttrs<Procedure, Procedure::Attr>(symbol, result,
       {
           {semantics::Attr::PURE, Procedure::Attr::Pure},

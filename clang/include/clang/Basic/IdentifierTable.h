@@ -48,7 +48,7 @@ using IdentifierLocPair = std::pair<IdentifierInfo *, SourceLocation>;
 /// of a pointer to one of these classes.
 enum { IdentifierInfoAlignment = 8 };
 
-static constexpr int ObjCOrBuiltinIDBits = 14;
+static constexpr int ObjCOrBuiltinIDBits = 15;
 
 /// One of these records is kept for each identifier that
 /// is lexed.  This contains information about whether the token was \#define'd,
@@ -224,18 +224,6 @@ public:
       return tok::objc_not_keyword;
   }
   void setObjCKeywordID(tok::ObjCKeywordKind ID) { ObjCOrBuiltinID = ID; }
-
-  /// True if setNotBuiltin() was called.
-  bool hasRevertedBuiltin() const {
-    return ObjCOrBuiltinID == tok::NUM_OBJC_KEYWORDS;
-  }
-
-  /// Revert the identifier to a non-builtin identifier. We do this if
-  /// the name of a known builtin library function is used to declare that
-  /// function, but an unexpected type is specified.
-  void revertBuiltin() {
-    setBuiltinID(0);
-  }
 
   /// Return a value indicating whether this is a builtin function.
   ///

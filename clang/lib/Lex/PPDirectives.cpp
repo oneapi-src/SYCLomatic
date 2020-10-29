@@ -379,8 +379,12 @@ Optional<unsigned> Preprocessor::getSkippedRangeForExcludedConditionalBlock(
 
   std::pair<FileID, unsigned> HashFileOffset =
       SourceMgr.getDecomposedLoc(HashLoc);
-  const llvm::MemoryBuffer *Buf = SourceMgr.getBuffer(HashFileOffset.first);
-  auto It = ExcludedConditionalDirectiveSkipMappings->find(Buf);
+  Optional<llvm::MemoryBufferRef> Buf =
+      SourceMgr.getBufferOrNone(HashFileOffset.first);
+  if (!Buf)
+    return None;
+  auto It =
+      ExcludedConditionalDirectiveSkipMappings->find(Buf->getBufferStart());
   if (It == ExcludedConditionalDirectiveSkipMappings->end())
     return None;
 
@@ -432,6 +436,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
     // Skip to the next '#endif' / '#else' / '#elif'.
     CurLexer->skipOver(*SkipLength);
   }
+  SourceLocation endLoc;
   while (true) {
     CurLexer->Lex(Tok);
 
@@ -538,7 +543,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           // Restore the value of LexingRawMode so that trailing comments
           // are handled correctly, if we've reached the outermost block.
           CurPPLexer->LexingRawMode = false;
-          CheckEndOfDirective("endif");
+          endLoc = CheckEndOfDirective("endif");
           CurPPLexer->LexingRawMode = true;
           if (Callbacks)
             Callbacks->Endif(Tok.getLocation(), CondInfo.IfLoc);
@@ -565,7 +570,7 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           // Restore the value of LexingRawMode so that trailing comments
           // are handled correctly.
           CurPPLexer->LexingRawMode = false;
-          CheckEndOfDirective("else");
+          endLoc = CheckEndOfDirective("else");
           CurPPLexer->LexingRawMode = true;
           if (Callbacks)
             Callbacks->Else(Tok.getLocation(), CondInfo.IfLoc);
@@ -621,7 +626,9 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
   // by the end of the preamble; we'll resume parsing after the preamble.
   if (Callbacks && (Tok.isNot(tok::eof) || !isRecordingPreamble()))
     Callbacks->SourceRangeSkipped(
-        SourceRange(HashTokenLoc, CurPPLexer->getSourceLocation()),
+        SourceRange(HashTokenLoc, endLoc.isValid()
+                                      ? endLoc
+                                      : CurPPLexer->getSourceLocation()),
         Tok.getLocation());
 }
 
@@ -2402,7 +2409,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
              diag::ext_variadic_macro);
 
       // OpenCL v1.2 s6.9.e: variadic macros are not supported.
-      if (LangOpts.OpenCL) {
+      if (LangOpts.OpenCL && !LangOpts.OpenCLCPlusPlus) {
         Diag(Tok, diag::ext_pp_opencl_variadic_macros);
       }
 

@@ -70,6 +70,8 @@ bool IsIntrinsicConcat(
     const evaluate::DynamicType &, int, const evaluate::DynamicType &, int);
 
 bool IsGenericDefinedOp(const Symbol &);
+bool IsDefinedOperator(SourceName);
+std::string MakeOpName(SourceName);
 bool DoesScopeContain(const Scope *maybeAncestor, const Scope &maybeDescendent);
 bool DoesScopeContain(const Scope *, const Symbol &);
 bool IsUseAssociated(const Symbol &, const Scope &);
@@ -84,8 +86,7 @@ bool IsStmtFunctionResult(const Symbol &);
 bool IsPointerDummy(const Symbol &);
 bool IsBindCProcedure(const Symbol &);
 bool IsBindCProcedure(const Scope &);
-bool IsProcName(const Symbol &symbol); // proc-name
-bool IsFunctionResult(const Symbol &);
+bool IsProcName(const Symbol &); // proc-name
 bool IsFunctionResultWithSameNameAsFunction(const Symbol &);
 bool IsExtensibleType(const DerivedTypeSpec *);
 bool IsBuiltinDerivedType(const DerivedTypeSpec *derived, const char *name);
@@ -96,9 +97,12 @@ bool IsIsoCType(const DerivedTypeSpec *);
 bool IsEventTypeOrLockType(const DerivedTypeSpec *);
 bool IsOrContainsEventOrLockComponent(const Symbol &);
 bool CanBeTypeBoundProc(const Symbol *);
-bool IsInitialized(const Symbol &);
+bool IsInitialized(const Symbol &, bool ignoreDATAstatements = false);
 bool HasIntrinsicTypeName(const Symbol &);
 bool IsSeparateModuleProcedureInterface(const Symbol *);
+bool IsAutomatic(const Symbol &);
+bool HasAlternateReturns(const Symbol &);
+bool InCommonBlock(const Symbol &);
 
 // Return an ultimate component of type that matches predicate, or nullptr.
 const Symbol *FindUltimateComponent(const DerivedTypeSpec &type,
@@ -146,6 +150,8 @@ bool IsFinalizable(const Symbol &);
 bool IsFinalizable(const DerivedTypeSpec &);
 bool HasImpureFinal(const DerivedTypeSpec &);
 bool IsCoarray(const Symbol &);
+bool IsInBlankCommon(const Symbol &);
+bool IsAutomaticObject(const Symbol &);
 inline bool IsAssumedSizeArray(const Symbol &symbol) {
   const auto *details{symbol.detailsIf<ObjectEntityDetails>()};
   return details && details->IsAssumedSize();
@@ -156,6 +162,7 @@ inline bool IsAssumedRankArray(const Symbol &symbol) {
 }
 bool IsAssumedLengthCharacter(const Symbol &);
 bool IsExternal(const Symbol &);
+bool IsModuleProcedure(const Symbol &);
 // Is the symbol modifiable in this scope
 std::optional<parser::MessageFixedText> WhyNotModifiable(
     const Symbol &, const Scope &);
@@ -235,15 +242,17 @@ bool ExprTypeKindIsDefault(
     const SomeExpr &expr, const SemanticsContext &context);
 
 struct GetExprHelper {
-  const SomeExpr *Get(const parser::Expr &);
-  const SomeExpr *Get(const parser::Variable &);
-  template <typename T> const SomeExpr *Get(const common::Indirection<T> &x) {
+  static const SomeExpr *Get(const parser::Expr &);
+  static const SomeExpr *Get(const parser::Variable &);
+  static const SomeExpr *Get(const parser::DataStmtConstant &);
+  template <typename T>
+  static const SomeExpr *Get(const common::Indirection<T> &x) {
     return Get(x.value());
   }
-  template <typename T> const SomeExpr *Get(const std::optional<T> &x) {
+  template <typename T> static const SomeExpr *Get(const std::optional<T> &x) {
     return x ? Get(*x) : nullptr;
   }
-  template <typename T> const SomeExpr *Get(const T &x) {
+  template <typename T> static const SomeExpr *Get(const T &x) {
     if constexpr (ConstraintTrait<T>) {
       return Get(x.thing);
     } else if constexpr (WrapperTrait<T>) {
@@ -274,6 +283,20 @@ template <typename T> bool IsZero(const T &expr) {
   auto value{GetIntValue(expr)};
   return value && *value == 0;
 }
+
+// 15.2.2
+enum class ProcedureDefinitionClass {
+  None,
+  Intrinsic,
+  External,
+  Internal,
+  Module,
+  Dummy,
+  Pointer,
+  StatementFunction
+};
+
+ProcedureDefinitionClass ClassifyProcedure(const Symbol &);
 
 // Derived type component iterator that provides a C++ LegacyForwardIterator
 // iterator over the Ordered, Direct, Ultimate or Potential components of a
@@ -519,5 +542,8 @@ private:
       parser::CharBlock stmtLocation, parser::MessageFormattedText &&message,
       parser::CharBlock constructLocation);
 };
+// Return the (possibly null) name of the ConstructNode
+const std::optional<parser::Name> &MaybeGetNodeName(
+    const ConstructNode &construct);
 } // namespace Fortran::semantics
 #endif // FORTRAN_SEMANTICS_TOOLS_H_

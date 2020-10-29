@@ -877,6 +877,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::NoMerge:
       case Attribute::NoReturn:
       case Attribute::NoSync:
+      case Attribute::NoUndef:
       case Attribute::None:
       case Attribute::NonNull:
       case Attribute::Preallocated:
@@ -894,6 +895,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::WriteOnly:
       case Attribute::ZExt:
       case Attribute::ImmArg:
+      case Attribute::ByRef:
       case Attribute::EndAttrKinds:
       case Attribute::EmptyKey:
       case Attribute::TombstoneKey:
@@ -929,6 +931,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::StrictFP:
       case Attribute::UWTable:
       case Attribute::NoCfCheck:
+      case Attribute::MustProgress:
         break;
       }
 
@@ -1022,32 +1025,21 @@ static void insertLifetimeMarkersSurroundingCall(
     Module *M, ArrayRef<Value *> LifetimesStart, ArrayRef<Value *> LifetimesEnd,
     CallInst *TheCall) {
   LLVMContext &Ctx = M->getContext();
-  auto Int8PtrTy = Type::getInt8PtrTy(Ctx);
   auto NegativeOne = ConstantInt::getSigned(Type::getInt64Ty(Ctx), -1);
   Instruction *Term = TheCall->getParent()->getTerminator();
 
-  // The memory argument to a lifetime marker must be a i8*. Cache any bitcasts
-  // needed to satisfy this requirement so they may be reused.
-  DenseMap<Value *, Value *> Bitcasts;
-
   // Emit lifetime markers for the pointers given in \p Objects. Insert the
   // markers before the call if \p InsertBefore, and after the call otherwise.
-  auto insertMarkers = [&](Function *MarkerFunc, ArrayRef<Value *> Objects,
+  auto insertMarkers = [&](Intrinsic::ID IID, ArrayRef<Value *> Objects,
                            bool InsertBefore) {
     for (Value *Mem : Objects) {
       assert((!isa<Instruction>(Mem) || cast<Instruction>(Mem)->getFunction() ==
                                             TheCall->getFunction()) &&
              "Input memory not defined in original function");
-      Value *&MemAsI8Ptr = Bitcasts[Mem];
-      if (!MemAsI8Ptr) {
-        if (Mem->getType() == Int8PtrTy)
-          MemAsI8Ptr = Mem;
-        else
-          MemAsI8Ptr =
-              CastInst::CreatePointerCast(Mem, Int8PtrTy, "lt.cast", TheCall);
-      }
-
-      auto Marker = CallInst::Create(MarkerFunc, {NegativeOne, MemAsI8Ptr});
+      assert(Mem->getType()->isPointerTy() && "Expected pointer to memory");
+      Function *MarkerFunc =
+          llvm::Intrinsic::getDeclaration(M, IID, Mem->getType());
+      auto Marker = CallInst::Create(MarkerFunc, {NegativeOne, Mem});
       if (InsertBefore)
         Marker->insertBefore(TheCall);
       else
@@ -1055,17 +1047,9 @@ static void insertLifetimeMarkersSurroundingCall(
     }
   };
 
-  if (!LifetimesStart.empty()) {
-    auto StartFn = llvm::Intrinsic::getDeclaration(
-        M, llvm::Intrinsic::lifetime_start, Int8PtrTy);
-    insertMarkers(StartFn, LifetimesStart, /*InsertBefore=*/true);
-  }
-
-  if (!LifetimesEnd.empty()) {
-    auto EndFn = llvm::Intrinsic::getDeclaration(
-        M, llvm::Intrinsic::lifetime_end, Int8PtrTy);
-    insertMarkers(EndFn, LifetimesEnd, /*InsertBefore=*/false);
-  }
+  insertMarkers(Intrinsic::lifetime_start, LifetimesStart,
+                /*InsertBefore=*/true);
+  insertMarkers(Intrinsic::lifetime_end, LifetimesEnd, /*InsertBefore=*/false);
 }
 
 /// emitCallAndSwitchStatement - This method sets up the caller side by adding
@@ -1433,7 +1417,7 @@ static void fixupDebugInfoPostExtraction(Function &OldFunc, Function &NewFunc,
   // function arguments, as the parameters don't correspond to anything at the
   // source level.
   assert(OldSP->getUnit() && "Missing compile unit for subprogram");
-  DIBuilder DIB(*OldFunc.getParent(), /*AllowUnresolvedNodes=*/false,
+  DIBuilder DIB(*OldFunc.getParent(), /*AllowUnresolved=*/false,
                 OldSP->getUnit());
   auto SPType = DIB.createSubroutineType(DIB.getOrCreateTypeArray(None));
   DISubprogram::DISPFlags SPFlags = DISubprogram::SPFlagDefinition |
@@ -1738,7 +1722,7 @@ bool CodeExtractor::verifyAssumptionCache(const Function &OldFunc,
                                           const Function &NewFunc,
                                           AssumptionCache *AC) {
   for (auto AssumeVH : AC->assumptions()) {
-    CallInst *I = dyn_cast_or_null<CallInst>(AssumeVH);
+    auto *I = dyn_cast_or_null<CallInst>(AssumeVH);
     if (!I)
       continue;
 
@@ -1750,12 +1734,12 @@ bool CodeExtractor::verifyAssumptionCache(const Function &OldFunc,
     // that were previously in the old function, but that have now been moved
     // to the new function.
     for (auto AffectedValVH : AC->assumptionsFor(I->getOperand(0))) {
-      CallInst *AffectedCI = dyn_cast_or_null<CallInst>(AffectedValVH);
+      auto *AffectedCI = dyn_cast_or_null<CallInst>(AffectedValVH);
       if (!AffectedCI)
         continue;
       if (AffectedCI->getFunction() != &OldFunc)
         return true;
-      auto *AssumedInst = dyn_cast<Instruction>(AffectedCI->getOperand(0));
+      auto *AssumedInst = cast<Instruction>(AffectedCI->getOperand(0));
       if (AssumedInst->getFunction() != &OldFunc)
         return true;
     }

@@ -96,7 +96,7 @@ bool SIPreAllocateWWMRegs::processDef(MachineOperand &MO) {
   if (!TRI->isVGPR(*MRI, Reg))
     return false;
 
-  if (Register::isPhysicalRegister(Reg))
+  if (Reg.isPhysical())
     return false;
 
   if (VRM->hasPhys(Reg))
@@ -104,7 +104,7 @@ bool SIPreAllocateWWMRegs::processDef(MachineOperand &MO) {
 
   LiveInterval &LI = LIS->getInterval(Reg);
 
-  for (unsigned PhysReg : RegClassInfo.getOrder(MRI->getRegClass(Reg))) {
+  for (MCRegister PhysReg : RegClassInfo.getOrder(MRI->getRegClass(Reg))) {
     if (!MRI->isPhysRegUsed(PhysReg) &&
         Matrix->checkInterference(LI, PhysReg) == LiveRegMatrix::IK_Free) {
       Matrix->assign(LI, PhysReg);
@@ -126,7 +126,7 @@ void SIPreAllocateWWMRegs::rewriteRegs(MachineFunction &MF) {
           continue;
 
         const Register VirtReg = MO.getReg();
-        if (Register::isPhysicalRegister(VirtReg))
+        if (VirtReg.isPhysical())
           continue;
 
         if (!VRM->hasPhys(VirtReg))

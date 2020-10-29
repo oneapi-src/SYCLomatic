@@ -37,13 +37,11 @@ using namespace llvm::opt;
 using tools::addMultilibFlag;
 using tools::addPathIfExists;
 
-void tools::GnuTool::anchor() {}
-
 static bool forwardToGCC(const Option &O) {
-  // Don't forward inputs from the original command line.  They are added from
-  // InputInfoList.
-  return O.getKind() != Option::InputClass &&
-         !O.hasFlag(options::DriverOption) && !O.hasFlag(options::LinkerInput);
+  // LinkerInput options have been forwarded. Don't duplicate.
+  if (O.hasFlag(options::LinkerInput))
+    return false;
+  return O.matches(options::OPT_Link_Group) || O.hasFlag(options::LinkOption);
 }
 
 // Switch CPU names not recognized by GNU assembler to a close CPU that it does
@@ -77,23 +75,6 @@ void tools::gcc::Common::ConstructJob(Compilation &C, const JobAction &JA,
       // platforms using a generic gcc, even if we are just using gcc
       // to get to the assembler.
       A->claim();
-
-      // Don't forward any -g arguments to assembly steps.
-      if (isa<AssembleJobAction>(JA) &&
-          A->getOption().matches(options::OPT_g_Group))
-        continue;
-
-      // Don't forward any -W arguments to assembly and link steps.
-      if ((isa<AssembleJobAction>(JA) || isa<LinkJobAction>(JA)) &&
-          A->getOption().matches(options::OPT_W_Group))
-        continue;
-
-      // Don't forward -mno-unaligned-access since GCC doesn't understand
-      // it and because it doesn't affect the assembly or link steps.
-      if ((isa<AssembleJobAction>(JA) || isa<LinkJobAction>(JA)) &&
-          (A->getOption().matches(options::OPT_munaligned_access) ||
-           A->getOption().matches(options::OPT_mno_unaligned_access)))
-        continue;
 
       A->render(Args, CmdArgs);
     }
@@ -190,7 +171,9 @@ void tools::gcc::Common::ConstructJob(Compilation &C, const JobAction &JA,
     GCCName = "gcc";
 
   const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath(GCCName));
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(JA, *this,
+                                         ResponseFileSupport::AtFileCurCP(),
+                                         Exec, CmdArgs, Inputs, Output));
 }
 
 void tools::gcc::Preprocessor::RenderExtraToolArgs(
@@ -305,6 +288,8 @@ static const char *getLDMOption(const llvm::Triple &T, const ArgList &Args) {
     if (T.getEnvironment() == llvm::Triple::GNUX32)
       return "elf32_x86_64";
     return "elf_x86_64";
+  case llvm::Triple::ve:
+    return "elf64ve";
   default:
     return nullptr;
   }
@@ -369,7 +354,52 @@ void tools::gnutools::Linker::constructLLVMARCommand(
   SmallString<128> LLVMARPath(C.getDriver().Dir);
   llvm::sys::path::append(LLVMARPath, "llvm-ar");
   const char *Exec = C.getArgs().MakeArgString(LLVMARPath);
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, None));
+  C.addCommand(std::make_unique<Command>(
+      JA, *this, ResponseFileSupport::None(), Exec, CmdArgs, None));
+}
+
+void tools::gnutools::StaticLibTool::ConstructJob(
+    Compilation &C, const JobAction &JA, const InputInfo &Output,
+    const InputInfoList &Inputs, const ArgList &Args,
+    const char *LinkingOutput) const {
+  const Driver &D = getToolChain().getDriver();
+
+  // Silence warning for "clang -g foo.o -o foo"
+  Args.ClaimAllArgs(options::OPT_g_Group);
+  // and "clang -emit-llvm foo.o -o foo"
+  Args.ClaimAllArgs(options::OPT_emit_llvm);
+  // and for "clang -w foo.o -o foo". Other warning options are already
+  // handled somewhere else.
+  Args.ClaimAllArgs(options::OPT_w);
+  // Silence warnings when linking C code with a C++ '-stdlib' argument.
+  Args.ClaimAllArgs(options::OPT_stdlib_EQ);
+
+  // ar tool command "llvm-ar <options> <output_file> <input_files>".
+  ArgStringList CmdArgs;
+  // Create and insert file members with a deterministic index.
+  CmdArgs.push_back("rcsD");
+  CmdArgs.push_back(Output.getFilename());
+
+  for (const auto &II : Inputs) {
+    if (II.isFilename()) {
+       CmdArgs.push_back(II.getFilename());
+    }
+  }
+
+  // Delete old output archive file if it already exists before generating a new
+  // archive file.
+  auto OutputFileName = Output.getFilename();
+  if (Output.isFilename() && llvm::sys::fs::exists(OutputFileName)) {
+    if (std::error_code EC = llvm::sys::fs::remove(OutputFileName)) {
+      D.Diag(diag::err_drv_unable_to_remove_file) << EC.message();
+      return;
+    }
+  }
+
+  const char *Exec = Args.MakeArgString(getToolChain().GetStaticLibToolPath());
+  C.addCommand(std::make_unique<Command>(JA, *this,
+                                         ResponseFileSupport::AtFileCurCP(),
+                                         Exec, CmdArgs, Inputs, Output));
 }
 
 void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
@@ -390,6 +420,7 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   const llvm::Triple::ArchType Arch = ToolChain.getArch();
   const bool isAndroid = ToolChain.getTriple().isAndroid();
   const bool IsIAMCU = ToolChain.getTriple().isOSIAMCU();
+  const bool IsVE = ToolChain.getTriple().isVE();
   const bool IsPIE = getPIE(Args, ToolChain);
   const bool IsStaticPIE = getStaticPIE(Args, ToolChain);
   const bool IsStatic = getStatic(Args);
@@ -514,6 +545,11 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back(Args.MakeArgString(ToolChain.GetFilePath("crti.o")));
     }
 
+    if (IsVE) {
+      CmdArgs.push_back("-z");
+      CmdArgs.push_back("max-page-size=0x4000000");
+    }
+
     if (IsIAMCU)
       CmdArgs.push_back(Args.MakeArgString(ToolChain.GetFilePath("crt0.o")));
     else if (HasCRTBeginEndFiles) {
@@ -560,6 +596,7 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   bool NeedsSanitizerDeps = addSanitizerRuntimes(ToolChain, Args, CmdArgs);
   bool NeedsXRayDeps = addXRayRuntime(ToolChain, Args, CmdArgs);
+  addLinkerCompressDebugSectionsOption(ToolChain, Args, CmdArgs);
   // When offloading, the input file(s) could be from unbundled partially
   // linked archives.  The unbundled information is a list of files and not
   // an actual object/archive.  Take that list and pass those to the linker
@@ -630,7 +667,8 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
       AddRunTimeLibs(ToolChain, D, CmdArgs, Args);
 
-      if (Args.hasArg(options::OPT_fsycl)) {
+      if (Args.hasArg(options::OPT_fsycl) &&
+          !Args.hasArg(options::OPT_nolibsycl)) {
         CmdArgs.push_back("-lsycl");
         // Use of -fintelfpga implies -lOpenCL.
         // FIXME: Adjust to use plugin interface when available.
@@ -691,14 +729,12 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     }
   }
 
-  // Add HIP offloading linker script args if required.
-  AddHIPLinkerScript(getToolChain(), C, Output, Inputs, Args, CmdArgs, JA,
-                     *this);
-
   Args.AddAllArgs(CmdArgs, options::OPT_T);
 
   const char *Exec = Args.MakeArgString(ToolChain.GetLinkerPath());
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(JA, *this,
+                                         ResponseFileSupport::AtFileCurCP(),
+                                         Exec, CmdArgs, Inputs, Output));
 }
 
 void tools::gnutools::Assembler::ConstructJob(Compilation &C,
@@ -716,6 +752,7 @@ void tools::gnutools::Assembler::ConstructJob(Compilation &C,
   llvm::Reloc::Model RelocationModel;
   unsigned PICLevel;
   bool IsPIE;
+  const char *DefaultAssembler = "as";
   std::tie(RelocationModel, PICLevel, IsPIE) =
       ParsePICArgs(getToolChain(), Args);
 
@@ -936,6 +973,8 @@ void tools::gnutools::Assembler::ConstructJob(Compilation &C,
     CmdArgs.push_back(Args.MakeArgString("-march=" + CPUName));
     break;
   }
+  case llvm::Triple::ve:
+    DefaultAssembler = "nas";
   }
 
   for (const Arg *A : Args.filtered(options::OPT_ffile_prefix_map_EQ,
@@ -960,8 +999,11 @@ void tools::gnutools::Assembler::ConstructJob(Compilation &C,
   for (const auto &II : Inputs)
     CmdArgs.push_back(II.getFilename());
 
-  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("as"));
-  C.addCommand(std::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+  const char *Exec =
+      Args.MakeArgString(getToolChain().GetProgramPath(DefaultAssembler));
+  C.addCommand(std::make_unique<Command>(JA, *this,
+                                         ResponseFileSupport::AtFileCurCP(),
+                                         Exec, CmdArgs, Inputs, Output));
 
   // Handle the debug info splitting at object creation time if we're
   // creating an object.
@@ -969,7 +1011,7 @@ void tools::gnutools::Assembler::ConstructJob(Compilation &C,
   if (Args.hasArg(options::OPT_gsplit_dwarf) &&
       getToolChain().getTriple().isOSLinux())
     SplitDebugInfo(getToolChain(), C, *this, JA, Args, Output,
-                   SplitDebugName(Args, Inputs[0], Output));
+                   SplitDebugName(JA, Args, Inputs[0], Output));
 }
 
 namespace {
@@ -1571,15 +1613,21 @@ static bool findMSP430Multilibs(const Driver &D,
                                 StringRef Path, const ArgList &Args,
                                 DetectedMultilibs &Result) {
   FilterNonExistent NonExistent(Path, "/crtbegin.o", D.getVFS());
-  Multilib MSP430Multilib = makeMultilib("/430");
+  Multilib WithoutExceptions = makeMultilib("/430").flag("-exceptions");
+  Multilib WithExceptions = makeMultilib("/430/exceptions").flag("+exceptions");
+
   // FIXME: when clang starts to support msp430x ISA additional logic
   // to select between multilib must be implemented
   // Multilib MSP430xMultilib = makeMultilib("/large");
 
-  Result.Multilibs.push_back(MSP430Multilib);
+  Result.Multilibs.push_back(WithoutExceptions);
+  Result.Multilibs.push_back(WithExceptions);
   Result.Multilibs.FilterOut(NonExistent);
 
   Multilib::flags_list Flags;
+  addMultilibFlag(Args.hasFlag(options::OPT_fexceptions,
+                               options::OPT_fno_exceptions, false),
+                  "exceptions", Flags);
   if (Result.Multilibs.select(Flags, Result.SelectedMultilib))
     return true;
 
@@ -1963,27 +2011,36 @@ void Generic_GCC::GCCInstallationDetector::init(
   // installation available. GCC installs are ranked by version number.
   Version = GCCVersion::Parse("0.0.0");
   for (const std::string &Prefix : Prefixes) {
-    if (!D.getVFS().exists(Prefix))
+    auto &VFS = D.getVFS();
+    if (!VFS.exists(Prefix))
       continue;
     for (StringRef Suffix : CandidateLibDirs) {
       const std::string LibDir = Prefix + Suffix.str();
-      if (!D.getVFS().exists(LibDir))
+      if (!VFS.exists(LibDir))
         continue;
+      // Maybe filter out <libdir>/gcc and <libdir>/gcc-cross.
+      bool GCCDirExists = VFS.exists(LibDir + "/gcc");
+      bool GCCCrossDirExists = VFS.exists(LibDir + "/gcc-cross");
       // Try to match the exact target triple first.
-      ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, TargetTriple.str());
+      ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, TargetTriple.str(),
+                             false, GCCDirExists, GCCCrossDirExists);
       // Try rest of possible triples.
       for (StringRef Candidate : ExtraTripleAliases) // Try these first.
-        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate);
+        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate, false,
+                               GCCDirExists, GCCCrossDirExists);
       for (StringRef Candidate : CandidateTripleAliases)
-        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate);
+        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate, false,
+                               GCCDirExists, GCCCrossDirExists);
     }
     for (StringRef Suffix : CandidateBiarchLibDirs) {
       const std::string LibDir = Prefix + Suffix.str();
-      if (!D.getVFS().exists(LibDir))
+      if (!VFS.exists(LibDir))
         continue;
+      bool GCCDirExists = VFS.exists(LibDir + "/gcc");
+      bool GCCCrossDirExists = VFS.exists(LibDir + "/gcc-cross");
       for (StringRef Candidate : CandidateBiarchTripleAliases)
-        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate,
-                               /*NeedsBiarchSuffix=*/ true);
+        ScanLibDirForGCCTriple(TargetTriple, Args, LibDir, Candidate, true,
+                               GCCDirExists, GCCCrossDirExists);
     }
   }
 }
@@ -2474,7 +2531,7 @@ bool Generic_GCC::GCCInstallationDetector::ScanGCCForMultilibs(
 void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
     const llvm::Triple &TargetTriple, const ArgList &Args,
     const std::string &LibDir, StringRef CandidateTriple,
-    bool NeedsBiarchSuffix) {
+    bool NeedsBiarchSuffix, bool GCCDirExists, bool GCCCrossDirExists) {
   llvm::Triple::ArchType TargetArch = TargetTriple.getArch();
   // Locations relative to the system lib directory where GCC's triple-specific
   // directories might reside.
@@ -2488,11 +2545,10 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
     bool Active;
   } Suffixes[] = {
       // This is the normal place.
-      {"gcc/" + CandidateTriple.str(), "../..", true},
+      {"gcc/" + CandidateTriple.str(), "../..", GCCDirExists},
 
       // Debian puts cross-compilers in gcc-cross.
-      {"gcc-cross/" + CandidateTriple.str(), "../..",
-       TargetTriple.getOS() != llvm::Triple::Solaris},
+      {"gcc-cross/" + CandidateTriple.str(), "../..", GCCCrossDirExists},
 
       // The Freescale PPC SDK has the gcc libraries in
       // <sysroot>/usr/lib/<triple>/x.y.z so have a look there as well. Only do
@@ -2559,6 +2615,9 @@ bool Generic_GCC::GCCInstallationDetector::ScanGentooConfigs(
     const llvm::Triple &TargetTriple, const ArgList &Args,
     const SmallVectorImpl<StringRef> &CandidateTriples,
     const SmallVectorImpl<StringRef> &CandidateBiarchTriples) {
+  if (!D.getVFS().exists(D.SysRoot + GentooConfigDir))
+    return false;
+
   for (StringRef CandidateTriple : CandidateTriples) {
     if (ScanGentooGccConfig(TargetTriple, Args, CandidateTriple))
       return true;
@@ -2575,7 +2634,7 @@ bool Generic_GCC::GCCInstallationDetector::ScanGentooGccConfig(
     const llvm::Triple &TargetTriple, const ArgList &Args,
     StringRef CandidateTriple, bool NeedsBiarchSuffix) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> File =
-      D.getVFS().getBufferForFile(D.SysRoot + "/etc/env.d/gcc/config-" +
+      D.getVFS().getBufferForFile(D.SysRoot + GentooConfigDir + "/config-" +
                                   CandidateTriple.str());
   if (File) {
     SmallVector<StringRef, 2> Lines;
@@ -2587,7 +2646,7 @@ bool Generic_GCC::GCCInstallationDetector::ScanGentooGccConfig(
         continue;
       // Process the config file pointed to by CURRENT.
       llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> ConfigFile =
-          D.getVFS().getBufferForFile(D.SysRoot + "/etc/env.d/gcc/" +
+          D.getVFS().getBufferForFile(D.SysRoot + GentooConfigDir + "/" +
                                       Line.str());
       std::pair<StringRef, StringRef> ActiveVersion = Line.rsplit('-');
       // List of paths to scan for libraries.
@@ -2644,7 +2703,7 @@ bool Generic_GCC::GCCInstallationDetector::ScanGentooGccConfig(
 Generic_GCC::Generic_GCC(const Driver &D, const llvm::Triple &Triple,
                          const ArgList &Args)
     : ToolChain(D, Triple, Args), GCCInstallation(D),
-      CudaInstallation(D, Triple, Args) {
+      CudaInstallation(D, Triple, Args), RocmInstallation(D, Triple, Args) {
   getProgramPaths().push_back(getDriver().getInstalledDir());
   if (getDriver().getInstalledDir() != getDriver().Dir)
     getProgramPaths().push_back(getDriver().Dir);
@@ -2677,6 +2736,7 @@ void Generic_GCC::printVerboseInfo(raw_ostream &OS) const {
   // Print the information about how we detected the GCC installation.
   GCCInstallation.print(OS);
   CudaInstallation.print(OS);
+  RocmInstallation.print(OS);
 }
 
 bool Generic_GCC::IsUnwindTablesDefault(const ArgList &Args) const {
@@ -2912,7 +2972,6 @@ static std::string DetectLibcxxIncludePath(llvm::vfs::FileSystem &vfs,
 void
 Generic_GCC::addLibCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
                                    llvm::opt::ArgStringList &CC1Args) const {
-  const std::string& SysRoot = getDriver().SysRoot;
   auto AddIncludePath = [&](std::string Path) {
     std::string IncludePath = DetectLibcxxIncludePath(getVFS(), Path);
     if (IncludePath.empty() || !getVFS().exists(IncludePath))
@@ -2928,6 +2987,7 @@ Generic_GCC::addLibCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
   // If this is a development, non-installed, clang, libcxx will
   // not be found at ../include/c++ but it likely to be found at
   // one of the following two locations:
+  std::string SysRoot = computeSysRoot();
   if (AddIncludePath(SysRoot + "/usr/local/include/c++"))
     return;
   if (AddIncludePath(SysRoot + "/usr/include/c++"))

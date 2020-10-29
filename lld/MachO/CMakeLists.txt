@@ -2,13 +2,18 @@ set(LLVM_TARGET_DEFINITIONS Options.td)
 tablegen(LLVM Options.inc -gen-opt-parser-defs)
 add_public_tablegen_target(MachOOptionsTableGen)
 
+include_directories(${LLVM_MAIN_SRC_DIR}/../libunwind/include)
+
 add_lld_library(lldMachO2
   Arch/X86_64.cpp
+  UnwindInfoSection.cpp
   Driver.cpp
+  DriverUtils.cpp
   ExportTrie.cpp
   InputFiles.cpp
   InputSection.cpp
   MergedOutputSection.cpp
+  ObjC.cpp
   OutputSection.cpp
   OutputSegment.cpp
   SymbolTable.cpp
@@ -24,6 +29,7 @@ add_lld_library(lldMachO2
   Object
   Option
   Support
+  TextAPI
 
   LINK_LIBS
   lldCommon

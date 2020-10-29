@@ -6,13 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 // UNSUPPORTED: windows
+// UNSUPPORTED: libcxx-no-debug-mode
 
 // ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DEBUG=0
-
-// This test requires debug mode, which the library on macOS doesn't have.
-// UNSUPPORTED: with_system_cxx_lib=macosx
 
 // <filesystem>
 

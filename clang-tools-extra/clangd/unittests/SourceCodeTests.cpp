@@ -71,6 +71,21 @@ TEST(SourceCodeTests, lspLength) {
   EXPECT_EQ(lspLength("😂"), 1UL);
 }
 
+TEST(SourceCodeTests, lspLengthBadUTF8) {
+  // Results are not well-defined if source file isn't valid UTF-8.
+  // However we shouldn't crash or return something totally wild.
+  const char *BadUTF8[] = {"\xa0", "\xff\xff\xff\xff\xff"};
+
+  for (OffsetEncoding Encoding :
+       {OffsetEncoding::UTF8, OffsetEncoding::UTF16, OffsetEncoding::UTF32}) {
+    WithContextValue UTF32(kCurrentOffsetEncoding, Encoding);
+    for (const char *Bad : BadUTF8) {
+      EXPECT_GE(lspLength(Bad), 0u);
+      EXPECT_LE(lspLength(Bad), strlen(Bad));
+    }
+  }
+}
+
 // The = → 🡆 below are ASCII (1 byte), BMP (3 bytes), and astral (4 bytes).
 const char File[] = R"(0:0 = 0
 1:0 → 8
@@ -772,6 +787,19 @@ TEST(SourceCodeTests, isHeaderFile) {
   // want to treat it as a header.
   LangOpts.IsHeaderFile = false;
   EXPECT_TRUE(isHeaderFile("header.h", LangOpts));
+}
+
+TEST(SourceCodeTests, isKeywords) {
+  LangOptions LangOpts;
+  LangOpts.CPlusPlus20 = true;
+  EXPECT_TRUE(isKeyword("int", LangOpts));
+  EXPECT_TRUE(isKeyword("return", LangOpts));
+  EXPECT_TRUE(isKeyword("co_await", LangOpts));
+
+  // these are identifiers (not keywords!) with special meaning in some
+  // contexts.
+  EXPECT_FALSE(isKeyword("final", LangOpts));
+  EXPECT_FALSE(isKeyword("override", LangOpts));
 }
 
 } // namespace

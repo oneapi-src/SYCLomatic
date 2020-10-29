@@ -6,23 +6,23 @@
 
 func @access_chain_struct() -> () {
   %0 = spv.constant 1: i32
-  %1 = spv.Variable : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
-  // CHECK: spv.AccessChain {{.*}}[{{.*}}, {{.*}}] : !spv.ptr<!spv.struct<f32, !spv.array<4 x f32>>, Function>
-  %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %1 = spv.Variable : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>
+  // CHECK: spv.AccessChain {{.*}}[{{.*}}, {{.*}}] : !spv.ptr<!spv.struct<(f32, !spv.array<4 x f32>)>, Function>
+  %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>, i32, i32
   return
 }
 
 func @access_chain_1D_array(%arg0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4xf32>, Function>
   // CHECK: spv.AccessChain {{.*}}[{{.*}}] : !spv.ptr<!spv.array<4 x f32>, Function>
-  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.array<4xf32>, Function>
+  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.array<4xf32>, Function>, i32
   return
 }
 
 func @access_chain_2D_array_1(%arg0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   // CHECK: spv.AccessChain {{.*}}[{{.*}}, {{.*}}] : !spv.ptr<!spv.array<4 x !spv.array<4 x f32>>, Function>
-  %1 = spv.AccessChain %0[%arg0, %arg0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[%arg0, %arg0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32, i32
   %2 = spv.Load "Function" %1 ["Volatile"] : f32
   return
 }
@@ -30,7 +30,7 @@ func @access_chain_2D_array_1(%arg0 : i32) -> () {
 func @access_chain_2D_array_2(%arg0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   // CHECK: spv.AccessChain {{.*}}[{{.*}}] : !spv.ptr<!spv.array<4 x !spv.array<4 x f32>>, Function>
-  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32
   %2 = spv.Load "Function" %1 ["Volatile"] : !spv.array<4xf32>
   return
 }
@@ -38,7 +38,7 @@ func @access_chain_2D_array_2(%arg0 : i32) -> () {
 func @access_chain_rtarray(%arg0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.rtarray<f32>, Function>
   // CHECK: spv.AccessChain {{.*}}[{{.*}}] : !spv.ptr<!spv.rtarray<f32>, Function>
-  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.rtarray<f32>, Function>
+  %1 = spv.AccessChain %0[%arg0] : !spv.ptr<!spv.rtarray<f32>, Function>, i32
   %2 = spv.Load "Function" %1 ["Volatile"] : f32
   return
 }
@@ -49,7 +49,7 @@ func @access_chain_non_composite() -> () {
   %0 = spv.constant 1: i32
   %1 = spv.Variable : !spv.ptr<f32, Function>
   // expected-error @+1 {{cannot extract from non-composite type 'f32' with index 0}}
-  %2 = spv.AccessChain %1[%0] : !spv.ptr<f32, Function>
+  %2 = spv.AccessChain %1[%0] : !spv.ptr<f32, Function>, i32
   return
 }
 
@@ -58,7 +58,34 @@ func @access_chain_non_composite() -> () {
 func @access_chain_no_indices(%index0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   // expected-error @+1 {{expected at least one index}}
-  %1 = spv.AccessChain %0[] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32
+  return
+}
+
+// -----
+
+func @access_chain_missing_comma(%index0 : i32) -> () {
+  %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  // expected-error @+1 {{expected ','}}
+  %1 = spv.AccessChain %0[%index0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function> i32
+  return
+}
+
+// -----
+
+func @access_chain_invalid_indices_types_count(%index0 : i32) -> () {
+  %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  // expected-error @+1 {{'spv.AccessChain' op indices types' count must be equal to indices info count}}
+  %1 = spv.AccessChain %0[%index0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32, i32
+  return
+}
+
+// -----
+
+func @access_chain_missing_indices_type(%index0 : i32) -> () {
+  %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  // expected-error @+1 {{'spv.AccessChain' op indices types' count must be equal to indices info count}}
+  %1 = spv.AccessChain %0[%index0, %index0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32
   return
 }
 
@@ -68,7 +95,7 @@ func @access_chain_invalid_type(%index0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   %1 = spv.Load "Function" %0 ["Volatile"] : !spv.array<4x!spv.array<4xf32>>
   // expected-error @+1 {{expected a pointer to composite type, but provided '!spv.array<4 x !spv.array<4 x f32>>'}}
-  %2 = spv.AccessChain %1[%index0] : !spv.array<4x!spv.array<4xf32>>
+  %2 = spv.AccessChain %1[%index0] : !spv.array<4x!spv.array<4xf32>>, i32
   return
 }
 
@@ -77,16 +104,16 @@ func @access_chain_invalid_type(%index0 : i32) -> () {
 func @access_chain_invalid_index_1(%index0 : i32) -> () {
    %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   // expected-error @+1 {{expected SSA operand}}
-  %1 = spv.AccessChain %0[%index, 4] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[%index, 4] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32, i32
   return
 }
 
 // -----
 
 func @access_chain_invalid_index_2(%index0 : i32) -> () {
-  %0 = spv.Variable : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %0 = spv.Variable : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>
   // expected-error @+1 {{index must be an integer spv.constant to access element of spv.struct}}
-  %1 = spv.AccessChain %0[%index0, %index0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[%index0, %index0] : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>, i32, i32
   return
 }
 
@@ -94,9 +121,9 @@ func @access_chain_invalid_index_2(%index0 : i32) -> () {
 
 func @access_chain_invalid_constant_type_1() -> () {
   %0 = std.constant 1: i32
-  %1 = spv.Variable : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %1 = spv.Variable : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>
   // expected-error @+1 {{index must be an integer spv.constant to access element of spv.struct, but provided std.constant}}
-  %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>, i32, i32
   return
 }
 
@@ -104,9 +131,9 @@ func @access_chain_invalid_constant_type_1() -> () {
 
 func @access_chain_out_of_bounds() -> () {
   %index0 = "spv.constant"() { value = 12: i32} : () -> i32
-  %0 = spv.Variable : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
-  // expected-error @+1 {{'spv.AccessChain' op index 12 out of bounds for '!spv.struct<f32, !spv.array<4 x f32>>'}}
-  %1 = spv.AccessChain %0[%index0, %index0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Function>
+  %0 = spv.Variable : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>
+  // expected-error @+1 {{'spv.AccessChain' op index 12 out of bounds for '!spv.struct<(f32, !spv.array<4 x f32>)>'}}
+  %1 = spv.AccessChain %0[%index0, %index0] : !spv.ptr<!spv.struct<(f32, !spv.array<4xf32>)>, Function>, i32, i32
   return
 }
 
@@ -115,7 +142,7 @@ func @access_chain_out_of_bounds() -> () {
 func @access_chain_invalid_accessing_type(%index0 : i32) -> () {
   %0 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
   // expected-error @+1 {{cannot extract from non-composite type 'f32' with index 0}}
-  %1 = spv.AccessChain %0[%index, %index0, %index0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
+  %1 = spv.AccessChain %0[%index, %index0, %index0] : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>, i32, i32, i32
   return
 
 // -----
@@ -308,6 +335,22 @@ func @convert_f_to_s_scalar(%arg0 : f32) -> i32 {
 
 // -----
 
+func @convert_f64_to_s32_scalar(%arg0 : f64) -> i32 {
+  // CHECK: {{%.*}} = spv.ConvertFToS {{%.*}} : f64 to i32
+  %0 = spv.ConvertFToS %arg0 : f64 to i32
+  spv.ReturnValue %0 : i32
+}
+
+// -----
+
+func @convert_f_to_s_vector(%arg0 : vector<3xf32>) -> vector<3xi32> {
+  // CHECK: {{%.*}} = spv.ConvertFToS {{%.*}} : vector<3xf32> to vector<3xi32>
+  %0 = spv.ConvertFToS %arg0 : vector<3xf32> to vector<3xi32>
+  spv.ReturnValue %0 : vector<3xi32>
+}
+
+// -----
+
 //===----------------------------------------------------------------------===//
 // spv.ConvertFToU
 //===----------------------------------------------------------------------===//
@@ -315,6 +358,14 @@ func @convert_f_to_s_scalar(%arg0 : f32) -> i32 {
 func @convert_f_to_u_scalar(%arg0 : f32) -> i32 {
   // CHECK: {{%.*}} = spv.ConvertFToU {{%.*}} : f32 to i32
   %0 = spv.ConvertFToU %arg0 : f32 to i32
+  spv.ReturnValue %0 : i32
+}
+
+// -----
+
+func @convert_f64_to_u32_scalar(%arg0 : f64) -> i32 {
+  // CHECK: {{%.*}} = spv.ConvertFToU {{%.*}} : f64 to i32
+  %0 = spv.ConvertFToU %arg0 : f64 to i32
   spv.ReturnValue %0 : i32
 }
 
@@ -336,14 +387,6 @@ func @convert_f_to_u_coopmatrix(%arg0 : !spv.coopmatrix<8x16xf32, Subgroup>) {
 
 // -----
 
-func @convert_f_to_u_scalar_invalid(%arg0 : f16) -> i32 {
-  // expected-error @+1 {{expected the same bit widths for operand type and result type, but provided 'f16' and 'i32'}}
-  %0 = spv.ConvertFToU %arg0 : f16 to i32
-  spv.ReturnValue %0 : i32
-}
-
-// -----
-
 //===----------------------------------------------------------------------===//
 // spv.ConvertSToF
 //===----------------------------------------------------------------------===//
@@ -356,6 +399,22 @@ func @convert_s_to_f_scalar(%arg0 : i32) -> f32 {
 
 // -----
 
+func @convert_s64_to_f32_scalar(%arg0 : i64) -> f32 {
+  // CHECK: {{%.*}} = spv.ConvertSToF {{%.*}} : i64 to f32
+  %0 = spv.ConvertSToF %arg0 : i64 to f32
+  spv.ReturnValue %0 : f32
+}
+
+// -----
+
+func @convert_s_to_f_vector(%arg0 : vector<3xi32>) -> vector<3xf32> {
+  // CHECK: {{%.*}} = spv.ConvertSToF {{%.*}} : vector<3xi32> to vector<3xf32>
+  %0 = spv.ConvertSToF %arg0 : vector<3xi32> to vector<3xf32>
+  spv.ReturnValue %0 : vector<3xf32>
+}
+
+// -----
+
 //===----------------------------------------------------------------------===//
 // spv.ConvertUToF
 //===----------------------------------------------------------------------===//
@@ -364,6 +423,22 @@ func @convert_u_to_f_scalar(%arg0 : i32) -> f32 {
   // CHECK: {{%.*}} = spv.ConvertUToF {{%.*}} : i32 to f32
   %0 = spv.ConvertUToF %arg0 : i32 to f32
   spv.ReturnValue %0 : f32
+}
+
+// -----
+
+func @convert_u64_to_f32_scalar(%arg0 : i64) -> f32 {
+  // CHECK: {{%.*}} = spv.ConvertUToF {{%.*}} : i64 to f32
+  %0 = spv.ConvertUToF %arg0 : i64 to f32
+  spv.ReturnValue %0 : f32
+}
+
+// -----
+
+func @convert_u_to_f_vector(%arg0 : vector<3xi32>) -> vector<3xf32> {
+  // CHECK: {{%.*}} = spv.ConvertUToF {{%.*}} : vector<3xi32> to vector<3xf32>
+  %0 = spv.ConvertUToF %arg0 : vector<3xi32> to vector<3xf32>
+  spv.ReturnValue %0 : vector<3xf32>
 }
 
 // -----
@@ -1216,4 +1291,65 @@ func @cannot_be_generic_storage_class(%arg0: f32) -> () {
   // expected-error @+1 {{op can only be used to model function-level variables. Use spv.globalVariable for module-level variables}}
   %0 = spv.Variable : !spv.ptr<f32, Generic>
   return
+}
+
+// -----
+
+func @copy_memory_incompatible_ptrs() {
+  %0 = spv.Variable : !spv.ptr<f32, Function>
+  %1 = spv.Variable : !spv.ptr<i32, Function>
+  // expected-error @+1 {{both operands must be pointers to the same type}}
+  "spv.CopyMemory"(%0, %1) {} : (!spv.ptr<f32, Function>, !spv.ptr<i32, Function>) -> ()
+  spv.Return
+}
+
+// -----
+
+func @copy_memory_invalid_maa() {
+  %0 = spv.Variable : !spv.ptr<f32, Function>
+  %1 = spv.Variable : !spv.ptr<f32, Function>
+  // expected-error @+1 {{missing alignment value}}
+  "spv.CopyMemory"(%0, %1) {memory_access=0x0002 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+  spv.Return
+}
+
+// -----
+
+func @copy_memory_invalid_source_maa() {
+  %0 = spv.Variable : !spv.ptr<f32, Function>
+  %1 = spv.Variable : !spv.ptr<f32, Function>
+  // expected-error @+1 {{invalid alignment specification with non-aligned memory access specification}}
+  "spv.CopyMemory"(%0, %1) {source_memory_access=0x0001 : i32, memory_access=0x0002 : i32, source_alignment=8 : i32, alignment=4 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+  spv.Return
+}
+
+// -----
+
+func @copy_memory_invalid_source_maa2() {
+  %0 = spv.Variable : !spv.ptr<f32, Function>
+  %1 = spv.Variable : !spv.ptr<f32, Function>
+  // expected-error @+1 {{missing alignment value}}
+  "spv.CopyMemory"(%0, %1) {source_memory_access=0x0002 : i32, memory_access=0x0002 : i32, alignment=4 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+  spv.Return
+}
+
+// -----
+
+func @copy_memory_print_maa() {
+  %0 = spv.Variable : !spv.ptr<f32, Function>
+  %1 = spv.Variable : !spv.ptr<f32, Function>
+
+  // CHECK: spv.CopyMemory "Function" %{{.*}}, "Function" %{{.*}} ["Volatile"] : f32
+  "spv.CopyMemory"(%0, %1) {memory_access=0x0001 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+
+  // CHECK: spv.CopyMemory "Function" %{{.*}}, "Function" %{{.*}} ["Aligned", 4] : f32
+  "spv.CopyMemory"(%0, %1) {memory_access=0x0002 : i32, alignment=4 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+
+  // CHECK: spv.CopyMemory "Function" %{{.*}}, "Function" %{{.*}} ["Aligned", 4], ["Volatile"] : f32
+  "spv.CopyMemory"(%0, %1) {source_memory_access=0x0001 : i32, memory_access=0x0002 : i32, alignment=4 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+
+  // CHECK: spv.CopyMemory "Function" %{{.*}}, "Function" %{{.*}} ["Aligned", 4], ["Aligned", 8] : f32
+  "spv.CopyMemory"(%0, %1) {source_memory_access=0x0002 : i32, memory_access=0x0002 : i32, source_alignment=8 : i32, alignment=4 : i32} : (!spv.ptr<f32, Function>, !spv.ptr<f32, Function>) -> ()
+
+  spv.Return
 }

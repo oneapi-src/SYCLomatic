@@ -44,10 +44,11 @@
 #include "SPIRVModule.h"
 
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
-#include "llvm/IR/Metadata.h"    // llvm::Metadata
 
 namespace llvm {
+class Metadata;
 class Module;
 class Type;
 class Instruction;
@@ -76,6 +77,7 @@ class SPIRVToLLVM {
 public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
 
+  static const StringSet<> BuiltInConstFunc;
   std::string getOCLBuiltinName(SPIRVInstruction *BI);
   std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
   std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
@@ -104,9 +106,13 @@ public:
   bool transFPContractMetadata();
   bool transMetadata();
   bool transOCLMetadata(SPIRVFunction *BF);
+  bool transVectorComputeMetadata(SPIRVFunction *BF);
   Value *transAsmINTEL(SPIRVAsmINTEL *BA);
   CallInst *transAsmCallINTEL(SPIRVAsmCallINTEL *BI, Function *F,
                               BasicBlock *BB);
+  CallInst *transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB);
+  CallInst *transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
+                              bool IsBinaryInst = false);
   bool transNonTemporalMetadata(Instruction *I);
   bool transSourceLanguage();
   bool transSourceExtension();
@@ -171,14 +177,6 @@ public:
   CallInst *expandOCLBuiltinWithScalarArg(CallInst *CI,
                                           const std::string &FuncName);
 
-  /// \brief Post-process OpGroupAll and OpGroupAny instructions translation.
-  /// i1 func (<n x i1> arg)
-  /// =>
-  /// i32 func (<n x i32> arg)
-  /// \return transformed call instruction.
-  Instruction *postProcessGroupAllAny(CallInst *CI,
-                                      const std::string &DemangledName);
-
   typedef DenseMap<SPIRVType *, Type *> SPIRVToLLVMTypeMap;
   typedef DenseMap<SPIRVValue *, Value *> SPIRVToLLVMValueMap;
   typedef DenseMap<SPIRVValue *, Value *> SPIRVBlockToLLVMStructMap;
@@ -224,6 +222,11 @@ private:
   // OpenCL function always has NoUnwind attribute.
   // Change this if it is no longer true.
   bool isFuncNoUnwind() const { return true; }
+
+  bool isFuncReadNone(const std::string &Name) const {
+    return BuiltInConstFunc.count(Name);
+  }
+
   bool isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const;
   bool isDirectlyTranslatedToOCL(Op OpCode) const;
   bool transOCLBuiltinsFromVariables();
@@ -253,6 +256,7 @@ private:
   std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST);
   std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe *ST);
+  std::string transVCTypeName(SPIRVTypeBufferSurfaceINTEL *PST);
 
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
                                  BasicBlock *BB);
@@ -271,7 +275,11 @@ private:
   Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transOCLRelational(SPIRVInstruction *BI, BasicBlock *BB);
 
+  void transUserSemantic(SPIRV::SPIRVFunction *Fun);
   void transGlobalAnnotations();
+  void transGlobalCtorDtors(SPIRVVariable *BV);
+  void createCXXStructor(const char *ListName,
+                         SmallVectorImpl<Function *> &Funcs);
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
 }; // class SPIRVToLLVM
 

@@ -11,6 +11,7 @@
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Serialization/PCHContainerOperations.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Format.h"
 #include "llvm/Support/FormatVariadic.h"
 
@@ -47,16 +48,11 @@ buildCompilerInvocation(const ParseInputs &Inputs, clang::DiagnosticConsumer &D,
   for (const auto &S : Inputs.CompileCommand.CommandLine)
     ArgStrs.push_back(S.c_str());
 
-  if (Inputs.FS->setCurrentWorkingDirectory(Inputs.CompileCommand.Directory)) {
-    log("Couldn't set working directory when creating compiler invocation.");
-    // We proceed anyway, our lit-tests rely on results for non-existing working
-    // dirs.
-  }
-
+  auto VFS = Inputs.TFS->view(Inputs.CompileCommand.Directory);
   llvm::IntrusiveRefCntPtr<DiagnosticsEngine> CommandLineDiagsEngine =
       CompilerInstance::createDiagnostics(new DiagnosticOptions, &D, false);
   std::unique_ptr<CompilerInvocation> CI = createInvocationFromCommandLine(
-      ArgStrs, CommandLineDiagsEngine, Inputs.FS,
+      ArgStrs, CommandLineDiagsEngine, std::move(VFS),
       /*ShouldRecoverOnErrors=*/true, CC1Args);
   if (!CI)
     return nullptr;
@@ -82,12 +78,14 @@ buildCompilerInvocation(const ParseInputs &Inputs, clang::DiagnosticConsumer &D,
   CI->getPreprocessorOpts().PCHThroughHeader.clear();
   CI->getPreprocessorOpts().PCHWithHdrStop = false;
   CI->getPreprocessorOpts().PCHWithHdrStopCreate = false;
+  // Don't crash on `#pragma clang __debug parser_crash`
+  CI->getPreprocessorOpts().DisablePragmaDebugCrash = true;
 
-  // Recovery expression currently only works for C++.
-  if (CI->getLangOpts()->CPlusPlus) {
-    CI->getLangOpts()->RecoveryAST = Inputs.Opts.BuildRecoveryAST;
-    CI->getLangOpts()->RecoveryASTType = Inputs.Opts.PreserveRecoveryASTType;
-  }
+  if (Inputs.Opts.BuildRecoveryAST)
+    CI->getLangOpts()->RecoveryAST = true;
+  if (Inputs.Opts.PreserveRecoveryASTType)
+    CI->getLangOpts()->RecoveryASTType = true;
+
   return CI;
 }
 

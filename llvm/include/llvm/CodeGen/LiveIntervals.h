@@ -22,7 +22,6 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/IndexedMap.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/CodeGen/LiveInterval.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
@@ -40,6 +39,7 @@ namespace llvm {
 
 extern cl::opt<bool> UseSegmentSetForPhysRegs;
 
+class AAResults;
 class BitVector;
 class LiveIntervalCalc;
 class MachineBlockFrequencyInfo;
@@ -56,7 +56,7 @@ class VirtRegMap;
     MachineRegisterInfo* MRI;
     const TargetRegisterInfo* TRI;
     const TargetInstrInfo* TII;
-    AliasAnalysis *AA;
+    AAResults *AA;
     SlotIndexes* Indexes;
     MachineDominatorTree *DomTree = nullptr;
     LiveIntervalCalc *LICalc = nullptr;
@@ -212,7 +212,7 @@ class VirtRegMap;
       return Indexes;
     }
 
-    AliasAnalysis *getAliasAnalysis() const {
+    AAResults *getAliasAnalysis() const {
       return AA;
     }
 
@@ -423,7 +423,7 @@ class VirtRegMap;
     /// Reg. Subsequent uses should rely on on-demand recomputation.  \note This
     /// method can result in inconsistent liveness tracking if multiple phyical
     /// registers share a regunit, and should be used cautiously.
-    void removeAllRegUnitsForPhysReg(unsigned Reg) {
+    void removeAllRegUnitsForPhysReg(MCRegister Reg) {
       for (MCRegUnitIterator Units(Reg, TRI); Units.isValid(); ++Units)
         removeRegUnit(*Units);
     }
@@ -431,7 +431,7 @@ class VirtRegMap;
     /// Remove value numbers and related live segments starting at position
     /// \p Pos that are part of any liverange of physical register \p Reg or one
     /// of its subregisters.
-    void removePhysRegDefAt(unsigned Reg, SlotIndex Pos);
+    void removePhysRegDefAt(MCRegister Reg, SlotIndex Pos);
 
     /// Remove value number and related live segments of \p LI and its subranges
     /// that start at position \p Pos.

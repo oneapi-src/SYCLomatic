@@ -265,10 +265,25 @@ public:
   // FIXME: Deprecated, move clients to getName().
   std::string getNameAsString() const { return Name.getAsString(); }
 
+  /// Pretty-print the unqualified name of this declaration. Can be overloaded
+  /// by derived classes to provide a more user-friendly name when appropriate.
   virtual void printName(raw_ostream &os) const;
 
   /// Get the actual, stored name of the declaration, which may be a special
   /// name.
+  ///
+  /// Note that generally in diagnostics, the non-null \p NamedDecl* itself
+  /// should be sent into the diagnostic instead of using the result of
+  /// \p getDeclName().
+  ///
+  /// A \p DeclarationName in a diagnostic will just be streamed to the output,
+  /// which will directly result in a call to \p DeclarationName::print.
+  ///
+  /// A \p NamedDecl* in a diagnostic will also ultimately result in a call to
+  /// \p DeclarationName::print, but with two customisation points along the
+  /// way (\p getNameForDiagnostic and \p printName). These are used to print
+  /// the template arguments if any, and to provide a user-friendly name for
+  /// some entities (such as unnamed variables and anonymous records).
   DeclarationName getDeclName() const { return Name; }
 
   /// Set the name of this declaration.
@@ -295,7 +310,7 @@ public:
                                 bool WithGlobalNsPrefix = false) const;
 
   // FIXME: Remove string version.
-  std::string getQualifiedNameAsString() const;
+  std::string getQualifiedNameAsString(bool WithGlobalNsPrefix = false) const;
 
   /// Appends a human-readable name for this declaration into the given stream.
   ///
@@ -789,18 +804,11 @@ struct EvaluatedStmt {
   /// Whether this statement is being evaluated.
   bool IsEvaluating : 1;
 
-  /// Whether we already checked whether this statement was an
-  /// integral constant expression.
-  bool CheckedICE : 1;
-
-  /// Whether we are checking whether this statement is an
-  /// integral constant expression.
-  bool CheckingICE : 1;
-
-  /// Whether this statement is an integral constant expression,
-  /// or in C++11, whether the statement is a constant expression. Only
-  /// valid if CheckedICE is true.
-  bool IsICE : 1;
+  /// Whether this variable is known to have constant initialization. This is
+  /// currently only computed in C++, for static / thread storage duration
+  /// variables that might have constant initialization and for variables that
+  /// are usable in constant expressions.
+  bool HasConstantInitialization : 1;
 
   /// Whether this variable is known to have constant destruction. That is,
   /// whether running the destructor on the initial value is a side-effect
@@ -809,12 +817,18 @@ struct EvaluatedStmt {
   /// non-trivial.
   bool HasConstantDestruction : 1;
 
+  /// In C++98, whether the initializer is an ICE. This affects whether the
+  /// variable is usable in constant expressions.
+  bool HasICEInit : 1;
+  bool CheckedForICEInit : 1;
+
   Stmt *Value;
   APValue Evaluated;
 
   EvaluatedStmt()
-      : WasEvaluated(false), IsEvaluating(false), CheckedICE(false),
-        CheckingICE(false), IsICE(false), HasConstantDestruction(false) {}
+      : WasEvaluated(false), IsEvaluating(false),
+        HasConstantInitialization(false), HasConstantDestruction(false),
+        HasICEInit(false), CheckedForICEInit(false) {}
 };
 
 /// Represents a variable declaration or definition.
@@ -1249,22 +1263,26 @@ public:
   /// constant expression, according to the relevant language standard.
   /// This only checks properties of the declaration, and does not check
   /// whether the initializer is in fact a constant expression.
-  bool mightBeUsableInConstantExpressions(ASTContext &C) const;
+  bool mightBeUsableInConstantExpressions(const ASTContext &C) const;
 
   /// Determine whether this variable's value can be used in a
   /// constant expression, according to the relevant language standard,
   /// including checking whether it was initialized by a constant expression.
-  bool isUsableInConstantExpressions(ASTContext &C) const;
+  bool isUsableInConstantExpressions(const ASTContext &C) const;
 
   EvaluatedStmt *ensureEvaluatedStmt() const;
+  EvaluatedStmt *getEvaluatedStmt() const;
 
   /// Attempt to evaluate the value of the initializer attached to this
-  /// declaration, and produce notes explaining why it cannot be evaluated or is
-  /// not a constant expression. Returns a pointer to the value if evaluation
-  /// succeeded, 0 otherwise.
+  /// declaration, and produce notes explaining why it cannot be evaluated.
+  /// Returns a pointer to the value if evaluation succeeded, 0 otherwise.
   APValue *evaluateValue() const;
-  APValue *evaluateValue(SmallVectorImpl<PartialDiagnosticAt> &Notes) const;
 
+private:
+  APValue *evaluateValueImpl(SmallVectorImpl<PartialDiagnosticAt> &Notes,
+                             bool IsConstantInitialization) const;
+
+public:
   /// Return the already-evaluated value of this variable's
   /// initializer, or NULL if the value is not yet known. Returns pointer
   /// to untyped APValue if the value could not be evaluated.
@@ -1273,25 +1291,29 @@ public:
   /// Evaluate the destruction of this variable to determine if it constitutes
   /// constant destruction.
   ///
-  /// \pre isInitICE()
+  /// \pre hasConstantInitialization()
   /// \return \c true if this variable has constant destruction, \c false if
   ///         not.
   bool evaluateDestruction(SmallVectorImpl<PartialDiagnosticAt> &Notes) const;
 
-  /// Determines whether it is already known whether the
-  /// initializer is an integral constant expression or not.
-  bool isInitKnownICE() const;
-
-  /// Determines whether the initializer is an integral constant
-  /// expression, or in C++11, whether the initializer is a constant
-  /// expression.
+  /// Determine whether this variable has constant initialization.
   ///
-  /// \pre isInitKnownICE()
-  bool isInitICE() const;
+  /// This is only set in two cases: when the language semantics require
+  /// constant initialization (globals in C and some globals in C++), and when
+  /// the variable is usable in constant expressions (constexpr, const int, and
+  /// reference variables in C++).
+  bool hasConstantInitialization() const;
 
-  /// Determine whether the value of the initializer attached to this
-  /// declaration is an integral constant expression.
-  bool checkInitIsICE() const;
+  /// Determine whether the initializer of this variable is an integer constant
+  /// expression. For use in C++98, where this affects whether the variable is
+  /// usable in constant expressions.
+  bool hasICEInitializer(const ASTContext &Context) const;
+
+  /// Evaluate the initializer of this variable to determine whether it's a
+  /// constant initializer. Should only be called once, after completing the
+  /// definition of the variable.
+  bool checkForConstantInitialization(
+      SmallVectorImpl<PartialDiagnosticAt> &Notes) const;
 
   void setInitStyle(InitializationStyle Style) {
     VarDeclBits.InitStyle = Style;
@@ -2440,6 +2462,14 @@ public:
   /// parameters have default arguments (in C++).
   unsigned getMinRequiredArguments() const;
 
+  /// Determine whether this function has a single parameter, or multiple
+  /// parameters where all but the first have default arguments.
+  ///
+  /// This notion is used in the definition of copy/move constructors and
+  /// initializer list constructors. Note that, unlike getMinRequiredArguments,
+  /// parameter packs are not treated specially here.
+  bool hasOneParamOrDefaultArgs() const;
+
   /// Find the source location information for how the type of this function
   /// was written. May be absent (for example if the function was declared via
   /// a typedef) and may contain a different type from that of the function
@@ -2611,7 +2641,13 @@ public:
   /// Retrieve the function declaration from which this function could
   /// be instantiated, if it is an instantiation (rather than a non-template
   /// or a specialization, for example).
-  FunctionDecl *getTemplateInstantiationPattern() const;
+  ///
+  /// If \p ForDefinition is \c false, explicit specializations will be treated
+  /// as if they were implicit instantiations. This will then find the pattern
+  /// corresponding to non-definition portions of the declaration, such as
+  /// default arguments and the exception specification.
+  FunctionDecl *
+  getTemplateInstantiationPattern(bool ForDefinition = true) const;
 
   /// Retrieve the primary template that this function template
   /// specialization either specializes or was instantiated from.
@@ -4485,14 +4521,8 @@ public:
 
 /// Insertion operator for diagnostics.  This allows sending NamedDecl's
 /// into a diagnostic with <<.
-inline const DiagnosticBuilder &operator<<(const DiagnosticBuilder &DB,
-                                           const NamedDecl* ND) {
-  DB.AddTaggedVal(reinterpret_cast<intptr_t>(ND),
-                  DiagnosticsEngine::ak_nameddecl);
-  return DB;
-}
-inline const PartialDiagnostic &operator<<(const PartialDiagnostic &PD,
-                                           const NamedDecl* ND) {
+inline const StreamingDiagnostic &operator<<(const StreamingDiagnostic &PD,
+                                             const NamedDecl *ND) {
   PD.AddTaggedVal(reinterpret_cast<intptr_t>(ND),
                   DiagnosticsEngine::ak_nameddecl);
   return PD;
@@ -4553,7 +4583,7 @@ inline bool IsEnumDeclScoped(EnumDecl *ED) {
 /// The new name looks likes this:
 ///  <name> + OpenMPVariantManglingSeparatorStr + <mangled OpenMP context>
 static constexpr StringRef getOpenMPVariantManglingSeparatorStr() {
-  return ".ompvariant";
+  return "$ompvariant";
 }
 
 } // namespace clang

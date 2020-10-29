@@ -18,16 +18,106 @@
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/GraphTraits.h"
 #include "llvm/ADT/iterator.h"
-#include "llvm/Support/GenericIteratedDominanceFrontier.h"
+#include "llvm/Support/CfgTraits.h"
 #include "llvm/Support/GenericDomTree.h"
 #include "llvm/Support/GenericDomTreeConstruction.h"
+#include "llvm/Support/GenericIteratedDominanceFrontier.h"
 #include "llvm/Support/raw_ostream.h"
+
+namespace clang {
+
+/// Partial CFG traits for MLIR's CFG, without a value type.
+class CfgTraitsBase : public llvm::CfgTraitsBase {
+public:
+  using ParentType = CFG;
+  using BlockRef = CFGBlock *;
+  using ValueRef = void;
+
+  static llvm::CfgBlockRef wrapRef(BlockRef block) {
+    return makeOpaque<llvm::CfgBlockRefTag>(block);
+  }
+  static BlockRef unwrapRef(llvm::CfgBlockRef block) {
+    return static_cast<BlockRef>(getOpaque(block));
+  }
+};
+
+class CfgTraits : public llvm::CfgTraits<CfgTraitsBase, CfgTraits> {
+public:
+  static ParentType *getBlockParent(CFGBlock *block) {
+    return block->getParent();
+  }
+
+  // Clang's CFG contains null pointers for unreachable successors, e.g. when an
+  // if statement's condition is always false, it's 'then' branch is represented
+  // with a nullptr. Account for this in the predecessors / successors
+  // iteration.
+  template <typename BaseIteratorT> struct skip_null_iterator;
+
+  template <typename BaseIteratorT>
+  using skip_null_iterator_base =
+      llvm::iterator_adaptor_base<skip_null_iterator<BaseIteratorT>,
+                                  BaseIteratorT,
+                                  std::bidirectional_iterator_tag>;
+
+  template <typename BaseIteratorT>
+  struct skip_null_iterator : skip_null_iterator_base<BaseIteratorT> {
+    using Base = skip_null_iterator_base<BaseIteratorT>;
+
+    skip_null_iterator() = default;
+    skip_null_iterator(BaseIteratorT it, BaseIteratorT end)
+        : Base(it), m_end(end) {
+      forward();
+    }
+
+    skip_null_iterator &operator++() {
+      ++this->I;
+      forward();
+      return *this;
+    }
+
+    skip_null_iterator &operator--() {
+      do {
+        --this->I;
+      } while (!*this->I);
+      return *this;
+    }
+
+  private:
+    BaseIteratorT m_end;
+
+    void forward() {
+      while (this->I != m_end && !*this->I)
+        ++this->I;
+    }
+  };
+
+  static auto predecessors(CFGBlock *block) {
+    auto range = llvm::inverse_children<CFGBlock *>(block);
+    using iterator = skip_null_iterator<decltype(range.begin())>;
+    return llvm::make_range(iterator(range.begin(), range.end()),
+                            iterator(range.end(), range.end()));
+  }
+
+  static auto successors(CFGBlock *block) {
+    auto range = llvm::children<CFGBlock *>(block);
+    using iterator = skip_null_iterator<decltype(range.begin())>;
+    return llvm::make_range(iterator(range.begin(), range.end()),
+                            iterator(range.end(), range.end()));
+  }
+};
+
+} // namespace clang
+
+namespace llvm {
+
+template <> struct CfgTraitsFor<clang::CFGBlock> {
+  using CfgTraits = clang::CfgTraits;
+};
 
 // FIXME: There is no good reason for the domtree to require a print method
 // which accepts an LLVM Module, so remove this (and the method's argument that
 // needs it) when that is fixed.
 
-namespace llvm {
 
 class Module;
 
@@ -167,9 +257,7 @@ public:
   }
 
   /// Releases the memory held by the dominator tree.
-  virtual void releaseMemory() {
-    DT.releaseMemory();
-  }
+  virtual void releaseMemory() { DT.reset(); }
 
   /// Converts the dominator tree to human readable form.
   virtual void print(raw_ostream &OS, const llvm::Module* M= nullptr) const {
@@ -275,83 +363,13 @@ public:
 
 namespace llvm {
 
-/// Clang's CFG contains nullpointers for unreachable succesors, e.g. when an
-/// if statement's condition is always false, it's 'then' branch is represented
-/// with a nullptr. This however will result in a nullpointer derefernece for
-/// dominator tree calculation.
-///
-/// To circumvent this, let's just crudely specialize the children getters
-/// used in LLVM's dominator tree builder.
-namespace DomTreeBuilder {
-
-using ClangCFGDomChildrenGetter =
-SemiNCAInfo<clang::CFGDomTree::DominatorTreeBase>::ChildrenGetter<
-                                                             /*Inverse=*/false>;
-
-template <>
-template <>
-inline ClangCFGDomChildrenGetter::ResultTy ClangCFGDomChildrenGetter::Get(
-    clang::CFGBlock *N, std::integral_constant<bool, /*Inverse=*/false>) {
-  auto RChildren = reverse(children<NodePtr>(N));
-  ResultTy Ret(RChildren.begin(), RChildren.end());
-  Ret.erase(std::remove(Ret.begin(), Ret.end(), nullptr), Ret.end());
-  return Ret;
-}
-
-using ClangCFGDomReverseChildrenGetter =
-SemiNCAInfo<clang::CFGDomTree::DominatorTreeBase>::ChildrenGetter<
-                                                              /*Inverse=*/true>;
-
-template <>
-template <>
-inline ClangCFGDomReverseChildrenGetter::ResultTy
-ClangCFGDomReverseChildrenGetter::Get(
-    clang::CFGBlock *N, std::integral_constant<bool, /*Inverse=*/true>) {
-  auto IChildren = inverse_children<NodePtr>(N);
-  ResultTy Ret(IChildren.begin(), IChildren.end());
-  Ret.erase(std::remove(Ret.begin(), Ret.end(), nullptr), Ret.end());
-  return Ret;
-}
-
-using ClangCFGPostDomChildrenGetter =
-SemiNCAInfo<clang::CFGPostDomTree::DominatorTreeBase>::ChildrenGetter<
-                                                             /*Inverse=*/false>;
-
-template <>
-template <>
-inline ClangCFGPostDomChildrenGetter::ResultTy
-ClangCFGPostDomChildrenGetter::Get(
-    clang::CFGBlock *N, std::integral_constant<bool, /*Inverse=*/false>) {
-  auto RChildren = reverse(children<NodePtr>(N));
-  ResultTy Ret(RChildren.begin(), RChildren.end());
-  Ret.erase(std::remove(Ret.begin(), Ret.end(), nullptr), Ret.end());
-  return Ret;
-}
-
-using ClangCFGPostDomReverseChildrenGetter =
-SemiNCAInfo<clang::CFGPostDomTree::DominatorTreeBase>::ChildrenGetter<
-                                                              /*Inverse=*/true>;
-
-template <>
-template <>
-inline ClangCFGPostDomReverseChildrenGetter::ResultTy
-ClangCFGPostDomReverseChildrenGetter::Get(
-    clang::CFGBlock *N, std::integral_constant<bool, /*Inverse=*/true>) {
-  auto IChildren = inverse_children<NodePtr>(N);
-  ResultTy Ret(IChildren.begin(), IChildren.end());
-  Ret.erase(std::remove(Ret.begin(), Ret.end(), nullptr), Ret.end());
-  return Ret;
-}
-
-} // end of namespace DomTreeBuilder
-
 //===-------------------------------------
 /// DominatorTree GraphTraits specialization so the DominatorTree can be
 /// iterable by generic graph iterators.
 ///
 template <> struct GraphTraits<clang::DomTreeNode *> {
   using NodeRef = ::clang::DomTreeNode *;
-  using ChildIteratorType = ::clang::DomTreeNode::iterator;
+  using ChildIteratorType = ::clang::DomTreeNode::const_iterator;
 
   static NodeRef getEntryNode(NodeRef N) { return N; }
   static ChildIteratorType child_begin(NodeRef N) { return N->begin(); }

@@ -57,15 +57,8 @@ size_t ValueObjectChild::CalculateNumChildren(uint32_t max) {
 
 static void AdjustForBitfieldness(ConstString &name,
                                   uint8_t bitfield_bit_size) {
-  if (name && bitfield_bit_size) {
-    const char *compiler_type_name = name.AsCString();
-    if (compiler_type_name) {
-      std::vector<char> bitfield_type_name(strlen(compiler_type_name) + 32, 0);
-      ::snprintf(&bitfield_type_name.front(), bitfield_type_name.size(),
-                 "%s:%u", compiler_type_name, bitfield_bit_size);
-      name.SetCString(&bitfield_type_name.front());
-    }
-  }
+  if (name && bitfield_bit_size)
+    name.SetString(llvm::formatv("{0}:{1}", name, bitfield_bit_size).str());
 }
 
 ConstString ValueObjectChild::GetTypeName() {
@@ -172,10 +165,6 @@ bool ValueObjectChild::UpdateValue() {
           } else if (addr == 0) {
             m_error.SetErrorString("parent is NULL");
           } else {
-            // Set this object's scalar value to the address of its value by
-            // adding its byte offset to the parent address
-            m_value.GetScalar() += GetByteOffset();
-
             // If a bitfield doesn't fit into the child_byte_size'd
             // window at child_byte_offset, move the window forward
             // until it fits.  The problem here is that Value has no
@@ -194,11 +183,15 @@ bool ValueObjectChild::UpdateValue() {
                 if (bitfield_end > *type_bit_size) {
                   uint64_t overhang_bytes =
                       (bitfield_end - *type_bit_size + 7) / 8;
-                  m_value.GetScalar() += overhang_bytes;
+                  m_byte_offset += overhang_bytes;
                   m_bitfield_bit_offset -= overhang_bytes * 8;
                 }
               }
             }
+
+            // Set this object's scalar value to the address of its value by
+            // adding its byte offset to the parent address
+            m_value.GetScalar() += m_byte_offset;
           }
         } break;
 
@@ -206,11 +199,7 @@ bool ValueObjectChild::UpdateValue() {
           // try to extract the child value from the parent's scalar value
           {
             Scalar scalar(m_value.GetScalar());
-            if (m_bitfield_bit_size)
-              scalar.ExtractBitfield(m_bitfield_bit_size,
-                                     m_bitfield_bit_offset);
-            else
-              scalar.ExtractBitfield(8 * m_byte_size, 8 * m_byte_offset);
+            scalar.ExtractBitfield(8 * m_byte_size, 8 * m_byte_offset);
             m_value.GetScalar() = scalar;
           }
           break;

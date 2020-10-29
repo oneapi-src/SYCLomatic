@@ -53,6 +53,7 @@ struct Limits {
 struct Table {
   TableType ElemType;
   Limits TableLimits;
+  uint32_t Index;
 };
 
 struct Export {
@@ -107,8 +108,10 @@ struct Function {
 struct Relocation {
   RelocType Type;
   uint32_t Index;
+  // TODO(wvo): this would strictly be better as Hex64, but that will change
+  // all existing obj2yaml output.
   yaml::Hex32 Offset;
-  int32_t Addend;
+  int64_t Addend;
 };
 
 struct DataSegment {

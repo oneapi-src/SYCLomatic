@@ -74,18 +74,22 @@ CGOPT(bool, UseCtors)
 CGOPT(bool, RelaxELFRelocations)
 CGOPT_EXP(bool, DataSections)
 CGOPT_EXP(bool, FunctionSections)
+CGOPT(bool, IgnoreXCOFFVisibility)
 CGOPT(std::string, BBSections)
 CGOPT(unsigned, TLSSize)
 CGOPT(bool, EmulatedTLS)
 CGOPT(bool, UniqueSectionNames)
-CGOPT(bool, UniqueBBSectionNames)
+CGOPT(bool, UniqueBasicBlockSectionNames)
 CGOPT(EABI, EABIVersion)
 CGOPT(DebuggerKind, DebuggerTuningOpt)
 CGOPT(bool, EnableStackSizeSection)
 CGOPT(bool, EnableAddrsig)
 CGOPT(bool, EmitCallSiteInfo)
+CGOPT(bool, EnableMachineFunctionSplitter)
 CGOPT(bool, EnableDebugEntryValues)
+CGOPT(bool, ValueTrackingVariableLocations)
 CGOPT(bool, ForceDwarfFrameSection)
+CGOPT(bool, XRayOmitFunctionIndex)
 
 codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
 #define CGBINDOPT(NAME)                                                        \
@@ -330,8 +334,15 @@ codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
       cl::init(false));
   CGBINDOPT(FunctionSections);
 
+  static cl::opt<bool> IgnoreXCOFFVisibility(
+      "ignore-xcoff-visibility",
+      cl::desc("Not emit the visibility attribute for asm in AIX OS or give "
+               "all symbols 'unspecified' visibility in XCOFF object file"),
+      cl::init(false));
+  CGBINDOPT(IgnoreXCOFFVisibility);
+
   static cl::opt<std::string> BBSections(
-      "basicblock-sections",
+      "basic-block-sections",
       cl::desc("Emit basic blocks into separate sections"),
       cl::value_desc("all | <function list (file)> | labels | none"),
       cl::init("none"));
@@ -350,11 +361,11 @@ codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
       cl::init(true));
   CGBINDOPT(UniqueSectionNames);
 
-  static cl::opt<bool> UniqueBBSectionNames(
-      "unique-bb-section-names",
+  static cl::opt<bool> UniqueBasicBlockSectionNames(
+      "unique-basic-block-section-names",
       cl::desc("Give unique names to every basic block section"),
       cl::init(false));
-  CGBINDOPT(UniqueBBSectionNames);
+  CGBINDOPT(UniqueBasicBlockSectionNames);
 
   static cl::opt<EABI> EABIVersion(
       "meabi", cl::desc("Set EABI type (default depends on triple):"),
@@ -399,10 +410,28 @@ codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
       cl::init(false));
   CGBINDOPT(EnableDebugEntryValues);
 
+  static cl::opt<bool> ValueTrackingVariableLocations(
+      "experimental-debug-variable-locations",
+      cl::desc("Use experimental new value-tracking variable locations"),
+      cl::init(false));
+  CGBINDOPT(ValueTrackingVariableLocations);
+
+  static cl::opt<bool> EnableMachineFunctionSplitter(
+      "split-machine-functions",
+      cl::desc("Split out cold basic blocks from machine functions based on "
+               "profile information"),
+      cl::init(false));
+  CGBINDOPT(EnableMachineFunctionSplitter);
+
   static cl::opt<bool> ForceDwarfFrameSection(
       "force-dwarf-frame-section",
       cl::desc("Always emit a debug frame section."), cl::init(false));
   CGBINDOPT(ForceDwarfFrameSection);
+
+  static cl::opt<bool> XRayOmitFunctionIndex(
+      "no-xray-index", cl::desc("Don't emit xray_fn_idx section"),
+      cl::init(false));
+  CGBINDOPT(XRayOmitFunctionIndex);
 
 #undef CGBINDOPT
 
@@ -432,7 +461,8 @@ codegen::getBBSectionsMode(llvm::TargetOptions &Options) {
 
 // Common utility function tightly tied to the options listed here. Initializes
 // a TargetOptions object with CodeGen flags and returns it.
-TargetOptions codegen::InitTargetOptionsFromCodeGenFlags() {
+TargetOptions
+codegen::InitTargetOptionsFromCodeGenFlags(const Triple &TheTriple) {
   TargetOptions Options;
   Options.AllowFPOpFusion = getFuseFPOps();
   Options.UnsafeFPMath = getEnableUnsafeFPMath();
@@ -456,20 +486,25 @@ TargetOptions codegen::InitTargetOptionsFromCodeGenFlags() {
   Options.StackSymbolOrdering = getStackSymbolOrdering();
   Options.UseInitArray = !getUseCtors();
   Options.RelaxELFRelocations = getRelaxELFRelocations();
-  Options.DataSections = getDataSections();
+  Options.DataSections =
+      getExplicitDataSections().getValueOr(TheTriple.hasDefaultDataSections());
   Options.FunctionSections = getFunctionSections();
+  Options.IgnoreXCOFFVisibility = getIgnoreXCOFFVisibility();
   Options.BBSections = getBBSectionsMode(Options);
   Options.UniqueSectionNames = getUniqueSectionNames();
-  Options.UniqueBBSectionNames = getUniqueBBSectionNames();
+  Options.UniqueBasicBlockSectionNames = getUniqueBasicBlockSectionNames();
   Options.TLSSize = getTLSSize();
   Options.EmulatedTLS = getEmulatedTLS();
   Options.ExplicitEmulatedTLS = EmulatedTLSView->getNumOccurrences() > 0;
   Options.ExceptionModel = getExceptionModel();
   Options.EmitStackSizeSection = getEnableStackSizeSection();
+  Options.EnableMachineFunctionSplitter = getEnableMachineFunctionSplitter();
   Options.EmitAddrsig = getEnableAddrsig();
   Options.EmitCallSiteInfo = getEmitCallSiteInfo();
   Options.EnableDebugEntryValues = getEnableDebugEntryValues();
+  Options.ValueTrackingVariableLocations = getValueTrackingVariableLocations();
   Options.ForceDwarfFrameSection = getForceDwarfFrameSection();
+  Options.XRayOmitFunctionIndex = getXRayOmitFunctionIndex();
 
   Options.MCOptions = mc::InitMCTargetOptionsFromFlags();
 

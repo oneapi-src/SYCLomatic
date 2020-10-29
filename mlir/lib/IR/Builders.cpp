@@ -9,6 +9,7 @@
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/AffineExpr.h"
 #include "mlir/IR/AffineMap.h"
+#include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/IR/Matchers.h"
@@ -67,12 +68,11 @@ IntegerType Builder::getIntegerType(unsigned width, bool isSigned) {
       width, isSigned ? IntegerType::Signed : IntegerType::Unsigned, context);
 }
 
-FunctionType Builder::getFunctionType(ArrayRef<Type> inputs,
-                                      ArrayRef<Type> results) {
+FunctionType Builder::getFunctionType(TypeRange inputs, TypeRange results) {
   return FunctionType::get(inputs, results, context);
 }
 
-TupleType Builder::getTupleType(ArrayRef<Type> elementTypes) {
+TupleType Builder::getTupleType(TypeRange elementTypes) {
   return TupleType::get(elementTypes, context);
 }
 
@@ -102,6 +102,12 @@ IntegerAttr Builder::getIndexAttr(int64_t value) {
 
 IntegerAttr Builder::getI64IntegerAttr(int64_t value) {
   return IntegerAttr::get(getIntegerType(64), APInt(64, value));
+}
+
+DenseIntElementsAttr Builder::getBoolVectorAttr(ArrayRef<bool> values) {
+  return DenseIntElementsAttr::get(
+      VectorType::get(static_cast<int64_t>(values.size()), getI1Type()),
+      values);
 }
 
 DenseIntElementsAttr Builder::getI32VectorAttr(ArrayRef<int32_t> values) {
@@ -256,6 +262,12 @@ ArrayAttr Builder::getStrArrayAttr(ArrayRef<StringRef> values) {
   return getArrayAttr(attrs);
 }
 
+ArrayAttr Builder::getTypeArrayAttr(TypeRange values) {
+  auto attrs = llvm::to_vector<8>(llvm::map_range(
+      values, [](Type v) -> Attribute { return TypeAttr::get(v); }));
+  return getArrayAttr(attrs);
+}
+
 ArrayAttr Builder::getAffineMapArrayAttr(ArrayRef<AffineMap> values) {
   auto attrs = llvm::to_vector<8>(llvm::map_range(
       values, [](AffineMap v) -> Attribute { return AffineMapAttr::get(v); }));
@@ -263,28 +275,18 @@ ArrayAttr Builder::getAffineMapArrayAttr(ArrayRef<AffineMap> values) {
 }
 
 Attribute Builder::getZeroAttr(Type type) {
-  switch (type.getKind()) {
-  case StandardTypes::BF16:
-  case StandardTypes::F16:
-  case StandardTypes::F32:
-  case StandardTypes::F64:
+  if (type.isa<FloatType>())
     return getFloatAttr(type, 0.0);
-  case StandardTypes::Integer: {
-    auto width = type.cast<IntegerType>().getWidth();
-    if (width == 1)
-      return getBoolAttr(false);
-    return getIntegerAttr(type, APInt(width, 0));
-  }
-  case StandardTypes::Vector:
-  case StandardTypes::RankedTensor: {
+  if (type.isa<IndexType>())
+    return getIndexAttr(0);
+  if (auto integerType = type.dyn_cast<IntegerType>())
+    return getIntegerAttr(type, APInt(type.cast<IntegerType>().getWidth(), 0));
+  if (type.isa<RankedTensorType, VectorType>()) {
     auto vtType = type.cast<ShapedType>();
     auto element = getZeroAttr(vtType.getElementType());
     if (!element)
       return {};
     return DenseElementsAttr::get(vtType, element);
-  }
-  default:
-    break;
   }
   return {};
 }
@@ -457,4 +459,24 @@ LogicalResult OpBuilder::tryFold(Operation *op,
     insert(cst);
 
   return success();
+}
+
+Operation *OpBuilder::clone(Operation &op, BlockAndValueMapping &mapper) {
+  Operation *newOp = op.clone(mapper);
+  // The `insert` call below handles the notification for inserting `newOp`
+  // itself. But if `newOp` has any regions, we need to notify the listener
+  // about any ops that got inserted inside those regions as part of cloning.
+  if (listener) {
+    auto walkFn = [&](Operation *walkedOp) {
+      listener->notifyOperationInserted(walkedOp);
+    };
+    for (Region &region : newOp->getRegions())
+      region.walk(walkFn);
+  }
+  return insert(newOp);
+}
+
+Operation *OpBuilder::clone(Operation &op) {
+  BlockAndValueMapping mapper;
+  return clone(op, mapper);
 }

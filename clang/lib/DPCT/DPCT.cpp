@@ -33,6 +33,7 @@
 #include "llvm/Support/Host.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
 
 #include <string>
 
@@ -539,7 +540,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   // Create minimalist CudaInstallationDetector and return the InstallPath.
   DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
-  driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(), E, nullptr);
+  driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(), E);
   driver::CudaInstallationDetector SDKDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
@@ -757,7 +758,7 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\nIntel(R) DPC++ Compatibility Tool version " << DPCT_VERSION_MAJOR
-     << "." << DPCT_VERSION_MINOR <<"."
+     << "." << DPCT_VERSION_MINOR << "."
      << " Codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.

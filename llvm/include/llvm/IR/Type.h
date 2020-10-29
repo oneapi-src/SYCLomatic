@@ -228,7 +228,9 @@ public:
   bool isPtrOrPtrVectorTy() const { return getScalarType()->isPointerTy(); }
 
   /// True if this is an instance of VectorType.
-  inline bool isVectorTy() const;
+  inline bool isVectorTy() const {
+    return getTypeID() == ScalableVectorTyID || getTypeID() == FixedVectorTyID;
+  }
 
   /// Return true if this type could be converted with a lossless BitCast to
   /// type 'Ty'. For example, i8* to i32*. BitCasts are valid for types of the
@@ -304,7 +306,11 @@ public:
 
   /// If this is a vector type, return the element type, otherwise return
   /// 'this'.
-  inline Type *getScalarType() const;
+  inline Type *getScalarType() const {
+    if (isVectorTy())
+      return getContainedType(0);
+    return const_cast<Type *>(this);
+  }
 
   //===--------------------------------------------------------------------===//
   // Type Iteration support.
@@ -420,6 +426,26 @@ public:
       }
     }
     llvm_unreachable("Unsupported type in Type::getScalarTy");
+  }
+  static Type *getFloatingPointTy(LLVMContext &C, const fltSemantics &S) {
+    Type *Ty;
+    if (&S == &APFloat::IEEEhalf())
+      Ty = Type::getHalfTy(C);
+    else if (&S == &APFloat::BFloat())
+      Ty = Type::getBFloatTy(C);
+    else if (&S == &APFloat::IEEEsingle())
+      Ty = Type::getFloatTy(C);
+    else if (&S == &APFloat::IEEEdouble())
+      Ty = Type::getDoubleTy(C);
+    else if (&S == &APFloat::x87DoubleExtended())
+      Ty = Type::getX86_FP80Ty(C);
+    else if (&S == &APFloat::IEEEquad())
+      Ty = Type::getFP128Ty(C);
+    else {
+      assert(&S == &APFloat::PPCDoubleDouble() && "Unknown FP format");
+      Ty = Type::getPPC_FP128Ty(C);
+    }
+    return Ty;
   }
 
   //===--------------------------------------------------------------------===//

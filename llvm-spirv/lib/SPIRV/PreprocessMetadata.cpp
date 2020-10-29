@@ -42,14 +42,14 @@
 #include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
+#include "VectorComputeUtil.h"
+#include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 
 using namespace llvm;
 using namespace SPIRV;
@@ -68,7 +68,11 @@ public:
 
   bool runOnModule(Module &M) override;
   void visit(Module *M);
+  void preprocessCXXStructorList(SPIRVMDBuilder::NamedMDWrapper &EM,
+                                 GlobalVariable *V, ExecutionMode EMode);
   void preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B, SPIRVMDWalker *W);
+  void preprocessVectorComputeMetadata(Module *M, SPIRVMDBuilder *B,
+                                       SPIRVMDWalker *W);
 
   static char ID;
 
@@ -85,14 +89,29 @@ bool PreprocessMetadata::runOnModule(Module &Module) {
 
   LLVM_DEBUG(dbgs() << "Enter PreprocessMetadata:\n");
   visit(M);
-
   LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
-  }
+
+  verifyRegularizationPass(*M, "PreprocessMetadata");
+
   return true;
+}
+
+void PreprocessMetadata::preprocessCXXStructorList(
+    SPIRVMDBuilder::NamedMDWrapper &EM, GlobalVariable *V,
+    ExecutionMode EMode) {
+  auto *List = dyn_cast_or_null<ConstantArray>(V->getInitializer());
+  if (!List)
+    return;
+
+  for (Value *V : List->operands()) {
+    auto *Structor = cast<ConstantStruct>(V);
+
+    // Each entry in the list is a struct containing 3 members:
+    // (priority, function, data), with function being the entry point.
+    auto *Kernel = cast<Function>(Structor->getOperand(1));
+
+    EM.addOp().add(Kernel).add(EMode).done();
+  }
 }
 
 void PreprocessMetadata::visit(Module *M) {
@@ -100,10 +119,15 @@ void PreprocessMetadata::visit(Module *M) {
   SPIRVMDWalker W(*M);
 
   preprocessOCLMetadata(M, &B, &W);
+  preprocessVectorComputeMetadata(M, &B, &W);
 
   // Create metadata representing (empty so far) list
   // of OpExecutionMode instructions
   auto EM = B.addNamedMD(kSPIRVMD::ExecutionMode); // !spirv.ExecutionMode = {}
+
+  // Process special variables in LLVM IR module.
+  if (auto *GV = M->getGlobalVariable("llvm.global_ctors"))
+    preprocessCXXStructorList(EM, GV, spv::ExecutionModeInitializer);
 
   // Add execution modes for kernels. We take it from metadata attached to
   // the kernel functions.
@@ -208,8 +232,8 @@ void PreprocessMetadata::preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B,
   // !{x} = !{i32 3, i32 102000}
   B->addNamedMD(kSPIRVMD::Source)
       .addOp()
-      .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
-                                 : spv::SourceLanguageOpenCL_CPP)
+      .add(CLVer == kOCLVer::CL21 ? spv::SourceLanguageOpenCL_CPP
+                                  : spv::SourceLanguageOpenCL_C)
       .add(CLVer)
       .done();
   if (EraseOCLMD)
@@ -241,6 +265,58 @@ void PreprocessMetadata::preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B,
 
   if (EraseOCLMD)
     B->eraseNamedMD(kSPIR2MD::FPContract);
+}
+
+void PreprocessMetadata::preprocessVectorComputeMetadata(Module *M,
+                                                         SPIRVMDBuilder *B,
+                                                         SPIRVMDWalker *W) {
+  using namespace VectorComputeUtil;
+
+  auto EM = B->addNamedMD(kSPIRVMD::ExecutionMode);
+
+  for (auto &F : *M) {
+    if (F.getCallingConv() != CallingConv::SPIR_KERNEL)
+      continue;
+
+    // Add VC float control execution modes
+    // RoundMode and FloatMode are always same for all types in VC
+    // While Denorm could be different for double, float and half
+    auto Attrs = F.getAttributes();
+    if (Attrs.hasFnAttribute(kVCMetadata::VCFloatControl)) {
+      SPIRVWord Mode = 0;
+      Attrs
+          .getAttribute(AttributeList::FunctionIndex,
+                        kVCMetadata::VCFloatControl)
+          .getValueAsString()
+          .getAsInteger(0, Mode);
+      spv::ExecutionMode ExecRoundMode =
+          FPRoundingModeExecModeMap::map(getFPRoundingMode(Mode));
+      spv::ExecutionMode ExecFloatMode =
+          FPOperationModeExecModeMap::map(getFPOperationMode(Mode));
+      VCFloatTypeSizeMap::foreach (
+          [&](VCFloatType FloatType, unsigned TargetWidth) {
+            EM.addOp().add(&F).add(ExecRoundMode).add(TargetWidth).done();
+            EM.addOp().add(&F).add(ExecFloatMode).add(TargetWidth).done();
+            EM.addOp()
+                .add(&F)
+                .add(FPDenormModeExecModeMap::map(
+                    getFPDenormMode(Mode, FloatType)))
+                .add(TargetWidth)
+                .done();
+          });
+    }
+    if (Attrs.hasFnAttribute(kVCMetadata::VCSLMSize)) {
+      SPIRVWord SLMSize = 0;
+      Attrs.getAttribute(AttributeList::FunctionIndex, kVCMetadata::VCSLMSize)
+          .getValueAsString()
+          .getAsInteger(0, SLMSize);
+      EM.addOp()
+          .add(&F)
+          .add(spv::ExecutionModeSharedLocalMemorySizeINTEL)
+          .add(SLMSize)
+          .done();
+    }
+  }
 }
 
 } // namespace SPIRV

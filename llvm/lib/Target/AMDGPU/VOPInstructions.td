@@ -122,9 +122,7 @@ class VOP3_Pseudo <string opName, VOPProfile P, list<dag> pattern = [],
 
   let ReadsModeReg = !or(isFloatType<P.DstVT>.ret, isFloatType<P.Src0VT>.ret);
 
-  // FIXME: Set this. Right now it seems regular IR operations don't
-  // automatically imply no FP exceptions.
-  // let mayRaiseFPException = ReadsModeReg;
+  let mayRaiseFPException = ReadsModeReg;
   let Uses = !if(ReadsModeReg, [MODE, EXEC], [EXEC]);
 
   let AsmVariantName = AMDGPUAsmVariants.VOP3;
@@ -298,7 +296,7 @@ class VOP3be <VOPProfile P> : Enc64 {
   let Inst{63}    = !if(P.HasSrc2Mods, src2_modifiers{0}, 0);
 }
 
-class VOP3Pe <bits<10> op, VOPProfile P> : Enc64 {
+class VOP3Pe <bits<7> op, VOPProfile P> : Enc64 {
   bits<8> vdst;
   // neg, neg_hi, op_sel put in srcN_modifiers
   bits<4> src0_modifiers;
@@ -322,8 +320,8 @@ class VOP3Pe <bits<10> op, VOPProfile P> : Enc64 {
 
   let Inst{15} = !if(P.HasClamp, clamp{0}, 0);
 
-  let Inst{25-16} = op;
-  let Inst{31-26} = 0x34; //encoding
+  let Inst{22-16} = op;
+  let Inst{31-23} = 0x1a7; //encoding
   let Inst{40-32} = !if(P.HasSrc0, src0, 0);
   let Inst{49-41} = !if(P.HasSrc1, src1, 0);
   let Inst{58-50} = !if(P.HasSrc2, src2, 0);
@@ -334,7 +332,7 @@ class VOP3Pe <bits<10> op, VOPProfile P> : Enc64 {
   let Inst{63}    = !if(P.HasSrc2Mods, src2_modifiers{0}, 0); // neg (lo)
 }
 
-class VOP3Pe_MAI <bits<10> op, VOPProfile P> : Enc64 {
+class VOP3Pe_MAI <bits<7> op, VOPProfile P> : Enc64 {
   bits<8> vdst;
   bits<10> src0;
   bits<10> src1;
@@ -351,8 +349,8 @@ class VOP3Pe_MAI <bits<10> op, VOPProfile P> : Enc64 {
 
   let Inst{15} = !if(P.HasClamp, clamp{0}, 0);
 
-  let Inst{25-16} = op;
-  let Inst{31-26} = 0x34; //encoding
+  let Inst{22-16} = op;
+  let Inst{31-23} = 0x1a7; //encoding
   let Inst{40-32} = !if(P.HasSrc0, src0{8-0}, 0);
   let Inst{49-41} = !if(P.HasSrc1, src1{8-0}, 0);
   let Inst{58-50} = !if(P.HasSrc2, src2, 0);
@@ -364,8 +362,8 @@ class VOP3Pe_MAI <bits<10> op, VOPProfile P> : Enc64 {
 }
 
 
-class VOP3Pe_gfx10 <bits<10> op, VOPProfile P> : VOP3Pe<op, P> {
-  let Inst{31-26} = 0x33; //encoding
+class VOP3Pe_gfx10 <bits<7> op, VOPProfile P> : VOP3Pe<op, P> {
+  let Inst{31-23} = 0x198; //encoding
 }
 
 class VOP3be_gfx6_gfx7<bits<9> op, VOPProfile p> : VOP3be<p> {
@@ -500,9 +498,7 @@ class VOP_SDWA_Pseudo <string opName, VOPProfile P, list<dag> pattern=[]> :
 
   let ReadsModeReg = !or(isFloatType<P.DstVT>.ret, isFloatType<P.Src0VT>.ret);
 
-  // FIXME: Set this. Right now it seems regular IR operations don't
-  // automatically imply no FP exceptions.
-  // let mayRaiseFPException = ReadsModeReg;
+  let mayRaiseFPException = ReadsModeReg;
   let Uses = !if(ReadsModeReg, [MODE, EXEC], [EXEC]);
 
   let SubtargetPredicate = HasSDWA;
@@ -623,9 +619,7 @@ class VOP_DPP_Pseudo <string OpName, VOPProfile P, list<dag> pattern=[]> :
 
   let ReadsModeReg = !or(isFloatType<P.DstVT>.ret, isFloatType<P.Src0VT>.ret);
 
-  // FIXME: Set this. Right now it seems regular IR operations don't
-  // automatically imply no FP exceptions.
-  // let mayRaiseFPException = ReadsModeReg;
+  let mayRaiseFPException = ReadsModeReg;
   let Uses = !if(ReadsModeReg, [MODE, EXEC], [EXEC]);
   let isConvergent = 1;
 
@@ -781,6 +775,19 @@ class DivergentFragOrOp<SDPatternOperator Op, VOPProfile P> {
   SDPatternOperator ret = !if(!eq(P.NeedPatGen,PatGenMode.Pattern),
    !if(!isa<SDNode>(Op), getDivergentFrag<Op>.ret, Op), Op);
 }
+
+class getVSrcOp<ValueType vt> {
+  RegisterOperand ret = !if(!eq(vt.Size, 32), VSrc_b32, VSrc_b16);
+}
+
+// Class for binary integer operations with the clamp bit set for saturation
+// TODO: Add sub with negated inline constant pattern.
+class VOPBinOpClampPat<SDPatternOperator node, Instruction inst, ValueType vt> :
+  GCNPat<(node vt:$src0, vt:$src1),
+         (inst getVSrcOp<vt>.ret:$src0, getVSrcOp<vt>.ret:$src1,
+               DSTCLAMP.ENABLE)
+>;
+
 
 include "VOPCInstructions.td"
 include "VOP1Instructions.td"

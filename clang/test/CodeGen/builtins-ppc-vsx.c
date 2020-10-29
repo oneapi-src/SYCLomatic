@@ -52,6 +52,7 @@ vector unsigned long long res_vull;
 vector signed __int128 res_vslll;
 
 double res_d;
+int res_i;
 float res_af[4];
 double res_ad[2];
 signed char res_asc[16];
@@ -713,15 +714,15 @@ void test1() {
 
   /* vec_msub */
   res_vf = vec_msub(vf, vf, vf);
-// CHECK: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
+// CHECK: fneg <4 x float> %{{[0-9]+}}
 // CHECK-NEXT: call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float>
-// CHECK-LE: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
+// CHECK-LE: fneg <4 x float> %{{[0-9]+}}
 // CHECK-LE-NEXT: call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float>
 
   res_vd = vec_msub(vd, vd, vd);
-// CHECK: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %{{[0-9]+}}
+// CHECK: fneg <2 x double> %{{[0-9]+}}
 // CHECK-NEXT: call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double>
-// CHECK-LE: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %{{[0-9]+}}
+// CHECK-LE: fneg <2 x double> %{{[0-9]+}}
 // CHECK-LE-NEXT: call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double>
 
   res_vsll = vec_mul(vsll, vsll);
@@ -750,31 +751,31 @@ void test1() {
 
   res_vf = vec_nmadd(vf, vf, vf);
 // CHECK: [[FM:[0-9]+]] = call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}})
-// CHECK-NEXT: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %[[FM]]
+// CHECK-NEXT: fneg <4 x float> %[[FM]]
 // CHECK-LE: [[FM:[0-9]+]] = call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}})
-// CHECK-LE-NEXT: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %[[FM]]
+// CHECK-LE-NEXT: fneg <4 x float> %[[FM]]
 
   res_vd = vec_nmadd(vd, vd, vd);
 // CHECK: [[FM:[0-9]+]] = call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}})
-// CHECK-NEXT: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %[[FM]]
+// CHECK-NEXT: fneg <2 x double> %[[FM]]
 // CHECK-LE: [[FM:[0-9]+]] = call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}})
-// CHECK-LE-NEXT: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %[[FM]]
+// CHECK-LE-NEXT: fneg <2 x double> %[[FM]]
 
   res_vf = vec_nmsub(vf, vf, vf);
-// CHECK: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
+// CHECK: fneg <4 x float> %{{[0-9]+}}
 // CHECK-NEXT: call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float>
-// CHECK: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
-// CHECK-LE: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
+// CHECK: fneg <4 x float> %{{[0-9]+}}
+// CHECK-LE: fneg <4 x float> %{{[0-9]+}}
 // CHECK-LE-NEXT: call <4 x float> @llvm.fma.v4f32(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}}, <4 x float>
-// CHECK-LE: fsub <4 x float> <float -0.000000e+00, float -0.000000e+00, float -0.000000e+00, float -0.000000e+00>, %{{[0-9]+}}
+// CHECK-LE: fneg <4 x float> %{{[0-9]+}}
 
   res_vd = vec_nmsub(vd, vd, vd);
-// CHECK: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %{{[0-9]+}}
+// CHECK: fneg <2 x double> %{{[0-9]+}}
 // CHECK-NEXT: [[FM:[0-9]+]] = call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double>
-// CHECK-NEXT: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %[[FM]]
-// CHECK-LE: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %{{[0-9]+}}
+// CHECK-NEXT: fneg <2 x double> %[[FM]]
+// CHECK-LE: fneg <2 x double> %{{[0-9]+}}
 // CHECK-LE-NEXT: [[FM:[0-9]+]] = call <2 x double> @llvm.fma.v2f64(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}}, <2 x double>
-// CHECK-LE-NEXT: fsub <2 x double> <double -0.000000e+00, double -0.000000e+00>, %[[FM]]
+// CHECK-LE-NEXT: fneg <2 x double> %[[FM]]
 
   /* vec_nor */
   res_vsll = vec_nor(vsll, vsll);
@@ -863,12 +864,12 @@ void test1() {
 // CHECK-LE: call <2 x double> @llvm.ppc.vsx.xvredp(<2 x double>
 
   res_vf = vec_rint(vf);
-// CHECK: call <4 x float> @llvm.nearbyint.v4f32(<4 x float> %{{[0-9]+}})
-// CHECK-LE: call <4 x float> @llvm.nearbyint.v4f32(<4 x float> %{{[0-9]+}})
+// CHECK: call <4 x float> @llvm.rint.v4f32(<4 x float> %{{[0-9]+}})
+// CHECK-LE: call <4 x float> @llvm.rint.v4f32(<4 x float> %{{[0-9]+}})
 
   res_vd = vec_rint(vd);
-// CHECK: call <2 x double> @llvm.nearbyint.v2f64(<2 x double> %{{[0-9]+}})
-// CHECK-LE: call <2 x double> @llvm.nearbyint.v2f64(<2 x double> %{{[0-9]+}})
+// CHECK: call <2 x double> @llvm.rint.v2f64(<2 x double> %{{[0-9]+}})
+// CHECK-LE: call <2 x double> @llvm.rint.v2f64(<2 x double> %{{[0-9]+}})
 
   res_vf = vec_rsqrte(vf);
 // CHECK: call <4 x float> @llvm.ppc.vsx.xvrsqrtesp(<4 x float> %{{[0-9]+}})
@@ -877,6 +878,23 @@ void test1() {
   res_vd = vec_rsqrte(vd);
 // CHECK: call <2 x double> @llvm.ppc.vsx.xvrsqrtedp(<2 x double> %{{[0-9]+}})
 // CHECK-LE: call <2 x double> @llvm.ppc.vsx.xvrsqrtedp(<2 x double> %{{[0-9]+}})
+
+  res_i = vec_test_swsqrt(vd);
+// CHECK: call i32 @llvm.ppc.vsx.xvtsqrtdp(<2 x double> %{{[0-9]+}})
+// CHECK-LE: call i32 @llvm.ppc.vsx.xvtsqrtdp(<2 x double> %{{[0-9]+}})
+
+  res_i = vec_test_swsqrts(vf);
+// CHECK: call i32 @llvm.ppc.vsx.xvtsqrtsp(<4 x float> %{{[0-9]+}})
+// CHECK-LE: call i32 @llvm.ppc.vsx.xvtsqrtsp(<4 x float> %{{[0-9]+}})
+
+  res_i = vec_test_swdiv(vd, vd);
+// CHECK: call i32 @llvm.ppc.vsx.xvtdivdp(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}})
+// CHECK-LE: call i32 @llvm.ppc.vsx.xvtdivdp(<2 x double> %{{[0-9]+}}, <2 x double> %{{[0-9]+}})
+
+  res_i = vec_test_swdivs(vf, vf);
+// CHECK: call i32 @llvm.ppc.vsx.xvtdivsp(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}})
+// CHECK-LE: call i32 @llvm.ppc.vsx.xvtdivsp(<4 x float> %{{[0-9]+}}, <4 x float> %{{[0-9]+}})
+
 
   dummy();
 // CHECK: call void @dummy()

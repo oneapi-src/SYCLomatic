@@ -40,6 +40,7 @@
 #include "llvm/IR/GlobalAlias.h"
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
@@ -194,10 +195,10 @@ CleanupPointerRootUsers(GlobalVariable *GV,
                         function_ref<TargetLibraryInfo &(Function &)> GetTLI) {
   // A brief explanation of leak checkers.  The goal is to find bugs where
   // pointers are forgotten, causing an accumulating growth in memory
-  // usage over time.  The common strategy for leak checkers is to whitelist the
-  // memory pointed to by globals at exit.  This is popular because it also
-  // solves another problem where the main thread of a C++ program may shut down
-  // before other threads that are still expecting to use those globals.  To
+  // usage over time.  The common strategy for leak checkers is to explicitly
+  // allow the memory pointed to by globals at exit.  This is popular because it
+  // also solves another problem where the main thread of a C++ program may shut
+  // down before other threads that are still expecting to use those globals. To
   // handle that case, we expect the program may create a singleton and never
   // destroy it.
 
@@ -267,6 +268,7 @@ CleanupPointerRootUsers(GlobalVariable *GV,
         I = J;
       } while (true);
       I->eraseFromParent();
+      Changed = true;
     }
   }
 
@@ -442,7 +444,7 @@ static bool IsSRASequential(Type *T) {
 static uint64_t GetSRASequentialNumElements(Type *T) {
   if (ArrayType *AT = dyn_cast<ArrayType>(T))
     return AT->getNumElements();
-  return cast<VectorType>(T)->getNumElements();
+  return cast<FixedVectorType>(T)->getNumElements();
 }
 static Type *GetSRASequentialElementType(Type *T) {
   if (ArrayType *AT = dyn_cast<ArrayType>(T))
@@ -467,19 +469,16 @@ static bool CanDoGlobalSRA(GlobalVariable *GV) {
 /// Copy over the debug info for a variable to its SRA replacements.
 static void transferSRADebugInfo(GlobalVariable *GV, GlobalVariable *NGV,
                                  uint64_t FragmentOffsetInBits,
-                                 uint64_t FragmentSizeInBits) {
+                                 uint64_t FragmentSizeInBits,
+                                 uint64_t VarSize) {
   SmallVector<DIGlobalVariableExpression *, 1> GVs;
   GV->getDebugInfo(GVs);
   for (auto *GVE : GVs) {
     DIVariable *Var = GVE->getVariable();
-    Optional<uint64_t> VarSize = Var->getSizeInBits();
-
     DIExpression *Expr = GVE->getExpression();
     // If the FragmentSize is smaller than the variable,
     // emit a fragment expression.
-    // If the variable size is unknown a fragment must be
-    // emitted to be safe.
-    if (!VarSize || FragmentSizeInBits < *VarSize) {
+    if (FragmentSizeInBits < VarSize) {
       if (auto E = DIExpression::createFragmentExpression(
               Expr, FragmentOffsetInBits, FragmentSizeInBits))
         Expr = *E;
@@ -504,13 +503,13 @@ static GlobalVariable *SRAGlobal(GlobalVariable *GV, const DataLayout &DL) {
   assert(GV->hasLocalLinkage());
   Constant *Init = GV->getInitializer();
   Type *Ty = Init->getType();
+  uint64_t VarSize = DL.getTypeSizeInBits(Ty);
 
   std::map<unsigned, GlobalVariable *> NewGlobals;
 
   // Get the alignment of the global, either explicit or target-specific.
-  unsigned StartAlignment = GV->getAlignment();
-  if (StartAlignment == 0)
-    StartAlignment = DL.getABITypeAlignment(GV->getType());
+  Align StartAlignment =
+      DL.getValueOrABITypeAlignment(GV->getAlign(), GV->getType());
 
   // Loop over all users and create replacement variables for used aggregate
   // elements.
@@ -553,28 +552,27 @@ static GlobalVariable *SRAGlobal(GlobalVariable *GV, const DataLayout &DL) {
       // had 256 byte alignment for example, something might depend on that:
       // propagate info to each field.
       uint64_t FieldOffset = Layout.getElementOffset(ElementIdx);
-      Align NewAlign(MinAlign(StartAlignment, FieldOffset));
-      if (NewAlign >
-          Align(DL.getABITypeAlignment(STy->getElementType(ElementIdx))))
+      Align NewAlign = commonAlignment(StartAlignment, FieldOffset);
+      if (NewAlign > DL.getABITypeAlign(STy->getElementType(ElementIdx)))
         NGV->setAlignment(NewAlign);
 
       // Copy over the debug info for the variable.
       uint64_t Size = DL.getTypeAllocSizeInBits(NGV->getValueType());
       uint64_t FragmentOffsetInBits = Layout.getElementOffsetInBits(ElementIdx);
-      transferSRADebugInfo(GV, NGV, FragmentOffsetInBits, Size);
+      transferSRADebugInfo(GV, NGV, FragmentOffsetInBits, Size, VarSize);
     } else {
       uint64_t EltSize = DL.getTypeAllocSize(ElTy);
-      Align EltAlign(DL.getABITypeAlignment(ElTy));
+      Align EltAlign = DL.getABITypeAlign(ElTy);
       uint64_t FragmentSizeInBits = DL.getTypeAllocSizeInBits(ElTy);
 
       // Calculate the known alignment of the field.  If the original aggregate
       // had 256 byte alignment for example, something might depend on that:
       // propagate info to each field.
-      Align NewAlign(MinAlign(StartAlignment, EltSize * ElementIdx));
+      Align NewAlign = commonAlignment(StartAlignment, EltSize * ElementIdx);
       if (NewAlign > EltAlign)
         NGV->setAlignment(NewAlign);
       transferSRADebugInfo(GV, NGV, FragmentSizeInBits * ElementIdx,
-                           FragmentSizeInBits);
+                           FragmentSizeInBits, VarSize);
     }
   }
 
@@ -1992,12 +1990,13 @@ processInternalGlobal(GlobalVariable *GV, const GlobalStatus &GS,
     return true;
   }
 
+  bool Changed = false;
+
   // If the global is never loaded (but may be stored to), it is dead.
   // Delete it now.
   if (!GS.IsLoaded) {
     LLVM_DEBUG(dbgs() << "GLOBAL NEVER LOADED: " << *GV << "\n");
 
-    bool Changed;
     if (isLeakCheckerRoot(GV)) {
       // Delete any constant stores to the global.
       Changed = CleanupPointerRootUsers(GV, GetTLI);
@@ -2023,11 +2022,14 @@ processInternalGlobal(GlobalVariable *GV, const GlobalStatus &GS,
     // Don't actually mark a global constant if it's atomic because atomic loads
     // are implemented by a trivial cmpxchg in some edge-cases and that usually
     // requires write access to the variable even if it's not actually changed.
-    if (GS.Ordering == AtomicOrdering::NotAtomic)
+    if (GS.Ordering == AtomicOrdering::NotAtomic) {
+      assert(!GV->isConstant() && "Expected a non-constant global");
       GV->setConstant(true);
+      Changed = true;
+    }
 
     // Clean up any obviously simplifiable users now.
-    CleanupConstantGlobalUsers(GV, GV->getInitializer(), DL, GetTLI);
+    Changed |= CleanupConstantGlobalUsers(GV, GV->getInitializer(), DL, GetTLI);
 
     // If the global is dead now, just nuke it.
     if (GV->use_empty()) {
@@ -2087,7 +2089,7 @@ processInternalGlobal(GlobalVariable *GV, const GlobalStatus &GS,
     }
   }
 
-  return false;
+  return Changed;
 }
 
 /// Analyze the specified global variable and optimize it if possible.  If we
@@ -2222,8 +2224,7 @@ isValidCandidateForColdCC(Function &F,
     BlockFrequencyInfo &CallerBFI = GetBFI(*CallerFunc);
     if (!isColdCallSite(CB, CallerBFI))
       return false;
-    auto It = std::find(AllCallsCold.begin(), AllCallsCold.end(), CallerFunc);
-    if (It == AllCallsCold.end())
+    if (!llvm::is_contained(AllCallsCold, CallerFunc))
       return false;
   }
   return true;
@@ -2268,6 +2269,115 @@ hasOnlyColdCalls(Function &F,
     }
   }
   return true;
+}
+
+static bool hasMustTailCallers(Function *F) {
+  for (User *U : F->users()) {
+    CallBase *CB = dyn_cast<CallBase>(U);
+    if (!CB) {
+      assert(isa<BlockAddress>(U) &&
+             "Expected either CallBase or BlockAddress");
+      continue;
+    }
+    if (CB->isMustTailCall())
+      return true;
+  }
+  return false;
+}
+
+static bool hasInvokeCallers(Function *F) {
+  for (User *U : F->users())
+    if (isa<InvokeInst>(U))
+      return true;
+  return false;
+}
+
+static void RemovePreallocated(Function *F) {
+  RemoveAttribute(F, Attribute::Preallocated);
+
+  auto *M = F->getParent();
+
+  IRBuilder<> Builder(M->getContext());
+
+  // Cannot modify users() while iterating over it, so make a copy.
+  SmallVector<User *, 4> PreallocatedCalls(F->users());
+  for (User *U : PreallocatedCalls) {
+    CallBase *CB = dyn_cast<CallBase>(U);
+    if (!CB)
+      continue;
+
+    assert(
+        !CB->isMustTailCall() &&
+        "Shouldn't call RemotePreallocated() on a musttail preallocated call");
+    // Create copy of call without "preallocated" operand bundle.
+    SmallVector<OperandBundleDef, 1> OpBundles;
+    CB->getOperandBundlesAsDefs(OpBundles);
+    CallBase *PreallocatedSetup = nullptr;
+    for (auto *It = OpBundles.begin(); It != OpBundles.end(); ++It) {
+      if (It->getTag() == "preallocated") {
+        PreallocatedSetup = cast<CallBase>(*It->input_begin());
+        OpBundles.erase(It);
+        break;
+      }
+    }
+    assert(PreallocatedSetup && "Did not find preallocated bundle");
+    uint64_t ArgCount =
+        cast<ConstantInt>(PreallocatedSetup->getArgOperand(0))->getZExtValue();
+
+    assert((isa<CallInst>(CB) || isa<InvokeInst>(CB)) &&
+           "Unknown indirect call type");
+    CallBase *NewCB = CallBase::Create(CB, OpBundles, CB);
+    CB->replaceAllUsesWith(NewCB);
+    NewCB->takeName(CB);
+    CB->eraseFromParent();
+
+    Builder.SetInsertPoint(PreallocatedSetup);
+    auto *StackSave =
+        Builder.CreateCall(Intrinsic::getDeclaration(M, Intrinsic::stacksave));
+
+    Builder.SetInsertPoint(NewCB->getNextNonDebugInstruction());
+    Builder.CreateCall(Intrinsic::getDeclaration(M, Intrinsic::stackrestore),
+                       StackSave);
+
+    // Replace @llvm.call.preallocated.arg() with alloca.
+    // Cannot modify users() while iterating over it, so make a copy.
+    // @llvm.call.preallocated.arg() can be called with the same index multiple
+    // times. So for each @llvm.call.preallocated.arg(), we see if we have
+    // already created a Value* for the index, and if not, create an alloca and
+    // bitcast right after the @llvm.call.preallocated.setup() so that it
+    // dominates all uses.
+    SmallVector<Value *, 2> ArgAllocas(ArgCount);
+    SmallVector<User *, 2> PreallocatedArgs(PreallocatedSetup->users());
+    for (auto *User : PreallocatedArgs) {
+      auto *UseCall = cast<CallBase>(User);
+      assert(UseCall->getCalledFunction()->getIntrinsicID() ==
+                 Intrinsic::call_preallocated_arg &&
+             "preallocated token use was not a llvm.call.preallocated.arg");
+      uint64_t AllocArgIndex =
+          cast<ConstantInt>(UseCall->getArgOperand(1))->getZExtValue();
+      Value *AllocaReplacement = ArgAllocas[AllocArgIndex];
+      if (!AllocaReplacement) {
+        auto AddressSpace = UseCall->getType()->getPointerAddressSpace();
+        auto *ArgType = UseCall
+                            ->getAttribute(AttributeList::FunctionIndex,
+                                           Attribute::Preallocated)
+                            .getValueAsType();
+        auto *InsertBefore = PreallocatedSetup->getNextNonDebugInstruction();
+        Builder.SetInsertPoint(InsertBefore);
+        auto *Alloca =
+            Builder.CreateAlloca(ArgType, AddressSpace, nullptr, "paarg");
+        auto *BitCast = Builder.CreateBitCast(
+            Alloca, Type::getInt8PtrTy(M->getContext()), UseCall->getName());
+        ArgAllocas[AllocArgIndex] = BitCast;
+        AllocaReplacement = BitCast;
+      }
+
+      UseCall->replaceAllUsesWith(AllocaReplacement);
+      UseCall->eraseFromParent();
+    }
+    // Remove @llvm.call.preallocated.setup().
+    cast<Instruction>(PreallocatedSetup)->eraseFromParent();
+  }
 }
 
 static bool
@@ -2333,11 +2443,21 @@ OptimizeFunctions(Module &M,
     // wouldn't be safe in the presence of inalloca.
     // FIXME: We should also hoist alloca affected by this to the entry
     // block if possible.
-    // FIXME: handle preallocated
     if (F->getAttributes().hasAttrSomewhere(Attribute::InAlloca) &&
-        !F->hasAddressTaken()) {
+        !F->hasAddressTaken() && !hasMustTailCallers(F)) {
       RemoveAttribute(F, Attribute::InAlloca);
       Changed = true;
+    }
+
+    // FIXME: handle invokes
+    // FIXME: handle musttail
+    if (F->getAttributes().hasAttrSomewhere(Attribute::Preallocated)) {
+      if (!F->hasAddressTaken() && !hasMustTailCallers(F) &&
+          !hasInvokeCallers(F)) {
+        RemovePreallocated(F);
+        Changed = true;
+      }
+      continue;
     }
 
     if (hasChangeableCC(F) && !F->isVarArg() && !F->hasAddressTaken()) {
@@ -2447,7 +2567,7 @@ static Constant *EvaluateStoreInto(Constant *Init, Constant *Val,
   if (ArrayType *ATy = dyn_cast<ArrayType>(Init->getType()))
     NumElts = ATy->getNumElements();
   else
-    NumElts = cast<VectorType>(Init->getType())->getNumElements();
+    NumElts = cast<FixedVectorType>(Init->getType())->getNumElements();
 
   // Break up the array into elements.
   for (uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -2583,7 +2703,7 @@ static void BatchCommitValueTo(const DenseMap<Constant*, Constant*> &Mem) {
       else if (auto *ATy = dyn_cast<ArrayType>(Ty))
         NumElts = ATy->getNumElements();
       else
-        NumElts = cast<VectorType>(Ty)->getNumElements();
+        NumElts = cast<FixedVectorType>(Ty)->getNumElements();
       for (unsigned i = 0, e = NumElts; i != e; ++i)
         Elts.push_back(Init->getAggregateElement(i));
     }

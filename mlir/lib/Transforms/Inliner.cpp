@@ -33,7 +33,7 @@ using namespace mlir;
 
 /// Walk all of the used symbol callgraph nodes referenced with the given op.
 static void walkReferencedSymbolNodes(
-    Operation *op, CallGraph &cg,
+    Operation *op, CallGraph &cg, SymbolTableCollection &symbolTable,
     DenseMap<Attribute, CallGraphNode *> &resolvedRefs,
     function_ref<void(CallGraphNode *, Operation *)> callback) {
   auto symbolUses = SymbolTable::getSymbolUses(op);
@@ -47,8 +47,8 @@ static void walkReferencedSymbolNodes(
     // If this is the first instance of this reference, try to resolve a
     // callgraph node for it.
     if (refIt.second) {
-      auto *symbolOp = SymbolTable::lookupNearestSymbolFrom(symbolTableOp,
-                                                            use.getSymbolRef());
+      auto *symbolOp = symbolTable.lookupNearestSymbolFrom(symbolTableOp,
+                                                           use.getSymbolRef());
       auto callableOp = dyn_cast_or_null<CallableOpInterface>(symbolOp);
       if (!callableOp)
         continue;
@@ -80,7 +80,7 @@ struct CGUseList {
     DenseMap<CallGraphNode *, int> innerUses;
   };
 
-  CGUseList(Operation *op, CallGraph &cg);
+  CGUseList(Operation *op, CallGraph &cg, SymbolTableCollection &symbolTable);
 
   /// Drop uses of nodes referred to by the given call operation that resides
   /// within 'userNode'.
@@ -110,13 +110,19 @@ private:
   /// A mapping between a discardable callgraph node (that is a symbol) and the
   /// number of uses for this node.
   DenseMap<CallGraphNode *, int> discardableSymNodeUses;
+
   /// A mapping between a callgraph node and the symbol callgraph nodes that it
   /// uses.
   DenseMap<CallGraphNode *, CGUser> nodeUses;
+
+  /// A symbol table to use when resolving call lookups.
+  SymbolTableCollection &symbolTable;
 };
 } // end anonymous namespace
 
-CGUseList::CGUseList(Operation *op, CallGraph &cg) {
+CGUseList::CGUseList(Operation *op, CallGraph &cg,
+                     SymbolTableCollection &symbolTable)
+    : symbolTable(symbolTable) {
   /// A set of callgraph nodes that are always known to be live during inlining.
   DenseMap<Attribute, CallGraphNode *> alwaysLiveNodes;
 
@@ -135,7 +141,7 @@ CGUseList::CGUseList(Operation *op, CallGraph &cg) {
         }
       }
       // Otherwise, check for any referenced nodes. These will be always-live.
-      walkReferencedSymbolNodes(&op, cg, alwaysLiveNodes,
+      walkReferencedSymbolNodes(&op, cg, symbolTable, alwaysLiveNodes,
                                 [](CallGraphNode *, Operation *) {});
     }
   };
@@ -162,7 +168,7 @@ void CGUseList::dropCallUses(CallGraphNode *userNode, Operation *callOp,
     --discardableSymNodeUses[node];
   };
   DenseMap<Attribute, CallGraphNode *> resolvedRefs;
-  walkReferencedSymbolNodes(callOp, cg, resolvedRefs, walkFn);
+  walkReferencedSymbolNodes(callOp, cg, symbolTable, resolvedRefs, walkFn);
 }
 
 void CGUseList::eraseNode(CallGraphNode *node) {
@@ -220,7 +226,7 @@ void CGUseList::recomputeUses(CallGraphNode *node, CallGraph &cg) {
       return;
     ++discardSymIt->second;
   };
-  walkReferencedSymbolNodes(parentOp, cg, resolvedRefs, walkFn);
+  walkReferencedSymbolNodes(parentOp, cg, symbolTable, resolvedRefs, walkFn);
 }
 
 void CGUseList::mergeUsesAfterInlining(CallGraphNode *lhs, CallGraphNode *rhs) {
@@ -242,19 +248,47 @@ void CGUseList::decrementDiscardableUses(CGUser &uses) {
 // CallGraph traversal
 //===----------------------------------------------------------------------===//
 
+namespace {
+/// This class represents a specific callgraph SCC.
+class CallGraphSCC {
+public:
+  CallGraphSCC(llvm::scc_iterator<const CallGraph *> &parentIterator)
+      : parentIterator(parentIterator) {}
+  /// Return a range over the nodes within this SCC.
+  std::vector<CallGraphNode *>::iterator begin() { return nodes.begin(); }
+  std::vector<CallGraphNode *>::iterator end() { return nodes.end(); }
+
+  /// Reset the nodes of this SCC with those provided.
+  void reset(const std::vector<CallGraphNode *> &newNodes) { nodes = newNodes; }
+
+  /// Remove the given node from this SCC.
+  void remove(CallGraphNode *node) {
+    auto it = llvm::find(nodes, node);
+    if (it != nodes.end()) {
+      nodes.erase(it);
+      parentIterator.ReplaceNode(node, nullptr);
+    }
+  }
+
+private:
+  std::vector<CallGraphNode *> nodes;
+  llvm::scc_iterator<const CallGraph *> &parentIterator;
+};
+} // end anonymous namespace
+
 /// Run a given transformation over the SCCs of the callgraph in a bottom up
 /// traversal.
-static void runTransformOnCGSCCs(
-    const CallGraph &cg,
-    function_ref<void(MutableArrayRef<CallGraphNode *>)> sccTransformer) {
-  std::vector<CallGraphNode *> currentSCCVec;
-  auto cgi = llvm::scc_begin(&cg);
+static void
+runTransformOnCGSCCs(const CallGraph &cg,
+                     function_ref<void(CallGraphSCC &)> sccTransformer) {
+  llvm::scc_iterator<const CallGraph *> cgi = llvm::scc_begin(&cg);
+  CallGraphSCC currentSCC(cgi);
   while (!cgi.isAtEnd()) {
     // Copy the current SCC and increment so that the transformer can modify the
     // SCC without invalidating our iterator.
-    currentSCCVec = *cgi;
+    currentSCC.reset(*cgi);
     ++cgi;
-    sccTransformer(currentSCCVec);
+    sccTransformer(currentSCC);
   }
 }
 
@@ -277,6 +311,7 @@ struct ResolvedCall {
 /// inside of nested callgraph nodes.
 static void collectCallOps(iterator_range<Region::iterator> blocks,
                            CallGraphNode *sourceNode, CallGraph &cg,
+                           SymbolTableCollection &symbolTable,
                            SmallVectorImpl<ResolvedCall> &calls,
                            bool traverseNestedCGNodes) {
   SmallVector<std::pair<Block *, CallGraphNode *>, 8> worklist;
@@ -293,14 +328,14 @@ static void collectCallOps(iterator_range<Region::iterator> blocks,
 
     for (Operation &op : *block) {
       if (auto call = dyn_cast<CallOpInterface>(op)) {
-        // TODO(riverriddle) Support inlining nested call references.
+        // TODO: Support inlining nested call references.
         CallInterfaceCallable callable = call.getCallableForCallee();
         if (SymbolRefAttr symRef = callable.dyn_cast<SymbolRefAttr>()) {
           if (!symRef.isa<FlatSymbolRefAttr>())
             continue;
         }
 
-        CallGraphNode *targetNode = cg.resolveCallable(call);
+        CallGraphNode *targetNode = cg.resolveCallable(call, symbolTable);
         if (!targetNode->isExternal())
           calls.emplace_back(call, sourceNode, targetNode);
         continue;
@@ -324,8 +359,9 @@ static void collectCallOps(iterator_range<Region::iterator> blocks,
 namespace {
 /// This class provides a specialization of the main inlining interface.
 struct Inliner : public InlinerInterface {
-  Inliner(MLIRContext *context, CallGraph &cg)
-      : InlinerInterface(context), cg(cg) {}
+  Inliner(MLIRContext *context, CallGraph &cg,
+          SymbolTableCollection &symbolTable)
+      : InlinerInterface(context), cg(cg), symbolTable(symbolTable) {}
 
   /// Process a set of blocks that have been inlined. This callback is invoked
   /// *before* inlined terminator operations have been processed.
@@ -339,15 +375,31 @@ struct Inliner : public InlinerInterface {
       assert(region && "expected valid parent node");
     }
 
-    collectCallOps(inlinedBlocks, node, cg, calls,
+    collectCallOps(inlinedBlocks, node, cg, symbolTable, calls,
                    /*traverseNestedCGNodes=*/true);
   }
+
+  /// Mark the given callgraph node for deletion.
+  void markForDeletion(CallGraphNode *node) { deadNodes.insert(node); }
+
+  /// This method properly disposes of callables that became dead during
+  /// inlining. This should not be called while iterating over the SCCs.
+  void eraseDeadCallables() {
+    for (CallGraphNode *node : deadNodes)
+      node->getCallableRegion()->getParentOp()->erase();
+  }
+
+  /// The set of callables known to be dead.
+  SmallPtrSet<CallGraphNode *, 8> deadNodes;
 
   /// The current set of call instructions to consider for inlining.
   SmallVector<ResolvedCall, 8> calls;
 
   /// The callgraph being operated on.
   CallGraph &cg;
+
+  /// A symbol table to use when resolving call lookups.
+  SymbolTableCollection &symbolTable;
 };
 } // namespace
 
@@ -368,26 +420,15 @@ static bool shouldInline(ResolvedCall &resolvedCall) {
   return true;
 }
 
-/// Delete the given node and remove it from the current scc and the callgraph.
-static void deleteNode(CallGraphNode *node, CGUseList &useList, CallGraph &cg,
-                       MutableArrayRef<CallGraphNode *> currentSCC) {
-  // Erase the parent operation and remove it from the various lists.
-  node->getCallableRegion()->getParentOp()->erase();
-  cg.eraseNode(node);
-
-  // Replace this node in the currentSCC with the external node.
-  auto it = llvm::find(currentSCC, node);
-  if (it != currentSCC.end())
-    *it = cg.getExternalNode();
-}
-
 /// Attempt to inline calls within the given scc. This function returns
 /// success if any calls were inlined, failure otherwise.
-static LogicalResult
-inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
-                 MutableArrayRef<CallGraphNode *> currentSCC) {
+static LogicalResult inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
+                                      CallGraphSCC &currentSCC) {
   CallGraph &cg = inliner.cg;
   auto &calls = inliner.calls;
+
+  // A set of dead nodes to remove after inlining.
+  SmallVector<CallGraphNode *, 1> deadNodes;
 
   // Collect all of the direct calls within the nodes of the current SCC. We
   // don't traverse nested callgraph nodes, because they are handled separately
@@ -396,18 +437,14 @@ inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
     if (node->isExternal())
       continue;
 
-    // If this node is dead, just delete it now.
-    if (useList.isDead(node))
-      deleteNode(node, useList, cg, currentSCC);
-    else
-      collectCallOps(*node->getCallableRegion(), node, cg, calls,
-                     /*traverseNestedCGNodes=*/false);
+    // Don't collect calls if the node is already dead.
+    if (useList.isDead(node)) {
+      deadNodes.push_back(node);
+    } else {
+      collectCallOps(*node->getCallableRegion(), node, cg, inliner.symbolTable,
+                     calls, /*traverseNestedCGNodes=*/false);
+    }
   }
-  if (calls.empty())
-    return failure();
-
-  // A set of dead nodes to remove after inlining.
-  SmallVector<CallGraphNode *, 1> deadNodes;
 
   // Try to inline each of the call operations. Don't cache the end iterator
   // here as more calls may be added during inlining.
@@ -415,16 +452,15 @@ inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
   for (unsigned i = 0; i != calls.size(); ++i) {
     ResolvedCall it = calls[i];
     bool doInline = shouldInline(it);
+    CallOpInterface call = it.call;
     LLVM_DEBUG({
       if (doInline)
-        llvm::dbgs() << "* Inlining call: ";
+        llvm::dbgs() << "* Inlining call: " << call << "\n";
       else
-        llvm::dbgs() << "* Not inlining call: ";
-      it.call.dump();
+        llvm::dbgs() << "* Not inlining call: " << call << "\n";
     });
     if (!doInline)
       continue;
-    CallOpInterface call = it.call;
     Region *targetRegion = it.targetNode->getCallableRegion();
 
     // If this is the last call to the target node and the node is discardable,
@@ -434,8 +470,10 @@ inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
     LogicalResult inlineResult = inlineCall(
         inliner, call, cast<CallableOpInterface>(targetRegion->getParentOp()),
         targetRegion, /*shouldCloneInlinedRegion=*/!inlineInPlace);
-    if (failed(inlineResult))
+    if (failed(inlineResult)) {
+      LLVM_DEBUG(llvm::dbgs() << "** Failed to inline\n");
       continue;
+    }
     inlinedAnyCalls = true;
 
     // If the inlining was successful, Merge the new uses into the source node.
@@ -452,8 +490,10 @@ inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
     }
   }
 
-  for (CallGraphNode *node : deadNodes)
-    deleteNode(node, useList, cg, currentSCC);
+  for (CallGraphNode *node : deadNodes) {
+    currentSCC.remove(node);
+    inliner.markForDeletion(node);
+  }
   calls.clear();
   return success(inlinedAnyCalls);
 }
@@ -461,8 +501,7 @@ inlineCallsInSCC(Inliner &inliner, CGUseList &useList,
 /// Canonicalize the nodes within the given SCC with the given set of
 /// canonicalization patterns.
 static void canonicalizeSCC(CallGraph &cg, CGUseList &useList,
-                            MutableArrayRef<CallGraphNode *> currentSCC,
-                            MLIRContext *context,
+                            CallGraphSCC &currentSCC, MLIRContext *context,
                             const OwningRewritePatternList &canonPatterns) {
   // Collect the sets of nodes to canonicalize.
   SmallVector<CallGraphNode *, 4> nodesToCanonicalize;
@@ -532,8 +571,7 @@ struct InlinerPass : public InlinerBase<InlinerPass> {
   /// Attempt to inline calls within the given scc, and run canonicalizations
   /// with the given patterns, until a fixed point is reached. This allows for
   /// the inlining of newly devirtualized calls.
-  void inlineSCC(Inliner &inliner, CGUseList &useList,
-                 MutableArrayRef<CallGraphNode *> currentSCC,
+  void inlineSCC(Inliner &inliner, CGUseList &useList, CallGraphSCC &currentSCC,
                  MLIRContext *context,
                  const OwningRewritePatternList &canonPatterns);
 };
@@ -559,16 +597,19 @@ void InlinerPass::runOnOperation() {
     op->getCanonicalizationPatterns(canonPatterns, context);
 
   // Run the inline transform in post-order over the SCCs in the callgraph.
-  Inliner inliner(context, cg);
-  CGUseList useList(getOperation(), cg);
-  runTransformOnCGSCCs(cg, [&](MutableArrayRef<CallGraphNode *> scc) {
+  SymbolTableCollection symbolTable;
+  Inliner inliner(context, cg, symbolTable);
+  CGUseList useList(getOperation(), cg, symbolTable);
+  runTransformOnCGSCCs(cg, [&](CallGraphSCC &scc) {
     inlineSCC(inliner, useList, scc, context, canonPatterns);
   });
+
+  // After inlining, make sure to erase any callables proven to be dead.
+  inliner.eraseDeadCallables();
 }
 
 void InlinerPass::inlineSCC(Inliner &inliner, CGUseList &useList,
-                            MutableArrayRef<CallGraphNode *> currentSCC,
-                            MLIRContext *context,
+                            CallGraphSCC &currentSCC, MLIRContext *context,
                             const OwningRewritePatternList &canonPatterns) {
   // If we successfully inlined any calls, run some simplifications on the
   // nodes of the scc. Continue attempting to inline until we reach a fixed

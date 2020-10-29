@@ -19,7 +19,8 @@ __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 // Forward declaration
 template <typename dataT, int dimensions, access::mode accessMode,
-          access::target accessTarget, access::placeholder isPlaceholder>
+          access::target accessTarget, access::placeholder isPlaceholder,
+          typename PropertyListT>
 class accessor;
 
 /// Provides constructors for address space qualified and non address space
@@ -108,40 +109,43 @@ public:
     return reinterpret_cast<ReturnPtr>(m_Pointer)[index];
   }
 
-  // Only if Space == global_space
+  // Only if Space == global_space || global_device_space
   template <int dimensions, access::mode Mode,
-            access::placeholder isPlaceholder,
+            access::placeholder isPlaceholder, typename PropertyListT,
             access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
-                Space == access::address_space::global_space>::type>
-  multi_ptr(accessor<ElementType, dimensions, Mode,
-                     access::target::global_buffer, isPlaceholder>
-                Accessor) {
-    m_Pointer = (pointer_t)(Accessor.get_pointer().m_Pointer);
+                (Space == access::address_space::global_space ||
+                 Space == access::address_space::global_device_space)>::type>
+  multi_ptr(
+      accessor<ElementType, dimensions, Mode, access::target::global_buffer,
+               isPlaceholder, PropertyListT>
+          Accessor) {
+    m_Pointer = (pointer_t)(Accessor.get_pointer().get());
   }
 
   // Only if Space == local_space
   template <
       int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-      access::address_space _Space = Space,
+      typename PropertyListT, access::address_space _Space = Space,
       typename = typename std::enable_if<
           _Space == Space && Space == access::address_space::local_space>::type>
   multi_ptr(accessor<ElementType, dimensions, Mode, access::target::local,
-                     isPlaceholder>
+                     isPlaceholder, PropertyListT>
                 Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == constant_space
   template <int dimensions, access::mode Mode,
-            access::placeholder isPlaceholder,
+            access::placeholder isPlaceholder, typename PropertyListT,
             access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
                 Space == access::address_space::constant_space>::type>
-  multi_ptr(accessor<ElementType, dimensions, Mode,
-                     access::target::constant_buffer, isPlaceholder>
-                Accessor)
+  multi_ptr(
+      accessor<ElementType, dimensions, Mode, access::target::constant_buffer,
+               isPlaceholder, PropertyListT>
+          Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // The following constructors are necessary to create multi_ptr<const
@@ -152,43 +156,50 @@ public:
   //    2. from multi_ptr<ElementType, Space> to multi_ptr<const ElementType,
   //    Space>
 
-  // Only if Space == global_space and element type is const
-  template <
-      int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-      access::address_space _Space = Space, typename ET = ElementType,
-      typename = typename std::enable_if<
-          _Space == Space && Space == access::address_space::global_space &&
-          std::is_const<ET>::value &&
-          std::is_same<ET, ElementType>::value>::type>
-  multi_ptr(accessor<typename std::remove_const<ET>::type, dimensions, Mode,
-                     access::target::global_buffer, isPlaceholder>
-                Accessor)
+  // Only if Space == global_space || global_device_space and element type is
+  // const
+  template <int dimensions, access::mode Mode,
+            access::placeholder isPlaceholder, typename PropertyListT,
+            access::address_space _Space = Space, typename ET = ElementType,
+            typename = typename std::enable_if<
+                _Space == Space &&
+                (Space == access::address_space::global_space ||
+                 Space == access::address_space::global_device_space) &&
+                std::is_const<ET>::value &&
+                std::is_same<ET, ElementType>::value>::type>
+  multi_ptr(
+      accessor<typename std::remove_const<ET>::type, dimensions, Mode,
+               access::target::global_buffer, isPlaceholder, PropertyListT>
+          Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == local_space and element type is const
   template <
       int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-      access::address_space _Space = Space, typename ET = ElementType,
+      typename PropertyListT, access::address_space _Space = Space,
+      typename ET = ElementType,
       typename = typename std::enable_if<
           _Space == Space && Space == access::address_space::local_space &&
           std::is_const<ET>::value &&
           std::is_same<ET, ElementType>::value>::type>
   multi_ptr(accessor<typename std::remove_const<ET>::type, dimensions, Mode,
-                     access::target::local, isPlaceholder>
+                     access::target::local, isPlaceholder, PropertyListT>
                 Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == constant_space and element type is const
   template <
       int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-      access::address_space _Space = Space, typename ET = ElementType,
+      typename PropertyListT, access::address_space _Space = Space,
+      typename ET = ElementType,
       typename = typename std::enable_if<
           _Space == Space && Space == access::address_space::constant_space &&
           std::is_const<ET>::value &&
           std::is_same<ET, ElementType>::value>::type>
-  multi_ptr(accessor<typename std::remove_const<ET>::type, dimensions, Mode,
-                     access::target::constant_buffer, isPlaceholder>
-                Accessor)
+  multi_ptr(
+      accessor<typename std::remove_const<ET>::type, dimensions, Mode,
+               access::target::constant_buffer, isPlaceholder, PropertyListT>
+          Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // TODO: This constructor is the temporary solution for the existing problem
@@ -271,6 +282,24 @@ public:
     return multi_ptr(m_Pointer - r);
   }
 
+#ifdef __ENABLE_USM_ADDR_SPACE__
+  // Explicit conversion to global_space
+  // Only available if Space == address_space::global_device_space ||
+  // Space == address_space::global_host_space
+  template <access::address_space _Space = Space,
+            typename = typename std::enable_if<
+                _Space == Space &&
+                (Space == access::address_space::global_device_space ||
+                 Space == access::address_space::global_host_space)>::type>
+  explicit
+  operator multi_ptr<ElementType, access::address_space::global_space>() const {
+    using global_pointer_t = typename detail::PtrValueType<
+        ElementType, access::address_space::global_space>::type *;
+    return multi_ptr<ElementType, access::address_space::global_space>(
+        reinterpret_cast<global_pointer_t>(m_Pointer));
+  }
+#endif // __ENABLE_USM_ADDR_SPACE__
+
   // Only if Space == global_space
   template <access::address_space _Space = Space,
             typename = typename std::enable_if<
@@ -345,38 +374,39 @@ public:
     return *this;
   }
 
-  // Only if Space == global_space
+  // Only if Space == global_space || global_device_space
   template <typename ElementType, int dimensions, access::mode Mode,
-            access::address_space _Space = Space,
+            typename PropertyListT, access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
-                Space == access::address_space::global_space>::type>
+                (Space == access::address_space::global_space ||
+                 Space == access::address_space::global_device_space)>::type>
   multi_ptr(
       accessor<ElementType, dimensions, Mode, access::target::global_buffer,
-               access::placeholder::false_t>
+               access::placeholder::false_t, PropertyListT>
           Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == local_space
   template <
       typename ElementType, int dimensions, access::mode Mode,
-      access::address_space _Space = Space,
+      typename PropertyListT, access::address_space _Space = Space,
       typename = typename std::enable_if<
           _Space == Space && Space == access::address_space::local_space>::type>
   multi_ptr(accessor<ElementType, dimensions, Mode, access::target::local,
-                     access::placeholder::false_t>
+                     access::placeholder::false_t, PropertyListT>
                 Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == constant_space
   template <typename ElementType, int dimensions, access::mode Mode,
-            access::address_space _Space = Space,
+            typename PropertyListT, access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
                 Space == access::address_space::constant_space>::type>
   multi_ptr(
       accessor<ElementType, dimensions, Mode, access::target::constant_buffer,
-               access::placeholder::false_t>
+               access::placeholder::false_t, PropertyListT>
           Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
@@ -466,38 +496,39 @@ public:
     return *this;
   }
 
-  // Only if Space == global_space
+  // Only if Space == global_space || global_device_space
   template <typename ElementType, int dimensions, access::mode Mode,
-            access::address_space _Space = Space,
+            typename PropertyListT, access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
-                Space == access::address_space::global_space>::type>
+                (Space == access::address_space::global_space ||
+                 Space == access::address_space::global_device_space)>::type>
   multi_ptr(
       accessor<ElementType, dimensions, Mode, access::target::global_buffer,
-               access::placeholder::false_t>
+               access::placeholder::false_t, PropertyListT>
           Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == local_space
   template <
       typename ElementType, int dimensions, access::mode Mode,
-      access::address_space _Space = Space,
+      typename PropertyListT, access::address_space _Space = Space,
       typename = typename std::enable_if<
           _Space == Space && Space == access::address_space::local_space>::type>
   multi_ptr(accessor<ElementType, dimensions, Mode, access::target::local,
-                     access::placeholder::false_t>
+                     access::placeholder::false_t, PropertyListT>
                 Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
   // Only if Space == constant_space
   template <typename ElementType, int dimensions, access::mode Mode,
-            access::address_space _Space = Space,
+            typename PropertyListT, access::address_space _Space = Space,
             typename = typename std::enable_if<
                 _Space == Space &&
                 Space == access::address_space::constant_space>::type>
   multi_ptr(
       accessor<ElementType, dimensions, Mode, access::target::constant_buffer,
-               access::placeholder::false_t>
+               access::placeholder::false_t, PropertyListT>
           Accessor)
       : multi_ptr(Accessor.get_pointer()) {}
 
@@ -526,18 +557,19 @@ private:
 
 #ifdef __cpp_deduction_guides
 template <int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-          class T>
-multi_ptr(
-    accessor<T, dimensions, Mode, access::target::global_buffer, isPlaceholder>)
+          typename PropertyListT, class T>
+multi_ptr(accessor<T, dimensions, Mode, access::target::global_buffer,
+                   isPlaceholder, PropertyListT>)
     ->multi_ptr<T, access::address_space::global_space>;
 template <int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-          class T>
+          typename PropertyListT, class T>
 multi_ptr(accessor<T, dimensions, Mode, access::target::constant_buffer,
-                   isPlaceholder>)
+                   isPlaceholder, PropertyListT>)
     ->multi_ptr<T, access::address_space::constant_space>;
 template <int dimensions, access::mode Mode, access::placeholder isPlaceholder,
-          class T>
-multi_ptr(accessor<T, dimensions, Mode, access::target::local, isPlaceholder>)
+          typename PropertyListT, class T>
+multi_ptr(accessor<T, dimensions, Mode, access::target::local, isPlaceholder,
+                   PropertyListT>)
     ->multi_ptr<T, access::address_space::local_space>;
 #endif
 

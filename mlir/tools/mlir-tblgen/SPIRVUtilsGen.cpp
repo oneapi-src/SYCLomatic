@@ -27,6 +27,8 @@
 #include "llvm/TableGen/Record.h"
 #include "llvm/TableGen/TableGenBackend.h"
 
+#include <list>
+
 using llvm::ArrayRef;
 using llvm::formatv;
 using llvm::raw_ostream;
@@ -205,7 +207,8 @@ static void emitConceptDecl(const Availability &availability, raw_ostream &os) {
      << "  public:\n"
      << "    virtual ~Concept() = default;\n"
      << "    virtual " << availability.getQueryFnRetType() << " "
-     << availability.getQueryFnName() << "(Operation *tblgen_opaque_op) = 0;\n"
+     << availability.getQueryFnName()
+     << "(Operation *tblgen_opaque_op) const = 0;\n"
      << "  };\n";
 }
 
@@ -215,7 +218,7 @@ static void emitModelDecl(const Availability &availability, raw_ostream &os) {
      << "  public:\n"
      << "    " << availability.getQueryFnRetType() << " "
      << availability.getQueryFnName()
-     << "(Operation *tblgen_opaque_op) final {\n"
+     << "(Operation *tblgen_opaque_op) const final {\n"
      << "      auto op = llvm::cast<ConcreteOp>(tblgen_opaque_op);\n"
      << "      (void)op;\n"
      // Forward to the method on the concrete operation type.
@@ -1030,7 +1033,7 @@ emitExtendedSetDeserializationDispatch(const RecordKeeper &recordKeeper,
   // raw_string_ostream needs a string&, use a vector to store all the string
   // that are captured by reference within raw_string_ostream.
   StringMap<raw_string_ostream> extensionSets;
-  SmallVector<std::string, 1> extensionSetNames;
+  std::list<std::string> extensionSetNames;
 
   initExtendedSetDeserializationDispatch(extensionSetName, instructionID, words,
                                          os);
@@ -1282,7 +1285,7 @@ static void emitAvailabilityImpl(const Operator &srcOp, raw_ostream &os) {
       os << formatv("    auto tblgen_instance = {0}::{1}(tblgen_attrVal);\n",
                     enumAttr->getCppNamespace(), avail.getQueryFnName());
       os << "    if (tblgen_instance) "
-         // TODO(antiagainst): use `avail.getMergeCode()` here once ODS supports
+         // TODO` here once ODS supports
          // dialect-specific contents so that we can use not implementing the
          // availability interface as indication of no requirements.
          << std::string(tgfmt(caseSpecs.front().second.getMergeActionCode(),

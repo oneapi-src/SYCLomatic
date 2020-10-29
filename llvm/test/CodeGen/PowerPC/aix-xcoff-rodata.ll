@@ -1,13 +1,15 @@
-; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc-ibm-aix-xcoff  < %s | FileCheck %s
-; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc64-ibm-aix-xcoff < %s | FileCheck %s
+; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc-ibm-aix-xcoff -data-sections=false < %s | \
+; RUN:   FileCheck --check-prefixes=CHECK,CHECK32 %s
+; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc64-ibm-aix-xcoff -data-sections=false < %s | \
+; RUN:   FileCheck --check-prefixes=CHECK,CHECK64 %s
 
-; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc-ibm-aix-xcoff -filetype=obj -o %t.o < %s
+; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc-ibm-aix-xcoff -data-sections=false -filetype=obj -o %t.o < %s
 ; RUN: llvm-readobj --section-headers --file-header %t.o | \
 ; RUN: FileCheck --check-prefix=OBJ %s
 ; RUN: llvm-readobj --syms %t.o | FileCheck --check-prefix=SYMS %s
 ; RUN: llvm-objdump -D %t.o | FileCheck --check-prefix=DIS %s
 
-; RUN: not --crash llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc64-ibm-aix-xcoff -filetype=obj < %s 2>&1 | \
+; RUN: not --crash llc -verify-machineinstrs -mcpu=pwr7 -mtriple powerpc64-ibm-aix-xcoff -data-sections=false -filetype=obj < %s 2>&1 | \
 ; RUN: FileCheck --check-prefix=XCOFF64 %s
 ; XCOFF64: LLVM ERROR: 64-bit XCOFF object files are not supported yet.
 
@@ -24,40 +26,51 @@
 ; CHECK-NEXT:          .globl  const_ivar
 ; CHECK-NEXT:          .align  2
 ; CHECK-NEXT:  const_ivar:
-; CHECK-NEXT:          .long   35
+; CHECK-NEXT:          .vbyte	4, 35
 ; CHECK-NEXT:          .globl  const_llvar
 ; CHECK-NEXT:          .align  3
 ; CHECK-NEXT:  const_llvar:
-; CHECK-NEXT:          .llong  36
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK32-NEXT:        .vbyte	4, 36
+; CHECK64-NEXT:        .vbyte	8, 36
 ; CHECK-NEXT:          .globl  const_svar
 ; CHECK-NEXT:          .align  1
 ; CHECK-NEXT:  const_svar:
-; CHECK-NEXT:          .short  37
+; CHECK-NEXT:          .vbyte	2, 37
 ; CHECK-NEXT:          .globl  const_fvar
 ; CHECK-NEXT:          .align  2
 ; CHECK-NEXT:  const_fvar:
-; CHECK-NEXT:          .long   0x44480000
+; CHECK-NEXT:          .vbyte	4, 0x44480000
 ; CHECK-NEXT:          .globl  const_dvar
 ; CHECK-NEXT:          .align  3
 ; CHECK-NEXT:  const_dvar:
-; CHECK-NEXT:          .llong  0x408c200000000000
+; CHECK32-NEXT:        .vbyte	4, 1082925056
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x408c200000000000
 ; CHECK-NEXT:          .globl  const_over_aligned
 ; CHECK-NEXT:          .align  5
 ; CHECK-NEXT:  const_over_aligned:
-; CHECK-NEXT:          .llong  0x408c200000000000
+; CHECK32-NEXT:        .vbyte	4, 1082925056
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x408c200000000000
 ; CHECK-NEXT:          .globl  const_chrarray
 ; CHECK-NEXT:  const_chrarray:
-; CHECK-NEXT:          .byte   97
-; CHECK-NEXT:          .byte   98
-; CHECK-NEXT:          .byte   99
-; CHECK-NEXT:          .byte   100
+; CHECK-NEXT:          .byte   'a,'b,'c,'d
 ; CHECK-NEXT:          .globl  const_dblarr
 ; CHECK-NEXT:          .align  3
 ; CHECK-NEXT:  const_dblarr:
-; CHECK-NEXT:          .llong  0x3ff0000000000000
-; CHECK-NEXT:          .llong  0x4000000000000000
-; CHECK-NEXT:          .llong  0x4008000000000000
-; CHECK-NEXT:          .llong  0x4010000000000000
+; CHECK32-NEXT:        .vbyte	4, 1072693248
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x3ff0000000000000
+; CHECK32-NEXT:        .vbyte	4, 1073741824
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x4000000000000000
+; CHECK32-NEXT:        .vbyte	4, 1074266112
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x4008000000000000
+; CHECK32-NEXT:        .vbyte	4, 1074790400
+; CHECK32-NEXT:        .vbyte	4, 0
+; CHECK64-NEXT:        .vbyte	8, 0x4010000000000000
 
 
 ; OBJ:      File: {{.*}}aix-xcoff-rodata.ll.tmp.o

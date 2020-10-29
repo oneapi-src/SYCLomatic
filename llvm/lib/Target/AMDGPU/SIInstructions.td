@@ -264,6 +264,7 @@ class WrapTerminatorInst<SOP_Pseudo base_inst> : SPseudoInstSI<
 let WaveSizePredicate = isWave64 in {
 def S_MOV_B64_term : WrapTerminatorInst<S_MOV_B64>;
 def S_XOR_B64_term : WrapTerminatorInst<S_XOR_B64>;
+def S_OR_B64_term : WrapTerminatorInst<S_OR_B64>;
 def S_ANDN2_B64_term : WrapTerminatorInst<S_ANDN2_B64>;
 }
 
@@ -274,13 +275,14 @@ def S_OR_B32_term : WrapTerminatorInst<S_OR_B32>;
 def S_ANDN2_B32_term : WrapTerminatorInst<S_ANDN2_B32>;
 }
 
+
 def WAVE_BARRIER : SPseudoInstSI<(outs), (ins),
   [(int_amdgcn_wave_barrier)]> {
   let SchedRW = [];
   let hasNoSchedulingInfo = 1;
   let hasSideEffects = 1;
-  let mayLoad = 1;
-  let mayStore = 1;
+  let mayLoad = 0;
+  let mayStore = 0;
   let isConvergent = 1;
   let FixedSize = 1;
   let Size = 0;
@@ -323,7 +325,7 @@ def SI_IF: CFPseudoInstSI <
 
 def SI_ELSE : CFPseudoInstSI <
   (outs SReg_1:$dst),
-  (ins SReg_1:$src, brtarget:$target, i1imm:$execfix), [], 1, 1> {
+  (ins SReg_1:$src, brtarget:$target), [], 1, 1> {
   let Size = 12;
   let hasSideEffects = 1;
 }
@@ -377,6 +379,9 @@ multiclass PseudoInstKill <dag ins> {
 
 defm SI_KILL_I1 : PseudoInstKill <(ins SCSrc_i1:$src, i1imm:$killvalue)>;
 defm SI_KILL_F32_COND_IMM : PseudoInstKill <(ins VSrc_b32:$src0, i32imm:$src1, i32imm:$cond)>;
+
+let Defs = [EXEC] in
+def SI_KILL_CLEANUP : SPseudoInstSI <(outs), (ins)>;
 
 let Defs = [EXEC,VCC] in
 def SI_ILLEGAL_COPY : SPseudoInstSI <
@@ -446,7 +451,7 @@ def SI_INIT_EXEC_FROM_INPUT : SPseudoInstSI <
 
 def : GCNPat <
   (int_amdgcn_init_exec timm:$src),
-  (SI_INIT_EXEC_LO (as_i32imm imm:$src))> {
+  (SI_INIT_EXEC_LO (as_i32timm timm:$src))> {
   let WaveSizePredicate = isWave32;
 }
 
@@ -662,11 +667,15 @@ defm SI_SPILL_S64  : SI_SPILL_SGPR <SReg_64>;
 defm SI_SPILL_S96  : SI_SPILL_SGPR <SReg_96>;
 defm SI_SPILL_S128 : SI_SPILL_SGPR <SReg_128>;
 defm SI_SPILL_S160 : SI_SPILL_SGPR <SReg_160>;
+defm SI_SPILL_S192 : SI_SPILL_SGPR <SReg_192>;
 defm SI_SPILL_S256 : SI_SPILL_SGPR <SReg_256>;
 defm SI_SPILL_S512 : SI_SPILL_SGPR <SReg_512>;
 defm SI_SPILL_S1024 : SI_SPILL_SGPR <SReg_1024>;
 
-multiclass SI_SPILL_VGPR <RegisterClass vgpr_class> {
+// VGPR or AGPR spill instructions. In case of AGPR spilling a temp register
+// needs to be used and an extra instruction to move between VGPR and AGPR.
+// UsesTmp adds to the total size of an expanded spill in this case.
+multiclass SI_SPILL_VGPR <RegisterClass vgpr_class, bit UsesTmp = 0> {
   let UseNamedOperandTable = 1, VGPRSpill = 1,
        SchedRW = [WriteVMEM] in {
     def _SAVE : VPseudoInstSI <
@@ -676,7 +685,7 @@ multiclass SI_SPILL_VGPR <RegisterClass vgpr_class> {
       let mayStore = 1;
       let mayLoad = 0;
       // (2 * 4) + (8 * num_subregs) bytes maximum
-      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), 3), 8);
+      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), !add(UsesTmp, 3)), 8);
       // Size field is unsigned char and cannot fit more.
       let Size = !if(!le(MaxSize, 256), MaxSize, 252);
     }
@@ -689,7 +698,7 @@ multiclass SI_SPILL_VGPR <RegisterClass vgpr_class> {
       let mayLoad = 1;
 
       // (2 * 4) + (8 * num_subregs) bytes maximum
-      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), 3), 8);
+      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), !add(UsesTmp, 3)), 8);
       // Size field is unsigned char and cannot fit more.
       let Size = !if(!le(MaxSize, 256), MaxSize, 252);
     }
@@ -701,46 +710,20 @@ defm SI_SPILL_V64  : SI_SPILL_VGPR <VReg_64>;
 defm SI_SPILL_V96  : SI_SPILL_VGPR <VReg_96>;
 defm SI_SPILL_V128 : SI_SPILL_VGPR <VReg_128>;
 defm SI_SPILL_V160 : SI_SPILL_VGPR <VReg_160>;
+defm SI_SPILL_V192 : SI_SPILL_VGPR <VReg_192>;
 defm SI_SPILL_V256 : SI_SPILL_VGPR <VReg_256>;
 defm SI_SPILL_V512 : SI_SPILL_VGPR <VReg_512>;
 defm SI_SPILL_V1024 : SI_SPILL_VGPR <VReg_1024>;
 
-multiclass SI_SPILL_AGPR <RegisterClass vgpr_class> {
-  let UseNamedOperandTable = 1, VGPRSpill = 1,
-      Constraints = "@earlyclobber $tmp",
-      SchedRW = [WriteVMEM] in {
-    def _SAVE : VPseudoInstSI <
-      (outs VGPR_32:$tmp),
-      (ins vgpr_class:$vdata, i32imm:$vaddr, SReg_128:$srsrc,
-           SReg_32:$soffset, i32imm:$offset)> {
-      let mayStore = 1;
-      let mayLoad = 0;
-      // (2 * 4) + (16 * num_subregs) bytes maximum
-      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), 4), 8);
-      // Size field is unsigned char and cannot fit more.
-      let Size = !if(!le(MaxSize, 256), MaxSize, 252);
-    }
-
-    def _RESTORE : VPseudoInstSI <
-      (outs vgpr_class:$vdata, VGPR_32:$tmp),
-      (ins i32imm:$vaddr, SReg_128:$srsrc, SReg_32:$soffset,
-           i32imm:$offset)> {
-      let mayStore = 0;
-      let mayLoad = 1;
-
-      // (2 * 4) + (16 * num_subregs) bytes maximum
-      int MaxSize = !add(!shl(!srl(vgpr_class.Size, 5), 4), 8);
-      // Size field is unsigned char and cannot fit more.
-      let Size = !if(!le(MaxSize, 256), MaxSize, 252);
-    }
-  } // End UseNamedOperandTable = 1, VGPRSpill = 1, SchedRW = [WriteVMEM]
-}
-
-defm SI_SPILL_A32  : SI_SPILL_AGPR <AGPR_32>;
-defm SI_SPILL_A64  : SI_SPILL_AGPR <AReg_64>;
-defm SI_SPILL_A128 : SI_SPILL_AGPR <AReg_128>;
-defm SI_SPILL_A512 : SI_SPILL_AGPR <AReg_512>;
-defm SI_SPILL_A1024 : SI_SPILL_AGPR <AReg_1024>;
+defm SI_SPILL_A32  : SI_SPILL_VGPR <AGPR_32, 1>;
+defm SI_SPILL_A64  : SI_SPILL_VGPR <AReg_64, 1>;
+defm SI_SPILL_A96  : SI_SPILL_VGPR <AReg_96, 1>;
+defm SI_SPILL_A128 : SI_SPILL_VGPR <AReg_128, 1>;
+defm SI_SPILL_A160 : SI_SPILL_VGPR <AReg_160, 1>;
+defm SI_SPILL_A192 : SI_SPILL_VGPR <AReg_192, 1>;
+defm SI_SPILL_A256 : SI_SPILL_VGPR <AReg_256, 1>;
+defm SI_SPILL_A512 : SI_SPILL_VGPR <AReg_512, 1>;
+defm SI_SPILL_A1024 : SI_SPILL_VGPR <AReg_1024, 1>;
 
 def SI_PC_ADD_REL_OFFSET : SPseudoInstSI <
   (outs SReg_64:$dst),
@@ -762,7 +745,7 @@ def : GCNPat<
 
 def : GCNPat<
   (AMDGPUelse i1:$src, bb:$target),
-  (SI_ELSE $src, $target, 0)
+  (SI_ELSE $src, $target)
 >;
 
 def : Pat <
@@ -883,7 +866,8 @@ def : GCNPat <
 // VOP2 Patterns
 //===----------------------------------------------------------------------===//
 
-// TODO: Check only no src2 mods?
+// NoMods pattern used for mac. If there are any source modifiers then it's
+// better to select mad instead of mac.
 class FMADPat <ValueType vt, Instruction inst, SDPatternOperator node>
   : GCNPat <(vt (node (vt (VOP3NoMods vt:$src0)),
                       (vt (VOP3NoMods vt:$src1)),
@@ -892,18 +876,41 @@ class FMADPat <ValueType vt, Instruction inst, SDPatternOperator node>
           SRCMODS.NONE, $src2, DSTCLAMP.NONE, DSTOMOD.NONE)
 >;
 
-
 // Prefer mac form when there are no modifiers.
 let AddedComplexity = 9 in {
+let OtherPredicates = [HasMadMacF32Insts] in {
 def : FMADPat <f32, V_MAC_F32_e64, fmad>;
 def : FMADPat <f32, V_MAC_F32_e64, AMDGPUfmad_ftz>;
+} // OtherPredicates = [HasMadMacF32Insts]
+
+// Don't allow source modifiers. If there are any source modifiers then it's
+// better to select mad instead of mac.
+let SubtargetPredicate = isGFX6GFX7GFX10,
+    OtherPredicates = [HasMadMacF32Insts, NoFP32Denormals] in
+def : GCNPat <
+      (f32 (fadd (AMDGPUfmul_legacy (VOP3NoMods f32:$src0),
+                                    (VOP3NoMods f32:$src1)),
+                 (VOP3NoMods f32:$src2))),
+      (V_MAC_LEGACY_F32_e64 SRCMODS.NONE, $src0, SRCMODS.NONE, $src1,
+                            SRCMODS.NONE, $src2, DSTCLAMP.NONE, DSTOMOD.NONE)
+>;
+
+// Don't allow source modifiers. If there are any source modifiers then it's
+// better to select fma instead of fmac.
+let SubtargetPredicate = HasNoMadMacF32Insts in
+def : GCNPat <
+      (f32 (int_amdgcn_fma_legacy (VOP3NoMods f32:$src0),
+                                  (VOP3NoMods f32:$src1),
+                                  (VOP3NoMods f32:$src2))),
+      (V_FMAC_LEGACY_F32_e64 SRCMODS.NONE, $src0, SRCMODS.NONE, $src1,
+                             SRCMODS.NONE, $src2, DSTCLAMP.NONE, DSTOMOD.NONE)
+>;
 
 let SubtargetPredicate = Has16BitInsts in {
 def : FMADPat <f16, V_MAC_F16_e64, fmad>;
 def : FMADPat <f16, V_MAC_F16_e64, AMDGPUfmad_ftz>;
-}
-
-}
+} // SubtargetPredicate = Has16BitInsts
+} // AddedComplexity = 9
 
 class FMADModsPat<ValueType Ty, Instruction inst, SDPatternOperator mad_opr>
   : GCNPat<
@@ -914,10 +921,20 @@ class FMADModsPat<ValueType Ty, Instruction inst, SDPatternOperator mad_opr>
   $src2_mod, $src2, DSTCLAMP.NONE, DSTOMOD.NONE)
 >;
 
+let OtherPredicates = [HasMadMacF32Insts] in
 def : FMADModsPat<f32, V_MAD_F32, AMDGPUfmad_ftz>;
-def : FMADModsPat<f16, V_MAD_F16, AMDGPUfmad_ftz> {
-  let SubtargetPredicate = Has16BitInsts;
-}
+
+let OtherPredicates = [HasMadMacF32Insts, NoFP32Denormals] in
+def : GCNPat <
+      (f32 (fadd (AMDGPUfmul_legacy (VOP3Mods f32:$src0, i32:$src0_mod),
+                                    (VOP3Mods f32:$src1, i32:$src1_mod)),
+                 (VOP3Mods f32:$src2, i32:$src2_mod))),
+      (V_MAD_LEGACY_F32 $src0_mod, $src0, $src1_mod, $src1,
+                        $src2_mod, $src2, DSTCLAMP.NONE, DSTOMOD.NONE)
+>;
+
+let SubtargetPredicate = Has16BitInsts in
+def : FMADModsPat<f16, V_MAD_F16, AMDGPUfmad_ftz>;
 
 class VOPSelectModsPat <ValueType vt> : GCNPat <
   (vt (select i1:$src0, (VOP3Mods vt:$src1, i32:$src1_mods),
@@ -1492,8 +1509,13 @@ def : GCNPat <
 >;
 
 def : GCNPat <
- (i32 frameindex:$fi),
- (V_MOV_B32_e32 (i32 (frameindex_to_targetframeindex $fi)))
+  (p5 frameindex:$fi),
+  (V_MOV_B32_e32 (p5 (frameindex_to_targetframeindex $fi)))
+>;
+
+def : GCNPat <
+  (p5 frameindex:$fi),
+  (S_MOV_B32 (p5 (frameindex_to_targetframeindex $fi)))
 >;
 
 def : GCNPat <
@@ -1545,11 +1567,12 @@ class Ext32Pat <SDNode ext> : GCNPat <
 def : Ext32Pat <zext>;
 def : Ext32Pat <anyext>;
 
-// The multiplication scales from [0,1] to the unsigned integer range
+// The multiplication scales from [0,1) to the unsigned integer range,
+// rounding down a bit to avoid unwanted overflow.
 def : GCNPat <
   (AMDGPUurecip i32:$src0),
   (V_CVT_U32_F32_e32
-    (V_MUL_F32_e32 (i32 CONST.FP_UINT_MAX_PLUS_1),
+    (V_MUL_F32_e32 (i32 CONST.FP_4294966784),
                    (V_RCP_IFLAG_F32_e32 (V_CVT_F32_U32_e32 $src0))))
 >;
 
@@ -1560,8 +1583,92 @@ def : GCNPat <
 def : IMad24Pat<V_MAD_I32_I24, 1>;
 def : UMad24Pat<V_MAD_U32_U24, 1>;
 
-// FIXME: This should only be done for VALU inputs
-defm : BFIPatterns <V_BFI_B32, S_MOV_B32, SReg_64>;
+// BFI patterns
+
+def BFIImm32 : PatFrag<
+  (ops node:$x, node:$y, node:$z),
+  (i32 (DivergentBinFrag<or> (and node:$y, node:$x), (and node:$z, imm))),
+  [{
+    auto *X = dyn_cast<ConstantSDNode>(N->getOperand(0)->getOperand(1));
+    auto *NotX = dyn_cast<ConstantSDNode>(N->getOperand(1)->getOperand(1));
+    return X && NotX &&
+      ~(unsigned)X->getZExtValue() == (unsigned)NotX->getZExtValue();
+  }]
+>;
+
+// Definition from ISA doc:
+// (y & x) | (z & ~x)
+def : AMDGPUPat <
+  (DivergentBinFrag<or> (and i32:$y, i32:$x), (and i32:$z, (not i32:$x))),
+  (V_BFI_B32 $x, $y, $z)
+>;
+
+// (y & C) | (z & ~C)
+def : AMDGPUPat <
+  (BFIImm32 i32:$x, i32:$y, i32:$z),
+  (V_BFI_B32 $x, $y, $z)
+>;
+
+// 64-bit version
+def : AMDGPUPat <
+  (DivergentBinFrag<or> (and i64:$y, i64:$x), (and i64:$z, (not i64:$x))),
+  (REG_SEQUENCE SReg_64,
+    (V_BFI_B32 (i32 (EXTRACT_SUBREG SReg_64:$x, sub0)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub0)),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub0))), sub0,
+    (V_BFI_B32 (i32 (EXTRACT_SUBREG SReg_64:$x, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub1))), sub1)
+>;
+
+// SHA-256 Ch function
+// z ^ (x & (y ^ z))
+def : AMDGPUPat <
+  (DivergentBinFrag<xor> i32:$z, (and i32:$x, (xor i32:$y, i32:$z))),
+  (V_BFI_B32 $x, $y, $z)
+>;
+
+// 64-bit version
+def : AMDGPUPat <
+  (DivergentBinFrag<xor> i64:$z, (and i64:$x, (xor i64:$y, i64:$z))),
+  (REG_SEQUENCE SReg_64,
+    (V_BFI_B32 (i32 (EXTRACT_SUBREG SReg_64:$x, sub0)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub0)),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub0))), sub0,
+    (V_BFI_B32 (i32 (EXTRACT_SUBREG SReg_64:$x, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub1))), sub1)
+>;
+
+def : AMDGPUPat <
+  (fcopysign f32:$src0, f32:$src1),
+  (V_BFI_B32 (S_MOV_B32 (i32 0x7fffffff)), $src0, $src1)
+>;
+
+def : AMDGPUPat <
+  (fcopysign f32:$src0, f64:$src1),
+  (V_BFI_B32 (S_MOV_B32 (i32 0x7fffffff)), $src0,
+             (i32 (EXTRACT_SUBREG SReg_64:$src1, sub1)))
+>;
+
+def : AMDGPUPat <
+  (fcopysign f64:$src0, f64:$src1),
+  (REG_SEQUENCE SReg_64,
+    (i32 (EXTRACT_SUBREG $src0, sub0)), sub0,
+    (V_BFI_B32 (S_MOV_B32 (i32 0x7fffffff)),
+               (i32 (EXTRACT_SUBREG SReg_64:$src0, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$src1, sub1))), sub1)
+>;
+
+def : AMDGPUPat <
+  (fcopysign f64:$src0, f32:$src1),
+  (REG_SEQUENCE SReg_64,
+    (i32 (EXTRACT_SUBREG $src0, sub0)), sub0,
+    (V_BFI_B32 (S_MOV_B32 (i32 0x7fffffff)),
+               (i32 (EXTRACT_SUBREG SReg_64:$src0, sub1)),
+               $src1), sub1)
+>;
+
 def : ROTRPattern <V_ALIGNBIT_B32>;
 
 def : GCNPat<(i32 (trunc (srl i64:$src0, (and i32:$src1, (i32 31))))),
@@ -2051,11 +2158,19 @@ def : GCNPat <
                   SRCMODS.NONE, $src2)
 >;
 
-// COPY is workaround tablegen bug from multiple outputs
-// from S_LSHL_B32's multiple outputs from implicit scc def.
 def : GCNPat <
   (v2i16 (build_vector (i16 0), (i16 SReg_32:$src1))),
   (S_LSHL_B32 SReg_32:$src1, (i16 16))
+>;
+
+def : GCNPat <
+  (v2i16 (build_vector (i16 SReg_32:$src1), (i16 0))),
+  (S_AND_B32 (S_MOV_B32 (i32 0xffff)), SReg_32:$src1)
+>;
+
+def : GCNPat <
+  (v2f16 (build_vector (f16 SReg_32:$src1), (f16 FP_ZERO))),
+  (S_AND_B32 (S_MOV_B32 (i32 0xffff)), SReg_32:$src1)
 >;
 
 def : GCNPat <
@@ -2205,7 +2320,7 @@ def : GCNPat<
 
 def : GCNPat<
   (add i32:$src0, (i32 NegSubInlineConst32:$src1)),
-  (V_SUB_I32_e64 VS_32:$src0, NegSubInlineConst32:$src1)> {
+  (V_SUB_CO_U32_e64 VS_32:$src0, NegSubInlineConst32:$src1)> {
   let SubtargetPredicate = NotHasAddNoCarryInsts;
 }
 
@@ -2233,8 +2348,77 @@ multiclass BFMPatterns <ValueType vt, InstSI BFM, InstSI MOV> {
 defm : BFMPatterns <i32, S_BFM_B32, S_MOV_B32>;
 // FIXME: defm : BFMPatterns <i64, S_BFM_B64, S_MOV_B64>;
 
-defm : BFEPattern <V_BFE_U32, V_BFE_I32, S_MOV_B32>;
-defm : SHA256MaPattern <V_BFI_B32, V_XOR_B32_e64, SReg_64>;
+// Bitfield extract patterns
+
+def IMMZeroBasedBitfieldMask : ImmLeaf <i32, [{
+  return isMask_32(Imm);
+}]>;
+
+def IMMPopCount : SDNodeXForm<imm, [{
+  return CurDAG->getTargetConstant(countPopulation(N->getZExtValue()), SDLoc(N),
+                                   MVT::i32);
+}]>;
+
+def : AMDGPUPat <
+  (DivergentBinFrag<and> (i32 (srl i32:$src, i32:$rshift)),
+                         IMMZeroBasedBitfieldMask:$mask),
+  (V_BFE_U32 $src, $rshift, (i32 (IMMPopCount $mask)))
+>;
+
+// x & ((1 << y) - 1)
+def : AMDGPUPat <
+  (DivergentBinFrag<and> i32:$src, (add_oneuse (shl_oneuse 1, i32:$width), -1)),
+  (V_BFE_U32 $src, (i32 0), $width)
+>;
+
+// x & ~(-1 << y)
+def : AMDGPUPat <
+  (DivergentBinFrag<and> i32:$src,
+                         (xor_oneuse (shl_oneuse -1, i32:$width), -1)),
+  (V_BFE_U32 $src, (i32 0), $width)
+>;
+
+// x & (-1 >> (bitwidth - y))
+def : AMDGPUPat <
+  (DivergentBinFrag<and> i32:$src, (srl_oneuse -1, (sub 32, i32:$width))),
+  (V_BFE_U32 $src, (i32 0), $width)
+>;
+
+// x << (bitwidth - y) >> (bitwidth - y)
+def : AMDGPUPat <
+  (DivergentBinFrag<srl> (shl_oneuse i32:$src, (sub 32, i32:$width)),
+                         (sub 32, i32:$width)),
+  (V_BFE_U32 $src, (i32 0), $width)
+>;
+
+def : AMDGPUPat <
+  (DivergentBinFrag<sra> (shl_oneuse i32:$src, (sub 32, i32:$width)),
+                         (sub 32, i32:$width)),
+  (V_BFE_I32 $src, (i32 0), $width)
+>;
+
+// SHA-256 Ma patterns
+
+// ((x & z) | (y & (x | z))) -> BFI (XOR x, y), z, y
+def : AMDGPUPat <
+  (DivergentBinFrag<or> (and i32:$x, i32:$z),
+                        (and i32:$y, (or i32:$x, i32:$z))),
+  (V_BFI_B32 (V_XOR_B32_e64 i32:$x, i32:$y), i32:$z, i32:$y)
+>;
+
+def : AMDGPUPat <
+  (DivergentBinFrag<or> (and i64:$x, i64:$z),
+                        (and i64:$y, (or i64:$x, i64:$z))),
+  (REG_SEQUENCE SReg_64,
+    (V_BFI_B32 (V_XOR_B32_e64 (i32 (EXTRACT_SUBREG SReg_64:$x, sub0)),
+                    (i32 (EXTRACT_SUBREG SReg_64:$y, sub0))),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub0)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub0))), sub0,
+    (V_BFI_B32 (V_XOR_B32_e64 (i32 (EXTRACT_SUBREG SReg_64:$x, sub1)),
+                    (i32 (EXTRACT_SUBREG SReg_64:$y, sub1))),
+               (i32 (EXTRACT_SUBREG SReg_64:$z, sub1)),
+               (i32 (EXTRACT_SUBREG SReg_64:$y, sub1))), sub1)
+>;
 
 multiclass IntMed3Pat<Instruction med3Inst,
                  SDPatternOperator min,
@@ -2420,10 +2604,12 @@ def G_AMDGPU_ATOMIC_CMPXCHG : AMDGPUGenericInstruction {
 let Namespace = "AMDGPU" in {
 def G_AMDGPU_ATOMIC_INC : G_ATOMICRMW_OP;
 def G_AMDGPU_ATOMIC_DEC : G_ATOMICRMW_OP;
+def G_AMDGPU_ATOMIC_FMIN : G_ATOMICRMW_OP;
+def G_AMDGPU_ATOMIC_FMAX : G_ATOMICRMW_OP;
 }
 
-class BufferAtomicGenericInstruction : AMDGPUGenericInstruction {
-  let OutOperandList = (outs type0:$dst);
+class BufferAtomicGenericInstruction<bit NoRtn = 0> : AMDGPUGenericInstruction {
+  let OutOperandList = !if(NoRtn, (outs), (outs type0:$dst));
   let InOperandList = (ins type0:$vdata, type1:$rsrc, type2:$vindex, type2:$voffset,
                            type2:$soffset, untyped_imm_0:$offset,
                            untyped_imm_0:$cachepolicy, untyped_imm_0:$idxen);
@@ -2444,6 +2630,7 @@ def G_AMDGPU_BUFFER_ATOMIC_OR : BufferAtomicGenericInstruction;
 def G_AMDGPU_BUFFER_ATOMIC_XOR : BufferAtomicGenericInstruction;
 def G_AMDGPU_BUFFER_ATOMIC_INC : BufferAtomicGenericInstruction;
 def G_AMDGPU_BUFFER_ATOMIC_DEC : BufferAtomicGenericInstruction;
+def G_AMDGPU_BUFFER_ATOMIC_FADD : BufferAtomicGenericInstruction;
 
 def G_AMDGPU_BUFFER_ATOMIC_CMPSWAP : AMDGPUGenericInstruction {
   let OutOperandList = (outs type0:$dst);
@@ -2485,4 +2672,12 @@ def G_AMDGPU_INTRIN_IMAGE_STORE : AMDGPUGenericInstruction {
   let InOperandList = (ins unknown:$intrin, variable_ops);
   let hasSideEffects = 0;
   let mayStore = 1;
+}
+
+def G_AMDGPU_INTRIN_BVH_INTERSECT_RAY : AMDGPUGenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins unknown:$intrin, variable_ops);
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 0;
 }

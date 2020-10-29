@@ -51,14 +51,14 @@ namespace llvm {
 // PassSupport.h.
 class PassRegistry;
 void initializeLLVMToSPIRVPass(PassRegistry &);
-void initializeOCL20ToSPIRVPass(PassRegistry &);
-void initializeOCL21ToSPIRVPass(PassRegistry &);
+void initializeOCLToSPIRVPass(PassRegistry &);
 void initializeOCLTypeToSPIRVPass(PassRegistry &);
 void initializeSPIRVLowerBoolPass(PassRegistry &);
 void initializeSPIRVLowerConstExprPass(PassRegistry &);
 void initializeSPIRVLowerSPIRBlocksPass(PassRegistry &);
 void initializeSPIRVLowerOCLBlocksPass(PassRegistry &);
 void initializeSPIRVLowerMemmovePass(PassRegistry &);
+void initializeSPIRVLowerSaddWithOverflowPass(PassRegistry &);
 void initializeSPIRVRegularizeLLVMPass(PassRegistry &);
 void initializeSPIRVToOCL12Pass(PassRegistry &);
 void initializeSPIRVToOCL20Pass(PassRegistry &);
@@ -161,13 +161,9 @@ void mangleOpenClBuiltin(const std::string &UnmangledName,
 /// Create a pass for translating LLVM to SPIR-V.
 ModulePass *createLLVMToSPIRV(SPIRV::SPIRVModule *);
 
-/// Create a pass for translating OCL 2.0 builtin functions to SPIR-V builtin
+/// Create a pass for translating OCL C builtin functions to SPIR-V builtin
 /// functions.
-ModulePass *createOCL20ToSPIRV();
-
-/// Create a pass for translating OCL 2.1 builtin functions to SPIR-V builtin
-/// functions.
-ModulePass *createOCL21ToSPIRV();
+ModulePass *createOCLToSPIRV();
 
 /// Create a pass for adapting OCL types for SPIRV.
 ModulePass *createOCLTypeToSPIRV();
@@ -187,6 +183,9 @@ ModulePass *createSPIRVLowerOCLBlocks();
 /// Create a pass for lowering llvm.memmove to llvm.memcpys with a temporary
 /// variable.
 ModulePass *createSPIRVLowerMemmove();
+
+/// Create a pass for lowering llvm.sadd.with.overflow
+ModulePass *createSPIRVLowerSaddWithOverflow();
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
 ModulePass *createSPIRVRegularizeLLVM();
@@ -210,6 +209,11 @@ ModulePass *createPreprocessMetadata();
 /// Create and return a pass that writes the module to the specified
 /// ostream.
 ModulePass *createSPIRVWriterPass(std::ostream &Str);
+
+/// Create and return a pass that writes the module to the specified
+/// ostream.
+ModulePass *createSPIRVWriterPass(std::ostream &Str,
+                                  const SPIRV::TranslatorOpts &Opts);
 
 } // namespace llvm
 

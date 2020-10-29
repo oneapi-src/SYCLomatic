@@ -13,10 +13,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "WebAssemblyMCInstLower.h"
+#include "MCTargetDesc/WebAssemblyMCTargetDesc.h"
+#include "TargetInfo/WebAssemblyTargetInfo.h"
 #include "WebAssemblyAsmPrinter.h"
 #include "WebAssemblyMachineFunctionInfo.h"
 #include "WebAssemblyRuntimeLibcallSignatures.h"
-#include "MCTargetDesc/WebAssemblyMCTargetDesc.h"
 #include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/IR/Constants.h"
@@ -29,11 +30,6 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
-// Defines llvm::WebAssembly::getStackOpcode to convert register instructions to
-// stack instructions
-#define GET_INSTRMAP_INFO 1
-#include "WebAssemblyGenInstrInfo.inc"
-
 // This disables the removal of registers when lowering into MC, as required
 // by some current tests.
 cl::opt<bool>
@@ -42,29 +38,34 @@ cl::opt<bool>
                                " instruction output for test purposes only."),
                       cl::init(false));
 
+extern cl::opt<bool> EnableEmException;
+extern cl::opt<bool> EnableEmSjLj;
+
 static void removeRegisterOperands(const MachineInstr *MI, MCInst &OutMI);
 
 MCSymbol *
 WebAssemblyMCInstLower::GetGlobalAddressSymbol(const MachineOperand &MO) const {
   const GlobalValue *Global = MO.getGlobal();
-  auto *WasmSym = cast<MCSymbolWasm>(Printer.getSymbol(Global));
+  if (!isa<Function>(Global))
+    return cast<MCSymbolWasm>(Printer.getSymbol(Global));
 
-  if (const auto *FuncTy = dyn_cast<FunctionType>(Global->getValueType())) {
-    const MachineFunction &MF = *MO.getParent()->getParent()->getParent();
-    const TargetMachine &TM = MF.getTarget();
-    const Function &CurrentFunc = MF.getFunction();
+  const auto *FuncTy = cast<FunctionType>(Global->getValueType());
+  const MachineFunction &MF = *MO.getParent()->getParent()->getParent();
+  const TargetMachine &TM = MF.getTarget();
+  const Function &CurrentFunc = MF.getFunction();
 
-    SmallVector<MVT, 1> ResultMVTs;
-    SmallVector<MVT, 4> ParamMVTs;
-    const auto *const F = dyn_cast<Function>(Global);
-    computeSignatureVTs(FuncTy, F, CurrentFunc, TM, ParamMVTs, ResultMVTs);
+  SmallVector<MVT, 1> ResultMVTs;
+  SmallVector<MVT, 4> ParamMVTs;
+  const auto *const F = dyn_cast<Function>(Global);
+  computeSignatureVTs(FuncTy, F, CurrentFunc, TM, ParamMVTs, ResultMVTs);
+  auto Signature = signatureFromMVTs(ResultMVTs, ParamMVTs);
 
-    auto Signature = signatureFromMVTs(ResultMVTs, ParamMVTs);
-    WasmSym->setSignature(Signature.get());
-    Printer.addSignature(std::move(Signature));
-    WasmSym->setType(wasm::WASM_SYMBOL_TYPE_FUNCTION);
-  }
-
+  bool InvokeDetected = false;
+  auto *WasmSym = Printer.getMCSymbolForFunction(
+      F, EnableEmException || EnableEmSjLj, Signature.get(), InvokeDetected);
+  WasmSym->setSignature(Signature.get());
+  Printer.addSignature(std::move(Signature));
+  WasmSym->setType(wasm::WASM_SYMBOL_TYPE_FUNCTION);
   return WasmSym;
 }
 
@@ -85,8 +86,9 @@ MCSymbol *WebAssemblyMCInstLower::GetExternalSymbolSymbol(
         strcmp(Name, "__stack_pointer") == 0 || strcmp(Name, "__tls_base") == 0;
     WasmSym->setType(wasm::WASM_SYMBOL_TYPE_GLOBAL);
     WasmSym->setGlobalType(wasm::WasmGlobalType{
-        uint8_t(Subtarget.hasAddr64() ? wasm::WASM_TYPE_I64
-                                      : wasm::WASM_TYPE_I32),
+        uint8_t(Subtarget.hasAddr64() && strcmp(Name, "__table_base") != 0
+                    ? wasm::WASM_TYPE_I64
+                    : wasm::WASM_TYPE_I32),
         Mutable});
     return WasmSym;
   }

@@ -16,6 +16,7 @@
 #include "clang/Basic/MacroBuilder.h"
 #include "clang/Basic/TargetBuiltins.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/Frontend/OpenMP/OMPGridValues.h"
 
 using namespace clang;
 using namespace clang::targets;
@@ -63,7 +64,10 @@ NVPTXTargetInfo::NVPTXTargetInfo(const llvm::Triple &Triple,
   TLSSupported = Triple.getEnvironment() == llvm::Triple::SYCLDevice;
   VLASupported = false;
   AddrSpaceMap = &NVPTXAddrSpaceMap;
+  GridValues = llvm::omp::NVPTXGpuGridValues;
   UseAddrSpaceMapMangling = true;
+  HasLegalHalfType = true;
+  HasFloat16 = true;
 
   // Define available target features
   // These must be defined in sorted order!
@@ -181,14 +185,17 @@ void NVPTXTargetInfo::getTargetDefines(const LangOptions &Opts,
       switch (GPU) {
       case CudaArch::GFX600:
       case CudaArch::GFX601:
+      case CudaArch::GFX602:
       case CudaArch::GFX700:
       case CudaArch::GFX701:
       case CudaArch::GFX702:
       case CudaArch::GFX703:
       case CudaArch::GFX704:
+      case CudaArch::GFX705:
       case CudaArch::GFX801:
       case CudaArch::GFX802:
       case CudaArch::GFX803:
+      case CudaArch::GFX805:
       case CudaArch::GFX810:
       case CudaArch::GFX900:
       case CudaArch::GFX902:
@@ -199,8 +206,12 @@ void NVPTXTargetInfo::getTargetDefines(const LangOptions &Opts,
       case CudaArch::GFX1010:
       case CudaArch::GFX1011:
       case CudaArch::GFX1012:
+      case CudaArch::GFX1030:
+      case CudaArch::GFX1031:
+      case CudaArch::GFX1032:
       case CudaArch::LAST:
         break;
+      case CudaArch::UNUSED:
       case CudaArch::UNKNOWN:
         assert(false && "No GPU arch when compiling CUDA device code.");
         return "";

@@ -240,15 +240,47 @@ TemplateDecl *Decl::getDescribedTemplate() const {
   return nullptr;
 }
 
+const TemplateParameterList *Decl::getDescribedTemplateParams() const {
+  if (auto *TD = getDescribedTemplate())
+    return TD->getTemplateParameters();
+  if (auto *CTPSD = dyn_cast<ClassTemplatePartialSpecializationDecl>(this))
+    return CTPSD->getTemplateParameters();
+  if (auto *VTPSD = dyn_cast<VarTemplatePartialSpecializationDecl>(this))
+    return VTPSD->getTemplateParameters();
+  return nullptr;
+}
+
 bool Decl::isTemplated() const {
-  // A declaration is dependent if it is a template or a template pattern, or
+  // A declaration is templated if it is a template or a template pattern, or
   // is within (lexcially for a friend, semantically otherwise) a dependent
   // context.
   // FIXME: Should local extern declarations be treated like friends?
   if (auto *AsDC = dyn_cast<DeclContext>(this))
     return AsDC->isDependentContext();
   auto *DC = getFriendObjectKind() ? getLexicalDeclContext() : getDeclContext();
-  return DC->isDependentContext() || isTemplateDecl() || getDescribedTemplate();
+  return DC->isDependentContext() || isTemplateDecl() ||
+         getDescribedTemplateParams();
+}
+
+unsigned Decl::getTemplateDepth() const {
+  if (auto *DC = dyn_cast<DeclContext>(this))
+    if (DC->isFileContext())
+      return 0;
+
+  if (auto *TPL = getDescribedTemplateParams())
+    return TPL->getDepth() + 1;
+
+  // If this is a dependent lambda, there might be an enclosing variable
+  // template. In this case, the next step is not the parent DeclContext (or
+  // even a DeclContext at all).
+  auto *RD = dyn_cast<CXXRecordDecl>(this);
+  if (RD && RD->isDependentLambda())
+    if (Decl *Context = RD->getLambdaContextDecl())
+      return Context->getTemplateDepth();
+
+  const DeclContext *DC =
+      getFriendObjectKind() ? getLexicalDeclContext() : getDeclContext();
+  return cast<Decl>(DC)->getTemplateDepth();
 }
 
 const DeclContext *Decl::getParentFunctionOrMethod() const {
@@ -332,8 +364,10 @@ void Decl::setDeclContextsImpl(DeclContext *SemaDC, DeclContext *LexicalDC,
   }
 }
 
-bool Decl::isInLocalScope() const {
+bool Decl::isInLocalScopeForInstantiation() const {
   const DeclContext *LDC = getLexicalDeclContext();
+  if (!LDC->isDependentContext())
+    return false;
   while (true) {
     if (LDC->isFunctionOrMethod())
       return true;
@@ -686,7 +720,7 @@ bool Decl::isWeakImported() const {
   if (!canBeWeakImported(IsDefinition))
     return false;
 
-  for (const auto *A : attrs()) {
+  for (const auto *A : getMostRecentDecl()->attrs()) {
     if (isa<WeakImportAttr>(A))
       return true;
 
@@ -1453,6 +1487,13 @@ static bool shouldBeHidden(NamedDecl *D) {
     if (FD->isFunctionTemplateSpecialization())
       return true;
 
+  // Hide destructors that are invalid. There should always be one destructor,
+  // but if it is an invalid decl, another one is created. We need to hide the
+  // invalid one from places that expect exactly one destructor, like the
+  // serialization code.
+  if (isa<CXXDestructorDecl>(D) && D->isInvalidDecl())
+    return true;
+
   return false;
 }
 
@@ -1986,9 +2027,9 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
 
   // Allocate the copy of the PartialDiagnostic via the ASTContext's
   // BumpPtrAllocator, rather than the ASTContext itself.
-  PartialDiagnostic::Storage *DiagStorage = nullptr;
+  DiagnosticStorage *DiagStorage = nullptr;
   if (PDiag.hasStorage())
-    DiagStorage = new (C) PartialDiagnostic::Storage;
+    DiagStorage = new (C) DiagnosticStorage;
 
   auto *DD = new (C) DependentDiagnostic(PDiag, DiagStorage);
 

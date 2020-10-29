@@ -1,8 +1,6 @@
 // RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple -o %t.out %s
 // RUN: cd %T
 // RUN: env SYCL_DEVICE_TYPE=HOST %t.out
-// RUN: %CPU_RUN_PLACEHOLDER %t.out
-// RUN: %GPU_RUN_PLACEHOLDER %t.out
 
 //==--- kernel_functor.cpp - Functors as SYCL kernel test ------------------==//
 //
@@ -23,7 +21,7 @@ constexpr auto sycl_global_buffer = cl::sycl::access::target::global_buffer;
 // - functor class is defined in an anonymous namespace
 // - the '()' operator:
 //   * does not have parameters (to be used in 'single_task').
-//   * has no 'const' qualifier
+//   * has the 'const' qualifier
 namespace {
 class Functor1 {
 public:
@@ -32,7 +30,7 @@ public:
       cl::sycl::accessor<int, 1, sycl_read_write, sycl_global_buffer> &Acc_)
       : X(X_), Acc(Acc_) {}
 
-  void operator()() { Acc[0] += X; }
+  void operator()() const { Acc[0] += X; }
 
 private:
   int X;
@@ -66,14 +64,14 @@ private:
 // - functor class is templated and defined in the translation unit scope
 // - the '()' operator:
 //   * has a parameter of type cl::sycl::id<1> (to be used in 'parallel_for').
-//   * has no 'const' qualifier
+//   * has the 'const' qualifier
 template <typename T> class TmplFunctor {
 public:
   TmplFunctor(
       T X_, cl::sycl::accessor<T, 1, sycl_read_write, sycl_global_buffer> &Acc_)
       : X(X_), Acc(Acc_) {}
 
-  void operator()(cl::sycl::id<1> id) { Acc[id] += X; }
+  void operator()(cl::sycl::id<1> id) const { Acc[id] += X; }
 
 private:
   T X;

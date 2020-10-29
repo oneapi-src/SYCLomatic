@@ -18,7 +18,8 @@ The files/directories related to the translator:
 
 ## Build Instructions
 
-The `master` branch of this repo is aimed to be buildable with the latest LLVM `master` or `trunk` revision.
+The `master` branch of this repo is aimed to be buildable with the latest
+LLVM `master` revision.
 
 ### Build with pre-installed LLVM
 
@@ -27,7 +28,7 @@ The translator can be built with the latest(nightly) package of LLVM. For Ubuntu
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
 sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main"
 sudo apt-get update
-sudo apt-get install llvm-11-dev llvm-11-tools clang-11 libclang-11-dev
+sudo apt-get install llvm-12-dev llvm-12-tools clang-12 libclang-12-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
@@ -69,9 +70,27 @@ git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
 Run (or re-run) cmake as usual for LLVM. After that you should have `llvm-spirv` and `check-llvm-spirv` targets available.
 ```
 mkdir llvm-project/build && cd llvm-project/build
-cmake ../llvm
+cmake ../llvm -DLLVM_ENABLE_PROJECTS="clang"
 make llvm-spirv -j`nproc`
 ```
+
+Note on enabling the `clang` project: there are tests in the translator that depend
+on `clang` binary, which makes clang a required dependency (search for
+`LLVM_SPIRV_TEST_DEPS` in [test/CMakeLists.txt](test/CMakeLists.txt)) for
+`check-llvm-spirv` target.
+
+Building clang from sources takes time and resources and it can be avoided:
+- if you are not interested in launching unit-tests for the translator after
+  build, you can disable generation of test targets by passing
+  `-DLLVM_INCLUDE_TESTS=OFF` option.
+- if you are interested in launching unit-tests, but don't want to build clang
+  you can pass `-DSPIRV_SKIP_CLANG_BUILD` cmake option to avoid adding `clang`
+  as dependency for `check-llvm-spirv` target. However, LIT will search for
+  `clang` binary when tests are launched and it should be available at this
+  point.
+- building and testing completely without `clang` is not supported at the
+  moment, see [KhronosGroup/SPIRV-LLVM-Translator#477](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/477)
+  to track progress, discuss and contribute.
 
 ## Test instructions
 
@@ -84,7 +103,7 @@ Execute the following command inside the build directory to run translator tests
 make test
 ```
 This requires that the `-DLLVM_INCLUDE_TESTS=ON` and
-`-DLLVM_EXTERNAL_LIT="/usr/lib/llvm-11/build/utils/lit/lit.py"` arguments were
+`-DLLVM_EXTERNAL_LIT="/usr/lib/llvm-12/build/utils/lit/lit.py"` arguments were
 passed to CMake during the build step.
 
 The translator test suite can be disabled by passing
@@ -163,8 +182,25 @@ More information can be found in
 
 ## Branching strategy
 
-Code on the master branch in this repository is intended to be compatible with master/trunk branch of the [llvm](https://github.com/llvm-mirror/llvm) project. That is, for an OpenCL kernel compiled to llvm bitcode by the latest version(built with the latest git commit or svn revision) of Clang it should be possible to translate it to SPIR-V with the llvm-spirv tool.
+Code on the master branch in this repository is intended to be compatible with
+the master branch of the [llvm](https://github.com/llvm/llvm-project)
+project. That is, for an OpenCL kernel compiled to llvm bitcode by the latest
+git revision of Clang it should be possible to translate it to SPIR-V with the
+llvm-spirv tool.
 
 All new development should be done on the master branch.
 
-To have versions compatible with released versions of LLVM and Clang, corresponding branches are available in this repository. For example, to build the translator with LLVM 7.0 ([release_70](https://github.com/llvm-mirror/llvm/tree/release_70)) one should use the [llvm_release_70](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/tree/llvm_release_70) branch. As a general rule, commits from the master branch may be backported to the release branches as long as they do not depend on features from a later LLVM/Clang release and there are no objections from the maintainer(s). There is no guarantee that older release branches are proactively kept up to date with master, but you can request certain commits on older release branches by creating a pull request or raising an issue on GitHub.
+To have versions compatible with released versions of LLVM and Clang,
+corresponding tags are available in this repository. For example, to build
+the translator with
+[LLVM 7.0.0](https://github.com/llvm/llvm-project/tree/llvmorg-7.0.0)
+one should use the
+[v7.0.0-1](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/tree/v7.0.0-1)
+tag. The 7.x releases are maintained on the
+[llvm_release_70](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/tree/llvm_release_70)
+branch. As a general rule, commits from the master branch may be backported to
+the release branches as long as they do not depend on features from a later
+LLVM/Clang release and there are no objections from the maintainer(s). There
+is no guarantee that older release branches are proactively kept up to date
+with master, but you can request specific commits on older release branches by
+creating a pull request or raising an issue on GitHub.

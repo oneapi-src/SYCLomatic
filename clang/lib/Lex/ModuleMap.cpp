@@ -387,13 +387,17 @@ bool ModuleMap::isBuiltinHeader(StringRef FileName) {
            .Default(false);
 }
 
+bool ModuleMap::isBuiltinHeader(const FileEntry *File) {
+  return File->getDir() == BuiltinIncludeDir &&
+         ModuleMap::isBuiltinHeader(llvm::sys::path::filename(File->getName()));
+}
+
 ModuleMap::HeadersMap::iterator
 ModuleMap::findKnownHeader(const FileEntry *File) {
   resolveHeaderDirectives(File);
   HeadersMap::iterator Known = Headers.find(File);
   if (HeaderInfo.getHeaderSearchOpts().ImplicitModuleMaps &&
-      Known == Headers.end() && File->getDir() == BuiltinIncludeDir &&
-      ModuleMap::isBuiltinHeader(llvm::sys::path::filename(File->getName()))) {
+      Known == Headers.end() && ModuleMap::isBuiltinHeader(File)) {
     HeaderInfo.loadTopLevelSystemModules();
     return Headers.find(File);
   }
@@ -1899,18 +1903,16 @@ void ModuleMapParser::parseModuleDecl() {
         continue;
       }
 
-      if (ActiveModule) {
-        Diags.Report(Id[I].second, diag::err_mmap_missing_module_qualified)
-          << Id[I].first
-          << ActiveModule->getTopLevelModule()->getFullModuleName();
-      } else {
-        Diags.Report(Id[I].second, diag::err_mmap_expected_module_name);
-      }
+      Diags.Report(Id[I].second, diag::err_mmap_missing_parent_module)
+          << Id[I].first << (ActiveModule != nullptr)
+          << (ActiveModule
+                  ? ActiveModule->getTopLevelModule()->getFullModuleName()
+                  : "");
       HadError = true;
-      return;
     }
 
-    if (ModuleMapFile != Map.getContainingModuleMapFile(TopLevelModule)) {
+    if (TopLevelModule &&
+        ModuleMapFile != Map.getContainingModuleMapFile(TopLevelModule)) {
       assert(ModuleMapFile != Map.getModuleMapFileForUniquing(TopLevelModule) &&
              "submodule defined in same file as 'module *' that allowed its "
              "top-level module");
@@ -3002,7 +3004,7 @@ bool ModuleMap::parseModuleMapFile(const FileEntry *File, bool IsSystem,
   }
 
   assert(Target && "Missing target information");
-  const llvm::MemoryBuffer *Buffer = SourceMgr.getBuffer(ID);
+  llvm::Optional<llvm::MemoryBufferRef> Buffer = SourceMgr.getBufferOrNone(ID);
   if (!Buffer)
     return ParsedModuleMap[File] = true;
   assert((!Offset || *Offset <= Buffer->getBufferSize()) &&

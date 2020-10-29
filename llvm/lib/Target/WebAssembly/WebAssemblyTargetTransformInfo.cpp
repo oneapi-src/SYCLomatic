@@ -63,10 +63,11 @@ unsigned WebAssemblyTTIImpl::getArithmeticInstrCost(
       // approxmation.
       if (Opd2Info != TTI::OK_UniformValue &&
           Opd2Info != TTI::OK_UniformConstantValue)
-        Cost = VTy->getNumElements() *
-               (TargetTransformInfo::TCC_Basic +
-                getArithmeticInstrCost(Opcode, VTy->getElementType(), CostKind) +
-                TargetTransformInfo::TCC_Basic);
+        Cost =
+            cast<FixedVectorType>(VTy)->getNumElements() *
+            (TargetTransformInfo::TCC_Basic +
+             getArithmeticInstrCost(Opcode, VTy->getElementType(), CostKind) +
+             TargetTransformInfo::TCC_Basic);
       break;
     }
   }
@@ -82,4 +83,22 @@ unsigned WebAssemblyTTIImpl::getVectorInstrCost(unsigned Opcode, Type *Val,
     return Cost + 25 * TargetTransformInfo::TCC_Expensive;
 
   return Cost;
+}
+
+bool WebAssemblyTTIImpl::areInlineCompatible(const Function *Caller,
+                                             const Function *Callee) const {
+  // Allow inlining only when the Callee has a subset of the Caller's
+  // features. In principle, we should be able to inline regardless of any
+  // features because WebAssembly supports features at module granularity, not
+  // function granularity, but without this restriction it would be possible for
+  // a module to "forget" about features if all the functions that used them
+  // were inlined.
+  const TargetMachine &TM = getTLI()->getTargetMachine();
+
+  const FeatureBitset &CallerBits =
+      TM.getSubtargetImpl(*Caller)->getFeatureBits();
+  const FeatureBitset &CalleeBits =
+      TM.getSubtargetImpl(*Callee)->getFeatureBits();
+
+  return (CallerBits & CalleeBits) == CalleeBits;
 }

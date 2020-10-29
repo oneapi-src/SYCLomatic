@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03, c++11, c++14
+// UNSUPPORTED: c++03, c++11, c++14
 // UNSUPPORTED: windows
 // UNSUPPORTED: libcpp-has-no-threads
-// ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DEBUG=1
+// UNSUPPORTED: libcpp-no-if-constexpr
 
-// Can't test the system lib because this test enables debug mode
-// UNSUPPORTED: with_system_cxx_lib=macosx
+// ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DEBUG=1
+// UNSUPPORTED: libcxx-no-debug-mode
 
 // test multihtreaded container debugging
 

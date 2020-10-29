@@ -220,6 +220,10 @@ void MIRPrinter::print(const MachineFunction &MF) {
   convert(MST, YamlMF.FrameInfo, MF.getFrameInfo());
   convertStackObjects(YamlMF, MF, MST);
   convertCallSiteObjects(YamlMF, MF, MST);
+  for (auto &Sub : MF.DebugValueSubstitutions)
+    YamlMF.DebugValueSubstitutions.push_back({Sub.first.first, Sub.first.second,
+                                              Sub.second.first,
+                                              Sub.second.second});
   if (const auto *ConstantPool = MF.getConstantPool())
     convert(YamlMF, *ConstantPool);
   if (const auto *JumpTableInfo = MF.getJumpTableInfo())
@@ -608,58 +612,10 @@ bool MIPrinter::canPredictSuccessors(const MachineBasicBlock &MBB) const {
 
 void MIPrinter::print(const MachineBasicBlock &MBB) {
   assert(MBB.getNumber() >= 0 && "Invalid MBB number");
-  OS << "bb." << MBB.getNumber();
-  bool HasAttributes = false;
-  if (const auto *BB = MBB.getBasicBlock()) {
-    if (BB->hasName()) {
-      OS << "." << BB->getName();
-    } else {
-      HasAttributes = true;
-      OS << " (";
-      int Slot = MST.getLocalSlot(BB);
-      if (Slot == -1)
-        OS << "<ir-block badref>";
-      else
-        OS << (Twine("%ir-block.") + Twine(Slot)).str();
-    }
-  }
-  if (MBB.hasAddressTaken()) {
-    OS << (HasAttributes ? ", " : " (");
-    OS << "address-taken";
-    HasAttributes = true;
-  }
-  if (MBB.isEHPad()) {
-    OS << (HasAttributes ? ", " : " (");
-    OS << "landing-pad";
-    HasAttributes = true;
-  }
-  if (MBB.isEHFuncletEntry()) {
-    OS << (HasAttributes ? ", " : " (");
-    OS << "ehfunclet-entry";
-    HasAttributes = true;
-  }
-  if (MBB.getAlignment() != Align(1)) {
-    OS << (HasAttributes ? ", " : " (");
-    OS << "align " << MBB.getAlignment().value();
-    HasAttributes = true;
-  }
-  if (MBB.getSectionID() != MBBSectionID(0)) {
-    OS << (HasAttributes ? ", " : " (");
-    OS << "bbsections ";
-    switch (MBB.getSectionID().Type) {
-    case MBBSectionID::SectionType::Exception:
-      OS << "Exception";
-      break;
-    case MBBSectionID::SectionType::Cold:
-      OS << "Cold";
-      break;
-    default:
-      OS << MBB.getSectionID().Number;
-    }
-    HasAttributes = true;
-  }
-  if (HasAttributes)
-    OS << ")";
+  MBB.printName(OS,
+                MachineBasicBlock::PrintNameIr |
+                    MachineBasicBlock::PrintNameAttributes,
+                &MST);
   OS << ":\n";
 
   bool HasLineAttributes = false;
@@ -815,6 +771,13 @@ void MIPrinter::print(const MachineInstr &MI) {
       OS << ',';
     OS << " heap-alloc-marker ";
     HeapAllocMarker->printAsOperand(OS, MST);
+    NeedComma = true;
+  }
+
+  if (auto Num = MI.peekDebugInstrNum()) {
+    if (NeedComma)
+      OS << ',';
+    OS << " debug-instr-number " << Num;
     NeedComma = true;
   }
 

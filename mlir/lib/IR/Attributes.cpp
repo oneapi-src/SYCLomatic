@@ -14,6 +14,7 @@
 #include "mlir/IR/Function.h"
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/IR/Types.h"
+#include "mlir/Interfaces/DecodeAttributesInterfaces.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Endian.h"
@@ -47,14 +48,16 @@ Type Attribute::getType() const { return impl->getType(); }
 MLIRContext *Attribute::getContext() const { return getType().getContext(); }
 
 /// Get the dialect this attribute is registered to.
-Dialect &Attribute::getDialect() const { return impl->getDialect(); }
+Dialect &Attribute::getDialect() const {
+  return impl->getAbstractAttribute().getDialect();
+}
 
 //===----------------------------------------------------------------------===//
 // AffineMapAttr
 //===----------------------------------------------------------------------===//
 
 AffineMapAttr AffineMapAttr::get(AffineMap value) {
-  return Base::get(value.getContext(), StandardAttributes::AffineMap, value);
+  return Base::get(value.getContext(), value);
 }
 
 AffineMap AffineMapAttr::getValue() const { return getImpl()->value; }
@@ -64,7 +67,7 @@ AffineMap AffineMapAttr::getValue() const { return getImpl()->value; }
 //===----------------------------------------------------------------------===//
 
 ArrayAttr ArrayAttr::get(ArrayRef<Attribute> value, MLIRContext *context) {
-  return Base::get(context, StandardAttributes::Array, value);
+  return Base::get(context, value);
 }
 
 ArrayRef<Attribute> ArrayAttr::getValue() const { return getImpl()->value; }
@@ -73,12 +76,6 @@ Attribute ArrayAttr::operator[](unsigned idx) const {
   assert(idx < size() && "index out of bounds");
   return getValue()[idx];
 }
-
-//===----------------------------------------------------------------------===//
-// BoolAttr
-//===----------------------------------------------------------------------===//
-
-bool BoolAttr::getValue() const { return getImpl()->value; }
 
 //===----------------------------------------------------------------------===//
 // DictionaryAttr
@@ -159,7 +156,7 @@ DictionaryAttr DictionaryAttr::get(ArrayRef<NamedAttribute> value,
   if (dictionaryAttrSort</*inPlace=*/false>(value, storage))
     value = storage;
 
-  return Base::get(context, StandardAttributes::Dictionary, value);
+  return Base::get(context, value);
 }
 /// Construct a dictionary with an array of values that is known to already be
 /// sorted by name and uniqued.
@@ -178,7 +175,7 @@ DictionaryAttr DictionaryAttr::getWithSorted(ArrayRef<NamedAttribute> value,
                               return l.first == r.first;
                             }) == value.end() &&
          "DictionaryAttr element names must be unique");
-  return Base::get(context, StandardAttributes::Dictionary, value);
+  return Base::get(context, value);
 }
 
 ArrayRef<NamedAttribute> DictionaryAttr::getValue() const {
@@ -222,19 +219,19 @@ size_t DictionaryAttr::size() const { return getValue().size(); }
 //===----------------------------------------------------------------------===//
 
 FloatAttr FloatAttr::get(Type type, double value) {
-  return Base::get(type.getContext(), StandardAttributes::Float, type, value);
+  return Base::get(type.getContext(), type, value);
 }
 
 FloatAttr FloatAttr::getChecked(Type type, double value, Location loc) {
-  return Base::getChecked(loc, StandardAttributes::Float, type, value);
+  return Base::getChecked(loc, type, value);
 }
 
 FloatAttr FloatAttr::get(Type type, const APFloat &value) {
-  return Base::get(type.getContext(), StandardAttributes::Float, type, value);
+  return Base::get(type.getContext(), type, value);
 }
 
 FloatAttr FloatAttr::getChecked(Type type, const APFloat &value, Location loc) {
-  return Base::getChecked(loc, StandardAttributes::Float, type, value);
+  return Base::getChecked(loc, type, value);
 }
 
 APFloat FloatAttr::getValue() const { return getImpl()->getValue(); }
@@ -282,14 +279,13 @@ LogicalResult FloatAttr::verifyConstructionInvariants(Location loc, Type type,
 //===----------------------------------------------------------------------===//
 
 FlatSymbolRefAttr SymbolRefAttr::get(StringRef value, MLIRContext *ctx) {
-  return Base::get(ctx, StandardAttributes::SymbolRef, value, llvm::None)
-      .cast<FlatSymbolRefAttr>();
+  return Base::get(ctx, value, llvm::None).cast<FlatSymbolRefAttr>();
 }
 
 SymbolRefAttr SymbolRefAttr::get(StringRef value,
                                  ArrayRef<FlatSymbolRefAttr> nestedReferences,
                                  MLIRContext *ctx) {
-  return Base::get(ctx, StandardAttributes::SymbolRef, value, nestedReferences);
+  return Base::get(ctx, value, nestedReferences);
 }
 
 StringRef SymbolRefAttr::getRootReference() const { return getImpl()->value; }
@@ -308,7 +304,9 @@ ArrayRef<FlatSymbolRefAttr> SymbolRefAttr::getNestedReferences() const {
 //===----------------------------------------------------------------------===//
 
 IntegerAttr IntegerAttr::get(Type type, const APInt &value) {
-  return Base::get(type.getContext(), StandardAttributes::Integer, type, value);
+  if (type.isSignlessInteger(1))
+    return BoolAttr::get(value.getBoolValue(), type.getContext());
+  return Base::get(type.getContext(), type, value);
 }
 
 IntegerAttr IntegerAttr::get(Type type, int64_t value) {
@@ -341,7 +339,7 @@ uint64_t IntegerAttr::getUInt() const {
 }
 
 static LogicalResult verifyIntegerTypeInvariants(Location loc, Type type) {
-  if (type.isa<IntegerType>() || type.isa<IndexType>())
+  if (type.isa<IntegerType, IndexType>())
     return success();
   return emitError(loc, "expected integer or index type");
 }
@@ -364,12 +362,24 @@ LogicalResult IntegerAttr::verifyConstructionInvariants(Location loc, Type type,
 }
 
 //===----------------------------------------------------------------------===//
+// BoolAttr
+
+bool BoolAttr::getValue() const {
+  auto *storage = reinterpret_cast<IntegerAttributeStorage *>(impl);
+  return storage->getValue().getBoolValue();
+}
+
+bool BoolAttr::classof(Attribute attr) {
+  IntegerAttr intAttr = attr.dyn_cast<IntegerAttr>();
+  return intAttr && intAttr.getType().isSignlessInteger(1);
+}
+
+//===----------------------------------------------------------------------===//
 // IntegerSetAttr
 //===----------------------------------------------------------------------===//
 
 IntegerSetAttr IntegerSetAttr::get(IntegerSet value) {
-  return Base::get(value.getConstraint(0).getContext(),
-                   StandardAttributes::IntegerSet, value);
+  return Base::get(value.getConstraint(0).getContext(), value);
 }
 
 IntegerSet IntegerSetAttr::getValue() const { return getImpl()->value; }
@@ -380,14 +390,12 @@ IntegerSet IntegerSetAttr::getValue() const { return getImpl()->value; }
 
 OpaqueAttr OpaqueAttr::get(Identifier dialect, StringRef attrData, Type type,
                            MLIRContext *context) {
-  return Base::get(context, StandardAttributes::Opaque, dialect, attrData,
-                   type);
+  return Base::get(context, dialect, attrData, type);
 }
 
 OpaqueAttr OpaqueAttr::getChecked(Identifier dialect, StringRef attrData,
                                   Type type, Location location) {
-  return Base::getChecked(location, StandardAttributes::Opaque, dialect,
-                          attrData, type);
+  return Base::getChecked(location, dialect, attrData, type);
 }
 
 /// Returns the dialect namespace of the opaque attribute.
@@ -418,7 +426,7 @@ StringAttr StringAttr::get(StringRef bytes, MLIRContext *context) {
 
 /// Get an instance of a StringAttr with the given string and Type.
 StringAttr StringAttr::get(StringRef bytes, Type type) {
-  return Base::get(type.getContext(), StandardAttributes::String, bytes, type);
+  return Base::get(type.getContext(), bytes, type);
 }
 
 StringRef StringAttr::getValue() const { return getImpl()->value; }
@@ -428,7 +436,7 @@ StringRef StringAttr::getValue() const { return getImpl()->value; }
 //===----------------------------------------------------------------------===//
 
 TypeAttr TypeAttr::get(Type value) {
-  return Base::get(value.getContext(), StandardAttributes::Type, value);
+  return Base::get(value.getContext(), value);
 }
 
 Type TypeAttr::getValue() const { return getImpl()->value; }
@@ -449,16 +457,11 @@ int64_t ElementsAttr::getNumElements() const {
 /// Return the value at the given index. If index does not refer to a valid
 /// element, then a null attribute is returned.
 Attribute ElementsAttr::getValue(ArrayRef<uint64_t> index) const {
-  switch (getKind()) {
-  case StandardAttributes::DenseIntOrFPElements:
-    return cast<DenseElementsAttr>().getValue(index);
-  case StandardAttributes::OpaqueElements:
-    return cast<OpaqueElementsAttr>().getValue(index);
-  case StandardAttributes::SparseElements:
-    return cast<SparseElementsAttr>().getValue(index);
-  default:
-    llvm_unreachable("unknown ElementsAttr kind");
-  }
+  if (auto denseAttr = dyn_cast<DenseElementsAttr>())
+    return denseAttr.getValue(index);
+  if (auto opaqueAttr = dyn_cast<OpaqueElementsAttr>())
+    return opaqueAttr.getValue(index);
+  return cast<SparseElementsAttr>().getValue(index);
 }
 
 /// Return if the given 'index' refers to a valid element in this attribute.
@@ -480,23 +483,23 @@ bool ElementsAttr::isValidIndex(ArrayRef<uint64_t> index) const {
 ElementsAttr
 ElementsAttr::mapValues(Type newElementType,
                         function_ref<APInt(const APInt &)> mapping) const {
-  switch (getKind()) {
-  case StandardAttributes::DenseIntOrFPElements:
-    return cast<DenseElementsAttr>().mapValues(newElementType, mapping);
-  default:
-    llvm_unreachable("unsupported ElementsAttr subtype");
-  }
+  if (auto intOrFpAttr = dyn_cast<DenseElementsAttr>())
+    return intOrFpAttr.mapValues(newElementType, mapping);
+  llvm_unreachable("unsupported ElementsAttr subtype");
 }
 
 ElementsAttr
 ElementsAttr::mapValues(Type newElementType,
                         function_ref<APInt(const APFloat &)> mapping) const {
-  switch (getKind()) {
-  case StandardAttributes::DenseIntOrFPElements:
-    return cast<DenseElementsAttr>().mapValues(newElementType, mapping);
-  default:
-    llvm_unreachable("unsupported ElementsAttr subtype");
-  }
+  if (auto intOrFpAttr = dyn_cast<DenseElementsAttr>())
+    return intOrFpAttr.mapValues(newElementType, mapping);
+  llvm_unreachable("unsupported ElementsAttr subtype");
+}
+
+/// Method for support type inquiry through isa, cast and dyn_cast.
+bool ElementsAttr::classof(Attribute attr) {
+  return attr.isa<DenseIntOrFPElementsAttr, DenseStringElementsAttr,
+                  OpaqueElementsAttr, SparseElementsAttr>();
 }
 
 /// Returns the 1 dimensional flattened row-major index from the given
@@ -519,7 +522,7 @@ uint64_t ElementsAttr::getFlattenedIndex(ArrayRef<uint64_t> index) const {
 }
 
 //===----------------------------------------------------------------------===//
-// DenseElementAttr Utilities
+// DenseElementsAttr Utilities
 //===----------------------------------------------------------------------===//
 
 /// Get the bitwidth of a dense element type within the buffer.
@@ -594,8 +597,8 @@ static APInt readBits(const char *rawData, size_t bitPos, size_t bitWidth) {
   return result;
 }
 
-/// Returns if 'values' corresponds to a splat, i.e. one element, or has the
-/// same element count as 'type'.
+/// Returns true if 'values' corresponds to a splat, i.e. one element, or has
+/// the same element count as 'type'.
 template <typename Values>
 static bool hasSameElementsOrSplat(ShapedType type, const Values &values) {
   return (values.size() == 1) ||
@@ -603,7 +606,7 @@ static bool hasSameElementsOrSplat(ShapedType type, const Values &values) {
 }
 
 //===----------------------------------------------------------------------===//
-// DenseElementAttr Iterators
+// DenseElementsAttr Iterators
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -618,12 +621,8 @@ DenseElementsAttr::AttributeElementIterator::AttributeElementIterator(
 Attribute DenseElementsAttr::AttributeElementIterator::operator*() const {
   auto owner = getFromOpaquePointer(base).cast<DenseElementsAttr>();
   Type eltTy = owner.getType().getElementType();
-  if (auto intEltTy = eltTy.dyn_cast<IntegerType>()) {
-    if (intEltTy.getWidth() == 1)
-      return BoolAttr::get((*IntElementIterator(owner, index)).isOneValue(),
-                           owner.getContext());
+  if (auto intEltTy = eltTy.dyn_cast<IntegerType>())
     return IntegerAttr::get(eltTy, *IntElementIterator(owner, index));
-  }
   if (eltTy.isa<IndexType>())
     return IntegerAttr::get(eltTy, *IntElementIterator(owner, index));
   if (auto floatEltTy = eltTy.dyn_cast<FloatType>()) {
@@ -711,6 +710,11 @@ DenseElementsAttr::ComplexFloatElementIterator::ComplexFloatElementIterator(
 // DenseElementsAttr
 //===----------------------------------------------------------------------===//
 
+/// Method for support type inquiry through isa, cast and dyn_cast.
+bool DenseElementsAttr::classof(Attribute attr) {
+  return attr.isa<DenseIntOrFPElementsAttr, DenseStringElementsAttr>();
+}
+
 DenseElementsAttr DenseElementsAttr::get(ShapedType type,
                                          ArrayRef<Attribute> values) {
   assert(hasSameElementsOrSplat(type, values));
@@ -740,23 +744,13 @@ DenseElementsAttr DenseElementsAttr::get(ShapedType type,
   for (unsigned i = 0, e = values.size(); i < e; ++i) {
     assert(eltType == values[i].getType() &&
            "expected attribute value to have element type");
-
-    switch (eltType.getKind()) {
-    case StandardTypes::BF16:
-    case StandardTypes::F16:
-    case StandardTypes::F32:
-    case StandardTypes::F64:
+    if (eltType.isa<FloatType>())
       intVal = values[i].cast<FloatAttr>().getValue().bitcastToAPInt();
-      break;
-    case StandardTypes::Integer:
-    case StandardTypes::Index:
-      intVal = values[i].isa<BoolAttr>()
-                   ? APInt(1, values[i].cast<BoolAttr>().getValue() ? 1 : 0)
-                   : values[i].cast<IntegerAttr>().getValue();
-      break;
-    default:
+    else if (eltType.isa<IntegerType>())
+      intVal = values[i].cast<IntegerAttr>().getValue();
+    else
       llvm_unreachable("unexpected element type");
-    }
+
     assert(intVal.getBitWidth() == bitWidth &&
            "expected value to have same bitwidth as element type");
     writeBits(data.data(), i * storageBitWidth, intVal);
@@ -919,7 +913,7 @@ bool DenseElementsAttr::isValidComplex(int64_t dataEltSize, bool isInt,
       dataEltSize / 2, isInt, isSigned);
 }
 
-/// Returns if this attribute corresponds to a splat, i.e. if all element
+/// Returns true if this attribute corresponds to a splat, i.e. if all element
 /// values are the same.
 bool DenseElementsAttr::isSplat() const {
   return static_cast<DenseElementsAttributeStorage *>(impl)->isSplat;
@@ -1038,8 +1032,7 @@ DenseElementsAttr DenseElementsAttr::mapValues(
 
 DenseStringElementsAttr
 DenseStringElementsAttr::get(ShapedType type, ArrayRef<StringRef> values) {
-  return Base::get(type.getContext(), StandardAttributes::DenseStringElements,
-                   type, values, (values.size() == 1));
+  return Base::get(type.getContext(), type, values, (values.size() == 1));
 }
 
 //===----------------------------------------------------------------------===//
@@ -1087,11 +1080,10 @@ DenseElementsAttr DenseIntOrFPElementsAttr::getRaw(ShapedType type,
 DenseElementsAttr DenseIntOrFPElementsAttr::getRaw(ShapedType type,
                                                    ArrayRef<char> data,
                                                    bool isSplat) {
-  assert((type.isa<RankedTensorType>() || type.isa<VectorType>()) &&
+  assert((type.isa<RankedTensorType, VectorType>()) &&
          "type must be ranked tensor or vector");
   assert(type.hasStaticShape() && "type must have static shape");
-  return Base::get(type.getContext(), StandardAttributes::DenseIntOrFPElements,
-                   type, data, isSplat);
+  return Base::get(type.getContext(), type, data, isSplat);
 }
 
 /// Overload of the raw 'get' method that asserts that the given type is of
@@ -1212,8 +1204,7 @@ OpaqueElementsAttr OpaqueElementsAttr::get(Dialect *dialect, ShapedType type,
                                            StringRef bytes) {
   assert(TensorType::isValidElementType(type.getElementType()) &&
          "Input element type should be a valid tensor element type");
-  return Base::get(type.getContext(), StandardAttributes::OpaqueElements, type,
-                   dialect, bytes);
+  return Base::get(type.getContext(), type, dialect, bytes);
 }
 
 StringRef OpaqueElementsAttr::getValue() const { return getImpl()->bytes; }
@@ -1222,17 +1213,20 @@ StringRef OpaqueElementsAttr::getValue() const { return getImpl()->bytes; }
 /// element, then a null attribute is returned.
 Attribute OpaqueElementsAttr::getValue(ArrayRef<uint64_t> index) const {
   assert(isValidIndex(index) && "expected valid multi-dimensional index");
-  if (Dialect *dialect = getDialect())
-    return dialect->extractElementHook(*this, index);
   return Attribute();
 }
 
 Dialect *OpaqueElementsAttr::getDialect() const { return getImpl()->dialect; }
 
 bool OpaqueElementsAttr::decode(ElementsAttr &result) {
-  if (auto *d = getDialect())
-    return d->decodeHook(*this, result);
-  return true;
+  auto *d = getDialect();
+  if (!d)
+    return true;
+  auto *interface =
+      d->getRegisteredInterface<DialectDecodeAttributesInterface>();
+  if (!interface)
+    return true;
+  return failed(interface->decode(*this, result));
 }
 
 //===----------------------------------------------------------------------===//
@@ -1244,10 +1238,10 @@ SparseElementsAttr SparseElementsAttr::get(ShapedType type,
                                            DenseElementsAttr values) {
   assert(indices.getType().getElementType().isInteger(64) &&
          "expected sparse indices to be 64-bit integer values");
-  assert((type.isa<RankedTensorType>() || type.isa<VectorType>()) &&
+  assert((type.isa<RankedTensorType, VectorType>()) &&
          "type must be ranked tensor or vector");
   assert(type.hasStaticShape() && "type must have static shape");
-  return Base::get(type.getContext(), StandardAttributes::SparseElements, type,
+  return Base::get(type.getContext(), type,
                    indices.cast<DenseIntElementsAttr>(), values);
 }
 
@@ -1321,9 +1315,7 @@ Attribute SparseElementsAttr::getZeroAttr() const {
     return FloatAttr::get(eltType, 0);
 
   // Otherwise, this is an integer.
-  auto intEltTy = eltType.cast<IntegerType>();
-  if (intEltTy.getWidth() == 1)
-    return BoolAttr::get(false, eltType.getContext());
+  // TODO: Handle StringAttr here.
   return IntegerAttr::get(eltType, 0);
 }
 

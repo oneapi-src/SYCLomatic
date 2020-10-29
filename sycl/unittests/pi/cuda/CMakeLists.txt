@@ -8,13 +8,13 @@ add_sycl_unittest(PiCudaTests OBJECT
   test_mem_obj.cpp
   test_primary_context.cpp
   test_queue.cpp
+  test_sampler_properties.cpp
 )
 
 add_dependencies(PiCudaTests sycl)
 
-target_link_libraries(PiCudaTests PRIVATE
-  LLVMTestingSupport
-  OpenCL-Headers)
+target_compile_definitions(PiCudaTests PRIVATE
+  GTEST_HAS_COMBINE=1)
 
 target_include_directories(
   PiCudaTests PUBLIC 

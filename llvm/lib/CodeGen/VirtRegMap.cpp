@@ -104,7 +104,7 @@ bool VirtRegMap::hasPreferredPhys(Register VirtReg) {
     return false;
   if (Hint.isVirtual())
     Hint = getPhys(Hint);
-  return getPhys(VirtReg) == Hint;
+  return Register(getPhys(VirtReg)) == Hint;
 }
 
 bool VirtRegMap::hasKnownPreference(Register VirtReg) {
@@ -400,18 +400,18 @@ void VirtRegRewriter::handleIdentityCopy(MachineInstr &MI) const {
 /// after processing the last in the bundle. Does not update LiveIntervals
 /// which we shouldn't need for this instruction anymore.
 void VirtRegRewriter::expandCopyBundle(MachineInstr &MI) const {
-  if (!MI.isCopy())
+  if (!MI.isCopy() && !MI.isKill())
     return;
 
   if (MI.isBundledWithPred() && !MI.isBundledWithSucc()) {
     SmallVector<MachineInstr *, 2> MIs({&MI});
 
-    // Only do this when the complete bundle is made out of COPYs.
+    // Only do this when the complete bundle is made out of COPYs and KILLs.
     MachineBasicBlock &MBB = *MI.getParent();
     for (MachineBasicBlock::reverse_instr_iterator I =
          std::next(MI.getReverseIterator()), E = MBB.instr_rend();
          I != E && I->isBundledWithSucc(); ++I) {
-      if (!I->isCopy())
+      if (!I->isCopy() && !I->isKill())
         return;
       MIs.push_back(&*I);
     }
@@ -452,7 +452,7 @@ void VirtRegRewriter::expandCopyBundle(MachineInstr &MI) const {
       // instruction, the bundle will have been completely undone.
       if (BundledMI != BundleStart) {
         BundledMI->removeFromBundle();
-        MBB.insert(FirstMI, BundledMI);
+        MBB.insert(BundleStart, BundledMI);
       } else if (BundledMI->isBundledWithSucc()) {
         BundledMI->unbundleFromSucc();
         BundleStart = &*std::next(BundledMI->getIterator());

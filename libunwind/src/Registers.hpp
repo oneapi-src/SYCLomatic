@@ -39,6 +39,8 @@ enum {
 };
 
 #if defined(_LIBUNWIND_TARGET_I386)
+class _LIBUNWIND_HIDDEN Registers_x86;
+extern "C" void __libunwind_Registers_x86_jumpto(Registers_x86 *);
 /// Registers_x86 holds the register state of a thread in a 32-bit intel
 /// process.
 class _LIBUNWIND_HIDDEN Registers_x86 {
@@ -56,7 +58,7 @@ public:
   v128        getVectorRegister(int num) const;
   void        setVectorRegister(int num, v128 value);
   static const char *getRegisterName(int num);
-  void        jumpto();
+  void        jumpto() { __libunwind_Registers_x86_jumpto(this); }
   static int  lastDwarfRegNum() { return _LIBUNWIND_HIGHEST_DWARF_REGISTER_X86; }
   static int  getArch() { return REGISTERS_X86; }
 
@@ -248,6 +250,8 @@ inline void Registers_x86::setVectorRegister(int, v128) {
 #if defined(_LIBUNWIND_TARGET_X86_64)
 /// Registers_x86_64  holds the register state of a thread in a 64-bit intel
 /// process.
+class _LIBUNWIND_HIDDEN Registers_x86_64;
+extern "C" void __libunwind_Registers_x86_64_jumpto(Registers_x86_64 *);
 class _LIBUNWIND_HIDDEN Registers_x86_64 {
 public:
   Registers_x86_64();
@@ -263,7 +267,7 @@ public:
   v128        getVectorRegister(int num) const;
   void        setVectorRegister(int num, v128 value);
   static const char *getRegisterName(int num);
-  void        jumpto();
+  void        jumpto() { __libunwind_Registers_x86_64_jumpto(this); }
   static int  lastDwarfRegNum() { return _LIBUNWIND_HIGHEST_DWARF_REGISTER_X86_64; }
   static int  getArch() { return REGISTERS_X86_64; }
 
@@ -1771,6 +1775,8 @@ inline const char *Registers_ppc64::getRegisterName(int regNum) {
 #if defined(_LIBUNWIND_TARGET_AARCH64)
 /// Registers_arm64  holds the register state of a thread in a 64-bit arm
 /// process.
+class _LIBUNWIND_HIDDEN Registers_arm64;
+extern "C" void __libunwind_Registers_arm64_jumpto(Registers_arm64 *);
 class _LIBUNWIND_HIDDEN Registers_arm64 {
 public:
   Registers_arm64();
@@ -1786,7 +1792,7 @@ public:
   v128        getVectorRegister(int num) const;
   void        setVectorRegister(int num, v128 value);
   static const char *getRegisterName(int num);
-  void        jumpto();
+  void        jumpto() { __libunwind_Registers_arm64_jumpto(this); }
   static int  lastDwarfRegNum() { return _LIBUNWIND_HIGHEST_DWARF_REGISTER_ARM64; }
   static int  getArch() { return REGISTERS_ARM64; }
 
@@ -3734,11 +3740,11 @@ public:
 
   uint64_t  getSP() const         { return _registers[2]; }
   void      setSP(uint64_t value) { _registers[2] = value; }
-  uint64_t  getIP() const         { return _registers[1]; }
-  void      setIP(uint64_t value) { _registers[1] = value; }
+  uint64_t  getIP() const         { return _registers[0]; }
+  void      setIP(uint64_t value) { _registers[0] = value; }
 
 private:
-
+  // _registers[0] holds the pc
   uint64_t _registers[32];
   double   _floats[32];
 };
@@ -3773,7 +3779,7 @@ inline bool Registers_riscv::validRegister(int regNum) const {
 
 inline uint64_t Registers_riscv::getRegister(int regNum) const {
   if (regNum == UNW_REG_IP)
-    return _registers[1];
+    return _registers[0];
   if (regNum == UNW_REG_SP)
     return _registers[2];
   if (regNum == UNW_RISCV_X0)
@@ -3785,7 +3791,7 @@ inline uint64_t Registers_riscv::getRegister(int regNum) const {
 
 inline void Registers_riscv::setRegister(int regNum, uint64_t value) {
   if (regNum == UNW_REG_IP)
-    _registers[1] = value;
+    _registers[0] = value;
   else if (regNum == UNW_REG_SP)
     _registers[2] = value;
   else if (regNum == UNW_RISCV_X0)

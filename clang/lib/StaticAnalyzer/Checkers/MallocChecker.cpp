@@ -47,6 +47,7 @@
 #include "AllocationState.h"
 #include "InterCheckerAPI.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ParentMap.h"
@@ -1037,9 +1038,44 @@ void MallocChecker::checkKernelMalloc(const CallEvent &Call,
   C.addTransition(State);
 }
 
-void MallocChecker::checkRealloc(const CallEvent &Call,
-                                 CheckerContext &C,
+static bool isStandardRealloc(const CallEvent &Call) {
+  const FunctionDecl *FD = dyn_cast<FunctionDecl>(Call.getDecl());
+  assert(FD);
+  ASTContext &AC = FD->getASTContext();
+
+  if (isa<CXXMethodDecl>(FD))
+    return false;
+
+  return FD->getDeclaredReturnType().getDesugaredType(AC) == AC.VoidPtrTy &&
+         FD->getParamDecl(0)->getType().getDesugaredType(AC) == AC.VoidPtrTy &&
+         FD->getParamDecl(1)->getType().getDesugaredType(AC) ==
+             AC.getSizeType();
+}
+
+static bool isGRealloc(const CallEvent &Call) {
+  const FunctionDecl *FD = dyn_cast<FunctionDecl>(Call.getDecl());
+  assert(FD);
+  ASTContext &AC = FD->getASTContext();
+
+  if (isa<CXXMethodDecl>(FD))
+    return false;
+
+  return FD->getDeclaredReturnType().getDesugaredType(AC) == AC.VoidPtrTy &&
+         FD->getParamDecl(0)->getType().getDesugaredType(AC) == AC.VoidPtrTy &&
+         FD->getParamDecl(1)->getType().getDesugaredType(AC) ==
+             AC.UnsignedLongTy;
+}
+
+void MallocChecker::checkRealloc(const CallEvent &Call, CheckerContext &C,
                                  bool ShouldFreeOnFail) const {
+  // HACK: CallDescription currently recognizes non-standard realloc functions
+  // as standard because it doesn't check the type, or wether its a non-method
+  // function. This should be solved by making CallDescription smarter.
+  // Mind that this came from a bug report, and all other functions suffer from
+  // this.
+  // https://bugs.llvm.org/show_bug.cgi?id=46253
+  if (!isStandardRealloc(Call) && !isGRealloc(Call))
+    return;
   ProgramStateRef State = C.getState();
   State = ReallocMemAux(C, Call, ShouldFreeOnFail, State, AF_Malloc);
   State = ProcessZeroAllocCheck(Call, 1, State);
@@ -2470,7 +2506,7 @@ MallocChecker::ReallocMemAux(CheckerContext &C, const CallEvent &Call,
       Kind = OAR_DoNotTrackAfterFailure;
 
     // Get the from and to pointer symbols as in toPtr = realloc(fromPtr, size).
-    SymbolRef FromPtr = arg0Val.getAsSymbol();
+    SymbolRef FromPtr = arg0Val.getLocSymbolInBase();
     SVal RetVal = C.getSVal(CE);
     SymbolRef ToPtr = RetVal.getAsSymbol();
     assert(FromPtr && ToPtr &&
@@ -3265,14 +3301,16 @@ PathDiagnosticPieceRef MallocBugVisitor::VisitNode(const ExplodedNode *N,
             OS << "reallocated by call to '";
             const Stmt *S = RSCurr->getStmt();
             if (const auto *MemCallE = dyn_cast<CXXMemberCallExpr>(S)) {
-              OS << MemCallE->getMethodDecl()->getNameAsString();
+              OS << MemCallE->getMethodDecl()->getDeclName();
             } else if (const auto *OpCallE = dyn_cast<CXXOperatorCallExpr>(S)) {
-              OS << OpCallE->getDirectCallee()->getNameAsString();
+              OS << OpCallE->getDirectCallee()->getDeclName();
             } else if (const auto *CallE = dyn_cast<CallExpr>(S)) {
               auto &CEMgr = BRC.getStateManager().getCallEventManager();
               CallEventRef<> Call = CEMgr.getSimpleCall(CallE, state, CurrentLC);
-              const auto *D = dyn_cast_or_null<NamedDecl>(Call->getDecl());
-              OS << (D ? D->getNameAsString() : "unknown");
+              if (const auto *D = dyn_cast_or_null<NamedDecl>(Call->getDecl()))
+                OS << D->getDeclName();
+              else
+                OS << "unknown";
             }
             OS << "'";
             StackHint = std::make_unique<StackHintGeneratorForSymbol>(

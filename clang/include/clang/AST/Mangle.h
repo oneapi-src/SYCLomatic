@@ -123,8 +123,11 @@ public:
   void mangleBlock(const DeclContext *DC, const BlockDecl *BD,
                    raw_ostream &Out);
 
-  void mangleObjCMethodNameWithoutSize(const ObjCMethodDecl *MD, raw_ostream &);
-  void mangleObjCMethodName(const ObjCMethodDecl *MD, raw_ostream &);
+  void mangleObjCMethodName(const ObjCMethodDecl *MD, raw_ostream &OS,
+                            bool includePrefixByte = true,
+                            bool includeCategoryNamespace = true);
+  void mangleObjCMethodNameAsSourceName(const ObjCMethodDecl *MD,
+                                        raw_ostream &);
 
   virtual void mangleStaticGuardVariable(const VarDecl *D, raw_ostream &) = 0;
 
@@ -174,6 +177,8 @@ public:
                                    raw_ostream &) = 0;
 
   virtual void mangleLambdaSig(const CXXRecordDecl *Lambda, raw_ostream &) = 0;
+
+  virtual void mangleDynamicStermFinalizer(const VarDecl *D, raw_ostream &) = 0;
 
   bool isUniqueNameMangler() { return IsUniqueNameMangler; }
 

@@ -285,10 +285,8 @@ TEST(YAMLIO, MultilineStrings) {
     YOut << Original;
   }
   auto Expected = "---\n"
-                  "str1:            'a multiline string\n"
-                  "foobarbaz'\n"
-                  "str2:            'another one\r"
-                  "foobarbaz'\n"
+                  "str1:            \"a multiline string\\nfoobarbaz\"\n"
+                  "str2:            \"another one\\rfoobarbaz\"\n"
                   "str3:            a one-line string\n"
                   "...\n";
   ASSERT_EQ(Serialized, Expected);
@@ -1784,10 +1782,10 @@ namespace yaml {
     static void mapping(IO &io, MyValidation &d) {
         io.mapRequired("value", d.value);
     }
-    static StringRef validate(IO &io, MyValidation &d) {
+    static std::string validate(IO &io, MyValidation &d) {
         if (d.value < 0)
           return "negative value";
-        return StringRef();
+        return {};
     }
   };
  }

@@ -1,5 +1,5 @@
-; RUN: opt -S -dse -enable-dse-memoryssa -dse-memoryssa-scanlimit=2 < %s | FileCheck %s
-; RUN: opt -S -strip-debug -dse -enable-dse-memoryssa -dse-memoryssa-scanlimit=2 < %s | FileCheck %s
+; RUN: opt -S -dse -dse-memoryssa-scanlimit=2 < %s | FileCheck %s
+; RUN: opt -S -strip-debug -dse -dse-memoryssa-scanlimit=2 < %s | FileCheck %s
 
 ; Test case to check that DSE gets the same result even if we have a dbg value
 ; between the memcpy.
@@ -69,8 +69,9 @@ attributes #2 = { argmemonly nounwind }
 !20 = !DILocation(line: 9, column: 5, scope: !14)
 !21 = !DILocation(line: 10, column: 1, scope: !14)
 
-; Check that the store is removed and that the memcpy is still there
+; Check that the both the store and memcpy are removed because they both access
+; an alloca that is not read.
 ; CHECK-LABEL: foo
 ; CHECK-NOT:   store i8
-; CHECK:       call void @llvm.memcpy
+; CHECK-NOT:   call void @llvm.memcpy
 ; CHECK:       ret void

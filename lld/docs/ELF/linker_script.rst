@@ -17,6 +17,25 @@ possible. We reserve the right to make different implementation choices where
 it is appropriate for LLD. Intentional deviations will be documented in this
 file.
 
+Symbol assignment
+~~~~~~~~~~~~~~~~~
+
+A symbol assignment looks like:
+
+::
+
+  symbol = expression;
+  symbol += expression;
+
+The first form defines ``symbol``. If ``symbol`` is already defined, it will be
+overridden. The other form requires ``symbol`` to be already defined.
+
+For a simple assignment like ``alias = aliasee;``, the ``st_type`` field is
+copied from the original symbol. Any arithmetic operation (e.g. ``+ 0`` will
+reset ``st_type`` to ``STT_NOTYPE``.
+
+The ``st_size`` field is set to 0.
+
 Output section description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -71,7 +90,7 @@ The two keywords cannot be specified at the same time.
 
 If neither ``AT(lma)`` nor ``AT>lma_region`` is specified:
 
-- If the previous section is also in the default LMA region, the difference
-  between the LMA and the VMA is computed to be the same as the previous
-  difference.
+- If the previous section is also in the default LMA region, and the two
+  section have the same memory regions, the difference between the LMA and the
+  VMA is computed to be the same as the previous difference.
 - Otherwise, the LMA is set to the VMA.

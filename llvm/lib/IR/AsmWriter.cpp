@@ -116,6 +116,15 @@ struct OrderMap {
 
 } // end anonymous namespace
 
+/// Look for a value that might be wrapped as metadata, e.g. a value in a
+/// metadata operand. Returns the input value as-is if it is not wrapped.
+static const Value *skipMetadataWrapper(const Value *V) {
+  if (const auto *MAV = dyn_cast<MetadataAsValue>(V))
+    if (const auto *VAM = dyn_cast<ValueAsMetadata>(MAV->getMetadata()))
+      return VAM->getValue();
+  return V;
+}
+
 static void orderValue(const Value *V, OrderMap &OM) {
   if (OM.lookup(V).first)
     return;
@@ -132,8 +141,6 @@ static void orderValue(const Value *V, OrderMap &OM) {
 }
 
 static OrderMap orderModule(const Module *M) {
-  // This needs to match the order used by ValueEnumerator::ValueEnumerator()
-  // and ValueEnumerator::incorporateFunction().
   OrderMap OM;
 
   for (const GlobalVariable &G : M->globals()) {
@@ -167,10 +174,12 @@ static OrderMap orderModule(const Module *M) {
     for (const BasicBlock &BB : F) {
       orderValue(&BB, OM);
       for (const Instruction &I : BB) {
-        for (const Value *Op : I.operands())
+        for (const Value *Op : I.operands()) {
+          Op = skipMetadataWrapper(Op);
           if ((isa<Constant>(*Op) && !isa<GlobalValue>(*Op)) ||
               isa<InlineAsm>(*Op))
             orderValue(Op, OM);
+        }
         orderValue(&I, OM);
       }
     }
@@ -284,9 +293,11 @@ static UseListOrderStack predictUseListOrder(const Module *M) {
       predictValueUseListOrder(&A, &F, OM, Stack);
     for (const BasicBlock &BB : F)
       for (const Instruction &I : BB)
-        for (const Value *Op : I.operands())
+        for (const Value *Op : I.operands()) {
+          Op = skipMetadataWrapper(Op);
           if (isa<Constant>(*Op) || isa<InlineAsm>(*Op)) // Visit GlobalValues.
             predictValueUseListOrder(Op, &F, OM, Stack);
+        }
     for (const BasicBlock &BB : F)
       for (const Instruction &I : BB)
         predictValueUseListOrder(&I, &F, OM, Stack);
@@ -656,9 +667,9 @@ void TypePrinting::print(Type *Ty, raw_ostream &OS) {
     VectorType *PTy = cast<VectorType>(Ty);
     ElementCount EC = PTy->getElementCount();
     OS << "<";
-    if (EC.Scalable)
+    if (EC.isScalable())
       OS << "vscale x ";
-    OS << EC.Min << " x ";
+    OS << EC.getKnownMinValue() << " x ";
     print(PTy->getElementType(), OS);
     OS << '>';
     return;
@@ -1373,9 +1384,19 @@ static void WriteConstantInternal(raw_ostream &Out, const Constant *CV,
                     "assuming that double is 64 bits!");
       APFloat apf = APF;
       // Floats are represented in ASCII IR as double, convert.
-      if (!isDouble)
+      // FIXME: We should allow 32-bit hex float and remove this.
+      if (!isDouble) {
+        // A signaling NaN is quieted on conversion, so we need to recreate the
+        // expected value after convert (quiet bit of the payload is clear).
+        bool IsSNAN = apf.isSignaling();
         apf.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven,
-                          &ignored);
+                    &ignored);
+        if (IsSNAN) {
+          APInt Payload = apf.bitcastToAPInt();
+          apf = APFloat::getSNaN(APFloat::IEEEdouble(), apf.isNegative(),
+                                 &Payload);
+        }
+      }
       Out << format_hex(apf.bitcastToAPInt().getZExtValue(), 0, /*Upper=*/true);
       return;
     }
@@ -1511,7 +1532,7 @@ static void WriteConstantInternal(raw_ostream &Out, const Constant *CV,
   }
 
   if (isa<ConstantVector>(CV) || isa<ConstantDataVector>(CV)) {
-    auto *CVVTy = cast<VectorType>(CV->getType());
+    auto *CVVTy = cast<FixedVectorType>(CV->getType());
     Type *ETy = CVVTy->getElementType();
     Out << '<';
     TypePrinter.print(ETy, Out);
@@ -1654,7 +1675,7 @@ struct MDFieldPrinter {
                      bool ShouldSkipNull = true);
   template <class IntTy>
   void printInt(StringRef Name, IntTy Int, bool ShouldSkipZero = true);
-  void printAPInt(StringRef Name, APInt Int, bool IsUnsigned,
+  void printAPInt(StringRef Name, const APInt &Int, bool IsUnsigned,
                   bool ShouldSkipZero);
   void printBool(StringRef Name, bool Value, Optional<bool> Default = None);
   void printDIFlags(StringRef Name, DINode::DIFlags Flags);
@@ -1731,8 +1752,8 @@ void MDFieldPrinter::printInt(StringRef Name, IntTy Int, bool ShouldSkipZero) {
   Out << FS << Name << ": " << Int;
 }
 
-void MDFieldPrinter::printAPInt(StringRef Name, APInt Int, bool IsUnsigned,
-                                bool ShouldSkipZero) {
+void MDFieldPrinter::printAPInt(StringRef Name, const APInt &Int,
+                                bool IsUnsigned, bool ShouldSkipZero) {
   if (ShouldSkipZero && Int.isNullValue())
     return;
 
@@ -1916,6 +1937,23 @@ static void writeDIBasicType(raw_ostream &Out, const DIBasicType *N,
   Out << ")";
 }
 
+static void writeDIStringType(raw_ostream &Out, const DIStringType *N,
+                              TypePrinting *TypePrinter, SlotTracker *Machine,
+                              const Module *Context) {
+  Out << "!DIStringType(";
+  MDFieldPrinter Printer(Out, TypePrinter, Machine, Context);
+  if (N->getTag() != dwarf::DW_TAG_string_type)
+    Printer.printTag(N);
+  Printer.printString("name", N->getName());
+  Printer.printMetadata("stringLength", N->getRawStringLength());
+  Printer.printMetadata("stringLengthExpression", N->getRawStringLengthExp());
+  Printer.printInt("size", N->getSizeInBits());
+  Printer.printInt("align", N->getAlignInBits());
+  Printer.printDwarfEnum("encoding", N->getEncoding(),
+                         dwarf::AttributeEncodingString);
+  Out << ")";
+}
+
 static void writeDIDerivedType(raw_ostream &Out, const DIDerivedType *N,
                                TypePrinting *TypePrinter, SlotTracker *Machine,
                                const Module *Context) {
@@ -1962,6 +2000,13 @@ static void writeDICompositeType(raw_ostream &Out, const DICompositeType *N,
   Printer.printString("identifier", N->getIdentifier());
   Printer.printMetadata("discriminator", N->getRawDiscriminator());
   Printer.printMetadata("dataLocation", N->getRawDataLocation());
+  Printer.printMetadata("associated", N->getRawAssociated());
+  Printer.printMetadata("allocated", N->getRawAllocated());
+  if (auto *RankConst = N->getRankConst())
+    Printer.printInt("rank", RankConst->getSExtValue(),
+                     /* ShouldSkipZero */ false);
+  else
+    Printer.printMetadata("rank", N->getRawRank(), /*ShouldSkipNull */ true);
   Out << ")";
 }
 
@@ -2510,10 +2555,10 @@ public:
   void printTypeIdInfo(const FunctionSummary::TypeIdInfo &TIDInfo);
   void printVFuncId(const FunctionSummary::VFuncId VFId);
   void
-  printNonConstVCalls(const std::vector<FunctionSummary::VFuncId> VCallList,
+  printNonConstVCalls(const std::vector<FunctionSummary::VFuncId> &VCallList,
                       const char *Tag);
   void
-  printConstVCalls(const std::vector<FunctionSummary::ConstVCall> VCallList,
+  printConstVCalls(const std::vector<FunctionSummary::ConstVCall> &VCallList,
                    const char *Tag);
 
 private:
@@ -2861,6 +2906,8 @@ static const char *getWholeProgDevirtResByArgKindName(
 
 static const char *getTTResKindName(TypeTestResolution::Kind K) {
   switch (K) {
+  case TypeTestResolution::Unknown:
+    return "unknown";
   case TypeTestResolution::Unsat:
     return "unsat";
   case TypeTestResolution::ByteArray:
@@ -3083,6 +3130,36 @@ void AssemblyWriter::printFunctionSummary(const FunctionSummary *FS) {
 
   if (const auto *TIdInfo = FS->getTypeIdInfo())
     printTypeIdInfo(*TIdInfo);
+
+  auto PrintRange = [&](const ConstantRange &Range) {
+    Out << "[" << Range.getSignedMin() << ", " << Range.getSignedMax() << "]";
+  };
+
+  if (!FS->paramAccesses().empty()) {
+    Out << ", params: (";
+    FieldSeparator IFS;
+    for (auto &PS : FS->paramAccesses()) {
+      Out << IFS;
+      Out << "(param: " << PS.ParamNo;
+      Out << ", offset: ";
+      PrintRange(PS.Use);
+      if (!PS.Calls.empty()) {
+        Out << ", calls: (";
+        FieldSeparator IFS;
+        for (auto &Call : PS.Calls) {
+          Out << IFS;
+          Out << "(callee: ^" << Machine.getGUIDSlot(Call.Callee.getGUID());
+          Out << ", param: " << Call.ParamNo;
+          Out << ", offset: ";
+          PrintRange(Call.Offsets);
+          Out << ")";
+        }
+        Out << ")";
+      }
+      Out << ")";
+    }
+    Out << ")";
+  }
 }
 
 void AssemblyWriter::printTypeIdInfo(
@@ -3154,7 +3231,7 @@ void AssemblyWriter::printVFuncId(const FunctionSummary::VFuncId VFId) {
 }
 
 void AssemblyWriter::printNonConstVCalls(
-    const std::vector<FunctionSummary::VFuncId> VCallList, const char *Tag) {
+    const std::vector<FunctionSummary::VFuncId> &VCallList, const char *Tag) {
   Out << Tag << ": (";
   FieldSeparator FS;
   for (auto &VFuncId : VCallList) {
@@ -3165,7 +3242,8 @@ void AssemblyWriter::printNonConstVCalls(
 }
 
 void AssemblyWriter::printConstVCalls(
-    const std::vector<FunctionSummary::ConstVCall> VCallList, const char *Tag) {
+    const std::vector<FunctionSummary::ConstVCall> &VCallList,
+    const char *Tag) {
   Out << Tag << ": (";
   FieldSeparator FS;
   for (auto &ConstVCall : VCallList) {
@@ -4236,11 +4314,17 @@ void AssemblyWriter::writeAttribute(const Attribute &Attr, bool InAttrGroup) {
   }
 
   assert((Attr.hasAttribute(Attribute::ByVal) ||
+          Attr.hasAttribute(Attribute::StructRet) ||
+          Attr.hasAttribute(Attribute::ByRef) ||
           Attr.hasAttribute(Attribute::Preallocated)) &&
          "unexpected type attr");
 
   if (Attr.hasAttribute(Attribute::ByVal)) {
     Out << "byval";
+  } else if (Attr.hasAttribute(Attribute::StructRet)) {
+    Out << "sret";
+  } else if (Attr.hasAttribute(Attribute::ByRef)) {
+    Out << "byref";
   } else {
     Out << "preallocated";
   }
@@ -4328,6 +4412,17 @@ void Function::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,
                    IsForDebug,
                    ShouldPreserveUseListOrder);
   W.printFunction(this);
+}
+
+void BasicBlock::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,
+                     bool ShouldPreserveUseListOrder,
+                     bool IsForDebug) const {
+  SlotTracker SlotTable(this->getParent());
+  formatted_raw_ostream OS(ROS);
+  AssemblyWriter W(OS, SlotTable, this->getModule(), AAW,
+                   IsForDebug,
+                   ShouldPreserveUseListOrder);
+  W.printBasicBlock(this);
 }
 
 void Module::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,

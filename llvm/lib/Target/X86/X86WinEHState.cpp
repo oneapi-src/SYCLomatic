@@ -19,6 +19,7 @@
 #include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/CodeGen/WinEHFuncInfo.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
@@ -108,7 +109,7 @@ private:
   /// The linked list node subobject inside of RegNode.
   Value *Link = nullptr;
 };
-}
+} // namespace
 
 FunctionPass *llvm::createX86WinEHStatePass() { return new WinEHStatePass(); }
 

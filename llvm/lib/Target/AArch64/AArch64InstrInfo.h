@@ -113,6 +113,10 @@ public:
   /// Hint that pairing the given load or store is unprofitable.
   static void suppressLdStPair(MachineInstr &MI);
 
+  Optional<ExtAddrMode>
+  getAddrModeFromMemoryOp(const MachineInstr &MemI,
+                          const TargetRegisterInfo *TRI) const override;
+
   bool getMemOperandsWithOffsetWidth(
       const MachineInstr &MI, SmallVectorImpl<const MachineOperand *> &BaseOps,
       int64_t &Offset, bool &OffsetIsScalable, unsigned &Width,
@@ -188,6 +192,9 @@ public:
                      MachineBasicBlock *&FBB,
                      SmallVectorImpl<MachineOperand> &Cond,
                      bool AllowModify = false) const override;
+  bool analyzeBranchPredicate(MachineBasicBlock &MBB,
+                              MachineBranchPredicate &MBP,
+                              bool AllowModify) const override;
   unsigned removeBranch(MachineBasicBlock &MBB,
                         int *BytesRemoved = nullptr) const override;
   unsigned insertBranch(MachineBasicBlock &MBB, MachineBasicBlock *TBB,
@@ -386,8 +393,19 @@ static inline bool isCondBranchOpcode(int Opc) {
 }
 
 static inline bool isIndirectBranchOpcode(int Opc) {
-  return Opc == AArch64::BR;
+  switch (Opc) {
+  case AArch64::BR:
+  case AArch64::BRAA:
+  case AArch64::BRAB:
+  case AArch64::BRAAZ:
+  case AArch64::BRABZ:
+    return true;
+  }
+  return false;
 }
+
+/// Return opcode to be used for indirect calls.
+unsigned getBLRCallOpcode(const MachineFunction &MF);
 
 // struct TSFlags {
 #define TSFLAG_ELEMENT_SIZE_TYPE(X)      (X)       // 3-bits
@@ -431,7 +449,7 @@ enum FalseLaneType {
 
 int getSVEPseudoMap(uint16_t Opcode);
 int getSVERevInstr(uint16_t Opcode);
-int getSVEOrigInstr(uint16_t Opcode);
+int getSVENonRevInstr(uint16_t Opcode);
 }
 
 } // end namespace llvm

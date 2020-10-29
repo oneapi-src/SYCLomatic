@@ -76,6 +76,11 @@ public:
   // Inquiry intrinsics are defined in section 16.7, table 16.1
   IntrinsicClass GetIntrinsicClass(const std::string &) const;
 
+  // Return the generic name of a specific intrinsic name.
+  // The name provided is returned if it is a generic intrinsic name or is
+  // not known to be an intrinsic.
+  std::string GetGenericIntrinsicName(const std::string &) const;
+
   // Probe the intrinsics for a match against a specific call.
   // On success, the actual arguments are transferred to the result
   // in dummy argument order; on failure, the actual arguments remain
@@ -87,10 +92,19 @@ public:
   std::optional<SpecificIntrinsicFunctionInterface> IsSpecificIntrinsicFunction(
       const std::string &) const;
 
+  // Illegal name for an intrinsic used to avoid cascading error messages when
+  // constant folding.
+  static const inline std::string InvalidName{
+      "(invalid intrinsic function call)"};
+
   llvm::raw_ostream &Dump(llvm::raw_ostream &) const;
 
 private:
   Implementation *impl_{nullptr}; // owning pointer
 };
+
+// Check if an intrinsic explicitly allows its INTENT(OUT) arguments to be
+// allocatable coarrays.
+bool AcceptsIntentOutAllocatableCoarray(const std::string &);
 } // namespace Fortran::evaluate
 #endif // FORTRAN_EVALUATE_INTRINSICS_H_

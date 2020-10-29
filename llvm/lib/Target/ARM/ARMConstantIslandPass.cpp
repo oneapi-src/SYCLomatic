@@ -491,7 +491,11 @@ ARMConstantIslands::doInitialConstPlacement(std::vector<MachineInstr*> &CPEMIs) 
 
   // The function needs to be as aligned as the basic blocks. The linker may
   // move functions around based on their alignment.
-  MF->ensureAlignment(BB->getAlignment());
+  // Special case: halfword literals still need word alignment on the function.
+  Align FuncAlign = MaxAlign;
+  if (MaxAlign == 2)
+    FuncAlign = Align(4);
+  MF->ensureAlignment(FuncAlign);
 
   // Order the entries in BB by descending alignment.  That ensures correct
   // alignment of all entries as long as BB is sufficiently aligned.  Keep
@@ -771,15 +775,25 @@ initializeFunctionInfo(const std::vector<MachineInstr*> &CPEMIs) {
 
           // Taking the address of a CP entry.
           case ARM::LEApcrel:
-          case ARM::LEApcrelJT:
-            // This takes a SoImm, which is 8 bit immediate rotated. We'll
-            // pretend the maximum offset is 255 * 4. Since each instruction
-            // 4 byte wide, this is always correct. We'll check for other
-            // displacements that fits in a SoImm as well.
-            Bits = 8;
-            Scale = 4;
-            NegOk = true;
-            IsSoImm = true;
+          case ARM::LEApcrelJT: {
+              // This takes a SoImm, which is 8 bit immediate rotated. We'll
+              // pretend the maximum offset is 255 * 4. Since each instruction
+              // 4 byte wide, this is always correct. We'll check for other
+              // displacements that fits in a SoImm as well.
+              Bits = 8;
+              NegOk = true;
+              IsSoImm = true;
+              unsigned CPI = I.getOperand(op).getIndex();
+              MachineInstr *CPEMI = CPEMIs[CPI];
+              const Align CPEAlign = getCPEAlign(CPEMI);
+              const unsigned LogCPEAlign = Log2(CPEAlign);
+              if (LogCPEAlign >= 2)
+                Scale = 4;
+              else
+                // For constants with less than 4-byte alignment,
+                // we'll pretend the maximum offset is 255 * 1.
+                Scale = 1;
+            }
             break;
           case ARM::t2LEApcrel:
           case ARM::t2LEApcrelJT:
@@ -2361,6 +2375,7 @@ adjustJTTargetBlockForward(MachineBasicBlock *BB, MachineBasicBlock *JTBB) {
   SmallVector<MachineOperand, 4> CondPrior;
   MachineFunction::iterator BBi = BB->getIterator();
   MachineFunction::iterator OldPrior = std::prev(BBi);
+  MachineFunction::iterator OldNext = std::next(BBi);
 
   // If the block terminator isn't analyzable, don't try to move the block
   bool B = TII->analyzeBranch(*BB, TBB, FBB, Cond);
@@ -2371,8 +2386,8 @@ adjustJTTargetBlockForward(MachineBasicBlock *BB, MachineBasicBlock *JTBB) {
   if (!B && Cond.empty() && BB != &MF->front() &&
       !TII->analyzeBranch(*OldPrior, TBB, FBB, CondPrior)) {
     BB->moveAfter(JTBB);
-    OldPrior->updateTerminator();
-    BB->updateTerminator();
+    OldPrior->updateTerminator(BB);
+    BB->updateTerminator(OldNext != MF->end() ? &*OldNext : nullptr);
     // Update numbering to account for the block being moved.
     MF->RenumberBlocks();
     ++NumJTMoved;

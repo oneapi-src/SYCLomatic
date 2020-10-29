@@ -13,21 +13,14 @@
 #ifndef MLIR_DIALECT_LINALG_PASSES_H_
 #define MLIR_DIALECT_LINALG_PASSES_H_
 
-#include "mlir/Support/LLVM.h"
-#include "llvm/ADT/ArrayRef.h"
+#include "mlir/Pass/Pass.h"
 
 namespace mlir {
-class FuncOp;
-class MLIRContext;
-class ModuleOp;
-template <typename T> class OperationPass;
-class OwningRewritePatternList;
-class Pass;
-
 std::unique_ptr<OperationPass<FuncOp>> createLinalgFoldUnitExtentDimsPass();
 
 std::unique_ptr<OperationPass<FuncOp>> createLinalgFusionPass();
 std::unique_ptr<Pass> createLinalgFusionOfTensorOpsPass();
+std::unique_ptr<Pass> createFoldReshapeOpsByLinearizationPass();
 
 std::unique_ptr<OperationPass<FuncOp>>
 createLinalgTilingPass(ArrayRef<int64_t> tileSizes = {});
@@ -36,7 +29,7 @@ std::unique_ptr<OperationPass<FuncOp>>
 createLinalgTilingToParallelLoopsPass(ArrayRef<int64_t> tileSizes = {});
 
 std::unique_ptr<OperationPass<FuncOp>>
-createLinalgPromotionPass(bool dynamicBuffers);
+createLinalgPromotionPass(bool dynamicBuffers, bool useAlloca);
 std::unique_ptr<OperationPass<FuncOp>> createLinalgPromotionPass();
 
 /// Create a pass to convert Linalg operations to scf.for loops and
@@ -54,8 +47,20 @@ std::unique_ptr<OperationPass<FuncOp>> createConvertLinalgToAffineLoopsPass();
 
 /// Create a pass to convert Linalg operations which work on tensors to use
 /// buffers instead.
-std::unique_ptr<OperationPass<ModuleOp>>
-createConvertLinalgOnTensorsToBuffersPass();
+std::unique_ptr<OperationPass<ModuleOp>> createLinalgBufferizePass();
+
+/// Patterns to fold an expanding (collapsing) tensor_reshape operation with its
+/// producer (consumer) generic operation by expanding the dimensionality of the
+/// loop in the generic op.
+void populateFoldReshapeOpsByExpansionPatterns(
+    MLIRContext *context, OwningRewritePatternList &patterns);
+
+/// Patterns to fold a collapsing (expanding) tensor_reshape operation with its
+/// producer (consumer) generic/indexed_generic operation by linearizing the
+/// indexing map used to access the source (target) of the reshape operation in
+/// the generic/indexed_generic operation.
+void populateFoldReshapeOpsByLinearizationPatterns(
+    MLIRContext *context, OwningRewritePatternList &patterns);
 
 /// Patterns for fusing linalg operation on tensors.
 void populateLinalgTensorOpsFusionPatterns(MLIRContext *context,
@@ -65,6 +70,14 @@ void populateLinalgTensorOpsFusionPatterns(MLIRContext *context,
 /// tensors.
 void populateLinalgFoldUnitExtentDimsPatterns(
     MLIRContext *context, OwningRewritePatternList &patterns);
+
+//===----------------------------------------------------------------------===//
+// Registration
+//===----------------------------------------------------------------------===//
+
+/// Generate the code for registering passes.
+#define GEN_PASS_REGISTRATION
+#include "mlir/Dialect/Linalg/Passes.h.inc"
 
 } // namespace mlir
 

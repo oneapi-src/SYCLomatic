@@ -15,8 +15,6 @@
 #include "lldb/Target/RegisterContext.h"
 #include "lldb/Utility/Log.h"
 
-class ProcessMonitor;
-
 class RegisterContextPOSIX_x86 : public lldb_private::RegisterContext {
 public:
   RegisterContextPOSIX_x86(lldb_private::Thread &thread,
@@ -46,9 +44,6 @@ public:
   const lldb_private::RegisterSet *GetRegisterSet(size_t set) override;
 
   const char *GetRegisterName(unsigned reg);
-
-  uint32_t ConvertRegisterKindToRegisterNumber(lldb::RegisterKind kind,
-                                               uint32_t num) override;
 
   // Note: prefer kernel definitions over user-land
   enum FPRType {
@@ -159,8 +154,6 @@ protected:
   bool IsFPR(unsigned reg);
 
   bool IsAVX(unsigned reg);
-
-  lldb::ByteOrder GetByteOrder();
 
   bool CopyXSTATEtoYMM(uint32_t reg, lldb::ByteOrder byte_order);
   bool CopyYMMtoXSTATE(uint32_t reg, lldb::ByteOrder byte_order);

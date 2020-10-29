@@ -19,6 +19,22 @@ class GenericInstruction : StandardPseudoInstruction {
   let isPreISelOpcode = 1;
 }
 
+// Provide a variant of an instruction with the same operands, but
+// different instruction flags. This is intended to provide a
+// convenient way to define strict floating point variants of ordinary
+// floating point instructions.
+class ConstrainedIntruction<GenericInstruction baseInst> :
+  GenericInstruction {
+  let OutOperandList = baseInst.OutOperandList;
+  let InOperandList =  baseInst.InOperandList;
+  let isCommutable = baseInst.isCommutable;
+
+  // TODO: Do we need a better way to mark reads from FP mode than
+  // hasSideEffects?
+  let hasSideEffects = 1;
+  let mayRaiseFPException = 1;
+}
+
 // Extend the underlying scalar type of an operation, leaving the high bits
 // unspecified.
 def G_ANYEXT : GenericInstruction {
@@ -398,6 +414,13 @@ def G_UMAX : GenericInstruction {
   let isCommutable = 1;
 }
 
+// Generic integer absolute value.
+def G_ABS : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src);
+  let hasSideEffects = 0;
+}
+
 //------------------------------------------------------------------------------
 // Overflow ops
 //------------------------------------------------------------------------------
@@ -525,6 +548,93 @@ def G_USUBSAT : GenericInstruction {
 def G_SSUBSAT : GenericInstruction {
   let OutOperandList = (outs type0:$dst);
   let InOperandList = (ins type0:$src1, type0:$src2);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+// Generic saturating unsigned left shift.
+def G_USHLSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src1, type1:$src2);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+// Generic saturating signed left shift.
+def G_SSHLSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src1, type1:$src2);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+/// RESULT = [US]MULFIX(LHS, RHS, SCALE) - Perform fixed point
+/// multiplication on 2 integers with the same width and scale. SCALE
+/// represents the scale of both operands as fixed point numbers. This
+/// SCALE parameter must be a constant integer. A scale of zero is
+/// effectively performing multiplication on 2 integers.
+def G_SMULFIX : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 1;
+}
+
+def G_UMULFIX : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 1;
+}
+
+/// Same as the corresponding unsaturated fixed point instructions, but the
+/// result is clamped between the min and max values representable by the
+/// bits of the first 2 operands.
+def G_SMULFIXSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 1;
+}
+
+def G_UMULFIXSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 1;
+}
+
+/// RESULT = [US]DIVFIX(LHS, RHS, SCALE) - Perform fixed point division on
+/// 2 integers with the same width and scale. SCALE represents the scale
+/// of both operands as fixed point numbers. This SCALE parameter must be a
+/// constant integer.
+def G_SDIVFIX : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+def G_UDIVFIX : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+/// Same as the corresponding unsaturated fixed point instructions,
+/// but the result is clamped between the min and max values
+/// representable by the bits of the first 2 operands.
+def G_SDIVFIXSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
+  let hasSideEffects = 0;
+  let isCommutable = 0;
+}
+
+def G_UDIVFIXSAT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type0:$src1, untyped_imm_0:$scale);
   let hasSideEffects = 0;
   let isCommutable = 0;
 }
@@ -716,6 +826,13 @@ def G_FPOW : GenericInstruction {
   let hasSideEffects = 0;
 }
 
+// Floating point exponentiation, with an integer power.
+def G_FPOWI : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src0, type1:$src1);
+  let hasSideEffects = 0;
+}
+
 // Floating point base-e exponential of a value.
 def G_FEXP : GenericInstruction {
   let OutOperandList = (outs type0:$dst);
@@ -813,6 +930,18 @@ def G_INTRINSIC_TRUNC : GenericInstruction {
 }
 
 def G_INTRINSIC_ROUND : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type0:$src1);
+  let hasSideEffects = 0;
+}
+
+def G_INTRINSIC_LRINT : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type1:$src);
+  let hasSideEffects = 0;
+}
+
+def G_INTRINSIC_ROUNDEVEN : GenericInstruction {
   let OutOperandList = (outs type0:$dst);
   let InOperandList = (ins type0:$src1);
   let hasSideEffects = 0;
@@ -958,7 +1087,7 @@ def G_FENCE : GenericInstruction {
 // register banks have been selected.
 def G_EXTRACT : GenericInstruction {
   let OutOperandList = (outs type0:$res);
-  let InOperandList = (ins type1:$src, unknown:$offset);
+  let InOperandList = (ins type1:$src, untyped_imm_0:$offset);
   let hasSideEffects = 0;
 }
 
@@ -977,7 +1106,7 @@ def G_UNMERGE_VALUES : GenericInstruction {
 // Insert a smaller register into a larger one at the specified bit-index.
 def G_INSERT : GenericInstruction {
   let OutOperandList = (outs type0:$dst);
-  let InOperandList = (ins type0:$src, type1:$op, unknown:$offset);
+  let InOperandList = (ins type0:$src, type1:$op, untyped_imm_0:$offset);
   let hasSideEffects = 0;
 }
 
@@ -1069,6 +1198,8 @@ def G_BRINDIRECT : GenericInstruction {
   let hasSideEffects = 0;
   let isBranch = 1;
   let isTerminator = 1;
+  let isBarrier = 1;
+  let isIndirectBranch = 1;
 }
 
 // Generic branch to jump table entry
@@ -1078,6 +1209,8 @@ def G_BRJT : GenericInstruction {
   let hasSideEffects = 0;
   let isBranch = 1;
   let isTerminator = 1;
+  let isBarrier = 1;
+  let isIndirectBranch = 1;
 }
 
 def G_READ_REGISTER : GenericInstruction {
@@ -1128,4 +1261,79 @@ def G_SHUFFLE_VECTOR: GenericInstruction {
   let hasSideEffects = 0;
 }
 
-// TODO: Add the other generic opcodes.
+//------------------------------------------------------------------------------
+// Vector reductions
+//------------------------------------------------------------------------------
+
+class VectorReduction : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type1:$v);
+  let hasSideEffects = 0;
+}
+
+def G_VECREDUCE_SEQ_FADD : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type1:$acc, type2:$v);
+  let hasSideEffects = 0;
+}
+
+def G_VECREDUCE_SEQ_FMUL : GenericInstruction {
+  let OutOperandList = (outs type0:$dst);
+  let InOperandList = (ins type1:$acc, type2:$v);
+  let hasSideEffects = 0;
+}
+
+def G_VECREDUCE_FADD : VectorReduction;
+def G_VECREDUCE_FMUL : VectorReduction;
+
+def G_VECREDUCE_FMAX : VectorReduction;
+def G_VECREDUCE_FMIN : VectorReduction;
+
+def G_VECREDUCE_ADD : VectorReduction;
+def G_VECREDUCE_MUL : VectorReduction;
+def G_VECREDUCE_AND : VectorReduction;
+def G_VECREDUCE_OR : VectorReduction;
+def G_VECREDUCE_XOR : VectorReduction;
+def G_VECREDUCE_SMAX : VectorReduction;
+def G_VECREDUCE_SMIN : VectorReduction;
+def G_VECREDUCE_UMAX : VectorReduction;
+def G_VECREDUCE_UMIN : VectorReduction;
+
+//------------------------------------------------------------------------------
+// Constrained floating point ops
+//------------------------------------------------------------------------------
+
+def G_STRICT_FADD : ConstrainedIntruction<G_FADD>;
+def G_STRICT_FSUB : ConstrainedIntruction<G_FSUB>;
+def G_STRICT_FMUL : ConstrainedIntruction<G_FMUL>;
+def G_STRICT_FDIV : ConstrainedIntruction<G_FDIV>;
+def G_STRICT_FREM : ConstrainedIntruction<G_FREM>;
+def G_STRICT_FMA : ConstrainedIntruction<G_FMA>;
+def G_STRICT_FSQRT : ConstrainedIntruction<G_FSQRT>;
+
+//------------------------------------------------------------------------------
+// Memory intrinsics
+//------------------------------------------------------------------------------
+
+def G_MEMCPY : GenericInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins ptype0:$dst_addr, ptype1:$src_addr, type2:$size, untyped_imm_0:$tailcall);
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 1;
+}
+
+def G_MEMMOVE : GenericInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins ptype0:$dst_addr, ptype1:$src_addr, type2:$size, untyped_imm_0:$tailcall);
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 1;
+}
+
+def G_MEMSET : GenericInstruction {
+  let OutOperandList = (outs);
+  let InOperandList = (ins ptype0:$dst_addr, type1:$value, type2:$size, untyped_imm_0:$tailcall);
+  let hasSideEffects = 0;
+  let mayStore = 1;
+}

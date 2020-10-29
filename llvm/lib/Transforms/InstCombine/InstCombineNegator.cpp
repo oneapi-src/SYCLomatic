@@ -14,6 +14,7 @@
 #include "InstCombineInternal.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/None.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
@@ -27,7 +28,6 @@
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugLoc.h"
-#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
@@ -42,8 +42,12 @@
 #include "llvm/Support/DebugCounter.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/InstCombine/InstCombiner.h"
+#include <cassert>
+#include <cstdint>
 #include <functional>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace llvm {
@@ -69,6 +73,8 @@ STATISTIC(NegatorTimesDepthLimitReached,
 STATISTIC(
     NegatorNumValuesVisited,
     "Negator: Total number of values visited during attempts to sink negation");
+STATISTIC(NegatorNumNegationsFoundInCache,
+          "Negator: How many negations did we retrieve/reuse from cache");
 STATISTIC(NegatorMaxTotalValuesVisited,
           "Negator: Maximal number of values ever visited while attempting to "
           "sink negation");
@@ -109,16 +115,22 @@ Negator::~Negator() {
 }
 #endif
 
+// Due to the InstCombine's worklist management, there are no guarantees that
+// each instruction we'll encounter has been visited by InstCombine already.
+// In particular, most importantly for us, that means we have to canonicalize
+// constants to RHS ourselves, since that is helpful sometimes.
+std::array<Value *, 2> Negator::getSortedOperandsOfBinOp(Instruction *I) {
+  assert(I->getNumOperands() == 2 && "Only for binops!");
+  std::array<Value *, 2> Ops{I->getOperand(0), I->getOperand(1)};
+  if (I->isCommutative() && InstCombiner::getComplexity(I->getOperand(0)) <
+                                InstCombiner::getComplexity(I->getOperand(1)))
+    std::swap(Ops[0], Ops[1]);
+  return Ops;
+}
+
 // FIXME: can this be reworked into a worklist-based algorithm while preserving
 // the depth-first, early bailout traversal?
-LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
-  NegatorMaxDepthVisited.updateMax(Depth);
-  ++NegatorNumValuesVisited;
-
-#if LLVM_ENABLE_STATS
-  ++NumValuesVisitedInThisNegator;
-#endif
-
+LLVM_NODISCARD Value *Negator::visitImpl(Value *V, unsigned Depth) {
   // -(undef) -> undef.
   if (match(V, m_Undef()))
     return V;
@@ -160,11 +172,13 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
 
   // In some cases we can give the answer without further recursion.
   switch (I->getOpcode()) {
-  case Instruction::Add:
+  case Instruction::Add: {
+    std::array<Value *, 2> Ops = getSortedOperandsOfBinOp(I);
     // `inc` is always negatible.
-    if (match(I->getOperand(1), m_One()))
-      return Builder.CreateNot(I->getOperand(0), I->getName() + ".neg");
+    if (match(Ops[1], m_One()))
+      return Builder.CreateNot(Ops[0], I->getName() + ".neg");
     break;
+  }
   case Instruction::Xor:
     // `not` is always negatible.
     if (match(I, m_Not(m_Value(X))))
@@ -185,6 +199,10 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
       }
       return BO;
     }
+    // While we could negate exact arithmetic shift:
+    //   ashr exact %x, C  -->   sdiv exact i8 %x, -1<<C
+    // iff C != 0 and C u< bitwidth(%x), we don't want to,
+    // because division is *THAT* much worse than a shift.
     break;
   }
   case Instruction::SExt:
@@ -241,12 +259,20 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
   }
 
   switch (I->getOpcode()) {
+  case Instruction::Freeze: {
+    // `freeze` is negatible if its operand is negatible.
+    Value *NegOp = negate(I->getOperand(0), Depth + 1);
+    if (!NegOp) // Early return.
+      return nullptr;
+    return Builder.CreateFreeze(NegOp, I->getName() + ".neg");
+  }
   case Instruction::PHI: {
     // `phi` is negatible if all the incoming values are negatible.
     auto *PHI = cast<PHINode>(I);
     SmallVector<Value *, 4> NegatedIncomingValues(PHI->getNumOperands());
     for (auto I : zip(PHI->incoming_values(), NegatedIncomingValues)) {
-      if (!(std::get<1>(I) = visit(std::get<0>(I), Depth + 1))) // Early return.
+      if (!(std::get<1>(I) =
+                negate(std::get<0>(I), Depth + 1))) // Early return.
         return nullptr;
     }
     // All incoming values are indeed negatible. Create negated PHI node.
@@ -257,26 +283,22 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
     return NegatedPHI;
   }
   case Instruction::Select: {
-    {
-      // `abs`/`nabs` is always negatible.
-      Value *LHS, *RHS;
-      SelectPatternFlavor SPF =
-          matchSelectPattern(I, LHS, RHS, /*CastOp=*/nullptr, Depth).Flavor;
-      if (SPF == SPF_ABS || SPF == SPF_NABS) {
-        auto *NewSelect = cast<SelectInst>(I->clone());
-        // Just swap the operands of the select.
-        NewSelect->swapValues();
-        // Don't swap prof metadata, we didn't change the branch behavior.
-        NewSelect->setName(I->getName() + ".neg");
-        Builder.Insert(NewSelect);
-        return NewSelect;
-      }
+    if (isKnownNegation(I->getOperand(1), I->getOperand(2))) {
+      // Of one hand of select is known to be negation of another hand,
+      // just swap the hands around.
+      auto *NewSelect = cast<SelectInst>(I->clone());
+      // Just swap the operands of the select.
+      NewSelect->swapValues();
+      // Don't swap prof metadata, we didn't change the branch behavior.
+      NewSelect->setName(I->getName() + ".neg");
+      Builder.Insert(NewSelect);
+      return NewSelect;
     }
     // `select` is negatible if both hands of `select` are negatible.
-    Value *NegOp1 = visit(I->getOperand(1), Depth + 1);
+    Value *NegOp1 = negate(I->getOperand(1), Depth + 1);
     if (!NegOp1) // Early return.
       return nullptr;
-    Value *NegOp2 = visit(I->getOperand(2), Depth + 1);
+    Value *NegOp2 = negate(I->getOperand(2), Depth + 1);
     if (!NegOp2)
       return nullptr;
     // Do preserve the metadata!
@@ -286,10 +308,10 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
   case Instruction::ShuffleVector: {
     // `shufflevector` is negatible if both operands are negatible.
     auto *Shuf = cast<ShuffleVectorInst>(I);
-    Value *NegOp0 = visit(I->getOperand(0), Depth + 1);
+    Value *NegOp0 = negate(I->getOperand(0), Depth + 1);
     if (!NegOp0) // Early return.
       return nullptr;
-    Value *NegOp1 = visit(I->getOperand(1), Depth + 1);
+    Value *NegOp1 = negate(I->getOperand(1), Depth + 1);
     if (!NegOp1)
       return nullptr;
     return Builder.CreateShuffleVector(NegOp0, NegOp1, Shuf->getShuffleMask(),
@@ -298,7 +320,7 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
   case Instruction::ExtractElement: {
     // `extractelement` is negatible if source operand is negatible.
     auto *EEI = cast<ExtractElementInst>(I);
-    Value *NegVector = visit(EEI->getVectorOperand(), Depth + 1);
+    Value *NegVector = negate(EEI->getVectorOperand(), Depth + 1);
     if (!NegVector) // Early return.
       return nullptr;
     return Builder.CreateExtractElement(NegVector, EEI->getIndexOperand(),
@@ -308,10 +330,10 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
     // `insertelement` is negatible if both the source vector and
     // element-to-be-inserted are negatible.
     auto *IEI = cast<InsertElementInst>(I);
-    Value *NegVector = visit(IEI->getOperand(0), Depth + 1);
+    Value *NegVector = negate(IEI->getOperand(0), Depth + 1);
     if (!NegVector) // Early return.
       return nullptr;
-    Value *NegNewElt = visit(IEI->getOperand(1), Depth + 1);
+    Value *NegNewElt = negate(IEI->getOperand(1), Depth + 1);
     if (!NegNewElt) // Early return.
       return nullptr;
     return Builder.CreateInsertElement(NegVector, NegNewElt, IEI->getOperand(2),
@@ -319,58 +341,88 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
   }
   case Instruction::Trunc: {
     // `trunc` is negatible if its operand is negatible.
-    Value *NegOp = visit(I->getOperand(0), Depth + 1);
+    Value *NegOp = negate(I->getOperand(0), Depth + 1);
     if (!NegOp) // Early return.
       return nullptr;
     return Builder.CreateTrunc(NegOp, I->getType(), I->getName() + ".neg");
   }
   case Instruction::Shl: {
     // `shl` is negatible if the first operand is negatible.
-    Value *NegOp0 = visit(I->getOperand(0), Depth + 1);
-    if (!NegOp0) // Early return.
+    if (Value *NegOp0 = negate(I->getOperand(0), Depth + 1))
+      return Builder.CreateShl(NegOp0, I->getOperand(1), I->getName() + ".neg");
+    // Otherwise, `shl %x, C` can be interpreted as `mul %x, 1<<C`.
+    auto *Op1C = dyn_cast<Constant>(I->getOperand(1));
+    if (!Op1C) // Early return.
       return nullptr;
-    return Builder.CreateShl(NegOp0, I->getOperand(1), I->getName() + ".neg");
+    return Builder.CreateMul(
+        I->getOperand(0),
+        ConstantExpr::getShl(Constant::getAllOnesValue(Op1C->getType()), Op1C),
+        I->getName() + ".neg");
   }
-  case Instruction::Or:
+  case Instruction::Or: {
     if (!haveNoCommonBitsSet(I->getOperand(0), I->getOperand(1), DL, &AC, I,
                              &DT))
       return nullptr; // Don't know how to handle `or` in general.
+    std::array<Value *, 2> Ops = getSortedOperandsOfBinOp(I);
     // `or`/`add` are interchangeable when operands have no common bits set.
     // `inc` is always negatible.
-    if (match(I->getOperand(1), m_One()))
-      return Builder.CreateNot(I->getOperand(0), I->getName() + ".neg");
+    if (match(Ops[1], m_One()))
+      return Builder.CreateNot(Ops[0], I->getName() + ".neg");
     // Else, just defer to Instruction::Add handling.
     LLVM_FALLTHROUGH;
+  }
   case Instruction::Add: {
     // `add` is negatible if both of its operands are negatible.
-    Value *NegOp0 = visit(I->getOperand(0), Depth + 1);
-    if (!NegOp0) // Early return.
+    SmallVector<Value *, 2> NegatedOps, NonNegatedOps;
+    for (Value *Op : I->operands()) {
+      // Can we sink the negation into this operand?
+      if (Value *NegOp = negate(Op, Depth + 1)) {
+        NegatedOps.emplace_back(NegOp); // Successfully negated operand!
+        continue;
+      }
+      // Failed to sink negation into this operand. IFF we started from negation
+      // and we manage to sink negation into one operand, we can still do this.
+      if (!IsTrulyNegation)
+        return nullptr;
+      NonNegatedOps.emplace_back(Op); // Just record which operand that was.
+    }
+    assert((NegatedOps.size() + NonNegatedOps.size()) == 2 &&
+           "Internal consistency sanity check.");
+    // Did we manage to sink negation into both of the operands?
+    if (NegatedOps.size() == 2) // Then we get to keep the `add`!
+      return Builder.CreateAdd(NegatedOps[0], NegatedOps[1],
+                               I->getName() + ".neg");
+    assert(IsTrulyNegation && "We should have early-exited then.");
+    // Completely failed to sink negation?
+    if (NonNegatedOps.size() == 2)
       return nullptr;
-    Value *NegOp1 = visit(I->getOperand(1), Depth + 1);
-    if (!NegOp1)
-      return nullptr;
-    return Builder.CreateAdd(NegOp0, NegOp1, I->getName() + ".neg");
+    // 0-(a+b) --> (-a)-b
+    return Builder.CreateSub(NegatedOps[0], NonNegatedOps[0],
+                             I->getName() + ".neg");
   }
-  case Instruction::Xor:
+  case Instruction::Xor: {
+    std::array<Value *, 2> Ops = getSortedOperandsOfBinOp(I);
     // `xor` is negatible if one of its operands is invertible.
     // FIXME: InstCombineInverter? But how to connect Inverter and Negator?
-    if (auto *C = dyn_cast<Constant>(I->getOperand(1))) {
-      Value *Xor = Builder.CreateXor(I->getOperand(0), ConstantExpr::getNot(C));
+    if (auto *C = dyn_cast<Constant>(Ops[1])) {
+      Value *Xor = Builder.CreateXor(Ops[0], ConstantExpr::getNot(C));
       return Builder.CreateAdd(Xor, ConstantInt::get(Xor->getType(), 1),
                                I->getName() + ".neg");
     }
     return nullptr;
+  }
   case Instruction::Mul: {
+    std::array<Value *, 2> Ops = getSortedOperandsOfBinOp(I);
     // `mul` is negatible if one of its operands is negatible.
     Value *NegatedOp, *OtherOp;
     // First try the second operand, in case it's a constant it will be best to
     // just invert it instead of sinking the `neg` deeper.
-    if (Value *NegOp1 = visit(I->getOperand(1), Depth + 1)) {
+    if (Value *NegOp1 = negate(Ops[1], Depth + 1)) {
       NegatedOp = NegOp1;
-      OtherOp = I->getOperand(0);
-    } else if (Value *NegOp0 = visit(I->getOperand(0), Depth + 1)) {
+      OtherOp = Ops[0];
+    } else if (Value *NegOp0 = negate(Ops[0], Depth + 1)) {
       NegatedOp = NegOp0;
-      OtherOp = I->getOperand(1);
+      OtherOp = Ops[1];
     } else
       // Can't negate either of them.
       return nullptr;
@@ -383,8 +435,45 @@ LLVM_NODISCARD Value *Negator::visit(Value *V, unsigned Depth) {
   llvm_unreachable("Can't get here. We always return from switch.");
 }
 
+LLVM_NODISCARD Value *Negator::negate(Value *V, unsigned Depth) {
+  NegatorMaxDepthVisited.updateMax(Depth);
+  ++NegatorNumValuesVisited;
+
+#if LLVM_ENABLE_STATS
+  ++NumValuesVisitedInThisNegator;
+#endif
+
+#ifndef NDEBUG
+  // We can't ever have a Value with such an address.
+  Value *Placeholder = reinterpret_cast<Value *>(static_cast<uintptr_t>(-1));
+#endif
+
+  // Did we already try to negate this value?
+  auto NegationsCacheIterator = NegationsCache.find(V);
+  if (NegationsCacheIterator != NegationsCache.end()) {
+    ++NegatorNumNegationsFoundInCache;
+    Value *NegatedV = NegationsCacheIterator->second;
+    assert(NegatedV != Placeholder && "Encountered a cycle during negation.");
+    return NegatedV;
+  }
+
+#ifndef NDEBUG
+  // We did not find a cached result for negation of V. While there,
+  // let's temporairly cache a placeholder value, with the idea that if later
+  // during negation we fetch it from cache, we'll know we're in a cycle.
+  NegationsCache[V] = Placeholder;
+#endif
+
+  // No luck. Try negating it for real.
+  Value *NegatedV = visitImpl(V, Depth);
+  // And cache the (real) result for the future.
+  NegationsCache[V] = NegatedV;
+
+  return NegatedV;
+}
+
 LLVM_NODISCARD Optional<Negator::Result> Negator::run(Value *Root) {
-  Value *Negated = visit(Root, /*Depth=*/0);
+  Value *Negated = negate(Root, /*Depth=*/0);
   if (!Negated) {
     // We must cleanup newly-inserted instructions, to avoid any potential
     // endless combine looping.
@@ -396,7 +485,7 @@ LLVM_NODISCARD Optional<Negator::Result> Negator::run(Value *Root) {
 }
 
 LLVM_NODISCARD Value *Negator::Negate(bool LHSIsZero, Value *Root,
-                                      InstCombiner &IC) {
+                                      InstCombinerImpl &IC) {
   ++NegatorTotalNegationsAttempted;
   LLVM_DEBUG(dbgs() << "Negator: attempting to sink negation into " << *Root
                     << "\n");

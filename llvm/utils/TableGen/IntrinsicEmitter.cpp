@@ -246,13 +246,15 @@ enum IIT_Info {
   IIT_SUBDIVIDE4_ARG = 45,
   IIT_VEC_OF_BITCASTS_TO_INT = 46,
   IIT_V128 = 47,
-  IIT_BF16 = 48
+  IIT_BF16 = 48,
+  IIT_STRUCT9 = 49,
+  IIT_V256 = 50
 };
 
 static void EncodeFixedValueType(MVT::SimpleValueType VT,
                                  std::vector<unsigned char> &Sig) {
   if (MVT(VT).isInteger()) {
-    unsigned BitWidth = MVT(VT).getSizeInBits();
+    unsigned BitWidth = MVT(VT).getFixedSizeInBits();
     switch (BitWidth) {
     default: PrintFatalError("unhandled integer type width in intrinsic!");
     case 1: return Sig.push_back(IIT_I1);
@@ -384,6 +386,7 @@ static void EncodeFixedType(Record *R, std::vector<unsigned char> &ArgCodes,
     case 32: Sig.push_back(IIT_V32); break;
     case 64: Sig.push_back(IIT_V64); break;
     case 128: Sig.push_back(IIT_V128); break;
+    case 256: Sig.push_back(IIT_V256); break;
     case 512: Sig.push_back(IIT_V512); break;
     case 1024: Sig.push_back(IIT_V1024); break;
     }
@@ -469,6 +472,7 @@ static void ComputeFixedEncoding(const CodeGenIntrinsic &Int,
       case 6: TypeSig.push_back(IIT_STRUCT6); break;
       case 7: TypeSig.push_back(IIT_STRUCT7); break;
       case 8: TypeSig.push_back(IIT_STRUCT8); break;
+      case 9: TypeSig.push_back(IIT_STRUCT9); break;
       default: llvm_unreachable("Unhandled case in struct");
     }
 
@@ -584,6 +588,9 @@ struct AttributeComparator {
     if (L->isNoSync != R->isNoSync)
       return R->isNoSync;
 
+    if (L->isNoFree != R->isNoFree)
+      return R->isNoFree;
+
     if (L->isWillReturn != R->isWillReturn)
       return R->isWillReturn;
 
@@ -684,6 +691,12 @@ void IntrinsicEmitter::EmitAttributes(const CodeGenIntrinsicTable &Ints,
             OS << "Attribute::NoAlias";
             addComma = true;
             break;
+          case CodeGenIntrinsic::NoUndef:
+            if (addComma)
+              OS << ",";
+            OS << "Attribute::NoUndef";
+            addComma = true;
+            break;
           case CodeGenIntrinsic::Returned:
             if (addComma)
               OS << ",";
@@ -751,10 +764,11 @@ void IntrinsicEmitter::EmitAttributes(const CodeGenIntrinsicTable &Ints,
     }
 
     if (!intrinsic.canThrow ||
-        (intrinsic.ModRef != CodeGenIntrinsic::ReadWriteMem && !intrinsic.hasSideEffects) ||
-        intrinsic.isNoReturn || intrinsic.isNoSync || intrinsic.isWillReturn ||
-        intrinsic.isCold || intrinsic.isNoDuplicate || intrinsic.isConvergent ||
-        intrinsic.isSpeculatable) {
+        (intrinsic.ModRef != CodeGenIntrinsic::ReadWriteMem &&
+         !intrinsic.hasSideEffects) ||
+        intrinsic.isNoReturn || intrinsic.isNoSync || intrinsic.isNoFree ||
+        intrinsic.isWillReturn || intrinsic.isCold || intrinsic.isNoDuplicate ||
+        intrinsic.isConvergent || intrinsic.isSpeculatable) {
       OS << "      const Attribute::AttrKind Atts[] = {";
       bool addComma = false;
       if (!intrinsic.canThrow) {
@@ -771,6 +785,12 @@ void IntrinsicEmitter::EmitAttributes(const CodeGenIntrinsicTable &Ints,
         if (addComma)
           OS << ",";
         OS << "Attribute::NoSync";
+        addComma = true;
+      }
+      if (intrinsic.isNoFree) {
+        if (addComma)
+          OS << ",";
+        OS << "Attribute::NoFree";
         addComma = true;
       }
       if (intrinsic.isWillReturn) {

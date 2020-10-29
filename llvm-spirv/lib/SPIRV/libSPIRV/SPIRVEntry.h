@@ -44,6 +44,9 @@
 #include "SPIRVEnum.h"
 #include "SPIRVError.h"
 #include "SPIRVIsValidEnum.h"
+
+#include <llvm/ADT/Optional.h>
+
 #include <cassert>
 #include <iostream>
 #include <map>
@@ -289,7 +292,9 @@ public:
   Op getOpCode() const { return OpCode; }
   SPIRVModule *getModule() const { return Module; }
   virtual SPIRVCapVec getRequiredCapability() const { return SPIRVCapVec(); }
-  virtual SPIRVExtSet getRequiredExtensions() const { return SPIRVExtSet(); }
+  virtual llvm::Optional<ExtensionID> getRequiredExtension() const {
+    return {};
+  }
   const std::string &getName() const { return Name; }
   bool hasDecorate(Decoration Kind, size_t Index = 0,
                    SPIRVWord *Result = 0) const;
@@ -304,6 +309,7 @@ public:
   getMemberDecorationStringLiteral(Decoration Kind,
                                    SPIRVWord MemberNumber) const;
   std::set<SPIRVWord> getDecorate(Decoration Kind, size_t Index = 0) const;
+  std::vector<SPIRVDecorate const *> getDecorations(Decoration Kind) const;
   bool hasId() const { return !(Attrib & SPIRVEA_NOID); }
   bool hasLine() const { return Line != nullptr; }
   bool hasLinkageType() const;
@@ -381,6 +387,12 @@ public:
     assert(Module && "Invalid module");
     assert(OpCode != OpNop && "Invalid op code");
     assert((!hasId() || isValidId(Id)) && "Invalid Id");
+    if (WordCount > 65535) {
+      std::stringstream SS;
+      SS << "Id: " << Id << ", OpCode: " << OpCodeNameMap::map(OpCode)
+         << ", Name: \"" << Name << "\"\n";
+      getErrorLog().checkError(false, SPIRVEC_InvalidWordCount, SS.str());
+    }
   }
   void validateFunctionControlMask(SPIRVWord FCtlMask) const;
   void validateValues(const std::vector<SPIRVId> &) const;
@@ -503,7 +515,8 @@ public:
   SPIRVEntryPoint(SPIRVModule *TheModule, SPIRVExecutionModelKind,
                   SPIRVId TheId, const std::string &TheName,
                   std::vector<SPIRVId> Variables);
-  SPIRVEntryPoint() : ExecModel(ExecutionModelKernel) {}
+  SPIRVEntryPoint() {}
+
   _SPIRV_DCL_ENCDEC
 protected:
   SPIRVExecutionModelKind ExecModel;
@@ -674,7 +687,7 @@ class SPIRVComponentExecutionModes {
 public:
   void addExecutionMode(SPIRVExecutionMode *ExecMode) {
     // There should not be more than 1 execution mode kind except the ones
-    // mentioned in SPV_KHR_float_controls.
+    // mentioned in SPV_KHR_float_controls and SPV_INTEL_float_controls2.
 #ifndef NDEBUG
     auto IsDenorm = [](auto EMK) {
       return EMK == ExecutionModeDenormPreserve ||
@@ -682,13 +695,20 @@ public:
     };
     auto IsRoundingMode = [](auto EMK) {
       return EMK == ExecutionModeRoundingModeRTE ||
-             EMK == ExecutionModeRoundingModeRTZ;
+             EMK == ExecutionModeRoundingModeRTZ ||
+             EMK == ExecutionModeRoundingModeRTPINTEL ||
+             EMK == ExecutionModeRoundingModeRTNINTEL;
+    };
+    auto IsFPMode = [](auto EMK) {
+      return EMK == ExecutionModeFloatingPointModeALTINTEL ||
+             EMK == ExecutionModeFloatingPointModeIEEEINTEL;
     };
     auto IsOtherFP = [](auto EMK) {
       return EMK == ExecutionModeSignedZeroInfNanPreserve;
     };
     auto IsFloatControl = [&](auto EMK) {
-      return IsDenorm(EMK) || IsRoundingMode(EMK) || IsOtherFP(EMK);
+      return IsDenorm(EMK) || IsRoundingMode(EMK) || IsFPMode(EMK) ||
+             IsOtherFP(EMK);
     };
     auto IsCompatible = [&](SPIRVExecutionMode *EM0, SPIRVExecutionMode *EM1) {
       if (EM0->getTargetId() != EM1->getTargetId())
@@ -702,7 +722,8 @@ public:
       if (TW0 != TW1)
         return true;
       return !(IsDenorm(EMK0) && IsDenorm(EMK1)) &&
-             !(IsRoundingMode(EMK0) && IsRoundingMode(EMK1));
+             !(IsRoundingMode(EMK0) && IsRoundingMode(EMK1)) &&
+             !(IsFPMode(EMK0) && IsFPMode(EMK1));
     };
     for (auto I = ExecModes.begin(); I != ExecModes.end(); ++I) {
       assert(IsCompatible(ExecMode, (*I).second) &&
@@ -806,16 +827,23 @@ public:
     }
   }
 
-  SPIRVExtSet getRequiredExtensions() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     switch (Kind) {
     case CapabilityDenormPreserve:
     case CapabilityDenormFlushToZero:
     case CapabilitySignedZeroInfNanPreserve:
     case CapabilityRoundingModeRTE:
     case CapabilityRoundingModeRTZ:
-      return getSet(ExtensionID::SPV_KHR_float_controls);
+      return ExtensionID::SPV_KHR_float_controls;
+    case CapabilityRoundToInfinityINTEL:
+    case CapabilityFloatingPointModeINTEL:
+    case CapabilityFunctionFloatControlINTEL:
+      return ExtensionID::SPV_INTEL_float_controls2;
+    case CapabilityVectorComputeINTEL:
+    case CapabilityVectorAnyINTEL:
+      return ExtensionID::SPV_INTEL_vector_compute;
     default:
-      return SPIRVExtSet();
+      return {};
     }
   }
 

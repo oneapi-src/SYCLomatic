@@ -92,6 +92,9 @@ public:
     return symbols;
   }
 
+  // Get filename to use for linker script processing.
+  StringRef getNameForScript() const;
+
   // Filename of .a which contained this file. If this file was
   // not in an archive file, it is the empty string. We use this
   // string for creating error messages.
@@ -147,6 +150,9 @@ protected:
 
 private:
   const Kind fileKind;
+
+  // Cache for getNameForScript().
+  mutable std::string nameForScriptCache;
 };
 
 class ELFFileBase : public InputFile {
@@ -307,6 +313,8 @@ public:
   template <class ELFT> void parse();
   void fetch();
 
+  bool fetched = false;
+
 private:
   uint64_t offsetInArchive;
 };
@@ -326,6 +334,8 @@ public:
 
   size_t getMemberCount() const;
   size_t getFetchedMemberCount() const { return seen.size(); }
+
+  bool parsed = false;
 
 private:
   std::unique_ptr<Archive> file;

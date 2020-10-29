@@ -1,7 +1,3 @@
-// The test fails sporadically on cuda.
-// See https://github.com/intel/llvm/issues/1508 for more details.
-// UNSUPPORTED: cuda
-
 // RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
 // RUN: env SYCL_DEVICE_TYPE=HOST %t.out
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
@@ -38,7 +34,9 @@ template <typename T> struct point {
 
 template <typename T> void test_fill(T Val);
 template <typename T> void test_copy_ptr_acc();
+template <typename T> void test_3D_copy_ptr_acc();
 template <typename T> void test_copy_acc_ptr();
+template <typename T> void test_3D_copy_acc_ptr();
 template <typename T> void test_copy_shared_ptr_acc();
 template <typename T> void test_copy_shared_ptr_const_acc();
 template <typename T> void test_copy_acc_shared_ptr();
@@ -76,6 +74,14 @@ int main() {
     test_copy_ptr_acc<point<int>>();
     test_copy_ptr_acc<point<float>>();
   }
+  // handler.copy(ptr, acc) 3D
+  {
+    test_3D_copy_ptr_acc<int>();
+    test_3D_copy_ptr_acc<int>();
+    test_3D_copy_ptr_acc<point<int>>();
+    test_3D_copy_ptr_acc<point<int>>();
+    test_3D_copy_ptr_acc<point<float>>();
+  }
   // handler.copy(acc, ptr)
   {
     test_copy_acc_ptr<int>();
@@ -83,6 +89,14 @@ int main() {
     test_copy_acc_ptr<point<int>>();
     test_copy_acc_ptr<point<int>>();
     test_copy_acc_ptr<point<float>>();
+  }
+  // handler.copy(acc, ptr) 3D
+  {
+    test_3D_copy_acc_ptr<int>();
+    test_3D_copy_acc_ptr<int>();
+    test_3D_copy_acc_ptr<point<int>>();
+    test_3D_copy_acc_ptr<point<int>>();
+    test_3D_copy_acc_ptr<point<float>>();
   }
   // handler.copy(shared_ptr, acc)
   {
@@ -281,6 +295,28 @@ template <typename T> void test_copy_ptr_acc() {
   assert(DstValue == 99);
 }
 
+template <typename T> void test_3D_copy_ptr_acc() {
+  const range<3> Range{2, 3, 4};
+  const size_t Size = 2 * 3 * 4;
+  T Data[Size] = {0};
+  T Values[Size] = {0};
+  for (size_t I = 0; I < Size; ++I)
+    Values[I] = I;
+
+  {
+    buffer<T, 3> Buffer(Data, Range);
+    queue Queue;
+    Queue.submit([&](handler &Cgh) {
+      accessor<T, 3, access::mode::write, access::target::global_buffer>
+          Accessor(Buffer, Cgh, Range);
+      Cgh.copy(Values, Accessor);
+    });
+  }
+
+  for (int I = 0; I < Size; ++I)
+    assert(Data[I] == Values[I]);
+}
+
 template <typename T> void test_copy_acc_ptr() {
   const size_t Size = 10;
   T Data[Size] = {0};
@@ -349,10 +385,32 @@ template <typename T> void test_copy_acc_ptr() {
   assert(DstValue == 77);
 }
 
+template <typename T> void test_3D_copy_acc_ptr() {
+  const range<3> Range{2, 3, 4};
+  const size_t Size = 2 * 3 * 4;
+  T Data[Size] = {0};
+  T Values[Size] = {0};
+  for (size_t I = 0; I < Size; ++I)
+    Data[I] = I;
+
+  {
+    buffer<T, 3> Buffer(Data, Range);
+    queue Queue;
+    Queue.submit([&](handler &Cgh) {
+      accessor<T, 3, access::mode::read, access::target::global_buffer>
+          Accessor(Buffer, Cgh, Range);
+      Cgh.copy(Accessor, Values);
+    });
+  }
+
+  for (size_t I = 0; I < Size; ++I)
+    assert(Data[I] == Values[I]);
+}
+
 template <typename T> void test_copy_shared_ptr_acc() {
   const size_t Size = 10;
   T Data[Size] = {0};
-  std::shared_ptr<T> Values(new T[Size]());
+  std::shared_ptr<T[]> Values(new T[Size]());
   for (size_t I = 0; I < Size; ++I) {
     Values.get()[I] = I;
   }
@@ -373,7 +431,7 @@ template <typename T> void test_copy_shared_ptr_acc() {
 template <typename T> void test_copy_shared_ptr_const_acc() {
   constexpr size_t Size = 10;
   T Data[Size] = {0};
-  std::shared_ptr<const T> Values(new T[Size]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+  std::shared_ptr<const T[]> Values(new T[Size]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
   {
     buffer<T, 1> Buffer(Data, range<1>(Size));
     queue Queue;
@@ -394,7 +452,7 @@ template <typename T> void test_copy_acc_shared_ptr() {
   for (size_t I = 0; I < Size; ++I) {
     Data[I] = I;
   }
-  std::shared_ptr<T> Values(new T[Size]());
+  std::shared_ptr<T[]> Values(new T[Size]());
   {
     buffer<T, 1> Buffer(Data, range<1>(Size));
     queue Queue;

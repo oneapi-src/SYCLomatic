@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 // <filesystem>
 
@@ -38,7 +38,7 @@ TEST_CASE(basic_test)
     const fs::path cwd = fs::current_path();
     const struct {
       std::string input;
-      std::string expect;
+      fs::path expect;
     } TestCases [] = {
         {"", cwd / ""},
         {"foo", cwd / "foo"},

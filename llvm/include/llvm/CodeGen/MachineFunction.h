@@ -144,6 +144,8 @@ public:
   //  operands, this also means that all generic virtual registers have been
   //  constrained to virtual registers (assigned to register classes) and that
   //  all sizes attached to them have been eliminated.
+  // TiedOpsRewritten: The twoaddressinstruction pass will set this flag, it
+  //  means that tied-def have been rewritten to meet the RegConstraint.
   enum class Property : unsigned {
     IsSSA,
     NoPHIs,
@@ -153,7 +155,8 @@ public:
     Legalized,
     RegBankSelected,
     Selected,
-    LastProperty = Selected,
+    TiedOpsRewritten,
+    LastProperty = TiedOpsRewritten,
   };
 
   bool hasProperty(Property P) const {
@@ -428,6 +431,35 @@ public:
   using VariableDbgInfoMapTy = SmallVector<VariableDbgInfo, 4>;
   VariableDbgInfoMapTy VariableDbgInfos;
 
+  /// A count of how many instructions in the function have had numbers
+  /// assigned to them. Used for debug value tracking, to determine the
+  /// next instruction number.
+  unsigned DebugInstrNumberingCount = 0;
+
+  /// Set value of DebugInstrNumberingCount field. Avoid using this unless
+  /// you're deserializing this data.
+  void setDebugInstrNumberingCount(unsigned Num);
+
+  /// Pair of instruction number and operand number.
+  using DebugInstrOperandPair = std::pair<unsigned, unsigned>;
+
+  /// Substitution map: from one <inst,operand> pair to another. Used to
+  /// record changes in where a value is defined, so that debug variable
+  /// locations can find it later.
+  std::map<DebugInstrOperandPair, DebugInstrOperandPair>
+      DebugValueSubstitutions;
+
+  /// Create a substitution between one <instr,operand> value to a different,
+  /// new value.
+  void makeDebugValueSubstitution(DebugInstrOperandPair, DebugInstrOperandPair);
+
+  /// Create substitutions for any tracked values in \p Old, to point at
+  /// \p New. Needed when we re-create an instruction during optimization,
+  /// which has the same signature (i.e., def operands in the same place) but
+  /// a modified instruction type, flags, or otherwise. An example: X86 moves
+  /// are sometimes transformed into equivalent LEAs.
+  void substituteDebugValuesForInst(const MachineInstr &Old, MachineInstr &New);
+
   MachineFunction(Function &F, const LLVMTargetMachine &Target,
                   const TargetSubtargetInfo &STI, unsigned FunctionNum,
                   MachineModuleInfo &MMI);
@@ -491,7 +523,8 @@ public:
   /// Returns true if this function has basic block sections enabled.
   bool hasBBSections() const {
     return (BBSectionsType == BasicBlockSection::All ||
-            BBSectionsType == BasicBlockSection::List);
+            BBSectionsType == BasicBlockSection::List ||
+            BBSectionsType == BasicBlockSection::Preset);
   }
 
   /// Returns true if basic block labels are to be generated for this function.
@@ -500,9 +533,6 @@ public:
   }
 
   void setBBSectionsType(BasicBlockSection V) { BBSectionsType = V; }
-
-  /// Creates basic block Labels for this function.
-  void createBBLabels();
 
   /// Assign IsBeginSection IsEndSection fields for basic blocks in this
   /// function.
@@ -766,7 +796,7 @@ public:
   /// CreateMachineInstr - Allocate a new MachineInstr. Use this instead
   /// of `new MachineInstr'.
   MachineInstr *CreateMachineInstr(const MCInstrDesc &MCID, const DebugLoc &DL,
-                                   bool NoImp = false);
+                                   bool NoImplicit = false);
 
   /// Create a new MachineInstr which is a copy of \p Orig, identical in all
   /// ways except the instruction has no parent, prev, or next. Bundling flags
@@ -811,6 +841,14 @@ public:
   /// explicitly deallocated.
   MachineMemOperand *getMachineMemOperand(const MachineMemOperand *MMO,
                                           int64_t Offset, uint64_t Size);
+
+  /// getMachineMemOperand - Allocate a new MachineMemOperand by copying
+  /// an existing one, replacing only the MachinePointerInfo and size.
+  /// MachineMemOperands are owned by the MachineFunction and need not be
+  /// explicitly deallocated.
+  MachineMemOperand *getMachineMemOperand(const MachineMemOperand *MMO,
+                                          MachinePointerInfo &PtrInfo,
+                                          uint64_t Size);
 
   /// Allocate a new MachineMemOperand by copying an existing one,
   /// replacing only AliasAnalysis information. MachineMemOperands are owned
@@ -1064,6 +1102,10 @@ public:
   /// the same callee.
   void moveCallSiteInfo(const MachineInstr *Old,
                         const MachineInstr *New);
+
+  unsigned getNewDebugInstrNum() {
+    return ++DebugInstrNumberingCount;
+  }
 };
 
 //===--------------------------------------------------------------------===//
@@ -1129,6 +1171,11 @@ template <> struct GraphTraits<Inverse<const MachineFunction*>> :
     return &G.Graph->front();
   }
 };
+
+class MachineFunctionAnalysisManager;
+void verifyMachineFunction(MachineFunctionAnalysisManager *,
+                           const std::string &Banner,
+                           const MachineFunction &MF);
 
 } // end namespace llvm
 

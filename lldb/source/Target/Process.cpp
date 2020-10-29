@@ -164,7 +164,8 @@ ProcessProperties::ProcessProperties(lldb_private::Process *process)
         [this] { m_process->LoadOperatingSystemPlugin(true); });
   }
 
-  m_experimental_properties_up.reset(new ProcessExperimentalProperties());
+  m_experimental_properties_up =
+      std::make_unique<ProcessExperimentalProperties>();
   m_collection_sp->AppendProperty(
       ConstString(Properties::GetExperimentalSettingsName()),
       ConstString("Experimental settings - setting these won't produce "
@@ -275,6 +276,12 @@ std::chrono::seconds ProcessProperties::GetUtilityExpressionTimeout() const {
   uint64_t value = m_collection_sp->GetPropertyAtIndexAsUInt64(
       nullptr, idx, g_process_properties[idx].default_uint_value);
   return std::chrono::seconds(value);
+}
+
+bool ProcessProperties::GetSteppingRunsAllThreads() const {
+  const uint32_t idx = ePropertySteppingRunsAllThreads;
+  return m_collection_sp->GetPropertyAtIndexAsBoolean(
+      nullptr, idx, g_process_properties[idx].default_uint_value != 0);
 }
 
 bool ProcessProperties::GetOSPluginReportsAllThreads() const {
@@ -1269,7 +1276,7 @@ void Process::UpdateThreadListIfNeeded() {
           for (size_t i = 0; i < num_old_threads; ++i)
             old_thread_list.GetThreadAtIndex(i, false)->ClearBackingThread();
           // See if the OS plugin reports all threads.  If it does, then
-          // it is safe to clear unseen thread's plans here.  Otherwise we 
+          // it is safe to clear unseen thread's plans here.  Otherwise we
           // should preserve them in case they show up again:
           clear_unused_threads = GetOSPluginReportsAllThreads();
 
@@ -2290,6 +2297,9 @@ size_t Process::WriteMemory(addr_t addr, const void *buf, size_t size,
     if (error.Fail())
       return;
 
+    if (bp->GetType() != BreakpointSite::eSoftware)
+      return;
+
     addr_t intersect_addr;
     size_t intersect_size;
     size_t opcode_offset;
@@ -2748,7 +2758,7 @@ DataExtractor Process::GetAuxvData() { return DataExtractor(); }
 
 JITLoaderList &Process::GetJITLoaders() {
   if (!m_jit_loaders_up) {
-    m_jit_loaders_up.reset(new JITLoaderList());
+    m_jit_loaders_up = std::make_unique<JITLoaderList>();
     JITLoader::LoadPlugins(this, *m_jit_loaders_up);
   }
   return *m_jit_loaders_up;
@@ -3095,14 +3105,14 @@ void Process::CompleteAttach() {
   }
 }
 
-Status Process::ConnectRemote(Stream *strm, llvm::StringRef remote_url) {
+Status Process::ConnectRemote(llvm::StringRef remote_url) {
   m_abi_sp.reset();
   m_process_input_reader.reset();
 
   // Find the process and its architecture.  Make sure it matches the
   // architecture of the current Target, and if not adjust it.
 
-  Status error(DoConnectRemote(strm, remote_url));
+  Status error(DoConnectRemote(remote_url));
   if (error.Success()) {
     if (GetID() != LLDB_INVALID_PROCESS_ID) {
       EventSP event_sp;
@@ -3153,7 +3163,7 @@ Status Process::PrivateResume() {
     if (m_thread_list.WillResume()) {
       // Last thing, do the PreResumeActions.
       if (!RunPreResumeActions()) {
-        error.SetErrorStringWithFormat(
+        error.SetErrorString(
             "Process::PrivateResume PreResumeActions failed, not resuming.");
       } else {
         m_mod_id.BumpResumeID();
@@ -3998,6 +4008,114 @@ ConstString Process::ProcessEventData::GetFlavor() const {
   return ProcessEventData::GetFlavorString();
 }
 
+bool Process::ProcessEventData::ShouldStop(Event *event_ptr,
+                                           bool &found_valid_stopinfo) {
+  found_valid_stopinfo = false;
+
+  ProcessSP process_sp(m_process_wp.lock());
+  if (!process_sp)
+    return false;
+
+  ThreadList &curr_thread_list = process_sp->GetThreadList();
+  uint32_t num_threads = curr_thread_list.GetSize();
+  uint32_t idx;
+
+  // The actions might change one of the thread's stop_info's opinions about
+  // whether we should stop the process, so we need to query that as we go.
+
+  // One other complication here, is that we try to catch any case where the
+  // target has run (except for expressions) and immediately exit, but if we
+  // get that wrong (which is possible) then the thread list might have
+  // changed, and that would cause our iteration here to crash.  We could
+  // make a copy of the thread list, but we'd really like to also know if it
+  // has changed at all, so we make up a vector of the thread ID's and check
+  // what we get back against this list & bag out if anything differs.
+  ThreadList not_suspended_thread_list(process_sp.get());
+  std::vector<uint32_t> thread_index_array(num_threads);
+  uint32_t not_suspended_idx = 0;
+  for (idx = 0; idx < num_threads; ++idx) {
+    lldb::ThreadSP thread_sp = curr_thread_list.GetThreadAtIndex(idx);
+
+    /*
+     Filter out all suspended threads, they could not be the reason
+     of stop and no need to perform any actions on them.
+     */
+    if (thread_sp->GetResumeState() != eStateSuspended) {
+      not_suspended_thread_list.AddThread(thread_sp);
+      thread_index_array[not_suspended_idx] = thread_sp->GetIndexID();
+      not_suspended_idx++;
+    }
+  }
+
+  // Use this to track whether we should continue from here.  We will only
+  // continue the target running if no thread says we should stop.  Of course
+  // if some thread's PerformAction actually sets the target running, then it
+  // doesn't matter what the other threads say...
+
+  bool still_should_stop = false;
+
+  // Sometimes - for instance if we have a bug in the stub we are talking to,
+  // we stop but no thread has a valid stop reason.  In that case we should
+  // just stop, because we have no way of telling what the right thing to do
+  // is, and it's better to let the user decide than continue behind their
+  // backs.
+
+  for (idx = 0; idx < not_suspended_thread_list.GetSize(); ++idx) {
+    curr_thread_list = process_sp->GetThreadList();
+    if (curr_thread_list.GetSize() != num_threads) {
+      Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_STEP |
+                                                      LIBLLDB_LOG_PROCESS));
+      LLDB_LOGF(
+          log,
+          "Number of threads changed from %u to %u while processing event.",
+          num_threads, curr_thread_list.GetSize());
+      break;
+    }
+
+    lldb::ThreadSP thread_sp = not_suspended_thread_list.GetThreadAtIndex(idx);
+
+    if (thread_sp->GetIndexID() != thread_index_array[idx]) {
+      Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_STEP |
+                                                      LIBLLDB_LOG_PROCESS));
+      LLDB_LOGF(log,
+                "The thread at position %u changed from %u to %u while "
+                "processing event.",
+                idx, thread_index_array[idx], thread_sp->GetIndexID());
+      break;
+    }
+
+    StopInfoSP stop_info_sp = thread_sp->GetStopInfo();
+    if (stop_info_sp && stop_info_sp->IsValid()) {
+      found_valid_stopinfo = true;
+      bool this_thread_wants_to_stop;
+      if (stop_info_sp->GetOverrideShouldStop()) {
+        this_thread_wants_to_stop =
+            stop_info_sp->GetOverriddenShouldStopValue();
+      } else {
+        stop_info_sp->PerformAction(event_ptr);
+        // The stop action might restart the target.  If it does, then we
+        // want to mark that in the event so that whoever is receiving it
+        // will know to wait for the running event and reflect that state
+        // appropriately. We also need to stop processing actions, since they
+        // aren't expecting the target to be running.
+
+        // FIXME: we might have run.
+        if (stop_info_sp->HasTargetRunSinceMe()) {
+          SetRestarted(true);
+          break;
+        }
+
+        this_thread_wants_to_stop = stop_info_sp->ShouldStop(event_ptr);
+      }
+
+      if (!still_should_stop)
+        still_should_stop = this_thread_wants_to_stop;
+    }
+  }
+
+  return still_should_stop;
+}
+
 void Process::ProcessEventData::DoOnRemoval(Event *event_ptr) {
   ProcessSP process_sp(m_process_wp.lock());
 
@@ -4032,120 +4150,38 @@ void Process::ProcessEventData::DoOnRemoval(Event *event_ptr) {
   if (m_interrupted)
     return;
 
-  // If we're stopped and haven't restarted, then do the StopInfo actions here:
-  if (m_state == eStateStopped && !m_restarted) {
-    ThreadList &curr_thread_list = process_sp->GetThreadList();
-    uint32_t num_threads = curr_thread_list.GetSize();
-    uint32_t idx;
+  // If we're not stopped or have restarted, then skip the StopInfo actions:
+  if (m_state != eStateStopped || m_restarted) {
+    return;
+  }
 
-    // The actions might change one of the thread's stop_info's opinions about
-    // whether we should stop the process, so we need to query that as we go.
+  bool does_anybody_have_an_opinion = false;
+  bool still_should_stop = ShouldStop(event_ptr, does_anybody_have_an_opinion);
 
-    // One other complication here, is that we try to catch any case where the
-    // target has run (except for expressions) and immediately exit, but if we
-    // get that wrong (which is possible) then the thread list might have
-    // changed, and that would cause our iteration here to crash.  We could
-    // make a copy of the thread list, but we'd really like to also know if it
-    // has changed at all, so we make up a vector of the thread ID's and check
-    // what we get back against this list & bag out if anything differs.
-    std::vector<uint32_t> thread_index_array(num_threads);
-    for (idx = 0; idx < num_threads; ++idx)
-      thread_index_array[idx] =
-          curr_thread_list.GetThreadAtIndex(idx)->GetIndexID();
+  if (GetRestarted()) {
+    return;
+  }
 
-    // Use this to track whether we should continue from here.  We will only
-    // continue the target running if no thread says we should stop.  Of course
-    // if some thread's PerformAction actually sets the target running, then it
-    // doesn't matter what the other threads say...
+  if (!still_should_stop && does_anybody_have_an_opinion) {
+    // We've been asked to continue, so do that here.
+    SetRestarted(true);
+    // Use the public resume method here, since this is just extending a
+    // public resume.
+    process_sp->PrivateResume();
+  } else {
+    bool hijacked = process_sp->IsHijackedForEvent(eBroadcastBitStateChanged) &&
+                    !process_sp->StateChangedIsHijackedForSynchronousResume();
 
-    bool still_should_stop = false;
-
-    // Sometimes - for instance if we have a bug in the stub we are talking to,
-    // we stop but no thread has a valid stop reason.  In that case we should
-    // just stop, because we have no way of telling what the right thing to do
-    // is, and it's better to let the user decide than continue behind their
-    // backs.
-
-    bool does_anybody_have_an_opinion = false;
-
-    for (idx = 0; idx < num_threads; ++idx) {
-      curr_thread_list = process_sp->GetThreadList();
-      if (curr_thread_list.GetSize() != num_threads) {
-        Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_STEP |
-                                                        LIBLLDB_LOG_PROCESS));
-        LLDB_LOGF(
-            log,
-            "Number of threads changed from %u to %u while processing event.",
-            num_threads, curr_thread_list.GetSize());
-        break;
-      }
-
-      lldb::ThreadSP thread_sp = curr_thread_list.GetThreadAtIndex(idx);
-
-      if (thread_sp->GetIndexID() != thread_index_array[idx]) {
-        Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_STEP |
-                                                        LIBLLDB_LOG_PROCESS));
-        LLDB_LOGF(log,
-                  "The thread at position %u changed from %u to %u while "
-                  "processing event.",
-                  idx, thread_index_array[idx], thread_sp->GetIndexID());
-        break;
-      }
-
-      StopInfoSP stop_info_sp = thread_sp->GetStopInfo();
-      if (stop_info_sp && stop_info_sp->IsValid()) {
-        does_anybody_have_an_opinion = true;
-        bool this_thread_wants_to_stop;
-        if (stop_info_sp->GetOverrideShouldStop()) {
-          this_thread_wants_to_stop =
-              stop_info_sp->GetOverriddenShouldStopValue();
-        } else {
-          stop_info_sp->PerformAction(event_ptr);
-          // The stop action might restart the target.  If it does, then we
-          // want to mark that in the event so that whoever is receiving it
-          // will know to wait for the running event and reflect that state
-          // appropriately. We also need to stop processing actions, since they
-          // aren't expecting the target to be running.
-
-          // FIXME: we might have run.
-          if (stop_info_sp->HasTargetRunSinceMe()) {
-            SetRestarted(true);
-            break;
-          }
-
-          this_thread_wants_to_stop = stop_info_sp->ShouldStop(event_ptr);
-        }
-
-        if (!still_should_stop)
-          still_should_stop = this_thread_wants_to_stop;
-      }
-    }
-
-    if (!GetRestarted()) {
-      if (!still_should_stop && does_anybody_have_an_opinion) {
-        // We've been asked to continue, so do that here.
+    if (!hijacked) {
+      // If we didn't restart, run the Stop Hooks here.
+      // Don't do that if state changed events aren't hooked up to the
+      // public (or SyncResume) broadcasters.  StopHooks are just for
+      // real public stops.  They might also restart the target,
+      // so watch for that.
+      if (process_sp->GetTarget().RunStopHooks())
         SetRestarted(true);
-        // Use the public resume method here, since this is just extending a
-        // public resume.
-        process_sp->PrivateResume();
-      } else {
-        bool hijacked =
-            process_sp->IsHijackedForEvent(eBroadcastBitStateChanged) &&
-            !process_sp->StateChangedIsHijackedForSynchronousResume();
-
-        if (!hijacked) {
-          // If we didn't restart, run the Stop Hooks here.
-          // Don't do that if state changed events aren't hooked up to the
-          // public (or SyncResume) broadcasters.  StopHooks are just for
-          // real public stops.  They might also restart the target,
-          // so watch for that.
-          process_sp->GetTarget().RunStopHooks();
-          if (process_sp->GetPrivateState() == eStateRunning)
-            SetRestarted(true);
-      }
     }
   }
-}
 }
 
 void Process::ProcessEventData::Dump(Stream *s) const {
@@ -5729,41 +5765,25 @@ addr_t Process::ResolveIndirectFunction(const Address *address, Status &error) {
 }
 
 void Process::ModulesDidLoad(ModuleList &module_list) {
+  // Inform the system runtime of the modified modules.
   SystemRuntime *sys_runtime = GetSystemRuntime();
-  if (sys_runtime) {
+  if (sys_runtime)
     sys_runtime->ModulesDidLoad(module_list);
-  }
 
   GetJITLoaders().ModulesDidLoad(module_list);
 
-  // Give runtimes a chance to be created.
+  // Give the instrumentation runtimes a chance to be created before informing
+  // them of the modified modules.
   InstrumentationRuntime::ModulesDidLoad(module_list, this,
                                          m_instrumentation_runtimes);
+  for (auto &runtime : m_instrumentation_runtimes)
+    runtime.second->ModulesDidLoad(module_list);
 
-  // Tell runtimes about new modules.
-  for (auto pos = m_instrumentation_runtimes.begin();
-       pos != m_instrumentation_runtimes.end(); ++pos) {
-    InstrumentationRuntimeSP runtime = pos->second;
-    runtime->ModulesDidLoad(module_list);
-  }
-
-  // Let any language runtimes we have already created know about the modules
-  // that loaded.
-
-  // Iterate over a copy of this language runtime list in case the language
-  // runtime ModulesDidLoad somehow causes the language runtime to be
-  // unloaded.
-  {
-    std::lock_guard<std::recursive_mutex> guard(m_language_runtimes_mutex);
-    LanguageRuntimeCollection language_runtimes(m_language_runtimes);
-    for (const auto &pair : language_runtimes) {
-      // We must check language_runtime_sp to make sure it is not nullptr as we
-      // might cache the fact that we didn't have a language runtime for a
-      // language.
-      LanguageRuntimeSP language_runtime_sp = pair.second;
-      if (language_runtime_sp)
-        language_runtime_sp->ModulesDidLoad(module_list);
-    }
+  // Give the language runtimes a chance to be created before informing them of
+  // the modified modules.
+  for (const lldb::LanguageType lang_type : Language::GetSupportedLanguages()) {
+    if (LanguageRuntime *runtime = GetLanguageRuntime(lang_type))
+      runtime->ModulesDidLoad(module_list);
   }
 
   // If we don't have an operating system plug-in, try to load one since
@@ -5771,7 +5791,7 @@ void Process::ModulesDidLoad(ModuleList &module_list) {
   if (!m_os_up)
     LoadOperatingSystemPlugin(false);
 
-  // Give structured-data plugins a chance to see the modified modules.
+  // Inform the structured-data plugins of the modified modules.
   for (auto pair : m_structured_data_plugin_map) {
     if (pair.second)
       pair.second->ModulesDidLoad(*this, module_list);
@@ -5932,10 +5952,8 @@ Process::AdvanceAddressToNextBranchInstruction(Address default_stop_addr,
     return retval;
   }
 
-  uint32_t branch_index =
-      insn_list->GetIndexOfNextBranchInstruction(insn_offset, target,
-                                                 false /* ignore_calls*/,
-                                                 nullptr);
+  uint32_t branch_index = insn_list->GetIndexOfNextBranchInstruction(
+      insn_offset, false /* ignore_calls*/, nullptr);
   if (branch_index == UINT32_MAX) {
     return retval;
   }

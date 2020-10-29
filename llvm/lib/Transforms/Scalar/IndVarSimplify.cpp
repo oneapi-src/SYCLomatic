@@ -131,6 +131,10 @@ static cl::opt<bool>
 LoopPredication("indvars-predicate-loops", cl::Hidden, cl::init(true),
                 cl::desc("Predicate conditions in read only loops"));
 
+static cl::opt<bool>
+AllowIVWidening("indvars-widen-indvars", cl::Hidden, cl::init(true),
+                cl::desc("Allow widening of indvars to eliminate s/zext"));
+
 namespace {
 
 struct RewritePhi;
@@ -739,7 +743,6 @@ protected:
 
   bool widenLoopCompare(NarrowIVDefUse DU);
   bool widenWithVariantUse(NarrowIVDefUse DU);
-  void widenWithVariantUseCodegen(NarrowIVDefUse DU);
 
   void pushNarrowIVUsers(Instruction *NarrowDef, Instruction *WideDef);
 };
@@ -1111,21 +1114,16 @@ bool WidenIV::widenWithVariantUse(NarrowIVDefUse DU) {
 
   // The operand that is not defined by NarrowDef of DU. Let's call it the
   // other operand.
-  unsigned ExtendOperIdx = DU.NarrowUse->getOperand(0) == NarrowDef ? 1 : 0;
-  assert(DU.NarrowUse->getOperand(1 - ExtendOperIdx) == DU.NarrowDef &&
+  assert((NarrowUse->getOperand(0) == NarrowDef ||
+          NarrowUse->getOperand(1) == NarrowDef) &&
          "bad DU");
 
-  const SCEV *ExtendOperExpr = nullptr;
   const OverflowingBinaryOperator *OBO =
     cast<OverflowingBinaryOperator>(NarrowUse);
   ExtendKind ExtKind = getExtendKind(NarrowDef);
-  if (ExtKind == SignExtended && OBO->hasNoSignedWrap())
-    ExtendOperExpr = SE->getSignExtendExpr(
-      SE->getSCEV(NarrowUse->getOperand(ExtendOperIdx)), WideType);
-  else if (ExtKind == ZeroExtended && OBO->hasNoUnsignedWrap())
-    ExtendOperExpr = SE->getZeroExtendExpr(
-      SE->getSCEV(NarrowUse->getOperand(ExtendOperIdx)), WideType);
-  else
+  bool CanSignExtend = ExtKind == SignExtended && OBO->hasNoSignedWrap();
+  bool CanZeroExtend = ExtKind == ZeroExtended && OBO->hasNoUnsignedWrap();
+  if (!CanSignExtend && !CanZeroExtend)
     return false;
 
   // Verifying that Defining operand is an AddRec
@@ -1133,14 +1131,6 @@ bool WidenIV::widenWithVariantUse(NarrowIVDefUse DU) {
   const SCEVAddRecExpr *AddRecOp1 = dyn_cast<SCEVAddRecExpr>(Op1);
   if (!AddRecOp1 || AddRecOp1->getLoop() != L)
     return false;
-  // Verifying that other operand is an Extend.
-  if (ExtKind == SignExtended) {
-    if (!isa<SCEVSignExtendExpr>(ExtendOperExpr))
-      return false;
-  } else {
-    if (!isa<SCEVZeroExtendExpr>(ExtendOperExpr))
-      return false;
-  }
 
   if (ExtKind == SignExtended) {
     for (Use &U : NarrowUse->uses()) {
@@ -1155,18 +1145,6 @@ bool WidenIV::widenWithVariantUse(NarrowIVDefUse DU) {
         return false;
     }
   }
-
-  return true;
-}
-
-/// Special Case for widening with loop variant (see
-/// WidenIV::widenWithVariant). This is the code generation part.
-void WidenIV::widenWithVariantUseCodegen(NarrowIVDefUse DU) {
-  Instruction *NarrowUse = DU.NarrowUse;
-  Instruction *NarrowDef = DU.NarrowDef;
-  Instruction *WideDef = DU.WideDef;
-
-  ExtendKind ExtKind = getExtendKind(NarrowDef);
 
   LLVM_DEBUG(dbgs() << "Cloning arithmetic IVUser: " << *NarrowUse << "\n");
 
@@ -1186,25 +1164,22 @@ void WidenIV::widenWithVariantUseCodegen(NarrowIVDefUse DU) {
   IRBuilder<> Builder(NarrowUse);
   Builder.Insert(WideBO);
   WideBO->copyIRFlags(NarrowBO);
-
-  assert(ExtKind != Unknown && "Unknown ExtKind not handled");
-
   ExtendKindMap[NarrowUse] = ExtKind;
 
   for (Use &U : NarrowUse->uses()) {
     Instruction *User = nullptr;
     if (ExtKind == SignExtended)
-      User = dyn_cast<SExtInst>(U.getUser());
+      User = cast<SExtInst>(U.getUser());
     else
-      User = dyn_cast<ZExtInst>(U.getUser());
-    if (User && User->getType() == WideType) {
-      LLVM_DEBUG(dbgs() << "INDVARS: eliminating " << *User << " replaced by "
-                        << *WideBO << "\n");
-      ++NumElimExt;
-      User->replaceAllUsesWith(WideBO);
-      DeadInsts.emplace_back(User);
-    }
+      User = cast<ZExtInst>(U.getUser());
+    assert(User->getType() == WideType && "Checked before!");
+    LLVM_DEBUG(dbgs() << "INDVARS: eliminating " << *User << " replaced by "
+                      << *WideBO << "\n");
+    ++NumElimExt;
+    User->replaceAllUsesWith(WideBO);
+    DeadInsts.emplace_back(User);
   }
+  return true;
 }
 
 /// Determine whether an individual user of the narrow IV can be widened. If so,
@@ -1309,10 +1284,8 @@ Instruction *WidenIV::widenIVUse(NarrowIVDefUse DU, SCEVExpander &Rewriter) {
     // in WideAddRec.first does not indicate a polynomial induction expression.
     // In that case, look at the operands of the use instruction to determine
     // if we can still widen the use instead of truncating its operand.
-    if (widenWithVariantUse(DU)) {
-      widenWithVariantUseCodegen(DU);
+    if (widenWithVariantUse(DU))
       return nullptr;
-    }
 
     // This user does not evaluate to a recurrence after widening, so don't
     // follow it. Instead insert a Trunc to kill off the original use,
@@ -1363,7 +1336,7 @@ void WidenIV::pushNarrowIVUsers(Instruction *NarrowDef, Instruction *WideDef) {
   const SCEV *NarrowSCEV = SE->getSCEV(NarrowDef);
   bool NonNegativeDef =
       SE->isKnownPredicate(ICmpInst::ICMP_SGE, NarrowSCEV,
-                           SE->getConstant(NarrowSCEV->getType(), 0));
+                           SE->getZero(NarrowSCEV->getType()));
   for (User *U : NarrowDef->users()) {
     Instruction *NarrowUser = cast<Instruction>(U);
 
@@ -1392,6 +1365,10 @@ void WidenIV::pushNarrowIVUsers(Instruction *NarrowDef, Instruction *WideDef) {
 /// It would be simpler to delete uses as they are processed, but we must avoid
 /// invalidating SCEV expressions.
 PHINode *WidenIV::createWideIV(SCEVExpander &Rewriter) {
+  // Bail if we disallowed widening.
+  if(!AllowIVWidening)
+    return nullptr;
+
   // Is this phi an induction variable?
   const SCEVAddRecExpr *AddRec = dyn_cast<SCEVAddRecExpr>(SE->getSCEV(OrigPhi));
   if (!AddRec)
@@ -1435,8 +1412,19 @@ PHINode *WidenIV::createWideIV(SCEVExpander &Rewriter) {
   // either find an existing phi or materialize a new one. Either way, we
   // expect a well-formed cyclic phi-with-increments. i.e. any operand not part
   // of the phi-SCC dominates the loop entry.
-  Instruction *InsertPt = &L->getHeader()->front();
-  WidePhi = cast<PHINode>(Rewriter.expandCodeFor(AddRec, WideType, InsertPt));
+  Instruction *InsertPt = &*L->getHeader()->getFirstInsertionPt();
+  Value *ExpandInst = Rewriter.expandCodeFor(AddRec, WideType, InsertPt);
+  // If the wide phi is not a phi node, for example a cast node, like bitcast,
+  // inttoptr, ptrtoint, just skip for now.
+  if (!(WidePhi = dyn_cast<PHINode>(ExpandInst))) {
+    // if the cast node is an inserted instruction without any user, we should
+    // remove it to make sure the pass don't touch the function as we can not
+    // wide the phi.
+    if (ExpandInst->hasNUses(0) &&
+        Rewriter.isInsertedInstruction(cast<Instruction>(ExpandInst)))
+      DeadInsts.emplace_back(ExpandInst);
+    return nullptr;
+  }
 
   // Remembering the WideIV increment generated by SCEVExpander allows
   // widenIVUse to reuse it when widening the narrow IV's increment. We don't
@@ -1813,7 +1801,7 @@ static bool mustExecuteUBIfPoisonOnPathTo(Instruction *Root,
 
     // If we can't analyze propagation through this instruction, just skip it
     // and transitive users.  Safe as false is a conservative result.
-    if (!propagatesPoison(I) && I != Root)
+    if (!propagatesPoison(cast<Operator>(I)) && I != Root)
       continue;
 
     if (KnownPoison.insert(I).second)
@@ -2219,7 +2207,7 @@ linearFunctionTestReplace(Loop *L, BasicBlock *ExitingBB,
   // update the branch to use the new comparison; in the common case this
   // will make old comparison dead.
   BI->setCondition(Cond);
-  DeadInsts.push_back(OrigCond);
+  DeadInsts.emplace_back(OrigCond);
 
   ++NumLFTR;
   return true;
@@ -2318,41 +2306,44 @@ bool IndVarSimplify::sinkUnusedInvariants(Loop *L) {
   return MadeAnyChanges;
 }
 
-/// Return a symbolic upper bound for the backedge taken count of the loop.
-/// This is more general than getConstantMaxBackedgeTakenCount as it returns
-/// an arbitrary expression as opposed to only constants.
-/// TODO: Move into the ScalarEvolution class.
-static const SCEV* getMaxBackedgeTakenCount(ScalarEvolution &SE,
-                                            DominatorTree &DT, Loop *L) {
-  SmallVector<BasicBlock*, 16> ExitingBlocks;
-  L->getExitingBlocks(ExitingBlocks);
+// Returns true if the condition of \p BI being checked is invariant and can be
+// proved to be trivially true.
+static bool isTrivialCond(const Loop *L, BranchInst *BI, ScalarEvolution *SE,
+                          bool ProvingLoopExit) {
+  ICmpInst::Predicate Pred;
+  Value *LHS, *RHS;
+  using namespace PatternMatch;
+  BasicBlock *TrueSucc, *FalseSucc;
+  if (!match(BI, m_Br(m_ICmp(Pred, m_Value(LHS), m_Value(RHS)),
+                      m_BasicBlock(TrueSucc), m_BasicBlock(FalseSucc))))
+    return false;
 
-  // Form an expression for the maximum exit count possible for this loop. We
-  // merge the max and exact information to approximate a version of
-  // getConstantMaxBackedgeTakenCount which isn't restricted to just constants.
-  SmallVector<const SCEV*, 4> ExitCounts;
-  for (BasicBlock *ExitingBB : ExitingBlocks) {
-    const SCEV *ExitCount = SE.getExitCount(L, ExitingBB);
-    if (isa<SCEVCouldNotCompute>(ExitCount))
-      ExitCount = SE.getExitCount(L, ExitingBB,
-                                  ScalarEvolution::ConstantMaximum);
-    if (!isa<SCEVCouldNotCompute>(ExitCount)) {
-      assert(DT.dominates(ExitingBB, L->getLoopLatch()) &&
-             "We should only have known counts for exiting blocks that "
-             "dominate latch!");
-      ExitCounts.push_back(ExitCount);
-    }
-  }
-  if (ExitCounts.empty())
-    return SE.getCouldNotCompute();
-  return SE.getUMinFromMismatchedTypes(ExitCounts);
+  assert((L->contains(TrueSucc) != L->contains(FalseSucc)) &&
+         "Not a loop exit!");
+
+  // 'LHS pred RHS' should now mean that we stay in loop.
+  if (L->contains(FalseSucc))
+    Pred = CmpInst::getInversePredicate(Pred);
+
+  // If we are proving loop exit, invert the predicate.
+  if (ProvingLoopExit)
+    Pred = CmpInst::getInversePredicate(Pred);
+
+  const SCEV *LHSS = SE->getSCEVAtScope(LHS, L);
+  const SCEV *RHSS = SE->getSCEVAtScope(RHS, L);
+  // Can we prove it to be trivially true?
+  if (SE->isKnownPredicate(Pred, LHSS, RHSS))
+    return true;
+
+  return false;
 }
 
 bool IndVarSimplify::optimizeLoopExits(Loop *L, SCEVExpander &Rewriter) {
   SmallVector<BasicBlock*, 16> ExitingBlocks;
   L->getExitingBlocks(ExitingBlocks);
 
-  // Remove all exits which aren't both rewriteable and analyzeable.
+  // Remove all exits which aren't both rewriteable and execute on every
+  // iteration.
   auto NewEnd = llvm::remove_if(ExitingBlocks, [&](BasicBlock *ExitingBB) {
     // If our exitting block exits multiple loops, we can only rewrite the
     // innermost one.  Otherwise, we're changing how many times the innermost
@@ -2369,9 +2360,10 @@ bool IndVarSimplify::optimizeLoopExits(Loop *L, SCEVExpander &Rewriter) {
     if (isa<Constant>(BI->getCondition()))
       return true;
 
-    const SCEV *ExitCount = SE->getExitCount(L, ExitingBB);
-    if (isa<SCEVCouldNotCompute>(ExitCount))
+    // Likewise, the loop latch must be dominated by the exiting BB.
+    if (!DT->dominates(ExitingBB, L->getLoopLatch()))
       return true;
+
     return false;
   });
   ExitingBlocks.erase(NewEnd, ExitingBlocks.end());
@@ -2380,23 +2372,25 @@ bool IndVarSimplify::optimizeLoopExits(Loop *L, SCEVExpander &Rewriter) {
     return false;
 
   // Get a symbolic upper bound on the loop backedge taken count.
-  const SCEV *MaxExitCount = getMaxBackedgeTakenCount(*SE, *DT, L);
+  const SCEV *MaxExitCount = SE->computeMaxBackedgeTakenCount(L);
   if (isa<SCEVCouldNotCompute>(MaxExitCount))
     return false;
 
-  // Visit our exit blocks in order of dominance.  We know from the fact that
-  // all exits (left) are analyzeable that the must be a total dominance order
-  // between them as each must dominate the latch.  The visit order only
-  // matters for the provably equal case.
-  llvm::sort(ExitingBlocks,
-             [&](BasicBlock *A, BasicBlock *B) {
+  // Visit our exit blocks in order of dominance. We know from the fact that
+  // all exits must dominate the latch, so there is a total dominance order
+  // between them.
+  llvm::sort(ExitingBlocks, [&](BasicBlock *A, BasicBlock *B) {
                // std::sort sorts in ascending order, so we want the inverse of
                // the normal dominance relation.
                if (A == B) return false;
-               if (DT->properlyDominates(A, B)) return true;
-               if (DT->properlyDominates(B, A)) return false;
-               llvm_unreachable("expected total dominance order!");
-             });
+               if (DT->properlyDominates(A, B))
+                 return true;
+               else {
+                 assert(DT->properlyDominates(B, A) &&
+                        "expected total dominance order!");
+                 return false;
+               }
+  });
 #ifdef ASSERT
   for (unsigned i = 1; i < ExitingBlocks.size(); i++) {
     assert(DT->dominates(ExitingBlocks[i-1], ExitingBlocks[i]));
@@ -2411,14 +2405,27 @@ bool IndVarSimplify::optimizeLoopExits(Loop *L, SCEVExpander &Rewriter) {
                                      IsTaken ? ExitIfTrue : !ExitIfTrue);
     BI->setCondition(NewCond);
     if (OldCond->use_empty())
-      DeadInsts.push_back(OldCond);
+      DeadInsts.emplace_back(OldCond);
   };
 
   bool Changed = false;
   SmallSet<const SCEV*, 8> DominatingExitCounts;
   for (BasicBlock *ExitingBB : ExitingBlocks) {
     const SCEV *ExitCount = SE->getExitCount(L, ExitingBB);
-    assert(!isa<SCEVCouldNotCompute>(ExitCount) && "checked above");
+    if (isa<SCEVCouldNotCompute>(ExitCount)) {
+      // Okay, we do not know the exit count here. Can we at least prove that it
+      // will remain the same within iteration space?
+      auto *BI = cast<BranchInst>(ExitingBB->getTerminator());
+      if (isTrivialCond(L, BI, SE, false)) {
+        FoldExit(ExitingBB, false);
+        Changed = true;
+      }
+      if (isTrivialCond(L, BI, SE, true)) {
+        FoldExit(ExitingBB, true);
+        Changed = true;
+      }
+      continue;
+    }
 
     // If we know we'd exit on the first iteration, rewrite the exit to
     // reflect this.  This does not imply the loop must exit through this
@@ -2637,7 +2644,7 @@ bool IndVarSimplify::predicateLoopExits(Loop *L, SCEVExpander &Rewriter) {
     Value *OldCond = BI->getCondition();
     BI->setCondition(NewCond);
     if (OldCond->use_empty())
-      DeadInsts.push_back(OldCond);
+      DeadInsts.emplace_back(OldCond);
     Changed = true;
   }
 

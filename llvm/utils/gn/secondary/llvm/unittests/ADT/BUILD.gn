@@ -10,11 +10,13 @@ unittest("ADTTests") {
     "//llvm/lib/Testing/Support",
   ]
   sources = [
+    "APFixedPointTest.cpp",
     "APFloatTest.cpp",
     "APIntTest.cpp",
     "APSIntTest.cpp",
     "AnyTest.cpp",
     "ArrayRefTest.cpp",
+    "BitFieldsTest.cpp",
     "BitVectorTest.cpp",
     "BitmaskEnumTest.cpp",
     "BreadthFirstIteratorTest.cpp",

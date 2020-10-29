@@ -131,8 +131,6 @@ protected:
 private:
   const lldb_private::SectionList *
   GetSectionListFromModule(const lldb::ModuleSP module) const;
-
-  DISALLOW_COPY_AND_ASSIGN(DynamicLoaderHexagonDYLD);
 };
 
 #endif // LLDB_SOURCE_PLUGINS_DYNAMICLOADER_HEXAGON_DYLD_DYNAMICLOADERHEXAGONDYLD_H

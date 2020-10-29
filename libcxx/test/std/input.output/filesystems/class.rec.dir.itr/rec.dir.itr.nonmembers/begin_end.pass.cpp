@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 // <filesystem>
 
@@ -23,7 +23,6 @@
 #include "test_macros.h"
 #include "rapid-cxx-test.h"
 #include "filesystem_test_helper.h"
-#include <iostream>
 
 using namespace fs;
 

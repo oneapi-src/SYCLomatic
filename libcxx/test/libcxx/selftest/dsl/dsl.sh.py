@@ -6,11 +6,15 @@
 #
 #===----------------------------------------------------------------------===##
 
-# RUN: %{python} %s %S %T %{escaped_exec} \
-# RUN:                    %{escaped_cxx} \
-# RUN:                    %{escaped_flags} \
-# RUN:                    %{escaped_compile_flags} \
-# RUN:                    %{escaped_link_flags}
+# Note: We prepend arguments with 'x' to avoid thinking there are too few
+#       arguments in case an argument is an empty string.
+# RUN: %{python} %s x%S \
+# RUN:              x%T \
+# RUN:              x%{escaped_exec} \
+# RUN:              x%{escaped_cxx} \
+# RUN:              x%{escaped_flags} \
+# RUN:              x%{escaped_compile_flags} \
+# RUN:              x%{escaped_link_flags}
 # END.
 
 import base64
@@ -33,7 +37,8 @@ import lit.util
 
 # Steal some parameters from the config running this test so that we can
 # bootstrap our own TestingConfig.
-SOURCE_ROOT, EXEC_PATH, EXEC, CXX, FLAGS, COMPILE_FLAGS, LINK_FLAGS = sys.argv[1:8]
+args = list(map(lambda s: s[1:], sys.argv[1:8])) # Remove the leading 'x'
+SOURCE_ROOT, EXEC_PATH, EXEC, CXX, FLAGS, COMPILE_FLAGS, LINK_FLAGS = args
 sys.argv[1:8] = []
 
 class SetupConfigs(unittest.TestCase):
@@ -80,6 +85,18 @@ class SetupConfigs(unittest.TestCase):
         return found[0]
 
 
+def findIndex(list, pred):
+    """Finds the index of the first element satisfying 'pred' in a list, or
+       'len(list)' if there is no such element."""
+    index = 0
+    for x in list:
+        if pred(x):
+            break
+        else:
+            index += 1
+    return index
+
+
 class TestHasCompileFlag(SetupConfigs):
     """
     Tests for libcxx.test.dsl.hasCompileFlag
@@ -97,6 +114,99 @@ class TestHasCompileFlag(SetupConfigs):
         self.assertTrue(dsl.hasCompileFlag(self.config, '-O1 -Dhello'))
 
 
+class TestSourceBuilds(SetupConfigs):
+    """
+    Tests for libcxx.test.dsl.sourceBuilds
+    """
+    def test_valid_program_builds(self):
+        source = """int main(int, char**) { return 0; }"""
+        self.assertTrue(dsl.sourceBuilds(self.config, source))
+
+    def test_compilation_error_fails(self):
+        source = """int main(int, char**) { this does not compile }"""
+        self.assertFalse(dsl.sourceBuilds(self.config, source))
+
+    def test_link_error_fails(self):
+        source = """extern void this_isnt_defined_anywhere();
+                    int main(int, char**) { this_isnt_defined_anywhere(); return 0; }"""
+        self.assertFalse(dsl.sourceBuilds(self.config, source))
+
+
+class TestProgramOutput(SetupConfigs):
+    """
+    Tests for libcxx.test.dsl.programOutput
+    """
+    def test_valid_program_returns_output(self):
+        source = """
+        #include <cstdio>
+        int main(int, char**) { std::printf("FOOBAR"); return 0; }
+        """
+        self.assertEqual(dsl.programOutput(self.config, source), "FOOBAR")
+
+    def test_valid_program_returns_output_newline_handling(self):
+        source = """
+        #include <cstdio>
+        int main(int, char**) { std::printf("FOOBAR\\n"); return 0; }
+        """
+        self.assertEqual(dsl.programOutput(self.config, source), "FOOBAR\n")
+
+    def test_valid_program_returns_no_output(self):
+        source = """
+        int main(int, char**) { return 0; }
+        """
+        self.assertEqual(dsl.programOutput(self.config, source), "")
+
+    def test_invalid_program_returns_None_1(self):
+        # The program compiles, but exits with an error
+        source = """
+        int main(int, char**) { return 1; }
+        """
+        self.assertEqual(dsl.programOutput(self.config, source), None)
+
+    def test_invalid_program_returns_None_2(self):
+        # The program doesn't compile
+        source = """
+        int main(int, char**) { this doesnt compile }
+        """
+        self.assertEqual(dsl.programOutput(self.config, source), None)
+
+    def test_pass_arguments_to_program(self):
+        source = """
+        #include <cassert>
+        #include <string>
+        int main(int argc, char** argv) {
+            assert(argc == 3);
+            assert(argv[1] == std::string("first-argument"));
+            assert(argv[2] == std::string("second-argument"));
+            return 0;
+        }
+        """
+        args = ["first-argument", "second-argument"]
+        self.assertEqual(dsl.programOutput(self.config, source, args=args), "")
+
+    def test_caching_is_not_too_aggressive(self):
+        # Run a program, then change the substitutions and run it again.
+        # Make sure the program is run the second time and the right result
+        # is given, to ensure we're not incorrectly caching the result of the
+        # first program run.
+        source = """
+        #include <cstdio>
+        int main(int, char**) {
+            std::printf("MACRO=%u\\n", MACRO);
+        }
+        """
+        compileFlagsIndex = findIndex(self.config.substitutions, lambda x: x[0] == '%{compile_flags}')
+        compileFlags = self.config.substitutions[compileFlagsIndex][1]
+
+        self.config.substitutions[compileFlagsIndex] = ('%{compile_flags}',  compileFlags + ' -DMACRO=1')
+        output1 = dsl.programOutput(self.config, source)
+        self.assertEqual(output1, "MACRO=1\n")
+
+        self.config.substitutions[compileFlagsIndex] = ('%{compile_flags}',  compileFlags + ' -DMACRO=2')
+        output2 = dsl.programOutput(self.config, source)
+        self.assertEqual(output2, "MACRO=2\n")
+
+
 class TestHasLocale(SetupConfigs):
     """
     Tests for libcxx.test.dsl.hasLocale
@@ -105,12 +215,12 @@ class TestHasLocale(SetupConfigs):
         # It's really hard to test that a system has a given locale, so at least
         # make sure we don't explode when we try to check it.
         try:
-            dsl.hasLocale(self.config, 'en_US.UTF-8')
+            dsl.hasAnyLocale(self.config, ['en_US.UTF-8'])
         except subprocess.CalledProcessError:
             self.fail("checking for hasLocale should not explode")
 
     def test_nonexistent_locale(self):
-        self.assertFalse(dsl.hasLocale(self.config, 'for_sure_this_is_not_an_existing_locale'))
+        self.assertFalse(dsl.hasAnyLocale(self.config, ['for_sure_this_is_not_an_existing_locale']))
 
 
 class TestCompilerMacros(SetupConfigs):
@@ -171,10 +281,28 @@ class TestFeature(SetupConfigs):
         self.assertIn('name', self.config.available_features)
 
     def test_name_can_be_a_callable(self):
-        feature = dsl.Feature(name=lambda cfg: (self.assertIs(self.config, cfg), 'name')[1])
+        feature = dsl.Feature(name=lambda cfg: 'name')
         assert feature.isSupported(self.config)
+        self.assertEqual('name', feature.getName(self.config))
         feature.enableIn(self.config)
         self.assertIn('name', self.config.available_features)
+
+    def test_name_is_not_a_string_1(self):
+        feature = dsl.Feature(name=None)
+        assert feature.isSupported(self.config)
+        self.assertRaises(ValueError, lambda: feature.getName(self.config))
+        self.assertRaises(ValueError, lambda: feature.enableIn(self.config))
+
+    def test_name_is_not_a_string_2(self):
+        feature = dsl.Feature(name=lambda cfg: None)
+        assert feature.isSupported(self.config)
+        self.assertRaises(ValueError, lambda: feature.getName(self.config))
+        self.assertRaises(ValueError, lambda: feature.enableIn(self.config))
+
+    def test_getName_when_unsupported(self):
+        feature = dsl.Feature(name='name', when=lambda _: False)
+        assert not feature.isSupported(self.config)
+        self.assertRaises(AssertionError, lambda: feature.getName(self.config))
 
     def test_adding_compile_flag(self):
         feature = dsl.Feature(name='name', compileFlag='-foo')
@@ -245,11 +373,11 @@ class TestParameter(SetupConfigs):
         param = dsl.Parameter(name='std', choices=['c++03'], type=str, help='', feature=lambda _: None)
         self.assertEqual(param.name, 'std')
 
-    def test_no_value_provided_on_command_line_and_no_default_value(self):
+    def test_no_value_provided_and_no_default_value(self):
         param = dsl.Parameter(name='std', choices=['c++03'], type=str, help='', feature=lambda _: None)
         self.assertRaises(ValueError, lambda: param.getFeature(self.config, self.litConfig.params))
 
-    def test_no_value_provided_on_command_line_and_default_value(self):
+    def test_no_value_provided_and_default_value(self):
         param = dsl.Parameter(name='std', choices=['c++03'], type=str, help='', default='c++03',
                               feature=lambda std: dsl.Feature(name=std))
         param.getFeature(self.config, self.litConfig.params).enableIn(self.config)
@@ -263,12 +391,32 @@ class TestParameter(SetupConfigs):
         self.assertIn('c++03', self.config.available_features)
 
     def test_value_provided_on_command_line_and_default_value(self):
+        """The value provided on the command line should override the default value"""
         self.litConfig.params['std'] = 'c++11'
         param = dsl.Parameter(name='std', choices=['c++03', 'c++11'], type=str, default='c++03', help='',
                               feature=lambda std: dsl.Feature(name=std))
         param.getFeature(self.config, self.litConfig.params).enableIn(self.config)
         self.assertIn('c++11', self.config.available_features)
         self.assertNotIn('c++03', self.config.available_features)
+
+    def test_value_provided_in_config_and_default_value(self):
+        """The value provided in the config should override the default value"""
+        self.config.std ='c++11'
+        param = dsl.Parameter(name='std', choices=['c++03', 'c++11'], type=str, default='c++03', help='',
+                              feature=lambda std: dsl.Feature(name=std))
+        param.getFeature(self.config, self.litConfig.params).enableIn(self.config)
+        self.assertIn('c++11', self.config.available_features)
+        self.assertNotIn('c++03', self.config.available_features)
+
+    def test_value_provided_in_config_and_on_command_line(self):
+        """The value on the command line should override the one in the config"""
+        self.config.std = 'c++11'
+        self.litConfig.params['std'] = 'c++03'
+        param = dsl.Parameter(name='std', choices=['c++03', 'c++11'], type=str, help='',
+                              feature=lambda std: dsl.Feature(name=std))
+        param.getFeature(self.config, self.litConfig.params).enableIn(self.config)
+        self.assertIn('c++03', self.config.available_features)
+        self.assertNotIn('c++11', self.config.available_features)
 
     def test_feature_is_None(self):
         self.litConfig.params['std'] = 'c++03'

@@ -332,6 +332,33 @@ TEST_F(IRBuilderTest, ConstrainedFPIntrinsics) {
   EXPECT_EQ(fp::ebStrict, CII->getExceptionBehavior());
 }
 
+TEST_F(IRBuilderTest, ConstrainedFPFunctionCall) {
+  IRBuilder<> Builder(BB);
+
+  // Create an empty constrained FP function.
+  FunctionType *FTy = FunctionType::get(Type::getVoidTy(Ctx),
+                                        /*isVarArg=*/false);
+  Function *Callee =
+      Function::Create(FTy, Function::ExternalLinkage, "", M.get());
+  BasicBlock *CalleeBB = BasicBlock::Create(Ctx, "", Callee);
+  IRBuilder<> CalleeBuilder(CalleeBB);
+  CalleeBuilder.setIsFPConstrained(true);
+  CalleeBuilder.setConstrainedFPFunctionAttr();
+  CalleeBuilder.CreateRetVoid();
+
+  // Now call the empty constrained FP function.
+  Builder.setIsFPConstrained(true);
+  Builder.setConstrainedFPFunctionAttr();
+  CallInst *FCall = Builder.CreateCall(Callee, None);
+
+  // Check the attributes to verify the strictfp attribute is on the call.
+  EXPECT_TRUE(FCall->getAttributes().getFnAttributes().hasAttribute(
+      Attribute::StrictFP));
+
+  Builder.CreateRetVoid();
+  EXPECT_FALSE(verifyModule(*M));
+}
+
 TEST_F(IRBuilderTest, Lifetime) {
   IRBuilder<> Builder(BB);
   AllocaInst *Var1 = Builder.CreateAlloca(Builder.getInt8Ty());
@@ -807,7 +834,7 @@ TEST_F(IRBuilderTest, createArtificialSubprogram) {
 TEST_F(IRBuilderTest, InsertExtractElement) {
   IRBuilder<> Builder(BB);
 
-  auto VecTy = VectorType::get(Builder.getInt64Ty(), 4);
+  auto VecTy = FixedVectorType::get(Builder.getInt64Ty(), 4);
   auto Elt1 = Builder.getInt64(-1);
   auto Elt2 = Builder.getInt64(-2);
   Value *Vec = UndefValue::get(VecTy);

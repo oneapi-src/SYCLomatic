@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "ClangdLSPServer.h"
+#include "ClangdServer.h"
 #include "CodeComplete.h"
 #include "Diagnostics.h"
 #include "DraftStore.h"
@@ -18,6 +19,7 @@
 #include "URI.h"
 #include "refactor/Tweak.h"
 #include "support/Context.h"
+#include "support/MemoryTree.h"
 #include "support/Trace.h"
 #include "clang/Basic/Version.h"
 #include "clang/Tooling/Core/Replacement.h"
@@ -26,6 +28,7 @@
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator_range.h"
+#include "llvm/Support/Allocator.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FormatVariadic.h"
@@ -33,7 +36,11 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/SHA1.h"
 #include "llvm/Support/ScopedPrinter.h"
+#include "llvm/Support/raw_ostream.h"
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -57,7 +64,7 @@ llvm::Optional<int64_t> decodeVersion(llvm::StringRef Encoded) {
   int64_t Result;
   if (llvm::to_integer(Encoded, Result, 10))
     return Result;
-  else if (!Encoded.empty()) // Empty can be e.g. diagnostics on close.
+  if (!Encoded.empty()) // Empty can be e.g. diagnostics on close.
     elog("unexpected non-numeric version {0}", Encoded);
   return llvm::None;
 }
@@ -68,14 +75,7 @@ CodeAction toCodeAction(const ClangdServer::TweakRef &T, const URIForFile &File,
                         Range Selection) {
   CodeAction CA;
   CA.title = T.Title;
-  switch (T.Intent) {
-  case Tweak::Refactor:
-    CA.kind = std::string(CodeAction::REFACTOR_KIND);
-    break;
-  case Tweak::Info:
-    CA.kind = std::string(CodeAction::INFO_KIND);
-    break;
-  }
+  CA.kind = T.Kind.str();
   // This tweak may have an expensive second stage, we only run it if the user
   // actually chooses it in the UI. We reply with a command that would run the
   // corresponding tweak.
@@ -147,15 +147,10 @@ llvm::Error validateEdits(const DraftStore &DraftMgr, const FileEdits &FE) {
   if (!InvalidFileCount)
     return llvm::Error::success();
   if (InvalidFileCount == 1)
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "File must be saved first: " +
-                                       LastInvalidFile);
-  return llvm::createStringError(
-      llvm::inconvertibleErrorCode(),
-      "Files must be saved first: " + LastInvalidFile + " (and " +
-          llvm::to_string(InvalidFileCount - 1) + " others)");
+    return error("File must be saved first: {0}", LastInvalidFile);
+  return error("Files must be saved first: {0} (and {1} others)",
+               LastInvalidFile, InvalidFileCount - 1);
 }
-
 } // namespace
 
 // MessageHandler dispatches incoming LSP messages.
@@ -174,14 +169,16 @@ public:
     log("<-- {0}", Method);
     if (Method == "exit")
       return false;
-    if (!Server.Server)
+    if (!Server.Server) {
       elog("Notification {0} before initialization", Method);
-    else if (Method == "$/cancelRequest")
+    } else if (Method == "$/cancelRequest") {
       onCancel(std::move(Params));
-    else if (auto Handler = Notifications.lookup(Method))
+    } else if (auto Handler = Notifications.lookup(Method)) {
       Handler(std::move(Params));
-    else
+      Server.maybeExportMemoryProfile();
+    } else {
       log("unhandled notification {0}", Method);
+    }
     return true;
   }
 
@@ -251,14 +248,10 @@ public:
             void (ClangdLSPServer::*Handler)(const Param &, Callback<Result>)) {
     Calls[Method] = [Method, Handler, this](llvm::json::Value RawParams,
                                             ReplyOnce Reply) {
-      Param P;
-      if (fromJSON(RawParams, P)) {
-        (Server.*Handler)(P, std::move(Reply));
-      } else {
-        elog("Failed to decode {0} request.", Method);
-        Reply(llvm::make_error<LSPError>("failed to decode request",
-                                         ErrorCode::InvalidRequest));
-      }
+      auto P = parse<Param>(RawParams, Method, "request");
+      if (!P)
+        return Reply(P.takeError());
+      (Server.*Handler)(*P, std::move(Reply));
     };
   }
 
@@ -284,10 +277,9 @@ public:
       }
     }
     if (OldestCB)
-      OldestCB->second(llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          llvm::formatv("failed to receive a client reply for request ({0})",
-                        OldestCB->first)));
+      OldestCB->second(
+          error("failed to receive a client reply for request ({0})",
+                OldestCB->first));
     return ID;
   }
 
@@ -297,14 +289,12 @@ public:
             void (ClangdLSPServer::*Handler)(const Param &)) {
     Notifications[Method] = [Method, Handler,
                              this](llvm::json::Value RawParams) {
-      Param P;
-      if (!fromJSON(RawParams, P)) {
-        elog("Failed to decode {0} request.", Method);
-        return;
-      }
+      llvm::Expected<Param> P = parse<Param>(RawParams, Method, "request");
+      if (!P)
+        return llvm::consumeError(P.takeError());
       trace::Span Tracer(Method, LSPLatency);
       SPAN_ATTACH(Tracer, "Params", RawParams);
-      (Server.*Handler)(P);
+      (Server.*Handler)(*P);
     };
   }
 
@@ -406,7 +396,7 @@ private:
   Context handlerContext() const {
     return Context::current().derive(
         kCurrentOffsetEncoding,
-        Server.NegotiatedOffsetEncoding.getValueOr(OffsetEncoding::UTF16));
+        Server.Opts.Encoding.getValueOr(OffsetEncoding::UTF16));
   }
 
   // We run cancelable requests in a context that does two things:
@@ -476,64 +466,62 @@ static std::vector<llvm::StringRef> semanticTokenTypes() {
 void ClangdLSPServer::onInitialize(const InitializeParams &Params,
                                    Callback<llvm::json::Value> Reply) {
   // Determine character encoding first as it affects constructed ClangdServer.
-  if (Params.capabilities.offsetEncoding && !NegotiatedOffsetEncoding) {
-    NegotiatedOffsetEncoding = OffsetEncoding::UTF16; // fallback
+  if (Params.capabilities.offsetEncoding && !Opts.Encoding) {
+    Opts.Encoding = OffsetEncoding::UTF16; // fallback
     for (OffsetEncoding Supported : *Params.capabilities.offsetEncoding)
       if (Supported != OffsetEncoding::UnsupportedEncoding) {
-        NegotiatedOffsetEncoding = Supported;
+        Opts.Encoding = Supported;
         break;
       }
   }
 
-  ClangdServerOpts.TheiaSemanticHighlighting =
+  Opts.TheiaSemanticHighlighting =
       Params.capabilities.TheiaSemanticHighlighting;
   if (Params.capabilities.TheiaSemanticHighlighting &&
       Params.capabilities.SemanticTokens) {
     log("Client supports legacy semanticHighlights notification and standard "
         "semanticTokens request, choosing the latter (no notifications).");
-    ClangdServerOpts.TheiaSemanticHighlighting = false;
+    Opts.TheiaSemanticHighlighting = false;
   }
 
   if (Params.rootUri && *Params.rootUri)
-    ClangdServerOpts.WorkspaceRoot = std::string(Params.rootUri->file());
+    Opts.WorkspaceRoot = std::string(Params.rootUri->file());
   else if (Params.rootPath && !Params.rootPath->empty())
-    ClangdServerOpts.WorkspaceRoot = *Params.rootPath;
+    Opts.WorkspaceRoot = *Params.rootPath;
   if (Server)
     return Reply(llvm::make_error<LSPError>("server already initialized",
                                             ErrorCode::InvalidRequest));
   if (const auto &Dir = Params.initializationOptions.compilationDatabasePath)
-    CompileCommandsDir = Dir;
-  if (UseDirBasedCDB) {
+    Opts.CompileCommandsDir = Dir;
+  if (Opts.UseDirBasedCDB) {
     BaseCDB = std::make_unique<DirectoryBasedGlobalCompilationDatabase>(
-        CompileCommandsDir);
-    BaseCDB = getQueryDriverDatabase(
-        llvm::makeArrayRef(ClangdServerOpts.QueryDriverGlobs),
-        std::move(BaseCDB));
+        Opts.CompileCommandsDir);
+    BaseCDB = getQueryDriverDatabase(llvm::makeArrayRef(Opts.QueryDriverGlobs),
+                                     std::move(BaseCDB));
   }
   auto Mangler = CommandMangler::detect();
-  if (ClangdServerOpts.ResourceDir)
-    Mangler.ResourceDir = *ClangdServerOpts.ResourceDir;
+  if (Opts.ResourceDir)
+    Mangler.ResourceDir = *Opts.ResourceDir;
   CDB.emplace(BaseCDB.get(), Params.initializationOptions.fallbackFlags,
-              tooling::ArgumentsAdjuster(Mangler));
+              tooling::ArgumentsAdjuster(std::move(Mangler)));
   {
     // Switch caller's context with LSPServer's background context. Since we
     // rather want to propagate information from LSPServer's context into the
     // Server, CDB, etc.
     WithContext MainContext(BackgroundContext.clone());
     llvm::Optional<WithContextValue> WithOffsetEncoding;
-    if (NegotiatedOffsetEncoding)
-      WithOffsetEncoding.emplace(kCurrentOffsetEncoding,
-                                 *NegotiatedOffsetEncoding);
-    Server.emplace(*CDB, FSProvider, ClangdServerOpts,
+    if (Opts.Encoding)
+      WithOffsetEncoding.emplace(kCurrentOffsetEncoding, *Opts.Encoding);
+    Server.emplace(*CDB, TFS, Opts,
                    static_cast<ClangdServer::Callbacks *>(this));
   }
   applyConfiguration(Params.initializationOptions.ConfigSettings);
 
-  CCOpts.EnableSnippets = Params.capabilities.CompletionSnippets;
-  CCOpts.IncludeFixIts = Params.capabilities.CompletionFixes;
-  if (!CCOpts.BundleOverloads.hasValue())
-    CCOpts.BundleOverloads = Params.capabilities.HasSignatureHelp;
-  CCOpts.DocumentationFormat =
+  Opts.CodeComplete.EnableSnippets = Params.capabilities.CompletionSnippets;
+  Opts.CodeComplete.IncludeFixIts = Params.capabilities.CompletionFixes;
+  if (!Opts.CodeComplete.BundleOverloads.hasValue())
+    Opts.CodeComplete.BundleOverloads = Params.capabilities.HasSignatureHelp;
+  Opts.CodeComplete.DocumentationFormat =
       Params.capabilities.CompletionDocumentationFormat;
   DiagOpts.EmbedFixesInDiagnostics = Params.capabilities.DiagnosticFixes;
   DiagOpts.SendDiagnosticCategory = Params.capabilities.DiagnosticCategory;
@@ -592,15 +580,18 @@ void ClangdLSPServer::onInitialize(const InitializeParams &Params,
             {"codeActionProvider", std::move(CodeActionProvider)},
             {"completionProvider",
              llvm::json::Object{
-                 {"allCommitCharacters", " \t()[]{}<>:;,+-/*%^&#?.=\"'|"},
+                 {"allCommitCharacters",
+                  {" ", "\t", "(", ")", "[", "]", "{",  "}", "<",
+                   ">", ":",  ";", ",", "+", "-", "/",  "*", "%",
+                   "^", "&",  "#", "?", ".", "=", "\"", "'", "|"}},
                  {"resolveProvider", false},
                  // We do extra checks, e.g. that > is part of ->.
                  {"triggerCharacters", {".", "<", ">", ":", "\"", "/"}},
              }},
             {"semanticTokensProvider",
              llvm::json::Object{
-                 {"documentProvider", llvm::json::Object{{"edits", true}}},
-                 {"rangeProvider", false},
+                 {"full", llvm::json::Object{{"delta", true}}},
+                 {"range", false},
                  {"legend",
                   llvm::json::Object{{"tokenTypes", semanticTokenTypes()},
                                      {"tokenModifiers", llvm::json::Array()}}},
@@ -629,14 +620,17 @@ void ClangdLSPServer::onInitialize(const InitializeParams &Params,
                    ExecuteCommandParams::CLANGD_APPLY_TWEAK}},
              }},
             {"typeHierarchyProvider", true},
+            {"memoryUsageProvider", true}, // clangd extension.
         }}}};
-  if (NegotiatedOffsetEncoding)
-    Result["offsetEncoding"] = *NegotiatedOffsetEncoding;
-  if (ClangdServerOpts.TheiaSemanticHighlighting)
+  if (Opts.Encoding)
+    Result["offsetEncoding"] = *Opts.Encoding;
+  if (Opts.TheiaSemanticHighlighting)
     Result.getObject("capabilities")
         ->insert(
             {"semanticHighlighting",
              llvm::json::Object{{"scopes", buildHighlightScopeLookupTable()}}});
+  if (Opts.FoldingRanges)
+    Result.getObject("capabilities")->insert({"foldingRangeProvider", true});
   Reply(std::move(Result));
 }
 
@@ -656,8 +650,7 @@ void ClangdLSPServer::onSync(const NoParams &Params,
   if (Server->blockUntilIdleForTest(/*TimeoutSeconds=*/60))
     Reply(nullptr);
   else
-    Reply(llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                  "Not idle after a minute"));
+    Reply(error("Not idle after a minute"));
 }
 
 void ClangdLSPServer::onDocumentDidOpen(
@@ -724,9 +717,7 @@ void ClangdLSPServer::onCommand(const ExecuteCommandParams &Params,
             std::string Reason = Response->failureReason
                                      ? *Response->failureReason
                                      : "unknown reason";
-            return Reply(llvm::createStringError(
-                llvm::inconvertibleErrorCode(),
-                ("edits were not applied: " + Reason).c_str()));
+            return Reply(error("edits were not applied: {0}", Reason));
           }
           return Reply(SuccessMessage);
         });
@@ -747,9 +738,7 @@ void ClangdLSPServer::onCommand(const ExecuteCommandParams &Params,
              Params.tweakArgs) {
     auto Code = DraftMgr.getDraft(Params.tweakArgs->file.file());
     if (!Code)
-      return Reply(llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          "trying to apply a code action for a non-added file"));
+      return Reply(error("trying to apply a code action for a non-added file"));
 
     auto Action = [this, ApplyEdit, Reply = std::move(Reply),
                    File = Params.tweakArgs->file, Code = std::move(*Code)](
@@ -799,7 +788,7 @@ void ClangdLSPServer::onWorkspaceSymbol(
     const WorkspaceSymbolParams &Params,
     Callback<std::vector<SymbolInformation>> Reply) {
   Server->workspaceSymbols(
-      Params.query, CCOpts.Limit,
+      Params.query, Opts.CodeComplete.Limit,
       [Reply = std::move(Reply),
        this](llvm::Expected<std::vector<SymbolInformation>> Items) mutable {
         if (!Items)
@@ -813,8 +802,14 @@ void ClangdLSPServer::onWorkspaceSymbol(
 
 void ClangdLSPServer::onPrepareRename(const TextDocumentPositionParams &Params,
                                       Callback<llvm::Optional<Range>> Reply) {
-  Server->prepareRename(Params.textDocument.uri.file(), Params.position,
-                        RenameOpts, std::move(Reply));
+  Server->prepareRename(
+      Params.textDocument.uri.file(), Params.position, /*NewName*/ llvm::None,
+      Opts.Rename,
+      [Reply = std::move(Reply)](llvm::Expected<RenameResult> Result) mutable {
+        if (!Result)
+          return Reply(Result.takeError());
+        return Reply(std::move(Result->Target));
+      });
 }
 
 void ClangdLSPServer::onRename(const RenameParams &Params,
@@ -824,16 +819,16 @@ void ClangdLSPServer::onRename(const RenameParams &Params,
     return Reply(llvm::make_error<LSPError>(
         "onRename called for non-added file", ErrorCode::InvalidParams));
   Server->rename(
-      File, Params.position, Params.newName, RenameOpts,
+      File, Params.position, Params.newName, Opts.Rename,
       [File, Params, Reply = std::move(Reply),
-       this](llvm::Expected<FileEdits> Edits) mutable {
-        if (!Edits)
-          return Reply(Edits.takeError());
-        if (auto Err = validateEdits(DraftMgr, *Edits))
+       this](llvm::Expected<RenameResult> R) mutable {
+        if (!R)
+          return Reply(R.takeError());
+        if (auto Err = validateEdits(DraftMgr, R->GlobalChanges))
           return Reply(std::move(Err));
         WorkspaceEdit Result;
         Result.changes.emplace();
-        for (const auto &Rep : *Edits) {
+        for (const auto &Rep : R->GlobalChanges) {
           (*Result.changes)[URI::createFile(Rep.first()).toString()] =
               Rep.second.asTextEdits();
         }
@@ -879,7 +874,8 @@ void ClangdLSPServer::onDocumentOnTypeFormatting(
         "onDocumentOnTypeFormatting called for non-added file",
         ErrorCode::InvalidParams));
 
-  Reply(Server->formatOnType(Code->Contents, File, Params.position, Params.ch));
+  Server->formatOnType(File, Code->Contents, Params.position, Params.ch,
+                       std::move(Reply));
 }
 
 void ClangdLSPServer::onDocumentRangeFormatting(
@@ -892,12 +888,15 @@ void ClangdLSPServer::onDocumentRangeFormatting(
         "onDocumentRangeFormatting called for non-added file",
         ErrorCode::InvalidParams));
 
-  auto ReplacementsOrError =
-      Server->formatRange(Code->Contents, File, Params.range);
-  if (ReplacementsOrError)
-    Reply(replacementsToEdits(Code->Contents, ReplacementsOrError.get()));
-  else
-    Reply(ReplacementsOrError.takeError());
+  Server->formatRange(
+      File, Code->Contents, Params.range,
+      [Code = Code->Contents, Reply = std::move(Reply)](
+          llvm::Expected<tooling::Replacements> Result) mutable {
+        if (Result)
+          Reply(replacementsToEdits(Code, Result.get()));
+        else
+          Reply(Result.takeError());
+      });
 }
 
 void ClangdLSPServer::onDocumentFormatting(
@@ -910,11 +909,14 @@ void ClangdLSPServer::onDocumentFormatting(
         "onDocumentFormatting called for non-added file",
         ErrorCode::InvalidParams));
 
-  auto ReplacementsOrError = Server->formatFile(Code->Contents, File);
-  if (ReplacementsOrError)
-    Reply(replacementsToEdits(Code->Contents, ReplacementsOrError.get()));
-  else
-    Reply(ReplacementsOrError.takeError());
+  Server->formatFile(File, Code->Contents,
+                     [Code = Code->Contents, Reply = std::move(Reply)](
+                         llvm::Expected<tooling::Replacements> Result) mutable {
+                       if (Result)
+                         Reply(replacementsToEdits(Code, Result.get()));
+                       else
+                         Reply(Result.takeError());
+                     });
 }
 
 /// The functions constructs a flattened view of the DocumentSymbol hierarchy.
@@ -922,7 +924,6 @@ void ClangdLSPServer::onDocumentFormatting(
 static std::vector<SymbolInformation>
 flattenSymbolHierarchy(llvm::ArrayRef<DocumentSymbol> Symbols,
                        const URIForFile &FileURI) {
-
   std::vector<SymbolInformation> Results;
   std::function<void(const DocumentSymbol &, llvm::StringRef)> Process =
       [&](const DocumentSymbol &S, llvm::Optional<llvm::StringRef> ParentName) {
@@ -959,6 +960,12 @@ void ClangdLSPServer::onDocumentSymbol(const DocumentSymbolParams &Params,
         else
           return Reply(flattenSymbolHierarchy(*Items, FileURI));
       });
+}
+
+void ClangdLSPServer::onFoldingRange(
+    const FoldingRangeParams &Params,
+    Callback<std::vector<FoldingRange>> Reply) {
+  Server->foldingRanges(Params.textDocument.uri.file(), std::move(Reply));
 }
 
 static llvm::Optional<Command> asCommand(const CodeAction &Action) {
@@ -1008,6 +1015,20 @@ void ClangdLSPServer::onCodeAction(const CodeActionParams &Params,
         for (const auto &T : *Tweaks)
           Actions.push_back(toCodeAction(T, File, Selection));
 
+        // If there's exactly one quick-fix, call it "preferred".
+        // We never consider refactorings etc as preferred.
+        CodeAction *OnlyFix = nullptr;
+        for (auto &Action : Actions) {
+          if (Action.kind && *Action.kind == CodeAction::QUICKFIX_KIND) {
+            if (OnlyFix) {
+              OnlyFix->isPreferred = false;
+              break;
+            }
+            Action.isPreferred = true;
+            OnlyFix = &Action;
+          }
+        }
+
         if (SupportsCodeAction)
           return Reply(llvm::json::Array(Actions));
         std::vector<Command> Commands;
@@ -1018,7 +1039,15 @@ void ClangdLSPServer::onCodeAction(const CodeActionParams &Params,
         return Reply(llvm::json::Array(Commands));
       };
 
-  Server->enumerateTweaks(File.file(), Params.range, std::move(ConsumeActions));
+  Server->enumerateTweaks(
+      File.file(), Params.range,
+      [&](const Tweak &T) {
+        if (!Opts.TweakFilter(T))
+          return false;
+        // FIXME: also consider CodeActionContext.only
+        return true;
+      },
+      std::move(ConsumeActions));
 }
 
 void ClangdLSPServer::onCompletion(const CompletionParams &Params,
@@ -1029,21 +1058,21 @@ void ClangdLSPServer::onCompletion(const CompletionParams &Params,
     vlog("ignored auto-triggered completion, preceding char did not match");
     return Reply(CompletionList());
   }
-  Server->codeComplete(Params.textDocument.uri.file(), Params.position, CCOpts,
-                       [Reply = std::move(Reply),
-                        this](llvm::Expected<CodeCompleteResult> List) mutable {
-                         if (!List)
-                           return Reply(List.takeError());
-                         CompletionList LSPList;
-                         LSPList.isIncomplete = List->HasMore;
-                         for (const auto &R : List->Completions) {
-                           CompletionItem C = R.render(CCOpts);
-                           C.kind = adjustKindToCapability(
-                               C.kind, SupportedCompletionItemKinds);
-                           LSPList.items.push_back(std::move(C));
-                         }
-                         return Reply(std::move(LSPList));
-                       });
+  Server->codeComplete(
+      Params.textDocument.uri.file(), Params.position, Opts.CodeComplete,
+      [Reply = std::move(Reply),
+       this](llvm::Expected<CodeCompleteResult> List) mutable {
+        if (!List)
+          return Reply(List.takeError());
+        CompletionList LSPList;
+        LSPList.isIncomplete = List->HasMore;
+        for (const auto &R : List->Completions) {
+          CompletionItem C = R.render(Opts.CodeComplete);
+          C.kind = adjustKindToCapability(C.kind, SupportedCompletionItemKinds);
+          LSPList.items.push_back(std::move(C));
+        }
+        return Reply(std::move(LSPList));
+      });
 }
 
 void ClangdLSPServer::onSignatureHelp(const TextDocumentPositionParams &Params,
@@ -1214,6 +1243,25 @@ void ClangdLSPServer::publishDiagnostics(
   notify("textDocument/publishDiagnostics", Params);
 }
 
+void ClangdLSPServer::maybeExportMemoryProfile() {
+  if (!trace::enabled())
+    return;
+  // Profiling might be expensive, so we throttle it to happen once every 5
+  // minutes.
+  static constexpr auto ProfileInterval = std::chrono::minutes(5);
+  auto Now = std::chrono::steady_clock::now();
+  if (Now < NextProfileTime)
+    return;
+
+  static constexpr trace::Metric MemoryUsage(
+      "memory_usage", trace::Metric::Value, "component_name");
+  trace::Span Tracer("ProfileBrief");
+  MemoryTree MT;
+  profile(MT);
+  record(MT, "clangd_lsp_server", MemoryUsage);
+  NextProfileTime = Now + ProfileInterval;
+}
+
 // FIXME: This function needs to be properly tested.
 void ClangdLSPServer::onChangeConfiguration(
     const DidChangeConfigurationParams &Params) {
@@ -1223,7 +1271,7 @@ void ClangdLSPServer::onChangeConfiguration(
 void ClangdLSPServer::onReference(const ReferenceParams &Params,
                                   Callback<std::vector<Location>> Reply) {
   Server->findReferences(Params.textDocument.uri.file(), Params.position,
-                         CCOpts.Limit,
+                         Opts.CodeComplete.Limit,
                          [Reply = std::move(Reply)](
                              llvm::Expected<ReferencesResult> Refs) mutable {
                            if (!Refs)
@@ -1304,9 +1352,9 @@ void ClangdLSPServer::onSemanticTokens(const SemanticTokensParams &Params,
       });
 }
 
-void ClangdLSPServer::onSemanticTokensEdits(
-    const SemanticTokensEditsParams &Params,
-    Callback<SemanticTokensOrEdits> CB) {
+void ClangdLSPServer::onSemanticTokensDelta(
+    const SemanticTokensDeltaParams &Params,
+    Callback<SemanticTokensOrDelta> CB) {
   Server->semanticHighlights(
       Params.textDocument.uri.file(),
       [this, PrevResultID(Params.previousResultId),
@@ -1316,7 +1364,7 @@ void ClangdLSPServer::onSemanticTokensEdits(
           return CB(HT.takeError());
         std::vector<SemanticToken> Toks = toSemanticTokens(*HT);
 
-        SemanticTokensOrEdits Result;
+        SemanticTokensOrDelta Result;
         {
           std::lock_guard<std::mutex> Lock(SemanticTokensMutex);
           auto &Last = LastSemanticTokens[File];
@@ -1324,8 +1372,8 @@ void ClangdLSPServer::onSemanticTokensEdits(
           if (PrevResultID == Last.resultId) {
             Result.edits = diffTokens(Last.tokens, Toks);
           } else {
-            vlog("semanticTokens/edits: wanted edits vs {0} but last result "
-                 "had ID {1}. Returning full token list.",
+            vlog("semanticTokens/full/delta: wanted edits vs {0} but last "
+                 "result had ID {1}. Returning full token list.",
                  PrevResultID, Last.resultId);
             Result.tokens = Toks;
           }
@@ -1339,21 +1387,21 @@ void ClangdLSPServer::onSemanticTokensEdits(
       });
 }
 
-ClangdLSPServer::ClangdLSPServer(
-    class Transport &Transp, const FileSystemProvider &FSProvider,
-    const clangd::CodeCompleteOptions &CCOpts,
-    const clangd::RenameOptions &RenameOpts,
-    llvm::Optional<Path> CompileCommandsDir, bool UseDirBasedCDB,
-    llvm::Optional<OffsetEncoding> ForcedOffsetEncoding,
-    const ClangdServer::Options &Opts)
+void ClangdLSPServer::onMemoryUsage(const NoParams &,
+                                    Callback<MemoryTree> Reply) {
+  llvm::BumpPtrAllocator DetailAlloc;
+  MemoryTree MT(&DetailAlloc);
+  profile(MT);
+  Reply(std::move(MT));
+}
+
+ClangdLSPServer::ClangdLSPServer(class Transport &Transp,
+                                 const ThreadsafeFS &TFS,
+                                 const ClangdLSPServer::Options &Opts)
     : BackgroundContext(Context::current().clone()), Transp(Transp),
-      MsgHandler(new MessageHandler(*this)), FSProvider(FSProvider),
-      CCOpts(CCOpts), RenameOpts(RenameOpts),
+      MsgHandler(new MessageHandler(*this)), TFS(TFS),
       SupportedSymbolKinds(defaultSymbolKinds()),
-      SupportedCompletionItemKinds(defaultCompletionItemKinds()),
-      UseDirBasedCDB(UseDirBasedCDB),
-      CompileCommandsDir(std::move(CompileCommandsDir)), ClangdServerOpts(Opts),
-      NegotiatedOffsetEncoding(ForcedOffsetEncoding) {
+      SupportedCompletionItemKinds(defaultCompletionItemKinds()), Opts(Opts) {
   // clang-format off
   MsgHandler->bind("initialize", &ClangdLSPServer::onInitialize);
   MsgHandler->bind("initialized", &ClangdLSPServer::onInitialized);
@@ -1387,9 +1435,15 @@ ClangdLSPServer::ClangdLSPServer(
   MsgHandler->bind("typeHierarchy/resolve", &ClangdLSPServer::onResolveTypeHierarchy);
   MsgHandler->bind("textDocument/selectionRange", &ClangdLSPServer::onSelectionRange);
   MsgHandler->bind("textDocument/documentLink", &ClangdLSPServer::onDocumentLink);
-  MsgHandler->bind("textDocument/semanticTokens", &ClangdLSPServer::onSemanticTokens);
-  MsgHandler->bind("textDocument/semanticTokens/edits", &ClangdLSPServer::onSemanticTokensEdits);
+  MsgHandler->bind("textDocument/semanticTokens/full", &ClangdLSPServer::onSemanticTokens);
+  MsgHandler->bind("textDocument/semanticTokens/full/delta", &ClangdLSPServer::onSemanticTokensDelta);
+  MsgHandler->bind("$/memoryUsage", &ClangdLSPServer::onMemoryUsage);
+  if (Opts.FoldingRanges)
+    MsgHandler->bind("textDocument/foldingRange", &ClangdLSPServer::onFoldingRange);
   // clang-format on
+
+  // Delay first profile until we've finished warming up.
+  NextProfileTime = std::chrono::steady_clock::now() + std::chrono::minutes(1);
 }
 
 ClangdLSPServer::~ClangdLSPServer() {
@@ -1408,6 +1462,11 @@ bool ClangdLSPServer::run() {
   }
 
   return CleanExit && ShutdownRequestReceived;
+}
+
+void ClangdLSPServer::profile(MemoryTree &MT) const {
+  if (Server)
+    Server->profile(MT.child("clangd_server"));
 }
 
 std::vector<Fix> ClangdLSPServer::getFixes(llvm::StringRef File,

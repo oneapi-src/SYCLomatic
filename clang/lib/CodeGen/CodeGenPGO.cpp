@@ -773,6 +773,11 @@ void CodeGenPGO::assignRegionCounters(GlobalDecl GD, llvm::Function *Fn) {
   if (!D->hasBody())
     return;
 
+  // Skip CUDA/HIP kernel launch stub functions.
+  if (CGM.getLangOpts().CUDA && !CGM.getLangOpts().CUDAIsDevice &&
+      D->hasAttr<CUDAGlobalAttr>())
+    return;
+
   bool InstrumentRegions = CGM.getCodeGenOpts().hasProfileClangInstr();
   llvm::IndexedInstrProfReader *PGOReader = CGM.getPGOReader();
   if (!InstrumentRegions && !PGOReader)
@@ -829,6 +834,18 @@ void CodeGenPGO::mapRegionCounters(const Decl *D) {
 
 bool CodeGenPGO::skipRegionMappingForDecl(const Decl *D) {
   if (!D->getBody())
+    return true;
+
+  // Skip host-only functions in the CUDA device compilation and device-only
+  // functions in the host compilation. Just roughly filter them out based on
+  // the function attributes. If there are effectively host-only or device-only
+  // ones, their coverage mapping may still be generated.
+  if (CGM.getLangOpts().CUDA &&
+      ((CGM.getLangOpts().CUDAIsDevice && !D->hasAttr<CUDADeviceAttr>() &&
+        !D->hasAttr<CUDAGlobalAttr>()) ||
+       (!CGM.getLangOpts().CUDAIsDevice &&
+        (D->hasAttr<CUDAGlobalAttr>() ||
+         (!D->hasAttr<CUDAHostAttr>() && D->hasAttr<CUDADeviceAttr>())))))
     return true;
 
   // Don't map the functions in system headers.
@@ -1021,7 +1038,7 @@ static uint32_t scaleBranchWeight(uint64_t Weight, uint64_t Scale) {
 }
 
 llvm::MDNode *CodeGenFunction::createProfileWeights(uint64_t TrueCount,
-                                                    uint64_t FalseCount) {
+                                                    uint64_t FalseCount) const {
   // Check for empty weights.
   if (!TrueCount && !FalseCount)
     return nullptr;
@@ -1035,7 +1052,7 @@ llvm::MDNode *CodeGenFunction::createProfileWeights(uint64_t TrueCount,
 }
 
 llvm::MDNode *
-CodeGenFunction::createProfileWeights(ArrayRef<uint64_t> Weights) {
+CodeGenFunction::createProfileWeights(ArrayRef<uint64_t> Weights) const {
   // We need at least two elements to create meaningful weights.
   if (Weights.size() < 2)
     return nullptr;
@@ -1057,8 +1074,9 @@ CodeGenFunction::createProfileWeights(ArrayRef<uint64_t> Weights) {
   return MDHelper.createBranchWeights(ScaledWeights);
 }
 
-llvm::MDNode *CodeGenFunction::createProfileWeightsForLoop(const Stmt *Cond,
-                                                           uint64_t LoopCount) {
+llvm::MDNode *
+CodeGenFunction::createProfileWeightsForLoop(const Stmt *Cond,
+                                             uint64_t LoopCount) const {
   if (!PGO.haveRegionCounts())
     return nullptr;
   Optional<uint64_t> CondCount = PGO.getStmtCount(Cond);

@@ -134,7 +134,7 @@ unsigned MipsTargetLowering::getVectorTypeBreakdownForCallingConv(
   // Break down vector types to either 2 i64s or 4 i32s.
   RegisterVT = getRegisterTypeForCallingConv(Context, CC, VT);
   IntermediateVT = RegisterVT;
-  NumIntermediates = VT.getSizeInBits() < RegisterVT.getSizeInBits()
+  NumIntermediates = VT.getFixedSizeInBits() < RegisterVT.getFixedSizeInBits()
                          ? VT.getVectorNumElements()
                          : VT.getSizeInBits() / RegisterVT.getSizeInBits();
 
@@ -142,8 +142,9 @@ unsigned MipsTargetLowering::getVectorTypeBreakdownForCallingConv(
 }
 
 SDValue MipsTargetLowering::getGlobalReg(SelectionDAG &DAG, EVT Ty) const {
-  MipsFunctionInfo *FI = DAG.getMachineFunction().getInfo<MipsFunctionInfo>();
-  return DAG.getRegister(FI->getGlobalBaseReg(), Ty);
+  MachineFunction &MF = DAG.getMachineFunction();
+  MipsFunctionInfo *FI = MF.getInfo<MipsFunctionInfo>();
+  return DAG.getRegister(FI->getGlobalBaseReg(MF), Ty);
 }
 
 SDValue MipsTargetLowering::getTargetNode(GlobalAddressSDNode *N, EVT Ty,
@@ -2908,8 +2909,8 @@ static bool CC_MipsO32(unsigned ValNo, MVT ValVT, MVT LocVT,
   // argument which is not f32 or f64.
   bool AllocateFloatsInIntReg = State.isVarArg() || ValNo > 1 ||
                                 State.getFirstUnallocated(F32Regs) != ValNo;
-  unsigned OrigAlign = ArgFlags.getOrigAlign();
-  bool isI64 = (ValVT == MVT::i32 && OrigAlign == 8);
+  Align OrigAlign = ArgFlags.getNonZeroOrigAlign();
+  bool isI64 = (ValVT == MVT::i32 && OrigAlign == Align(8));
   bool isVectorFloat = MipsState->WasOriginalArgVectorFloat(ValNo);
 
   // The MIPS vector ABI for floats passes them in a pair of registers
@@ -3024,8 +3025,8 @@ SDValue MipsTargetLowering::passArgOnStack(SDValue StackPtr, unsigned Offset,
   MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
   int FI = MFI.CreateFixedObject(Arg.getValueSizeInBits() / 8, Offset, false);
   SDValue FIN = DAG.getFrameIndex(FI, getPointerTy(DAG.getDataLayout()));
-  return DAG.getStore(Chain, DL, Arg, FIN, MachinePointerInfo(),
-                      /* Alignment = */ 0, MachineMemOperand::MOVolatile);
+  return DAG.getStore(Chain, DL, Arg, FIN, MachinePointerInfo(), MaybeAlign(),
+                      MachineMemOperand::MOVolatile);
 }
 
 void MipsTargetLowering::
@@ -3209,7 +3210,7 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   // caller side but removing it breaks the frame size calculation.
   unsigned ReservedArgArea =
       MemcpyInByVal ? 0 : ABI.GetCalleeAllocdArgSizeInBytes(CallConv);
-  CCInfo.AllocateStack(ReservedArgArea, 1);
+  CCInfo.AllocateStack(ReservedArgArea, Align(1));
 
   CCInfo.AnalyzeCallOperands(Outs, CC_Mips, CLI.getArgs(),
                              ES ? ES->getSymbol() : nullptr);
@@ -3420,11 +3421,11 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
       else if (Subtarget.useXGOT()) {
         Callee = getAddrGlobalLargeGOT(G, DL, Ty, DAG, MipsII::MO_CALL_HI16,
                                        MipsII::MO_CALL_LO16, Chain,
-                                       FuncInfo->callPtrInfo(Val));
+                                       FuncInfo->callPtrInfo(MF, Val));
         IsCallReloc = true;
       } else {
         Callee = getAddrGlobal(G, DL, Ty, DAG, MipsII::MO_GOT_CALL, Chain,
-                               FuncInfo->callPtrInfo(Val));
+                               FuncInfo->callPtrInfo(MF, Val));
         IsCallReloc = true;
       }
     } else
@@ -3442,11 +3443,11 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     else if (Subtarget.useXGOT()) {
       Callee = getAddrGlobalLargeGOT(S, DL, Ty, DAG, MipsII::MO_CALL_HI16,
                                      MipsII::MO_CALL_LO16, Chain,
-                                     FuncInfo->callPtrInfo(Sym));
+                                     FuncInfo->callPtrInfo(MF, Sym));
       IsCallReloc = true;
     } else { // PIC
       Callee = getAddrGlobal(S, DL, Ty, DAG, MipsII::MO_GOT_CALL, Chain,
-                             FuncInfo->callPtrInfo(Sym));
+                             FuncInfo->callPtrInfo(MF, Sym));
       IsCallReloc = true;
     }
 
@@ -3631,7 +3632,7 @@ SDValue MipsTargetLowering::LowerFormalArguments(
   SmallVector<CCValAssign, 16> ArgLocs;
   MipsCCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), ArgLocs,
                      *DAG.getContext());
-  CCInfo.AllocateStack(ABI.GetCalleeAllocdArgSizeInBytes(CallConv), 1);
+  CCInfo.AllocateStack(ABI.GetCalleeAllocdArgSizeInBytes(CallConv), Align(1));
   const Function &Func = DAG.getMachineFunction().getFunction();
   Function::const_arg_iterator FuncArg = Func.arg_begin();
 
@@ -4403,7 +4404,7 @@ void MipsTargetLowering::passByValArg(
       SDValue LoadPtr = DAG.getNode(ISD::ADD, DL, PtrTy, Arg,
                                     DAG.getConstant(OffsetInBytes, DL, PtrTy));
       SDValue LoadVal = DAG.getLoad(RegTy, DL, Chain, LoadPtr,
-                                    MachinePointerInfo(), Alignment.value());
+                                    MachinePointerInfo(), Alignment);
       MemOpChains.push_back(LoadVal.getValue(1));
       unsigned ArgReg = ArgRegs[FirstReg + I];
       RegsToPass.push_back(std::make_pair(ArgReg, LoadVal));
@@ -4430,7 +4431,7 @@ void MipsTargetLowering::passByValArg(
                                                       PtrTy));
         SDValue LoadVal = DAG.getExtLoad(
             ISD::ZEXTLOAD, DL, RegTy, Chain, LoadPtr, MachinePointerInfo(),
-            MVT::getIntegerVT(LoadSizeInBytes * 8), Alignment.value());
+            MVT::getIntegerVT(LoadSizeInBytes * 8), Alignment);
         MemOpChains.push_back(LoadVal.getValue(1));
 
         // Shift the loaded value.
@@ -4521,12 +4522,12 @@ void MipsTargetLowering::writeVarArgRegs(std::vector<SDValue> &OutChains,
 }
 
 void MipsTargetLowering::HandleByVal(CCState *State, unsigned &Size,
-                                     unsigned Align) const {
+                                     Align Alignment) const {
   const TargetFrameLowering *TFL = Subtarget.getFrameLowering();
 
   assert(Size && "Byval argument's size shouldn't be 0.");
 
-  Align = std::min(Align, TFL->getStackAlignment());
+  Alignment = std::min(Alignment, TFL->getStackAlign());
 
   unsigned FirstReg = 0;
   unsigned NumRegs = 0;
@@ -4540,17 +4541,17 @@ void MipsTargetLowering::HandleByVal(CCState *State, unsigned &Size,
 
     // We used to check the size as well but we can't do that anymore since
     // CCState::HandleByVal() rounds up the size after calling this function.
-    assert(!(Align % RegSizeInBytes) &&
-           "Byval argument's alignment should be a multiple of"
-           "RegSizeInBytes.");
+    assert(
+        Alignment >= Align(RegSizeInBytes) &&
+        "Byval argument's alignment should be a multiple of RegSizeInBytes.");
 
     FirstReg = State->getFirstUnallocated(IntArgRegs);
 
-    // If Align > RegSizeInBytes, the first arg register must be even.
+    // If Alignment > RegSizeInBytes, the first arg register must be even.
     // FIXME: This condition happens to do the right thing but it's not the
     //        right way to test it. We want to check that the stack frame offset
     //        of the register is aligned.
-    if ((Align > RegSizeInBytes) && (FirstReg % 2)) {
+    if ((Alignment > RegSizeInBytes) && (FirstReg % 2)) {
       State->AllocateReg(IntArgRegs[FirstReg], ShadowRegs[FirstReg]);
       ++FirstReg;
     }

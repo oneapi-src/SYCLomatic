@@ -200,10 +200,10 @@ class ModuleSanitizerCoverage {
 public:
   ModuleSanitizerCoverage(
       const SanitizerCoverageOptions &Options = SanitizerCoverageOptions(),
-      const SpecialCaseList *Whitelist = nullptr,
-      const SpecialCaseList *Blacklist = nullptr)
-      : Options(OverrideFromCL(Options)), Whitelist(Whitelist),
-        Blacklist(Blacklist) {}
+      const SpecialCaseList *Allowlist = nullptr,
+      const SpecialCaseList *Blocklist = nullptr)
+      : Options(OverrideFromCL(Options)), Allowlist(Allowlist),
+        Blocklist(Blocklist) {}
   bool instrumentModule(Module &M, DomTreeCallback DTCallback,
                         PostDomTreeCallback PDTCallback);
 
@@ -250,7 +250,6 @@ private:
   FunctionCallee SanCovTraceGepFunction;
   FunctionCallee SanCovTraceSwitchFunction;
   GlobalVariable *SanCovLowestStack;
-  InlineAsm *EmptyAsm;
   Type *IntptrTy, *IntptrPtrTy, *Int64Ty, *Int64PtrTy, *Int32Ty, *Int32PtrTy,
       *Int16Ty, *Int8Ty, *Int8PtrTy, *Int1Ty, *Int1PtrTy;
   Module *CurModule;
@@ -268,31 +267,31 @@ private:
 
   SanitizerCoverageOptions Options;
 
-  const SpecialCaseList *Whitelist;
-  const SpecialCaseList *Blacklist;
+  const SpecialCaseList *Allowlist;
+  const SpecialCaseList *Blocklist;
 };
 
 class ModuleSanitizerCoverageLegacyPass : public ModulePass {
 public:
   ModuleSanitizerCoverageLegacyPass(
       const SanitizerCoverageOptions &Options = SanitizerCoverageOptions(),
-      const std::vector<std::string> &WhitelistFiles =
+      const std::vector<std::string> &AllowlistFiles =
           std::vector<std::string>(),
-      const std::vector<std::string> &BlacklistFiles =
+      const std::vector<std::string> &BlocklistFiles =
           std::vector<std::string>())
       : ModulePass(ID), Options(Options) {
-    if (WhitelistFiles.size() > 0)
-      Whitelist = SpecialCaseList::createOrDie(WhitelistFiles,
+    if (AllowlistFiles.size() > 0)
+      Allowlist = SpecialCaseList::createOrDie(AllowlistFiles,
                                                *vfs::getRealFileSystem());
-    if (BlacklistFiles.size() > 0)
-      Blacklist = SpecialCaseList::createOrDie(BlacklistFiles,
+    if (BlocklistFiles.size() > 0)
+      Blocklist = SpecialCaseList::createOrDie(BlocklistFiles,
                                                *vfs::getRealFileSystem());
     initializeModuleSanitizerCoverageLegacyPassPass(
         *PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override {
-    ModuleSanitizerCoverage ModuleSancov(Options, Whitelist.get(),
-                                         Blacklist.get());
+    ModuleSanitizerCoverage ModuleSancov(Options, Allowlist.get(),
+                                         Blocklist.get());
     auto DTCallback = [this](Function &F) -> const DominatorTree * {
       return &this->getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
     };
@@ -314,16 +313,16 @@ public:
 private:
   SanitizerCoverageOptions Options;
 
-  std::unique_ptr<SpecialCaseList> Whitelist;
-  std::unique_ptr<SpecialCaseList> Blacklist;
+  std::unique_ptr<SpecialCaseList> Allowlist;
+  std::unique_ptr<SpecialCaseList> Blocklist;
 };
 
 } // namespace
 
 PreservedAnalyses ModuleSanitizerCoveragePass::run(Module &M,
                                                    ModuleAnalysisManager &MAM) {
-  ModuleSanitizerCoverage ModuleSancov(Options, Whitelist.get(),
-                                       Blacklist.get());
+  ModuleSanitizerCoverage ModuleSancov(Options, Allowlist.get(),
+                                       Blocklist.get());
   auto &FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
   auto DTCallback = [&FAM](Function &F) -> const DominatorTree * {
     return &FAM.getResult<DominatorTreeAnalysis>(F);
@@ -339,25 +338,24 @@ PreservedAnalyses ModuleSanitizerCoveragePass::run(Module &M,
 std::pair<Value *, Value *>
 ModuleSanitizerCoverage::CreateSecStartEnd(Module &M, const char *Section,
                                            Type *Ty) {
-  GlobalVariable *SecStart =
-      new GlobalVariable(M, Ty, false, GlobalVariable::ExternalLinkage, nullptr,
-                         getSectionStart(Section));
+  GlobalVariable *SecStart = new GlobalVariable(
+      M, Ty->getPointerElementType(), false, GlobalVariable::ExternalLinkage,
+      nullptr, getSectionStart(Section));
   SecStart->setVisibility(GlobalValue::HiddenVisibility);
-  GlobalVariable *SecEnd =
-      new GlobalVariable(M, Ty, false, GlobalVariable::ExternalLinkage,
-                         nullptr, getSectionEnd(Section));
+  GlobalVariable *SecEnd = new GlobalVariable(
+      M, Ty->getPointerElementType(), false, GlobalVariable::ExternalLinkage,
+      nullptr, getSectionEnd(Section));
   SecEnd->setVisibility(GlobalValue::HiddenVisibility);
   IRBuilder<> IRB(M.getContext());
-  Value *SecEndPtr = IRB.CreatePointerCast(SecEnd, Ty);
   if (!TargetTriple.isOSBinFormatCOFF())
-    return std::make_pair(IRB.CreatePointerCast(SecStart, Ty), SecEndPtr);
+    return std::make_pair(SecStart, SecEnd);
 
   // Account for the fact that on windows-msvc __start_* symbols actually
   // point to a uint64_t before the start of the array.
   auto SecStartI8Ptr = IRB.CreatePointerCast(SecStart, Int8PtrTy);
   auto GEP = IRB.CreateGEP(Int8Ty, SecStartI8Ptr,
                            ConstantInt::get(IntptrTy, sizeof(uint64_t)));
-  return std::make_pair(IRB.CreatePointerCast(GEP, Ty), SecEndPtr);
+  return std::make_pair(IRB.CreatePointerCast(GEP, Ty), SecEnd);
 }
 
 Function *ModuleSanitizerCoverage::CreateInitCallsForSections(
@@ -396,11 +394,11 @@ bool ModuleSanitizerCoverage::instrumentModule(
     Module &M, DomTreeCallback DTCallback, PostDomTreeCallback PDTCallback) {
   if (Options.CoverageType == SanitizerCoverageOptions::SCK_None)
     return false;
-  if (Whitelist &&
-      !Whitelist->inSection("coverage", "src", M.getSourceFileName()))
+  if (Allowlist &&
+      !Allowlist->inSection("coverage", "src", M.getSourceFileName()))
     return false;
-  if (Blacklist &&
-      Blacklist->inSection("coverage", "src", M.getSourceFileName()))
+  if (Blocklist &&
+      Blocklist->inSection("coverage", "src", M.getSourceFileName()))
     return false;
   C = &(M.getContext());
   DL = &M.getDataLayout();
@@ -427,15 +425,13 @@ bool ModuleSanitizerCoverage::instrumentModule(
 
   SanCovTracePCIndir =
       M.getOrInsertFunction(SanCovTracePCIndirName, VoidTy, IntptrTy);
-  // Make sure smaller parameters are zero-extended to i64 as required by the
-  // x86_64 ABI.
+  // Make sure smaller parameters are zero-extended to i64 if required by the
+  // target ABI.
   AttributeList SanCovTraceCmpZeroExtAL;
-  if (TargetTriple.getArch() == Triple::x86_64) {
-    SanCovTraceCmpZeroExtAL =
-        SanCovTraceCmpZeroExtAL.addParamAttribute(*C, 0, Attribute::ZExt);
-    SanCovTraceCmpZeroExtAL =
-        SanCovTraceCmpZeroExtAL.addParamAttribute(*C, 1, Attribute::ZExt);
-  }
+  SanCovTraceCmpZeroExtAL =
+      SanCovTraceCmpZeroExtAL.addParamAttribute(*C, 0, Attribute::ZExt);
+  SanCovTraceCmpZeroExtAL =
+      SanCovTraceCmpZeroExtAL.addParamAttribute(*C, 1, Attribute::ZExt);
 
   SanCovTraceCmpFunction[0] =
       M.getOrInsertFunction(SanCovTraceCmp1, SanCovTraceCmpZeroExtAL, VoidTy,
@@ -460,8 +456,7 @@ bool ModuleSanitizerCoverage::instrumentModule(
 
   {
     AttributeList AL;
-    if (TargetTriple.getArch() == Triple::x86_64)
-      AL = AL.addParamAttribute(*C, 0, Attribute::ZExt);
+    AL = AL.addParamAttribute(*C, 0, Attribute::ZExt);
     SanCovTraceDivFunction[0] =
         M.getOrInsertFunction(SanCovTraceDiv4, AL, VoidTy, IRB.getInt32Ty());
   }
@@ -484,11 +479,6 @@ bool ModuleSanitizerCoverage::instrumentModule(
       GlobalValue::ThreadLocalMode::InitialExecTLSModel);
   if (Options.StackDepth && !SanCovLowestStack->isDeclaration())
     SanCovLowestStack->setInitializer(Constant::getAllOnesValue(IntptrTy));
-
-  // We insert an empty inline asm after cov callbacks to avoid callback merge.
-  EmptyAsm = InlineAsm::get(FunctionType::get(IRB.getVoidTy(), false),
-                            StringRef(""), StringRef(""),
-                            /*hasSideEffects=*/true);
 
   SanCovTracePC = M.getOrInsertFunction(SanCovTracePCName, VoidTy);
   SanCovTracePCGuard =
@@ -639,9 +629,9 @@ void ModuleSanitizerCoverage::instrumentFunction(
   if (F.hasPersonalityFn() &&
       isAsynchronousEHPersonality(classifyEHPersonality(F.getPersonalityFn())))
     return;
-  if (Whitelist && !Whitelist->inSection("coverage", "fun", F.getName()))
+  if (Allowlist && !Allowlist->inSection("coverage", "fun", F.getName()))
     return;
-  if (Blacklist && Blacklist->inSection("coverage", "fun", F.getName()))
+  if (Blocklist && Blocklist->inSection("coverage", "fun", F.getName()))
     return;
   if (Options.CoverageType >= SanitizerCoverageOptions::SCK_Edge)
     SplitAllCriticalEdges(F, CriticalEdgeSplittingOptions().setIgnoreUnreachableDests());
@@ -921,16 +911,15 @@ void ModuleSanitizerCoverage::InjectCoverageAtBlock(Function &F, BasicBlock &BB,
   IRBuilder<> IRB(&*IP);
   IRB.SetCurrentDebugLocation(EntryLoc);
   if (Options.TracePC) {
-    IRB.CreateCall(SanCovTracePC); // gets the PC using GET_CALLER_PC.
-    IRB.CreateCall(EmptyAsm, {}); // Avoids callback merge.
+    IRB.CreateCall(SanCovTracePC)
+        ->setCannotMerge(); // gets the PC using GET_CALLER_PC.
   }
   if (Options.TracePCGuard) {
     auto GuardPtr = IRB.CreateIntToPtr(
         IRB.CreateAdd(IRB.CreatePointerCast(FunctionGuardArray, IntptrTy),
                       ConstantInt::get(IntptrTy, Idx * 4)),
         Int32PtrTy);
-    IRB.CreateCall(SanCovTracePCGuard, GuardPtr);
-    IRB.CreateCall(EmptyAsm, {}); // Avoids callback merge.
+    IRB.CreateCall(SanCovTracePCGuard, GuardPtr)->setCannotMerge();
   }
   if (Options.Inline8bitCounters) {
     auto CounterPtr = IRB.CreateGEP(
@@ -1014,8 +1003,8 @@ INITIALIZE_PASS_END(ModuleSanitizerCoverageLegacyPass, "sancov",
                     false)
 ModulePass *llvm::createModuleSanitizerCoverageLegacyPassPass(
     const SanitizerCoverageOptions &Options,
-    const std::vector<std::string> &WhitelistFiles,
-    const std::vector<std::string> &BlacklistFiles) {
-  return new ModuleSanitizerCoverageLegacyPass(Options, WhitelistFiles,
-                                               BlacklistFiles);
+    const std::vector<std::string> &AllowlistFiles,
+    const std::vector<std::string> &BlocklistFiles) {
+  return new ModuleSanitizerCoverageLegacyPass(Options, AllowlistFiles,
+                                               BlocklistFiles);
 }

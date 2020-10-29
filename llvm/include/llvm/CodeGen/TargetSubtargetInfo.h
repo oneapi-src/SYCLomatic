@@ -25,7 +25,6 @@
 #include <memory>
 #include <vector>
 
-
 namespace llvm {
 
 class CallLowering;
@@ -42,9 +41,6 @@ struct MCWriteProcResEntry;
 class RegisterBankInfo;
 class SDep;
 class SelectionDAGTargetInfo;
-struct SubtargetFeatureKV;
-struct SubtargetSubTypeKV;
-struct SubtargetInfoKV;
 class SUnit;
 class TargetFrameLowering;
 class TargetInstrInfo;
@@ -62,8 +58,8 @@ class Triple;
 ///
 class TargetSubtargetInfo : public MCSubtargetInfo {
 protected: // Can only create subclasses...
-  TargetSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS,
-                      ArrayRef<SubtargetFeatureKV> PF,
+  TargetSubtargetInfo(const Triple &TT, StringRef CPU, StringRef TuneCPU,
+                      StringRef FS, ArrayRef<SubtargetFeatureKV> PF,
                       ArrayRef<SubtargetSubTypeKV> PD,
                       const MCWriteProcResEntry *WPR,
                       const MCWriteLatencyEntry *WL,

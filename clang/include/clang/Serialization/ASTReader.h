@@ -858,10 +858,10 @@ private:
   SourceLocation PointersToMembersPragmaLocation;
 
   /// The pragma float_control state.
-  Optional<unsigned> FpPragmaCurrentValue;
+  Optional<FPOptionsOverride> FpPragmaCurrentValue;
   SourceLocation FpPragmaCurrentLocation;
   struct FpPragmaStackEntry {
-    unsigned Value;
+    FPOptionsOverride Value;
     SourceLocation Location;
     SourceLocation PushLocation;
     StringRef SlotLabel;
@@ -900,8 +900,9 @@ private:
   /// Delete expressions to analyze at the end of translation unit.
   SmallVector<uint64_t, 8> DelayedDeleteExprs;
 
-  // A list of late parsed template function data.
-  SmallVector<uint64_t, 1> LateParsedTemplates;
+  // A list of late parsed template function data with their module files.
+  SmallVector<std::pair<ModuleFile *, SmallVector<uint64_t, 1>>, 4>
+      LateParsedTemplates;
 
   /// The IDs of all decls to be checked for deferred diags.
   ///
@@ -1890,7 +1891,8 @@ public:
   /// ReadBlockAbbrevs - Enter a subblock of the specified BlockID with the
   /// specified cursor.  Read the abbreviations that are at the top of the block
   /// and then leave the cursor pointing into the block.
-  static bool ReadBlockAbbrevs(llvm::BitstreamCursor &Cursor, unsigned BlockID);
+  static bool ReadBlockAbbrevs(llvm::BitstreamCursor &Cursor, unsigned BlockID,
+                               uint64_t *StartOfBlockOffset = nullptr);
 
   /// Finds all the visible declarations with a given name.
   /// The current implementation of this method just loads the entire
@@ -2083,8 +2085,6 @@ public:
   ///
   /// Note: overrides method in ExternalASTSource
   Module *getModule(unsigned ID) override;
-
-  bool DeclIsFromPCHWithObjectFile(const Decl *D) override;
 
   /// Retrieve the module file with a given local ID within the specified
   /// ModuleFile.

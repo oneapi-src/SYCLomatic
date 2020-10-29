@@ -722,7 +722,8 @@ let Class = PackExpansionType in {
   }
 
   def : Creator<[{
-    return ctx.getPackExpansionType(pattern, numExpansions);
+    return ctx.getPackExpansionType(pattern, numExpansions,
+                                    /*ExpectPackInType*/false);
   }]>;
 }
 
@@ -750,6 +751,12 @@ let Class = BuiltinType in {
       switch (kind) {
 #define IMAGE_TYPE(IMGTYPE, ID, SINGLETON_ID, ACCESS, SUFFIX) \
       case BuiltinType::ID: return ctx.SINGLETON_ID;
+#include "clang/Basic/OpenCLImageTypes.def"
+
+#define IMAGE_TYPE(IMGTYPE, ID, SINGLETON_ID, ACCESS, SUFFIX) \
+      case BuiltinType::Sampled##ID: return ctx.Sampled##SINGLETON_ID;
+#define IMAGE_WRITE_TYPE(Type, Id, Ext)
+#define IMAGE_READ_WRITE_TYPE(Type, Id, Ext)
 #include "clang/Basic/OpenCLImageTypes.def"
 
 #define EXT_OPAQUE_TYPE(EXTTYPE, ID, EXT) \

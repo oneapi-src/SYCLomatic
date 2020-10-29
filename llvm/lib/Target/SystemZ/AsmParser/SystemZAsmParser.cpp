@@ -405,14 +405,16 @@ private:
 
   bool parseRegister(Register &Reg, bool RestoreOnFailure = false);
 
+  bool parseIntegerRegister(Register &Reg, RegisterGroup Group);
+
   OperandMatchResultTy parseRegister(OperandVector &Operands,
                                      RegisterKind Kind);
 
   OperandMatchResultTy parseAnyRegister(OperandVector &Operands);
 
-  bool parseAddress(bool &HaveReg1, Register &Reg1,
-                    bool &HaveReg2, Register &Reg2,
-                    const MCExpr *&Disp, const MCExpr *&Length);
+  bool parseAddress(bool &HaveReg1, Register &Reg1, bool &HaveReg2,
+                    Register &Reg2, const MCExpr *&Disp, const MCExpr *&Length,
+                    bool HasLength = false, bool HasVectorIndex = false);
   bool parseAddressRegister(Register &Reg);
 
   bool ParseDirectiveInsn(SMLoc L);
@@ -563,7 +565,7 @@ struct InsnMatchEntry {
   StringRef Format;
   uint64_t Opcode;
   int32_t NumOperands;
-  MatchClassKind OperandKinds[5];
+  MatchClassKind OperandKinds[7];
 };
 
 // For equal_range comparison.
@@ -631,7 +633,20 @@ static struct InsnMatchEntry InsnMatchTable[] = {
   { "sse", SystemZ::InsnSSE, 3,
     { MCK_U48Imm, MCK_BDAddr64Disp12, MCK_BDAddr64Disp12 } },
   { "ssf", SystemZ::InsnSSF, 4,
-    { MCK_U48Imm, MCK_BDAddr64Disp12, MCK_BDAddr64Disp12, MCK_AnyReg } }
+    { MCK_U48Imm, MCK_BDAddr64Disp12, MCK_BDAddr64Disp12, MCK_AnyReg } },
+  { "vri", SystemZ::InsnVRI, 6,
+    { MCK_U48Imm, MCK_VR128, MCK_VR128, MCK_U12Imm, MCK_U4Imm, MCK_U4Imm } },
+  { "vrr", SystemZ::InsnVRR, 7,
+    { MCK_U48Imm, MCK_VR128, MCK_VR128, MCK_VR128, MCK_U4Imm, MCK_U4Imm,
+      MCK_U4Imm } },
+  { "vrs", SystemZ::InsnVRS, 5,
+    { MCK_U48Imm, MCK_AnyReg, MCK_VR128, MCK_BDAddr64Disp12, MCK_U4Imm } },
+  { "vrv", SystemZ::InsnVRV, 4,
+    { MCK_U48Imm, MCK_VR128, MCK_BDVAddr64Disp12, MCK_U4Imm } },
+  { "vrx", SystemZ::InsnVRX, 4,
+    { MCK_U48Imm, MCK_VR128, MCK_BDXAddr64Disp12, MCK_U4Imm } },
+  { "vsi", SystemZ::InsnVSI, 4,
+    { MCK_U48Imm, MCK_VR128, MCK_BDAddr64Disp12, MCK_U8Imm } }
 };
 
 static void printMCExpr(const MCExpr *E, raw_ostream &OS) {
@@ -748,82 +763,60 @@ bool SystemZAsmParser::parseRegister(Register &Reg, bool RestoreOnFailure) {
 // Parse a register of kind Kind and add it to Operands.
 OperandMatchResultTy
 SystemZAsmParser::parseRegister(OperandVector &Operands, RegisterKind Kind) {
-  SMLoc StartLoc, EndLoc;
-  unsigned RegNum;
+  Register Reg;
+  RegisterGroup Group;
+  switch (Kind) {
+  case GR32Reg:
+  case GRH32Reg:
+  case GR64Reg:
+  case GR128Reg:
+    Group = RegGR;
+    break;
+  case FP32Reg:
+  case FP64Reg:
+  case FP128Reg:
+    Group = RegFP;
+    break;
+  case VR32Reg:
+  case VR64Reg:
+  case VR128Reg:
+    Group = RegV;
+    break;
+  case AR32Reg:
+    Group = RegAR;
+    break;
+  case CR64Reg:
+    Group = RegCR;
+    break;
+  }
 
-  // Handle register names of the form %<prefix><number>.
+  // Handle register names of the form %<prefix><number>
   if (Parser.getTok().is(AsmToken::Percent)) {
-    Register Reg;
     if (parseRegister(Reg))
       return MatchOperand_ParseFail;
 
-    // Verify that a register prefix appropriate for Kind was used.
-    bool PrefixMatch;
-    switch (Kind) {
-    case GR32Reg:
-    case GRH32Reg:
-    case GR64Reg:
-    case GR128Reg:
-      PrefixMatch = Reg.Group == RegGR;
+    // Check the parsed register group "Reg.Group" with the expected "Group"
+    // Have to error out if user specified wrong prefix.
+    switch (Group) {
+    case RegGR:
+    case RegFP:
+    case RegAR:
+    case RegCR:
+      if (Group != Reg.Group) {
+        Error(Reg.StartLoc, "invalid operand for instruction");
+        return MatchOperand_ParseFail;
+      }
       break;
-    case FP32Reg:
-    case FP64Reg:
-    case FP128Reg:
-      PrefixMatch = Reg.Group == RegFP;
-      break;
-    case VR32Reg:
-    case VR64Reg:
-    case VR128Reg:
-      // It is OK to use the %f prefix with vector instructions that
-      // expect some VR..Reg kind, so accept the RegFP group as well.
-      PrefixMatch = Reg.Group == RegV || Reg.Group == RegFP;
-      break;
-    case AR32Reg:
-      PrefixMatch = Reg.Group == RegAR;
-      break;
-    case CR64Reg:
-      PrefixMatch = Reg.Group == RegCR;
+    case RegV:
+      if (Reg.Group != RegV && Reg.Group != RegFP) {
+        Error(Reg.StartLoc, "invalid operand for instruction");
+        return MatchOperand_ParseFail;
+      }
       break;
     }
-    if (!PrefixMatch) {
-      Error(Reg.StartLoc, "invalid operand for instruction");
+  } else if (Parser.getTok().is(AsmToken::Integer)) {
+    if (parseIntegerRegister(Reg, Group))
       return MatchOperand_ParseFail;
-    }
-
-    RegNum = Reg.Num;
-    StartLoc = Reg.StartLoc;
-    EndLoc = Reg.EndLoc;
-  }
-  // Also allow specifying just a plain register number as integer.
-  else if (Parser.getTok().is(AsmToken::Integer)) {
-    const MCExpr *Register;
-    StartLoc = Parser.getTok().getLoc();
-    if (Parser.parseExpression(Register))
-      return MatchOperand_ParseFail;
-
-    auto *CE = dyn_cast<MCConstantExpr>(Register);
-    if (!CE)
-      return MatchOperand_ParseFail;
-
-    int64_t MaxRegNum;
-    switch (Kind) {
-    case VR32Reg:
-    case VR64Reg:
-    case VR128Reg:
-      MaxRegNum = 31;
-      break;
-    default:
-      MaxRegNum = 15;
-      break;
-    }
-    int64_t Value = CE->getValue();
-    if (Value < 0 || Value > MaxRegNum) {
-      Error(StartLoc, "invalid register");
-      return MatchOperand_ParseFail;
-    }
-    RegNum = (unsigned) Value;
-
-    EndLoc = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
   }
   // Otherwise we didn't match a register operand.
   else
@@ -845,23 +838,24 @@ SystemZAsmParser::parseRegister(OperandVector &Operands, RegisterKind Kind) {
   case AR32Reg:  Regs = SystemZMC::AR32Regs;  break;
   case CR64Reg:  Regs = SystemZMC::CR64Regs;  break;
   }
-  if (Regs[RegNum] == 0) {
-    Error(StartLoc, "invalid register pair");
+  if (Regs[Reg.Num] == 0) {
+    Error(Reg.StartLoc, "invalid register pair");
     return MatchOperand_ParseFail;
   }
 
-  Operands.push_back(SystemZOperand::createReg(Kind, Regs[RegNum],
-                                               StartLoc, EndLoc));
+  Operands.push_back(
+      SystemZOperand::createReg(Kind, Regs[Reg.Num], Reg.StartLoc, Reg.EndLoc));
   return MatchOperand_Success;
 }
 
 // Parse any type of register (including integers) and add it to Operands.
 OperandMatchResultTy
 SystemZAsmParser::parseAnyRegister(OperandVector &Operands) {
+  SMLoc StartLoc = Parser.getTok().getLoc();
+
   // Handle integer values.
   if (Parser.getTok().is(AsmToken::Integer)) {
     const MCExpr *Register;
-    SMLoc StartLoc = Parser.getTok().getLoc();
     if (Parser.parseExpression(Register))
       return MatchOperand_ParseFail;
 
@@ -882,6 +876,11 @@ SystemZAsmParser::parseAnyRegister(OperandVector &Operands) {
     Register Reg;
     if (parseRegister(Reg))
       return MatchOperand_ParseFail;
+
+    if (Reg.Num > 15) {
+      Error(StartLoc, "invalid register");
+      return MatchOperand_ParseFail;
+    }
 
     // Map to the correct register kind.
     RegisterKind Kind;
@@ -916,11 +915,39 @@ SystemZAsmParser::parseAnyRegister(OperandVector &Operands) {
   return MatchOperand_Success;
 }
 
+bool SystemZAsmParser::parseIntegerRegister(Register &Reg,
+                                            RegisterGroup Group) {
+  Reg.StartLoc = Parser.getTok().getLoc();
+  // We have an integer token
+  const MCExpr *Register;
+  if (Parser.parseExpression(Register))
+    return true;
+
+  const auto *CE = dyn_cast<MCConstantExpr>(Register);
+  if (!CE)
+    return true;
+
+  int64_t MaxRegNum = (Group == RegV) ? 31 : 15;
+  int64_t Value = CE->getValue();
+  if (Value < 0 || Value > MaxRegNum) {
+    Error(Parser.getTok().getLoc(), "invalid register");
+    return true;
+  }
+
+  // Assign the Register Number
+  Reg.Num = (unsigned)Value;
+  Reg.Group = Group;
+  Reg.EndLoc = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
+
+  // At this point, successfully parsed an integer register.
+  return false;
+}
+
 // Parse a memory operand into Reg1, Reg2, Disp, and Length.
 bool SystemZAsmParser::parseAddress(bool &HaveReg1, Register &Reg1,
                                     bool &HaveReg2, Register &Reg2,
-                                    const MCExpr *&Disp,
-                                    const MCExpr *&Length) {
+                                    const MCExpr *&Disp, const MCExpr *&Length,
+                                    bool HasLength, bool HasVectorIndex) {
   // Parse the displacement, which must always be present.
   if (getParser().parseExpression(Disp))
     return true;
@@ -929,6 +956,27 @@ bool SystemZAsmParser::parseAddress(bool &HaveReg1, Register &Reg1,
   HaveReg1 = false;
   HaveReg2 = false;
   Length = nullptr;
+
+  // If we have a scenario as below:
+  //   vgef %v0, 0(0), 0
+  // This is an example of a "BDVMem" instruction type.
+  //
+  // So when we parse this as an integer register, the register group
+  // needs to be tied to "RegV". Usually when the prefix is passed in
+  // as %<prefix><reg-number> its easy to check which group it should belong to
+  // However, if we're passing in just the integer there's no real way to
+  // "check" what register group it should belong to.
+  //
+  // When the user passes in the register as an integer, the user assumes that
+  // the compiler is responsible for substituting it as the right kind of
+  // register. Whereas, when the user specifies a "prefix", the onus is on
+  // the user to make sure they pass in the right kind of register.
+  //
+  // The restriction only applies to the first Register (i.e. Reg1). Reg2 is
+  // always a general register. Reg1 should be of group RegV if "HasVectorIndex"
+  // (i.e. insn is of type BDVMem) is true.
+  RegisterGroup RegGroup = HasVectorIndex ? RegV : RegGR;
+
   if (getLexer().is(AsmToken::LParen)) {
     Parser.Lex();
 
@@ -937,18 +985,47 @@ bool SystemZAsmParser::parseAddress(bool &HaveReg1, Register &Reg1,
       HaveReg1 = true;
       if (parseRegister(Reg1))
         return true;
+    }
+    // So if we have an integer as the first token in ([tok1], ..), it could:
+    // 1. Refer to a "Register" (i.e X,R,V fields in BD[X|R|V]Mem type of
+    // instructions)
+    // 2. Refer to a "Length" field (i.e L field in BDLMem type of instructions)
+    else if (getLexer().is(AsmToken::Integer)) {
+      if (HasLength) {
+        // Instruction has a "Length" field, safe to parse the first token as
+        // the "Length" field
+        if (getParser().parseExpression(Length))
+          return true;
+      } else {
+        // Otherwise, if the instruction has no "Length" field, parse the
+        // token as a "Register". We don't have to worry about whether the
+        // instruction is invalid here, because the caller will take care of
+        // error reporting.
+        HaveReg1 = true;
+        if (parseIntegerRegister(Reg1, RegGroup))
+          return true;
+      }
     } else {
-      // Parse the length.
-      if (getParser().parseExpression(Length))
-        return true;
+      // If its not an integer or a percent token, then if the instruction
+      // is reported to have a "Length" then, parse it as "Length".
+      if (HasLength) {
+        if (getParser().parseExpression(Length))
+          return true;
+      }
     }
 
     // Check whether there's a second register.
     if (getLexer().is(AsmToken::Comma)) {
       Parser.Lex();
       HaveReg2 = true;
-      if (parseRegister(Reg2))
-        return true;
+
+      if (getLexer().is(AsmToken::Integer)) {
+        if (parseIntegerRegister(Reg2, RegGR))
+          return true;
+      } else {
+        if (parseRegister(Reg2))
+          return true;
+      }
     }
 
     // Consume the closing bracket.
@@ -983,7 +1060,11 @@ SystemZAsmParser::parseAddress(OperandVector &Operands, MemoryKind MemKind,
   bool HaveReg1, HaveReg2;
   const MCExpr *Disp;
   const MCExpr *Length;
-  if (parseAddress(HaveReg1, Reg1, HaveReg2, Reg2, Disp, Length))
+
+  bool HasLength = (MemKind == BDLMem) ? true : false;
+  bool HasVectorIndex = (MemKind == BDVMem) ? true : false;
+  if (parseAddress(HaveReg1, Reg1, HaveReg2, Reg2, Disp, Length, HasLength,
+                   HasVectorIndex))
     return MatchOperand_ParseFail;
 
   const unsigned *Regs;
@@ -1001,11 +1082,7 @@ SystemZAsmParser::parseAddress(OperandVector &Operands, MemoryKind MemKind,
         return MatchOperand_ParseFail;
       Base = Regs[Reg1.Num];
     }
-    // There must be no Reg2 or length.
-    if (Length) {
-      Error(StartLoc, "invalid use of length addressing");
-      return MatchOperand_ParseFail;
-    }
+    // There must be no Reg2.
     if (HaveReg2) {
       Error(StartLoc, "invalid use of indexed addressing");
       return MatchOperand_ParseFail;
@@ -1028,11 +1105,6 @@ SystemZAsmParser::parseAddress(OperandVector &Operands, MemoryKind MemKind,
       if (parseAddressRegister(Reg2))
         return MatchOperand_ParseFail;
       Base = Regs[Reg2.Num];
-    }
-    // There must be no length.
-    if (Length) {
-      Error(StartLoc, "invalid use of length addressing");
-      return MatchOperand_ParseFail;
     }
     break;
   case BDLMem:
@@ -1066,11 +1138,6 @@ SystemZAsmParser::parseAddress(OperandVector &Operands, MemoryKind MemKind,
         return MatchOperand_ParseFail;
       Base = Regs[Reg2.Num];
     }
-    // There must be no length.
-    if (Length) {
-      Error(StartLoc, "invalid use of length addressing");
-      return MatchOperand_ParseFail;
-    }
     break;
   case BDVMem:
     // We must have Reg1, and it must be a vector register.
@@ -1085,16 +1152,11 @@ SystemZAsmParser::parseAddress(OperandVector &Operands, MemoryKind MemKind,
         return MatchOperand_ParseFail;
       Base = Regs[Reg2.Num];
     }
-    // There must be no length.
-    if (Length) {
-      Error(StartLoc, "invalid use of length addressing");
-      return MatchOperand_ParseFail;
-    }
     break;
   }
 
   SMLoc EndLoc =
-    SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
+      SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
   Operands.push_back(SystemZOperand::createMem(MemKind, RegKind, Base, Disp,
                                                Index, Length, LengthReg,
                                                StartLoc, EndLoc));
@@ -1152,10 +1214,14 @@ bool SystemZAsmParser::ParseDirectiveInsn(SMLoc L) {
     OperandMatchResultTy ResTy;
     if (Kind == MCK_AnyReg)
       ResTy = parseAnyReg(Operands);
+    else if (Kind == MCK_VR128)
+      ResTy = parseVR128(Operands);
     else if (Kind == MCK_BDXAddr64Disp12 || Kind == MCK_BDXAddr64Disp20)
       ResTy = parseBDXAddr64(Operands);
     else if (Kind == MCK_BDAddr64Disp12 || Kind == MCK_BDAddr64Disp20)
       ResTy = parseBDAddr64(Operands);
+    else if (Kind == MCK_BDVAddr64Disp12)
+      ResTy = parseBDVAddr64(Operands);
     else if (Kind == MCK_PCRel32)
       ResTy = parsePCRel32(Operands);
     else if (Kind == MCK_PCRel16)
@@ -1200,6 +1266,8 @@ bool SystemZAsmParser::ParseDirectiveInsn(SMLoc L) {
       ZOperand.addBDAddrOperands(Inst, 2);
     else if (ZOperand.isMem(BDXMem))
       ZOperand.addBDXAddrOperands(Inst, 3);
+    else if (ZOperand.isMem(BDVMem))
+      ZOperand.addBDVAddrOperands(Inst, 3);
     else if (ZOperand.isImm())
       ZOperand.addImmOperands(Inst, 1);
     else
@@ -1323,7 +1391,8 @@ bool SystemZAsmParser::parseOperand(OperandVector &Operands,
   bool HaveReg1, HaveReg2;
   const MCExpr *Expr;
   const MCExpr *Length;
-  if (parseAddress(HaveReg1, Reg1, HaveReg2, Reg2, Expr, Length))
+  if (parseAddress(HaveReg1, Reg1, HaveReg2, Reg2, Expr, Length,
+                   /*HasLength*/ true, /*HasVectorIndex*/ true))
     return true;
   // If the register combination is not valid for any instruction, reject it.
   // Otherwise, fall back to reporting an unrecognized instruction.
