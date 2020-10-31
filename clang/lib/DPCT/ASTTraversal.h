@@ -1221,14 +1221,40 @@ public:
                          const ast_matchers::MatchFinder::MatchResult &Result,
                          bool IsAssigned);
   void
-  handleEventElapsedTime(const CallExpr *CE,
-                         const ast_matchers::MatchFinder::MatchResult &Result,
-                         bool IsAssigned);
-  void
-  handleTimeMeasurement(const CallExpr *CE,
-                        const ast_matchers::MatchFinder::MatchResult &Result);
+  handleEventElapsedTime(bool IsAssigned);
+  void handleTimeMeasurement();
+  void handleTargetCalls(const Stmt *Parent);
+  void handleKernelCalls(const Stmt *Parent, const CUDAKernelCallExpr *KCall);
+  void handleOrdinaryCalls(const CallExpr *Call);
   bool IsEventArgArraySubscriptExpr(const Expr *E);
   const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
+
+private:
+  // Since the state of a rule is shared between multiple matches, it iss
+  // necessary to clear the previous migration status.
+  // The call is supposed to be called whenever a migrtion on time measurement
+  // is triggered.
+  void reset() {
+    RecordBegin = nullptr;
+    RecordEnd = nullptr;
+    TimeElapsedCE = nullptr;
+    RecordBeginLoc = 0;
+    RecordEndLoc = 0;
+    TimeElapsedLoc = 0;
+    Events2Wait.clear();
+    QueueCounter.clear();
+    Queues2Wait.clear();
+    DefaultQueueAdded = false;
+  }
+  const Stmt *RecordBegin = nullptr, *RecordEnd = nullptr;
+  const CallExpr *TimeElapsedCE = nullptr;
+  unsigned RecordBeginLoc = 0;
+  unsigned RecordEndLoc = 0;
+  unsigned TimeElapsedLoc = 0;
+  std::vector<std::string> Events2Wait;
+  std::map<std::string, int> QueueCounter;
+  std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
+  bool DefaultQueueAdded = false;
 };
 
 /// Migration rule for stream API calls

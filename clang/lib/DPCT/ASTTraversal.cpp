@@ -19,12 +19,15 @@
 #include "TextModification.h"
 #include "Utility.h"
 #include "Checkpoint.h"
+#include "clang/AST/ExprCXX.h"
+#include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 
 #include <iostream>
@@ -8014,7 +8017,11 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {
-    handleEventElapsedTime(CE, Result, IsAssigned);
+    // Reset from last migration on time measurement.
+    // Do NOT delete me.
+    reset();
+    TimeElapsedCE = CE;
+    handleEventElapsedTime(IsAssigned);
   } else if (FuncName == "cudaEventSynchronize") {
     std::string ReplStr{getStmtSpelling(CE->getArg(0))};
     ReplStr += ".wait_and_throw()";
@@ -8085,15 +8092,18 @@ std::string getTimePointNameForEvent(const Expr *E, bool IsDecl) {
     auto Base = ASE->getBase()->IgnoreImpCasts();
     if (isArrayType(Base))
       return getTimePointNameForEvent(Base, IsDecl) + "[" +
-        (IsDecl ? getArrayDeclSize(Base) : ExprAnalysis::ref(ASE->getIdx())) + "]";
+             (IsDecl ? getArrayDeclSize(Base)
+                     : ExprAnalysis::ref(ASE->getIdx())) +
+             "]";
     return getTimePointNameForEvent(Base, IsDecl) + "_" +
-      ExprAnalysis::ref(ASE->getIdx());
+           ExprAnalysis::ref(ASE->getIdx());
   }
   if (auto ME = dyn_cast<MemberExpr>(E)) {
     auto Base = ME->getBase()->IgnoreImpCasts();
-    return ((IsDecl || ME->isImplicitAccess()) ? "" :
-            ExprAnalysis::ref(Base) + (ME->isArrow() ? "->" : ".")) +
-      ME->getMemberDecl()->getNameAsString() + getCTFixedSuffix();
+    return ((IsDecl || ME->isImplicitAccess())
+                ? ""
+                : ExprAnalysis::ref(Base) + (ME->isArrow() ? "->" : ".")) +
+           ME->getMemberDecl()->getNameAsString() + getCTFixedSuffix();
   }
   if (auto DRE = dyn_cast<DeclRefExpr>(E))
     return DRE->getDecl()->getNameAsString() + getCTFixedSuffix();
@@ -8164,15 +8174,13 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   }
 }
 
-void EventAPICallRule::handleEventElapsedTime(
-    const CallExpr *CE, const MatchFinder::MatchResult &Result,
-    bool IsAssigned) {
-  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0));
-  auto StmtStrArg1 = getTimePointNameForEvent(CE->getArg(1), false);
-  auto StmtStrArg2 = getTimePointNameForEvent(CE->getArg(2), false);
+void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
+  auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
+  auto StmtStrArg1 = getTimePointNameForEvent(TimeElapsedCE->getArg(1), false);
+  auto StmtStrArg2 = getTimePointNameForEvent(TimeElapsedCE->getArg(2), false);
   std::ostringstream Repl;
   std::string Assginee = "*(" + StmtStrArg0 + ")";
-  if (auto UO = dyn_cast<UnaryOperator>(CE->getArg(0))) {
+  if (auto UO = dyn_cast<UnaryOperator>(TimeElapsedCE->getArg(0))) {
     if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
       Assginee = getStmtSpelling(UO->getSubExpr());
   }
@@ -8182,13 +8190,14 @@ void EventAPICallRule::handleEventElapsedTime(
     std::ostringstream Temp;
     Temp << "(" << Repl.str() << ", 0)";
     Repl = std::move(Temp);
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    report(TimeElapsedCE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP,
+           false);
   }
   const std::string Name =
-      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+      TimeElapsedCE->getCalleeDecl()->getAsFunction()->getNameAsString();
   emplaceTransformation(
-      new ReplaceStmt(CE, false, Name, std::move(Repl.str())));
-  handleTimeMeasurement(CE, Result);
+      new ReplaceStmt(TimeElapsedCE, false, Name, std::move(Repl.str())));
+  handleTimeMeasurement();
 }
 
 bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
@@ -8202,54 +8211,70 @@ bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
   return false;
 }
 
-const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Parent,
+const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
                                                     unsigned KCallLoc) {
-  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+  for (auto Iter = Node->child_begin(); Iter != Node->child_end(); ++Iter) {
     if (auto CE = dyn_cast<CallExpr>(*Iter)) {
+      auto Callee = CE->getDirectCallee();
+      if (!Callee)
+        return nullptr;
       if (CE->getBeginLoc().getRawEncoding() > KCallLoc &&
-          CE->getDirectCallee()->getName() == "cudaEventRecord")
+          Callee->getName() == "cudaEventRecord")
         return CE->getArg(0);
     }
   }
   return nullptr;
 }
 
-void EventAPICallRule::handleTimeMeasurement(
-    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  auto CELoc = CE->getBeginLoc().getRawEncoding();
-  auto Parents = Result.Context->getParents(*CE);
-  if(Parents.size() < 1)
+//  The following is a typical piece of time-measurement code, in which three
+//  locations are used to help migrate:
+//
+//  cudaEventRecord(start);                 // <<== RecordBeginLoc
+//  ...
+//  mem_calls();
+//  kernel_calls();
+//  mem_calls();
+//  ...
+//  cudaEventRecord(stop);                  // <<== RecordEndLoc
+//  ...
+//  sync_calls();
+//  ...
+//  cudaEventElapsedTime(&et, start, stop); // <<== TimeElapsedLoc
+void EventAPICallRule::handleTimeMeasurement() {
+  auto CELoc = TimeElapsedCE->getBeginLoc().getRawEncoding();
+  auto FD = getImmediateOuterFuncDecl(TimeElapsedCE);
+  auto FuncBody = FD->getBody();
+  if (!FuncBody)
     return;
-  auto *Parent = Parents[0].get<Stmt>();
-  if (!Parent) {
-    return;
-  }
-  const Stmt *RecordBegin = nullptr, *RecordEnd = nullptr;
-  auto EventArg = CE->getArg(0);
+  auto EventArg = TimeElapsedCE->getArg(0);
   if (IsEventArgArraySubscriptExpr(EventArg)) {
     // If the event arg is a ArraySubscriptExpr, mark all kernels in the current
     // function to wait
-    RecordBegin = *Parent->child_begin();
-    for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter)
+    RecordBegin = *FuncBody->child_begin();
+    for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
+         ++Iter)
       RecordEnd = *Iter;
   } else {
     // Find the last Event record call on start and stop
-    for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+    for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
+         ++Iter) {
       if (Iter->getBeginLoc().getRawEncoding() > CELoc)
         continue;
 
       if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
         if (!RecordCall->getDirectCallee())
           continue;
-        std::string RecordFuncName =
-            RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
+        std::string RecordFuncName = RecordCall->getDirectCallee()
+                                         ->getNameInfo()
+                                         .getName()
+                                         .getAsString();
         // Find the last call of Event Record on start and stop before
         // calculate the time elapsed
         if (RecordFuncName == "cudaEventRecord") {
           auto Arg0 = getStmtSpelling(RecordCall->getArg(0));
-          if (Arg0 == getStmtSpelling(CE->getArg(1)))
+          if (Arg0 == getStmtSpelling(TimeElapsedCE->getArg(1)))
             RecordBegin = RecordCall;
-          else if (Arg0 == getStmtSpelling(CE->getArg(2)))
+          else if (Arg0 == getStmtSpelling(TimeElapsedCE->getArg(2)))
             RecordEnd = RecordCall;
         }
       }
@@ -8258,98 +8283,147 @@ void EventAPICallRule::handleTimeMeasurement(
   if (!RecordBegin || !RecordEnd)
     return;
 
-  // Find the kernel calls and async memory operations between start and stop
-  auto RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
-  auto RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
-  auto TimeElapsedLoc = CE->getBeginLoc().getRawEncoding();
-  std::vector<std::string> Events2Wait;
-  std::map<std::string, int> QueueCounter;
-  std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
-  bool DefaultQueueAdded = false;
+  RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
+  RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
+  TimeElapsedLoc = TimeElapsedCE->getBeginLoc().getRawEncoding();
+
+  // Handle the kernel calls and async memory operations between start and stop
+  handleTargetCalls(FuncBody);
+
   auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
-    const CUDAKernelCallExpr *KCall = nullptr;
-    if (auto *Expr = dyn_cast<ExprWithCleanups>(*Iter)) {
-      auto *SubExpr = Expr->getSubExpr();
-      if (auto *Call = dyn_cast<CUDAKernelCallExpr>(SubExpr))
-        KCall = Call;
-    } else if (auto *Call = dyn_cast<CUDAKernelCallExpr>(*Iter)) {
-      KCall = Call;
-    }
-
-    if (KCall) {
-      auto KCallLoc = KCall->getBeginLoc().getRawEncoding();
-      // Only the kernel calls between begin and end are set to be synced
-      if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
-        auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-        auto EventExpr = findNextRecordedEvent(Parent, KCallLoc);
-        if (!EventExpr)
-          EventExpr = CE->getArg(2);
-        K->setEvent(ExprAnalysis::ref(EventExpr));
-        K->setSync();
-      }
-    }
-
-    if (auto *MemCall = dyn_cast<CallExpr>(*Iter)) {
-      auto MemCallLoc = MemCall->getBeginLoc().getRawEncoding();
-      auto MemCallee = MemCall->getDirectCallee();
-      if(!MemCallee)
-        continue;
-      auto CalleeName = MemCallee->getName();
-      if (MemCallLoc > RecordBeginLoc && MemCallLoc < RecordEndLoc) {
-        if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
-          auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
-          bool IsDefaultStream = false;
-          // Need queue for default stream or stream 0, 1 and 2
-          if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
-            IsDefaultStream = true;
-          } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
-            auto IL = dyn_cast<IntegerLiteral>(StreamArg);
-            auto V = IL->getValue().getZExtValue();
-            if (V <= 2) // V should be 0, 1 or 2
-              IsDefaultStream = true;
-          }
-          if (USMLevel == UsmLevel::restricted) {
-            std::string EventName = getTempNameForExpr(CE->getArg(2));
-            std::string QueueName = IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
-            std::string NewEventName = EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
-            Events2Wait.push_back(NewEventName);
-            emplaceTransformation(new InsertBeforeStmt(MemCall, "sycl::event " + NewEventName + " = "));
-          } else {
-            std::tuple<bool, std::string, const CallExpr *> T;
-            if (IsDefaultStream && !DefaultQueueAdded) {
-              DefaultQueueAdded = true;
-              if (checkWhetherIsDuplicate(MemCall, false))
-                continue;
-              int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-              std::ostringstream SyncStmt;
-              SyncStmt << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait();" << getNL();
-              buildTempVariableMap(Index, MemCall, HelperFuncType::DefaultQueue);
-              emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
-            } else if (!IsDefaultStream) {
-              auto TempName = getTempNameForExpr(StreamArg);
-              Queues2Wait.emplace_back(TempName.substr(0, TempName.size() - 1), nullptr);
-            }
-          }
-        }
-      } else if (MemCallLoc > RecordEndLoc && MemCallLoc < TimeElapsedLoc) {
-        if (CalleeName == "cudaEventSynchronize") {
-          emplaceTransformation(new ReplaceStmt(MemCall, false, std::string("cudaEventSynchronize"), ""));
-        }
-      }
-    }
-  }
   for (auto NewEventName : Events2Wait) {
     std::ostringstream SyncStmt;
-    SyncStmt << NewEventName << ".wait();" << getNL()
-             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    SyncStmt
+        << NewEventName << ".wait();" << getNL()
+        << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
     emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
   }
   for (auto T : Queues2Wait) {
     std::ostringstream SyncStmt;
-    SyncStmt << std::get<0>(T) << "->wait();" << getNL()
-             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    SyncStmt
+        << std::get<0>(T) << "->wait();" << getNL()
+        << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
     emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+  }
+}
+
+//  cudaEventRecord(start);                 // <<== RecordBeginLoc
+//  ...
+//  mem_calls();
+//  kernel_calls();
+//  mem_calls();
+//  ...
+//  cudaEventRecord(stop);                  // <<== RecordEndLoc
+//  ...
+//  sync_calls();
+//  ...
+//  cudaEventElapsedTime(&et, start, stop); // <<== TimeElapsedLoc
+void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
+  if (!Node)
+    return;
+  for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
+    auto Loc = It->getBeginLoc().getRawEncoding();
+    // Skip statements before RecordBeginLoc or after TimeElapsedLoc
+    if (Loc <= RecordBeginLoc || Loc >= TimeElapsedLoc)
+      continue;
+    // Handle cudaEventSynchronize between RecordEndLoc and TimeElapsedLoc
+    if (Loc > RecordEndLoc && Loc < TimeElapsedLoc) {
+      auto Call = dyn_cast<CallExpr>(*It);
+      if (!Call)
+        continue;
+      auto Callee = Call->getDirectCallee();
+      if (!Callee)
+        continue;
+      if (Callee->getName() == "cudaEventSynchronize") {
+        emplaceTransformation(new ReplaceStmt(
+            Call, false, std::string("cudaEventSynchronize"), ""));
+      }
+    }
+
+    // Now handle all statements between RecordBeginLoc and RecordEndLoc
+    switch (It->getStmtClass()) {
+    case Stmt::CallExprClass:
+      handleOrdinaryCalls(dyn_cast<CallExpr>(*It));
+      break;
+    case Stmt::CUDAKernelCallExprClass:
+      handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
+      break;
+    case Stmt::ExprWithCleanupsClass: {
+      auto ExprS = dyn_cast<ExprWithCleanups>(*It);
+      auto *SubExpr = ExprS->getSubExpr();
+      if (auto *KCall = dyn_cast<CUDAKernelCallExpr>(SubExpr))
+        handleKernelCalls(Node, KCall);
+      break;
+    }
+    case Stmt::CompoundStmtClass:
+      handleTargetCalls(*It);
+      break;
+    default:
+      // Recursively handle target calls in deeper code structures
+      for (auto It2 = It->child_begin(); It2 != It->child_end(); ++It2)
+        handleTargetCalls(*It2);
+    }
+  }
+}
+
+void EventAPICallRule::handleKernelCalls(const Stmt *Node,
+                                         const CUDAKernelCallExpr *KCall) {
+  auto KCallLoc = KCall->getBeginLoc().getRawEncoding();
+  auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+  auto EventExpr = findNextRecordedEvent(Node, KCallLoc);
+  if (!EventExpr)
+    EventExpr = TimeElapsedCE->getArg(2);
+  K->setEvent(ExprAnalysis::ref(EventExpr));
+  K->setSync();
+}
+
+void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
+  auto Callee = Call->getDirectCallee();
+  if (!Callee)
+    return;
+  auto CalleeName = Callee->getName();
+  if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
+    auto StreamArg = Call->getArg(Call->getNumArgs() - 1)->IgnoreImpCasts();
+    bool IsDefaultStream = false;
+    // Need queue for default stream or stream 0, 1 and 2
+    if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+      IsDefaultStream = true;
+    } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
+      auto IL = dyn_cast<IntegerLiteral>(StreamArg);
+      auto V = IL->getValue().getZExtValue();
+      if (V <= 2) // V should be 0, 1 or 2
+        IsDefaultStream = true;
+    }
+    if (USMLevel == UsmLevel::restricted) {
+      std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
+      std::string QueueName =
+          IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
+      std::string NewEventName =
+          EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
+      Events2Wait.push_back(NewEventName);
+      emplaceTransformation(
+          new InsertBeforeStmt(Call, "sycl::event " + NewEventName + " = "));
+    } else {
+      std::tuple<bool, std::string, const CallExpr *> T;
+      if (IsDefaultStream && !DefaultQueueAdded) {
+        DefaultQueueAdded = true;
+        if (checkWhetherIsDuplicate(Call, false))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        auto &SM = DpctGlobalInfo::getSourceManager();
+        std::ostringstream SyncStmt;
+        SyncStmt << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait();"
+                 << getNL()
+                 << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM)
+                        .str();
+        buildTempVariableMap(Index, Call, HelperFuncType::DefaultQueue);
+        emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+      } else if (!IsDefaultStream) {
+        auto TempName = getTempNameForExpr(StreamArg);
+        Queues2Wait.emplace_back(TempName.substr(0, TempName.size() - 1),
+                                 nullptr);
+      }
+    }
   }
 }
 

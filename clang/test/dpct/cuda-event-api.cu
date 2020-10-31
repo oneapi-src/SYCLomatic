@@ -13,10 +13,8 @@ void check(T result, char const *const func) {
 //CHECK: /*
 //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define CudaEvent(X)\
-
-#define CudaEvent(X)\
-  cudaEventCreate(&X)
+//CHECK-NEXT: #define CudaEvent(X)
+#define CudaEvent(X) cudaEventCreate(&X)
 
 #define cudaCheck(stmt) do {                         \
   cudaError_t err = stmt;                            \
