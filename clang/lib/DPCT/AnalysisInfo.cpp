@@ -32,6 +32,7 @@ std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
+std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
@@ -220,6 +221,10 @@ void DpctFileInfo::buildReplacements() {
                                Diagnostics::API_NOT_OCCURRED_IN_AST, true,
                                std::get<1>(AtomicInfo.second));
   }
+
+  for (auto &DescInfo : FFTDescriptorTypeMap) {
+    DescInfo.second.buildInfo(FilePath, DescInfo.first);
+  }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
@@ -246,13 +251,13 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
 }
 
 void DpctGlobalInfo::insertRandomEngine(const Expr *E) {
-  if (auto Src = RandomEngineInfo::getHandleVar(E)) {
+  if (auto Src = getHandleVar(E)) {
     insertRandomEngineInfo(Src);
   }
 }
 std::shared_ptr<RandomEngineInfo>
 DpctGlobalInfo::findRandomEngine(const Expr *E) {
-  if (auto Src = RandomEngineInfo::getHandleVar(E)) {
+  if (auto Src = getHandleVar(E)) {
     return findRandomEngineInfo(Src);
   }
   return std::shared_ptr<RandomEngineInfo>();
@@ -2272,6 +2277,35 @@ void RandomEngineInfo::buildInfo() {
         std::make_shared<ExtReplacement>(CreateCallFilePath[i],
                                          CreateAPIBegin[i], CreateAPILength[i],
                                          Repl, nullptr));
+}
+
+void FFTDescriptorTypeInfo::buildInfo(std::string FilePath,
+                                          unsigned int Offset) {
+  if (!PrecAndDom.empty() && IsValid) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            "std::shared_ptr<oneapi::mkl::dft::descriptor<" + PrecAndDom + ">>",
+            nullptr));
+    return;
+  }
+  if (DpctGlobalInfo::getPrecAndDomPairSet().size() == 1) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            "std::shared_ptr<oneapi::mkl::dft::descriptor<" +
+                *DpctGlobalInfo::getPrecAndDomPairSet().begin() + ">>",
+            nullptr));
+  } else {
+    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
+                             true, "FFT precision and domain type");
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            "std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/"
+            "*Fix the precision and domain type manually*/>>",
+            nullptr));
+  }
 }
 
 void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,

@@ -42,6 +42,7 @@ add_clang_library(DPCT
   GaHelper/os_specific.cpp
   GaHelper/uuid.cpp
   GAnalytics.cpp
+  LibraryAPIMigration.cpp
 
   DEPENDS
   ClangDriverOptions

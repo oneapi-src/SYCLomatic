@@ -35,7 +35,6 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaError_t", "int"},
       {"cudaError", "int"},
       {"CUresult", "int"},
-      {"cufftResult_t", "int"},
       {"CUcontext", "void*"},
       {"dim3", ClNamespace + "::range<3>"},
       {"int2", ClNamespace + "::int2"},
@@ -143,7 +142,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusolverEigMode_t", "oneapi::mkl::job"},
       {"cusolverStatus_t", "int"},
       {"cudaChannelFormatDesc", "dpct::image_channel"},
-      { "cudaChannelFormatKind", "dpct::image_channel_data_type" },
+      {"cudaChannelFormatKind", "dpct::image_channel_data_type" },
       {"cudaArray", "dpct::image_matrix"},
       {"cudaArray_t", "dpct::image_matrix_p"},
       {"cudaTextureDesc", "dpct::sampling_info"},
@@ -163,6 +162,14 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaMemcpyKind", "dpct::memcpy_direction"},
       {"cudaComputeMode", "int"},
       {"cudaSharedMemConfig", "int"},
+      {"cufftReal", "float"},
+      {"cufftDoubleReal", "double"},
+      {"cufftComplex", ClNamespace + "::float2"},
+      {"cufftDoubleComplex", ClNamespace + "::double2"},
+      {"cufftResult_t", "int"},
+      {"cufftResult", "int"},
+      {"cufftType_t", "int"},
+      {"cufftType", "int"},
       // ...
 
   };

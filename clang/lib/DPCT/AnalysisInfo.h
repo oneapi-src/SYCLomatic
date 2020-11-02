@@ -99,6 +99,15 @@ struct HostRandomDistrInfo {
   std::string IndentStr;
 };
 
+struct FFTDescriptorTypeInfo {
+  FFTDescriptorTypeInfo(unsigned int Length) : Length(Length) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string PrecAndDom;
+  bool IsValid = true;
+};
+
 // Below four structs are all used for device RNG library API migration.
 // In the origin code, the returned random number vector size is decided when
 // the generate API is called.
@@ -305,6 +314,7 @@ enum HeaderType {
   MKL_BLAS_Solver,
   MKL_RNG,
   MKL_SPBLAS,
+  MKL_FFT,
   Chrono,
 };
 
@@ -456,6 +466,9 @@ public:
     case MKL_SPBLAS:
       return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+    case MKL_FFT:
+      return insertHeader(HeaderType::MKL_FFT, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<array>");
     case Numeric:
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
         "<numeric>");
@@ -525,6 +538,10 @@ public:
 
   std::map<unsigned int, HostRandomEngineTypeInfo> &
   getHostRandomEngineTypeMap() { return HostRandomEngineTypeMap; }
+
+  std::map<unsigned int, FFTDescriptorTypeInfo> &getFFTDescriptorTypeMap() {
+    return FFTDescriptorTypeMap;
+  }
 
   // The key of below three maps are the offset of the replacement.
   std::map<unsigned int, DeviceRandomStateTypeInfo> &
@@ -616,6 +633,7 @@ private:
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>
       HostRandomDistrMap;
+  std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
@@ -891,6 +909,10 @@ public:
     EnableComments = Enable;
   }
 
+  inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
+    return PrecAndDomPairSet;
+  }
+
   // This set collects all the different vector size of the return value of the
   // generate API. If the size of this set is 1, then we can use this vec_size
   // in all generator types. Otherwise, a placeholder will be inserted.
@@ -1150,6 +1172,15 @@ public:
     if (M.find(LocInfo.second) == M.end()) {
       M.insert(std::make_pair(LocInfo.second,
                               HostRandomEngineTypeInfo(Length)));
+    }
+  }
+
+  void insertFFTDescriptorTypeInfo(SourceLocation SL, unsigned int Length) {
+    auto LocInfo = getLocInfo(SL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getFFTDescriptorTypeMap();
+    if (M.find(LocInfo.second) == M.end()) {
+      M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
     }
   }
 
@@ -1496,6 +1527,7 @@ private:
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
+  static std::unordered_set<std::string> PrecAndDomPairSet;
   static std::unordered_set<int> DeviceRNGReturnNumSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
@@ -3288,32 +3320,6 @@ public:
   // use 0 as default.
   // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
   // use 1 as default.
-  static const DeclaratorDecl *getHandleVar(const Expr *Arg) {
-    const DeclaratorDecl *D = nullptr;
-    if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
-      if (UO->getOpcode() == UO_AddrOf) {
-        D = getDecl(UO->getSubExpr());
-      }
-    } else {
-      D = getDecl(Arg);
-    }
-    return D;
-  }
-  static const DeclaratorDecl *getDecl(const Expr *E) {
-    const Expr *NoImpCastE = E->IgnoreImpCasts();
-
-    if (auto ASE = dyn_cast<ArraySubscriptExpr>(NoImpCastE))
-      NoImpCastE = ASE->getBase()->IgnoreImpCasts();
-
-    if (auto DeclRef = dyn_cast<DeclRefExpr>(NoImpCastE)) {
-      if (dyn_cast<VarDecl>(DeclRef->getDecl()))
-        return dyn_cast<DeclaratorDecl>(DeclRef->getDecl());
-    } else if (auto Member = dyn_cast<MemberExpr>(NoImpCastE)) {
-      if (dyn_cast<FieldDecl>(Member->getMemberDecl()))
-        return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
-    }
-    return nullptr;
-  }
 
   void setEngineTypeReplacement(std::string EngineType) {
     TypeReplacement = EngineType;

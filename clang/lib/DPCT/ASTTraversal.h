@@ -18,6 +18,7 @@
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
+#include "LibraryAPIMigration.h"
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
@@ -418,6 +419,99 @@ protected:
     emplaceTransformation(std::move(PIT));
     emplaceTransformation(std::move(SIT));
   }
+
+  void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
+                                   LibraryMigrationStrings Strings,
+                                   LibraryMigrationLocations Locations,
+                                   std::string FuncName, const CallExpr *CE) {
+    if (Flags.NeedUseLambda) {
+      if (Strings.PrefixInsertStr.empty() && Strings.SuffixInsertStr.empty()) {
+        // If there is one API call in the migrted code, it is unnecessary to
+        // use a lambda expression
+        Flags.NeedUseLambda = false;
+      }
+    }
+
+    if (Flags.NeedUseLambda) {
+      if ((Flags.MoveOutOfMacro && Flags.IsMacroArg) ||
+          (Flags.CanAvoidUsingLambda && !Flags.IsMacroArg)) {
+        std::string InsertString;
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+            !Flags.CanAvoidBrace)
+          InsertString = std::string("{") + getNL() + Strings.IndentStr +
+                         Strings.PrefixInsertStr + Strings.Repl + ";" +
+                         Strings.SuffixInsertStr + getNL() + Strings.IndentStr +
+                         "}" + getNL() + Strings.IndentStr;
+        else
+          InsertString = Strings.PrefixInsertStr + Strings.Repl + ";" +
+                         Strings.SuffixInsertStr + getNL() + Strings.IndentStr;
+
+        if (Flags.MoveOutOfMacro && Flags.IsMacroArg) {
+          emplaceTransformation(new InsertText(Locations.OutOfMacroInsertLoc,
+                                               std::move(InsertString)));
+          report(Locations.OutOfMacroInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
+                 true, "function-like macro");
+        } else {
+          emplaceTransformation(new InsertText(Locations.OuterInsertLoc,
+                                               std::move(InsertString)));
+          report(Locations.OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
+                 true,
+                 Flags.OriginStmtType == "if" ? "an " + Flags.OriginStmtType
+                                              : "a " + Flags.OriginStmtType);
+        }
+        emplaceTransformation(
+            new ReplaceText(Locations.PrefixInsertLoc, Locations.Len, "0"));
+      } else {
+        if (Flags.IsAssigned) {
+          report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA,
+                 false);
+          insertAroundRange(
+              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
+              std::string("[&](){") + getNL() + Strings.IndentStr +
+                  Strings.PrefixInsertStr,
+              std::string(";") + Strings.SuffixInsertStr + getNL() +
+                  Strings.IndentStr + "return 0;" + getNL() +
+                  Strings.IndentStr + std::string("}()"));
+        } else {
+          insertAroundRange(
+              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
+              std::string("[&](){") + getNL() + Strings.IndentStr +
+                  Strings.PrefixInsertStr,
+              std::string(";") + Strings.SuffixInsertStr + getNL() +
+                  Strings.IndentStr + std::string("}()"));
+        }
+        emplaceTransformation(
+            new ReplaceText(Locations.PrefixInsertLoc, Locations.Len,
+                            std::move(Strings.Repl), false, FuncName));
+      }
+    } else {
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+          !Flags.CanAvoidBrace) {
+        if (!Strings.PrefixInsertStr.empty() ||
+            !Strings.SuffixInsertStr.empty()) {
+          insertAroundRange(
+              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
+              Strings.PrePrefixInsertStr + std::string("{") + getNL() +
+                  Strings.IndentStr + Strings.PrefixInsertStr,
+              Strings.SuffixInsertStr + getNL() + Strings.IndentStr +
+                  std::string("}"));
+        }
+      } else {
+        insertAroundRange(Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
+                          Strings.PrePrefixInsertStr + Strings.PrefixInsertStr,
+                          std::move(Strings.SuffixInsertStr));
+      }
+      if (Flags.IsAssigned) {
+        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "(",
+                          ", 0)");
+        report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP,
+               true);
+      }
+
+      emplaceTransformation(
+          new ReplaceStmt(CE, false, FuncName, true, Strings.Repl));
+    }
+  }
 };
 
 template <typename T> const char NamedMigrationRule<T>::ID(0);
@@ -684,6 +778,14 @@ public:
   ManualMigrateEnumsRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Migration rule for FFT enums.
+class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
+public:
+  FFTEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -1701,6 +1803,17 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
+public:
+  FFTFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  std::vector<std::string> PrefixStmts;
+  std::string IndentStr;
+  std::string CallExprRepl;
 };
 
 class AsmRule : public NamedMigrationRule<AsmRule> {

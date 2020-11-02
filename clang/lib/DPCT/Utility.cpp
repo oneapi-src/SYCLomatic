@@ -605,10 +605,27 @@ getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*N);
-  // if (Parents.size() == 1)
-  return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
+  if (Parents.size() >= 1)
+    return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
 
-  // return nullptr;
+  return nullptr;
+}
+
+const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
+getNonImplicitCastParentNode(
+    const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+  if (!N)
+    return nullptr;
+
+  auto P = getParentNode(N);
+  while (P) {
+    if (!P->get<ImplicitCastExpr>()) {
+      return P;
+    } else {
+      P = getParentNode(P);
+    }
+  }
+  return nullptr;
 }
 
 // Determine if S is a single line statement inside
@@ -2260,3 +2277,29 @@ bool isLexicallyInLocalScope(const clang::Decl *D) {
   }
   return false;
 }
+
+const DeclaratorDecl *getHandleVar(const Expr *Arg) {
+  const Expr *NoImpCastE = nullptr;
+  if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      NoImpCastE = UO->getSubExpr()->IgnoreImpCasts();
+    }
+  } else {
+    NoImpCastE = Arg->IgnoreImpCasts();
+  }
+  if (!NoImpCastE)
+    return nullptr;
+
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(NoImpCastE))
+    NoImpCastE = ASE->getBase()->IgnoreImpCasts();
+
+  if (auto DeclRef = dyn_cast<DeclRefExpr>(NoImpCastE)) {
+    if (dyn_cast<VarDecl>(DeclRef->getDecl()))
+      return dyn_cast<DeclaratorDecl>(DeclRef->getDecl());
+  } else if (auto Member = dyn_cast<MemberExpr>(NoImpCastE)) {
+    if (dyn_cast<FieldDecl>(Member->getMemberDecl()))
+      return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
+  }
+  return nullptr;
+}
+

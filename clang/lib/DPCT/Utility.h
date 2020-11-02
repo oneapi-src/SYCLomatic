@@ -312,6 +312,8 @@ const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
 const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E);
 const std::shared_ptr<clang::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::DynTypedNode> N);
+const std::shared_ptr<clang::DynTypedNode>
+getNonImplicitCastParentNode(const std::shared_ptr<clang::DynTypedNode> N);
 bool IsSingleLineStatement(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
 clang::SourceRange
@@ -445,4 +447,6 @@ clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
 
 bool isLexicallyInLocalScope(const clang::Decl*);
+
+const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 #endif // DPCT_UTILITY_H
