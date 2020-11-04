@@ -161,6 +161,9 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
   if (EndLoc.isValid()) {
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
+    if (End.first + End.second < Begin) {
+      return std::pair<size_t, size_t>(Begin, 0);
+    }
     return std::pair<size_t, size_t>(Begin, End.first - Begin + End.second);
   }
   return getOffsetAndLength(BeginLoc);
