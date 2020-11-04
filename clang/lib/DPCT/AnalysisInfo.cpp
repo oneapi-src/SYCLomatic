@@ -1788,6 +1788,9 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
   if (!DpctGlobalInfo::isInRoot(FD->getBeginLoc()))
     return;
+  if (!FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAGlobalAttr>())
+    return;
+
   /// Ignore explicit instantiation definition, as the decl in AST has wrong
   /// location info. And it is processed in
   /// DPCTConsumer::HandleCXXExplicitFunctionInstantiation
