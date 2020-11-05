@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/device001.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/device001 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
 
 int main(int argc, char **argv) {
 
@@ -142,3 +142,4 @@ void test2() {
   // CHECK-NEXT: int j = 0;
   int j = cudaThreadSetLimit(limit, 0);
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cuda_vardecl.dp.cpp --match-full-lines %s
+// RUN: dpct -out-root %T/cuda_vardecl %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cuda_vardecl/cuda_vardecl.dp.cpp --match-full-lines %s
 
 #include <vector>
 #include <list>
@@ -149,3 +149,4 @@ int main(int argc, char* argv[]) {
   // CHECK: std::vector<sycl::float2> const vf(5);
   std::vector<float2> const vf(5);
 }
+

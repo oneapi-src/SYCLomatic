@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter/pass-filter.dp.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run
 // CHECK: void test_00(sycl::nd_item<3> item_ct1) {
@@ -11,3 +11,4 @@ __global__ void test_00() {
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 }
+

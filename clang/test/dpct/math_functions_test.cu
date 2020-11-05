@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/math_functions_test.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
 #include <cmath>
@@ -484,3 +484,4 @@ void foo_3(){
   unsigned long long max = foo_inner((unsigned long long) std::numeric_limits<int>::max());
   unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
 }
+

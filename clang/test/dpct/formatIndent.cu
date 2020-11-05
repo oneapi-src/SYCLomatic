@@ -1,7 +1,7 @@
 // RUN: cat %s > %T/formatIndent.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T formatIndent.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace formatIndent.cu --match-full-lines --input-file %T/formatIndent.dp.cpp
+// RUN: dpct -out-root %T/formatIndent formatIndent.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace formatIndent.cu --match-full-lines --input-file %T/formatIndent/formatIndent.dp.cpp
 
 #include <cuda_runtime.h>
 

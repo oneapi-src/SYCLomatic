@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/try_catch.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/try_catch %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/try_catch/try_catch.dp.cpp
 
 namespace Test {
 enum class AA : int { ONE,
@@ -17,3 +17,4 @@ public:
 private:
   Test::AA data_;
 };
+

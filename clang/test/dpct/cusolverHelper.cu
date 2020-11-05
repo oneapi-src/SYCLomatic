@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --report-type=all -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusolverHelper.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --report-type=all -out-root %T/cusolverHelper %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusolverHelper/cusolverHelper.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -62,4 +62,5 @@ int main(int argc, char *argv[])
     int a = sizeof(cublasStatus_t);
     int b = sizeof(cusolverDnHandle_t);
 }
+
 

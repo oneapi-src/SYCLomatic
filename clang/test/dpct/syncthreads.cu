@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads/syncthreads.dp.cpp
 
 // CHECK: void test_syncthreads(int *arr, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void test_syncthreads(int *arr) {
@@ -39,3 +39,4 @@ __global__ void test_syncthreads(int *arr) {
 //   test_syncthreads_and<<<blocks_per_grid, threads_per_block>>>(d_arr);
 //   test_syncthreads_or<<<blocks_per_grid, threads_per_block>>>(d_arr);
 // }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublas-create-Sgemm-destroy.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublas-create-Sgemm-destroy %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublas-create-Sgemm-destroy/cublas-create-Sgemm-destroy.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
@@ -277,3 +277,4 @@ int foo2(cudaDataType DT) {
   cublasDestroy(handle);
   return 0;
 }
+

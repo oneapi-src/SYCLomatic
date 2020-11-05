@@ -1,10 +1,10 @@
-// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/mf-test.dp.cpp
-// RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-kernel.dp.cpp
-// RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-kernel.dp.hpp
-// RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-extern.dp.hpp
-// RUN: FileCheck %S/mf-func-included.cu --match-full-lines --input-file %T/mf-func-included.dp.cpp
-// RUN: FileCheck %S/mf-func-mid-included.cu --match-full-lines --input-file %T/mf-func-mid-included.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/mf-test %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/mf-test/mf-test.dp.cpp
+// RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-test/mf-kernel.dp.cpp
+// RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-test/mf-kernel.dp.hpp
+// RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-test/mf-extern.dp.hpp
+// RUN: FileCheck %S/mf-func-included.cu --match-full-lines --input-file %T/mf-test/mf-func-included.dp.cpp
+// RUN: FileCheck %S/mf-func-mid-included.cu --match-full-lines --input-file %T/mf-test/mf-func-mid-included.dp.cpp
 
 // CHECK: #include "mf-kernel.dp.hpp"
 // CHECK-NEXT#include "mf-extern.dp.hpp"

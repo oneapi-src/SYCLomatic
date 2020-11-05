@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/malloc.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/malloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/malloc/malloc.dp.cpp
 #include <cuda_runtime.h>
 
 template <class T>
@@ -48,3 +48,4 @@ int main(){
     // CHECK: d_data_int2 = sycl::malloc_device<sycl::int2>(100, q_ct1);
     cudaMalloc((void **)&d_data_int2, sizeof(INT2)*100);
 }
+

@@ -1,6 +1,6 @@
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
-// RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
+// RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
 
 #include <complex>
 
@@ -401,3 +401,4 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:    });
     kernel_dependent<<<1,1>>>(h_cpx_2);
 }
+

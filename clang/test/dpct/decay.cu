@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/decay.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/decay %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/decay/decay.dp.cpp %s
 #include <cuda_runtime.h>
 
 template<typename T>
@@ -28,3 +28,4 @@ void foo(float* R[])
 {
   foo_kernel<float><<<1, 1>>>(R);
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/kernel_without_name.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
 
 __global__ void testKernel(int L, int M, int N);
 
@@ -208,3 +208,4 @@ void run_foo4(dim3 c, dim3 d) {
  while (1)
    foo_kernel3<<<c, 1>>>(g_a);
 }
+

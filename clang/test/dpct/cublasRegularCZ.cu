@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasRegularCZ.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasRegularCZ %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasRegularCZ/cublasRegularCZ.dp.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
@@ -1643,3 +1643,4 @@ int main(){
   // CHECK-NEXT: }
   cublasZtrsm(handle, (cublasSideMode_t)foo(), (cublasFillMode_t)foo(), (cublasOperation_t)foo(), (cublasDiagType_t)foo(), m, n, alpha_z, A_z, lda, B_z, ldb);
 }
+

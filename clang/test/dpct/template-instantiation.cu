@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/template-instantiation.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/template-instantiation %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck %s --match-full-lines --input-file %T/template-instantiation/template-instantiation.dp.cpp
 
 #include <vector>
 
@@ -122,3 +122,4 @@ __global__ void kernel(int *) {
   __shared__ T a[10];
   int b = blockDim.x;
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/printf.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/printf %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/printf/printf.dp.cpp
 
 #include <stdio.h>
 
@@ -45,3 +45,4 @@ int main() {
   kernel_test<<<1, 1>>>();
   host_test();
 }
+

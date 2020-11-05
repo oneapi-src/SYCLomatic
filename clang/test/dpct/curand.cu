@@ -1,8 +1,8 @@
 // CHECKME
 // RUN: cat %s > %T/curand.cu
 // RUN: cd %T
-//RUN: dpct -out-root %T curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-//RUN: FileCheck --input-file %T/curand.dp.cpp --match-full-lines curand.cu
+//RUN: dpct -out-root %T/curand curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+//RUN: FileCheck --input-file %T/curand/curand.dp.cpp --match-full-lines curand.cu
 //CHECK:// CHECKME
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>

@@ -1,7 +1,7 @@
 // RUN: cat %s > %T/error-handling.cu
 // RUN: cd %T
-// RUN: dpct --usm-level=none -out-root %T error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
-// RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling.dp.cpp
+// RUN: dpct --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
+// RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling/error-handling.dp.cpp
 
 #include <stdexcept>
 #include <cublas.h>

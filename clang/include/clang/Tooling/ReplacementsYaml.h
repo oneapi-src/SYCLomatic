@@ -33,14 +33,16 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
 #ifdef INTEL_CUSTOMIZATION
     NormalizedReplacement(const IO &)
         : FilePath(""), Offset(0), Length(0), ReplacementText(""),
-          ConstantFlag(""), ConstantOffset(0), InitStr(""), NewHostVarName("") {
+          ConstantFlag(""), ConstantOffset(0), InitStr(""), NewHostVarName(""),
+          BlockLevelFormatFlag(false) {
     }
 
     NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
         : FilePath(R.getFilePath()), Offset(R.getOffset()),
           Length(R.getLength()), ReplacementText(R.getReplacementText()),
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
-          NewHostVarName(R.getNewHostVarName()) {
+          NewHostVarName(R.getNewHostVarName()),
+          BlockLevelFormatFlag(R.getBlockLevelFormatFlag()) {
       clang::dpct::ConstantFlagType Flag = R.getConstantFlag();
       if (Flag == clang::dpct::ConstantFlagType::HostDevice) {
         ConstantFlag = "HostDeviceConstant";
@@ -68,6 +70,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       R.setConstantOffset(ConstantOffset);
       R.setInitStr(InitStr);
       R.setNewHostVarName(NewHostVarName);
+      R.setBlockLevelFormatFlag(BlockLevelFormatFlag);
       return R;
     }
 #else
@@ -93,6 +96,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
     unsigned int ConstantOffset = 0;
     std::string InitStr = "";
     std::string NewHostVarName = "";
+    bool BlockLevelFormatFlag = false;
 #endif
   };
 
@@ -108,6 +112,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
     Io.mapRequired("ConstantOffset", Keys->ConstantOffset);
     Io.mapRequired("InitStr", Keys->InitStr);
     Io.mapRequired("NewHostVarName", Keys->NewHostVarName);
+    Io.mapRequired("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
 #endif
   }
 };

@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/USM-none.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/USM-none %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/USM-none/USM-none.dp.cpp %s
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #define DPCT_NAMED_LAMBDA
@@ -405,3 +405,4 @@ void foo3() {
   CUDA_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamLegacy));
   CUDA_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread));
 }
+

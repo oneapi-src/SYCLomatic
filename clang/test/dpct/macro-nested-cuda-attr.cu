@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/macro-nested-cuda-attr.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/macro-nested-cuda-attr %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/macro-nested-cuda-attr/macro-nested-cuda-attr.dp.cpp --match-full-lines %s
 
 #define HAVE_CUDA
 
@@ -221,3 +221,4 @@ int getGlobalThreadID();
 // CHECK: GLOBAL
 GLOBAL
 void globalFunc() {}
+

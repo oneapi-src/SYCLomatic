@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/kernel-signature %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature/kernel-signature.dp.cpp
 
 // CHECK: void test_01();
 // CHECK: void test_06();
@@ -35,3 +35,4 @@ struct foo
         return NULL;
     }
 };
+

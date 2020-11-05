@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/math-functions.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/math-functions/math-functions.dp.cpp --match-full-lines %s
 
 #include <cmath>
 
@@ -570,3 +570,4 @@ int main() {
     // TODO: Check more primitive type and vector types
   }
 }
+

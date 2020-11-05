@@ -1,7 +1,7 @@
 // RUN: cat %s > %T/checkKernelFormatMigrated.cu
 // RUN: cd %T
-// RUN: dpct --no-cl-namespace-inline -out-root %T checkKernelFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace checkKernelFormatMigrated.cu --match-full-lines --input-file %T/checkKernelFormatMigrated.dp.cpp
+// RUN: dpct --no-cl-namespace-inline -out-root %T/checkKernelFormatMigrated checkKernelFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace checkKernelFormatMigrated.cu --match-full-lines --input-file %T/checkKernelFormatMigrated/checkKernelFormatMigrated.dp.cpp
 
 #include <cuda_runtime.h>
 

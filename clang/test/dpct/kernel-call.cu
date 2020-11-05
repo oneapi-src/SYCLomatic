@@ -1,6 +1,6 @@
-// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
+// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
 
-// RUN: FileCheck --input-file %T/kernel-call.dp.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/kernel-call/kernel-call.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 #include <vector>
@@ -864,3 +864,4 @@ int run_foo12() {
   //CHECK-NEXT:}
   my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }
+

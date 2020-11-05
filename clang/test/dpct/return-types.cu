@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none  --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/return-types.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/return-types/return-types.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -128,3 +128,4 @@ const cudaEvent_t &bar(long i) {
   cudaEvent_t e;
   return e;
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s -passes "IterationSpaceBuiltinRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/function-attrs %s -passes "IterationSpaceBuiltinRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs/function-attrs.dp.cpp
 
 // CHECK: void test_00();
 __device__ void test_00();
@@ -31,4 +31,5 @@ __global__ void test_06() { }
 __global__    void test_07();
 // CHECK: void test_08();
 __global__	    void test_08();
+
 

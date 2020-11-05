@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusparse-usm-2.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --out-root %T/cusparse-usm-2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusparse-usm-2/cusparse-usm-2.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -99,4 +99,5 @@ int foo(int aaaaa){
   cusparseDestroyMatDescr(descrA);
   cusparseDestroy(handle);
 }
+
 

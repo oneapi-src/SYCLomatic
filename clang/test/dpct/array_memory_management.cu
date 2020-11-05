@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck --input-file %T/array_memory_management.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/array_memory_management %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck --input-file %T/array_memory_management/array_memory_management.dp.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>
 
@@ -314,3 +314,4 @@ void foo() {
   // CHECK-NEXT:  CHECK_ERR((delete a1, 0));
   CHECK_ERR(cudaFreeArray(a1));
 }
+

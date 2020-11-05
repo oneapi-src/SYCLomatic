@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/template-kernel-call.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
 void printf(const char *format, unsigned char data);
 
@@ -331,3 +331,4 @@ template <typename T, int size>
 void foo2(Image<T> &ptr, T value) {
   my_kernel<<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
 }
+

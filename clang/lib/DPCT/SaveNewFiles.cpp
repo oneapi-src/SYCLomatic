@@ -198,7 +198,23 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   SmallString<512> OutPath;
 
+  std::string YamlFile =
+      OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
+  std::string SrcFile = "MainSrcFiles_placehold";
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+
+  if (llvm::sys::fs::exists(YamlFile)) {
+    if (loadFromYaml(YamlFile, *PreTU) == 0) {
+      for (const auto &Repl : PreTU->Replacements) {
+        auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+        FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
+      }
+    }
+  }
+
   bool AppliedAll = true;
+  std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
+
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
@@ -218,6 +234,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       makeCanonical(OutPath);
       bool HasRealReplacements = true;
       auto Repls = Entry.second;
+
       if (Repls.size() == 1) {
         auto Repl = *Repls.begin();
         if(Repl.getLength() == 0 && Repl.getReplacementText().empty())
@@ -256,11 +273,25 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         return status;
       }
 
-      // for headfile, as it can be included from differnt file, it need
+      // For headfile, as it can be included from differnt file, it need
       // merge the migration triggered by each including.
-      if (OutPath.back() == 'h') {
-        // note the replacement of Entry.second are updated by this call.
+      // For mainfile, as it can be compiled or preprocessed with different
+      // macro defined, it aslo need merge the migration triggered by each command.
+      SourceProcessType FileType = GetSourceFileType(Entry.first);
+      if (FileType & (TypeCppHeader | TypeCudaHeader)) {
         mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
+      } else {
+
+        auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
+        auto Iter = FileRelpsMap.find(Entry.first);
+        if (Iter != FileRelpsMap.end()) {
+          const auto &PreRepls = Iter->second;
+          mergeAndUniqueReps(Entry.second, PreRepls);
+        }
+
+        for (const auto &Repl : Entry.second) {
+          MainSrcFilesRepls.push_back(Repl);
+        }
       }
 
       std::vector<clang::tooling::Range> Ranges;
@@ -273,7 +304,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       FileBlockLevelFormatRangesMap.insert(
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
-
       AppliedAll =
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
       Rewrite
@@ -282,6 +312,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
     }
+
+    save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls);
+
     extern bool ProcessAllFlag;
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
@@ -419,14 +452,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
 void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
-  if (SourceFilePath.back() != 'h')
-    return;
 
   SourceFilePath = StringRef(DpctGlobalInfo::removeSymlinks(
       DpctGlobalInfo::getFileManager(), Path));
   makeCanonical(SourceFilePath);
 
   std::string OriginPath = SourceFilePath.str().str();
+  rewriteFileName(SourceFilePath);
   rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
              DpctGlobalInfo::getOutRoot());
 

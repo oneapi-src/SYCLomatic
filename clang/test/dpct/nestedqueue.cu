@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/nestedqueue.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/nestedqueue %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/nestedqueue/nestedqueue.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 #include <cublas_v2.h>
@@ -66,3 +66,4 @@ __host__ void foo4(){
   // CHECK: oneapi::mkl::blas::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}});
   cublasIsamax(handle, n, x_S, incx, result);
 }
+

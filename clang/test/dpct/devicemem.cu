@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/devicemem.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/devicemem %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/devicemem/devicemem.dp.cpp
 
 #include <cuda_runtime.h>
 
@@ -141,3 +141,4 @@ int main() {
 
   return 0;
 }
+

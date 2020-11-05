@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusparse-type.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --out-root %T/cusparse-type %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusparse-type/cusparse-type.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -192,3 +192,4 @@ template void bar2<int>(cusparseFillMode_t a1,
 //There is no DeclStmt node as these two VarDecl nodes' parent.
 //Currently, tool cannot cover this case.
 cusparseMatDescr_t b = 0, c = 0;
+

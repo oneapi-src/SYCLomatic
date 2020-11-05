@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/api-name-migrated.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/api-name-migrated %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/api-name-migrated/api-name-migrated.dp.cpp %s
 
 #include <cuda_runtime.h>
 
@@ -26,3 +26,4 @@ void fooo() {
   // CHECK: srcGPU = dpct::dpct_malloc(extent);
   cudaMalloc3D(&srcGPU, extent);
 }
+

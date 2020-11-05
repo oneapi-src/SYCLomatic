@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasTtrmmLegacy.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasTtrmmLegacy %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasTtrmmLegacy/cublasTtrmmLegacy.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas.h>
 #include <cuda_runtime.h>
@@ -54,3 +54,4 @@ int main(){
   // CHECK-NEXT:}
   cublasZtrmm('L', 'U', 'N', 'N', m, n, alpha_Z, A_Z, lda, B_Z, ldb);
 }
+

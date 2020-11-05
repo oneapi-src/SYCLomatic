@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/thrust-copy-2.dp.cpp --match-full-lines %s
+// RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T/thrust-copy-2 -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/thrust-copy-2/thrust-copy-2.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
@@ -20,3 +20,4 @@ int main(void) {
 // CHECK:  std::copy(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), input.begin(), input.end(), output.begin());
   thrust::copy(input.begin(), input.end(), output.begin());
 }
+

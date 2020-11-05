@@ -1,6 +1,6 @@
 // FIXME
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --format-range=none --enable-ctad -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/ctad.dp.cpp --match-full-lines %s
+// RUN: dpct --usm-level=none -out-root %T/ctad %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --format-range=none --enable-ctad -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/ctad/ctad.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 #include <algorithm>
@@ -107,4 +107,5 @@ int main() {
   // CHECK-NEXT:     });
   kernel<<<NUM, NUM>>>(1);
 }
+
 

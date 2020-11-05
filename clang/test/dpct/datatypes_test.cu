@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/datatypes_test %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test/datatypes_test.dp.cpp
 
 #include <iostream>
 #include <iostream>
@@ -4390,3 +4390,4 @@ template <> struct S<CUstream_st &&> {};
 template <> void foo2(CUstream_st){}
 template <> void foo3(CUstream_st){}
 template <> void foo4(CUstream_st){}
+

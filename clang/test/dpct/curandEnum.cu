@@ -1,5 +1,5 @@
-//RUN: dpct --out-root %T --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
-//RUN: FileCheck --input-file %T/curandEnum.dp.cpp --match-full-lines %s
+//RUN: dpct --out-root %T/curandEnum --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
+//RUN: FileCheck --input-file %T/curandEnum/curandEnum.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
 #include <stdio.h>
@@ -92,3 +92,4 @@ int main() {
     CURAND_STATUS_ARCH_MISMATCH,
     CURAND_STATUS_INTERNAL_ERROR);
 }
+

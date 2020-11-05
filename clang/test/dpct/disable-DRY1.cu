@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --no-dry-pattern -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/disable-DRY1.dp.cpp
+// RUN: dpct --format-range=none --no-dry-pattern -out-root %T/disable-DRY1 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/disable-DRY1/disable-DRY1.dp.cpp
 
 
 #include "cuda.h"
@@ -33,3 +33,4 @@ void foo1() {
   cudaMemset(d_A, 23, size);
   cudaMemset(d_A, 23, size);
 }
+

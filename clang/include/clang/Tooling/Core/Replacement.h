@@ -143,7 +143,7 @@ public:
   std::string toString() const;
 #ifdef INTEL_CUSTOMIZATION
   void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
-  bool getBlockLevelFormatFlag() { return BlockLevelFormatFlag; }
+  bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
   void setNotFormatFlag() { NotFormatFlag = true; }
   bool getNotFormatFlag() { return NotFormatFlag; }
   dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }

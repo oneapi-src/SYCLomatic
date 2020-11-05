@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusolverDnEi-usm.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/cusolverDnEi-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusolverDnEi-usm/cusolverDnEi-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cusolverDn.h>
@@ -157,3 +157,4 @@ int main(int argc, char *argv[])
     cusolverDnZgesvd (*cusolverH, jobu, jobvt, m, n, &A_z, lda, &S_d, &U_z, ldu, &VT_z, ldvt, &workspace_z, Lwork, &Rwork_d, &devInfo);
 
 }
+

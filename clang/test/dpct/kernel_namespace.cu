@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/kernel_namespace.dp.cpp %s
+// RUN: dpct --format-range=none --out-root %T/kernel_namespace %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/kernel_namespace/kernel_namespace.dp.cpp %s
 
 #include "cuda_runtime.h"
 #include <iostream>
@@ -91,3 +91,4 @@ void foo13() {
   // CHECK: k4();
   k4<<<1,1>>>();
 }
+

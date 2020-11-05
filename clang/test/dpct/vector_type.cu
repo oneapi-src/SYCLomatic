@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/vector_type.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/vector_type %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/vector_type/vector_type.dp.cpp --match-full-lines %s
 
 #include <vector>
 
@@ -4070,3 +4070,4 @@ void test2() {
   VT2 d2;
   if (std::abs(d2.x) >= 0.01) {}
 }
+

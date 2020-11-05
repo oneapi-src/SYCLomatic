@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/max_min_windows.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/max_min_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/max_min_windows/max_min_windows.dp.cpp
 
 #if defined(_WIN32) || defined(WIN32)
 #include <Windows.h>
@@ -14,3 +14,4 @@ __global__ void test_max_min(void) {
   // CHECK: float d = sycl::min(a, b);
   float d = min(a, b);
 }
+

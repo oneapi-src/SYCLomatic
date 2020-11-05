@@ -1352,6 +1352,12 @@ public:
   static std::map<std::string, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
+  static std::unordered_map<std::string,
+                          std::vector<clang::tooling::Replacement>> &
+  getFileRelpsMap() {
+  return FileRelpsMap;
+  }
+  static std::string getYamlFileName() { return YamlFileName; }
   static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
   static void removeVarNameInGlobalVarNameSet(const std::string& VarName) {
     auto Iter = getGlobalVarNameSet().find(VarName);
@@ -1521,6 +1527,10 @@ private:
   // key: The hash string of the begin location of the macro expansion
   // value: The end location of the macro expansion
   static std::map<std::string, SourceLocation> BeginOfEmptyMacros;
+  static std::unordered_map<std::string,
+                            std::vector<clang::tooling::Replacement>>
+      FileRelpsMap;
+  static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel.dp.cpp
+// RUN: dpct --format-range=none -usm-level=none -out-root %T/launch-kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel/launch-kernel.dp.cpp
 
 // CHECK: void template_device(T *d, T *s) {
 template<class T>
@@ -97,3 +97,4 @@ int main() {
   cudaFree(d_data21);
   cudaFree(d_data);
 }
+

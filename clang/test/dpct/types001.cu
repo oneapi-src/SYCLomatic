@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
-// RUN: FileCheck %s --match-full-lines --input-file %T/types001.dp.cpp
+// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: FileCheck %s --match-full-lines --input-file %T/types001/types001.dp.cpp
 
 #include <cuda.h>
 #include <cublas.h>
@@ -563,3 +563,4 @@ void fun3() {
   if (!deviceProp.canMapHostMemory){
   }
 }
+

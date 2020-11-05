@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/types004.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/types004 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/types004/types004.dp.cpp
 
 #include "cuda_fp16.h"
 
@@ -28,4 +28,5 @@ int main(int argc, char **argv) {
   a = sizeof _h2;
 
 }
+
 

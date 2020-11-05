@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasTtrmm.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasTtrmm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasTtrmm/cublasTtrmm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -123,3 +123,4 @@ int main(){
   // CHECK-NEXT: }
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, (cublasOperation_t)foo1(), CUBLAS_DIAG_NON_UNIT, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, foo2(), ldc);
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/error-handling-trycatch %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch/error-handling-trycatch.dp.cpp
 
 void test_simple() {
 }
@@ -39,3 +39,4 @@ struct C : public Base {
   C() {}
   ~C() throw() {}
 };
+

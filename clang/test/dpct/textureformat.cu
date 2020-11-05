@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck --input-file %T/textureformat.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/textureformat %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck --input-file %T/textureformat/textureformat.dp.cpp --match-full-lines %s
 #include "cuda_runtime.h"
 __global__ void transformKernel(float* output, cudaTextureObject_t texObj, int width, int height, float theta)
 {
@@ -77,3 +77,4 @@ int main()
   cudaFree(output);
   return 0;
 }
+

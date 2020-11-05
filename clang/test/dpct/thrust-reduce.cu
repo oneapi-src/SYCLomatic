@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/thrust-reduce.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/thrust-reduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/thrust-reduce/thrust-reduce.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
@@ -66,3 +66,4 @@ public:
     return thrust::raw_pointer_cast(this->data + 2);
   }
 };
+

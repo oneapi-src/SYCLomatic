@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda  -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
 
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -300,3 +300,4 @@ int run_foo12() {
   // CHECK-NEXT:    });
   my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }
+

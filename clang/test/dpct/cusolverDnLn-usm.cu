@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusolverDnLn-usm.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/cusolverDnLn-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusolverDnLn-usm/cusolverDnLn-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cusolverDn.h>
@@ -279,3 +279,4 @@ int main(int argc, char *argv[])
     cusolverDnCsytrf(*cusolverH, uplo, n, &A_c, lda, &devIpiv, &workspace_c, Lwork, &devInfo);
     cusolverDnZsytrf(*cusolverH, uplo, n, &A_z, lda, &devIpiv, &workspace_z, Lwork, &devInfo);
 }
+

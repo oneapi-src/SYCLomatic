@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/histogram.dp.cpp %s
+// RUN: dpct --format-range=none -out-root %T/histogram %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/histogram/histogram.dp.cpp %s
 #ifdef _WIN32
 #include <cstdint>
 #endif
@@ -24,3 +24,4 @@ void foo() {
   cudaDeviceProp device_properties;
   size_t smem_size = device_properties.sharedMemPerBlock;
 }
+

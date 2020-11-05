@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/sycl_style_double2.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/sycl_style_double2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/sycl_style_double2/sycl_style_double2.dp.cpp --match-full-lines %s
 
 // CHECK: void func3(sycl::double2 a, sycl::double2 b, sycl::double2 c) {
 void func3(double2 a, double2 b, double2 c) {
@@ -103,3 +103,4 @@ int main() {
   // CHECK-NEXT:     });
   gpuMain<<<64, 64>>>();
 }
+

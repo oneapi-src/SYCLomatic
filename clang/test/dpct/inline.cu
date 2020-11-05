@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/inline.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/inline %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/inline/inline.dp.cpp
 #include <cuda_runtime.h>
 
 #define NUM_ELEMENTS 16
@@ -41,3 +41,4 @@ class TestClass {
 
 // CHECK: extern __dpct_inline__ void error(void);
 extern __forceinline__ void error(void);
+

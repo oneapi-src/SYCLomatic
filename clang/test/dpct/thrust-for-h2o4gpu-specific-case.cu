@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1
 // UNSUPPORTED: v8.0, v10.1, v10.2, v11.0, v11.1
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/thrust-for-h2o4gpu-specific-case.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu-specific-case %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/thrust-for-h2o4gpu-specific-case/thrust-for-h2o4gpu-specific-case.dp.cpp --match-full-lines %s
 
 
 // CHECK: #include <CL/sycl.hpp>
@@ -31,3 +31,4 @@ void foo_1() {
   thrust::device_vector<int, thrust::device_malloc_allocator<int>> *dd[10];
   foo_cpy(*tt[0], *dd[0]);
 }
+

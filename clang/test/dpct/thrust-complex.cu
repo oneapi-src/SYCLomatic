@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/thrust-complex.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
@@ -149,3 +149,4 @@ int foo(){
   thrust::complex<float> c3 = c1 + c2;
   printf("c1 + c2 = (%f, %f)\n", c3.real(), c3.imag());
 }
+

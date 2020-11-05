@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/curand-device-usm.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/curand-device-usm/curand-device-usm.dp.cpp --match-full-lines %s
 
 //CHECK: #include <CL/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -116,3 +116,4 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none  -out-root %T %s --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasBatch.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasBatch %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasBatch/cublasBatch.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -204,3 +204,4 @@ int main() {
 
   return 0;
 }
+

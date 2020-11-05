@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/memcpy_from_symbol.dp.cpp %s
+// RUN: dpct --format-range=none -usm-level=none -out-root %T/memcpy_from_symbol %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/memcpy_from_symbol/memcpy_from_symbol.dp.cpp %s
 
 #include <cuda_runtime.h>
 
@@ -45,3 +45,4 @@ int main() {
   std::cout << "Passed" << std::endl;
   return 0;
 }
+

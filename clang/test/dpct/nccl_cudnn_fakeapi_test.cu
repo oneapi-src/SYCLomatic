@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root 0 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 int fake__cudnn_call(){
  return 1;
 }
@@ -18,3 +18,4 @@ class _cudnn_t {
 _cudnn_t ab1;
 
 __global__ void hello(){}
+

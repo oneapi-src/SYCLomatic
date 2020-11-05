@@ -1,8 +1,8 @@
 // FIXME
 // UNSUPPORTED: -windows-
 
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_static %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static/sharedmem_var_static.dp.cpp
 
 #include <stdio.h>
 #include <complex>
@@ -178,3 +178,4 @@ int main(void) {
   // CHECK-NEXT: }
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
 }
+

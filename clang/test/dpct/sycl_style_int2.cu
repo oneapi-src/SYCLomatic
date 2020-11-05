@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/sycl_style_int2.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/sycl_style_int2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/sycl_style_int2/sycl_style_int2.dp.cpp --match-full-lines %s
 #ifdef _WIN32
 #include <cstdint>
 #endif
@@ -129,3 +129,4 @@ int main() {
   // CHECK-NEXT: sycl::int4 aaa4;
   volatile int4 aaa4;
 }
+

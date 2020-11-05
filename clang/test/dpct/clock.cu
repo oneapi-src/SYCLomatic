@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/clock.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/clock %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/clock/clock.dp.cpp
 
 // CHECK: #include <stdio.h>
 // CHECK-NEXT: #include <stdint.h>
@@ -39,3 +39,4 @@ int main(int argc, char **argv)
     timedReduction<<<64, 256, sizeof(float) * 2 * 256>>>(dinput, doutput, dtimer);
     return 0;
 }
+

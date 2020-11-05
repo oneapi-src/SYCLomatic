@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/replace-dim3.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 #include <algorithm>
@@ -259,3 +259,4 @@ __global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {
     atomicAdd(&mt[i].f3.x, a[i]);
   }
 }
+

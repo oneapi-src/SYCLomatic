@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/queue_ctn_usm_none.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/queue_ctn_usm_none %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/queue_ctn_usm_none/queue_ctn_usm_none.dp.cpp
 
 
 #include "cuda.h"
@@ -32,3 +32,4 @@ void foo1() {
   cudaMemset(d_A, 23, size);
   cudaMemset(d_A, 23, size);
 }
+

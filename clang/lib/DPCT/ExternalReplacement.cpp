@@ -37,7 +37,7 @@ namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
 int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
-              const Replacements &Replaces) {
+              const std::vector<clang::tooling::Replacement> &Replaces) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
@@ -77,10 +77,10 @@ int loadFromYaml(StringRef Input,
 }
 
 void mergeAndUniqueReps(Replacements &Replaces,
-                        clang::tooling::TranslationUnitReplacements &PreTU) {
+                        const std::vector<clang::tooling::Replacement> &PreRepls) {
 
   bool DupFlag = false;
-  for (const auto &OldR : PreTU.Replacements) {
+  for (const auto &OldR : PreRepls) {
     DupFlag = false;
 
     for (const auto &CurrR : Replaces) {
@@ -118,10 +118,12 @@ int mergeExternalReps(std::string InRootSrcFilePath,
   if (PreTU) {
     llvm::errs() << YamlFile << " exist, try to merge it.\n";
 
-    mergeAndUniqueReps(Replaces, *PreTU);
+    mergeAndUniqueReps(Replaces, (*PreTU).Replacements);
   }
 
   llvm::errs() << "Saved new version of " << YamlFile << " file\n";
-  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Replaces);
+
+  std::vector<clang::tooling::Replacement> Repls(Replaces.begin(), Replaces.end());
+  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls);
   return 0;
 }

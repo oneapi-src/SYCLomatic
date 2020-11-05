@@ -1,7 +1,7 @@
 // UNSUPPORTED: v11.0, v11.1
 // UNSUPPORTED: cuda-11.0, cuda-11.1
-// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusparse-usm.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --out-root %T/cusparse-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusparse-usm/cusparse-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -220,3 +220,4 @@ int foo(int aaaaa){
 int foo(cusparseMatDescr_t descrB){
   return cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }
+

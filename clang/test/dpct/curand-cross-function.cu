@@ -1,5 +1,5 @@
-//RUN: dpct -out-root %T %s --format-range=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-//RUN: FileCheck --input-file %T/curand-cross-function.dp.cpp --match-full-lines %s
+//RUN: dpct -out-root %T/curand-cross-function %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+//RUN: FileCheck --input-file %T/curand-cross-function/curand-cross-function.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
 #include <stdio.h>
@@ -41,3 +41,4 @@ int main(){
   update(randvals, rng, nx, ny);
   curandDestroyGenerator(rng);
 }
+

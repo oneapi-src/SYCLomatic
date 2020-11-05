@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem-dim-noUSM.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem-dim-noUSM %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem-dim-noUSM/sharedmem-dim-noUSM.dp.cpp
 // CHECK: #define DPCT_USM_LEVEL_NONE
 #include <cuda_runtime.h>
 
@@ -53,3 +53,4 @@ int main(void)
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;
 }
+

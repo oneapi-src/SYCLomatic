@@ -1,7 +1,7 @@
 // FIXME:
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cuda-stream-api.dp.cpp --match-full-lines %s
+// RUN: dpct --usm-level=none -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cuda-stream-api/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>
 #include <functional>
@@ -388,3 +388,4 @@ class C {
     streams2 = INIT_STREAM;
   }
 };
+

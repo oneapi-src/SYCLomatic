@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/memory_data_types.dp.cpp %s
+// RUN: dpct --format-range=none -usm-level=none -out-root %T/memory_data_types %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/memory_data_types/memory_data_types.dp.cpp %s
 
 void foo(int *data, int x, int y) {
   // CHECK: dpct::pitched_data p1 = dpct::pitched_data(data, x, x, y);
@@ -72,3 +72,4 @@ void foo(int *data, int x, int y) {
   // CHECK: dpct::dpct_memcpy(p2_to_data_ct1, p2_to_pos_ct1, p2_from_data_ct1, p2_from_pos_ct1, p2_size_ct1, p2_direction_ct1);
   cudaMemcpy3D(&p2);
 }
+

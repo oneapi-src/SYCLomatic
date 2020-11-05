@@ -1,6 +1,6 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/kernel-call-complex_windows.dp.cpp --match-full-lines %s
+// RUN: dpct -out-root %T/kernel-call-complex_windows %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/kernel-call-complex_windows/kernel-call-complex_windows.dp.cpp --match-full-lines %s
 
 __global__ void k(int i) {
 }
@@ -82,3 +82,4 @@ void foo() {
   // CHECK-NEXT:       });
   k<<<16, 32>>>(S2::bar<T>());
 }
+

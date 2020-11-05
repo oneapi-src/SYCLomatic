@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=restricted -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
-// RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
+// RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
 
 #include <cuda_runtime.h>
 
@@ -444,3 +444,4 @@ void foobar() {
   //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
   checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float)));
 }
+

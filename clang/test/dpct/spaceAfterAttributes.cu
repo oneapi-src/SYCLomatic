@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/spaceAfterAttributes.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/spaceAfterAttributes %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/spaceAfterAttributes/spaceAfterAttributes.dp.cpp
 
 #include <cuda_runtime.h>
 
@@ -50,3 +50,4 @@ void __host__
 foo8() {
   return;
 }
+

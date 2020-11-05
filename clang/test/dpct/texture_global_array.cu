@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/texture_global_array.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/texture_global_array %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/texture_global_array/texture_global_array.dp.cpp --match-full-lines %s
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -131,3 +131,4 @@ void test(float *d_Out, int rSize, int pSize, int pPitch) {
   test_Kernel<<<gridSz, blockSz>>>(tex_Input[0], d_Out, pPitch / sizeof(float));
 }
 #undef MAX_INSTANCES
+

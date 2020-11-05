@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/time-measure-usm-restricted.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/time-measure-usm-restricted %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/time-measure-usm-restricted/time-measure-usm-restricted.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
 #define N 1000
@@ -74,4 +74,5 @@ int main() {
 
     return 0;
 }
+
 

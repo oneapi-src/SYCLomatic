@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/new-expr.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/new-expr %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/new-expr/new-expr.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
 // CHECK: #define NEW_STREAM new sycl::queue *
@@ -36,3 +36,4 @@ void foo() {
   event = NEW(cudaEvent_t);
   cudaEvent_t *events = new cudaEvent_t[n];
 }
+

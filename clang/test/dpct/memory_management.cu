@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -output-file=memory_management_outputfile.txt -- -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/memory_management.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/memory_management %s --cuda-include-path="%cuda-path/include" -output-file=memory_management_outputfile.txt -- -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/memory_management/memory_management.dp.cpp %s
 
 #include <cuda_runtime.h>
 
@@ -1054,3 +1054,4 @@ void copy_dir_3 (enum    cudaMemcpyKind kind) {}
 void copy_dir_1 (cudaComputeMode kind) {}
 void copy_dir_2 (enum cudaComputeMode kind) {}
 void copy_dir_3 (enum    cudaComputeMode kind) {}
+

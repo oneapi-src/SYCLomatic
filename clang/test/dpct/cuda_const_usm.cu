@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const_usm.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/cuda_const_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const_usm/cuda_const_usm.dp.cpp
 
 #include <stdio.h>
 
@@ -219,3 +219,4 @@ int main(int argc, char **argv) {
   printf("Test Passed!\n");
   return 0;
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasTsyrkx.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasTsyrkx %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasTsyrkx/cublasTsyrkx.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas.h>
 #include <cuda_runtime.h>
@@ -116,3 +116,4 @@ int main() {
 
   return 0;
 }
+

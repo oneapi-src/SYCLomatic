@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/nested_device_call.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/nested_device_call %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/nested_device_call/nested_device_call.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 
@@ -77,3 +77,4 @@ int main() {
   kernel<<<1, 1>>>();
   kernel_with_item<<<1, 1>>>();
 }
+

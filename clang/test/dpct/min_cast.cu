@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/min_cast.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/min_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/min_cast/min_cast.dp.cpp --match-full-lines %s
 
 #include <algorithm>
 #include <cmath>
@@ -36,3 +36,4 @@ __global__ void func() {
   const int zlength1 = min(CHUNK_SIZE1, numz1 - blockIdx.x * CHUNK_SIZE1);
 
 }
+

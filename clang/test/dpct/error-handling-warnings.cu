@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-warnings.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/error-handling-warnings %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-warnings/error-handling-warnings.dp.cpp
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
@@ -109,3 +109,4 @@ void specialize_ifs_negative() {
     malloc(0x100);
   }
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/iteration-space.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/iteration-space %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/iteration-space/iteration-space.dp.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.
 // CHECK: void test_00(sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
@@ -103,3 +103,4 @@ __global__ void test_02() {
   size_t gdy = gridDim.y;
   size_t gdz = gridDim.z;
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --always-use-async-handler -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/async-error-handler.dp.cpp --match-full-lines %s
+// RUN: dpct --usm-level=none -out-root %T/async-error-handler %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --always-use-async-handler -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/async-error-handler/async-error-handler.dp.cpp --match-full-lines %s
 
 
 int main() {
@@ -22,3 +22,4 @@ int main() {
   // CHECK-NEXT: s2 = dev_ct1.create_queue(true);
   cudaStreamCreateWithPriority(&s2, cudaStreamDefault, 2);
 }
+

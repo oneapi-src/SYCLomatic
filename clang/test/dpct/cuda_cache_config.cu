@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_cache_config.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_cache_config %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_cache_config/cuda_cache_config.dp.cpp
 
 #include <stdio.h>
 
@@ -83,3 +83,4 @@ int main(int argc, char **argv) {
   cudaFree(d_array);
   return 0;
 }
+

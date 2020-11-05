@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --  -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/test-attributes.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/test-attributes %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/test-attributes/test-attributes.dp.cpp --match-full-lines %s
 #include "cuda.h"
 
 // CHECK:  void hd() {
@@ -46,3 +46,4 @@ __global__ void g() {
   float f;
   isnan(f);
 }
+

@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck --input-file %T/unnamed-struct.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/unnamed-struct %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck --input-file %T/unnamed-struct/unnamed-struct.dp.cpp --match-full-lines %s
 
 #include <vector>
 #include <algorithm>
@@ -82,3 +82,4 @@ typedef struct tt {
         int a;
     };
 } tt;
+

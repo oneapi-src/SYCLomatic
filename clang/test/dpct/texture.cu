@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/texture.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/texture/texture.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 
@@ -453,4 +453,5 @@ __global__ void test_call(uchar4 *d_output,
     float c = tex2D_bar<unsigned char, float>(tex, u, v);
   }
 }
+
 

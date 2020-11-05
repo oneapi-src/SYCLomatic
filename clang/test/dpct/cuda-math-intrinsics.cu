@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cuda-math-intrinsics.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>
 #include <iomanip>
@@ -3493,3 +3493,4 @@ void log_log(bool cond, T... o)
 int test_log() {
   log_log(true, "MJ", "23");
 }
+

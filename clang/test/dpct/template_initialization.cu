@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/template_initialization.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/template_initialization %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/template_initialization/template_initialization.dp.cpp
 
 #include <cuda_runtime.h>
 
@@ -74,3 +74,4 @@ void run_test() {
     assert(h_out[i] == h_in[i]);
   }
 }
+

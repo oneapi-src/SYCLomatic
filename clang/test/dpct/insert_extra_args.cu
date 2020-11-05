@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/insert_extra_args.dp.cpp --match-full-lines %s
+// RUN: dpct -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/insert_extra_args/insert_extra_args.dp.cpp --match-full-lines %s
 
 //CHECK: void deviceFoo(int i, int j, sycl::nd_item<3> item_ct1){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
@@ -120,4 +120,5 @@ int main() {
     bar<<<1, 2>>>();
     return 0;
 }
+
 

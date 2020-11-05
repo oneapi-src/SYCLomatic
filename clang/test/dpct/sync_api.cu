@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/sync_api.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/sync_api/sync_api.dp.cpp
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -66,3 +66,4 @@ __global__ void k() {
   // CHECK: FOO((item_ct1.barrier(), sycl::ONEAPI::any_of(item_ct1.get_group(), p)));
   FOO(__syncthreads_or(p));
 }
+

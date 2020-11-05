@@ -1,5 +1,5 @@
-//RUN: dpct -out-root %T %s --format-range=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-//RUN: FileCheck --input-file %T/curand-usm.dp.cpp --match-full-lines %s
+//RUN: dpct -out-root %T/curand-usm %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+//RUN: FileCheck --input-file %T/curand-usm/curand-usm.dp.cpp --match-full-lines %s
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <oneapi/mkl.hpp>
@@ -313,3 +313,4 @@ void bar6(float *x_gpu, size_t n) {
   //CHECK: oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *(gen[i]), n, x_gpu);
   curandGenerateUniform(gen[i], x_gpu, n);
 }
+

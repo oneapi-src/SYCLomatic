@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasReturnType.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/cublasReturnType %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasReturnType/cublasReturnType.dp.cpp --match-full-lines %s
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -50,3 +50,4 @@ cublasDiagType_t foo7(cublasDiagType_t m) {
   // CHECK: return oneapi::mkl::diag::nonunit;
   return CUBLAS_DIAG_NON_UNIT;
 }
+

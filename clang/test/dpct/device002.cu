@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/device002.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/device002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/device002/device002.dp.cpp
 
 #include <stdio.h>
 
@@ -162,3 +162,4 @@ cudaPeekAtLastError();
 cudaThreadSynchronize();
 return 0;
 }
+

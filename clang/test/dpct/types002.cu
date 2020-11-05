@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/types002.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/types002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/types002/types002.dp.cpp
 
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>
@@ -84,3 +84,4 @@ struct type2;
 template<>
 struct type2<float> { typedef float2  type; };
 typedef typename type2<float>::type  foo_type;
+

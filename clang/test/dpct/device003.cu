@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/device003.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/device003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/device003/device003.dp.cpp
 
 template <typename T>
 void check(T result, char const *const func) {}
@@ -95,3 +95,4 @@ void get_version(void) {
     // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
+

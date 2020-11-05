@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/accessor-offset.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/accessor-offset %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/accessor-offset/accessor-offset.dp.cpp --match-full-lines %s
 
 __global__ void hello(int *d) {}
 __global__ void hello(int *d, int i) {}
@@ -668,3 +668,4 @@ int testVectorAdd(void)
 
     return 0;
 }
+

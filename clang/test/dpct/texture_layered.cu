@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck --input-file %T/texture_layered.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_layered %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck --input-file %T/texture_layered/texture_layered.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 
@@ -136,3 +136,4 @@ int main() {
   tex_tmp.filterMode = cudaFilterModePoint;
 
 }
+

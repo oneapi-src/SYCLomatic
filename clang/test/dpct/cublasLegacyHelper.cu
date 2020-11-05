@@ -1,5 +1,5 @@
-// RUN: dpct --no-cl-namespace-inline --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasLegacyHelper.dp.cpp --match-full-lines %s
+// RUN: dpct --no-cl-namespace-inline --format-range=none --usm-level=none -out-root %T/cublasLegacyHelper %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
@@ -181,3 +181,4 @@ int main() {
   cublasShutdown();
   return 0;
 }
+

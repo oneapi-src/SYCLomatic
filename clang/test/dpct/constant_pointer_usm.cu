@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=restricted -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer_usm.dp.cpp
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/constant_pointer_usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer_usm/constant_pointer_usm.dp.cpp
 
 // CHECK: static dpct::global_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
@@ -35,4 +35,5 @@ void init() {
 int main() {
   init();
 }
+
 

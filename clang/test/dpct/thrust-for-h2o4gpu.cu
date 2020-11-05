@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
 
 
 // CHECK: #include <CL/sycl.hpp>
@@ -273,3 +273,4 @@ void test(){
     // CHECK: const dpct::device_vector<float> d_actual2;
     const thrust::device_vector<float> d_actual2;
 }
+

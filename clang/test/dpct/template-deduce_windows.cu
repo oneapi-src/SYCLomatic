@@ -1,6 +1,6 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
-// RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce_windows.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-deduce_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce_windows/template-deduce_windows.dp.cpp
 
 template<class T1, class T2> class TemplateClass {};
 
@@ -111,3 +111,4 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel4<float2><<<1,1>>>();
 }
+

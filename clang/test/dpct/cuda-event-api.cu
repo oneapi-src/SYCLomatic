@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cuda-event-api.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda-event-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cuda-event-api/cuda-event-api.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 
@@ -611,3 +611,4 @@ void barr(int maxCalls) {
   }
   cudaEventElapsedTime( &total, evtStart[1], evtEnd[maxCalls-1]);
 }
+

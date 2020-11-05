@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s -passes "ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/error-handling-constants.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/error-handling-constants %s -passes "ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/error-handling-constants/error-handling-constants.dp.cpp --match-full-lines %s
 
 
 #include <cufft.h>
@@ -160,3 +160,4 @@ int test_simple_ifs() {
     return (int)cudaSuccess;
   }
 }
+

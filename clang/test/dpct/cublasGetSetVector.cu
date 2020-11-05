@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -extra-arg-before=-std=c++14 -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasGetSetVector.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -extra-arg-before=-std=c++14 -out-root %T/cublasGetSetVector %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasGetSetVector/cublasGetSetVector.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -126,3 +126,4 @@ int main() {
 
   return 0;
 }
+

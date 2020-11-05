@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/comments.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 
 static texture<uint2, 1> tex21;
 
@@ -67,3 +67,4 @@ int main() {
 // CHECK-NEXT:        });
     kernel<<<griddim, threaddim>>>();
 }
+

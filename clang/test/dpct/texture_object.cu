@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
-// RUN: FileCheck --input-file %T/texture_object.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_object %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: FileCheck --input-file %T/texture_object/texture_object.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 
@@ -283,3 +283,4 @@ void foo(){
   tex_tmp.addressMode[2] = cudaAddressModeClamp;
   tex_tmp.normalizedCoords = 1;
 }
+

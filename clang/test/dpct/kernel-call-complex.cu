@@ -1,6 +1,6 @@
 // UNSUPPORTED: -windows-
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/kernel-call-complex.dp.cpp --match-full-lines %s
+// RUN: dpct -out-root %T/kernel-call-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/kernel-call-complex/kernel-call-complex.dp.cpp --match-full-lines %s
 
 __global__ void k(int i) {
 }
@@ -100,3 +100,4 @@ void foo() {
   // CHECK-NEXT:     });
   k2<<<16, 32>>>(pointers[0], pointers[1]);
 }
+

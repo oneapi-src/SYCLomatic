@@ -13,6 +13,7 @@
 #define __EXTERNAL_REPLACEMENT_H__
 
 #include <map>
+#include "llvm/ADT/StringRef.h"
 
 namespace llvm {
 class StringRef;
@@ -30,4 +31,9 @@ int mergeExternalReps(std::string InRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
 int loadFromYaml(llvm::StringRef Input,
                  clang::tooling::TranslationUnitReplacements &TU);
+int save2Yaml(llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
+              const std::vector<clang::tooling::Replacement> &Replaces);
+void mergeAndUniqueReps(clang::tooling::Replacements &Replaces,
+                        const std::vector<clang::tooling::Replacement> &PreRepls);
+
 #endif

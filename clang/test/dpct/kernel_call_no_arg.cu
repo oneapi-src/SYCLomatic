@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/kernel_call_no_arg.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_call_no_arg %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/kernel_call_no_arg/kernel_call_no_arg.dp.cpp
 
 #include <cuda_runtime.h>
 
@@ -54,3 +54,4 @@ int main() {
 
   return 0;
 }
+

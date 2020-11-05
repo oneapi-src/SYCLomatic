@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const.dp.cpp
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_const %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const/cuda_const.dp.cpp
 
 #include <stdio.h>
 
@@ -262,3 +262,4 @@ __device__ void foo() {
   int last;
   inner_foo(&last, l_arg);
 }
+
