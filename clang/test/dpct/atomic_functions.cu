@@ -486,6 +486,9 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:                             unsigned int *temp) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if it is safe.
+// CHECK-NEXT:  */
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range().get(2);
 // CHECK-NEXT:  int offset = item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2);
@@ -493,6 +496,9 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:    sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&temp[buffer[i]])).fetch_add(1);
 // CHECK-NEXT:    i += offset;
 // CHECK-NEXT:  }
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if it is safe.
+// CHECK-NEXT:  */
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&(histo[item_ct1.get_local_id(2)]))).fetch_add(temp[item_ct1.get_local_id(2)]);
 // CHECK-NEXT:}
@@ -536,7 +542,7 @@ __global__ static void vlc_encode_kernel_sm64huff() {
 
 // CHECK:void addByte(unsigned int *s_WarpHist, unsigned int data) {
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:19: The generated code assumes that "s_WarpHist + data" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "s_WarpHist + data" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::local_space>".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(s_WarpHist + data)).fetch_add(1);
 // CHECK-NEXT:}
