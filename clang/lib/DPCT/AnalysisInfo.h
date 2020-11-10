@@ -1330,6 +1330,11 @@ public:
     return MacroTokenToMacroDefineLoc;
   }
 
+  static std::map<std::string, std::string> &
+  getFunctionCallInMacroMigrateRecord() {
+    return FunctionCallInMacroMigrateRecord;
+  }
+
   static std::map<std::string, SourceLocation> &getEndifLocationOfIfdef() {
     return EndifLocationOfIfdef;
   }
@@ -1508,6 +1513,7 @@ private:
   static std::vector<std::pair<std::string, size_t>> ConditionalCompilationLoc;
   static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
+  static std::map<std::string, std::string> FunctionCallInMacroMigrateRecord;
   // key: The hash string of the first non-empty token after the end location of
   // macro expansion
   // value: begin location of macro expansion

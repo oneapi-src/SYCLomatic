@@ -426,40 +426,84 @@ int main() {
 
   //cublas<t>rotg
   // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::rotg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::rotg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasSrotg(handle, x_f, y_f, x_f, y_f);
   cublasSrotg(handle, x_f, y_f, x_f, y_f);
 
   // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::rotg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::rotg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasDrotg(handle, x_d, y_d, x_d, y_d);
@@ -504,40 +548,84 @@ int main() {
 
   //cublas<t>rotmg
   // CHECK: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(5));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::rotmg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, *handle), y_f_buf_ct{{[0-9]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
+  // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(5));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::rotmg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, *handle), y_f_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
   cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
 
   // CHECK: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(5));
+  // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::rotmg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, *handle), y_d_buf_ct{{[0-9]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
+  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: } else {
+  // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
+  // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(5));
+  // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::rotmg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, *handle), y_d_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   status = cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);

@@ -216,6 +216,7 @@ CudaInstallationDetector::CudaInstallationDetector(
   }
 
 #ifdef INTEL_CUSTOMIZATION
+  Args.hasArg(options::OPT_nogpulib);
   if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
         !D.getVFS().exists(RealSDKIncludePath))

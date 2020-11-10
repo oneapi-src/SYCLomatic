@@ -31,13 +31,13 @@ namespace detail {
 /// width will be 32 bits. cl_harf is an exception.
 template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
-  template <int Dimension>
+  template <int dimensions>
   using accessor_t =
-      cl::sycl::accessor<acc_data_t, Dimension, cl::sycl::access::mode::read,
+      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access::mode::read,
                          cl::sycl::access::target::image>;
-  template <int Dimension>
+  template <int dimensions>
   using array_accessor_t =
-      cl::sycl::accessor<acc_data_t, Dimension, cl::sycl::access::mode::read,
+      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access::mode::read,
                          cl::sycl::access::target::image_array>;
   using data_t = T;
   using elem_t = T;
@@ -134,7 +134,7 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 
 /// Functor for attaching data to image class.
-template <class T, int Dimension, bool IsImageArray> struct attach_data;
+template <class T, int dimensions, bool IsImageArray> struct attach_data;
 
 } // namespace detail
 
@@ -272,15 +272,15 @@ public:
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
   /// Construct a new image class with the matrix data.
-  template <int Dimension> cl::sycl::image<Dimension> *create_image() {
-    return create_image<Dimension>(_channel);
+  template <int dimensions> cl::sycl::image<dimensions> *create_image() {
+    return create_image<dimensions>(_channel);
   }
   /// Construct a new image class with the matrix data.
-  template <int Dimension>
-  cl::sycl::image<Dimension> *create_image(image_channel channel) {
-    return new cl::sycl::image<Dimension>(
+  template <int dimensions>
+  cl::sycl::image<dimensions> *create_image(image_channel channel) {
+    return new cl::sycl::image<dimensions>(
         _host_data, channel.get_channel_order(), channel.get_channel_type(),
-        get_range(make_index_sequence<Dimension>()),
+        get_range(make_index_sequence<dimensions>()),
         cl::sycl::property::image::use_host_ptr());
   }
 
@@ -480,17 +480,17 @@ public:
 inline image_wrapper_base::~image_wrapper_base() {}
 using image_wrapper_base_p = image_wrapper_base *;
 
-template <class T, int Dimension, bool IsImageArray> class image_accessor_ext;
+template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 
-template <class T, int Dimension, bool IsImageArray> struct attach_data;
+template <class T, int dimensions, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
-template <class T, int Dimension, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
-  cl::sycl::image<Dimension> *_image = nullptr;
+template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
+  cl::sycl::image<dimensions> *_image = nullptr;
 
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
-      typename image_accessor_ext<T, IsImageArray ? (Dimension - 1) : Dimension,
+      typename image_accessor_ext<T, IsImageArray ? (dimensions - 1) : dimensions,
                               IsImageArray>::accessor_t;
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
@@ -502,17 +502,17 @@ public:
   /// Set data info, attach the data to this class.
   void attach(image_data data) override {
     image_wrapper_base::set_data(data);
-    detail::attach_data<T, Dimension, IsImageArray>()(*this, get_data());
+    detail::attach_data<T, dimensions, IsImageArray>()(*this, get_data());
   }
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix) {
     detach();
-    _image = matrix->create_image<Dimension>();
+    _image = matrix->create_image<dimensions>();
   }
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix, image_channel channel) {
     detach();
-    _image = matrix->create_image<Dimension>(channel);
+    _image = matrix->create_image<dimensions>(channel);
   }
   /// Attach linear data to this class.
   void attach(void *ptr, size_t count) {
@@ -525,7 +525,7 @@ public:
       ptr = get_buffer(ptr)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
-    _image = new cl::sycl::image<Dimension>(
+    _image = new cl::sycl::image<dimensions>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<1>(count / channel.get_total_size()));
   }
@@ -541,7 +541,7 @@ public:
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     cl::sycl::range<1> pitch_range(pitch);
-    _image = new cl::sycl::image<Dimension>(
+    _image = new cl::sycl::image<dimensions>(
         data, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<2>(x / channel.get_total_size(), y), pitch_range);
   }
@@ -554,11 +554,11 @@ public:
 };
 
 /// Wrap sampler and image accessor together.
-template <class T, int Dimension, bool IsImageArray = false>
+template <class T, int dimensions, bool IsImageArray = false>
 class image_accessor_ext {
 public:
   using accessor_t =
-      typename detail::image_trait<T>::template accessor_t<Dimension>;
+      typename detail::image_trait<T>::template accessor_t<dimensions>;
   using data_t = typename detail::image_trait<T>::data_t;
   cl::sycl::sampler _sampler;
   accessor_t _img_acc;
@@ -568,46 +568,46 @@ public:
       : _sampler(sampler), _img_acc(acc) {}
 
   /// Read data from accessor.
-  template <bool Available = Dimension == 3>
+  template <bool Available = dimensions == 3>
   typename std::enable_if<Available, data_t>::type read(float x, float y,
                                                         float z) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::float4(x, y, z, 0), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 3>
+  template <bool Available = dimensions == 3>
   typename std::enable_if<Available, data_t>::type read(int x, int y, int z) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::int4(x, y, z, 0), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 2>
+  template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(float x, float y) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::float2(x, y), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 2>
+  template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int x, int y) {
     return detail::fetch_data<T>()(
         _img_acc.read(cl::sycl::int2(x, y), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 1>
+  template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(float x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 1>
+  template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
   }
 };
 
-template <class T, int Dimension> class image_accessor_ext<T, Dimension, true> {
+template <class T, int dimensions> class image_accessor_ext<T, dimensions, true> {
 public:
   using accessor_t =
-      typename detail::image_trait<T>::template array_accessor_t<Dimension>;
+      typename detail::image_trait<T>::template array_accessor_t<dimensions>;
   using data_t = typename detail::image_trait<T>::data_t;
   cl::sycl::sampler _sampler;
   accessor_t _img_acc;
@@ -617,26 +617,26 @@ public:
       : _sampler(sampler), _img_acc(acc) {}
 
   /// Read data from accessor.
-  template <bool Available = Dimension == 2>
+  template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int index, float x,
                                                         float y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(cl::sycl::float2(x, y), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 2>
+  template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(cl::sycl::int2(x, y), _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 1>
+  template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, float x) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(x, _sampler));
   }
   /// Read data from accessor.
-  template <bool Available = Dimension == 1>
+  template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, int x) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(x, _sampler));
@@ -670,8 +670,8 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 
 namespace detail {
 /// Functor for attaching data to image class.
-template <class T, int Dimension, bool IsImageArray> struct attach_data {
-  void operator()(image_wrapper<T, Dimension, IsImageArray> &in_image,
+template <class T, int dimensions, bool IsImageArray> struct attach_data {
+  void operator()(image_wrapper<T, dimensions, IsImageArray> &in_image,
                   image_data data) {
     assert(data.get_data_type() == image_data_type::matrix);
     in_image.attach((image_matrix_p)data.get_data_ptr());

@@ -156,7 +156,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusparseStatus_t", "int"},
       {"cusparseMatDescr_t", "oneapi::mkl::index_base"},
       {"cusparseHandle_t", ClNamespace + "::queue*"},
-      {"cudaMemoryAdvise", "pi_mem_advice"},
+      {"cudaMemoryAdvise", "int"},
       {"cudaPos", ClNamespace + "::id<3>"},
       {"cudaExtent", ClNamespace + "::range<3>"},
       {"cudaPitchedPtr", "dpct::pitched_data"},
@@ -179,11 +179,11 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaDevAttrClockRate", "get_max_clock_frequency"},
     {"cudaDevAttrIntegrated", "get_integrated"},
     // enum Memcpy Kind
-    {"cudaMemcpyHostToHost", "host_to_host"},
-    {"cudaMemcpyHostToDevice", "host_to_device"},
-    {"cudaMemcpyDeviceToHost", "device_to_host"},
-    {"cudaMemcpyDeviceToDevice", "device_to_device"},
-    {"cudaMemcpyDefault", "automatic"},
+    {"cudaMemcpyHostToHost", "dpct::host_to_host"},
+    {"cudaMemcpyHostToDevice", "dpct::host_to_device"},
+    {"cudaMemcpyDeviceToHost", "dpct::device_to_host"},
+    {"cudaMemcpyDeviceToDevice", "dpct::device_to_device"},
+    {"cudaMemcpyDefault", "dpct::automatic"},
     // enum Texture Address Mode
     {"cudaAddressModeWrap", ClNamespace + "::addressing_mode::repeat"},
     {"cudaAddressModeClamp", ClNamespace + "::addressing_mode::clamp_to_edge"},
@@ -200,6 +200,13 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaResourceTypeArray", "dpct::image_data_type::matrix"},
     {"cudaResourceTypeLinear", "dpct::image_data_type::linear"},
     {"cudaResourceTypePitch2D", "dpct::image_data_type::pitch"},
+    // enum cudaMemoryAdvise
+    {"cudaMemAdviseSetReadMostly", "0"},
+    {"cudaMemAdviseUnsetReadMostly", "0"},
+    {"cudaMemAdviseSetPreferredLocation", "0"},
+    {"cudaMemAdviseUnsetPreferredLocation", "0"},
+    {"cudaMemAdviseSetAccessedBy", "0"},
+    {"cudaMemAdviseUnsetAccessedBy", "0"},
     // ...
   };
 
@@ -2219,6 +2226,28 @@ const std::map<std::string, std::pair<std::string, int>>
                               {"cublasScnrm2_v2", {"float", 4}},
                               {"cublasDznrm2_v2", {"double", 4}}};
 
+// This map is only used for non-usm.
+const std::map<std::string, std::map<int, std::string>>
+    MapNames::MaySyncBLASFuncWithMultiArgs{
+        {"cublasSrotg_v2",
+         {{1, "float"}, {2, "float"}, {3, "float"}, {4, "float"}}},
+        {"cublasDrotg_v2",
+         {{1, "double"}, {2, "double"}, {3, "double"}, {4, "double"}}},
+        {"cublasCrotg_v2",
+         {{1, "std::complex<float>"},
+          {2, "std::complex<float>"},
+          {3, "float"},
+          {4, "std::complex<float>"}}},
+        {"cublasZrotg_v2",
+         {{1, "std::complex<double>"},
+          {2, "std::complex<double>"},
+          {3, "double"},
+          {4, "std::complex<double>"}}},
+        {"cublasSrotmg_v2",
+         {{1, "float"}, {2, "float"}, {3, "float"}, {5, "float"}}},
+        {"cublasDrotmg_v2",
+         {{1, "double"}, {2, "double"}, {3, "double"}, {5, "double"}}}};
+
 // SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>
     MapNames::SOLVERFuncReplInfoMap{
@@ -2952,7 +2981,7 @@ const MapNames::MapTy MapNames::Dim3MemberNamesMap{
 const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA_ARCH__", "DPCT_COMPATIBILITY_TEMP"}, /**/
     {"__NVCC__", "DPCT_COMPATIBILITY_TEMP"},      /**/
-    {"__CUDACC__", "CL_SYCL_LANGUAGE_VERSION"},
+    {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
     //...

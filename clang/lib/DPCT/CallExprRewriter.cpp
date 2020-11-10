@@ -867,24 +867,24 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       TargetCalleeName = SourceCalleeName.str();
       return buildRewriteString();
     }
-    LangOptions LO;
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto PP = Context.getPrintingPolicy();
+    PP.PrintCanonicalTypes = 1;
     auto Arg0 = Call->getArg(0);
     auto Arg1 = Call->getArg(1);
 
     std::string T0, T1;
     if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(0))) {
-      T0 = CXXFCE->getType().getAsString(PrintingPolicy(LO));
+      T0 = CXXFCE->getType().getAsString(PP);
     } else {
-      T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+      T0 = Arg0->IgnoreCasts()->getType().getAsString(PP);
     }
 
     if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(1))) {
-      T1 = CXXFCE->getType().getAsString(PrintingPolicy(LO));
+      T1 = CXXFCE->getType().getAsString(PP);
     } else {
-      T1 = Arg1->IgnoreCasts()->getType().getAsString(PrintingPolicy(LO));
+      T1 = Arg1->IgnoreCasts()->getType().getAsString(PP);
     }
-
-
 
     auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
     auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
@@ -918,9 +918,6 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       else
         return "(" + Arg0Str + ") * (" + Arg0Str + ")";
     }
-    // For i of integer type or integer literals, migrate to sycl::pown:
-    // pow(x, i) ==> pown(x, i);
-    // otherwise, migrate to sycl::pow(x, i).
     if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
         T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
       if (T0 == "int") {
@@ -933,34 +930,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       if (T1 != "int") {
         RewriteArgList[1] = "(int)" + RewriteArgList[1];
       }
-      TargetCalleeName =  MapNames::getClNamespace() + "::pown";
-    } else if (T1 == "long" || T1 == "unsigned long" || T1 == "long long" ||
-               T1 == "unsigned long long") {
-      if (DRE0)
-        RewriteArgList[1] = "(float)" + RewriteArgList[1];
-      else
-        RewriteArgList[1] = "(float)(" + RewriteArgList[1] + ")";
-    } else if (T1 == "float") {
-      if (T0 == "int") {
-        if (DRE0)
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        else
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-      } else if (T0 == "double") {
-        if (DRE0)
-          RewriteArgList[1] = "(double)" + RewriteArgList[1];
-        else
-          RewriteArgList[1] = "(double)(" + RewriteArgList[1] + ")";
-      }
-      TargetCalleeName = MapNames::getClNamespace() + "::pow";
-    } else if (T1 == "double") {
-      if (T0 == "int" || T0 == "float") {
-        if (DRE0)
-          RewriteArgList[0] = "(double)" + RewriteArgList[0];
-        else
-          RewriteArgList[0] = "(double)(" + RewriteArgList[0] + ")";
-      }
-      TargetCalleeName = MapNames::getClNamespace() + "::pow";
+      TargetCalleeName = MapNames::getClNamespace() + "::pown";
     }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {

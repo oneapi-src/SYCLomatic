@@ -13,7 +13,7 @@ __global__ void hello() { printf("other"); }
 #ifndef __NVCC__
 __global__ void hello2() { printf("hello2"); }
 #endif
-//CHECK: #if defined(CL_SYCL_LANGUAGE_VERSION)
+//CHECK: #if defined(SYCL_LANGUAGE_VERSION)
 #if defined(__CUDACC__)
 __global__ void hello3() { printf("hello2"); }
 #endif
@@ -80,7 +80,7 @@ int main() {
 }
 
 //CHECK: #define AAA DPCT_COMPATIBILITY_TEMP
-//CHECK-NEXT: #define BBB CL_SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: #define BBB SYCL_LANGUAGE_VERSION
 //CHECK-NEXT: #define CCC DPCT_COMPATIBILITY_TEMP
 #define AAA __CUDA_ARCH__
 #define BBB __CUDACC__

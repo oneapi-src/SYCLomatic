@@ -29,6 +29,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <regex>
@@ -631,6 +632,16 @@ void IncludesCallbacks::InclusionDirective(
   if (!isChildOrSamePath(CudaPath, IncludePath) &&
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
+      return;
+    }
+  }
+
+  // If CudaPath is in /usr/include,
+  // for all the include files without following pattern, keep it
+  if (!CudaPath.compare(0, 12, "/usr/include", 12)) {
+    if (!FileName.startswith("cuda") && !FileName.startswith("cusolver") &&
+        !FileName.startswith("cublas") && !FileName.startswith("cusparse") &&
+        !FileName.startswith("curand")) {
       return;
     }
   }
@@ -1348,8 +1359,10 @@ void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
   const FunctionDecl *FuncDecl = NULL;
   if (auto DRE = dyn_cast<DeclRefExpr>(
           Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
-    if (isa<ParmVarDecl>(DRE->getDecl()))
+    if (isa<ParmVarDecl>(DRE->getDecl())) {
+      NeedReport = true;
       return;
+    }
 
     if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
       if (VD->hasAttr<CUDASharedAttr>()) {
@@ -1633,15 +1646,19 @@ void ThrustFunctionRule::thrustFuncMigration(
     return;
   auto NewName = ReplInfo->second.ReplName;
 
-    // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
-    // thrust::count, thrust::equal) called in device function , should be
-    // migrated to oneapi::dpl APIs without a policy on the DPC++ side
-    if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
-          ArgT.find("execution_policy_base") != std::string::npos) {
-        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-      }
+  bool hasExecutionPolicy =
+      (ArgT == "ExecutionPolicy") ||
+      (ArgT.find("execution_policy_base") != std::string::npos);
+
+  // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
+  // thrust::count, thrust::equal) called in device function , should be
+  // migrated to oneapi::dpl APIs without a policy on the DPC++ side
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+        ArgT.find("execution_policy_base") != std::string::npos) {
+      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
     }
+  }
 
   if (ArgT != "ExecutionPolicy" && ThrustFuncName == "copy_if" &&
       (ArgT.find("execution_policy_base") == std::string::npos &&
@@ -1675,8 +1692,7 @@ void ThrustFunctionRule::thrustFuncMigration(
       emplaceTransformation(new InsertAfterStmt(CE->getArg(5), std::move(Str)));
     }
 
-    if (ArgT.find("execution_policy_base") != std::string::npos ||
-        ArgT == "ExecutionPolicy") {
+    if (hasExecutionPolicy) {
       if (ULExpr) {
         emplaceTransformation(new ReplaceToken(
             ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
@@ -1709,8 +1725,30 @@ void ThrustFunctionRule::thrustFuncMigration(
     emplaceTransformation(
         new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
 
-  } else if (ArgT.find("execution_policy_base") != std::string::npos ||
-             ArgT == "ExecutionPolicy") {
+  } else if (ThrustFuncName == "binary_search" &&
+             (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
+    // Currently, we do not support migration of 4 of the 8 overloaded versions
+    // of thrust::binary_search.  The ones we do not support are the ones
+    // searching for a single value instead of a vector of values
+    //
+    // Supported parameter profiles:
+    // 1. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
+    // 2. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
+    // 3. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
+    // 4. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
+    //
+    // Not supported parameter profiles:
+    // 1. (policy, firstIt, lastIt, value)
+    // 2. (firstIt, lastIt, value)
+    // 3. (policy, firstIt, lastIt, value, comp)
+    // 4. (firstIt, lastIt, value, comp)
+    //
+    // The logic in the above if condition filters out the ones
+    // currently not supported and issues a warning
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false);
+    return;
+
+  } else if (hasExecutionPolicy) {
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
     return;
@@ -3459,8 +3497,9 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaComputeMode", "cudaMemcpyKind"))))))
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(
+                                hasAnyName("cudaComputeMode", "cudaMemcpyKind",
+                                           "cudaMemoryAdvise"))))))
                     .bind("EnumConstant"),
                 this);
 
@@ -3573,6 +3612,11 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
+  } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
+    if (ET->getDecl()->getName() == "cudaMemoryAdvise") {
+      report(E->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
+             " and was set to 0");
+    }
   }
   auto Search = EnumNamesMap.find(EnumName);
   if (Search == EnumNamesMap.end()) {
@@ -3580,7 +3624,7 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  emplaceTransformation(new ReplaceStmt(E, "dpct::" + Search->second));
+  emplaceTransformation(new ReplaceStmt(E, Search->second));
 }
 
 REGISTER_RULE(EnumConstantRule)
@@ -5883,21 +5927,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           std::string BufferDecl = "";
           std::string BufferName = "";
           auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          auto MaySyncAPIIWithMultiArgsIter =
+              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
           if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
               i == MaySyncAPIIter->second.second) {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, MaySyncAPIIter->second.first);
+            BufferName = processSyncAPIBufferArg(
+                FuncName, CE, PrefixInsertStr, IndentStr,
+                MaySyncAPIIter->second.first, i);
+          } else if (MaySyncAPIIWithMultiArgsIter !=
+                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, ArgIter->second, i);
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, "int");
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, "int", i);
           } else {
             BufferName = getBufferNameAndDeclStr(
                 CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
@@ -6027,21 +6073,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           std::string BufferDecl = "";
           std::string BufferName = "";
           auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
+          auto MaySyncAPIIWithMultiArgsIter =
+              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
           if (MaySyncAPIIter != MapNames::MaySyncBLASFunc.end() &&
               i == MaySyncAPIIter->second.second) {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, MaySyncAPIIter->second.first);
+            BufferName = processSyncAPIBufferArg(
+                FuncName, CE, PrefixInsertStr, IndentStr,
+                MaySyncAPIIter->second.first, i);
+          } else if (MaySyncAPIIWithMultiArgsIter !=
+                         MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
+                     MaySyncAPIIWithMultiArgsIter->second.find(i) !=
+                         MaySyncAPIIWithMultiArgsIter->second.end()) {
+            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, ArgIter->second, i);
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName =
-                getTempNameForExpr(CE->getArg(i), true, true) + "buf_ct" +
-                std::to_string(
-                    dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr, IndentStr,
-                                    BufferName, "int");
+            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
+                                                 IndentStr, "int", i);
           } else {
             BufferName = getBufferNameAndDeclStr(
                 CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
@@ -8209,9 +8257,15 @@ void EventAPICallRule::handleTimeMeasurement(
   if (!RecordBegin || !RecordEnd)
     return;
 
-  // Find the kernel calls between start and stop
+  // Find the kernel calls and async memory operations between start and stop
   auto RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
   auto RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
+  auto TimeElapsedLoc = CE->getBeginLoc().getRawEncoding();
+  std::vector<std::string> Events2Wait;
+  std::map<std::string, int> QueueCounter;
+  std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
+  bool DefaultQueueAdded = false;
+  auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
     const CUDAKernelCallExpr *KCall = nullptr;
     if (auto *Expr = dyn_cast<ExprWithCleanups>(*Iter)) {
@@ -8237,52 +8291,64 @@ void EventAPICallRule::handleTimeMeasurement(
 
     if (auto *MemCall = dyn_cast<CallExpr>(*Iter)) {
       auto MemCallLoc = MemCall->getBeginLoc().getRawEncoding();
+      auto MemCallee = MemCall->getDirectCallee();
+      if(!MemCallee)
+        continue;
+      auto CalleeName = MemCallee->getName();
       if (MemCallLoc > RecordBeginLoc && MemCallLoc < RecordEndLoc) {
-        auto MemCallee = MemCall->getDirectCallee();
-        if(!MemCallee)
-          continue;
-        auto CalleeName = MemCallee->getName();
         if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
-          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
+          bool IsDefaultStream = false;
+          // Need queue for default stream or stream 0, 1 and 2
+          if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+            IsDefaultStream = true;
+          } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
+            auto IL = dyn_cast<IntegerLiteral>(StreamArg);
+            auto V = IL->getValue().getZExtValue();
+            if (V <= 2) // V should be 0, 1 or 2
+              IsDefaultStream = true;
+          }
           if (USMLevel == UsmLevel::restricted) {
-            std::string EventName = ExprAnalysis::ref(CE->getArg(2));
-            emplaceTransformation(new InsertBeforeStmt(MemCall, EventName + " = "));
-            std::string SyncStmt = ";";
-            SyncStmt += getNL();
-            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
-            SyncStmt += EventName;
-            SyncStmt += ".wait()";
-            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
+            std::string EventName = getTempNameForExpr(CE->getArg(2));
+            std::string QueueName = IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
+            std::string NewEventName = EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
+            Events2Wait.push_back(NewEventName);
+            emplaceTransformation(new InsertBeforeStmt(MemCall, "sycl::event " + NewEventName + " = "));
           } else {
-            std::string SyncStmt = ";";
-            SyncStmt += getNL();
-            SyncStmt += getIndent(SM.getExpansionLoc(MemCall->getBeginLoc()), SM).str();
-            auto StreamArg = MemCall->getArg(MemCall->getNumArgs()-1)->IgnoreImpCasts();
-            bool NeedQueue = false;
-            // Need queue for default stream or stream 0, 1 and 2
-            if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
-              NeedQueue = true;
-            } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
-              auto IL = dyn_cast<IntegerLiteral>(StreamArg);
-              auto V = IL->getValue().getZExtValue();
-              if (V <= 2)
-                NeedQueue = true;
-            }
-            if (NeedQueue) {
+            std::tuple<bool, std::string, const CallExpr *> T;
+            if (IsDefaultStream && !DefaultQueueAdded) {
+              DefaultQueueAdded = true;
               if (checkWhetherIsDuplicate(MemCall, false))
                 continue;
               int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-              SyncStmt += "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-              SyncStmt += ".wait()";
+              std::ostringstream SyncStmt;
+              SyncStmt << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait();" << getNL();
               buildTempVariableMap(Index, MemCall, HelperFuncType::DefaultQueue);
-            } else {
-              SyncStmt += ExprAnalysis::ref(StreamArg) + "->wait()";
+              emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+            } else if (!IsDefaultStream) {
+              auto TempName = getTempNameForExpr(StreamArg);
+              Queues2Wait.emplace_back(TempName.substr(0, TempName.size() - 1), nullptr);
             }
-            emplaceTransformation(new InsertAfterStmt(MemCall, std::move(SyncStmt)));
           }
+        }
+      } else if (MemCallLoc > RecordEndLoc && MemCallLoc < TimeElapsedLoc) {
+        if (CalleeName == "cudaEventSynchronize") {
+          emplaceTransformation(new ReplaceStmt(MemCall, false, std::string("cudaEventSynchronize"), ""));
         }
       }
     }
+  }
+  for (auto NewEventName : Events2Wait) {
+    std::ostringstream SyncStmt;
+    SyncStmt << NewEventName << ".wait();" << getNL()
+             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+  }
+  for (auto T : Queues2Wait) {
+    std::ostringstream SyncStmt;
+    SyncStmt << std::get<0>(T) << "->wait();" << getNL()
+             << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+    emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
   }
 }
 
@@ -9826,7 +9892,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
       if(Search == EnumConstantRule::EnumNamesMap.end())
         return;
       Direction = nullptr;
-      DirectionName = "dpct::" + Search->second;
+      DirectionName = Search->second;
     }
   }
 
@@ -10211,11 +10277,33 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
     return;
   }
-  report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false);
+  auto Arg2Expr = C->getArg(2);
+  if (auto NamedCaster = dyn_cast<ExplicitCastExpr>(Arg2Expr)) {
+    if (NamedCaster->getTypeAsWritten()->isIntegerType()) {
+      Arg2Expr = NamedCaster->getSubExpr();
+    } else if (DpctGlobalInfo::getUnqualifiedTypeName(
+                   NamedCaster->getTypeAsWritten()) == "cudaMemoryAdvise" &&
+               NamedCaster->getSubExpr()->getType()->isIntegerType()) {
+      Arg2Expr = NamedCaster->getSubExpr();
+    }
+  }
   auto Arg0Str = ExprAnalysis::ref(C->getArg(0));
   auto Arg1Str = ExprAnalysis::ref(C->getArg(1));
-  auto Arg2Str = "0";
   auto Arg3Str = ExprAnalysis::ref(C->getArg(3));
+
+  std::string Arg2Str;
+  if (Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass) {
+    Arg2Str = "0";
+  } else {
+    Arg2Str = ExprAnalysis::ref(Arg2Expr);
+  }
+
+  if (Arg2Str == "0") {
+    report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
+           " and was set to 0");
+  } else {
+    report(C->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false, "");
+  }
 
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
@@ -10507,7 +10595,7 @@ void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
             EnumConstantRule::EnumNamesMap, Enum->getName().str());
         if (!ReplaceDirection.empty()) {
           emplaceTransformation(
-              new ReplaceStmt(DRE, "dpct::" + ReplaceDirection));
+              new ReplaceStmt(DRE, ReplaceDirection));
         }
       }
     }

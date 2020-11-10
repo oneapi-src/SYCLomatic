@@ -228,7 +228,6 @@ int main(int argc, char* argv[]) {
   if (0)
     checkCudaErrors(cudaEventRecord(stop, 0));
 
-  // CHECK: stop.wait_and_throw();
   cudaEventSynchronize(stop);
 
   // CHECK: /*

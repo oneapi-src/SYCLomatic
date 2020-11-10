@@ -36,7 +36,6 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
-  MigrationSuccessExpParingOrRuntimeErr=3,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -46,7 +45,6 @@ enum ProcessStatus {
   MigrationErrorInvalidInRootPath = -7,
   MigrationErrorInvalidFilePath = -8,
   MigrationErrorInvalidReportArgs = -9,
-  MigrationErrorNotSupportFileType = -10,
   VcxprojPaserFileNotExist = -11,
   VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
   MigrationErrorInvalidInstallPath = -13,
@@ -60,9 +58,7 @@ enum ProcessStatus {
   MigrationErrorNoExplicitInRoot = -21,
   MigrationSKIPForMissingCompileCommand = -22,
   MigrationErrorSpecialCharacter = -23,
-  MigrationErrorNameTooLong = -24,
   MigrationErrorPrefixTooLong = -25,
-  MigrationErrorFormatFail = -26,
   MigrationErrorNoFileTypeAvail = -27,
   MigrationErrorInRootContainSDKFolder = -28,
   MigrationErrorCannotAccessDirInDatabase = -29,

@@ -472,10 +472,21 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee requires rewrite, get the rewriter
   auto Itr = CallExprRewriterFactoryBase::RewriterMap.find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap.end()) {
-    auto Result = Itr->second->create(CE)->rewrite();
+    auto Rewriter = Itr->second->create(CE);
+    auto Result = Rewriter->rewrite();
     if (Result.hasValue()) {
-      addReplacement(CE, Result.getValue());
-      return;
+      auto ResultStr = Result.getValue();
+      auto LocStr = getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+      auto &FCIMMR = dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+      if (FCIMMR.find(LocStr) != FCIMMR.end() &&
+          FCIMMR.find(LocStr)->second.compare(ResultStr)) {
+        Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
+                         false, RefString);
+      } else {
+        FCIMMR[LocStr] = ResultStr;
+        addReplacement(CE, ResultStr);
+        return;
+      }
     }
   }
   // If the callee does not need rewrite, analyze the args

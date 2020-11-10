@@ -123,7 +123,7 @@ public:
       return nullptr;
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
-      std::abort();
+      throw std::runtime_error("dpct_malloc: out of memory for virtual memory pool");
     }
     // Allocation
     cl::sycl::range<1> r(size);
@@ -181,15 +181,15 @@ private:
   std::map<byte_t *, allocation>::iterator get_map_iterator(const void *ptr) {
     auto it = m_map.upper_bound((byte_t *)ptr);
     if (it == m_map.end()) {
-      // Not a device pointer or out of bound.
-      std::abort();
+      // Not a virtual pointer.
+      throw std::runtime_error("can not get buffer from non-virtual pointer");
     }
     const allocation &alloc = it->second;
     if (ptr < alloc.alloc_ptr) {
       // Out of bound.
       // This may happen if there's a gap between allocations due to alignment
       // or extra padding and pointer points to this gap.
-      std::abort();
+      throw std::runtime_error("invalid virtual pointer");
     }
     return it;
   }
@@ -435,7 +435,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     }
   }
   default:
-    std::abort();
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
 #else
   return q.memcpy(to_ptr, from_ptr, size);

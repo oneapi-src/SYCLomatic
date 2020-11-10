@@ -50,6 +50,7 @@ std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
+std::map<std::string, std::string> DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;

@@ -652,22 +652,36 @@ __global__ void foo11(){
 VECTOR_TYPE_DEF(int)
 
 //CHECK: typedef float real;
-//CHECK-NEXT: #define POW(x, y) sycl::pow(x, y)
+//CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
+//CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
+//CHECK-NEXT: /*
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
+//CHECK-NEXT: for all macro uses. Adjust the code.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
 //CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
 //CHECK-NEXT: real *vy;
 //CHECK-NEXT: int id;
 //CHECK-NEXT: real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+//CHECK-NEXT: real v3 = POW2(vx[id], 2);
+//CHECK-NEXT: real v4 = POW3(vx[id], 3.0);
+//CHECK-NEXT: real v5 = POW3(vx[id], 2);
 //CHECK-NEXT: }
 typedef float real;
 #define POW(x,y)    powf(x,y)
+#define POW2(x,y)    pow(x,y)
+#define POW3(x,y)    pow(x,y)
 #define SQRT(x)     sqrtf(x)
 __global__ void foo12(){
 real *vx;
 real *vy;
 int id;
 real v2 = SQRT(SQRT(POW(vx[id], 2.0) + POW(vy[id], 2.0)));
+real v3 = POW2(vx[id], 2);
+real v4 = POW3(vx[id], 3.0);
+real v5 = POW3(vx[id], 2);
 }
 
 //CHECK: #define CALL(call) call;

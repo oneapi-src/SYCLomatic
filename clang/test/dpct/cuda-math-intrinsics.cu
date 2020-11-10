@@ -504,13 +504,13 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::nan(0u);
   d2 = nan("");
 
-  // CHECK: d2 = sycl::pow(d0, d1);
+  // CHECK: d2 = sycl::pow<double>(d0, d1);
   d2 = pow(d0, d1);
   // CHECK: d2 = sycl::pown((float)i, i);
   d2 = pow(i, i);
   // CHECK: d2 = sycl::pown(d0, i);
   d2 = pow(d0, i);
-  // CHECK: d2 = sycl::pow((double)i, d1);
+  // CHECK: d2 = sycl::pow<double>(i, d1);
   d2 = pow(i, d1);
 
   // CHECK: sycl::pown(f, 1);
@@ -1132,13 +1132,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::nan(0u);
   f2 = nan("");
 
-  // CHECK: f2 = sycl::pow(f0, f1);
+  // CHECK: f2 = sycl::pow<float>(f0, f1);
   f2 = powf(f0, f1);
   // CHECK: f2 = sycl::pown((float)i, i);
   f2 = powf(i, i);
   // CHECK: f2 = sycl::pown(f0, i);
   f2 = powf(f0, i);
-  // CHECK: f2 = sycl::pow((float)i, f1);
+  // CHECK: f2 = sycl::pow<float>(i, f1);
   f2 = powf(i, f1);
 
   // CHECK: f2 = sycl::remainder(f0, f1);
@@ -1473,13 +1473,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f1 = sycl::log((float)i);
   f1 = __logf(i);
 
-  // CHECK: f2 = sycl::pow(f0, f1);
+  // CHECK: f2 = sycl::pow<float>(f0, f1);
   f2 = __powf(f0, f1);
   // CHECK: f2 = sycl::pown((float)i, i);
   f2 = __powf(i, i);
   // CHECK: f2 = sycl::pown(f0, i);
   f2 = __powf(f0, i);
-  // CHECK: f2 = sycl::pow((float)i, f1);
+  // CHECK: f2 = sycl::pow<float>(i, f1);
   f2 = __powf(i, f1);
 
   // CHECK: f1 = sycl::sincos(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
@@ -2497,11 +2497,11 @@ void testTypecasts() {
 __global__ void testConditionalOperator(float *deviceArrayFloat) {
   float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1),
         &f2 = *(deviceArrayFloat + 2);
-  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow(f1, 2.f) / f1 : -f1, f1 + f1 < f2
-  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow(f2, 2.f) / f1 : -f1)
+  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f1, 2.f) / f1 : -f1, f1 + f1 < f2
+  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f2, 2.f) / f1 : -f1)
   // CHECK-NEXT:         : -f1);
-  // CHECK-NEXT: f0 = f1 > f2 ? sycl::pow(f1, 2.f) / f1 : f1;
-  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::pow(f1, 2.f) / f1 : f1, f2);
+  // CHECK-NEXT: f0 = f1 > f2 ? sycl::pow<float>(f1, 2.f) / f1 : f1;
+  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::pow<float>(f1, 2.f) / f1 : f1, f2);
   f0 = fmaxf(
       f0 = (f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f1, 2.f), f1) : -f1,
       f1 + f1 < f2
@@ -2653,18 +2653,18 @@ __device__ void test_pow() {
   // CHECK: sycl::pown(d, i);
   pow(d, i);
 
-  // CHECK: sycl::pow((float)i, f);
+  // CHECK: sycl::pow<double>(i, f);
   pow(i, f);
-  // CHECK: sycl::pow(f, f);
+  // CHECK: sycl::pow<double>(f, f);
   pow(f, f);
-  // CHECK: sycl::pow(d, (double)f);
+  // CHECK: sycl::pow<double>(d, f);
   pow(d, f);
 
-  // CHECK: sycl::pow((double)i, d);
+  // CHECK: sycl::pow<double>(i, d);
   pow(i, d);
-  // CHECK: sycl::pow((double)f, d);
+  // CHECK: sycl::pow<double>(f, d);
   pow(f, d);
-  // CHECK: sycl::pow(d, d);
+  // CHECK: sycl::pow<double>(d, d);
   pow(d, d);
 }
 
@@ -3156,13 +3156,13 @@ __global__ void k() {
   pow(f, i);
   // CHECK: sycl::pown(f, (int)ui);
   pow(f, ui);
-  // CHECK: sycl::pow(f, (float)l);
+  // CHECK: sycl::pow<double>(f, l);
   pow(f, l);
-  // CHECK: sycl::pow(f, (float)ul);
+  // CHECK: sycl::pow<double>(f, ul);
   pow(f, ul);
-  // CHECK: sycl::pow(f, (float)ll);
+  // CHECK: sycl::pow<double>(f, ll);
   pow(f, ll);
-  // CHECK: sycl::pow(f, (float)ull);
+  // CHECK: sycl::pow<double>(f, ull);
   pow(f, ull);
 
   // CHECK: sycl::pown(f, (int)c);
@@ -3177,13 +3177,13 @@ __global__ void k() {
   powf(f, i);
   // CHECK: sycl::pown(f, (int)ui);
   powf(f, ui);
-  // CHECK: sycl::pow(f, (float)l);
+  // CHECK: sycl::pow<float>(f, l);
   powf(f, l);
-  // CHECK: sycl::pow(f, (float)ul);
+  // CHECK: sycl::pow<float>(f, ul);
   powf(f, ul);
-  // CHECK: sycl::pow(f, (float)ll);
+  // CHECK: sycl::pow<float>(f, ll);
   powf(f, ll);
-  // CHECK: sycl::pow(f, (float)ull);
+  // CHECK: sycl::pow<float>(f, ull);
   powf(f, ull);
 
   // CHECK: sycl::pown(f, (int)c);
@@ -3198,13 +3198,13 @@ __global__ void k() {
   __powf(f, i);
   // CHECK: sycl::pown(f, (int)ui);
   __powf(f, ui);
-  // CHECK: sycl::pow(f, (float)l);
+  // CHECK: sycl::pow<float>(f, l);
   __powf(f, l);
-  // CHECK: sycl::pow(f, (float)ul);
+  // CHECK: sycl::pow<float>(f, ul);
   __powf(f, ul);
-  // CHECK: sycl::pow(f, (float)ll);
+  // CHECK: sycl::pow<float>(f, ll);
   __powf(f, ll);
-  // CHECK: sycl::pow(f, (float)ull);
+  // CHECK: sycl::pow<float>(f, ull);
   __powf(f, ull);
 
 }
@@ -3376,10 +3376,10 @@ __device__ S fun2(int i) { return { i * 2 }; }
 
 #define TWO 2.0
 
-// CHECK: #define POW_TWO(x) sycl::pow(x, 2.0)
+// CHECK: #define POW_TWO(x) sycl::pow<double>(x, 2.0)
 #define POW_TWO(x) pow(x, 2.0)
 
-// CHECK: #define POW(x, y) sycl::pow(x, y)
+// CHECK: #define POW(x, y) sycl::pow<double>(x, y)
 #define POW(x, y) pow(x, y)
 
 __global__ void test_side_effects() {
@@ -3426,15 +3426,15 @@ __global__ void test_side_effects() {
 
   // CHECK: int u1 = 2.0 * 2.0;
   int u1 = pow(2.0, 2.0);
-  // CHECK: int v = sycl::pow(2.0, 1.99999999999999999);
+  // CHECK: int v = sycl::pow<double>(2.0, 1.99999999999999999);
   int v = pow(2.0, 1.99999999999999999);
   // CHECK: int w = 2.0 * 2.0;
   int w = pow(2.0, 2.0f);
-  // CHECK: int w1 = sycl::pow(2.0, (double)(2.0000000001f));
+  // CHECK: int w1 = sycl::pow<double>(2.0, 2.0000000001f);
   int w1 = pow(2.0, 2.0000000001f);
-  // CHECK: int w2 = sycl::pow(2.0, (double)(2.0000001f));
+  // CHECK: int w2 = sycl::pow<double>(2.0, 2.0000001f);
   int w2 = pow(2.0, 2.0000001f);
-  // CHECK: int w3 = sycl::pow(2.0, 2.0000000000000001);
+  // CHECK: int w3 = sycl::pow<double>(2.0, 2.0000000000000001);
   int w3 = pow(2.0, 2.0000000000000001);
   // CHECK: int x = 2.0 * 2.0;
   int x = pow(2.0, 2l);
@@ -3443,7 +3443,7 @@ __global__ void test_side_effects() {
   // CHECK: int z = 2.0 * 2.0;
   int z = pow(2.0, 2ull);
 
-  // CHECK: sycl::pow(2.0, TWO);
+  // CHECK: sycl::pow<double>(2.0, TWO);
   pow(2.0, TWO);
   // CHECK: POW_TWO(2.0);
   POW_TWO(2.0);
@@ -3455,7 +3455,7 @@ __global__ void test_side_effects() {
 __device__ void foo() {
   fp d_initvalu_36;
   fp ret;
-  // CHECK: ret = sycl::pow(d_initvalu_36, fp(1.6));
+  // CHECK: ret = sycl::pow<double>(d_initvalu_36, fp(1.6));
   ret = pow(d_initvalu_36, fp(1.6));
 }
 

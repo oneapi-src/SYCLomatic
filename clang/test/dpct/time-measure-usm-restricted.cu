@@ -38,21 +38,20 @@ int main() {
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(start, 0);
 
-    // CHECK: stop = q_ct1.memcpy(da, ha, N*sizeof(int));
-    // CHECK: stop.wait();
+    // CHECK: sycl::event stop_q_ct1_1 = q_ct1.memcpy(da, ha, N*sizeof(int));
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice);
-    // CHECK: stop = q_ct1.memcpy(da, ha, N*sizeof(int));
-    // CHECK: stop.wait();
+    // CHECK: sycl::event stop_q_ct1_2 = q_ct1.memcpy(da, ha, N*sizeof(int));
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, 0);
-    // CHECK: stop = stream->memcpy(da, ha, N*sizeof(int));
-    // CHECK: stop.wait();
+    // CHECK: sycl::event stop_stream_1 = stream->memcpy(da, ha, N*sizeof(int));
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
+    // CHECK: stop_q_ct1_1.wait();
+    // CHECK: stop_q_ct1_2.wait();
+    // CHECK: stop_stream_1.wait();
     // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    cudaEventRecord(stop, 0);
-    // CHECK: stop.wait_and_throw();
-    cudaEventSynchronize(stop);
     // CHECK: elapsedTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
     cudaEventElapsedTime(&elapsedTime, start, stop);
 
     add<<<N, 1>>>(da, db);
