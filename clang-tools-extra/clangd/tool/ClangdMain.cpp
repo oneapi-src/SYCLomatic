@@ -14,13 +14,16 @@
 #include "Transport.h"
 #include "index/Background.h"
 #include "index/Serialization.h"
+#include "index/remote/Client.h"
 #include "refactor/Rename.h"
 #include "support/Path.h"
 #include "support/Shutdown.h"
+#include "support/ThreadsafeFS.h"
 #include "support/Trace.h"
 #include "clang/Basic/Version.h"
 #include "clang/Format/Format.h"
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
@@ -44,6 +47,11 @@
 
 namespace clang {
 namespace clangd {
+
+// Implemented in Check.cpp.
+bool check(const llvm::StringRef File, const ThreadsafeFS &TFS,
+           const ClangdLSPServer::Options &Opts);
+
 namespace {
 
 using llvm::cl::cat;
@@ -54,6 +62,7 @@ using llvm::cl::init;
 using llvm::cl::list;
 using llvm::cl::opt;
 using llvm::cl::OptionCategory;
+using llvm::cl::ValueOptional;
 using llvm::cl::values;
 
 // All flags must be placed in a category, or they will be shown neither in
@@ -161,6 +170,26 @@ opt<CodeCompleteOptions::CodeCompletionParse> CodeCompletionParse{
            clEnumValN(CodeCompleteOptions::NeverParse, "never",
                       "Always used text-based completion")),
     init(CodeCompleteOptions().RunParser),
+    Hidden,
+};
+
+opt<CodeCompleteOptions::CodeCompletionRankingModel> RankingModel{
+    "ranking-model",
+    cat(Features),
+    desc("Model to use to rank code-completion items"),
+    values(clEnumValN(CodeCompleteOptions::Heuristics, "heuristics",
+                      "Use hueristics to rank code completion items"),
+           clEnumValN(CodeCompleteOptions::DecisionForest, "decision_forest",
+                      "Use Decision Forest model to rank completion items")),
+    init(CodeCompleteOptions().RankingModel),
+    Hidden,
+};
+
+opt<float> DecisionForestBase{
+    "decision-forest-base",
+    cat(Features),
+    desc("Base for exponentiating the prediction from DecisionForest."),
+    init(CodeCompleteOptions().DecisionForestBase),
     Hidden,
 };
 
@@ -281,16 +310,22 @@ opt<bool> CrossFileRename{
 opt<bool> RecoveryAST{
     "recovery-ast",
     cat(Features),
-    desc("Preserve expressions in AST for broken code (C++ only). Note that "
-         "this feature is experimental and may lead to crashes"),
-    init(false),
-    Hidden,
+    desc("Preserve expressions in AST for broken code."),
+    init(ClangdServer::Options().BuildRecoveryAST),
 };
+
 opt<bool> RecoveryASTType{
     "recovery-ast-type",
     cat(Features),
-    desc("Preserve the type for recovery AST. Note that "
-         "this feature is experimental and may lead to crashes"),
+    desc("Preserve the type for recovery AST."),
+    init(ClangdServer::Options().PreserveRecoveryASTType),
+    Hidden,
+};
+
+opt<bool> FoldingRanges{
+    "folding-ranges",
+    cat(Features),
+    desc("Enable preview of FoldingRanges feature"),
     init(false),
     Hidden,
 };
@@ -319,10 +354,20 @@ opt<bool> Test{
     "lit-test",
     cat(Misc),
     desc("Abbreviation for -input-style=delimited -pretty -sync "
-         "-enable-test-scheme -log=verbose. "
+         "-enable-test-scheme -enable-config=0 -log=verbose. "
          "Intended to simplify lit tests"),
     init(false),
     Hidden,
+};
+
+opt<Path> CheckFile{
+    "check",
+    cat(Misc),
+    desc("Parse one file in isolation instead of acting as a language server. "
+         "Useful to investigate/reproduce crashes or configuration problems. "
+         "With --check=<filename>, attempts to parse a particular file."),
+    init(""),
+    ValueOptional,
 };
 
 enum PCHStorageFlag { Disk, Memory };
@@ -426,6 +471,42 @@ opt<bool> AsyncPreamble{
     Hidden,
 };
 
+opt<bool> EnableConfig{
+    "enable-config",
+    cat(Misc),
+    desc(
+        "Read user and project configuration from YAML files.\n"
+        "Project config is from a .clangd file in the project directory.\n"
+        "User config is from clangd/config.yaml in the following directories:\n"
+        "\tWindows: %USERPROFILE%\\AppData\\Local\n"
+        "\tMac OS: ~/Library/Preferences/\n"
+        "\tOthers: $XDG_CONFIG_HOME, usually ~/.config\n"
+        "Configuration is documented at https://clangd.llvm.org/config.html"),
+    init(true),
+};
+
+opt<bool> CollectMainFileRefs{
+    "collect-main-file-refs",
+    cat(Misc),
+    desc("Store references to main-file-only symbols in the index"),
+    init(false),
+};
+
+#if CLANGD_ENABLE_REMOTE
+opt<std::string> RemoteIndexAddress{
+    "remote-index-address",
+    cat(Features),
+    desc("Address of the remote index server"),
+};
+
+// FIXME(kirillbobyrev): Should this be the location of compile_commands.json?
+opt<std::string> ProjectRoot{
+    "project-root",
+    cat(Features),
+    desc("Path to the project root. Requires remote-index-address to be set."),
+};
+#endif
+
 /// Supports a test URI scheme with relaxed constraints for lit tests.
 /// The path in a test URI will be combined with a platform-specific fake
 /// directory to form an absolute path. For example, test:///a.cpp is resolved
@@ -439,9 +520,9 @@ public:
     // Still require "/" in body to mimic file scheme, as we want lengths of an
     // equivalent URI in both schemes to be the same.
     if (!Body.startswith("/"))
-      return llvm::make_error<llvm::StringError>(
-          "Expect URI body to be an absolute path starting with '/': " + Body,
-          llvm::inconvertibleErrorCode());
+      return error(
+          "Expect URI body to be an absolute path starting with '/': {0}",
+          Body);
     Body = Body.ltrim('/');
     llvm::SmallVector<char, 16> Path(Body.begin(), Body.end());
     path::native(Path);
@@ -452,11 +533,9 @@ public:
   llvm::Expected<URI>
   uriFromAbsolutePath(llvm::StringRef AbsolutePath) const override {
     llvm::StringRef Body = AbsolutePath;
-    if (!Body.consume_front(TestScheme::TestDir)) {
-      return llvm::make_error<llvm::StringError>(
-          "Path " + AbsolutePath + " doesn't start with root " + TestDir,
-          llvm::inconvertibleErrorCode());
-    }
+    if (!Body.consume_front(TestScheme::TestDir))
+      return error("Path {0} doesn't start with root {1}", AbsolutePath,
+                   TestDir);
 
     return URI("test", /*Authority=*/"",
                llvm::sys::path::convert_to_slash(Body));
@@ -478,7 +557,8 @@ const char TestScheme::TestDir[] = "/clangd-test";
 
 enum class ErrorResultCode : int {
   NoShutdownRequest = 1,
-  CantRunAsXPCService = 2
+  CantRunAsXPCService = 2,
+  CheckFailed = 3
 };
 
 int main(int argc, char *argv[]) {
@@ -509,6 +589,9 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
     InputStyle = JSONStreamStyle::Delimited;
     LogLevel = Logger::Verbose;
     PrettyPrint = true;
+    // Disable config system by default to avoid external reads.
+    if (!EnableConfig.getNumOccurrences())
+      EnableConfig = false;
     // Disable background index on lit tests by default to prevent disk writes.
     if (!EnableBackgroundIndex.getNumOccurrences())
       EnableBackgroundIndex = false;
@@ -580,11 +663,14 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
   // If a user ran `clangd` in a terminal without redirecting anything,
   // it's somewhat likely they're confused about how to use clangd.
   // Show them the help overview, which explains.
-  if (llvm::outs().is_displayed() && llvm::errs().is_displayed())
+  if (llvm::outs().is_displayed() && llvm::errs().is_displayed() &&
+      !CheckFile.getNumOccurrences())
     llvm::errs() << Overview << "\n";
   // Use buffered stream to stderr (we still flush each log message). Unbuffered
   // stream can cause significant (non-deterministic) latency for the logger.
   llvm::errs().SetBuffered();
+  // Don't flush stdout when logging, this would be both slow and racy!
+  llvm::errs().tie(nullptr);
   StreamLogger Logger(llvm::errs(), LogLevel);
   LoggingSession LoggingSession(Logger);
   // Write some initial logs before we start doing any real work.
@@ -602,9 +688,11 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
   if (auto EnvFlags = llvm::sys::Process::GetEnv(FlagsEnvVar))
     log("{0}: {1}", FlagsEnvVar, *EnvFlags);
 
+  ClangdLSPServer::Options Opts;
+  Opts.UseDirBasedCDB = (CompileArgsFrom == FilesystemCompileArgs);
+
   // If --compile-commands-dir arg was invoked, check value and override default
   // path.
-  llvm::Optional<Path> CompileCommandsDirPath;
   if (!CompileCommandsDir.empty()) {
     if (llvm::sys::fs::exists(CompileCommandsDir)) {
       // We support passing both relative and absolute paths to the
@@ -613,20 +701,19 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
       // continuing.
       llvm::SmallString<128> Path(CompileCommandsDir);
       if (std::error_code EC = llvm::sys::fs::make_absolute(Path)) {
-        llvm::errs() << "Error while converting the relative path specified by "
-                        "--compile-commands-dir to an absolute path: "
-                     << EC.message() << ". The argument will be ignored.\n";
+        elog("Error while converting the relative path specified by "
+             "--compile-commands-dir to an absolute path: {0}. The argument "
+             "will be ignored.",
+             EC.message());
       } else {
-        CompileCommandsDirPath = std::string(Path.str());
+        Opts.CompileCommandsDir = std::string(Path.str());
       }
     } else {
-      llvm::errs()
-          << "Path specified by --compile-commands-dir does not exist. The "
-             "argument will be ignored.\n";
+      elog("Path specified by --compile-commands-dir does not exist. The "
+           "argument will be ignored.");
     }
   }
 
-  ClangdServer::Options Opts;
   switch (PCHStorage) {
   case PCHStorageFlag::Memory:
     Opts.StorePreamblesInMemory = true;
@@ -638,7 +725,7 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
   if (!ResourceDir.empty())
     Opts.ResourceDir = ResourceDir;
   Opts.BuildDynamicSymbolIndex = EnableIndex;
-  Opts.BackgroundIndex = EnableBackgroundIndex;
+  Opts.CollectMainFileRefs = CollectMainFileRefs;
   std::unique_ptr<SymbolIndex> StaticIdx;
   std::future<void> AsyncIndexLoad; // Block exit while loading the index.
   if (EnableIndex && !IndexFile.empty()) {
@@ -652,32 +739,122 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
     if (Sync)
       AsyncIndexLoad.wait();
   }
+#if CLANGD_ENABLE_REMOTE
+  if (RemoteIndexAddress.empty() != ProjectRoot.empty()) {
+    llvm::errs() << "remote-index-address and project-path have to be "
+                    "specified at the same time.";
+    return 1;
+  }
+  if (!RemoteIndexAddress.empty()) {
+    if (IndexFile.empty()) {
+      log("Connecting to remote index at {0}", RemoteIndexAddress);
+      StaticIdx = remote::getClient(RemoteIndexAddress, ProjectRoot);
+      EnableBackgroundIndex = false;
+    } else {
+      elog("When enabling remote index, IndexFile should not be specified. "
+           "Only one can be used at time. Remote index will ignored.");
+    }
+  }
+#endif
+  Opts.BackgroundIndex = EnableBackgroundIndex;
   Opts.StaticIndex = StaticIdx.get();
   Opts.AsyncThreadsCount = WorkerThreadsCount;
   Opts.BuildRecoveryAST = RecoveryAST;
   Opts.PreserveRecoveryASTType = RecoveryASTType;
+  Opts.FoldingRanges = FoldingRanges;
 
-  clangd::CodeCompleteOptions CCOpts;
-  CCOpts.IncludeIneligibleResults = IncludeIneligibleResults;
-  CCOpts.Limit = LimitResults;
+  Opts.CodeComplete.IncludeIneligibleResults = IncludeIneligibleResults;
+  Opts.CodeComplete.Limit = LimitResults;
   if (CompletionStyle.getNumOccurrences())
-    CCOpts.BundleOverloads = CompletionStyle != Detailed;
-  CCOpts.ShowOrigins = ShowOrigins;
-  CCOpts.InsertIncludes = HeaderInsertion;
+    Opts.CodeComplete.BundleOverloads = CompletionStyle != Detailed;
+  Opts.CodeComplete.ShowOrigins = ShowOrigins;
+  Opts.CodeComplete.InsertIncludes = HeaderInsertion;
   if (!HeaderInsertionDecorators) {
-    CCOpts.IncludeIndicator.Insert.clear();
-    CCOpts.IncludeIndicator.NoInsert.clear();
+    Opts.CodeComplete.IncludeIndicator.Insert.clear();
+    Opts.CodeComplete.IncludeIndicator.NoInsert.clear();
   }
-  CCOpts.SpeculativeIndexRequest = Opts.StaticIndex;
-  CCOpts.EnableFunctionArgSnippets = EnableFunctionArgSnippets;
-  CCOpts.AllScopes = AllScopesCompletion;
-  CCOpts.RunParser = CodeCompletionParse;
+  Opts.CodeComplete.SpeculativeIndexRequest = Opts.StaticIndex;
+  Opts.CodeComplete.EnableFunctionArgSnippets = EnableFunctionArgSnippets;
+  Opts.CodeComplete.AllScopes = AllScopesCompletion;
+  Opts.CodeComplete.RunParser = CodeCompletionParse;
+  Opts.CodeComplete.RankingModel = RankingModel;
+  Opts.CodeComplete.DecisionForestBase = DecisionForestBase;
 
-  RealFileSystemProvider FSProvider;
+  RealThreadsafeFS TFS;
+  std::vector<std::unique_ptr<config::Provider>> ProviderStack;
+  std::unique_ptr<config::Provider> Config;
+  if (EnableConfig) {
+    ProviderStack.push_back(
+        config::Provider::fromAncestorRelativeYAMLFiles(".clangd", TFS));
+    llvm::SmallString<256> UserConfig;
+    if (llvm::sys::path::user_config_directory(UserConfig)) {
+      llvm::sys::path::append(UserConfig, "clangd", "config.yaml");
+      vlog("User config file is {0}", UserConfig);
+      ProviderStack.push_back(config::Provider::fromYAMLFile(UserConfig, TFS));
+    } else {
+      elog("Couldn't determine user config file, not loading");
+    }
+    std::vector<const config::Provider *> ProviderPointers;
+    for (const auto &P : ProviderStack)
+      ProviderPointers.push_back(P.get());
+    Config = config::Provider::combine(std::move(ProviderPointers));
+    Opts.ConfigProvider = Config.get();
+  }
+
+  // Create an empty clang-tidy option.
+  std::mutex ClangTidyOptMu;
+  std::unique_ptr<tidy::ClangTidyOptionsProvider>
+      ClangTidyOptProvider; /*GUARDED_BY(ClangTidyOptMu)*/
+  if (EnableClangTidy) {
+    auto EmptyDefaults = tidy::ClangTidyOptions::getDefaults();
+    EmptyDefaults.Checks.reset(); // So we can tell if checks were ever set.
+    tidy::ClangTidyOptions OverrideClangTidyOptions;
+    if (!ClangTidyChecks.empty())
+      OverrideClangTidyOptions.Checks = ClangTidyChecks;
+    ClangTidyOptProvider = std::make_unique<tidy::FileOptionsProvider>(
+        tidy::ClangTidyGlobalOptions(),
+        /* Default */ EmptyDefaults,
+        /* Override */ OverrideClangTidyOptions, TFS.view(/*CWD=*/llvm::None));
+    Opts.GetClangTidyOptions = [&](llvm::vfs::FileSystem &,
+                                   llvm::StringRef File) {
+      // This function must be thread-safe and tidy option providers are not.
+      tidy::ClangTidyOptions Opts;
+      {
+        std::lock_guard<std::mutex> Lock(ClangTidyOptMu);
+        // FIXME: use the FS provided to the function.
+        Opts = ClangTidyOptProvider->getOptions(File);
+      }
+      return Opts;
+    };
+  }
+  Opts.AsyncPreambleBuilds = AsyncPreamble;
+  Opts.SuggestMissingIncludes = SuggestMissingIncludes;
+  Opts.QueryDriverGlobs = std::move(QueryDriverGlobs);
+  Opts.TweakFilter = [&](const Tweak &T) {
+    if (T.hidden() && !HiddenFeatures)
+      return false;
+    if (TweakList.getNumOccurrences())
+      return llvm::is_contained(TweakList, T.id());
+    return true;
+  };
+  if (ForceOffsetEncoding != OffsetEncoding::UnsupportedEncoding)
+    Opts.Encoding = ForceOffsetEncoding;
+
+  // Shall we allow to customize the file limit?
+  Opts.Rename.AllowCrossFile = CrossFileRename;
+
+  if (CheckFile.getNumOccurrences()) {
+    llvm::SmallString<256> Path;
+    llvm::sys::fs::real_path(CheckFile, Path, /*expand_tilde=*/true);
+    log("Entering check mode (no LSP server)");
+    return check(Path, TFS, Opts)
+               ? 0
+               : static_cast<int>(ErrorResultCode::CheckFailed);
+  }
+
   // Initialize and run ClangdLSPServer.
   // Change stdin to binary to not lose \r\n on windows.
   llvm::sys::ChangeStdinToBinary();
-
   std::unique_ptr<Transport> TransportLayer;
   if (getenv("CLANGD_AS_XPC_SERVICE")) {
 #if CLANGD_BUILD_XPC
@@ -685,7 +862,7 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
     TransportLayer = newXPCTransport();
 #else
     llvm::errs() << "This clangd binary wasn't built with XPC support.\n";
-    return (int)ErrorResultCode::CantRunAsXPCService;
+    return static_cast<int>(ErrorResultCode::CantRunAsXPCService);
 #endif
   } else {
     log("Starting LSP over stdin/stdout");
@@ -703,71 +880,8 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
     TransportLayer = createPathMappingTransport(std::move(TransportLayer),
                                                 std::move(*Mappings));
   }
-  // Create an empty clang-tidy option.
-  std::mutex ClangTidyOptMu;
-  std::unique_ptr<tidy::ClangTidyOptionsProvider>
-      ClangTidyOptProvider; /*GUARDED_BY(ClangTidyOptMu)*/
-  if (EnableClangTidy) {
-    auto EmptyDefaults = tidy::ClangTidyOptions::getDefaults();
-    EmptyDefaults.Checks.reset(); // So we can tell if checks were ever set.
-    tidy::ClangTidyOptions OverrideClangTidyOptions;
-    if (!ClangTidyChecks.empty())
-      OverrideClangTidyOptions.Checks = ClangTidyChecks;
-    ClangTidyOptProvider = std::make_unique<tidy::FileOptionsProvider>(
-        tidy::ClangTidyGlobalOptions(),
-        /* Default */ EmptyDefaults,
-        /* Override */ OverrideClangTidyOptions, FSProvider.getFileSystem());
-    Opts.GetClangTidyOptions = [&](llvm::vfs::FileSystem &,
-                                   llvm::StringRef File) {
-      // This function must be thread-safe and tidy option providers are not.
-      tidy::ClangTidyOptions Opts;
-      {
-        std::lock_guard<std::mutex> Lock(ClangTidyOptMu);
-        // FIXME: use the FS provided to the function.
-        Opts = ClangTidyOptProvider->getOptions(File);
-      }
-      if (!Opts.Checks) {
-        // If the user hasn't configured clang-tidy checks at all, including
-        // via .clang-tidy, give them a nice set of checks.
-        // (This should be what the "default" options does, but it isn't...)
-        //
-        // These default checks are chosen for:
-        //  - low false-positive rate
-        //  - providing a lot of value
-        //  - being reasonably efficient
-        Opts.Checks = llvm::join_items(
-            ",", "readability-misleading-indentation",
-            "readability-deleted-default", "bugprone-integer-division",
-            "bugprone-sizeof-expression", "bugprone-suspicious-missing-comma",
-            "bugprone-unused-raii", "bugprone-unused-return-value",
-            "misc-unused-using-decls", "misc-unused-alias-decls",
-            "misc-definitions-in-headers");
-      }
-      return Opts;
-    };
-  }
-  Opts.SuggestMissingIncludes = SuggestMissingIncludes;
-  Opts.QueryDriverGlobs = std::move(QueryDriverGlobs);
 
-  Opts.TweakFilter = [&](const Tweak &T) {
-    if (T.hidden() && !HiddenFeatures)
-      return false;
-    if (TweakList.getNumOccurrences())
-      return llvm::is_contained(TweakList, T.id());
-    return true;
-  };
-  llvm::Optional<OffsetEncoding> OffsetEncodingFromFlag;
-  if (ForceOffsetEncoding != OffsetEncoding::UnsupportedEncoding)
-    OffsetEncodingFromFlag = ForceOffsetEncoding;
-
-  clangd::RenameOptions RenameOpts;
-  // Shall we allow to customize the file limit?
-  RenameOpts.AllowCrossFile = CrossFileRename;
-
-  ClangdLSPServer LSPServer(
-      *TransportLayer, FSProvider, CCOpts, RenameOpts, CompileCommandsDirPath,
-      /*UseDirBasedCDB=*/CompileArgsFrom == FilesystemCompileArgs,
-      OffsetEncodingFromFlag, Opts);
+  ClangdLSPServer LSPServer(*TransportLayer, TFS, Opts);
   llvm::set_thread_name("clangd.main");
   int ExitCode = LSPServer.run()
                      ? 0

@@ -29,11 +29,13 @@ public:
   IsConstantExprHelper() : Base{*this} {}
   using Base::operator();
 
-  template <int KIND> bool operator()(const TypeParamInquiry<KIND> &inq) const {
+  bool operator()(const TypeParamInquiry &inq) const {
     return IsKindTypeParameter(inq.parameter());
   }
   bool operator()(const semantics::Symbol &symbol) const {
-    return IsNamedConstant(symbol) || IsImpliedDoIndex(symbol);
+    const auto &ultimate{symbol.GetUltimate()};
+    return IsNamedConstant(ultimate) || IsImpliedDoIndex(ultimate) ||
+        IsInitialProcedureTarget(ultimate);
   }
   bool operator()(const CoarrayRef &) const { return false; }
   bool operator()(const semantics::ParamValue &param) const {
@@ -41,7 +43,10 @@ public:
   }
   template <typename T> bool operator()(const FunctionRef<T> &call) const {
     if (const auto *intrinsic{std::get_if<SpecificIntrinsic>(&call.proc().u)}) {
-      return intrinsic->name == "kind";
+      // kind is always a constant, and we avoid cascading errors by calling
+      // invalid calls to intrinsics constant
+      return intrinsic->name == "kind" ||
+          intrinsic->name == IntrinsicProcTable::InvalidName;
       // TODO: other inquiry intrinsics
     } else {
       return false;
@@ -49,26 +54,39 @@ public:
   }
   bool operator()(const StructureConstructor &constructor) const {
     for (const auto &[symRef, expr] : constructor) {
-      if (IsAllocatable(*symRef)) {
-        return IsNullPointer(expr.value());
-      } else if (IsPointer(*symRef)) {
-        return IsNullPointer(expr.value()) || IsInitialDataTarget(expr.value());
-      } else if (!(*this)(expr.value())) {
+      if (!IsConstantStructureConstructorComponent(*symRef, expr.value())) {
         return false;
       }
     }
     return true;
   }
-
+  bool operator()(const Component &component) const {
+    return (*this)(component.base());
+  }
   // Forbid integer division by zero in constants.
   template <int KIND>
   bool operator()(
       const Divide<Type<TypeCategory::Integer, KIND>> &division) const {
     using T = Type<TypeCategory::Integer, KIND>;
     if (const auto divisor{GetScalarConstantValue<T>(division.right())}) {
-      return !divisor->IsZero();
+      return !divisor->IsZero() && (*this)(division.left());
     } else {
       return false;
+    }
+  }
+
+  bool operator()(const Constant<SomeDerived> &) const { return true; }
+
+private:
+  bool IsConstantStructureConstructorComponent(
+      const Symbol &component, const Expr<SomeType> &expr) const {
+    if (IsAllocatable(component)) {
+      return IsNullPointer(expr);
+    } else if (IsPointer(component)) {
+      return IsNullPointer(expr) || IsInitialDataTarget(expr) ||
+          IsInitialProcedureTarget(expr);
+    } else {
+      return (*this)(expr);
     }
   }
 };
@@ -79,12 +97,11 @@ template <typename A> bool IsConstantExpr(const A &x) {
 template bool IsConstantExpr(const Expr<SomeType> &);
 template bool IsConstantExpr(const Expr<SomeInteger> &);
 template bool IsConstantExpr(const Expr<SubscriptInteger> &);
+template bool IsConstantExpr(const StructureConstructor &);
 
 // Object pointer initialization checking predicate IsInitialDataTarget().
 // This code determines whether an expression is allowable as the static
 // data address used to initialize a pointer with "=> x".  See C765.
-// If messages are requested, errors may be generated without returning
-// a false result.
 class IsInitialDataTargetHelper
     : public AllTraverse<IsInitialDataTargetHelper, true> {
 public:
@@ -93,52 +110,52 @@ public:
   explicit IsInitialDataTargetHelper(parser::ContextualMessages *m)
       : Base{*this}, messages_{m} {}
 
+  bool emittedMessage() const { return emittedMessage_; }
+
   bool operator()(const BOZLiteralConstant &) const { return false; }
   bool operator()(const NullPointer &) const { return true; }
   template <typename T> bool operator()(const Constant<T> &) const {
     return false;
   }
-  bool operator()(const semantics::Symbol &symbol) const {
+  bool operator()(const semantics::Symbol &symbol) {
     const Symbol &ultimate{symbol.GetUltimate()};
     if (IsAllocatable(ultimate)) {
       if (messages_) {
         messages_->Say(
             "An initial data target may not be a reference to an ALLOCATABLE '%s'"_err_en_US,
             ultimate.name());
-      } else {
-        return false;
+        emittedMessage_ = true;
       }
+      return false;
     } else if (ultimate.Corank() > 0) {
       if (messages_) {
         messages_->Say(
             "An initial data target may not be a reference to a coarray '%s'"_err_en_US,
             ultimate.name());
-      } else {
-        return false;
+        emittedMessage_ = true;
       }
+      return false;
     } else if (!ultimate.attrs().test(semantics::Attr::TARGET)) {
       if (messages_) {
         messages_->Say(
             "An initial data target may not be a reference to an object '%s' that lacks the TARGET attribute"_err_en_US,
             ultimate.name());
-      } else {
-        return false;
+        emittedMessage_ = true;
       }
+      return false;
     } else if (!IsSaved(ultimate)) {
       if (messages_) {
         messages_->Say(
             "An initial data target may not be a reference to an object '%s' that lacks the SAVE attribute"_err_en_US,
             ultimate.name());
-      } else {
-        return false;
+        emittedMessage_ = true;
       }
+      return false;
     }
     return true;
   }
   bool operator()(const StaticDataObject &) const { return false; }
-  template <int KIND> bool operator()(const TypeParamInquiry<KIND> &) const {
-    return false;
-  }
+  bool operator()(const TypeParamInquiry &) const { return false; }
   bool operator()(const Triplet &x) const {
     return IsConstantExpr(x.lower()) && IsConstantExpr(x.upper()) &&
         IsConstantExpr(x.stride());
@@ -177,11 +194,50 @@ public:
 
 private:
   parser::ContextualMessages *messages_;
+  bool emittedMessage_{false};
 };
 
 bool IsInitialDataTarget(
     const Expr<SomeType> &x, parser::ContextualMessages *messages) {
-  return IsInitialDataTargetHelper{messages}(x);
+  IsInitialDataTargetHelper helper{messages};
+  bool result{helper(x)};
+  if (!result && messages && !helper.emittedMessage()) {
+    messages->Say(
+        "An initial data target must be a designator with constant subscripts"_err_en_US);
+  }
+  return result;
+}
+
+bool IsInitialProcedureTarget(const semantics::Symbol &symbol) {
+  const auto &ultimate{symbol.GetUltimate()};
+  return std::visit(
+      common::visitors{
+          [](const semantics::SubprogramDetails &) { return true; },
+          [](const semantics::SubprogramNameDetails &) { return true; },
+          [&](const semantics::ProcEntityDetails &proc) {
+            return !semantics::IsPointer(ultimate) && !proc.isDummy();
+          },
+          [](const auto &) { return false; },
+      },
+      ultimate.details());
+}
+
+bool IsInitialProcedureTarget(const ProcedureDesignator &proc) {
+  if (const auto *intrin{proc.GetSpecificIntrinsic()}) {
+    return !intrin->isRestrictedSpecific;
+  } else if (proc.GetComponent()) {
+    return false;
+  } else {
+    return IsInitialProcedureTarget(DEREF(proc.GetSymbol()));
+  }
+}
+
+bool IsInitialProcedureTarget(const Expr<SomeType> &expr) {
+  if (const auto *proc{std::get_if<ProcedureDesignator>(&expr.u)}) {
+    return IsInitialProcedureTarget(*proc);
+  } else {
+    return IsNullPointer(expr);
+  }
 }
 
 // Specification expression validation (10.1.11(2), C1010)
@@ -252,10 +308,9 @@ public:
     return std::nullopt;
   }
 
-  template <int KIND>
-  Result operator()(const TypeParamInquiry<KIND> &inq) const {
+  Result operator()(const TypeParamInquiry &inq) const {
     if (scope_.IsDerivedType() && !IsConstantExpr(inq) &&
-        inq.parameter().owner() != scope_) { // C750, C754
+        inq.base() /* X%T, not local T */) { // C750, C754
       return "non-constant reference to a type parameter inquiry not "
              "allowed for derived type components or type parameter values";
     }

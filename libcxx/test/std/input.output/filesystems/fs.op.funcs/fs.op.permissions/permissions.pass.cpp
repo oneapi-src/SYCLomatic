@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 // <filesystem>
 
@@ -38,7 +38,7 @@ TEST_CASE(test_signatures)
     ASSERT_NOT_NOEXCEPT(fs::permissions(p, pr));
     ASSERT_NOT_NOEXCEPT(fs::permissions(p, pr, opts));
     ASSERT_NOEXCEPT(fs::permissions(p, pr, ec));
-    ASSERT_NOT_NOEXCEPT(fs::permissions(p, pr, opts, ec));
+    LIBCPP_ONLY(ASSERT_NOT_NOEXCEPT(fs::permissions(p, pr, opts, ec)));
 }
 
 TEST_CASE(test_error_reporting)

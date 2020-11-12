@@ -29,7 +29,7 @@ void User::replaceUsesOfWith(Value *From, Value *To) {
       // The side effects of this setOperand call include linking to
       // "To", adding "this" to the uses list of To, and
       // most importantly, removing "this" from the use list of "From".
-      setOperand(i, To); // Fix it now...
+      setOperand(i, To);
     }
 }
 
@@ -195,4 +195,4 @@ LLVM_NO_SANITIZE_MEMORY_ATTRIBUTE void User::operator delete(void *Usr) {
   }
 }
 
-} // End llvm namespace
+} // namespace llvm

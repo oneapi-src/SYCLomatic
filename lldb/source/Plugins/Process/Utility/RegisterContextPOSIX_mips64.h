@@ -14,10 +14,6 @@
 #include "lldb/Target/RegisterContext.h"
 #include "lldb/Utility/Log.h"
 
-using namespace lldb_private;
-
-class ProcessMonitor;
-
 class RegisterContextPOSIX_mips64 : public lldb_private::RegisterContext {
 public:
 
@@ -72,8 +68,6 @@ protected:
   bool IsGPR(unsigned reg);
 
   bool IsFPR(unsigned reg);
-
-  lldb::ByteOrder GetByteOrder();
 
   virtual bool ReadGPR() = 0;
   virtual bool ReadFPR() = 0;

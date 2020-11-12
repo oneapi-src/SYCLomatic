@@ -8,7 +8,7 @@
 
 // Make sure that a std::vector containing move-only types can't be copied.
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 #include <vector>
 
@@ -22,6 +22,6 @@ struct move_only
 int main(int, char**)
 {
     std::vector<move_only> v;
-    std::vector<move_only> copy = v; // expected-error@memory:* {{call to implicitly-deleted copy constructor of 'move_only'}}
+    std::vector<move_only> copy = v; // expected-error-re@memory:* {{{{(no matching function for call to 'construct_at')|(call to implicitly-deleted copy constructor of 'move_only')}}}}
     return 0;
 }

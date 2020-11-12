@@ -80,6 +80,15 @@ struct RegImmPair {
   RegImmPair(Register Reg, int64_t Imm) : Reg(Reg), Imm(Imm) {}
 };
 
+/// Used to describe addressing mode similar to ExtAddrMode in CodeGenPrepare.
+/// It holds the register values, the scale value and the displacement.
+struct ExtAddrMode {
+  Register BaseReg;
+  Register ScaledReg;
+  int64_t Scale;
+  int64_t Displacement;
+};
+
 //---------------------------------------------------------------------------
 ///
 /// TargetInstrInfo - Interface to description of machine instruction set
@@ -724,7 +733,7 @@ public:
     return nullptr;
   }
 
-  /// Analyze the loop code, return true if it cannot be understoo. Upon
+  /// Analyze the loop code, return true if it cannot be understood. Upon
   /// success, this function returns false and returns information about the
   /// induction variable and compare instruction used at the end.
   virtual bool analyzeLoop(MachineLoop &L, MachineInstr *&IndVarInst,
@@ -771,7 +780,7 @@ public:
 
   /// Second variant of isProfitableToIfCvt. This one
   /// checks for the case where two basic blocks from true and false path
-  /// of a if-then-else (diamond) are predicated on mutally exclusive
+  /// of a if-then-else (diamond) are predicated on mutually exclusive
   /// predicates, where the probability of the true path being taken is given
   /// by Probability, and Confidence is a measure of our confidence that it
   /// will be properly predicted.
@@ -966,6 +975,15 @@ public:
   virtual Optional<RegImmPair> isAddImmediate(const MachineInstr &MI,
                                               Register Reg) const {
     return None;
+  }
+
+  /// Returns true if MI is an instruction that defines Reg to have a constant
+  /// value and the value is recorded in ImmVal. The ImmVal is a result that
+  /// should be interpreted as modulo size of Reg.
+  virtual bool getConstValDefinedInReg(const MachineInstr &MI,
+                                       const Register Reg,
+                                       int64_t &ImmVal) const {
+    return false;
   }
 
   /// Store the specified register of the given register class to the specified
@@ -1270,6 +1288,27 @@ public:
     return false;
   }
 
+  /// Target dependent implementation to get the values constituting the address
+  /// MachineInstr that is accessing memory. These values are returned as a
+  /// struct ExtAddrMode which contains all relevant information to make up the
+  /// address.
+  virtual Optional<ExtAddrMode>
+  getAddrModeFromMemoryOp(const MachineInstr &MemI,
+                          const TargetRegisterInfo *TRI) const {
+    return None;
+  }
+
+  /// Returns true if MI's Def is NullValueReg, and the MI
+  /// does not change the Zero value. i.e. cases such as rax = shr rax, X where
+  /// NullValueReg = rax. Note that if the NullValueReg is non-zero, this
+  /// function can return true even if becomes zero. Specifically cases such as
+  /// NullValueReg = shl NullValueReg, 63.
+  virtual bool preservesZeroValueInReg(const MachineInstr *MI,
+                                       const Register NullValueReg,
+                                       const TargetRegisterInfo *TRI) const {
+    return false;
+  }
+
   /// If the instruction is an increment of a constant value, return the amount.
   virtual bool getIncrementValue(const MachineInstr &MI, int &Value) const {
     return false;
@@ -1303,6 +1342,11 @@ public:
   /// Insert a noop into the instruction stream at the specified point.
   virtual void insertNoop(MachineBasicBlock &MBB,
                           MachineBasicBlock::iterator MI) const;
+
+  /// Insert noops into the instruction stream at the specified point.
+  virtual void insertNoops(MachineBasicBlock &MBB,
+                           MachineBasicBlock::iterator MI,
+                           unsigned Quantity) const;
 
   /// Return the noop instruction to use for a noop.
   virtual void getNoop(MCInst &NopInst) const;
@@ -1442,7 +1486,7 @@ public:
   /// the machine instruction generated due to folding.
   virtual MachineInstr *optimizeLoadInstr(MachineInstr &MI,
                                           const MachineRegisterInfo *MRI,
-                                          unsigned &FoldAsLoadDefReg,
+                                          Register &FoldAsLoadDefReg,
                                           MachineInstr *&DefMI) const {
     return nullptr;
   }
@@ -1627,7 +1671,7 @@ public:
   /// This hook works similarly to getPartialRegUpdateClearance, except that it
   /// does not take an operand index. Instead sets \p OpNum to the index of the
   /// unused register.
-  virtual unsigned getUndefRegClearance(const MachineInstr &MI, unsigned &OpNum,
+  virtual unsigned getUndefRegClearance(const MachineInstr &MI, unsigned OpNum,
                                         const TargetRegisterInfo *TRI) const {
     // The default implementation returns 0 for no undef register dependency.
     return 0;

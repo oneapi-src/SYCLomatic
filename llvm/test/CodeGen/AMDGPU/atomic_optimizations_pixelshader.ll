@@ -130,7 +130,7 @@ define amdgpu_ps void @add_i32_constant(<4 x i32> inreg %out, <4 x i32> inreg %i
 ; GFX1064-NEXT:    v_mul_u32_u24_e64 v1, s12, 5
 ; GFX1064-NEXT:    buffer_atomic_add v1, off, s[4:7], 0 glc
 ; GFX1064-NEXT:  BB0_3:
-; GFX1064-NEXT:    v_nop
+; GFX1064-NEXT:    s_waitcnt_depctr 0xffe3
 ; GFX1064-NEXT:    s_or_b64 exec, exec, s[30:31]
 ; GFX1064-NEXT:    s_waitcnt vmcnt(0)
 ; GFX1064-NEXT:    v_readfirstlane_b32 s4, v1
@@ -164,7 +164,7 @@ define amdgpu_ps void @add_i32_constant(<4 x i32> inreg %out, <4 x i32> inreg %i
 ; GFX1032-NEXT:    v_mul_u32_u24_e64 v1, s10, 5
 ; GFX1032-NEXT:    buffer_atomic_add v1, off, s[4:7], 0 glc
 ; GFX1032-NEXT:  BB0_3:
-; GFX1032-NEXT:    v_nop
+; GFX1032-NEXT:    s_waitcnt_depctr 0xffe3
 ; GFX1032-NEXT:    s_or_b32 exec_lo, exec_lo, s9
 ; GFX1032-NEXT:    s_waitcnt vmcnt(0)
 ; GFX1032-NEXT:    v_readfirstlane_b32 s4, v1
@@ -223,7 +223,6 @@ define amdgpu_ps void @add_i32_varying(<4 x i32> inreg %out, <4 x i32> inreg %in
 ; GFX8-NEXT:    v_mov_b32_e32 v2, 0
 ; GFX8-NEXT:    s_not_b64 exec, exec
 ; GFX8-NEXT:    s_or_saveexec_b64 s[10:11], -1
-; GFX8-NEXT:    s_nop 0
 ; GFX8-NEXT:    v_add_u32_dpp v2, vcc, v2, v2 row_shr:1 row_mask:0xf bank_mask:0xf bound_ctrl:0
 ; GFX8-NEXT:    s_nop 1
 ; GFX8-NEXT:    v_add_u32_dpp v2, vcc, v2, v2 row_shr:2 row_mask:0xf bank_mask:0xf bound_ctrl:0
@@ -280,7 +279,6 @@ define amdgpu_ps void @add_i32_varying(<4 x i32> inreg %out, <4 x i32> inreg %in
 ; GFX9-NEXT:    v_mov_b32_e32 v2, 0
 ; GFX9-NEXT:    s_not_b64 exec, exec
 ; GFX9-NEXT:    s_or_saveexec_b64 s[10:11], -1
-; GFX9-NEXT:    s_nop 0
 ; GFX9-NEXT:    v_add_u32_dpp v2, v2, v2 row_shr:1 row_mask:0xf bank_mask:0xf bound_ctrl:0
 ; GFX9-NEXT:    s_nop 1
 ; GFX9-NEXT:    v_add_u32_dpp v2, v2, v2 row_shr:2 row_mask:0xf bank_mask:0xf bound_ctrl:0
@@ -364,7 +362,7 @@ define amdgpu_ps void @add_i32_varying(<4 x i32> inreg %out, <4 x i32> inreg %in
 ; GFX1064-NEXT:    v_mov_b32_e32 v0, s12
 ; GFX1064-NEXT:    buffer_atomic_add v0, off, s[4:7], 0 glc
 ; GFX1064-NEXT:  BB1_3:
-; GFX1064-NEXT:    v_nop
+; GFX1064-NEXT:    s_waitcnt_depctr 0xffe3
 ; GFX1064-NEXT:    s_or_b64 exec, exec, s[30:31]
 ; GFX1064-NEXT:    s_waitcnt vmcnt(0)
 ; GFX1064-NEXT:    v_readfirstlane_b32 s4, v0
@@ -418,7 +416,7 @@ define amdgpu_ps void @add_i32_varying(<4 x i32> inreg %out, <4 x i32> inreg %in
 ; GFX1032-NEXT:    v_mov_b32_e32 v0, s10
 ; GFX1032-NEXT:    buffer_atomic_add v0, off, s[4:7], 0 glc
 ; GFX1032-NEXT:  BB1_3:
-; GFX1032-NEXT:    v_nop
+; GFX1032-NEXT:    s_waitcnt_depctr 0xffe3
 ; GFX1032-NEXT:    s_or_b32 exec_lo, exec_lo, s9
 ; GFX1032-NEXT:    s_waitcnt vmcnt(0)
 ; GFX1032-NEXT:    v_readfirstlane_b32 s4, v0

@@ -34,6 +34,7 @@
 
 namespace llvm {
 
+class AAResults;
 class LiveIntervals;
 class LiveRangeEdit;
 class MachineBlockFrequencyInfo;
@@ -53,7 +54,7 @@ private:
   /// Last legal insert point in each basic block in the current function.
   /// The first entry is the first terminator, the second entry is the
   /// last valid point to insert a split or spill for a variable that is
-  /// live into a landing pad successor.
+  /// live into a landing pad or inlineasm_br successor.
   SmallVector<std::pair<SlotIndex, SlotIndex>, 8> LastInsertPoint;
 
   SlotIndex computeLastInsertPoint(const LiveInterval &CurLI,
@@ -256,7 +257,7 @@ public:
 ///
 class LLVM_LIBRARY_VISIBILITY SplitEditor {
   SplitAnalysis &SA;
-  AliasAnalysis &AA;
+  AAResults &AA;
   LiveIntervals &LIS;
   VirtRegMap &VRM;
   MachineRegisterInfo &MRI;
@@ -344,10 +345,17 @@ private:
     return LICalc[SpillMode != SM_Partition && RegIdx != 0];
   }
 
-  /// Find a subrange corresponding to the lane mask @p LM in the live
+  /// Find a subrange corresponding to the exact lane mask @p LM in the live
   /// interval @p LI. The interval @p LI is assumed to contain such a subrange.
   /// This function is used to find corresponding subranges between the
   /// original interval and the new intervals.
+  LiveInterval::SubRange &getSubRangeForMaskExact(LaneBitmask LM,
+                                                  LiveInterval &LI);
+
+  /// Find a subrange corresponding to the lane mask @p LM, or a superset of it,
+  /// in the live interval @p LI. The interval @p LI is assumed to contain such
+  /// a subrange.  This function is used to find corresponding subranges between
+  /// the original interval and the new intervals.
   LiveInterval::SubRange &getSubRangeForMask(LaneBitmask LM, LiveInterval &LI);
 
   /// Add a segment to the interval LI for the value number VNI. If LI has
@@ -442,7 +450,7 @@ private:
 public:
   /// Create a new SplitEditor for editing the LiveInterval analyzed by SA.
   /// Newly created intervals will be appended to newIntervals.
-  SplitEditor(SplitAnalysis &sa, AliasAnalysis &aa, LiveIntervals &lis,
+  SplitEditor(SplitAnalysis &sa, AAResults &aa, LiveIntervals &lis,
               VirtRegMap &vrm, MachineDominatorTree &mdt,
               MachineBlockFrequencyInfo &mbfi);
 

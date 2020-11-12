@@ -17,21 +17,30 @@
 using namespace llvm;
 using namespace dwarf;
 
+DwarfFormat DWARFDebugMacro::MacroHeader::getDwarfFormat() const {
+  return Flags & MACRO_OFFSET_SIZE ? DWARF64 : DWARF32;
+}
+
+uint8_t DWARFDebugMacro::MacroHeader::getOffsetByteSize() const {
+  return getDwarfOffsetByteSize(getDwarfFormat());
+}
+
 void DWARFDebugMacro::MacroHeader::dumpMacroHeader(raw_ostream &OS) const {
   // FIXME: Add support for dumping opcode_operands_table
-  OS << format("macro header: version = 0x%04" PRIx16 ", flags = 0x%02" PRIx8,
-               Version, Flags);
+  OS << format("macro header: version = 0x%04" PRIx16, Version)
+     << format(", flags = 0x%02" PRIx8, Flags)
+     << ", format = " << FormatString(getDwarfFormat());
   if (Flags & MACRO_DEBUG_LINE_OFFSET)
-    OS << format(", debug_line_offset = 0x%04" PRIx64 "\n", DebugLineOffset);
-  else
-    OS << "\n";
+    OS << format(", debug_line_offset = 0x%0*" PRIx64, 2 * getOffsetByteSize(),
+                 DebugLineOffset);
+  OS << "\n";
 }
 
 void DWARFDebugMacro::dump(raw_ostream &OS) const {
   unsigned IndLevel = 0;
   for (const auto &Macros : MacroLists) {
     OS << format("0x%08" PRIx64 ":\n", Macros.Offset);
-    if (Macros.Header.Version >= 5)
+    if (Macros.IsDebugMacro)
       Macros.Header.dumpMacroHeader(OS);
     for (const Entry &E : Macros.Macros) {
       // There should not be DW_MACINFO_end_file when IndLevel is Zero. However,
@@ -43,8 +52,10 @@ void DWARFDebugMacro::dump(raw_ostream &OS) const {
         OS << "  ";
       IndLevel += (E.Type == DW_MACINFO_start_file);
       // Based on which version we are handling choose appropriate macro forms.
-      if (Macros.Header.Version >= 5)
-        WithColor(OS, HighlightColor::Macro).get() << MacroString(E.Type);
+      if (Macros.IsDebugMacro)
+        WithColor(OS, HighlightColor::Macro).get()
+            << (Macros.Header.Version < 5 ? GnuMacroString(E.Type)
+                                          : MacroString(E.Type));
       else
         WithColor(OS, HighlightColor::Macro).get() << MacinfoString(E.Type);
       switch (E.Type) {
@@ -58,6 +69,9 @@ void DWARFDebugMacro::dump(raw_ostream &OS) const {
         // DW_MACRO_start_file == DW_MACINFO_start_file
         // DW_MACRO_end_file   == DW_MACINFO_end_file
         // For readability/uniformity we are using DW_MACRO_*.
+        //
+        // The GNU .debug_macro extension's entries have the same encoding
+        // as DWARF 5's DW_MACRO_* entries, so we only use the latter here.
       case DW_MACRO_define:
       case DW_MACRO_undef:
       case DW_MACRO_define_strp:
@@ -72,7 +86,8 @@ void DWARFDebugMacro::dump(raw_ostream &OS) const {
         OS << " filenum: " << E.File;
         break;
       case DW_MACRO_import:
-        OS << format(" - import offset: 0x%08" PRIx64, E.ImportOffset);
+        OS << format(" - import offset: 0x%0*" PRIx64,
+                     2 * Macros.Header.getOffsetByteSize(), E.ImportOffset);
         break;
       case DW_MACRO_end_file:
         break;
@@ -87,7 +102,7 @@ void DWARFDebugMacro::dump(raw_ostream &OS) const {
 }
 
 Error DWARFDebugMacro::parseImpl(
-    Optional<DWARFUnitVector::iterator_range> Units,
+    Optional<DWARFUnitVector::compile_unit_range> Units,
     Optional<DataExtractor> StringExtractor, DWARFDataExtractor Data,
     bool IsMacro) {
   uint64_t Offset = 0;
@@ -108,6 +123,7 @@ Error DWARFDebugMacro::parseImpl(
       MacroLists.emplace_back();
       M = &MacroLists.back();
       M->Offset = Offset;
+      M->IsDebugMacro = IsMacro;
       if (IsMacro) {
         auto Err = M->Header.parseMacroHeader(Data, &Offset);
         if (Err)
@@ -158,8 +174,8 @@ Error DWARFDebugMacro::parseImpl(
       // 2. Source line
       E.Line = Data.getULEB128(&Offset);
       // 3. Macro string
-      // FIXME: Add support for DWARF64
-      StrOffset = Data.getRelocatedValue(/*OffsetSize=*/4, &Offset);
+      StrOffset =
+          Data.getRelocatedValue(M->Header.getOffsetByteSize(), &Offset);
       assert(StringExtractor && "String Extractor not found");
       E.MacroStr = StringExtractor->getCStr(&StrOffset);
       break;
@@ -199,8 +215,8 @@ Error DWARFDebugMacro::parseImpl(
     case DW_MACRO_end_file:
       break;
     case DW_MACRO_import:
-      // FIXME: Add support for DWARF64
-      E.ImportOffset = Data.getRelocatedValue(/*OffsetSize=*/4, &Offset);
+      E.ImportOffset =
+          Data.getRelocatedValue(M->Header.getOffsetByteSize(), &Offset);
       break;
     case DW_MACINFO_vendor_ext:
       // 2. Vendor extension constant
@@ -217,9 +233,6 @@ Error DWARFDebugMacro::MacroHeader::parseMacroHeader(DWARFDataExtractor Data,
                                                      uint64_t *Offset) {
   Version = Data.getU16(Offset);
   uint8_t FlagData = Data.getU8(Offset);
-  // FIXME: Add support for DWARF64
-  if (FlagData & MACRO_OFFSET_SIZE)
-    return createStringError(errc::not_supported, "DWARF64 is not supported");
 
   // FIXME: Add support for parsing opcode_operands_table
   if (FlagData & MACRO_OPCODE_OPERANDS_TABLE)
@@ -227,6 +240,6 @@ Error DWARFDebugMacro::MacroHeader::parseMacroHeader(DWARFDataExtractor Data,
                              "opcode_operands_table is not supported");
   Flags = FlagData;
   if (Flags & MACRO_DEBUG_LINE_OFFSET)
-    DebugLineOffset = Data.getU32(Offset);
+    DebugLineOffset = Data.getUnsigned(Offset, getOffsetByteSize());
   return Error::success();
 }

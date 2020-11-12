@@ -95,6 +95,7 @@ mkdir -p "${LLVM_BUILD_DIR}"
   xcrun cmake \
     -C "${MONOREPO_ROOT}/libcxx/cmake/caches/Apple.cmake" \
     -GNinja \
+    -DCMAKE_MAKE_PROGRAM="$(xcrun --find ninja)" \
     -DCMAKE_INSTALL_PREFIX="${LLVM_INSTALL_DIR}" \
     -DLIBCXX_ENABLE_EXCEPTIONS="${LIBCXX_EXCEPTIONS}" \
     -DLIBCXXABI_ENABLE_EXCEPTIONS=ON \
@@ -108,18 +109,18 @@ echo "@@@@@@"
 
 
 echo "@@@ Building libc++.dylib and libc++abi.dylib from sources (just to make sure it works) @@@"
-ninja -C "${LLVM_BUILD_DIR}" install-cxx install-cxxabi -v
+xcrun ninja -C "${LLVM_BUILD_DIR}" install-cxx install-cxxabi -v
 echo "@@@@@@"
 
 
 echo "@@@ Running tests for libc++ @@@"
 # TODO: We should run check-cxx-abilist too
-ninja -C "${LLVM_BUILD_DIR}" check-cxx
+xcrun ninja -C "${LLVM_BUILD_DIR}" check-cxx
 echo "@@@@@@"
 
 
 echo "@@@ Running tests for libc++abi @@@"
-ninja -C "${LLVM_BUILD_DIR}" check-cxxabi
+xcrun ninja -C "${LLVM_BUILD_DIR}" check-cxxabi
 echo "@@@@@@"
 
 
@@ -128,19 +129,9 @@ echo "@@@@@@"
 echo "@@@ Building libc++ and libc++abi using the Apple script (to make sure they work) @@@"
 "${MONOREPO_ROOT}/libcxx/utils/ci/apple-install-libcxx.sh"      \
     --llvm-root "${MONOREPO_ROOT}"                              \
-    --build-dir "${LLVM_BUILD_DIR}/apple-build-cxx"             \
-    --install-dir "${LLVM_BUILD_DIR}/apple-install-cxx"         \
-    --symbols-dir "${LLVM_BUILD_DIR}/apple-symbols-cxx"         \
-    --sdk macosx                                                \
-    --architectures "x86_64"                                    \
-    --version 999.99.99                                         \
-    --cache "${MONOREPO_ROOT}/libcxx/cmake/caches/Apple.cmake"
-
-"${MONOREPO_ROOT}/libcxx/utils/ci/apple-install-libcxxabi.sh"   \
-    --llvm-root "${MONOREPO_ROOT}"                              \
-    --build-dir "${LLVM_BUILD_DIR}/apple-build-cxxabi"          \
-    --install-dir "${LLVM_BUILD_DIR}/apple-install-cxxabi"      \
-    --symbols-dir "${LLVM_BUILD_DIR}/apple-symbols-cxxabi"      \
+    --build-dir "${LLVM_BUILD_DIR}/apple-build"                 \
+    --install-dir "${LLVM_BUILD_DIR}/apple-install"             \
+    --symbols-dir "${LLVM_BUILD_DIR}/apple-symbols"             \
     --sdk macosx                                                \
     --architectures "x86_64"                                    \
     --version 999.99.99                                         \

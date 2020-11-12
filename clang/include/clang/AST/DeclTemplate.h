@@ -77,7 +77,7 @@ class TemplateParameterList final
 
   /// The number of template parameters in this template
   /// parameter list.
-  unsigned NumParams : 30;
+  unsigned NumParams : 29;
 
   /// Whether this template parameter list contains an unexpanded parameter
   /// pack.
@@ -204,10 +204,6 @@ public:
              bool OmitTemplateKW = false) const;
   void print(raw_ostream &Out, const ASTContext &Context,
              const PrintingPolicy &Policy, bool OmitTemplateKW = false) const;
-
-public:
-  // FIXME: workaround for MSVC 2013; remove when no longer needed
-  using FixedSizeStorageOwner = TrailingObjects::FixedSizeStorageOwner;
 };
 
 /// Stores a list of template parameters and the associated
@@ -2270,7 +2266,7 @@ protected:
   /// Retrieve the set of partial specializations of this class
   /// template.
   llvm::FoldingSetVector<ClassTemplatePartialSpecializationDecl> &
-  getPartialSpecializations();
+  getPartialSpecializations() const;
 
   ClassTemplateDecl(ASTContext &C, DeclContext *DC, SourceLocation L,
                     DeclarationName Name, TemplateParameterList *Params,
@@ -2367,7 +2363,7 @@ public:
 
   /// Retrieve the partial specializations as an ordered list.
   void getPartialSpecializations(
-          SmallVectorImpl<ClassTemplatePartialSpecializationDecl *> &PS);
+      SmallVectorImpl<ClassTemplatePartialSpecializationDecl *> &PS) const;
 
   /// Find a class template partial specialization with the given
   /// type T.
@@ -3099,7 +3095,7 @@ protected:
   /// Retrieve the set of partial specializations of this class
   /// template.
   llvm::FoldingSetVector<VarTemplatePartialSpecializationDecl> &
-  getPartialSpecializations();
+  getPartialSpecializations() const;
 
   VarTemplateDecl(ASTContext &C, DeclContext *DC, SourceLocation L,
                   DeclarationName Name, TemplateParameterList *Params,
@@ -3195,7 +3191,7 @@ public:
 
   /// Retrieve the partial specializations as an ordered list.
   void getPartialSpecializations(
-      SmallVectorImpl<VarTemplatePartialSpecializationDecl *> &PS);
+      SmallVectorImpl<VarTemplatePartialSpecializationDecl *> &PS) const;
 
   /// Find a variable template partial specialization which was
   /// instantiated

@@ -45,7 +45,9 @@ public:
 
   bool WillStop() override;
 
-  bool StopOthers() override;
+  bool StopOthers() override { return m_stop_others; }
+
+  void SetStopOthers(bool new_value) override { m_stop_others = new_value; }
 
   void DidPush() override;
 
@@ -67,8 +69,10 @@ private:
   std::string m_error_str;
   StructuredData::ObjectSP m_implementation_sp;
   bool m_did_push;
+  bool m_stop_others;
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadPlanPython);
+  ThreadPlanPython(const ThreadPlanPython &) = delete;
+  const ThreadPlanPython &operator=(const ThreadPlanPython &) = delete;
 };
 
 } // namespace lldb_private

@@ -1,4 +1,4 @@
-; RUN: llc -relocation-model=pic -filetype=obj %s -o %t.o
+; RUN: llc -relocation-model=pic -mattr=+mutable-globals -filetype=obj %s -o %t.o
 ; RUN: wasm-ld -shared -o %t.wasm %t.o
 ; RUN: obj2yaml %t.wasm | FileCheck %s
 
@@ -72,6 +72,7 @@ declare void @func_external()
 ; CHECK-NEXT:         Field:           __indirect_function_table
 ; CHECK-NEXT:         Kind:            TABLE
 ; CHECK-NEXT:         Table:
+; CHECK-NEXT:           Index:           0
 ; CHECK-NEXT:           ElemType:        FUNCREF
 ; CHECK-NEXT:           Limits:
 ; CHECK-NEXT:             Initial:         0x00000002

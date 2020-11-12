@@ -29,6 +29,7 @@ namespace orc {
 
 class LLJITBuilderState;
 class LLLazyJITBuilderState;
+class TargetProcessControl;
 
 /// A pre-fabricated ORC JIT stack that can serve as an alternative to MCJIT.
 ///
@@ -85,21 +86,8 @@ public:
     return ES->createJITDylib(std::move(Name));
   }
 
-  /// A convenience method for defining MUs in LLJIT's Main JITDylib. This can
-  /// be useful for succinctly defining absolute symbols, aliases and
-  /// re-exports.
-  template <typename MUType>
-  Error define(std::unique_ptr<MUType> &&MU) {
-    return Main->define(std::move(MU));
-  }
-
-  /// A convenience method for defining MUs in LLJIT's Main JITDylib. This can
-  /// be usedful for succinctly defining absolute symbols, aliases and
-  /// re-exports.
-  template <typename MUType>
-  Error define(std::unique_ptr<MUType> &MU) {
-    return Main->define(MU);
-  }
+  /// Adds an IR module with the given ResourceTracker.
+  Error addIRModule(ResourceTrackerSP RT, ThreadSafeModule TSM);
 
   /// Adds an IR module to the given JITDylib.
   Error addIRModule(JITDylib &JD, ThreadSafeModule TSM);
@@ -108,6 +96,9 @@ public:
   Error addIRModule(ThreadSafeModule TSM) {
     return addIRModule(*Main, std::move(TSM));
   }
+
+  /// Adds an object file to the given JITDylib.
+  Error addObjectFile(ResourceTrackerSP RT, std::unique_ptr<MemoryBuffer> Obj);
 
   /// Adds an object file to the given JITDylib.
   Error addObjectFile(JITDylib &JD, std::unique_ptr<MemoryBuffer> Obj);
@@ -237,6 +228,9 @@ public:
     CODLayer->setPartitionFunction(std::move(Partition));
   }
 
+  /// Returns a reference to the on-demand layer.
+  CompileOnDemandLayer &getCompileOnDemandLayer() { return *CODLayer; }
+
   /// Add a module to be lazily compiled to JITDylib JD.
   Error addLazyIRModule(JITDylib &JD, ThreadSafeModule M);
 
@@ -272,6 +266,7 @@ public:
   CompileFunctionCreator CreateCompileFunction;
   PlatformSetupFunction SetUpPlatform;
   unsigned NumCompileThreads = 0;
+  TargetProcessControl *TPC = nullptr;
 
   /// Called prior to JIT class construcion to fix up defaults.
   Error prepareForConstruction();
@@ -351,6 +346,17 @@ public:
   /// a zero argument.
   SetterImpl &setNumCompileThreads(unsigned NumCompileThreads) {
     impl().NumCompileThreads = NumCompileThreads;
+    return impl();
+  }
+
+  /// Set a TargetProcessControl object.
+  ///
+  /// If the platform uses ObjectLinkingLayer by default and no
+  /// ObjectLinkingLayerCreator has been set then the TargetProcessControl
+  /// object will be used to supply the memory manager for the
+  /// ObjectLinkingLayer.
+  SetterImpl &setTargetProcessControl(TargetProcessControl &TPC) {
+    impl().TPC = &TPC;
     return impl();
   }
 

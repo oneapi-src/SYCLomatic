@@ -51,12 +51,16 @@ class LLVMConfig(object):
         elif platform.system() == 'Windows':
             # For tests that require Windows to run.
             features.add('system-windows')
-        elif platform.system() == "Linux":
+        elif platform.system() == 'Linux':
             features.add('system-linux')
         elif platform.system() in ['FreeBSD']:
             features.add('system-freebsd')
-        elif platform.system() == "NetBSD":
+        elif platform.system() == 'NetBSD':
             features.add('system-netbsd')
+        elif platform.system() == 'AIX':
+            features.add('system-aix')
+        elif platform.system() == 'SunOS':
+            features.add('system-solaris')
 
         # Native compilation: host arch == default triple arch
         # Both of these values should probably be in every site config (e.g. as
@@ -435,7 +439,7 @@ class LLVMConfig(object):
         self.config.substitutions.append(
             (' clang ', """\"*** Do not use 'clang' in tests, use '%clang'. ***\""""))
         self.config.substitutions.append(
-            (' clang\+\+ ', """\"*** Do not use 'clang++' in tests, use '%clangxx'. ***\""""))
+            (r' clang\+\+ ', """\"*** Do not use 'clang++' in tests, use '%clangxx'. ***\""""))
         self.config.substitutions.append(
             (' clang-cc ',
              """\"*** Do not use 'clang-cc' in tests, use '%clang_cc1'. ***\""""))
@@ -490,11 +494,11 @@ class LLVMConfig(object):
         was_found = ld_lld and lld_link and ld64_lld and wasm_ld
         tool_substitutions = []
         if ld_lld:
-            tool_substitutions.append(ToolSubst('ld\.lld', command=ld_lld))
+            tool_substitutions.append(ToolSubst(r'ld\.lld', command=ld_lld))
         if lld_link:
             tool_substitutions.append(ToolSubst('lld-link', command=lld_link))
         if ld64_lld:
-            tool_substitutions.append(ToolSubst('ld64\.lld', command=ld64_lld))
+            tool_substitutions.append(ToolSubst(r'ld64\.lld', command=ld64_lld))
         if wasm_ld:
             tool_substitutions.append(ToolSubst('wasm-ld', command=wasm_ld))
         self.add_tool_substitutions(tool_substitutions)

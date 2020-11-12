@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #===----------------------------------------------------------------------===##
 #
 # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -16,31 +17,41 @@ conformance test suite.
 import argparse
 import os
 import posixpath
+import shlex
 import subprocess
 import sys
 import tarfile
 import tempfile
 
+def ssh(args, command):
+    cmd = ['ssh', '-oBatchMode=yes']
+    if args.extra_ssh_args is not None:
+        cmd.extend(shlex.split(args.extra_ssh_args))
+    return cmd + [args.host, command]
+
+
+def scp(args, src, dst):
+    cmd = ['scp', '-q', '-oBatchMode=yes']
+    if args.extra_scp_args is not None:
+        cmd.extend(shlex.split(args.extra_scp_args))
+    return cmd + [src, '{}:{}'.format(args.host, dst)]
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', type=str, required=True)
+    parser.add_argument('--execdir', type=str, required=True)
+    parser.add_argument('--extra-ssh-args', type=str, required=False)
+    parser.add_argument('--extra-scp-args', type=str, required=False)
     parser.add_argument('--codesign_identity', type=str, required=False, default=None)
-    parser.add_argument('--dependencies', type=str, nargs='*', required=False, default=[])
     parser.add_argument('--env', type=str, nargs='*', required=False, default=dict())
-    (args, remaining) = parser.parse_known_args(sys.argv[1:])
-
-    if len(remaining) < 2:
-        sys.stderr.write('Missing actual commands to run')
-        return 1
-
-    commandLine = remaining[1:] # Skip the '--'
-
-    ssh = lambda command: ['ssh', '-oBatchMode=yes', args.host, command]
-    scp = lambda src, dst: ['scp', '-q', '-oBatchMode=yes', src, '{}:{}'.format(args.host, dst)]
+    parser.add_argument("command", nargs=argparse.ONE_OR_MORE)
+    args = parser.parse_args()
+    commandLine = args.command
 
     # Create a temporary directory where the test will be run.
-    tmp = subprocess.check_output(ssh('mktemp -d /tmp/libcxx.XXXXXXXXXX'), universal_newlines=True).strip()
+    # That is effectively the value of %T on the remote host.
+    tmp = subprocess.check_output(ssh(args, 'mktemp -d /tmp/libcxx.XXXXXXXXXX'), universal_newlines=True).strip()
 
     # HACK:
     # If an argument is a file that ends in `.tmp.exe`, assume it is the name
@@ -58,22 +69,18 @@ def main():
             for exe in filter(isTestExe, commandLine):
                 subprocess.check_call(['xcrun', 'codesign', '-f', '-s', args.codesign_identity, exe], env={})
 
-        # Ensure the test dependencies exist, tar them up and copy the tarball
-        # over to the remote host.
+        # tar up the execution directory (which contains everything that's needed
+        # to run the test), and copy the tarball over to the remote host.
         try:
             tmpTar = tempfile.NamedTemporaryFile(suffix='.tar', delete=False)
             with tarfile.open(fileobj=tmpTar, mode='w') as tarball:
-                for dep in args.dependencies:
-                    if not os.path.exists(dep):
-                        sys.stderr.write('Missing file or directory "{}" marked as a dependency of a test'.format(dep))
-                        return 1
-                    tarball.add(dep, arcname=os.path.basename(dep))
+                tarball.add(args.execdir, arcname=os.path.basename(args.execdir))
 
             # Make sure we close the file before we scp it, because accessing
             # the temporary file while still open doesn't work on Windows.
             tmpTar.close()
             remoteTarball = pathOnRemote(tmpTar.name)
-            subprocess.check_call(scp(tmpTar.name, remoteTarball))
+            subprocess.check_call(scp(args, tmpTar.name, remoteTarball))
         finally:
             # Make sure we close the file in case an exception happens before
             # we've closed it above -- otherwise close() is idempotent.
@@ -82,7 +89,7 @@ def main():
 
         # Untar the dependencies in the temporary directory and remove the tarball.
         remoteCommands = [
-            'tar -xf {} -C {}'.format(remoteTarball, tmp),
+            'tar -xf {} -C {} --strip-components 1'.format(remoteTarball, tmp),
             'rm {}'.format(remoteTarball)
         ]
 
@@ -95,8 +102,7 @@ def main():
         # Execute the command through SSH in the temporary directory, with the
         # correct environment. We tweak the command line to run it on the remote
         # host by transforming the path of test-executables to their path in the
-        # temporary directory, where we know they have been copied when we handled
-        # test dependencies above.
+        # temporary directory on the remote host.
         commandLine = (pathOnRemote(x) if isTestExe(x) else x for x in commandLine)
         remoteCommands.append('cd {}'.format(tmp))
         if args.env:
@@ -104,12 +110,12 @@ def main():
         remoteCommands.append(subprocess.list2cmdline(commandLine))
 
         # Finally, SSH to the remote host and execute all the commands.
-        rc = subprocess.call(ssh(' && '.join(remoteCommands)))
+        rc = subprocess.call(ssh(args, ' && '.join(remoteCommands)))
         return rc
 
     finally:
         # Make sure the temporary directory is removed when we're done.
-        subprocess.check_call(ssh('rm -r {}'.format(tmp)))
+        subprocess.check_call(ssh(args, 'rm -r {}'.format(tmp)))
 
 
 if __name__ == '__main__':

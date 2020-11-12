@@ -22,12 +22,12 @@ and a wide range of compute accelerators such as GPU and FPGA.
 ## Prerequisites
 
 * `git` - [Download](https://git-scm.com/downloads)
-* `cmake` version 3.2 or later - [Download](http://www.cmake.org/download/)
+* `cmake` version 3.14 or later - [Download](http://www.cmake.org/download/)
 * `python` - [Download](https://www.python.org/downloads/release/python-2716/)
 * `ninja` -
 [Download](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages)
 * C++ compiler
-  * Linux: `GCC` version 5.1.0 or later (including libstdc++) -
+  * Linux: `GCC` version 7.1.0 or later (including libstdc++) -
     [Download](https://gcc.gnu.org/install/)
   * Windows: `Visual Studio` version 15.7 preview 4 or later -
     [Download](https://visualstudio.microsoft.com/downloads/)
@@ -123,13 +123,14 @@ To enable support for CUDA devices, follow the instructions for the Linux
 DPC++ toolchain, but add the `--cuda` flag to `configure.py`
 
 Enabling this flag requires an installation of
-[CUDA 10.1](https://developer.nvidia.com/cuda-10.1-download-archive-update2) on
+[CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive) on
 the system, refer to
 [NVIDIA CUDA Installation Guide for Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
 
 Currently, the only combination tested is Ubuntu 18.04 with CUDA 10.2 using
 a Titan RTX GPU (SM 71), but it should work on any GPU compatible with SM 50 or
-above.
+above. The default SM for the NVIDIA CUDA backend is 5.0. Users can specify
+lower values, but some features may not be supported.
 
 ### Deployment
 
@@ -161,37 +162,41 @@ which contains all the symbols required.
 To run DPC++ applications on OpenCL devices, OpenCL implementation(s) must be
 present in the system.
 
-The OpenCL RT for `GPU`, OpenCL RT for `CPU` and TBB runtime which are needed
-to run DPC++ application on Intel `GPU` or Intel `CPU` devices can be
-downloaded using links in
+To run DPC++ applications on Level Zero devices, Level Zero implementation(s)
+must be present in the system. You can find the link to the Level Zero spec in
+the following section [Find More](#find-more).
+
+The Level Zero RT for `GPU`, OpenCL RT for `GPU`, OpenCL RT for `CPU`, FPGA
+emulation RT and TBB runtime which are needed to run DPC++ application
+on Intel `GPU` or Intel `CPU` devices can be downloaded using links in
 [the dependency configuration file](../../buildbot/dependency.conf)
 and installed following the instructions below. The same versions are used in
 PR testing.
 
-Intel OpenCL RT for `CPU` devices can be switched into OpenCL runtime for
-Intel FPGA Emulation. The following parameter should be set in `cl.cfg` file
-(available in directory containing CPU runtime for OpenCL) or environment
-variable with the same name. The following value should be set to switch
-OpenCL device mode:
-
-```bash
-CL_CONFIG_DEVICES = fpga-emu
-```
-
 **Linux**:
 
-1) Extract the archive. For example, for the archive
-`oclcpu_rt_<cpu_version>.tar.gz` you would run the following commands
+1) Extract the archive. For example, for the archives
+`oclcpuexp_<cpu_version>.tar.gz` and `fpgaemu_<fpga_version>.tar.gz` you would
+run the following commands
 
     ```bash
+    # Extract OpenCL FPGA emulation RT
+    mkdir -p /opt/intel/oclfpgaemu_<fpga_version>
+    cd /opt/intel/oclfpgaemu_<fpga_version>
+    tar zxvf fpgaemu_<fpga_version>.tar.gz
+    # Extract OpenCL CPU RT
     mkdir -p /opt/intel/oclcpuexp_<cpu_version>
     cd /opt/intel/oclcpuexp_<cpu_version>
     tar -zxvf oclcpu_rt_<cpu_version>.tar.gz
     ```
 
-2) Create ICD file pointing to the new runtime
+2) Create ICD file pointing to the new runtime (requires root access)
 
     ```bash
+    # OpenCL FPGA emulation RT
+    echo  /opt/intel/oclfpgaemu_<fpga_version>/x64/libintelocl_emu.so >
+      /etc/OpenCL/vendors/intel_fpgaemu.icd
+    # OpenCL CPU RT
     echo /opt/intel/oclcpuexp_<cpu_version>/x64/libintelocl.so >
       /etc/OpenCL/vendors/intel_expcpu.icd
     ```
@@ -208,6 +213,16 @@ CL_CONFIG_DEVICES = fpga-emu
 folder:
 
     ```bash
+    # OpenCL FPGA emulation RT
+    ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbb.so
+      /opt/intel/oclfpgaemu_<fpga_version>/x64
+    ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbbmalloc.so
+      /opt/intel/oclfpgaemu_<fpga_version>/x64
+    ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbb.so.2
+      /opt/intel/oclfpgaemu_<fpga_version>/x64
+    ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbbmalloc.so.2
+      /opt/intel/oclfpgaemu_<fpga_version>/x64
+    # OpenCL CPU RT
     ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbb.so
       /opt/intel/oclcpuexp_<cpu_version>/x64
     ln -s /opt/intel/tbb_<tbb_version>/tbb/lib/intel64/gcc4.8/libtbbmalloc.so
@@ -218,10 +233,12 @@ folder:
       /opt/intel/oclcpuexp_<cpu_version>/x64
     ```
 
-5) Configure library paths
+5) Configure library paths (requires root access)
 
     ```bash
-    echo /opt/intel/oclcpuexp_<cpu_version>/x64 >
+    echo /opt/intel/oclfpgaemu_<fpga_version>/x64 >
+      /etc/ld.so.conf.d/libintelopenclexp.conf
+    echo /opt/intel/oclcpuexp_<cpu_version>/x64 >>
       /etc/ld.so.conf.d/libintelopenclexp.conf
     ldconfig -f /etc/ld.so.conf.d/libintelopenclexp.conf
     ```
@@ -234,7 +251,8 @@ OpenCL runtime for Intel `GPU` installer may re-write some important
 files or settings and make existing OpenCL runtime for Intel `CPU` runtime
 not working properly.
 
-2) Extract the archive with OpenCL runtime for Intel `CPU` using links in
+2) Extract the archive with OpenCL runtime for Intel `CPU` and/or for Intel
+`FPGA` emulation using links in
 [the dependency configuration file](../../buildbot/dependency.conf).  For
 example, to `c:\oclcpu_rt_<cpu_version>`.
 
@@ -252,6 +270,11 @@ extracted files are in `c:\oclcpu_rt_<cpu_version>\` folder, then type the
 command:
 
     ```bash
+    # Install OpenCL FPGA emulation RT
+    # Answer N to clean previous OCL_ICD_FILENAMES configuration
+    c:\oclfpga_rt_<fpga_version>\install.bat c:\tbb_<tbb_version>\tbb\bin\intel64\vc14
+    # Install OpenCL CPU RT
+    # Answer Y to setup CPU RT side-bi-side with FPGA RT
     c:\oclcpu_rt_<cpu_version>\install.bat c:\tbb_<tbb_version>\tbb\bin\intel64\vc14
     ```
 
@@ -509,11 +532,10 @@ class CUDASelector : public cl::sycl::device_selector {
   public:
     int operator()(const cl::sycl::device &Device) const override {
       using namespace cl::sycl::info;
+      const std::string DriverVersion = Device.get_info<device::driver_version>();
 
-      const std::string DeviceName = Device.get_info<device::name>();
-      const std::string DeviceVendor = Device.get_info<device::vendor>();
-
-      if (Device.is_gpu() && (DeviceName.find("NVIDIA") != std::string::npos)) {
+      if (Device.is_gpu() && (DriverVersion.find("CUDA") != std::string::npos)) {
+        std::cout << " CUDA device found " << std::endl;
         return 1;
       };
       return -1;
@@ -551,5 +573,7 @@ class CUDASelector : public cl::sycl::device_selector {
 [https://spec.oneapi.com/versions/latest/elements/dpcpp/source/index.html](https://spec.oneapi.com/versions/latest/elements/dpcpp/source/index.html)
 * SYCL\* 1.2.1 specification:
 [www.khronos.org/registry/SYCL/specs/sycl-1.2.1.pdf](https://www.khronos.org/registry/SYCL/specs/sycl-1.2.1.pdf)
+* oneAPI Level Zero specification:
+[https://spec.oneapi.com/versions/latest/oneL0/index.html](https://spec.oneapi.com/versions/latest/oneL0/index.html)
 
 \*Other names and brands may be claimed as the property of others.

@@ -17,6 +17,7 @@
 #include "clang/AST/DeclOpenMP.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/OpenMPKinds.h"
+#include "clang/Basic/TargetInfo.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -50,6 +51,8 @@ OMPClause::child_range OMPClause::used_children() {
   case OMPC_device_type:
   case OMPC_match:
   case OMPC_unknown:
+    break;
+  default:
     break;
   }
   llvm_unreachable("unknown OMPClause");
@@ -154,6 +157,8 @@ const OMPClauseWithPreInit *OMPClauseWithPreInit::get(const OMPClause *C) {
   case OMPC_uses_allocators:
   case OMPC_affinity:
     break;
+  default:
+    break;
   }
 
   return nullptr;
@@ -245,6 +250,8 @@ const OMPClauseWithPostUpdate *OMPClauseWithPostUpdate::get(const OMPClause *C) 
   case OMPC_exclusive:
   case OMPC_uses_allocators:
   case OMPC_affinity:
+    break;
+  default:
     break;
   }
 
@@ -709,15 +716,43 @@ void OMPReductionClause::setReductionOps(ArrayRef<Expr *> ReductionOps) {
   std::copy(ReductionOps.begin(), ReductionOps.end(), getRHSExprs().end());
 }
 
+void OMPReductionClause::setInscanCopyOps(ArrayRef<Expr *> Ops) {
+  assert(Modifier == OMPC_REDUCTION_inscan && "Expected inscan reduction.");
+  assert(Ops.size() == varlist_size() && "Number of copy "
+                                         "expressions is not the same "
+                                         "as the preallocated buffer");
+  llvm::copy(Ops, getReductionOps().end());
+}
+
+void OMPReductionClause::setInscanCopyArrayTemps(
+    ArrayRef<Expr *> CopyArrayTemps) {
+  assert(Modifier == OMPC_REDUCTION_inscan && "Expected inscan reduction.");
+  assert(CopyArrayTemps.size() == varlist_size() &&
+         "Number of copy temp expressions is not the same as the preallocated "
+         "buffer");
+  llvm::copy(CopyArrayTemps, getInscanCopyOps().end());
+}
+
+void OMPReductionClause::setInscanCopyArrayElems(
+    ArrayRef<Expr *> CopyArrayElems) {
+  assert(Modifier == OMPC_REDUCTION_inscan && "Expected inscan reduction.");
+  assert(CopyArrayElems.size() == varlist_size() &&
+         "Number of copy temp expressions is not the same as the preallocated "
+         "buffer");
+  llvm::copy(CopyArrayElems, getInscanCopyArrayTemps().end());
+}
+
 OMPReductionClause *OMPReductionClause::Create(
     const ASTContext &C, SourceLocation StartLoc, SourceLocation LParenLoc,
     SourceLocation ModifierLoc, SourceLocation EndLoc, SourceLocation ColonLoc,
     OpenMPReductionClauseModifier Modifier, ArrayRef<Expr *> VL,
     NestedNameSpecifierLoc QualifierLoc, const DeclarationNameInfo &NameInfo,
     ArrayRef<Expr *> Privates, ArrayRef<Expr *> LHSExprs,
-    ArrayRef<Expr *> RHSExprs, ArrayRef<Expr *> ReductionOps, Stmt *PreInit,
-    Expr *PostUpdate) {
-  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(5 * VL.size()));
+    ArrayRef<Expr *> RHSExprs, ArrayRef<Expr *> ReductionOps,
+    ArrayRef<Expr *> CopyOps, ArrayRef<Expr *> CopyArrayTemps,
+    ArrayRef<Expr *> CopyArrayElems, Stmt *PreInit, Expr *PostUpdate) {
+  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(
+      (Modifier == OMPC_REDUCTION_inscan ? 8 : 5) * VL.size()));
   auto *Clause = new (Mem)
       OMPReductionClause(StartLoc, LParenLoc, ModifierLoc, EndLoc, ColonLoc,
                          Modifier, VL.size(), QualifierLoc, NameInfo);
@@ -728,13 +763,29 @@ OMPReductionClause *OMPReductionClause::Create(
   Clause->setReductionOps(ReductionOps);
   Clause->setPreInitStmt(PreInit);
   Clause->setPostUpdateExpr(PostUpdate);
+  if (Modifier == OMPC_REDUCTION_inscan) {
+    Clause->setInscanCopyOps(CopyOps);
+    Clause->setInscanCopyArrayTemps(CopyArrayTemps);
+    Clause->setInscanCopyArrayElems(CopyArrayElems);
+  } else {
+    assert(CopyOps.empty() &&
+           "copy operations are expected in inscan reductions only.");
+    assert(CopyArrayTemps.empty() &&
+           "copy array temps are expected in inscan reductions only.");
+    assert(CopyArrayElems.empty() &&
+           "copy array temps are expected in inscan reductions only.");
+  }
   return Clause;
 }
 
-OMPReductionClause *OMPReductionClause::CreateEmpty(const ASTContext &C,
-                                                    unsigned N) {
-  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(5 * N));
-  return new (Mem) OMPReductionClause(N);
+OMPReductionClause *
+OMPReductionClause::CreateEmpty(const ASTContext &C, unsigned N,
+                                OpenMPReductionClauseModifier Modifier) {
+  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(
+      (Modifier == OMPC_REDUCTION_inscan ? 8 : 5) * N));
+  auto *Clause = new (Mem) OMPReductionClause(N);
+  Clause->setModifier(Modifier);
+  return Clause;
 }
 
 void OMPTaskReductionClause::setPrivates(ArrayRef<Expr *> Privates) {
@@ -1047,6 +1098,8 @@ OMPToClause *OMPToClause::Create(
     const ASTContext &C, const OMPVarListLocTy &Locs, ArrayRef<Expr *> Vars,
     ArrayRef<ValueDecl *> Declarations,
     MappableExprComponentListsRef ComponentLists, ArrayRef<Expr *> UDMapperRefs,
+    ArrayRef<OpenMPMotionModifierKind> MotionModifiers,
+    ArrayRef<SourceLocation> MotionModifiersLoc,
     NestedNameSpecifierLoc UDMQualifierLoc, DeclarationNameInfo MapperId) {
   OMPMappableExprListSizeTy Sizes;
   Sizes.NumVars = Vars.size();
@@ -1071,7 +1124,8 @@ OMPToClause *OMPToClause::Create(
           Sizes.NumUniqueDeclarations + Sizes.NumComponentLists,
           Sizes.NumComponents));
 
-  auto *Clause = new (Mem) OMPToClause(UDMQualifierLoc, MapperId, Locs, Sizes);
+  auto *Clause = new (Mem) OMPToClause(MotionModifiers, MotionModifiersLoc,
+                                       UDMQualifierLoc, MapperId, Locs, Sizes);
 
   Clause->setVarRefs(Vars);
   Clause->setUDMapperRefs(UDMapperRefs);
@@ -1094,6 +1148,8 @@ OMPFromClause *OMPFromClause::Create(
     const ASTContext &C, const OMPVarListLocTy &Locs, ArrayRef<Expr *> Vars,
     ArrayRef<ValueDecl *> Declarations,
     MappableExprComponentListsRef ComponentLists, ArrayRef<Expr *> UDMapperRefs,
+    ArrayRef<OpenMPMotionModifierKind> MotionModifiers,
+    ArrayRef<SourceLocation> MotionModifiersLoc,
     NestedNameSpecifierLoc UDMQualifierLoc, DeclarationNameInfo MapperId) {
   OMPMappableExprListSizeTy Sizes;
   Sizes.NumVars = Vars.size();
@@ -1119,7 +1175,8 @@ OMPFromClause *OMPFromClause::Create(
           Sizes.NumComponents));
 
   auto *Clause =
-      new (Mem) OMPFromClause(UDMQualifierLoc, MapperId, Locs, Sizes);
+      new (Mem) OMPFromClause(MotionModifiers, MotionModifiersLoc,
+                              UDMQualifierLoc, MapperId, Locs, Sizes);
 
   Clause->setVarRefs(Vars);
   Clause->setUDMapperRefs(UDMapperRefs);
@@ -1163,8 +1220,8 @@ OMPUseDevicePtrClause *OMPUseDevicePtrClause::Create(
   Sizes.NumComponents = getComponentsTotalNumber(ComponentLists);
 
   // We need to allocate:
-  // 3 x NumVars x Expr* - we have an original list expression for each clause
-  // list entry and an equal number of private copies and inits.
+  // NumVars x Expr* - we have an original list expression for each clause
+  // list entry.
   // NumUniqueDeclarations x ValueDecl* - unique base declarations associated
   // with each component list.
   // (NumUniqueDeclarations + NumComponentLists) x unsigned - we specify the
@@ -1886,6 +1943,17 @@ void OMPClausePrinter::VisitOMPDependClause(OMPDependClause *Node) {
   OS << ")";
 }
 
+template <typename T>
+static void PrintMapper(raw_ostream &OS, T *Node,
+                        const PrintingPolicy &Policy) {
+  OS << '(';
+  NestedNameSpecifier *MapperNNS =
+      Node->getMapperQualifierLoc().getNestedNameSpecifier();
+  if (MapperNNS)
+    MapperNNS->print(OS, Policy);
+  OS << Node->getMapperIdInfo() << ')';
+}
+
 void OMPClausePrinter::VisitOMPMapClause(OMPMapClause *Node) {
   if (!Node->varlist_empty()) {
     OS << "map(";
@@ -1894,14 +1962,8 @@ void OMPClausePrinter::VisitOMPMapClause(OMPMapClause *Node) {
         if (Node->getMapTypeModifier(I) != OMPC_MAP_MODIFIER_unknown) {
           OS << getOpenMPSimpleClauseTypeName(OMPC_map,
                                               Node->getMapTypeModifier(I));
-          if (Node->getMapTypeModifier(I) == OMPC_MAP_MODIFIER_mapper) {
-            OS << '(';
-            NestedNameSpecifier *MapperNNS =
-                Node->getMapperQualifierLoc().getNestedNameSpecifier();
-            if (MapperNNS)
-              MapperNNS->print(OS, Policy);
-            OS << Node->getMapperIdInfo() << ')';
-          }
+          if (Node->getMapTypeModifier(I) == OMPC_MAP_MODIFIER_mapper)
+            PrintMapper(OS, Node, Policy);
           OS << ',';
         }
       }
@@ -1913,44 +1975,41 @@ void OMPClausePrinter::VisitOMPMapClause(OMPMapClause *Node) {
   }
 }
 
-void OMPClausePrinter::VisitOMPToClause(OMPToClause *Node) {
-  if (!Node->varlist_empty()) {
-    OS << "to";
-    DeclarationNameInfo MapperId = Node->getMapperIdInfo();
-    if (MapperId.getName() && !MapperId.getName().isEmpty()) {
-      OS << '(';
-      OS << "mapper(";
-      NestedNameSpecifier *MapperNNS =
-          Node->getMapperQualifierLoc().getNestedNameSpecifier();
-      if (MapperNNS)
-        MapperNNS->print(OS, Policy);
-      OS << MapperId << "):";
-      VisitOMPClauseList(Node, ' ');
-    } else {
-      VisitOMPClauseList(Node, '(');
-    }
-    OS << ")";
+template <typename T> void OMPClausePrinter::VisitOMPMotionClause(T *Node) {
+  if (Node->varlist_empty())
+    return;
+  OS << getOpenMPClauseName(Node->getClauseKind());
+  unsigned ModifierCount = 0;
+  for (unsigned I = 0; I < NumberOfOMPMotionModifiers; ++I) {
+    if (Node->getMotionModifier(I) != OMPC_MOTION_MODIFIER_unknown)
+      ++ModifierCount;
   }
+  if (ModifierCount) {
+    OS << '(';
+    for (unsigned I = 0; I < NumberOfOMPMotionModifiers; ++I) {
+      if (Node->getMotionModifier(I) != OMPC_MOTION_MODIFIER_unknown) {
+        OS << getOpenMPSimpleClauseTypeName(Node->getClauseKind(),
+                                            Node->getMotionModifier(I));
+        if (Node->getMotionModifier(I) == OMPC_MOTION_MODIFIER_mapper)
+          PrintMapper(OS, Node, Policy);
+        if (I < ModifierCount - 1)
+          OS << ", ";
+      }
+    }
+    OS << ':';
+    VisitOMPClauseList(Node, ' ');
+  } else {
+    VisitOMPClauseList(Node, '(');
+  }
+  OS << ")";
+}
+
+void OMPClausePrinter::VisitOMPToClause(OMPToClause *Node) {
+  VisitOMPMotionClause(Node);
 }
 
 void OMPClausePrinter::VisitOMPFromClause(OMPFromClause *Node) {
-  if (!Node->varlist_empty()) {
-    OS << "from";
-    DeclarationNameInfo MapperId = Node->getMapperIdInfo();
-    if (MapperId.getName() && !MapperId.getName().isEmpty()) {
-      OS << '(';
-      OS << "mapper(";
-      NestedNameSpecifier *MapperNNS =
-          Node->getMapperQualifierLoc().getNestedNameSpecifier();
-      if (MapperNNS)
-        MapperNNS->print(OS, Policy);
-      OS << MapperId << "):";
-      VisitOMPClauseList(Node, ' ');
-    } else {
-      VisitOMPClauseList(Node, '(');
-    }
-    OS << ")";
-  }
+  VisitOMPMotionClause(Node);
 }
 
 void OMPClausePrinter::VisitOMPDistScheduleClause(OMPDistScheduleClause *Node) {
@@ -2077,27 +2136,29 @@ void OMPTraitInfo::getAsVariantMatchInfo(ASTContext &ASTCtx,
                    TraitProperty::user_condition_unknown &&
                "Ill-formed user condition, expected unknown trait property!");
 
-        llvm::APSInt CondVal;
-        if (Selector.ScoreOrCondition->isIntegerConstantExpr(CondVal, ASTCtx))
-          VMI.addTrait(CondVal.isNullValue()
-                          ? TraitProperty::user_condition_false
-                          : TraitProperty::user_condition_true);
+        if (Optional<APSInt> CondVal =
+                Selector.ScoreOrCondition->getIntegerConstantExpr(ASTCtx))
+          VMI.addTrait(CondVal->isNullValue()
+                           ? TraitProperty::user_condition_false
+                           : TraitProperty::user_condition_true,
+                       "<condition>");
         else
-          VMI.addTrait(TraitProperty::user_condition_false);
+          VMI.addTrait(TraitProperty::user_condition_false, "<condition>");
         continue;
       }
 
-      llvm::APSInt Score;
+      Optional<llvm::APSInt> Score;
       llvm::APInt *ScorePtr = nullptr;
       if (Selector.ScoreOrCondition) {
-        if (Selector.ScoreOrCondition->isIntegerConstantExpr(Score, ASTCtx))
-          ScorePtr = &Score;
+        if ((Score = Selector.ScoreOrCondition->getIntegerConstantExpr(ASTCtx)))
+          ScorePtr = &*Score;
         else
-          VMI.addTrait(TraitProperty::user_condition_false);
+          VMI.addTrait(TraitProperty::user_condition_false,
+                       "<non-constant-score>");
       }
 
       for (const OMPTraitProperty &Property : Selector.Properties)
-        VMI.addTrait(Set.Kind, Property.Kind, ScorePtr);
+        VMI.addTrait(Set.Kind, Property.Kind, Property.RawString, ScorePtr);
 
       if (Set.Kind != TraitSet::construct)
         continue;
@@ -2140,7 +2201,10 @@ void OMPTraitInfo::print(llvm::raw_ostream &OS,
 
       OS << "(";
       if (Selector.Kind == TraitSelector::user_condition) {
-        Selector.ScoreOrCondition->printPretty(OS, nullptr, Policy);
+        if (Selector.ScoreOrCondition)
+          Selector.ScoreOrCondition->printPretty(OS, nullptr, Policy);
+        else
+          OS << "...";
       } else {
 
         if (Selector.ScoreOrCondition) {
@@ -2154,7 +2218,8 @@ void OMPTraitInfo::print(llvm::raw_ostream &OS,
           if (!FirstProperty)
             OS << ", ";
           FirstProperty = false;
-          OS << getOpenMPContextTraitPropertyName(Property.Kind);
+          OS << getOpenMPContextTraitPropertyName(Property.Kind,
+                                                  Property.RawString);
         }
       }
       OS << ")";
@@ -2167,22 +2232,23 @@ std::string OMPTraitInfo::getMangledName() const {
   std::string MangledName;
   llvm::raw_string_ostream OS(MangledName);
   for (const OMPTraitSet &Set : Sets) {
-    OS << '.' << 'S' << unsigned(Set.Kind);
+    OS << '$' << 'S' << unsigned(Set.Kind);
     for (const OMPTraitSelector &Selector : Set.Selectors) {
 
       bool AllowsTraitScore = false;
       bool RequiresProperty = false;
       isValidTraitSelectorForTraitSet(
           Selector.Kind, Set.Kind, AllowsTraitScore, RequiresProperty);
-      OS << '.' << 's' << unsigned(Selector.Kind);
+      OS << '$' << 's' << unsigned(Selector.Kind);
 
       if (!RequiresProperty ||
           Selector.Kind == TraitSelector::user_condition)
         continue;
 
       for (const OMPTraitProperty &Property : Selector.Properties)
-        OS << '.' << 'P'
-           << getOpenMPContextTraitPropertyName(Property.Kind);
+        OS << '$' << 'P'
+           << getOpenMPContextTraitPropertyName(Property.Kind,
+                                                Property.RawString);
     }
   }
   return OS.str();
@@ -2191,7 +2257,7 @@ std::string OMPTraitInfo::getMangledName() const {
 OMPTraitInfo::OMPTraitInfo(StringRef MangledName) {
   unsigned long U;
   do {
-    if (!MangledName.consume_front(".S"))
+    if (!MangledName.consume_front("$S"))
       break;
     if (MangledName.consumeInteger(10, U))
       break;
@@ -2199,7 +2265,7 @@ OMPTraitInfo::OMPTraitInfo(StringRef MangledName) {
     OMPTraitSet &Set = Sets.back();
     Set.Kind = TraitSet(U);
     do {
-      if (!MangledName.consume_front(".s"))
+      if (!MangledName.consume_front("$s"))
         break;
       if (MangledName.consumeInteger(10, U))
         break;
@@ -2207,14 +2273,15 @@ OMPTraitInfo::OMPTraitInfo(StringRef MangledName) {
       OMPTraitSelector &Selector = Set.Selectors.back();
       Selector.Kind = TraitSelector(U);
       do {
-        if (!MangledName.consume_front(".P"))
+        if (!MangledName.consume_front("$P"))
           break;
         Selector.Properties.push_back(OMPTraitProperty());
         OMPTraitProperty &Property = Selector.Properties.back();
-        std::pair<StringRef, StringRef> PropRestPair = MangledName.split('.');
-        Property.Kind =
-            getOpenMPContextTraitPropertyKind(Set.Kind, PropRestPair.first);
-        MangledName = PropRestPair.second;
+        std::pair<StringRef, StringRef> PropRestPair = MangledName.split('$');
+        Property.RawString = PropRestPair.first;
+        Property.Kind = getOpenMPContextTraitPropertyKind(
+            Set.Kind, Selector.Kind, PropRestPair.first);
+        MangledName = MangledName.drop_front(PropRestPair.first.size());
       } while (true);
     } while (true);
   } while (true);
@@ -2230,4 +2297,25 @@ llvm::raw_ostream &clang::operator<<(llvm::raw_ostream &OS,
 llvm::raw_ostream &clang::operator<<(llvm::raw_ostream &OS,
                                      const OMPTraitInfo *TI) {
   return TI ? OS << *TI : OS;
+}
+
+TargetOMPContext::TargetOMPContext(
+    ASTContext &ASTCtx, std::function<void(StringRef)> &&DiagUnknownTrait,
+    const FunctionDecl *CurrentFunctionDecl)
+    : OMPContext(ASTCtx.getLangOpts().OpenMPIsDevice,
+                 ASTCtx.getTargetInfo().getTriple()),
+      FeatureValidityCheck([&](StringRef FeatureName) {
+        return ASTCtx.getTargetInfo().isValidFeatureName(FeatureName);
+      }),
+      DiagUnknownTrait(std::move(DiagUnknownTrait)) {
+  ASTCtx.getFunctionFeatureMap(FeatureMap, CurrentFunctionDecl);
+}
+
+bool TargetOMPContext::matchesISATrait(StringRef RawString) const {
+  auto It = FeatureMap.find(RawString);
+  if (It != FeatureMap.end())
+    return It->second;
+  if (!FeatureValidityCheck(RawString))
+    DiagUnknownTrait(RawString);
+  return false;
 }

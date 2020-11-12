@@ -10,9 +10,11 @@ unittest("ObjectTests") {
     "ArchiveTest.cpp",
     "ELFObjectFileTest.cpp",
     "ELFTest.cpp",
+    "ELFTypesTest.cpp",
     "MinidumpTest.cpp",
     "ObjectFileTest.cpp",
     "SymbolSizeTest.cpp",
     "SymbolicFileTest.cpp",
+    "XCOFFObjectFileTest.cpp",
   ]
 }

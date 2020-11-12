@@ -266,10 +266,16 @@ public:
 
   void AddCXXDefinitionData(const CXXRecordDecl *D);
 
+  /// Emit information about the initializer of a VarDecl.
+  void AddVarDeclInit(const VarDecl *VD);
+
   /// Write an OMPTraitInfo object.
   void writeOMPTraitInfo(const OMPTraitInfo *TI);
 
   void writeOMPClause(OMPClause *C);
+
+  /// Writes data related to the OpenMP directives.
+  void writeOMPChildren(OMPChildren *Data);
 
   /// Emit a string.
   void AddString(StringRef Str) {

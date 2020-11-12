@@ -40,8 +40,6 @@
 namespace llvm {
 
 class Argument;
-class CCState;
-class CCValAssign;
 class FastISel;
 class FunctionLoweringInfo;
 class MachineBasicBlock;
@@ -346,7 +344,7 @@ class TargetRegisterClass;
     void AdjustInstrPostInstrSelection(MachineInstr &MI,
                                        SDNode *Node) const override;
 
-    void HandleByVal(CCState *, unsigned &, unsigned) const override;
+    void HandleByVal(CCState *, unsigned &, Align) const override;
 
     Register getRegisterByName(const char* RegName, LLT VT,
                                const MachineFunction &MF) const override;
@@ -363,14 +361,6 @@ class TargetRegisterClass;
     Register
     getExceptionSelectorRegister(const Constant *PersonalityFn) const override {
       return ABI.IsN64() ? Mips::A1_64 : Mips::A1;
-    }
-
-    /// Returns true if a cast between SrcAS and DestAS is a noop.
-    bool isNoopAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const override {
-      // Mips doesn't have any special address spaces so we just reserve
-      // the first 256 for software use (e.g. OpenCL) and treat casts
-      // between them as noops.
-      return SrcAS < 256 && DestAS < 256;
     }
 
     bool isJumpTableRelative() const override {

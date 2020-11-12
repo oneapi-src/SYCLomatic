@@ -2238,3 +2238,18 @@ std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
   auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
   return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }
+
+bool isLexicallyInLocalScope(const clang::Decl *D) {
+  const DeclContext *LDC = D->getLexicalDeclContext();
+  while (true) {
+    if (LDC->isFunctionOrMethod())
+      return true;
+    if (!isa<TagDecl>(LDC))
+      return false;
+    if (const auto *CRD = dyn_cast<CXXRecordDecl>(LDC))
+      if (CRD->isLambda())
+        return true;
+    LDC = LDC->getLexicalParent();
+  }
+  return false;
+}

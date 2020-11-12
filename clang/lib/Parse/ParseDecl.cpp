@@ -23,6 +23,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/ParsedTemplate.h"
 #include "clang/Sema/Scope.h"
+#include "clang/Sema/SemaDiagnostic.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallString.h"
@@ -452,6 +453,10 @@ void Parser::ParseGNUAttributeArgs(IdentifierInfo *AttrName,
     ParseObjCBridgeRelatedAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc,
                                     ScopeName, ScopeLoc, Syntax);
     return;
+  } else if (AttrKind == ParsedAttr::AT_SwiftNewType) {
+    ParseSwiftNewTypeAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc, ScopeName,
+                               ScopeLoc, Syntax);
+    return;
   } else if (AttrKind == ParsedAttr::AT_TypeTagForDatatype) {
     ParseTypeTagForDatatypeAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc,
                                      ScopeName, ScopeLoc, Syntax);
@@ -505,6 +510,10 @@ unsigned Parser::ParseClangAttributeArgs(
   case ParsedAttr::AT_ObjCBridgeRelated:
     ParseObjCBridgeRelatedAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc,
                                     ScopeName, ScopeLoc, Syntax);
+    break;
+  case ParsedAttr::AT_SwiftNewType:
+    ParseSwiftNewTypeAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc, ScopeName,
+                               ScopeLoc, Syntax);
     break;
   case ParsedAttr::AT_TypeTagForDatatype:
     ParseTypeTagForDatatypeAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc,
@@ -1409,153 +1418,48 @@ void Parser::ParseObjCBridgeRelatedAttribute(IdentifierInfo &ObjCBridgeRelated,
                Syntax);
 }
 
-// Late Parsed Attributes:
-// See other examples of late parsing in lib/Parse/ParseCXXInlineMethods
 
-void Parser::LateParsedDeclaration::ParseLexedAttributes() {}
+void Parser::ParseSwiftNewTypeAttribute(
+    IdentifierInfo &AttrName, SourceLocation AttrNameLoc,
+    ParsedAttributes &Attrs, SourceLocation *EndLoc, IdentifierInfo *ScopeName,
+    SourceLocation ScopeLoc, ParsedAttr::Syntax Syntax) {
+  BalancedDelimiterTracker T(*this, tok::l_paren);
 
-void Parser::LateParsedClass::ParseLexedAttributes() {
-  Self->ParseLexedAttributes(*Class);
-}
-
-void Parser::LateParsedAttribute::ParseLexedAttributes() {
-  Self->ParseLexedAttribute(*this, true, false);
-}
-
-/// Wrapper class which calls ParseLexedAttribute, after setting up the
-/// scope appropriately.
-void Parser::ParseLexedAttributes(ParsingClass &Class) {
-  // Deal with templates
-  // FIXME: Test cases to make sure this does the right thing for templates.
-  bool HasTemplateScope = !Class.TopLevelClass && Class.TemplateScope;
-  ParseScope ClassTemplateScope(this, Scope::TemplateParamScope,
-                                HasTemplateScope);
-  if (HasTemplateScope)
-    Actions.ActOnReenterTemplateScope(getCurScope(), Class.TagOrTemplate);
-
-  // Set or update the scope flags.
-  bool AlreadyHasClassScope = Class.TopLevelClass;
-  unsigned ScopeFlags = Scope::ClassScope|Scope::DeclScope;
-  ParseScope ClassScope(this, ScopeFlags, !AlreadyHasClassScope);
-  ParseScopeFlags ClassScopeFlags(this, ScopeFlags, AlreadyHasClassScope);
-
-  // Enter the scope of nested classes
-  if (!AlreadyHasClassScope)
-    Actions.ActOnStartDelayedMemberDeclarations(getCurScope(),
-                                                Class.TagOrTemplate);
-  if (!Class.LateParsedDeclarations.empty()) {
-    for (unsigned i = 0, ni = Class.LateParsedDeclarations.size(); i < ni; ++i){
-      Class.LateParsedDeclarations[i]->ParseLexedAttributes();
-    }
+  // Opening '('
+  if (T.consumeOpen()) {
+    Diag(Tok, diag::err_expected) << tok::l_paren;
+    return;
   }
 
-  if (!AlreadyHasClassScope)
-    Actions.ActOnFinishDelayedMemberDeclarations(getCurScope(),
-                                                 Class.TagOrTemplate);
-}
-
-/// Parse all attributes in LAs, and attach them to Decl D.
-void Parser::ParseLexedAttributeList(LateParsedAttrList &LAs, Decl *D,
-                                     bool EnterScope, bool OnDefinition) {
-  assert(LAs.parseSoon() &&
-         "Attribute list should be marked for immediate parsing.");
-  for (unsigned i = 0, ni = LAs.size(); i < ni; ++i) {
-    if (D)
-      LAs[i]->addDecl(D);
-    ParseLexedAttribute(*LAs[i], EnterScope, OnDefinition);
-    delete LAs[i];
+  if (Tok.is(tok::r_paren)) {
+    Diag(Tok.getLocation(), diag::err_argument_required_after_attribute);
+    T.consumeClose();
+    return;
   }
-  LAs.clear();
-}
-
-/// Finish parsing an attribute for which parsing was delayed.
-/// This will be called at the end of parsing a class declaration
-/// for each LateParsedAttribute. We consume the saved tokens and
-/// create an attribute with the arguments filled in. We add this
-/// to the Attribute list for the decl.
-void Parser::ParseLexedAttribute(LateParsedAttribute &LA,
-                                 bool EnterScope, bool OnDefinition) {
-  // Create a fake EOF so that attribute parsing won't go off the end of the
-  // attribute.
-  Token AttrEnd;
-  AttrEnd.startToken();
-  AttrEnd.setKind(tok::eof);
-  AttrEnd.setLocation(Tok.getLocation());
-  AttrEnd.setEofData(LA.Toks.data());
-  LA.Toks.push_back(AttrEnd);
-
-  // Append the current token at the end of the new token stream so that it
-  // doesn't get lost.
-  LA.Toks.push_back(Tok);
-  PP.EnterTokenStream(LA.Toks, true, /*IsReinject=*/true);
-  // Consume the previously pushed token.
-  ConsumeAnyToken(/*ConsumeCodeCompletionTok=*/true);
-
-  ParsedAttributes Attrs(AttrFactory);
-  SourceLocation endLoc;
-
-  if (LA.Decls.size() > 0) {
-    Decl *D = LA.Decls[0];
-    NamedDecl *ND  = dyn_cast<NamedDecl>(D);
-    RecordDecl *RD = dyn_cast_or_null<RecordDecl>(D->getDeclContext());
-
-    // Allow 'this' within late-parsed attributes.
-    Sema::CXXThisScopeRAII ThisScope(Actions, RD, Qualifiers(),
-                                     ND && ND->isCXXInstanceMember());
-
-    if (LA.Decls.size() == 1) {
-      // If the Decl is templatized, add template parameters to scope.
-      bool HasTemplateScope = EnterScope && D->isTemplateDecl();
-      ParseScope TempScope(this, Scope::TemplateParamScope, HasTemplateScope);
-      if (HasTemplateScope)
-        Actions.ActOnReenterTemplateScope(Actions.CurScope, D);
-
-      // If the Decl is on a function, add function parameters to the scope.
-      bool HasFunScope = EnterScope && D->isFunctionOrFunctionTemplate();
-      ParseScope FnScope(
-          this, Scope::FnScope | Scope::DeclScope | Scope::CompoundStmtScope,
-          HasFunScope);
-      if (HasFunScope)
-        Actions.ActOnReenterFunctionContext(Actions.CurScope, D);
-
-      ParseGNUAttributeArgs(&LA.AttrName, LA.AttrNameLoc, Attrs, &endLoc,
-                            nullptr, SourceLocation(), ParsedAttr::AS_GNU,
-                            nullptr);
-
-      if (HasFunScope) {
-        Actions.ActOnExitFunctionContext();
-        FnScope.Exit();  // Pop scope, and remove Decls from IdResolver
-      }
-      if (HasTemplateScope) {
-        TempScope.Exit();
-      }
-    } else {
-      // If there are multiple decls, then the decl cannot be within the
-      // function scope.
-      ParseGNUAttributeArgs(&LA.AttrName, LA.AttrNameLoc, Attrs, &endLoc,
-                            nullptr, SourceLocation(), ParsedAttr::AS_GNU,
-                            nullptr);
-    }
-  } else {
-    Diag(Tok, diag::warn_attribute_no_decl) << LA.AttrName.getName();
+  if (Tok.isNot(tok::kw_struct) && Tok.isNot(tok::kw_enum)) {
+    Diag(Tok, diag::warn_attribute_type_not_supported)
+        << &AttrName << Tok.getIdentifierInfo();
+    if (!isTokenSpecial())
+      ConsumeToken();
+    T.consumeClose();
+    return;
   }
 
-  if (OnDefinition && !Attrs.empty() && !Attrs.begin()->isCXX11Attribute() &&
-      Attrs.begin()->isKnownToGCC())
-    Diag(Tok, diag::warn_attribute_on_function_definition)
-      << &LA.AttrName;
+  auto *SwiftType = IdentifierLoc::create(Actions.Context, Tok.getLocation(),
+                                          Tok.getIdentifierInfo());
+  ConsumeToken();
 
-  for (unsigned i = 0, ni = LA.Decls.size(); i < ni; ++i)
-    Actions.ActOnFinishDelayedAttribute(getCurScope(), LA.Decls[i], Attrs);
+  // Closing ')'
+  if (T.consumeClose())
+    return;
+  if (EndLoc)
+    *EndLoc = T.getCloseLocation();
 
-  // Due to a parsing error, we either went over the cached tokens or
-  // there are still cached tokens left, so we skip the leftover tokens.
-  while (Tok.isNot(tok::eof))
-    ConsumeAnyToken();
-
-  if (Tok.is(tok::eof) && Tok.getEofData() == AttrEnd.getEofData())
-    ConsumeAnyToken();
+  ArgsUnion Args[] = {SwiftType};
+  Attrs.addNew(&AttrName, SourceRange(AttrNameLoc, T.getCloseLocation()),
+               ScopeName, ScopeLoc, Args, llvm::array_lengthof(Args), Syntax);
 }
+
 
 void Parser::ParseTypeTagForDatatypeAttribute(IdentifierInfo &AttrName,
                                               SourceLocation AttrNameLoc,
@@ -2046,46 +1950,52 @@ Parser::DeclGroupPtrTy Parser::ParseDeclGroup(ParsingDeclSpec &DS,
   }
 
   // Check to see if we have a function *definition* which must have a body.
-  if (D.isFunctionDeclarator() &&
-      // Look at the next token to make sure that this isn't a function
-      // declaration.  We have to check this because __attribute__ might be the
-      // start of a function definition in GCC-extended K&R C.
-      !isDeclarationAfterDeclarator()) {
+  if (D.isFunctionDeclarator()) {
+    if (Tok.is(tok::equal) && NextToken().is(tok::code_completion)) {
+      Actions.CodeCompleteAfterFunctionEquals(D);
+      cutOffParsing();
+      return nullptr;
+    }
+    // Look at the next token to make sure that this isn't a function
+    // declaration.  We have to check this because __attribute__ might be the
+    // start of a function definition in GCC-extended K&R C.
+    if (!isDeclarationAfterDeclarator()) {
 
-    // Function definitions are only allowed at file scope and in C++ classes.
-    // The C++ inline method definition case is handled elsewhere, so we only
-    // need to handle the file scope definition case.
-    if (Context == DeclaratorContext::FileContext) {
-      if (isStartOfFunctionDefinition(D)) {
-        if (DS.getStorageClassSpec() == DeclSpec::SCS_typedef) {
-          Diag(Tok, diag::err_function_declared_typedef);
+      // Function definitions are only allowed at file scope and in C++ classes.
+      // The C++ inline method definition case is handled elsewhere, so we only
+      // need to handle the file scope definition case.
+      if (Context == DeclaratorContext::FileContext) {
+        if (isStartOfFunctionDefinition(D)) {
+          if (DS.getStorageClassSpec() == DeclSpec::SCS_typedef) {
+            Diag(Tok, diag::err_function_declared_typedef);
 
-          // Recover by treating the 'typedef' as spurious.
-          DS.ClearStorageClassSpecs();
+            // Recover by treating the 'typedef' as spurious.
+            DS.ClearStorageClassSpecs();
+          }
+
+          Decl *TheDecl = ParseFunctionDefinition(D, ParsedTemplateInfo(),
+                                                  &LateParsedAttrs);
+          return Actions.ConvertDeclToDeclGroup(TheDecl);
         }
 
-        Decl *TheDecl =
-          ParseFunctionDefinition(D, ParsedTemplateInfo(), &LateParsedAttrs);
-        return Actions.ConvertDeclToDeclGroup(TheDecl);
-      }
-
-      if (isDeclarationSpecifier()) {
-        // If there is an invalid declaration specifier right after the
-        // function prototype, then we must be in a missing semicolon case
-        // where this isn't actually a body.  Just fall through into the code
-        // that handles it as a prototype, and let the top-level code handle
-        // the erroneous declspec where it would otherwise expect a comma or
-        // semicolon.
+        if (isDeclarationSpecifier()) {
+          // If there is an invalid declaration specifier right after the
+          // function prototype, then we must be in a missing semicolon case
+          // where this isn't actually a body.  Just fall through into the code
+          // that handles it as a prototype, and let the top-level code handle
+          // the erroneous declspec where it would otherwise expect a comma or
+          // semicolon.
+        } else {
+          Diag(Tok, diag::err_expected_fn_body);
+          SkipUntil(tok::semi);
+          return nullptr;
+        }
       } else {
-        Diag(Tok, diag::err_expected_fn_body);
-        SkipUntil(tok::semi);
-        return nullptr;
-      }
-    } else {
-      if (Tok.is(tok::l_brace)) {
-        Diag(Tok, diag::err_function_definition_not_allowed);
-        SkipMalformedDecl();
-        return nullptr;
+        if (Tok.is(tok::l_brace)) {
+          Diag(Tok, diag::err_function_definition_not_allowed);
+          SkipMalformedDecl();
+          return nullptr;
+        }
       }
     }
   }
@@ -2285,6 +2195,7 @@ Decl *Parser::ParseDeclarationAfterDeclaratorAndAttributes(
 
   // Inform the current actions module that we just parsed this declarator.
   Decl *ThisDecl = nullptr;
+  Decl *OuterDecl = nullptr;
   switch (TemplateInfo.Kind) {
   case ParsedTemplateInfo::NonTemplate:
     ThisDecl = Actions.ActOnDeclarator(getCurScope(), D);
@@ -2295,10 +2206,12 @@ Decl *Parser::ParseDeclarationAfterDeclaratorAndAttributes(
     ThisDecl = Actions.ActOnTemplateDeclarator(getCurScope(),
                                                *TemplateInfo.TemplateParams,
                                                D);
-    if (VarTemplateDecl *VT = dyn_cast_or_null<VarTemplateDecl>(ThisDecl))
+    if (VarTemplateDecl *VT = dyn_cast_or_null<VarTemplateDecl>(ThisDecl)) {
       // Re-direct this decl to refer to the templated decl so that we can
       // initialize it.
       ThisDecl = VT->getTemplatedDecl();
+      OuterDecl = VT;
+    }
     break;
   }
   case ParsedTemplateInfo::ExplicitInstantiation: {
@@ -2475,8 +2388,7 @@ Decl *Parser::ParseDeclarationAfterDeclaratorAndAttributes(
   }
 
   Actions.FinalizeDeclaration(ThisDecl);
-
-  return ThisDecl;
+  return OuterDecl ? OuterDecl : ThisDecl;
 }
 
 /// ParseSpecifierQualifierList
@@ -2980,7 +2892,7 @@ Parser::DiagnoseMissingSemiAfterTagDefinition(DeclSpec &DS, AccessSpecifier AS,
       case Sema::NC_Unknown:
       case Sema::NC_NonType:
       case Sema::NC_DependentNonType:
-      case Sema::NC_ContextIndependentExpr:
+      case Sema::NC_OverloadSet:
       case Sema::NC_VarTemplate:
       case Sema::NC_FunctionTemplate:
       case Sema::NC_Concept:
@@ -3843,6 +3755,10 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       isInvalid = DS.SetTypeSpecType(DeclSpec::TST_half, Loc, PrevSpec,
                                      DiagID, Policy);
       break;
+    case tok::kw___bf16:
+      isInvalid = DS.SetTypeSpecType(DeclSpec::TST_BFloat16, Loc, PrevSpec,
+                                     DiagID, Policy);
+      break;
     case tok::kw_float:
       isInvalid = DS.SetTypeSpecType(DeclSpec::TST_float, Loc, PrevSpec,
                                      DiagID, Policy);
@@ -4200,8 +4116,13 @@ void Parser::ParseStructDeclaration(
     DeclaratorInfo.D.setCommaLoc(CommaLoc);
 
     // Attributes are only allowed here on successive declarators.
-    if (!FirstDeclarator)
+    if (!FirstDeclarator) {
+      // However, this does not apply for [[]] attributes (which could show up
+      // before or after the __attribute__ attributes).
+      DiagnoseAndSkipCXX11Attributes();
       MaybeParseGNUAttributes(DeclaratorInfo.D);
+      DiagnoseAndSkipCXX11Attributes();
+    }
 
     /// struct-declarator: declarator
     /// struct-declarator: declarator[opt] ':' constant-expression
@@ -4239,14 +4160,14 @@ void Parser::ParseStructDeclaration(
 ///       struct-contents:
 ///         struct-declaration-list
 /// [EXT]   empty
-/// [GNU]   "struct-declaration-list" without terminatoring ';'
+/// [GNU]   "struct-declaration-list" without terminating ';'
 ///       struct-declaration-list:
 ///         struct-declaration
 ///         struct-declaration-list struct-declaration
 /// [OBC]   '@' 'defs' '(' class-name ')'
 ///
 void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
-                                  DeclSpec::TST TagType, Decl *TagDecl) {
+                                  DeclSpec::TST TagType, RecordDecl *TagDecl) {
   PrettyDeclStackTraceEntry CrashInfo(Actions.Context, TagDecl, RecordLoc,
                                       "parsing struct/union body");
   assert(!getLangOpts().CPlusPlus && "C++ declarations not supported");
@@ -4257,8 +4178,6 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
 
   ParseScope StructScope(this, Scope::ClassScope|Scope::DeclScope);
   Actions.ActOnTagStartDefinition(getCurScope(), TagDecl);
-
-  SmallVector<Decl *, 32> FieldDecls;
 
   // While we still have something to read, read the declarations in the struct.
   while (!tryParseMisplacedModuleImport() && Tok.isNot(tok::r_brace) &&
@@ -4311,7 +4230,6 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
             Actions.ActOnField(getCurScope(), TagDecl,
                                FD.D.getDeclSpec().getSourceRange().getBegin(),
                                FD.D, FD.BitfieldSize);
-        FieldDecls.push_back(Field);
         FD.complete(Field);
       };
 
@@ -4335,7 +4253,6 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
       SmallVector<Decl *, 16> Fields;
       Actions.ActOnDefs(getCurScope(), TagDecl, Tok.getLocation(),
                         Tok.getIdentifierInfo(), Fields);
-      FieldDecls.insert(FieldDecls.end(), Fields.begin(), Fields.end());
       ConsumeToken();
       ExpectAndConsume(tok::r_paren);
     }
@@ -4360,6 +4277,9 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
   ParsedAttributes attrs(AttrFactory);
   // If attributes exist after struct contents, parse them.
   MaybeParseGNUAttributes(attrs);
+
+  SmallVector<Decl *, 32> FieldDecls(TagDecl->field_begin(),
+                                     TagDecl->field_end());
 
   Actions.ActOnFields(getCurScope(), RecordLoc, TagDecl, FieldDecls,
                       T.getOpenLocation(), T.getCloseLocation(), attrs);
@@ -4943,6 +4863,7 @@ bool Parser::isKnownToBeTypeSpecifier(const Token &Tok) const {
   case tok::kw_char32_t:
   case tok::kw_int:
   case tok::kw__ExtInt:
+  case tok::kw___bf16:
   case tok::kw_half:
   case tok::kw_float:
   case tok::kw_double:
@@ -5024,6 +4945,7 @@ bool Parser::isTypeSpecifierQualifier() {
   case tok::kw_int:
   case tok::kw__ExtInt:
   case tok::kw_half:
+  case tok::kw___bf16:
   case tok::kw_float:
   case tok::kw_double:
   case tok::kw__Accum:
@@ -5191,6 +5113,7 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
   case tok::kw_int:
   case tok::kw__ExtInt:
   case tok::kw_half:
+  case tok::kw___bf16:
   case tok::kw_float:
   case tok::kw_double:
   case tok::kw__Accum:
@@ -5726,6 +5649,11 @@ void Parser::ParseDeclaratorInternal(Declarator &D,
         if (DirectDeclParser)
           (this->*DirectDeclParser)(D);
         return;
+      }
+
+      if (SS.isValid()) {
+        checkCompoundToken(SS.getEndLoc(), tok::coloncolon,
+                           CompoundToken::MemberPtr);
       }
 
       SourceLocation StarLoc = ConsumeToken();
@@ -6533,8 +6461,8 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
     else if (RequiresArg)
       Diag(Tok, diag::err_argument_required_after_attribute);
 
-    HasProto = ParamInfo.size() || getLangOpts().CPlusPlus
-                                || getLangOpts().OpenCL;
+    HasProto = ParamInfo.size() || getLangOpts().CPlusPlus ||
+               getLangOpts().OpenCL || getLangOpts().SYCLIsDevice;
 
     // If we have the closing ')', eat it.
     Tracker.consumeClose();
@@ -6566,6 +6494,10 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
       InitCXXThisScopeForDeclaratorIfRelevant(D, DS, ThisScope);
 
       // Parse exception-specification[opt].
+      // FIXME: Per [class.mem]p6, all exception-specifications at class scope
+      // should be delayed, including those for non-members (eg, friend
+      // declarations). But only applying this to member declarations is
+      // consistent with what other implementations do.
       bool Delayed = D.isFirstDeclarationOfMember() &&
                      D.isFunctionDeclaratorAFunctionDeclaration();
       if (Delayed && Actions.isLibstdcxxEagerExceptionSpecHack(D) &&

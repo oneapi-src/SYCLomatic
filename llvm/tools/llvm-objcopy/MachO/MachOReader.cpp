@@ -7,10 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "MachOReader.h"
-#include "../llvm-objcopy.h"
 #include "Object.h"
 #include "llvm/BinaryFormat/MachO.h"
 #include "llvm/Object/MachO.h"
+#include "llvm/Support/Errc.h"
 #include <memory>
 
 namespace llvm {
@@ -59,9 +59,8 @@ template <> Section constructSection(MachO::section_64 Sec, uint32_t Index) {
   return S;
 }
 
-// TODO: get rid of reportError and make MachOReader return Expected<> instead.
 template <typename SectionType, typename SegmentType>
-std::vector<std::unique_ptr<Section>>
+Expected<std::vector<std::unique_ptr<Section>>>
 extractSections(const object::MachOObjectFile::LoadCommandInfo &LoadCmd,
                 const object::MachOObjectFile &MachOObj,
                 uint32_t &NextSectionIndex) {
@@ -86,14 +85,15 @@ extractSections(const object::MachOObjectFile::LoadCommandInfo &LoadCmd,
     Expected<object::SectionRef> SecRef =
         MachOObj.getSection(NextSectionIndex++);
     if (!SecRef)
-      reportError(MachOObj.getFileName(), SecRef.takeError());
+      return SecRef.takeError();
 
-    if (Expected<ArrayRef<uint8_t>> E =
-            MachOObj.getSectionContents(SecRef->getRawDataRefImpl()))
-      S.Content =
-          StringRef(reinterpret_cast<const char *>(E->data()), E->size());
-    else
-      reportError(MachOObj.getFileName(), E.takeError());
+    Expected<ArrayRef<uint8_t>> Data =
+        MachOObj.getSectionContents(SecRef->getRawDataRefImpl());
+    if (!Data)
+      return Data.takeError();
+
+    S.Content =
+        StringRef(reinterpret_cast<const char *>(Data->data()), Data->size());
 
     S.Relocations.reserve(S.NReloc);
     for (auto RI = MachOObj.section_rel_begin(SecRef->getRawDataRefImpl()),
@@ -110,23 +110,33 @@ extractSections(const object::MachOObjectFile::LoadCommandInfo &LoadCmd,
     assert(S.NReloc == S.Relocations.size() &&
            "Incorrect number of relocations");
   }
-  return Sections;
+  return std::move(Sections);
 }
 
-void MachOReader::readLoadCommands(Object &O) const {
+Error MachOReader::readLoadCommands(Object &O) const {
   // For MachO sections indices start from 1.
   uint32_t NextSectionIndex = 1;
   for (auto LoadCmd : MachOObj.load_commands()) {
     LoadCommand LC;
     switch (LoadCmd.C.cmd) {
+    case MachO::LC_CODE_SIGNATURE:
+      O.CodeSignatureCommandIndex = O.LoadCommands.size();
+      break;
     case MachO::LC_SEGMENT:
-      LC.Sections = extractSections<MachO::section, MachO::segment_command>(
-          LoadCmd, MachOObj, NextSectionIndex);
+      if (Expected<std::vector<std::unique_ptr<Section>>> Sections =
+              extractSections<MachO::section, MachO::segment_command>(
+                  LoadCmd, MachOObj, NextSectionIndex))
+        LC.Sections = std::move(*Sections);
+      else
+        return Sections.takeError();
       break;
     case MachO::LC_SEGMENT_64:
-      LC.Sections =
-          extractSections<MachO::section_64, MachO::segment_command_64>(
-              LoadCmd, MachOObj, NextSectionIndex);
+      if (Expected<std::vector<std::unique_ptr<Section>>> Sections =
+              extractSections<MachO::section_64, MachO::segment_command_64>(
+                  LoadCmd, MachOObj, NextSectionIndex))
+        LC.Sections = std::move(*Sections);
+      else
+        return Sections.takeError();
       break;
     case MachO::LC_SYMTAB:
       O.SymTabCommandIndex = O.LoadCommands.size();
@@ -174,6 +184,7 @@ void MachOReader::readLoadCommands(Object &O) const {
     }
     O.LoadCommands.push_back(std::move(LC));
   }
+  return Error::success();
 }
 
 template <typename nlist_t>
@@ -247,26 +258,26 @@ void MachOReader::readExportInfo(Object &O) const {
   O.Exports.Trie = MachOObj.getDyldInfoExportsTrie();
 }
 
-void MachOReader::readDataInCodeData(Object &O) const {
-  if (!O.DataInCodeCommandIndex)
+void MachOReader::readLinkData(Object &O, Optional<size_t> LCIndex,
+                               LinkData &LD) const {
+  if (!LCIndex)
     return;
-  const MachO::linkedit_data_command &LDC =
-      O.LoadCommands[*O.DataInCodeCommandIndex]
-          .MachOLoadCommand.linkedit_data_command_data;
+  const MachO::linkedit_data_command &LC =
+      O.LoadCommands[*LCIndex].MachOLoadCommand.linkedit_data_command_data;
+  LD.Data =
+      arrayRefFromStringRef(MachOObj.getData().substr(LC.dataoff, LC.datasize));
+}
 
-  O.DataInCode.Data = arrayRefFromStringRef(
-      MachOObj.getData().substr(LDC.dataoff, LDC.datasize));
+void MachOReader::readCodeSignature(Object &O) const {
+  return readLinkData(O, O.CodeSignatureCommandIndex, O.CodeSignature);
+}
+
+void MachOReader::readDataInCodeData(Object &O) const {
+  return readLinkData(O, O.DataInCodeCommandIndex, O.DataInCode);
 }
 
 void MachOReader::readFunctionStartsData(Object &O) const {
-  if (!O.FunctionStartsCommandIndex)
-    return;
-  const MachO::linkedit_data_command &LDC =
-      O.LoadCommands[*O.FunctionStartsCommandIndex]
-          .MachOLoadCommand.linkedit_data_command_data;
-
-  O.FunctionStarts.Data = arrayRefFromStringRef(
-      MachOObj.getData().substr(LDC.dataoff, LDC.datasize));
+  return readLinkData(O, O.FunctionStartsCommandIndex, O.FunctionStarts);
 }
 
 void MachOReader::readIndirectSymbolTable(Object &O) const {
@@ -305,10 +316,11 @@ void MachOReader::readSwiftVersion(Object &O) const {
       }
 }
 
-std::unique_ptr<Object> MachOReader::create() const {
+Expected<std::unique_ptr<Object>> MachOReader::create() const {
   auto Obj = std::make_unique<Object>();
   readHeader(*Obj);
-  readLoadCommands(*Obj);
+  if (Error E = readLoadCommands(*Obj))
+    return std::move(E);
   readSymbolTable(*Obj);
   setSymbolInRelocationInfo(*Obj);
   readRebaseInfo(*Obj);
@@ -316,11 +328,12 @@ std::unique_ptr<Object> MachOReader::create() const {
   readWeakBindInfo(*Obj);
   readLazyBindInfo(*Obj);
   readExportInfo(*Obj);
+  readCodeSignature(*Obj);
   readDataInCodeData(*Obj);
   readFunctionStartsData(*Obj);
   readIndirectSymbolTable(*Obj);
   readSwiftVersion(*Obj);
-  return Obj;
+  return std::move(Obj);
 }
 
 } // end namespace macho

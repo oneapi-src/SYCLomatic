@@ -125,14 +125,12 @@ define arm_aapcs_vfpcc void @ssatmul_s_q31(i32* nocapture readonly %pSrcA, i32* 
 ; CHECK-NEXT:    it lt
 ; CHECK-NEXT:    movlt r5, #1
 ; CHECK-NEXT:    cmp r5, #0
-; CHECK-NEXT:    itt eq
-; CHECK-NEXT:    moveq r3, r0
-; CHECK-NEXT:    moveq r4, r1
+; CHECK-NEXT:    csel r4, r4, r1, ne
+; CHECK-NEXT:    csel r3, r3, r0, ne
 ; CHECK-NEXT:    subs r5, r4, r2
 ; CHECK-NEXT:    sbcs r3, r3, #0
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r4, r2
-; CHECK-NEXT:    str r4, [r11], #4
+; CHECK-NEXT:    csel r3, r4, r2, lt
+; CHECK-NEXT:    str r3, [r11], #4
 ; CHECK-NEXT:    le lr, .LBB0_7
 ; CHECK-NEXT:  .LBB0_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    add sp, #8
@@ -406,22 +404,20 @@ define arm_aapcs_vfpcc void @ssatmul_4_q31(i32* nocapture readonly %pSrcA, i32* 
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    ldr r2, [r12], #4
 ; CHECK-NEXT:    ldr r4, [r10], #4
-; CHECK-NEXT:    smull r4, r5, r4, r2
-; CHECK-NEXT:    asrl r4, r5, #31
-; CHECK-NEXT:    subs r2, r1, r4
-; CHECK-NEXT:    sbcs.w r2, r0, r5
-; CHECK-NEXT:    mov.w r2, #0
+; CHECK-NEXT:    smull r2, r5, r4, r2
+; CHECK-NEXT:    asrl r2, r5, #31
+; CHECK-NEXT:    subs r4, r1, r2
+; CHECK-NEXT:    sbcs.w r4, r0, r5
+; CHECK-NEXT:    mov.w r4, #0
 ; CHECK-NEXT:    it lt
-; CHECK-NEXT:    movlt r2, #1
-; CHECK-NEXT:    cmp r2, #0
-; CHECK-NEXT:    itt eq
-; CHECK-NEXT:    moveq r5, r0
-; CHECK-NEXT:    moveq r4, r1
-; CHECK-NEXT:    subs r2, r4, r3
-; CHECK-NEXT:    sbcs r2, r5, #0
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r4, r3
-; CHECK-NEXT:    str r4, [r11], #4
+; CHECK-NEXT:    movlt r4, #1
+; CHECK-NEXT:    cmp r4, #0
+; CHECK-NEXT:    csel r2, r2, r1, ne
+; CHECK-NEXT:    csel r4, r5, r0, ne
+; CHECK-NEXT:    subs r5, r2, r3
+; CHECK-NEXT:    sbcs r4, r4, #0
+; CHECK-NEXT:    csel r2, r2, r3, lt
+; CHECK-NEXT:    str r2, [r11], #4
 ; CHECK-NEXT:    le lr, .LBB1_7
 ; CHECK-NEXT:  .LBB1_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    add sp, #8
@@ -1110,8 +1106,7 @@ define arm_aapcs_vfpcc void @ssatmul_4_q15(i16* nocapture readonly %pSrcA, i16* 
 ; CHECK:       @ %bb.0: @ %entry
 ; CHECK-NEXT:    .save {r4, r5, r6, lr}
 ; CHECK-NEXT:    push {r4, r5, r6, lr}
-; CHECK-NEXT:    cmp r3, #0
-; CHECK-NEXT:    beq .LBB5_8
+; CHECK-NEXT:    cbz r3, .LBB5_8
 ; CHECK-NEXT:  @ %bb.1: @ %for.body.preheader
 ; CHECK-NEXT:    cmp r3, #3
 ; CHECK-NEXT:    bhi .LBB5_3
@@ -1143,24 +1138,15 @@ define arm_aapcs_vfpcc void @ssatmul_4_q15(i16* nocapture readonly %pSrcA, i16* 
 ; CHECK-NEXT:    it eq
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB5_6: @ %for.body.preheader21
-; CHECK-NEXT:    movw r0, #32768
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    movt r0, #65535
-; CHECK-NEXT:    movw r1, #32767
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB5_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsh r2, [r12], #2
-; CHECK-NEXT:    ldrsh r3, [r6], #2
-; CHECK-NEXT:    muls r2, r3, r2
-; CHECK-NEXT:    mov r3, r0
-; CHECK-NEXT:    cmp.w r0, r2, asr #15
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r3, r2, #15
-; CHECK-NEXT:    cmp r3, r1
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r3, r1
-; CHECK-NEXT:    strh r3, [r4], #2
+; CHECK-NEXT:    ldrsh r0, [r12], #2
+; CHECK-NEXT:    ldrsh r1, [r6], #2
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #16, r0, asr #15
+; CHECK-NEXT:    strh r0, [r4], #2
 ; CHECK-NEXT:    le lr, .LBB5_7
 ; CHECK-NEXT:  .LBB5_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -1285,24 +1271,15 @@ define arm_aapcs_vfpcc void @ssatmul_8_q15(i16* nocapture readonly %pSrcA, i16* 
 ; CHECK-NEXT:    it eq
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB6_6: @ %for.body.preheader21
-; CHECK-NEXT:    movw r0, #32768
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    movt r0, #65535
-; CHECK-NEXT:    movw r1, #32767
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB6_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsh r2, [r12], #2
-; CHECK-NEXT:    ldrsh r3, [r6], #2
-; CHECK-NEXT:    muls r2, r3, r2
-; CHECK-NEXT:    mov r3, r0
-; CHECK-NEXT:    cmp.w r0, r2, asr #15
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r3, r2, #15
-; CHECK-NEXT:    cmp r3, r1
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r3, r1
-; CHECK-NEXT:    strh r3, [r4], #2
+; CHECK-NEXT:    ldrsh r0, [r12], #2
+; CHECK-NEXT:    ldrsh r1, [r6], #2
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #16, r0, asr #15
+; CHECK-NEXT:    strh r0, [r4], #2
 ; CHECK-NEXT:    le lr, .LBB6_7
 ; CHECK-NEXT:  .LBB6_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -1416,7 +1393,6 @@ define arm_aapcs_vfpcc void @ssatmul_8i_q15(i16* nocapture readonly %pSrcA, i16*
 ; CHECK-NEXT:    vmullt.s16 q2, q1, q0
 ; CHECK-NEXT:    vmullb.s16 q0, q1, q0
 ; CHECK-NEXT:    vqshrnb.s32 q0, q0, #15
-; CHECK-NEXT:    vmovlb.s16 q0, q0
 ; CHECK-NEXT:    vqshrnt.s32 q0, q2, #15
 ; CHECK-NEXT:    vstrb.8 q0, [r2], #16
 ; CHECK-NEXT:    le lr, .LBB7_4
@@ -1425,24 +1401,15 @@ define arm_aapcs_vfpcc void @ssatmul_8i_q15(i16* nocapture readonly %pSrcA, i16*
 ; CHECK-NEXT:    it eq
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB7_6: @ %for.body.preheader21
-; CHECK-NEXT:    movw r0, #32768
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    movt r0, #65535
-; CHECK-NEXT:    movw r1, #32767
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB7_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsh r2, [r12], #2
-; CHECK-NEXT:    ldrsh r3, [r6], #2
-; CHECK-NEXT:    muls r2, r3, r2
-; CHECK-NEXT:    mov r3, r0
-; CHECK-NEXT:    cmp.w r0, r2, asr #15
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r3, r2, #15
-; CHECK-NEXT:    cmp r3, r1
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r3, r1
-; CHECK-NEXT:    strh r3, [r4], #2
+; CHECK-NEXT:    ldrsh r0, [r12], #2
+; CHECK-NEXT:    ldrsh r1, [r6], #2
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #16, r0, asr #15
+; CHECK-NEXT:    strh r0, [r4], #2
 ; CHECK-NEXT:    le lr, .LBB7_7
 ; CHECK-NEXT:  .LBB7_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -1545,6 +1512,7 @@ define arm_aapcs_vfpcc void @ssatmul_s4t_q15(i16* nocapture readonly %pSrcA, i16
 ; CHECK-NEXT:    cmp r3, #0
 ; CHECK-NEXT:    it eq
 ; CHECK-NEXT:    popeq {r4, pc}
+; CHECK-NEXT:  .LBB8_1: @ %vector.ph
 ; CHECK-NEXT:    add.w r12, r3, #3
 ; CHECK-NEXT:    adr r4, .LCPI8_0
 ; CHECK-NEXT:    bic r12, r12, #3
@@ -1556,7 +1524,7 @@ define arm_aapcs_vfpcc void @ssatmul_s4t_q15(i16* nocapture readonly %pSrcA, i16
 ; CHECK-NEXT:    movs r3, #0
 ; CHECK-NEXT:    vdup.32 q1, r12
 ; CHECK-NEXT:    dls lr, lr
-; CHECK-NEXT:  .LBB8_1: @ %vector.body
+; CHECK-NEXT:  .LBB8_2: @ %vector.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    vdup.32 q2, r3
 ; CHECK-NEXT:    adds r3, #4
@@ -1569,11 +1537,11 @@ define arm_aapcs_vfpcc void @ssatmul_s4t_q15(i16* nocapture readonly %pSrcA, i16
 ; CHECK-NEXT:    vmovlb.s16 q2, q2
 ; CHECK-NEXT:    vpst
 ; CHECK-NEXT:    vstrht.32 q2, [r2], #8
-; CHECK-NEXT:    le lr, .LBB8_1
-; CHECK-NEXT:  @ %bb.2: @ %for.cond.cleanup
+; CHECK-NEXT:    le lr, .LBB8_2
+; CHECK-NEXT:  @ %bb.3: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, pc}
 ; CHECK-NEXT:    .p2align 4
-; CHECK-NEXT:  @ %bb.3:
+; CHECK-NEXT:  @ %bb.4:
 ; CHECK-NEXT:  .LCPI8_0:
 ; CHECK-NEXT:    .long 0 @ 0x0
 ; CHECK-NEXT:    .long 1 @ 0x1
@@ -1856,7 +1824,6 @@ define arm_aapcs_vfpcc void @ssatmul_8ti_q15(i16* nocapture readonly %pSrcA, i16
 ; CHECK-NEXT:    vmullt.s16 q7, q6, q5
 ; CHECK-NEXT:    vmullb.s16 q5, q6, q5
 ; CHECK-NEXT:    vqshrnb.s32 q5, q5, #15
-; CHECK-NEXT:    vmovlb.s16 q5, q5
 ; CHECK-NEXT:    vqshrnt.s32 q5, q7, #15
 ; CHECK-NEXT:    vpst
 ; CHECK-NEXT:    vstrht.16 q5, [r2], #16
@@ -2248,15 +2215,8 @@ define arm_aapcs_vfpcc void @ssatmul_4_q7(i8* nocapture readonly %pSrcA, i8* noc
 ; CHECK-NEXT:    ldrsb r0, [r12], #1
 ; CHECK-NEXT:    ldrsb r1, [r6], #1
 ; CHECK-NEXT:    muls r0, r1, r0
-; CHECK-NEXT:    asrs r1, r0, #7
-; CHECK-NEXT:    cmn.w r1, #128
-; CHECK-NEXT:    mvn r1, #127
-; CHECK-NEXT:    it gt
-; CHECK-NEXT:    asrgt r1, r0, #7
-; CHECK-NEXT:    cmp r1, #127
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r1, #127
-; CHECK-NEXT:    strb r1, [r4], #1
+; CHECK-NEXT:    ssat r0, #8, r0, asr #7
+; CHECK-NEXT:    strb r0, [r4], #1
 ; CHECK-NEXT:    le lr, .LBB13_7
 ; CHECK-NEXT:  .LBB13_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -2343,8 +2303,7 @@ define arm_aapcs_vfpcc void @ssatmul_8_q7(i8* nocapture readonly %pSrcA, i8* noc
 ; CHECK:       @ %bb.0: @ %entry
 ; CHECK-NEXT:    .save {r4, r5, r6, lr}
 ; CHECK-NEXT:    push {r4, r5, r6, lr}
-; CHECK-NEXT:    cmp r3, #0
-; CHECK-NEXT:    beq .LBB14_8
+; CHECK-NEXT:    cbz r3, .LBB14_8
 ; CHECK-NEXT:  @ %bb.1: @ %for.body.preheader
 ; CHECK-NEXT:    cmp r3, #7
 ; CHECK-NEXT:    bhi .LBB14_3
@@ -2377,21 +2336,14 @@ define arm_aapcs_vfpcc void @ssatmul_8_q7(i8* nocapture readonly %pSrcA, i8* noc
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB14_6: @ %for.body.preheader23
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    mvn r0, #127
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB14_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsb r1, [r12], #1
-; CHECK-NEXT:    ldrsb r2, [r6], #1
-; CHECK-NEXT:    muls r1, r2, r1
-; CHECK-NEXT:    mvn r2, #127
-; CHECK-NEXT:    cmp.w r0, r1, asr #7
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r2, r1, #7
-; CHECK-NEXT:    cmp r2, #127
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r2, #127
-; CHECK-NEXT:    strb r2, [r4], #1
+; CHECK-NEXT:    ldrsb r0, [r12], #1
+; CHECK-NEXT:    ldrsb r1, [r6], #1
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #8, r0, asr #7
+; CHECK-NEXT:    strb r0, [r4], #1
 ; CHECK-NEXT:    le lr, .LBB14_7
 ; CHECK-NEXT:  .LBB14_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -2517,21 +2469,14 @@ define arm_aapcs_vfpcc void @ssatmul_16_q7(i8* nocapture readonly %pSrcA, i8* no
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB15_6: @ %for.body.preheader23
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    mvn r0, #127
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB15_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsb r1, [r12], #1
-; CHECK-NEXT:    ldrsb r2, [r6], #1
-; CHECK-NEXT:    muls r1, r2, r1
-; CHECK-NEXT:    mvn r2, #127
-; CHECK-NEXT:    cmp.w r0, r1, asr #7
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r2, r1, #7
-; CHECK-NEXT:    cmp r2, #127
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r2, #127
-; CHECK-NEXT:    strb r2, [r4], #1
+; CHECK-NEXT:    ldrsb r0, [r12], #1
+; CHECK-NEXT:    ldrsb r1, [r6], #1
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #8, r0, asr #7
+; CHECK-NEXT:    strb r0, [r4], #1
 ; CHECK-NEXT:    le lr, .LBB15_7
 ; CHECK-NEXT:  .LBB15_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -2645,7 +2590,6 @@ define arm_aapcs_vfpcc void @ssatmul_16i_q7(i8* nocapture readonly %pSrcA, i8* n
 ; CHECK-NEXT:    vmullt.s8 q2, q1, q0
 ; CHECK-NEXT:    vmullb.s8 q0, q1, q0
 ; CHECK-NEXT:    vqshrnb.s16 q0, q0, #7
-; CHECK-NEXT:    vmovlb.s8 q0, q0
 ; CHECK-NEXT:    vqshrnt.s16 q0, q2, #7
 ; CHECK-NEXT:    vstrb.8 q0, [r2], #16
 ; CHECK-NEXT:    le lr, .LBB16_4
@@ -2655,21 +2599,14 @@ define arm_aapcs_vfpcc void @ssatmul_16i_q7(i8* nocapture readonly %pSrcA, i8* n
 ; CHECK-NEXT:    popeq {r4, r5, r6, pc}
 ; CHECK-NEXT:  .LBB16_6: @ %for.body.preheader23
 ; CHECK-NEXT:    sub.w lr, r3, r5
-; CHECK-NEXT:    mvn r0, #127
 ; CHECK-NEXT:    dls lr, lr
 ; CHECK-NEXT:  .LBB16_7: @ %for.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    ldrsb r1, [r12], #1
-; CHECK-NEXT:    ldrsb r2, [r6], #1
-; CHECK-NEXT:    muls r1, r2, r1
-; CHECK-NEXT:    mvn r2, #127
-; CHECK-NEXT:    cmp.w r0, r1, asr #7
-; CHECK-NEXT:    it lt
-; CHECK-NEXT:    asrlt r2, r1, #7
-; CHECK-NEXT:    cmp r2, #127
-; CHECK-NEXT:    it ge
-; CHECK-NEXT:    movge r2, #127
-; CHECK-NEXT:    strb r2, [r4], #1
+; CHECK-NEXT:    ldrsb r0, [r12], #1
+; CHECK-NEXT:    ldrsb r1, [r6], #1
+; CHECK-NEXT:    muls r0, r1, r0
+; CHECK-NEXT:    ssat r0, #8, r0, asr #7
+; CHECK-NEXT:    strb r0, [r4], #1
 ; CHECK-NEXT:    le lr, .LBB16_7
 ; CHECK-NEXT:  .LBB16_8: @ %for.cond.cleanup
 ; CHECK-NEXT:    pop {r4, r5, r6, pc}
@@ -3310,7 +3247,6 @@ define arm_aapcs_vfpcc void @ssatmul_16ti_q7(i8* nocapture readonly %pSrcA, i8* 
 ; CHECK-NEXT:    vmullt.s8 q5, q4, q0
 ; CHECK-NEXT:    vmullb.s8 q0, q4, q0
 ; CHECK-NEXT:    vqshrnb.s16 q0, q0, #7
-; CHECK-NEXT:    vmovlb.s8 q0, q0
 ; CHECK-NEXT:    vqshrnt.s16 q0, q5, #7
 ; CHECK-NEXT:    vpst
 ; CHECK-NEXT:    vstrbt.8 q0, [r2], #16

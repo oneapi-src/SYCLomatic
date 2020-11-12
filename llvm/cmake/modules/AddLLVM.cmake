@@ -221,7 +221,7 @@ function(add_link_opts target_name)
 
     # Pass -O3 to the linker. This enabled different optimizations on different
     # linkers.
-    if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin|SunOS|AIX" OR WIN32))
+    if(NOT (CMAKE_SYSTEM_NAME MATCHES "Darwin|SunOS|AIX|OS390" OR WIN32))
       set_property(TARGET ${target_name} APPEND_STRING PROPERTY
                    LINK_FLAGS " -Wl,-O3")
     endif()
@@ -240,14 +240,21 @@ function(add_link_opts target_name)
         set_property(TARGET ${target_name} APPEND_STRING PROPERTY
                      LINK_FLAGS " -Wl,-dead_strip")
       elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-        set_property(TARGET ${target_name} APPEND_STRING PROPERTY
-                     LINK_FLAGS " -Wl,-z -Wl,discard-unused=sections")
+        # Support for ld -z discard-unused=sections was only added in
+        # Solaris 11.4.
+        include(CheckLinkerFlag)
+        check_linker_flag("-Wl,-z,discard-unused=sections" LINKER_SUPPORTS_Z_DISCARD_UNUSED)
+        if (LINKER_SUPPORTS_Z_DISCARD_UNUSED)
+          set_property(TARGET ${target_name} APPEND_STRING PROPERTY
+                       LINK_FLAGS " -Wl,-z,discard-unused=sections")
+        endif()
       elseif(NOT WIN32 AND NOT LLVM_LINKER_IS_GOLD AND
-             NOT ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD|AIX")
+             NOT CMAKE_SYSTEM_NAME MATCHES "OpenBSD|AIX|OS390")
         # Object files are compiled with -ffunction-data-sections.
         # Versions of bfd ld < 2.23.1 have a bug in --gc-sections that breaks
         # tools that use plugins. Always pass --gc-sections once we require
         # a newer linker.
+        # TODO Revisit this later on z/OS.
         set_property(TARGET ${target_name} APPEND_STRING PROPERTY
                      LINK_FLAGS " -Wl,--gc-sections")
       endif()
@@ -560,7 +567,7 @@ function(llvm_add_library name)
   endif()
 
   if(ARG_SHARED)
-    if(WIN32)
+    if(MSVC)
       set_target_properties(${name} PROPERTIES
         PREFIX ""
         )
@@ -885,7 +892,7 @@ endmacro(add_llvm_executable name)
 #   only an object library is built, and no module is built. This is specific to the Polly use case.
 #
 #   The SUBPROJECT argument contains the LLVM project the plugin belongs
-#   to. If set, the plugin will link statically by default it if the 
+#   to. If set, the plugin will link statically by default it if the
 #   project was enabled.
 function(add_llvm_pass_plugin name)
   cmake_parse_arguments(ARG
@@ -918,6 +925,12 @@ function(add_llvm_pass_plugin name)
     set_property(TARGET ${name} APPEND PROPERTY COMPILE_DEFINITIONS LLVM_LINK_INTO_TOOLS)
     if (TARGET intrinsics_gen)
       add_dependencies(obj.${name} intrinsics_gen)
+    endif()
+    if (TARGET omp_gen)
+      add_dependencies(obj.${name} omp_gen)
+    endif()
+    if (TARGET acc_gen)
+      add_dependencies(obj.${name} acc_gen)
     endif()
     set_property(GLOBAL APPEND PROPERTY LLVM_STATIC_EXTENSIONS ${name})
   elseif(NOT ARG_NO_MODULE)
@@ -1214,7 +1227,7 @@ macro(add_llvm_utility name)
 
   add_llvm_executable(${name} DISABLE_LLVM_LINK_LLVM_DYLIB ${ARGN})
   set_target_properties(${name} PROPERTIES FOLDER "Utils")
-  if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
+  if ( ${name} IN_LIST LLVM_TOOLCHAIN_UTILITIES OR NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
     if (LLVM_INSTALL_UTILS AND LLVM_BUILD_UTILS)
       set(export_to_llvmexports)
       if (${name} IN_LIST LLVM_DISTRIBUTION_COMPONENTS OR
@@ -1388,19 +1401,6 @@ function(add_unittest test_suite test_name)
     set(EXCLUDE_FROM_ALL ON)
   endif()
 
-  # Our current version of gtest does not properly recognize C++11 support
-  # with MSVC, so it falls back to tr1 / experimental classes.  Since LLVM
-  # itself requires C++11, we can safely force it on unconditionally so that
-  # we don't have to fight with the buggy gtest check.
-  add_definitions(-DGTEST_LANG_CXX11=1)
-  add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
-
-  include_directories(${LLVM_MAIN_SRC_DIR}/utils/unittest/googletest/include)
-  include_directories(${LLVM_MAIN_SRC_DIR}/utils/unittest/googlemock/include)
-  if (NOT LLVM_ENABLE_THREADS)
-    list(APPEND LLVM_COMPILE_DEFINITIONS GTEST_HAS_PTHREAD=0)
-  endif ()
-
   if (SUPPORTS_VARIADIC_MACROS_FLAG)
     list(APPEND LLVM_COMPILE_FLAGS "-Wno-variadic-macros")
   endif ()
@@ -1422,7 +1422,7 @@ function(add_unittest test_suite test_name)
 
   add_dependencies(${test_suite} ${test_name})
   get_target_property(test_suite_folder ${test_suite} FOLDER)
-  if (NOT ${test_suite_folder} STREQUAL "NOTFOUND")
+  if (test_suite_folder)
     set_property(TARGET ${test_name} PROPERTY FOLDER "${test_suite_folder}")
   endif ()
 endfunction()
@@ -1494,6 +1494,7 @@ def relpath(p):\n
     if os.path.splitdrive(p)[0] != os.path.splitdrive(base)[0]: return p\n
     if haslink(p) or haslink(base): return p\n
     return os.path.relpath(p, base)\n
+if len(sys.argv) < 3: sys.exit(0)\n
 sys.stdout.write(';'.join(relpath(p) for p in sys.argv[2].split(';')))"
     ${basedir}
     ${pathlist_escaped}
@@ -1657,8 +1658,9 @@ function(get_llvm_lit_path base_dir file_name)
         set(${file_name} ${LIT_FILE_NAME} PARENT_SCOPE)
         set(${base_dir} ${LIT_BASE_DIR} PARENT_SCOPE)
         return()
-      else()
+      elseif (NOT DEFINED CACHE{LLVM_EXTERNAL_LIT_MISSING_WARNED_ONCE})
         message(WARNING "LLVM_EXTERNAL_LIT set to ${LLVM_EXTERNAL_LIT}, but the path does not exist.")
+        set(LLVM_EXTERNAL_LIT_MISSING_WARNED_ONCE YES CACHE INTERNAL "")
       endif()
     endif()
   endif()
@@ -2025,9 +2027,10 @@ function(llvm_codesign name)
       set(ARG_BUNDLE_PATH $<TARGET_FILE:${name}>)
     endif()
 
-    if(ARG_FORCE)
-      set(force_flag "-f")
-    endif()
+    # ld64 now always codesigns the binaries it creates. Apply the force arg
+    # unconditionally so that we can - for example - add entitlements to the
+    # targets that need it.
+    set(force_flag "-f")
 
     add_custom_command(
       TARGET ${name} POST_BUILD

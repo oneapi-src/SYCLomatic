@@ -92,15 +92,7 @@ struct __kmpc_data_sharing_worker_slot_static {
   void *DataEnd;
   char Data[DS_Worker_Warp_Slot_Size];
 };
-// Additional master slot type which is initialized with the default master slot
-// size of 4 bytes.
-struct __kmpc_data_sharing_master_slot_static {
-  __kmpc_data_sharing_slot *Next;
-  __kmpc_data_sharing_slot *Prev;
-  void *PrevSlotStackPtr;
-  void *DataEnd;
-  char Data[DS_Slot_Size];
-};
+
 extern DEVICE SHARED DataSharingStateTy DataSharingState;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,41 +192,9 @@ public:
   INLINE omptarget_nvptx_WorkDescr &WorkDescr() {
     return workDescrForActiveParallel;
   }
-  INLINE uint64_t *getLastprivateIterBuffer() { return &lastprivateIterBuffer; }
 
   // init
   INLINE void InitTeamDescr();
-
-  INLINE __kmpc_data_sharing_slot *RootS(int wid, bool IsMasterThread) {
-    // If this is invoked by the master thread of the master warp then
-    // initialize it with a smaller slot.
-    if (IsMasterThread) {
-      // Do not initialize this slot again if it has already been initalized.
-      if (master_rootS[0].DataEnd == &master_rootS[0].Data[0] + DS_Slot_Size)
-        return 0;
-      // Initialize the pointer to the end of the slot given the size of the
-      // data section. DataEnd is non-inclusive.
-      master_rootS[0].DataEnd = &master_rootS[0].Data[0] + DS_Slot_Size;
-      // We currently do not have a next slot.
-      master_rootS[0].Next = 0;
-      master_rootS[0].Prev = 0;
-      master_rootS[0].PrevSlotStackPtr = 0;
-      return (__kmpc_data_sharing_slot *)&master_rootS[0];
-    }
-    // Do not initialize this slot again if it has already been initalized.
-    if (worker_rootS[wid].DataEnd ==
-        &worker_rootS[wid].Data[0] + DS_Worker_Warp_Slot_Size)
-      return 0;
-    // Initialize the pointer to the end of the slot given the size of the data
-    // section. DataEnd is non-inclusive.
-    worker_rootS[wid].DataEnd =
-        &worker_rootS[wid].Data[0] + DS_Worker_Warp_Slot_Size;
-    // We currently do not have a next slot.
-    worker_rootS[wid].Next = 0;
-    worker_rootS[wid].Prev = 0;
-    worker_rootS[wid].PrevSlotStackPtr = 0;
-    return (__kmpc_data_sharing_slot *)&worker_rootS[wid];
-  }
 
   INLINE __kmpc_data_sharing_slot *GetPreallocatedSlotAddr(int wid) {
     worker_rootS[wid].DataEnd =
@@ -251,11 +211,9 @@ private:
       levelZeroTaskDescr; // icv for team master initial thread
   omptarget_nvptx_WorkDescr
       workDescrForActiveParallel; // one, ONLY for the active par
-  uint64_t lastprivateIterBuffer;
 
   ALIGN(16)
-  __kmpc_data_sharing_worker_slot_static worker_rootS[WARPSIZE];
-  ALIGN(16) __kmpc_data_sharing_master_slot_static master_rootS[1];
+  __kmpc_data_sharing_worker_slot_static worker_rootS[DS_Max_Warp_Number];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -276,10 +234,6 @@ public:
   // parallel
   INLINE uint16_t &NumThreadsForNextParallel(int tid) {
     return nextRegion.tnum[tid];
-  }
-  // simd
-  INLINE uint16_t &SimdLimitForNextSimd(int tid) {
-    return nextRegion.slim[tid];
   }
   // schedule (for dispatch)
   INLINE kmp_sched_t &ScheduleType(int tid) { return schedule[tid]; }
@@ -304,8 +258,6 @@ private:
     // Only one of the two is live at the same time.
     // parallel
     uint16_t tnum[MAX_THREADS_PER_TEAM];
-    // simd limit
-    uint16_t slim[MAX_THREADS_PER_TEAM];
   } nextRegion;
   // schedule (for dispatch)
   kmp_sched_t schedule[MAX_THREADS_PER_TEAM]; // remember schedule type for #for

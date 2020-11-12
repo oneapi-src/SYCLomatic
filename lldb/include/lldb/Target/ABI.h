@@ -148,7 +148,8 @@ protected:
   std::unique_ptr<llvm::MCRegisterInfo> m_mc_register_info_up;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ABI);
+  ABI(const ABI &) = delete;
+  const ABI &operator=(const ABI &) = delete;
 };
 
 class RegInfoBasedABI : public ABI {
@@ -158,7 +159,7 @@ public:
 protected:
   using ABI::ABI;
 
-  bool GetRegisterInfoByName(ConstString name, RegisterInfo &info);
+  bool GetRegisterInfoByName(llvm::StringRef name, RegisterInfo &info);
 
   virtual const RegisterInfo *GetRegisterInfoArray(uint32_t &count) = 0;
 };

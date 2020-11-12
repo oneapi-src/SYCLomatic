@@ -1220,7 +1220,7 @@ are listed below.
 
    * ``-fno-math-errno``
 
-   * ``-ffinite-math``
+   * ``-ffinite-math-only``
 
    * ``-fassociative-math``
 
@@ -1306,14 +1306,14 @@ are listed below.
 **-f[no-]honor-infinities**
 
    If both ``-fno-honor-infinities`` and ``-fno-honor-nans`` are used,
-   has the same effect as specifying ``-ffinite-math``.
+   has the same effect as specifying ``-ffinite-math-only``.
 
 .. _opt_fhonor-nans:
 
 **-f[no-]honor-nans**
 
    If both ``-fno-honor-infinities`` and ``-fno-honor-nans`` are used,
-   has the same effect as specifying ``-ffinite-math``.
+   has the same effect as specifying ``-ffinite-math-only``.
 
 .. _opt_fsigned-zeros:
 
@@ -1351,9 +1351,9 @@ are listed below.
 
    Defaults to ``-fno-unsafe-math-optimizations``.
 
-.. _opt_ffinite-math:
+.. _opt_ffinite-math-only:
 
-**-f[no-]finite-math**
+**-f[no-]finite-math-only**
 
    Allow floating-point optimizations that assume arguments and results are
    not NaNs or +-Inf.  This defines the ``__FINITE_MATH_ONLY__`` preprocessor macro.
@@ -1362,7 +1362,7 @@ are listed below.
    * ``-fno-honor-infinities``
    * ``-fno-honor-nans``
 
-   Defaults to ``-fno-finite-math``.
+   Defaults to ``-fno-finite-math-only``.
 
 .. _opt_frounding-math:
 
@@ -1697,6 +1697,47 @@ are listed below.
      $ cd $P/foo && clang -c -funique-internal-linkage-names name_conflict.c
      $ cd $P/bar && clang -c -funique-internal-linkage-names name_conflict.c
      $ cd $P && clang foo/name_conflict.o && bar/name_conflict.o
+
+**-fbasic-block-sections=[labels, all, list=<arg>, none]**
+
+  Controls how Clang emits text sections for basic blocks. With values ``all``
+  and ``list=<arg>``, each basic block or a subset of basic blocks can be placed
+  in its own unique section. With the "labels" value, normal text sections are
+  emitted, but a ``.bb_addr_map`` section is emitted which includes address
+  offsets for each basic block in the program, relative to the parent function
+  address.
+
+  With the ``list=<arg>`` option, a file containing the subset of basic blocks
+  that need to placed in unique sections can be specified.  The format of the
+  file is as follows.  For example, ``list=spec.txt`` where ``spec.txt`` is the
+  following:
+
+  ::
+
+        !foo
+        !!2
+        !_Z3barv
+
+  will place the machine basic block with ``id 2`` in function ``foo`` in a
+  unique section.  It will also place all basic blocks of functions ``bar``
+  in unique sections.
+
+  Further, section clusters can also be specified using the ``list=<arg>``
+  option.  For example, ``list=spec.txt`` where ``spec.txt`` contains:
+
+  ::
+
+        !foo
+        !!1 !!3 !!5
+        !!2 !!4 !!6
+
+  will create two unique sections for function ``foo`` with the first
+  containing the odd numbered basic blocks and the second containing the
+  even numbered basic blocks.
+
+  Basic block sections allow the linker to reorder basic blocks and enables
+  link-time optimizations like whole program inter-procedural basic block
+  reordering.
 
 Profile Guided Optimization
 ---------------------------
@@ -2131,6 +2172,17 @@ programs using the same instrumentation method as ``-fprofile-generate``.
   profile file, it reads from that file. If ``pathname`` is a directory name,
   it reads from ``pathname/default.profdata``.
 
+.. option:: -fprofile-update[=<method>]
+
+  Unless ``-fsanitize=thread`` is specified, the default is ``single``, which
+  uses non-atomic increments. The counters can be inaccurate under thread
+  contention. ``atomic`` uses atomic increments which is accurate but has
+  overhead. ``prefer-atomic`` will be transformed to ``atomic`` when supported
+  by the target, or ``single`` otherwise.
+
+  This option currently works with ``-fprofile-arcs`` and ``-fprofile-instr-generate``,
+  but not with ``-fprofile-generate``.
+
 Disabling Instrumentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2314,6 +2366,12 @@ below. If multiple flags are present, the last one is used.
 
   Generate complete debug info.
 
+.. option:: -feliminate-unused-debug-types
+
+  By default, Clang does not emit type information for types that are defined
+  but not used in a program. To retain the debug info for these unused types,
+  the negation **-fno-eliminate-unused-debug-types** can be used.
+
 Controlling Macro Debug Info Generation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2421,8 +2479,8 @@ Differences between various standard modes
 ------------------------------------------
 
 clang supports the -std option, which changes what language mode clang uses.
-The supported modes for C are c89, gnu89, c99, gnu99, c11, gnu11, c17, gnu17,
-c2x, gnu2x, and various aliases for those modes. If no -std option is
+The supported modes for C are c89, gnu89, c94, c99, gnu99, c11, gnu11, c17,
+gnu17, c2x, gnu2x, and various aliases for those modes. If no -std option is
 specified, clang defaults to gnu17 mode. Many C99 and C11 features are
 supported in earlier modes as a conforming extension, with a warning. Use
 ``-pedantic-errors`` to request an error if a feature from a later standard
@@ -2431,34 +2489,36 @@ revision is used in an earlier mode.
 Differences between all ``c*`` and ``gnu*`` modes:
 
 -  ``c*`` modes define "``__STRICT_ANSI__``".
--  Target-specific defines not prefixed by underscores, like "linux",
+-  Target-specific defines not prefixed by underscores, like ``linux``,
    are defined in ``gnu*`` modes.
--  Trigraphs default to being off in ``gnu*`` modes; they can be enabled by
-   the -trigraphs option.
--  The parser recognizes "asm" and "typeof" as keywords in ``gnu*`` modes;
-   the variants "``__asm__``" and "``__typeof__``" are recognized in all
+-  Trigraphs default to being off in ``gnu*`` modes; they can be enabled
+   by the ``-trigraphs`` option.
+-  The parser recognizes ``asm`` and ``typeof`` as keywords in ``gnu*`` modes;
+   the variants ``__asm__`` and ``__typeof__`` are recognized in all modes.
+-  The parser recognizes ``inline`` as a keyword in ``gnu*`` mode, in
+   addition to recognizing it in the ``*99`` and later modes for which it is
+   part of the ISO C standard. The variant ``__inline__`` is recognized in all
    modes.
 -  The Apple "blocks" extension is recognized by default in ``gnu*`` modes
-   on some platforms; it can be enabled in any mode with the "-fblocks"
+   on some platforms; it can be enabled in any mode with the ``-fblocks``
    option.
--  Arrays that are VLA's according to the standard, but which can be
-   constant folded by the frontend are treated as fixed size arrays.
-   This occurs for things like "int X[(1, 2)];", which is technically a
-   VLA. ``c*`` modes are strictly compliant and treat these as VLAs.
 
-Differences between ``*89`` and ``*99`` modes:
+Differences between ``*89`` and ``*94`` modes:
 
--  The ``*99`` modes default to implementing "inline" as specified in C99,
-   while the ``*89`` modes implement the GNU version. This can be
-   overridden for individual functions with the ``__gnu_inline__``
-   attribute.
 -  Digraphs are not recognized in c89 mode.
--  The scope of names defined inside a "for", "if", "switch", "while",
-   or "do" statement is different. (example: "``if ((struct x {int
-   x;}*)0) {}``".)
+
+Differences between ``*94`` and ``*99`` modes:
+
+-  The ``*99`` modes default to implementing ``inline`` / ``__inline__``
+   as specified in C99, while the ``*89`` modes implement the GNU version.
+   This can be overridden for individual functions with the ``__gnu_inline__``
+   attribute.
+-  The scope of names defined inside a ``for``, ``if``, ``switch``, ``while``,
+  or ``do`` statement is different. (example: ``if ((struct x {int x;}*)0)
+  {}``.)
 -  ``__STDC_VERSION__`` is not defined in ``*89`` modes.
--  "inline" is not recognized as a keyword in c89 mode.
--  "restrict" is not recognized as a keyword in ``*89`` modes.
+-  ``inline`` is not recognized as a keyword in ``c89`` mode.
+-  ``restrict`` is not recognized as a keyword in ``*89`` modes.
 -  Commas are allowed in integer constant expressions in ``*99`` modes.
 -  Arrays which are not lvalues are not implicitly promoted to pointers
    in ``*89`` modes.
@@ -2480,9 +2540,7 @@ clang tries to be compatible with gcc as much as possible, but some gcc
 extensions are not implemented yet:
 
 -  clang does not support decimal floating point types (``_Decimal32`` and
-   friends) or fixed-point types (``_Fract`` and friends); nobody has
-   expressed interest in these features yet, so it's hard to say when
-   they will be implemented.
+   friends) yet.
 -  clang does not support nested functions; this is a complex feature
    which is infrequently used, so it is unlikely to be implemented
    anytime soon. In C++11 it can be emulated by assigning lambda
@@ -2532,10 +2590,12 @@ Intentionally unsupported GCC extensions
    the extension appears to be rarely used. Note that clang *does*
    support flexible array members (arrays with a zero or unspecified
    size at the end of a structure).
--  clang does not have an equivalent to gcc's "fold"; this means that
-   clang doesn't accept some constructs gcc might accept in contexts
-   where a constant expression is required, like "x-x" where x is a
-   variable.
+-  GCC accepts many expression forms that are not valid integer constant
+   expressions in bit-field widths, enumerator constants, case labels,
+   and in array bounds at global scope. Clang also accepts additional
+   expression forms in these contexts, but constructs that GCC accepts due to
+   simplifications GCC performs while parsing, such as ``x - x`` (where ``x`` is a
+   variable) will likely never be accepted by Clang.
 -  clang does not support ``__builtin_apply`` and friends; this extension
    is extremely obscure and difficult to implement reliably.
 
@@ -2576,8 +2636,11 @@ C++ Language Features
 =====================
 
 clang fully implements all of standard C++98 except for exported
-templates (which were removed in C++11), and all of standard C++11
-and the current draft standard for C++1y.
+templates (which were removed in C++11), all of standard C++11,
+C++14, and C++17, and most of C++20.
+
+See the `C++ support in Clang <https://clang.llvm.org/cxx_status.html>` page
+for detailed information on C++ feature support across Clang versions.
 
 Controlling implementation limits
 ---------------------------------
@@ -3094,7 +3157,7 @@ Global objects must be constructed before the first kernel using the global obje
 is executed and destroyed just after the last kernel using the program objects is
 executed. In OpenCL v2.0 drivers there is no specific API for invoking global
 constructors. However, an easy workaround would be to enqueue a constructor
-initialization kernel that has a name ``@_GLOBAL__sub_I_<compiled file name>``.
+initialization kernel that has a name ``_GLOBAL__sub_I_<compiled file name>``.
 This kernel is only present if there are any global objects to be initialized in
 the compiled binary. One way to check this is by passing ``CL_PROGRAM_KERNEL_NAMES``
 to ``clGetProgramInfo`` (OpenCL v2.0 s5.8.7).
@@ -3110,7 +3173,7 @@ before running any kernels in which the objects are used.
      clang -cl-std=clc++ test.cl
 
 If there are any global objects to be initialized, the final binary will contain
-the ``@_GLOBAL__sub_I_test.cl`` kernel to be enqueued.
+the ``_GLOBAL__sub_I_test.cl`` kernel to be enqueued.
 
 Global destructors can not be invoked in OpenCL v2.0 drivers. However, all memory used
 for program scope objects is released on ``clReleaseProgram``.
@@ -3142,6 +3205,15 @@ using ``asm(".code16gcc")`` with the GNU toolchain. The generated code
 and the ABI remains 32-bit but the assembler emits instructions
 appropriate for a CPU running in 16-bit mode, with address-size and
 operand-size prefixes to enable 32-bit addressing and operations.
+
+Several micro-architecture levels as specified by the x86-64 psABI are defined.
+They are cumulative in the sense that features from previous levels are
+implicitly included in later levels.
+
+- ``-march=x86-64``: CMOV, CMPXCHG8B, FPU, FXSR, MMX, FXSR, SCE, SSE, SSE2
+- ``-march=x86-64-v2``: (close to Nehalem) CMPXCHG16B, LAHF-SAHF, POPCNT, SSE3, SSE4.1, SSE4.2, SSSE3
+- ``-march=x86-64-v3``: (close to Haswell) AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, XSAVE
+- ``-march=x86-64-v4``: AVX512F, AVX512BW, AVX512CD, AVX512DQ, AVX512VL
 
 ARM
 ^^^
@@ -3182,11 +3254,6 @@ backend.
 
 Operating System Features and Limitations
 -----------------------------------------
-
-Darwin (macOS)
-^^^^^^^^^^^^^^
-
-Thread Sanitizer is not supported.
 
 Windows
 ^^^^^^^

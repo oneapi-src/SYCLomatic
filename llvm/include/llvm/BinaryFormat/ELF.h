@@ -312,6 +312,7 @@ enum {
   EM_LANAI = 244,         // Lanai 32-bit processor
   EM_BPF = 247,           // Linux kernel bpf virtual machine
   EM_VE = 251,            // NEC SX-Aurora VE
+  EM_CSKY = 252,          // C-SKY 32-bit processor
 };
 
 // Object file classes.
@@ -359,6 +360,14 @@ enum {
   ELFOSABI_LAST_ARCH = 255     // Last Architecture-specific OS ABI
 };
 
+// AMDGPU OS ABI Version identification.
+enum {
+  // ELFABIVERSION_AMDGPU_HSA_V1 does not exist because OS ABI identification
+  // was never defined for V1.
+  ELFABIVERSION_AMDGPU_HSA_V2 = 0,
+  ELFABIVERSION_AMDGPU_HSA_V3 = 1,
+};
+
 #define ELF_RELOC(name, value) name = value,
 
 // X86_64 relocations.
@@ -403,6 +412,12 @@ enum {
 // ELF Relocation types for AArch64
 enum {
 #include "ELFRelocs/AArch64.def"
+};
+
+// Special values for the st_other field in the symbol table entry for AArch64.
+enum {
+  // Symbol may follow different calling convention than base PCS.
+  STO_AARCH64_VARIANT_PCS = 0x80
 };
 
 // ARM Specific e_flags
@@ -684,16 +699,19 @@ enum : unsigned {
   // AMDGCN GFX6.
   EF_AMDGPU_MACH_AMDGCN_GFX600 = 0x020,
   EF_AMDGPU_MACH_AMDGCN_GFX601 = 0x021,
+  EF_AMDGPU_MACH_AMDGCN_GFX602 = 0x03a,
   // AMDGCN GFX7.
   EF_AMDGPU_MACH_AMDGCN_GFX700 = 0x022,
   EF_AMDGPU_MACH_AMDGCN_GFX701 = 0x023,
   EF_AMDGPU_MACH_AMDGCN_GFX702 = 0x024,
   EF_AMDGPU_MACH_AMDGCN_GFX703 = 0x025,
   EF_AMDGPU_MACH_AMDGCN_GFX704 = 0x026,
+  EF_AMDGPU_MACH_AMDGCN_GFX705 = 0x03b,
   // AMDGCN GFX8.
   EF_AMDGPU_MACH_AMDGCN_GFX801 = 0x028,
   EF_AMDGPU_MACH_AMDGCN_GFX802 = 0x029,
   EF_AMDGPU_MACH_AMDGCN_GFX803 = 0x02a,
+  EF_AMDGPU_MACH_AMDGCN_GFX805 = 0x03c,
   EF_AMDGPU_MACH_AMDGCN_GFX810 = 0x02b,
   // AMDGCN GFX9.
   EF_AMDGPU_MACH_AMDGCN_GFX900 = 0x02c,
@@ -706,6 +724,9 @@ enum : unsigned {
   EF_AMDGPU_MACH_AMDGCN_GFX1010 = 0x033,
   EF_AMDGPU_MACH_AMDGCN_GFX1011 = 0x034,
   EF_AMDGPU_MACH_AMDGCN_GFX1012 = 0x035,
+  EF_AMDGPU_MACH_AMDGCN_GFX1030 = 0x036,
+  EF_AMDGPU_MACH_AMDGCN_GFX1031 = 0x037,
+  EF_AMDGPU_MACH_AMDGCN_GFX1032 = 0x038,
 
   // Reserved for AMDGCN-based processors.
   EF_AMDGPU_MACH_AMDGCN_RESERVED0 = 0x027,
@@ -713,7 +734,7 @@ enum : unsigned {
 
   // First/last AMDGCN-based processors.
   EF_AMDGPU_MACH_AMDGCN_FIRST = EF_AMDGPU_MACH_AMDGCN_GFX600,
-  EF_AMDGPU_MACH_AMDGCN_LAST = EF_AMDGPU_MACH_AMDGCN_GFX1012,
+  EF_AMDGPU_MACH_AMDGCN_LAST = EF_AMDGPU_MACH_AMDGCN_GFX805,
 
   // Indicates if the "xnack" target feature is enabled for all code contained
   // in the object.
@@ -768,6 +789,12 @@ enum {
 // ELF Relocation type for VE.
 enum {
 #include "ELFRelocs/VE.def"
+};
+
+
+// ELF Relocation types for CSKY
+enum {
+#include "ELFRelocs/CSKY.def"
 };
 
 #undef ELF_RELOC
@@ -847,10 +874,11 @@ enum : unsigned {
   SHT_LLVM_ADDRSIG = 0x6fff4c03, // List of address-significant symbols
                                  // for safe ICF.
   SHT_LLVM_DEPENDENT_LIBRARIES =
-      0x6fff4c04,                  // LLVM Dependent Library Specifiers.
-  SHT_LLVM_SYMPART = 0x6fff4c05,   // Symbol partition specification.
-  SHT_LLVM_PART_EHDR = 0x6fff4c06, // ELF header for loadable partition.
-  SHT_LLVM_PART_PHDR = 0x6fff4c07, // Phdrs for loadable partition.
+      0x6fff4c04,                    // LLVM Dependent Library Specifiers.
+  SHT_LLVM_SYMPART = 0x6fff4c05,     // Symbol partition specification.
+  SHT_LLVM_PART_EHDR = 0x6fff4c06,   // ELF header for loadable partition.
+  SHT_LLVM_PART_PHDR = 0x6fff4c07,   // Phdrs for loadable partition.
+  SHT_LLVM_BB_ADDR_MAP = 0x6fff4c08, // LLVM Basic Block Address Map.
   // Android's experimental support for SHT_RELR sections.
   // https://android.googlesource.com/platform/bionic/+/b7feec74547f84559a1467aca02708ff61346d2a/libc/include/elf.h#512
   SHT_ANDROID_RELR = 0x6fffff00,   // Relocation entries; only offsets.

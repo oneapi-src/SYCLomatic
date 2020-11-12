@@ -75,15 +75,16 @@ RISCVTargetMachine::RISCVTargetMachine(const Target &T, const Triple &TT,
 const RISCVSubtarget *
 RISCVTargetMachine::getSubtargetImpl(const Function &F) const {
   Attribute CPUAttr = F.getFnAttribute("target-cpu");
+  Attribute TuneAttr = F.getFnAttribute("tune-cpu");
   Attribute FSAttr = F.getFnAttribute("target-features");
 
-  std::string CPU = !CPUAttr.hasAttribute(Attribute::None)
-                        ? CPUAttr.getValueAsString().str()
-                        : TargetCPU;
-  std::string FS = !FSAttr.hasAttribute(Attribute::None)
-                       ? FSAttr.getValueAsString().str()
-                       : TargetFS;
-  std::string Key = CPU + FS;
+  std::string CPU =
+      CPUAttr.isValid() ? CPUAttr.getValueAsString().str() : TargetCPU;
+  std::string TuneCPU =
+      TuneAttr.isValid() ? TuneAttr.getValueAsString().str() : CPU;
+  std::string FS =
+      FSAttr.isValid() ? FSAttr.getValueAsString().str() : TargetFS;
+  std::string Key = CPU + TuneCPU + FS;
   auto &I = SubtargetMap[Key];
   if (!I) {
     // This needs to be done before we create a new subtarget since any
@@ -100,7 +101,7 @@ RISCVTargetMachine::getSubtargetImpl(const Function &F) const {
       }
       ABIName = ModuleTargetABI->getString();
     }
-    I = std::make_unique<RISCVSubtarget>(TargetTriple, CPU, FS, ABIName, *this);
+    I = std::make_unique<RISCVSubtarget>(TargetTriple, CPU, TuneCPU, FS, ABIName, *this);
   }
   return I.get();
 }
@@ -128,6 +129,7 @@ public:
   bool addGlobalInstructionSelect() override;
   void addPreEmitPass() override;
   void addPreEmitPass2() override;
+  void addPreSched2() override;
   void addPreRegAlloc() override;
 };
 }
@@ -148,7 +150,7 @@ bool RISCVPassConfig::addInstSelector() {
 }
 
 bool RISCVPassConfig::addIRTranslator() {
-  addPass(new IRTranslator());
+  addPass(new IRTranslator(getOptLevel()));
   return false;
 }
 
@@ -167,13 +169,16 @@ bool RISCVPassConfig::addGlobalInstructionSelect() {
   return false;
 }
 
+void RISCVPassConfig::addPreSched2() {}
+
 void RISCVPassConfig::addPreEmitPass() { addPass(&BranchRelaxationPassID); }
 
 void RISCVPassConfig::addPreEmitPass2() {
+  addPass(createRISCVExpandPseudoPass());
   // Schedule the expansion of AMOs at the last possible moment, avoiding the
   // possibility for other passes to break the requirements for forward
   // progress in the LR/SC block.
-  addPass(createRISCVExpandPseudoPass());
+  addPass(createRISCVExpandAtomicPseudoPass());
 }
 
 void RISCVPassConfig::addPreRegAlloc() {

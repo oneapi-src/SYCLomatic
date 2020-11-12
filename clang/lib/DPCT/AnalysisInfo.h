@@ -1669,7 +1669,7 @@ public:
           const DeclaratorDecl *Var)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
         Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                        Var->isInLocalScope())) {}
+                                        isLexicallyInLocalScope(Var))) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }

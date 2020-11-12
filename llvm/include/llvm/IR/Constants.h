@@ -41,11 +41,6 @@
 
 namespace llvm {
 
-class ArrayType;
-class IntegerType;
-class PointerType;
-class StructType;
-class VectorType;
 template <class ConstantClass> struct ConstantAggrKeyType;
 
 /// Base class for constants with no operands.
@@ -156,9 +151,19 @@ public:
     return Val.getSExtValue();
   }
 
-  /// Return the constant as an llvm::Align. Note that this method can assert if
-  /// the value does not fit in 64 bits or is not a power of two.
-  inline Align getAlignValue() const { return Align(getZExtValue()); }
+  /// Return the constant as an llvm::MaybeAlign.
+  /// Note that this method can assert if the value does not fit in 64 bits or
+  /// is not a power of two.
+  inline MaybeAlign getMaybeAlignValue() const {
+    return MaybeAlign(getZExtValue());
+  }
+
+  /// Return the constant as an llvm::Align, interpreting `0` as `Align(1)`.
+  /// Note that this method can assert if the value does not fit in 64 bits or
+  /// is not a power of two.
+  inline Align getAlignValue() const {
+    return getMaybeAlignValue().valueOrOne();
+  }
 
   /// A helper method that can be used to determine if the constant contained
   /// within is equal to a constant.  This only works for very small values,
@@ -303,6 +308,7 @@ public:
   /// Return true if Ty is big enough to represent V.
   static bool isValueValidForType(Type *Ty, const APFloat &V);
   inline const APFloat &getValueAPF() const { return Val; }
+  inline const APFloat &getValue() const { return Val; }
 
   /// Return true if the value is positive or negative zero.
   bool isZero() const { return Val.isZero(); }
@@ -904,6 +910,8 @@ protected:
     setValueSubclassData(Opcode);
   }
 
+  ~ConstantExpr() = default;
+
 public:
   // Static methods to construct a ConstantExpr of different kinds.  Note that
   // these methods may return a object that is not an instance of the
@@ -951,6 +959,7 @@ public:
   static Constant *getAnd(Constant *C1, Constant *C2);
   static Constant *getOr(Constant *C1, Constant *C2);
   static Constant *getXor(Constant *C1, Constant *C2);
+  static Constant *getUMin(Constant *C1, Constant *C2);
   static Constant *getShl(Constant *C1, Constant *C2,
                           bool HasNUW = false, bool HasNSW = false);
   static Constant *getLShr(Constant *C1, Constant *C2, bool isExact = false);
@@ -1025,6 +1034,12 @@ public:
   static Constant *getExactLShr(Constant *C1, Constant *C2) {
     return getLShr(C1, C2, true);
   }
+
+  /// If C is a scalar/fixed width vector of known powers of 2, then this
+  /// function returns a new scalar/fixed width vector obtained from logBase2
+  /// of C. Undef vector elements are set to zero.
+  /// Return a null pointer otherwise.
+  static Constant *getExactLogBase2(Constant *C);
 
   /// Return the identity constant for a binary opcode.
   /// The identity constant C is defined as X op C = X and C op X = X for every

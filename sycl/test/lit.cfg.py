@@ -36,13 +36,15 @@ config.test_source_root = os.path.dirname(__file__)
 config.test_exec_root = os.path.join(config.sycl_obj_root, 'test')
 
 # Propagate some variables from the host environment.
-llvm_config.with_system_environment(['PATH', 'OCL_ICD_FILENAME', 'SYCL_DEVICE_ALLOWLIST', 'SYCL_CONFIG_FILE_NAME'])
+llvm_config.with_system_environment(['PATH', 'OCL_ICD_FILENAMES', 'SYCL_DEVICE_ALLOWLIST', 'SYCL_CONFIG_FILE_NAME'])
 
 # Configure LD_LIBRARY_PATH or corresponding os-specific alternatives
 if platform.system() == "Linux":
     config.available_features.add('linux')
     llvm_config.with_system_environment('LD_LIBRARY_PATH')
     llvm_config.with_environment('LD_LIBRARY_PATH', config.sycl_libs_dir, append_path=True)
+    llvm_config.with_system_environment('CFLAGS')
+    llvm_config.with_environment('CFLAGS', config.sycl_clang_extra_flags)
 
 elif platform.system() == "Windows":
     config.available_features.add('windows')
@@ -81,6 +83,7 @@ get_device_count_by_type_path = os.path.join(config.llvm_tools_dir, "get_device_
 
 def getDeviceCount(device_type):
     is_cuda = False;
+    is_level_zero = False;
     process = subprocess.Popen([get_device_count_by_type_path, device_type, backend],
         stdout=subprocess.PIPE)
     (output, err) = process.communicate()
@@ -89,7 +92,7 @@ def getDeviceCount(device_type):
     if exit_code != 0:
         lit_config.error("getDeviceCount {TYPE} {BACKEND}: Non-zero exit code {CODE}".format(
             TYPE=device_type, BACKEND=backend, CODE=exit_code))
-        return [0,False]
+        return [0,False,False]
 
     result = output.decode().replace('\n', '').split(':', 1)
     try:
@@ -100,15 +103,17 @@ def getDeviceCount(device_type):
             TYPE=device_type, BACKEND=backend, OUT=result[0]))
 
     # if we have found gpu and there is additional information, let's check
-    # whether this is CUDA device or not
+    # whether this is CUDA device or Level Zero device or none of these.
     if device_type == "gpu" and value > 0 and len(result[1]):
         if re.match(r".*cuda", result[1]):
             is_cuda = True;
+        if re.match(r".*level zero", result[1]):
+            is_level_zero = True;
 
     if err:
         lit_config.warning("getDeviceCount {TYPE} {BACKEND} stderr:{ERR}".format(
             TYPE=device_type, BACKEND=backend, ERR=err))
-    return [value,is_cuda]
+    return [value,is_cuda,is_level_zero]
 
 # Every SYCL implementation provides a host implementation.
 config.available_features.add('host')
@@ -146,7 +151,8 @@ gpu_check_substitute = ""
 gpu_check_on_linux_substitute = ""
 
 cuda = False
-[gpu_count, cuda] = getDeviceCount("gpu")
+level_zero = False
+[gpu_count, cuda, level_zero] = getDeviceCount("gpu")
 
 if gpu_count > 0:
     found_at_least_one_device = True
@@ -156,10 +162,16 @@ if gpu_count > 0:
     config.available_features.add('gpu')
     if cuda:
        config.available_features.add('cuda')
+    elif level_zero:
+       config.available_features.add('level_zero')
 
     if platform.system() == "Linux":
         gpu_run_on_linux_substitute = "env SYCL_DEVICE_TYPE=GPU SYCL_BE={SYCL_BE} ".format(SYCL_BE=backend)
         gpu_check_on_linux_substitute = "| FileCheck %s"
+    # ESIMD-specific setup. Requires OpenCL for now.
+    esimd_run_substitute = " env SYCL_BE=PI_OPENCL SYCL_DEVICE_TYPE=GPU SYCL_PROGRAM_COMPILE_OPTIONS=-vc-codegen"
+    config.substitutions.append( ('%ESIMD_RUN_PLACEHOLDER',  esimd_run_substitute) )
+    config.substitutions.append( ('%clangxx-esimd',  "clang++ -fsycl-explicit-simd" ) )
 else:
     lit_config.warning("GPU device not found")
 
@@ -170,7 +182,7 @@ config.substitutions.append( ('%GPU_CHECK_ON_LINUX_PLACEHOLDER',  gpu_check_on_l
 
 acc_run_substitute = "true"
 acc_check_substitute = ""
-if getDeviceCount("accelerator")[0] and platform.system() == "Linux":
+if getDeviceCount("accelerator")[0]:
     found_at_least_one_device = True
     lit_config.note("Found available accelerator device")
     acc_run_substitute = " env SYCL_DEVICE_TYPE=ACC "
@@ -181,8 +193,8 @@ else:
 config.substitutions.append( ('%ACC_RUN_PLACEHOLDER',  acc_run_substitute) )
 config.substitutions.append( ('%ACC_CHECK_PLACEHOLDER',  acc_check_substitute) )
 
-# PI API either supports OpenCL or CUDA.
-if not cuda and found_at_least_one_device:
+# LIT testing either supports OpenCL or CUDA or Level Zero.
+if not cuda and not level_zero and found_at_least_one_device:
     config.available_features.add('opencl')
 
 if cuda:

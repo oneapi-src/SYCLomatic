@@ -41,7 +41,8 @@ public:
   int getIntImmCost(const APInt &Imm, Type *Ty, TTI::TargetCostKind CostKind);
 
   int getIntImmCostInst(unsigned Opcode, unsigned Idx, const APInt &Imm,
-                        Type *Ty, TTI::TargetCostKind CostKind);
+                        Type *Ty, TTI::TargetCostKind CostKind,
+                        Instruction *Inst = nullptr);
   int getIntImmCostIntrin(Intrinsic::ID IID, unsigned Idx, const APInt &Imm,
                           Type *Ty, TTI::TargetCostKind CostKind);
 
@@ -49,6 +50,9 @@ public:
 
   void getUnrollingPreferences(Loop *L, ScalarEvolution &SE,
                                TTI::UnrollingPreferences &UP);
+
+  void getPeelingPreferences(Loop *L, ScalarEvolution &SE,
+                             TTI::PeelingPreferences &PP);
 
   bool isLSRCostLess(TargetTransformInfo::LSRCost &C1,
                      TargetTransformInfo::LSRCost &C2);
@@ -90,7 +94,7 @@ public:
   unsigned getBoolVecToIntConversionCost(unsigned Opcode, Type *Dst,
                                          const Instruction *I);
   int getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src,
-                       TTI::TargetCostKind CostKind,
+                       TTI::CastContextHint CCH, TTI::TargetCostKind CostKind,
                        const Instruction *I = nullptr);
   int getCmpSelInstrCost(unsigned Opcode, Type *ValTy, Type *CondTy,
                          TTI::TargetCostKind CostKind,
@@ -101,14 +105,11 @@ public:
                       unsigned AddressSpace, TTI::TargetCostKind CostKind,
                       const Instruction *I = nullptr);
 
-  int getInterleavedMemoryOpCost(unsigned Opcode, Type *VecTy,
-                                 unsigned Factor,
-                                 ArrayRef<unsigned> Indices,
-                                 unsigned Alignment,
-                                 unsigned AddressSpace,
-                                 TTI::TargetCostKind CostKind = TTI::TCK_SizeAndLatency,
-                                 bool UseMaskForCond = false,
-                                 bool UseMaskForGaps = false);
+  int getInterleavedMemoryOpCost(
+      unsigned Opcode, Type *VecTy, unsigned Factor, ArrayRef<unsigned> Indices,
+      Align Alignment, unsigned AddressSpace,
+      TTI::TargetCostKind CostKind = TTI::TCK_SizeAndLatency,
+      bool UseMaskForCond = false, bool UseMaskForGaps = false);
 
   int getIntrinsicInstrCost(const IntrinsicCostAttributes &ICA,
                             TTI::TargetCostKind CostKind);

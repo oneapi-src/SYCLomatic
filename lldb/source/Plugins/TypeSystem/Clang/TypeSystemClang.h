@@ -346,11 +346,9 @@ public:
     std::unique_ptr<TemplateParameterInfos> packed_args;
   };
 
-  clang::FunctionTemplateDecl *
-  CreateFunctionTemplateDecl(clang::DeclContext *decl_ctx,
-                             OptionalClangModuleID owning_module,
-                             clang::FunctionDecl *func_decl, const char *name,
-                             const TemplateParameterInfos &infos);
+  clang::FunctionTemplateDecl *CreateFunctionTemplateDecl(
+      clang::DeclContext *decl_ctx, OptionalClangModuleID owning_module,
+      clang::FunctionDecl *func_decl, const TemplateParameterInfos &infos);
 
   void CreateFunctionTemplateSpecializationInfo(
       clang::FunctionDecl *func_decl, clang::FunctionTemplateDecl *Template,
@@ -410,11 +408,10 @@ public:
 
   // Function Types
 
-  clang::FunctionDecl *
-  CreateFunctionDeclaration(clang::DeclContext *decl_ctx,
-                            OptionalClangModuleID owning_module,
-                            const char *name, const CompilerType &function_Type,
-                            int storage, bool is_inline);
+  clang::FunctionDecl *CreateFunctionDeclaration(
+      clang::DeclContext *decl_ctx, OptionalClangModuleID owning_module,
+      llvm::StringRef name, const CompilerType &function_Type,
+      clang::StorageClass storage, bool is_inline);
 
   CompilerType CreateFunctionType(const CompilerType &result_type,
                                   const CompilerType *args, unsigned num_args,
@@ -682,14 +679,14 @@ public:
 
   /// Using the current type, create a new typedef to that type using
   /// "typedef_name" as the name and "decl_ctx" as the decl context.
-  /// \param payload is an opaque TypePayloadClang.
+  /// \param opaque_payload is an opaque TypePayloadClang.
   static CompilerType
   CreateTypedefType(const CompilerType &type, const char *typedef_name,
                     const CompilerDeclContext &compiler_decl_ctx,
                     uint32_t opaque_payload);
 
   CompilerType GetArrayElementType(lldb::opaque_compiler_type_t type,
-                                   uint64_t *stride) override;
+                                   ExecutionContextScope *exe_scope) override;
 
   CompilerType GetArrayType(lldb::opaque_compiler_type_t type,
                             uint64_t size) override;
@@ -873,6 +870,24 @@ public:
                                                  const CompilerType &var_type,
                                                  lldb::AccessType access);
 
+  /// Initializes a variable with an integer value.
+  /// \param var The variable to initialize. Must not already have an
+  ///            initializer and must have an integer or enum type.
+  /// \param init_value The integer value that the variable should be
+  ///                   initialized to. Has to match the bit width of the
+  ///                   variable type.
+  static void SetIntegerInitializerForVariable(clang::VarDecl *var,
+                                               const llvm::APInt &init_value);
+
+  /// Initializes a variable with a floating point value.
+  /// \param var The variable to initialize. Must not already have an
+  ///            initializer and must have a floating point type.
+  /// \param init_value The float value that the variable should be
+  ///                   initialized to.
+  static void
+  SetFloatingInitializerForVariable(clang::VarDecl *var,
+                                    const llvm::APFloat &init_value);
+
   clang::CXXMethodDecl *AddMethodToCXXRecordType(
       lldb::opaque_compiler_type_t type, llvm::StringRef name,
       const char *mangled_name, const CompilerType &method_type,
@@ -1037,7 +1052,8 @@ public:
   }
 
   clang::DeclarationName
-  GetDeclarationName(const char *name, const CompilerType &function_clang_type);
+  GetDeclarationName(llvm::StringRef name,
+                     const CompilerType &function_clang_type);
 
   clang::LangOptions *GetLangOpts() const {
     return m_language_options_up.get();

@@ -174,6 +174,7 @@ TEST_F(AliasAnalysisTest, getModRefInfo) {
   auto PtrType = Type::getInt32PtrTy(C);
   auto *Value = ConstantInt::get(IntType, 42);
   auto *Addr = ConstantPointerNull::get(PtrType);
+  auto Alignment = Align(IntType->getBitWidth() / 8);
 
   auto *Store1 = new StoreInst(Value, Addr, BB);
   auto *Load1 = new LoadInst(IntType, Addr, "load", BB);
@@ -181,11 +182,11 @@ TEST_F(AliasAnalysisTest, getModRefInfo) {
   auto *VAArg1 = new VAArgInst(Addr, PtrType, "vaarg", BB);
   auto *CmpXChg1 = new AtomicCmpXchgInst(
       Addr, ConstantInt::get(IntType, 0), ConstantInt::get(IntType, 1),
-      AtomicOrdering::Monotonic, AtomicOrdering::Monotonic,
+      Alignment, AtomicOrdering::Monotonic, AtomicOrdering::Monotonic,
       SyncScope::System, BB);
-  auto *AtomicRMW =
-      new AtomicRMWInst(AtomicRMWInst::Xchg, Addr, ConstantInt::get(IntType, 1),
-                        AtomicOrdering::Monotonic, SyncScope::System, BB);
+  auto *AtomicRMW = new AtomicRMWInst(
+      AtomicRMWInst::Xchg, Addr, ConstantInt::get(IntType, 1), Alignment,
+      AtomicOrdering::Monotonic, SyncScope::System, BB);
 
   ReturnInst::Create(C, nullptr, BB);
 
@@ -204,6 +205,48 @@ TEST_F(AliasAnalysisTest, getModRefInfo) {
   EXPECT_EQ(AA.getModRefInfo(CmpXChg1, None), ModRefInfo::ModRef);
   EXPECT_EQ(AA.getModRefInfo(AtomicRMW, MemoryLocation()), ModRefInfo::ModRef);
   EXPECT_EQ(AA.getModRefInfo(AtomicRMW, None), ModRefInfo::ModRef);
+}
+
+static Instruction *getInstructionByName(Function &F, StringRef Name) {
+  for (auto &I : instructions(F))
+    if (I.getName() == Name)
+      return &I;
+  llvm_unreachable("Expected to find instruction!");
+}
+
+TEST_F(AliasAnalysisTest, BatchAAPhiCycles) {
+  LLVMContext C;
+  SMDiagnostic Err;
+  std::unique_ptr<Module> M = parseAssemblyString(R"(
+    define void @f(i8* noalias %a) {
+    entry:
+      br label %loop
+
+    loop:
+      %phi = phi i8* [ null, %entry ], [ %a2, %loop ]
+      %offset1 = phi i64 [ 0, %entry ], [ %offset2, %loop]
+      %offset2 = add i64 %offset1, 1
+      %a1 = getelementptr i8, i8* %a, i64 %offset1
+      %a2 = getelementptr i8, i8* %a, i64 %offset2
+      br label %loop
+    }
+  )", Err, C);
+
+  Function *F = M->getFunction("f");
+  Instruction *Phi = getInstructionByName(*F, "phi");
+  Instruction *A1 = getInstructionByName(*F, "a1");
+  Instruction *A2 = getInstructionByName(*F, "a2");
+  MemoryLocation PhiLoc(Phi, LocationSize::precise(1));
+  MemoryLocation A1Loc(A1, LocationSize::precise(1));
+  MemoryLocation A2Loc(A2, LocationSize::precise(1));
+
+  auto &AA = getAAResults(*F);
+  EXPECT_EQ(NoAlias, AA.alias(A1Loc, A2Loc));
+  EXPECT_EQ(MayAlias, AA.alias(PhiLoc, A1Loc));
+
+  BatchAAResults BatchAA(AA);
+  EXPECT_EQ(NoAlias, BatchAA.alias(A1Loc, A2Loc));
+  EXPECT_EQ(NoAlias, BatchAA.alias(PhiLoc, A1Loc)); // TODO: This is wrong.
 }
 
 class AAPassInfraTest : public testing::Test {

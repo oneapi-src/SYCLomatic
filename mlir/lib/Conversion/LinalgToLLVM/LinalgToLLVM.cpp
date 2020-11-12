@@ -19,6 +19,7 @@
 #include "mlir/Dialect/Linalg/IR/LinalgOps.h"
 #include "mlir/Dialect/Linalg/IR/LinalgTypes.h"
 #include "mlir/Dialect/Linalg/Passes.h"
+#include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/Dialect/StandardOps/EDSC/Intrinsics.h"
 #include "mlir/IR/AffineExpr.h"
 #include "mlir/IR/AffineMap.h"
@@ -140,7 +141,7 @@ public:
     edsc::ScopedContext context(rewriter, op->getLoc());
 
     // Fill in an aggregate value of the descriptor.
-    RangeOpOperandAdaptor adaptor(operands);
+    RangeOpAdaptor adaptor(operands);
     Value desc = llvm_undef(rangeDescriptorTy);
     desc = llvm_insertvalue(desc, adaptor.min(), rewriter.getI64ArrayAttr(0));
     desc = llvm_insertvalue(desc, adaptor.max(), rewriter.getI64ArrayAttr(1));
@@ -178,7 +179,7 @@ public:
       return failure();
 
     edsc::ScopedContext context(rewriter, op->getLoc());
-    ReshapeOpOperandAdaptor adaptor(operands);
+    ReshapeOpAdaptor adaptor(operands);
     BaseViewConversionHelper baseDesc(adaptor.src());
     BaseViewConversionHelper desc(typeConverter.convertType(dstType));
     desc.setAllocatedPtr(baseDesc.allocatedPtr());
@@ -208,7 +209,7 @@ public:
   matchAndRewrite(Operation *op, ArrayRef<Value> operands,
                   ConversionPatternRewriter &rewriter) const override {
     edsc::ScopedContext context(rewriter, op->getLoc());
-    SliceOpOperandAdaptor adaptor(operands);
+    SliceOpAdaptor adaptor(operands);
     BaseViewConversionHelper baseDesc(adaptor.view());
 
     auto sliceOp = cast<SliceOp>(op);
@@ -219,7 +220,7 @@ public:
     BaseViewConversionHelper desc(
         typeConverter.convertType(sliceOp.getShapedType()));
 
-    // TODO(ntv): extract sizes and emit asserts.
+    // TODO: extract sizes and emit asserts.
     SmallVector<Value, 4> strides(memRefType.getRank());
     for (int i = 0, e = memRefType.getRank(); i < e; ++i)
       strides[i] = baseDesc.stride(i);
@@ -283,62 +284,12 @@ public:
   }
 };
 
-/// Conversion pattern that transforms a linalg.transpose op into:
-///   1. A function entry `alloca` operation to allocate a ViewDescriptor.
-///   2. A load of the ViewDescriptor from the pointer allocated in 1.
-///   3. Updates to the ViewDescriptor to introduce the data ptr, offset, size
-///      and stride. Size and stride are permutations of the original values.
-///   4. A store of the resulting ViewDescriptor to the alloca'ed pointer.
-/// The linalg.transpose op is replaced by the alloca'ed pointer.
-class TransposeOpConversion : public ConvertToLLVMPattern {
-public:
-  explicit TransposeOpConversion(MLIRContext *context,
-                                 LLVMTypeConverter &lowering_)
-      : ConvertToLLVMPattern(TransposeOp::getOperationName(), context,
-                             lowering_) {}
-
-  LogicalResult
-  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
-                  ConversionPatternRewriter &rewriter) const override {
-    // Initialize the common boilerplate and alloca at the top of the FuncOp.
-    edsc::ScopedContext context(rewriter, op->getLoc());
-    TransposeOpOperandAdaptor adaptor(operands);
-    BaseViewConversionHelper baseDesc(adaptor.view());
-
-    auto transposeOp = cast<TransposeOp>(op);
-    // No permutation, early exit.
-    if (transposeOp.permutation().isIdentity())
-      return rewriter.replaceOp(op, {baseDesc}), success();
-
-    BaseViewConversionHelper desc(
-        typeConverter.convertType(transposeOp.getShapedType()));
-
-    // Copy the base and aligned pointers from the old descriptor to the new
-    // one.
-    desc.setAllocatedPtr(baseDesc.allocatedPtr());
-    desc.setAlignedPtr(baseDesc.alignedPtr());
-
-    // Copy the offset pointer from the old descriptor to the new one.
-    desc.setOffset(baseDesc.offset());
-
-    // Iterate over the dimensions and apply size/stride permutation.
-    for (auto en : llvm::enumerate(transposeOp.permutation().getResults())) {
-      int sourcePos = en.index();
-      int targetPos = en.value().cast<AffineDimExpr>().getPosition();
-      desc.setSize(targetPos, baseDesc.size(sourcePos));
-      desc.setStride(targetPos, baseDesc.stride(sourcePos));
-    }
-
-    rewriter.replaceOp(op, {desc});
-    return success();
-  }
-};
-
 // YieldOp produces and LLVM::ReturnOp.
 class YieldOpConversion : public ConvertToLLVMPattern {
 public:
   explicit YieldOpConversion(MLIRContext *context, LLVMTypeConverter &lowering_)
-      : ConvertToLLVMPattern(YieldOp::getOperationName(), context, lowering_) {}
+      : ConvertToLLVMPattern(linalg::YieldOp::getOperationName(), context,
+                             lowering_) {}
 
   LogicalResult
   matchAndRewrite(Operation *op, ArrayRef<Value> operands,
@@ -354,7 +305,7 @@ void mlir::populateLinalgToLLVMConversionPatterns(
     LLVMTypeConverter &converter, OwningRewritePatternList &patterns,
     MLIRContext *ctx) {
   patterns.insert<RangeOpConversion, ReshapeOpConversion, SliceOpConversion,
-                  TransposeOpConversion, YieldOpConversion>(ctx, converter);
+                  YieldOpConversion>(ctx, converter);
 
   // Populate the type conversions for the linalg types.
   converter.addConversion(
@@ -383,10 +334,8 @@ void ConvertLinalgToLLVMPass::runOnOperation() {
   populateLinalgToLLVMConversionPatterns(converter, patterns, &getContext());
 
   LLVMConversionTarget target(getContext());
-  target.addDynamicallyLegalOp<FuncOp>(
-      [&](FuncOp op) { return converter.isSignatureLegal(op.getType()); });
   target.addLegalOp<ModuleOp, ModuleTerminatorOp>();
-  if (failed(applyFullConversion(module, target, patterns, &converter)))
+  if (failed(applyFullConversion(module, target, patterns)))
     signalPassFailure();
 }
 

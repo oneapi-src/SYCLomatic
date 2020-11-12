@@ -407,6 +407,9 @@ template <> struct ScalarTraits<Target> {
     case PlatformKind::watchOSSimulator:
       OS << "watchos-simulator";
       break;
+    case PlatformKind::driverKit:
+      OS << "driverkit";
+      break;
     }
   }
 
@@ -1089,8 +1092,8 @@ struct DocumentListTraits<std::vector<const MachO::InterfaceFile *>> {
 };
 
 } // end namespace yaml.
+} // namespace llvm
 
-namespace MachO {
 static void DiagHandler(const SMDiagnostic &Diag, void *Context) {
   auto *File = static_cast<TextAPIContext *>(Context);
   SmallString<1024> Message;
@@ -1147,6 +1150,3 @@ Error TextAPIWriter::writeToStream(raw_ostream &OS, const InterfaceFile &File) {
 
   return Error::success();
 }
-
-} // end namespace MachO.
-} // end namespace llvm.

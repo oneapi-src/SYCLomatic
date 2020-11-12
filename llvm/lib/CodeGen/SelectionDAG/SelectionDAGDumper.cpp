@@ -106,6 +106,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::TokenFactor:                return "TokenFactor";
   case ISD::AssertSext:                 return "AssertSext";
   case ISD::AssertZext:                 return "AssertZext";
+  case ISD::AssertAlign:                return "AssertAlign";
 
   case ISD::BasicBlock:                 return "BasicBlock";
   case ISD::VALUETYPE:                  return "ValueType";
@@ -292,6 +293,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::ADDC:                       return "addc";
   case ISD::ADDE:                       return "adde";
   case ISD::ADDCARRY:                   return "addcarry";
+  case ISD::SADDO_CARRY:                return "saddo_carry";
   case ISD::SADDO:                      return "saddo";
   case ISD::UADDO:                      return "uaddo";
   case ISD::SSUBO:                      return "ssubo";
@@ -301,6 +303,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::SUBC:                       return "subc";
   case ISD::SUBE:                       return "sube";
   case ISD::SUBCARRY:                   return "subcarry";
+  case ISD::SSUBO_CARRY:                return "ssubo_carry";
   case ISD::SHL_PARTS:                  return "shl_parts";
   case ISD::SRA_PARTS:                  return "sra_parts";
   case ISD::SRL_PARTS:                  return "srl_parts";
@@ -309,6 +312,8 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::UADDSAT:                    return "uaddsat";
   case ISD::SSUBSAT:                    return "ssubsat";
   case ISD::USUBSAT:                    return "usubsat";
+  case ISD::SSHLSAT:                    return "sshlsat";
+  case ISD::USHLSAT:                    return "ushlsat";
 
   case ISD::SMULFIX:                    return "smulfix";
   case ISD::SMULFIXSAT:                 return "smulfixsat";
@@ -409,6 +414,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::CTTZ_ZERO_UNDEF:            return "cttz_zero_undef";
   case ISD::CTLZ:                       return "ctlz";
   case ISD::CTLZ_ZERO_UNDEF:            return "ctlz_zero_undef";
+  case ISD::PARITY:                     return "parity";
 
   // Trampolines
   case ISD::INIT_TRAMPOLINE:            return "init_trampoline";
@@ -446,9 +452,9 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
     case ISD::SETFALSE2:                return "setfalse2";
     }
   case ISD::VECREDUCE_FADD:             return "vecreduce_fadd";
-  case ISD::VECREDUCE_STRICT_FADD:      return "vecreduce_strict_fadd";
+  case ISD::VECREDUCE_SEQ_FADD:         return "vecreduce_seq_fadd";
   case ISD::VECREDUCE_FMUL:             return "vecreduce_fmul";
-  case ISD::VECREDUCE_STRICT_FMUL:      return "vecreduce_strict_fmul";
+  case ISD::VECREDUCE_SEQ_FMUL:         return "vecreduce_seq_fmul";
   case ISD::VECREDUCE_ADD:              return "vecreduce_add";
   case ISD::VECREDUCE_MUL:              return "vecreduce_mul";
   case ISD::VECREDUCE_AND:              return "vecreduce_and";

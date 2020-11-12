@@ -24,6 +24,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IRReader/IRReader.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/DataTypes.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/SourceMgr.h"
@@ -157,7 +158,7 @@ extern "C" LLVM_ATTRIBUTE_USED int LLVMFuzzerInitialize(int *argc,
   case '3': OLvl = CodeGenOpt::Aggressive; break;
   }
 
-  TargetOptions Options = codegen::InitTargetOptionsFromCodeGenFlags();
+  TargetOptions Options = codegen::InitTargetOptionsFromCodeGenFlags(TheTriple);
   TM.reset(TheTarget->createTargetMachine(
       TheTriple.getTriple(), CPUStr, FeaturesStr, Options,
       codegen::getExplicitRelocModel(), codegen::getExplicitCodeModel(), OLvl));

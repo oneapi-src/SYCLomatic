@@ -35,42 +35,42 @@ public:
   //
   // Further sentinels can be allocated from the small negative integers.
   // DenseMapInfo<unsigned> uses -1u and -2u.
+  static_assert(std::numeric_limits<decltype(Reg)>::max() >= 0xFFFFFFFF,
+                "Reg isn't large enough to hold full range.");
+  static constexpr unsigned NoRegister = 0u;
+  static constexpr unsigned FirstPhysicalReg = 1u;
+  static constexpr unsigned FirstStackSlot = 1u << 30;
+  static constexpr unsigned VirtualRegFlag = 1u << 31;
 
   /// This is the portion of the positive number space that is not a physical
   /// register. StackSlot values do not exist in the MC layer, see
   /// Register::isStackSlot() for the more information on them.
   ///
-  /// Note that isVirtualRegister() and isPhysicalRegister() cannot handle stack
-  /// slots, so if a variable may contains a stack slot, always check
-  /// isStackSlot() first.
   static bool isStackSlot(unsigned Reg) {
-    return int(Reg) >= (1 << 30);
+    return FirstStackSlot <= Reg && Reg < VirtualRegFlag;
   }
 
   /// Return true if the specified register number is in
   /// the physical register namespace.
   static bool isPhysicalRegister(unsigned Reg) {
-    assert(!isStackSlot(Reg) && "Not a register! Check isStackSlot() first.");
-    return int(Reg) > 0;
-  }
-
-  /// Return true if the specified register number is in the physical register
-  /// namespace.
-  bool isPhysical() const {
-    return isPhysicalRegister(Reg);
+    return FirstPhysicalReg <= Reg && Reg < FirstStackSlot;
   }
 
   constexpr operator unsigned() const {
     return Reg;
   }
 
+  /// Check the provided unsigned value is a valid MCRegister.
+  static MCRegister from(unsigned Val) {
+    assert(Val == NoRegister || isPhysicalRegister(Val));
+    return MCRegister(Val);
+  }
+
   unsigned id() const {
     return Reg;
   }
 
-  bool isValid() const {
-    return Reg != 0;
-  }
+  bool isValid() const { return Reg != NoRegister; }
 
   /// Comparisons between register objects
   bool operator==(const MCRegister &Other) const { return Reg == Other.Reg; }

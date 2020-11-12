@@ -62,6 +62,12 @@ void wasm::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   const char *Linker = Args.MakeArgString(getLinkerPath(Args));
   ArgStringList CmdArgs;
 
+  CmdArgs.push_back("-m");
+  if (getToolChain().getTriple().isArch64Bit())
+    CmdArgs.push_back("wasm64");
+  else
+    CmdArgs.push_back("wasm32");
+
   if (Args.hasArg(options::OPT_s))
     CmdArgs.push_back("--strip-all");
 
@@ -69,8 +75,26 @@ void wasm::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   Args.AddAllArgs(CmdArgs, options::OPT_u);
   ToolChain.AddFilePathLibArgs(Args, CmdArgs);
 
+  const char *Crt1 = "crt1.o";
+  const char *Entry = NULL;
+  if (const Arg *A = Args.getLastArg(options::OPT_mexec_model_EQ)) {
+    StringRef CM = A->getValue();
+    if (CM == "command") {
+      // Use default values.
+    } else if (CM == "reactor") {
+      Crt1 = "crt1-reactor.o";
+      Entry = "_initialize";
+    } else {
+      ToolChain.getDriver().Diag(diag::err_drv_invalid_argument_to_option)
+          << CM << A->getOption().getName();
+    }
+  }
   if (!Args.hasArg(options::OPT_nostdlib, options::OPT_nostartfiles))
-    CmdArgs.push_back(Args.MakeArgString(ToolChain.GetFilePath("crt1.o")));
+    CmdArgs.push_back(Args.MakeArgString(ToolChain.GetFilePath(Crt1)));
+  if (Entry) {
+    CmdArgs.push_back(Args.MakeArgString("--entry"));
+    CmdArgs.push_back(Args.MakeArgString(Entry));
+  }
 
   AddLinkerInputs(ToolChain, Inputs, Args, CmdArgs, JA);
 
@@ -90,7 +114,9 @@ void wasm::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   CmdArgs.push_back("-o");
   CmdArgs.push_back(Output.getFilename());
 
-  C.addCommand(std::make_unique<Command>(JA, *this, Linker, CmdArgs, Inputs));
+  C.addCommand(std::make_unique<Command>(JA, *this,
+                                         ResponseFileSupport::AtFileCurCP(),
+                                         Linker, CmdArgs, Inputs, Output));
 
   // When optimizing, if wasm-opt is available, run it.
   if (Arg *A = Args.getLastArg(options::OPT_O_Group)) {
@@ -112,7 +138,9 @@ void wasm::Linker::ConstructJob(Compilation &C, const JobAction &JA,
         CmdArgs.push_back(Args.MakeArgString(llvm::Twine("-O") + OOpt));
         CmdArgs.push_back("-o");
         CmdArgs.push_back(Output.getFilename());
-        C.addCommand(std::make_unique<Command>(JA, *this, WasmOpt, CmdArgs, Inputs));
+        C.addCommand(std::make_unique<Command>(
+            JA, *this, ResponseFileSupport::AtFileCurCP(), WasmOpt, CmdArgs,
+            Inputs, Output));
       }
     }
   }
@@ -214,6 +242,27 @@ void WebAssembly::addClangTargetOptions(const ArgList &DriverArgs,
     CC1Args.push_back("+mutable-globals");
     CC1Args.push_back("-target-feature");
     CC1Args.push_back("+sign-ext");
+  }
+
+  if (!DriverArgs.hasFlag(options::OPT_mmutable_globals,
+                          options::OPT_mno_mutable_globals, false)) {
+    // -fPIC implies +mutable-globals because the PIC ABI used by the linker
+    // depends on importing and exporting mutable globals.
+    llvm::Reloc::Model RelocationModel;
+    unsigned PICLevel;
+    bool IsPIE;
+    std::tie(RelocationModel, PICLevel, IsPIE) =
+        ParsePICArgs(*this, DriverArgs);
+    if (RelocationModel == llvm::Reloc::PIC_) {
+      if (DriverArgs.hasFlag(options::OPT_mno_mutable_globals,
+                             options::OPT_mmutable_globals, false)) {
+        getDriver().Diag(diag::err_drv_argument_not_allowed_with)
+            << "-fPIC"
+            << "-mno-mutable-globals";
+      }
+      CC1Args.push_back("-target-feature");
+      CC1Args.push_back("+mutable-globals");
+    }
   }
 
   if (DriverArgs.getLastArg(options::OPT_fwasm_exceptions)) {

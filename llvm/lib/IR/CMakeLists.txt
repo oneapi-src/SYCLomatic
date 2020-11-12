@@ -4,6 +4,7 @@ add_llvm_component_library(LLVMCore
   Attributes.cpp
   AutoUpgrade.cpp
   BasicBlock.cpp
+  CFG.cpp
   Comdat.cpp
   ConstantFold.cpp
   ConstantRange.cpp
@@ -47,6 +48,7 @@ add_llvm_component_library(LLVMCore
   SafepointIRVerifier.cpp
   ProfileSummary.cpp
   Statepoint.cpp
+  StructuralHash.cpp
   Type.cpp
   TypeFinder.cpp
   Use.cpp

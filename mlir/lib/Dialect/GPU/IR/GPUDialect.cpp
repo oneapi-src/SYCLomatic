@@ -16,12 +16,13 @@
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/Function.h"
+#include "mlir/IR/DialectImplementation.h"
 #include "mlir/IR/FunctionImplementation.h"
 #include "mlir/IR/Module.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/StandardTypes.h"
+#include "llvm/ADT/TypeSwitch.h"
 
 using namespace mlir;
 using namespace mlir::gpu;
@@ -35,12 +36,33 @@ bool GPUDialect::isKernel(Operation *op) {
   return static_cast<bool>(isKernelAttr);
 }
 
-GPUDialect::GPUDialect(MLIRContext *context)
-    : Dialect(getDialectNamespace(), context) {
+void GPUDialect::initialize() {
+  addTypes<AsyncTokenType>();
   addOperations<
 #define GET_OP_LIST
 #include "mlir/Dialect/GPU/GPUOps.cpp.inc"
       >();
+}
+
+Type GPUDialect::parseType(DialectAsmParser &parser) const {
+  // Parse the main keyword for the type.
+  StringRef keyword;
+  if (parser.parseKeyword(&keyword))
+    return Type();
+  MLIRContext *context = getContext();
+
+  // Handle 'async token' types.
+  if (keyword == "async.token")
+    return AsyncTokenType::get(context);
+
+  parser.emitError(parser.getNameLoc(), "unknown gpu type: " + keyword);
+  return Type();
+}
+
+void GPUDialect::printType(Type type, DialectAsmPrinter &os) const {
+  TypeSwitch<Type>(type)
+      .Case<AsyncTokenType>([&](Type) { os << "async.token"; })
+      .Default([](Type) { llvm_unreachable("unexpected 'gpu' type kind"); });
 }
 
 LogicalResult GPUDialect::verifyOperationAttribute(Operation *op,
@@ -87,7 +109,7 @@ LogicalResult GPUDialect::verifyOperationAttribute(Operation *op,
       return launchOp.emitOpError("kernel function is missing the '")
              << GPUDialect::getKernelFuncAttrName() << "' attribute";
 
-    // TODO(ntv,zinenko,herhut): if the kernel function has been converted to
+    // TODO: if the kernel function has been converted to
     // the LLVM dialect but the caller hasn't (which happens during the
     // separate compilation), do not check type correspondence as it would
     // require the verifier to be aware of the LLVM type conversion.
@@ -127,9 +149,9 @@ static LogicalResult verifyAllReduce(gpu::AllReduceOp allReduce) {
     return allReduce.emitError(
         "expected either an op attribute or a non-empty body");
   if (!allReduce.body().empty()) {
-    if (allReduce.body().front().getNumArguments() != 2)
+    if (allReduce.body().getNumArguments() != 2)
       return allReduce.emitError("expected two region arguments");
-    for (auto argument : allReduce.body().front().getArguments()) {
+    for (auto argument : allReduce.body().getArguments()) {
       if (argument.getType() != allReduce.getType())
         return allReduce.emitError("incorrect region argument type");
     }
@@ -197,6 +219,26 @@ static ParseResult parseShuffleOp(OpAsmParser &parser, OperationState &state) {
 }
 
 //===----------------------------------------------------------------------===//
+// AsyncOpInterface
+//===----------------------------------------------------------------------===//
+
+void gpu::addAsyncDependency(Operation *op, Value token) {
+  op->insertOperands(0, {token});
+  if (!op->template hasTrait<OpTrait::AttrSizedOperandSegments>())
+    return;
+  auto attrName =
+      OpTrait::AttrSizedOperandSegments<void>::getOperandSegmentSizeAttr();
+  auto sizeAttr = op->template getAttrOfType<DenseIntElementsAttr>(attrName);
+  if (!sizeAttr)
+    return; // Async dependencies is the only variadic operand.
+  SmallVector<int32_t, 8> sizes;
+  for (auto size : sizeAttr.getIntValues())
+    sizes.push_back(size.getSExtValue());
+  ++sizes.front();
+  op->setAttr(attrName, Builder(op->getContext()).getI32VectorAttr(sizes));
+}
+
+//===----------------------------------------------------------------------===//
 // LaunchOp
 //===----------------------------------------------------------------------===//
 
@@ -218,26 +260,26 @@ void LaunchOp::build(OpBuilder &builder, OperationState &result,
 }
 
 KernelDim3 LaunchOp::getBlockIds() {
-  assert(!body().getBlocks().empty() && "FuncOp body must not be empty.");
-  auto args = body().getBlocks().front().getArguments();
+  assert(!body().empty() && "LaunchOp body must not be empty.");
+  auto args = body().getArguments();
   return KernelDim3{args[0], args[1], args[2]};
 }
 
 KernelDim3 LaunchOp::getThreadIds() {
-  assert(!body().getBlocks().empty() && "FuncOp body must not be empty.");
-  auto args = body().getBlocks().front().getArguments();
+  assert(!body().empty() && "LaunchOp body must not be empty.");
+  auto args = body().getArguments();
   return KernelDim3{args[3], args[4], args[5]};
 }
 
 KernelDim3 LaunchOp::getGridSize() {
-  assert(!body().getBlocks().empty() && "FuncOp body must not be empty.");
-  auto args = body().getBlocks().front().getArguments();
+  assert(!body().empty() && "LaunchOp body must not be empty.");
+  auto args = body().getArguments();
   return KernelDim3{args[6], args[7], args[8]};
 }
 
 KernelDim3 LaunchOp::getBlockSize() {
-  assert(!body().getBlocks().empty() && "FuncOp body must not be empty.");
-  auto args = body().getBlocks().front().getArguments();
+  assert(!body().empty() && "LaunchOp body must not be empty.");
+  auto args = body().getArguments();
   return KernelDim3{args[9], args[10], args[11]};
 }
 
@@ -254,8 +296,7 @@ static LogicalResult verify(LaunchOp op) {
   // sizes and transforms them into kNumConfigRegionAttributes region arguments
   // for block/thread identifiers and grid/block sizes.
   if (!op.body().empty()) {
-    Block &entryBlock = op.body().front();
-    if (entryBlock.getNumArguments() !=
+    if (op.body().getNumArguments() !=
         LaunchOp::kNumConfigOperands + op.getNumOperands())
       return op.emitOpError("unexpected number of region arguments");
   }
@@ -285,22 +326,20 @@ static LogicalResult verify(LaunchOp op) {
 //   (%size-x = %ssa-use, %size-y = %ssa-use, %size-z = %ssa-use)
 // where %size-* and %iter-* will correspond to the body region arguments.
 static void printSizeAssignment(OpAsmPrinter &p, KernelDim3 size,
-                                ValueRange operands, KernelDim3 ids) {
+                                KernelDim3 operands, KernelDim3 ids) {
   p << '(' << ids.x << ", " << ids.y << ", " << ids.z << ") in (";
-  p << size.x << " = " << operands[0] << ", ";
-  p << size.y << " = " << operands[1] << ", ";
-  p << size.z << " = " << operands[2] << ')';
+  p << size.x << " = " << operands.x << ", ";
+  p << size.y << " = " << operands.y << ", ";
+  p << size.z << " = " << operands.z << ')';
 }
 
 static void printLaunchOp(OpAsmPrinter &p, LaunchOp op) {
-  ValueRange operands = op.getOperands();
-
   // Print the launch configuration.
   p << LaunchOp::getOperationName() << ' ' << op.getBlocksKeyword();
-  printSizeAssignment(p, op.getGridSize(), operands.take_front(3),
+  printSizeAssignment(p, op.getGridSize(), op.getGridSizeOperandValues(),
                       op.getBlockIds());
   p << ' ' << op.getThreadsKeyword();
-  printSizeAssignment(p, op.getBlockSize(), operands.slice(3, 3),
+  printSizeAssignment(p, op.getBlockSize(), op.getBlockSizeOperandValues(),
                       op.getThreadIds());
 
   p.printRegion(op.body(), /*printEntryBlockArgs=*/false);
@@ -463,8 +502,8 @@ BlockArgument GPUFuncOp::addWorkgroupAttribution(Type type) {
   auto attrName = getNumWorkgroupAttributionsAttrName();
   auto attr = getAttrOfType<IntegerAttr>(attrName);
   setAttr(attrName, IntegerAttr::get(attr.getType(), attr.getValue() + 1));
-  return getBody().front().insertArgument(
-      getType().getNumInputs() + attr.getInt(), type);
+  return getBody().insertArgument(getType().getNumInputs() + attr.getInt(),
+                                  type);
 }
 
 /// Adds a new block argument that corresponds to buffers located in
@@ -472,13 +511,13 @@ BlockArgument GPUFuncOp::addWorkgroupAttribution(Type type) {
 BlockArgument GPUFuncOp::addPrivateAttribution(Type type) {
   // Buffers on the private memory always come after buffers on the workgroup
   // memory.
-  return getBody().front().addArgument(type);
+  return getBody().addArgument(type);
 }
 
 void GPUFuncOp::build(OpBuilder &builder, OperationState &result,
                       StringRef name, FunctionType type,
-                      ArrayRef<Type> workgroupAttributions,
-                      ArrayRef<Type> privateAttributions,
+                      TypeRange workgroupAttributions,
+                      TypeRange privateAttributions,
                       ArrayRef<NamedAttribute> attrs) {
   result.addAttribute(SymbolTable::getSymbolAttrName(),
                       builder.getStringAttr(name));
@@ -675,13 +714,10 @@ static LogicalResult verifyAttributions(Operation *op,
 LogicalResult GPUFuncOp::verifyBody() {
   unsigned numFuncArguments = getNumArguments();
   unsigned numWorkgroupAttributions = getNumWorkgroupAttributions();
-  unsigned numPrivateAttributions = getNumPrivateAttributions();
   unsigned numBlockArguments = front().getNumArguments();
-  if (numBlockArguments <
-      numFuncArguments + numWorkgroupAttributions + numPrivateAttributions)
+  if (numBlockArguments < numFuncArguments + numWorkgroupAttributions)
     return emitOpError() << "expected at least "
-                         << numFuncArguments + numWorkgroupAttributions +
-                                numPrivateAttributions
+                         << numFuncArguments + numWorkgroupAttributions
                          << " arguments to body region";
 
   ArrayRef<Type> funcArgTypes = getType().getInputs();
@@ -782,10 +818,31 @@ static void print(OpAsmPrinter &p, GPUModuleOp op) {
                 /*printBlockTerminators=*/false);
 }
 
-// Namespace avoids ambiguous ReturnOpOperandAdaptor.
-namespace mlir {
-namespace gpu {
+static ParseResult parseAsyncDependencies(
+    OpAsmParser &parser, Type &asyncTokenType,
+    SmallVectorImpl<OpAsmParser::OperandType> &asyncDependencies) {
+  auto loc = parser.getCurrentLocation();
+  if (succeeded(parser.parseOptionalKeyword("async"))) {
+    if (parser.getNumResults() == 0)
+      return parser.emitError(loc, "needs to be named when marked 'async'");
+    asyncTokenType = parser.getBuilder().getType<AsyncTokenType>();
+  }
+  return parser.parseOperandList(asyncDependencies,
+                                 OpAsmParser::Delimiter::OptionalSquare);
+}
+
+static void printAsyncDependencies(OpAsmPrinter &printer, Type asyncTokenType,
+                                   OperandRange asyncDependencies) {
+  if (asyncTokenType)
+    printer << "async ";
+  if (asyncDependencies.empty())
+    return;
+  printer << "[";
+  llvm::interleaveComma(asyncDependencies, printer);
+  printer << "]";
+}
+
+#include "mlir/Dialect/GPU/GPUOpInterfaces.cpp.inc"
+
 #define GET_OP_CLASSES
 #include "mlir/Dialect/GPU/GPUOps.cpp.inc"
-} // namespace gpu
-} // namespace mlir

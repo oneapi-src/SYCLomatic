@@ -126,8 +126,9 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   }
   if (DpctGlobalInfo::isKeepOriginCode())
-    Buffer = Content->getBuffer(SM.getDiagnostics(), SM.getFileManager())
-                 ->getBufferStart();
+    Buffer = Content->getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
+                 .getValueOr(llvm::MemoryBufferRef())
+                 .getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
     Lines.emplace_back(L, LineCache, Buffer);
   Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, Buffer);
@@ -1795,7 +1796,7 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
 MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
     const VarDecl *Var)
   : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
-  Scope((Var->isInLocalScope())
+  Scope(isLexicallyInLocalScope(Var)
     ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
     : Global),
   PointerAsArray(false) {

@@ -2,6 +2,8 @@ add_subdirectory(Transforms)
 
 add_mlir_dialect_library(MLIRLLVMIR
   IR/LLVMDialect.cpp
+  IR/LLVMTypes.cpp
+  IR/LLVMTypeSyntax.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Dialect/LLVMIR
@@ -9,6 +11,7 @@ add_mlir_dialect_library(MLIRLLVMIR
   DEPENDS
   MLIRLLVMOpsIncGen
   MLIRLLVMConversionsIncGen
+  MLIROpenMPOpsIncGen
   intrinsics_gen
 
   LINK_COMPONENTS
@@ -16,12 +19,10 @@ add_mlir_dialect_library(MLIRLLVMIR
   BitReader
   BitWriter
   Core
-  FrontendOpenMP
 
   LINK_LIBS PUBLIC
   MLIRCallInterfaces
   MLIRControlFlowInterfaces
-  MLIROpenMP
   MLIRIR
   MLIRSideEffectInterfaces
   MLIRSupport

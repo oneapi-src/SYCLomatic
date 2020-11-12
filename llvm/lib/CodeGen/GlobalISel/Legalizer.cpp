@@ -133,7 +133,6 @@ public:
   }
 
   void createdInstr(MachineInstr &MI) override {
-    LLVM_DEBUG(dbgs() << ".. .. New MI: " << MI);
     LLVM_DEBUG(NewMIs.push_back(&MI));
     createdOrChangedInstr(MI);
   }
@@ -170,6 +169,7 @@ Legalizer::legalizeMachineFunction(MachineFunction &MF, const LegalizerInfo &LI,
                                    ArrayRef<GISelChangeObserver *> AuxObservers,
                                    LostDebugLocObserver &LocObserver,
                                    MachineIRBuilder &MIRBuilder) {
+  MIRBuilder.setMF(MF);
   MachineRegisterInfo &MRI = MF.getRegInfo();
 
   // Populate worklists.
@@ -284,7 +284,7 @@ Legalizer::legalizeMachineFunction(MachineFunction &MF, const LegalizerInfo &LI,
                                             WrapperObserver)) {
         WorkListObserver.printNewInstrs();
         for (auto *DeadMI : DeadInstructions) {
-          LLVM_DEBUG(dbgs() << *DeadMI << "Is dead\n");
+          LLVM_DEBUG(dbgs() << "Is dead: " << *DeadMI);
           RemoveDeadInstFromLists(DeadMI);
           DeadMI->eraseFromParentAndMarkDBGValuesForRemoval();
         }

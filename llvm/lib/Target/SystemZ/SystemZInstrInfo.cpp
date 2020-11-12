@@ -1196,7 +1196,7 @@ MachineInstr *SystemZInstrInfo::foldMemoryOperandImpl(
     if (RC == &SystemZ::VR32BitRegClass || RC == &SystemZ::VR64BitRegClass) {
       Register Reg = MI.getOperand(I).getReg();
       Register PhysReg = Register::isVirtualRegister(Reg)
-                             ? (VRM ? VRM->getPhys(Reg) : Register())
+                             ? (VRM ? Register(VRM->getPhys(Reg)) : Register())
                              : Reg;
       if (!PhysReg ||
           !(SystemZ::FP32BitRegClass.contains(PhysReg) ||
@@ -1242,7 +1242,8 @@ MachineInstr *SystemZInstrInfo::foldMemoryOperandImpl(
     else {
       Register DstReg = MI.getOperand(0).getReg();
       Register DstPhys =
-          (Register::isVirtualRegister(DstReg) ? VRM->getPhys(DstReg) : DstReg);
+          (Register::isVirtualRegister(DstReg) ? Register(VRM->getPhys(DstReg))
+                                               : DstReg);
       Register SrcReg = (OpNum == 2 ? MI.getOperand(1).getReg()
                                     : ((OpNum == 1 && MI.isCommutable())
                                            ? MI.getOperand(2).getReg()
@@ -1870,6 +1871,30 @@ unsigned SystemZ::reverseCCMask(unsigned CCMask) {
           (CCMask & SystemZ::CCMASK_CMP_GT ? SystemZ::CCMASK_CMP_LT : 0) |
           (CCMask & SystemZ::CCMASK_CMP_LT ? SystemZ::CCMASK_CMP_GT : 0) |
           (CCMask & SystemZ::CCMASK_CMP_UO));
+}
+
+MachineBasicBlock *SystemZ::emitBlockAfter(MachineBasicBlock *MBB) {
+  MachineFunction &MF = *MBB->getParent();
+  MachineBasicBlock *NewMBB = MF.CreateMachineBasicBlock(MBB->getBasicBlock());
+  MF.insert(std::next(MachineFunction::iterator(MBB)), NewMBB);
+  return NewMBB;
+}
+
+MachineBasicBlock *SystemZ::splitBlockAfter(MachineBasicBlock::iterator MI,
+                                            MachineBasicBlock *MBB) {
+  MachineBasicBlock *NewMBB = emitBlockAfter(MBB);
+  NewMBB->splice(NewMBB->begin(), MBB,
+                 std::next(MachineBasicBlock::iterator(MI)), MBB->end());
+  NewMBB->transferSuccessorsAndUpdatePHIs(MBB);
+  return NewMBB;
+}
+
+MachineBasicBlock *SystemZ::splitBlockBefore(MachineBasicBlock::iterator MI,
+                                             MachineBasicBlock *MBB) {
+  MachineBasicBlock *NewMBB = emitBlockAfter(MBB);
+  NewMBB->splice(NewMBB->begin(), MBB, MI, MBB->end());
+  NewMBB->transferSuccessorsAndUpdatePHIs(MBB);
+  return NewMBB;
 }
 
 unsigned SystemZInstrInfo::getLoadAndTrap(unsigned Opcode) const {

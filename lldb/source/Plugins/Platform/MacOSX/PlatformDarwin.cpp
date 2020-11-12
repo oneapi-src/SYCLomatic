@@ -237,6 +237,30 @@ lldb_private::Status PlatformDarwin::GetSharedModuleWithLocalCache(
 
   Status err;
 
+  if (IsHost()) {
+    // When debugging on the host, we are most likely using the same shared
+    // cache as our inferior. The dylibs from the shared cache might not
+    // exist on the filesystem, so let's use the images in our own memory
+    // to create the modules.
+
+    // Check if the requested image is in our shared cache.
+    SharedCacheImageInfo image_info =
+        HostInfo::GetSharedCacheImageInfo(module_spec.GetFileSpec().GetPath());
+
+    // If we found it and it has the correct UUID, let's proceed with
+    // creating a module from the memory contents.
+    if (image_info.uuid &&
+        (!module_spec.GetUUID() || module_spec.GetUUID() == image_info.uuid)) {
+      ModuleSpec shared_cache_spec(module_spec.GetFileSpec(), image_info.uuid,
+                                   image_info.data_sp);
+      err = ModuleList::GetSharedModule(shared_cache_spec, module_sp,
+                                        module_search_paths_ptr,
+                                        old_module_sp_ptr, did_create_ptr);
+      if (module_sp)
+        return err;
+    }
+  }
+
   err = ModuleList::GetSharedModule(module_spec, module_sp,
                                     module_search_paths_ptr, old_module_sp_ptr,
                                     did_create_ptr);
@@ -548,6 +572,19 @@ bool PlatformDarwin::ARMGetSupportedArchitectureAtIndex(uint32_t idx,
 #define OSNAME "bridgeos"
 #else
 #define OSNAME "ios"
+#endif
+
+#if TARGET_OS_OSX
+  if (IsHost()) {
+    if (idx == 0) {
+      arch.SetTriple("arm64e-apple-macosx");
+      return true;
+    } else if (idx == 1) {
+      arch.SetTriple("arm64-apple-macosx");
+      return true;
+    }
+    return false;
+  }
 #endif
 
   const ArchSpec::Core system_core = system_arch.GetCore();
@@ -1133,19 +1170,6 @@ static FileSpec GetXcodeSelectPath() {
   return g_xcode_select_filespec;
 }
 
-lldb_private::FileSpec PlatformDarwin::GetXcodeDeveloperDirectory() {
-  static lldb_private::FileSpec g_developer_directory;
-  static llvm::once_flag g_once_flag;
-  llvm::call_once(g_once_flag, []() {
-    if (FileSpec fspec = GetXcodeContentsDirectory()) {
-      fspec.AppendPathComponent("Developer");
-      if (FileSystem::Instance().Exists(fspec))
-        g_developer_directory = fspec;
-    }
-  });
-  return g_developer_directory;
-}
-
 BreakpointSP PlatformDarwin::SetThreadCreationBreakpoint(Target &target) {
   BreakpointSP bp_sp;
   static const char *g_bp_names[] = {
@@ -1200,6 +1224,33 @@ PlatformDarwin::GetResumeCountForLaunchInfo(ProcessLaunchInfo &launch_info) {
     return 2;
   } else
     return 1;
+}
+
+lldb::ProcessSP
+PlatformDarwin::DebugProcess(ProcessLaunchInfo &launch_info, Debugger &debugger,
+                             Target *target, // Can be NULL, if NULL create
+                                             // a new target, else use existing
+                                             // one
+                             Status &error) {
+  ProcessSP process_sp;
+
+  if (IsHost()) {
+    // We are going to hand this process off to debugserver which will be in
+    // charge of setting the exit status.  However, we still need to reap it
+    // from lldb. So, make sure we use a exit callback which does not set exit
+    // status.
+    const bool monitor_signals = false;
+    launch_info.SetMonitorProcessCallback(
+        &ProcessLaunchInfo::NoOpMonitorCallback, monitor_signals);
+    process_sp = Platform::DebugProcess(launch_info, debugger, target, error);
+  } else {
+    if (m_remote_platform_sp)
+      process_sp = m_remote_platform_sp->DebugProcess(launch_info, debugger,
+                                                      target, error);
+    else
+      error.SetErrorString("the platform is not currently connected");
+  }
+  return process_sp;
 }
 
 void PlatformDarwin::CalculateTrapHandlerSymbolNames() {
@@ -1260,7 +1311,7 @@ FileSpec PlatformDarwin::FindSDKInXcodeForModules(XcodeSDK::Type sdk_type,
 }
 
 FileSpec PlatformDarwin::GetSDKDirectoryForModules(XcodeSDK::Type sdk_type) {
-  FileSpec sdks_spec = GetXcodeContentsDirectory();
+  FileSpec sdks_spec = HostInfo::GetXcodeContentsDirectory();
   sdks_spec.AppendPathComponent("Developer");
   sdks_spec.AppendPathComponent("Platforms");
 
@@ -1273,6 +1324,12 @@ FileSpec PlatformDarwin::GetSDKDirectoryForModules(XcodeSDK::Type sdk_type) {
     break;
   case XcodeSDK::Type::iPhoneOS:
     sdks_spec.AppendPathComponent("iPhoneOS.platform");
+    break;
+  case XcodeSDK::Type::WatchSimulator:
+    sdks_spec.AppendPathComponent("WatchSimulator.platform");
+    break;
+  case XcodeSDK::Type::AppleTVSimulator:
+    sdks_spec.AppendPathComponent("AppleTVSimulator.platform");
     break;
   default:
     llvm_unreachable("unsupported sdk");
@@ -1464,25 +1521,20 @@ void PlatformDarwin::AddClangModuleCompilationOptionsForSDKType(
 
   StreamString minimum_version_option;
   bool use_current_os_version = false;
+  // If the SDK type is for the host OS, use its version number.
+  auto get_host_os = []() { return HostInfo::GetTargetTriple().getOS(); };
   switch (sdk_type) {
-  case XcodeSDK::Type::iPhoneOS:
-#if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
-    use_current_os_version = true;
-#else
-    use_current_os_version = false;
-#endif
-    break;
-
-  case XcodeSDK::Type::iPhoneSimulator:
-    use_current_os_version = false;
-    break;
-
   case XcodeSDK::Type::MacOSX:
-#if defined(__i386__) || defined(__x86_64__)
-    use_current_os_version = true;
-#else
-    use_current_os_version = false;
-#endif
+    use_current_os_version = get_host_os() == llvm::Triple::MacOSX;
+    break;
+  case XcodeSDK::Type::iPhoneOS:
+    use_current_os_version = get_host_os() == llvm::Triple::IOS;
+    break;
+  case XcodeSDK::Type::AppleTVOS:
+    use_current_os_version = get_host_os() == llvm::Triple::TvOS;
+    break;
+  case XcodeSDK::Type::watchOS:
+    use_current_os_version = get_host_os() == llvm::Triple::WatchOS;
     break;
   default:
     break;
@@ -1502,24 +1554,49 @@ void PlatformDarwin::AddClangModuleCompilationOptionsForSDKType(
     }
   }
   // Only add the version-min options if we got a version from somewhere
-  if (!version.empty()) {
+  if (!version.empty() && sdk_type != XcodeSDK::Type::Linux) {
+#define OPTION(PREFIX, NAME, VAR, ...)                                         \
+  const char *opt_##VAR = NAME;                                                \
+  (void)opt_##VAR;
+#include "clang/Driver/Options.inc"
+#undef OPTION
+    minimum_version_option << '-';
     switch (sdk_type) {
-    case XcodeSDK::Type::iPhoneOS:
-      minimum_version_option.PutCString("-mios-version-min=");
-      minimum_version_option.PutCString(version.getAsString());
+    case XcodeSDK::Type::MacOSX:
+      minimum_version_option << opt_mmacosx_version_min_EQ;
       break;
     case XcodeSDK::Type::iPhoneSimulator:
-      minimum_version_option.PutCString("-mios-simulator-version-min=");
-      minimum_version_option.PutCString(version.getAsString());
+      minimum_version_option << opt_mios_simulator_version_min_EQ;
       break;
-    case XcodeSDK::Type::MacOSX:
-      minimum_version_option.PutCString("-mmacosx-version-min=");
-      minimum_version_option.PutCString(version.getAsString());
+    case XcodeSDK::Type::iPhoneOS:
+      minimum_version_option << opt_mios_version_min_EQ;
       break;
-    default:
-      llvm_unreachable("unsupported sdk");
+    case XcodeSDK::Type::AppleTVSimulator:
+      minimum_version_option << opt_mtvos_simulator_version_min_EQ;
+      break;
+    case XcodeSDK::Type::AppleTVOS:
+      minimum_version_option << opt_mtvos_version_min_EQ;
+      break;
+    case XcodeSDK::Type::WatchSimulator:
+      minimum_version_option << opt_mwatchos_simulator_version_min_EQ;
+      break;
+    case XcodeSDK::Type::watchOS:
+      minimum_version_option << opt_mwatchos_version_min_EQ;
+      break;
+    case XcodeSDK::Type::bridgeOS:
+    case XcodeSDK::Type::Linux:
+    case XcodeSDK::Type::unknown:
+      if (lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_HOST)) {
+        XcodeSDK::Info info;
+        info.type = sdk_type;
+        LLDB_LOGF(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_HOST),
+                  "Clang modules on %s are not supported",
+                  XcodeSDK::GetCanonicalName(info).c_str());
+      }
+      return;
     }
-    options.push_back(std::string(minimum_version_option.GetString()));
+    minimum_version_option << version.getAsString();
+    options.emplace_back(std::string(minimum_version_option.GetString()));
   }
 
   FileSpec sysroot_spec;
@@ -1586,7 +1663,7 @@ lldb_private::FileSpec PlatformDarwin::LocateExecutable(const char *basename) {
   llvm::call_once(g_once_flag, []() {
 
     // When locating executables, trust the DEVELOPER_DIR first if it is set
-    FileSpec xcode_contents_dir = GetXcodeContentsDirectory();
+    FileSpec xcode_contents_dir = HostInfo::GetXcodeContentsDirectory();
     if (xcode_contents_dir) {
       FileSpec xcode_lldb_resources = xcode_contents_dir;
       xcode_lldb_resources.AppendPathComponent("SharedFrameworks");
@@ -1736,72 +1813,6 @@ std::string PlatformDarwin::FindComponentInPath(llvm::StringRef path,
     }
   }
   return {};
-}
-
-std::string
-PlatformDarwin::FindXcodeContentsDirectoryInPath(llvm::StringRef path) {
-  auto begin = llvm::sys::path::begin(path);
-  auto end = llvm::sys::path::end(path);
-
-  // Iterate over the path components until we find something that ends with
-  // .app. If the next component is Contents then we've found the Contents
-  // directory.
-  for (auto it = begin; it != end; ++it) {
-    if (it->endswith(".app")) {
-      auto next = it;
-      if (++next != end && *next == "Contents") {
-        llvm::SmallString<128> buffer;
-        llvm::sys::path::append(buffer, begin, ++next,
-                                llvm::sys::path::Style::posix);
-        return buffer.str().str();
-      }
-    }
-  }
-
-  return {};
-}
-
-FileSpec PlatformDarwin::GetXcodeContentsDirectory() {
-  static FileSpec g_xcode_contents_path;
-  static std::once_flag g_once_flag;
-  std::call_once(g_once_flag, [&]() {
-    // Try the shlib dir first.
-    if (FileSpec fspec = HostInfo::GetShlibDir()) {
-      if (FileSystem::Instance().Exists(fspec)) {
-        std::string xcode_contents_dir =
-            FindXcodeContentsDirectoryInPath(fspec.GetPath());
-        if (!xcode_contents_dir.empty()) {
-          g_xcode_contents_path = FileSpec(xcode_contents_dir);
-          return;
-        }
-      }
-    }
-
-    if (const char *developer_dir_env_var = getenv("DEVELOPER_DIR")) {
-      FileSpec fspec(developer_dir_env_var);
-      if (FileSystem::Instance().Exists(fspec)) {
-        std::string xcode_contents_dir =
-            FindXcodeContentsDirectoryInPath(fspec.GetPath());
-        if (!xcode_contents_dir.empty()) {
-          g_xcode_contents_path = FileSpec(xcode_contents_dir);
-          return;
-        }
-      }
-    }
-
-    FileSpec fspec(HostInfo::GetXcodeSDKPath(XcodeSDK::GetAnyMacOS()));
-    if (fspec) {
-      if (FileSystem::Instance().Exists(fspec)) {
-        std::string xcode_contents_dir =
-            FindXcodeContentsDirectoryInPath(fspec.GetPath());
-        if (!xcode_contents_dir.empty()) {
-          g_xcode_contents_path = FileSpec(xcode_contents_dir);
-          return;
-        }
-      }
-    }
-  });
-  return g_xcode_contents_path;
 }
 
 FileSpec PlatformDarwin::GetCurrentToolchainDirectory() {

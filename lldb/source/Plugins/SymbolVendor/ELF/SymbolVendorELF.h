@@ -17,8 +17,6 @@ public:
   // Constructors and Destructors
   SymbolVendorELF(const lldb::ModuleSP &module_sp);
 
-  ~SymbolVendorELF() override;
-
   // Static Functions
   static void Initialize();
 
@@ -36,9 +34,6 @@ public:
   lldb_private::ConstString GetPluginName() override;
 
   uint32_t GetPluginVersion() override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(SymbolVendorELF);
 };
 
 #endif // LLDB_SOURCE_PLUGINS_SYMBOLVENDOR_ELF_SYMBOLVENDORELF_H

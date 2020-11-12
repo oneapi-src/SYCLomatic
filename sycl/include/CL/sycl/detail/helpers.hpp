@@ -77,6 +77,18 @@ getOrWaitEvents(std::vector<cl::sycl::event> DepEvents,
 
 __SYCL_EXPORT void waitEvents(std::vector<cl::sycl::event> DepEvents);
 
+template <typename T> T *declptr() { return static_cast<T *>(nullptr); }
+
+// Function to get of store id, item, nd_item, group for the host implementation
+// Pass nullptr to get stored object. Pass valid address to store object
+template <typename T> T get_or_store(const T *obj) {
+  static thread_local auto stored = *obj;
+  if (obj != nullptr) {
+    stored = *obj;
+  }
+  return stored;
+}
+
 class Builder {
 public:
   Builder() = delete;
@@ -139,12 +151,12 @@ public:
   template <int N>
   using is_valid_dimensions = std::integral_constant<bool, (N > 0) && (N < 4)>;
 
-  template <int Dims> static const id<Dims> getId() {
+  template <int Dims> static const id<Dims> getElement(id<Dims> *) {
     static_assert(is_valid_dimensions<Dims>::value, "invalid dimensions");
     return __spirv::initGlobalInvocationId<Dims, id<Dims>>();
   }
 
-  template <int Dims> static const group<Dims> getGroup() {
+  template <int Dims> static const group<Dims> getElement(group<Dims> *) {
     static_assert(is_valid_dimensions<Dims>::value, "invalid dimensions");
     range<Dims> GlobalSize{__spirv::initGlobalSize<Dims, range<Dims>>()};
     range<Dims> LocalSize{__spirv::initWorkgroupSize<Dims, range<Dims>>()};
@@ -172,7 +184,7 @@ public:
     return createItem<Dims, false>(GlobalSize, GlobalId);
   }
 
-  template <int Dims> static const nd_item<Dims> getNDItem() {
+  template <int Dims> static const nd_item<Dims> getElement(nd_item<Dims> *) {
     static_assert(is_valid_dimensions<Dims>::value, "invalid dimensions");
     range<Dims> GlobalSize{__spirv::initGlobalSize<Dims, range<Dims>>()};
     range<Dims> LocalSize{__spirv::initWorkgroupSize<Dims, range<Dims>>()};
@@ -188,6 +200,18 @@ public:
     item<Dims, false> LocalItem = createItem<Dims, false>(LocalSize, LocalId);
     return createNDItem<Dims>(GlobalItem, LocalItem, Group);
   }
+
+  template <int Dims, bool WithOffset>
+  static auto getElement(item<Dims, WithOffset> *)
+      -> decltype(getItem<Dims, WithOffset>()) {
+    return getItem<Dims, WithOffset>();
+  }
+
+  template <int Dims>
+  static auto getNDItem() -> decltype(getElement(declptr<nd_item<Dims>>())) {
+    return getElement(declptr<nd_item<Dims>>());
+  }
+
 #endif // __SYCL_DEVICE_ONLY__
 };
 

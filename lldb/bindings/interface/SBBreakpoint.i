@@ -100,6 +100,9 @@ public:
     void
     ClearAllBreakpointSites ();
 
+    lldb::SBTarget
+    GetTarget() const;
+  
     lldb::SBBreakpointLocation
     FindLocationByAddress (lldb::addr_t vm_addr);
 
@@ -206,6 +209,9 @@ public:
     bool
     AddName (const char *new_name);
 
+    SBError
+    AddNameWithErrorHandling (const char *new_name);
+
     void
     RemoveName (const char *name_to_remove);
 
@@ -230,6 +236,8 @@ public:
     // Can only be called from a ScriptedBreakpointResolver...
     SBError
     AddLocation(SBAddress &address);
+
+    SBStructuredData SBBreakpoint::SerializeToStructuredData();
 
     static bool
     EventIsBreakpointEvent (const lldb::SBEvent &event);

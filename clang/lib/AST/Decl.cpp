@@ -1299,7 +1299,8 @@ LinkageInfo LinkageComputer::getLVForLocalDecl(const NamedDecl *D,
     // we should not make static local variables in the function hidden.
     LV = getLVForDecl(FD, computation);
     if (isa<VarDecl>(D) && useInlineVisibilityHidden(FD) &&
-        !LV.isVisibilityExplicit()) {
+        !LV.isVisibilityExplicit() &&
+        !Context.getLangOpts().VisibilityInlinesHiddenStaticLocalVar) {
       assert(cast<VarDecl>(D)->isStaticLocal());
       // If this was an implicitly hidden inline method, check again for
       // explicit visibility on the parent class, and use that for static locals
@@ -1527,10 +1528,11 @@ void NamedDecl::printName(raw_ostream &os) const {
   os << Name;
 }
 
-std::string NamedDecl::getQualifiedNameAsString() const {
+std::string NamedDecl::getQualifiedNameAsString(bool WithGlobalNsPrefix) const {
   std::string QualName;
   llvm::raw_string_ostream OS(QualName);
-  printQualifiedName(OS, getASTContext().getPrintingPolicy());
+  printQualifiedName(OS, getASTContext().getPrintingPolicy(),
+                     WithGlobalNsPrefix);
   return OS.str();
 }
 
@@ -2279,14 +2281,20 @@ void VarDecl::setInit(Expr *I) {
   Init = I;
 }
 
-bool VarDecl::mightBeUsableInConstantExpressions(ASTContext &C) const {
+bool VarDecl::mightBeUsableInConstantExpressions(const ASTContext &C) const {
   const LangOptions &Lang = C.getLangOpts();
 
-  if (!Lang.CPlusPlus)
+  // OpenCL permits const integral variables to be used in constant
+  // expressions, like in C++98.
+  if (!Lang.CPlusPlus && !Lang.OpenCL)
     return false;
 
   // Function parameters are never usable in constant expressions.
   if (isa<ParmVarDecl>(this))
+    return false;
+
+  // The values of weak variables are never usable in constant expressions.
+  if (isWeak())
     return false;
 
   // In C++11, any variable of reference type can be used in a constant
@@ -2297,7 +2305,7 @@ bool VarDecl::mightBeUsableInConstantExpressions(ASTContext &C) const {
   // Only const objects can be used in constant expressions in C++. C++98 does
   // not require the variable to be non-volatile, but we consider this to be a
   // defect.
-  if (!getType().isConstQualified() || getType().isVolatileQualified())
+  if (!getType().isConstant(C) || getType().isVolatileQualified())
     return false;
 
   // In C++, const, non-volatile variables of integral or enumeration types
@@ -2310,7 +2318,7 @@ bool VarDecl::mightBeUsableInConstantExpressions(ASTContext &C) const {
   return Lang.CPlusPlus11 && isConstexpr();
 }
 
-bool VarDecl::isUsableInConstantExpressions(ASTContext &Context) const {
+bool VarDecl::isUsableInConstantExpressions(const ASTContext &Context) const {
   // C++2a [expr.const]p3:
   //   A variable is usable in constant expressions after its initializing
   //   declaration is encountered...
@@ -2323,7 +2331,16 @@ bool VarDecl::isUsableInConstantExpressions(ASTContext &Context) const {
   if (!DefVD->mightBeUsableInConstantExpressions(Context))
     return false;
   //   ... and its initializer is a constant initializer.
-  return DefVD->checkInitIsICE();
+  if (Context.getLangOpts().CPlusPlus && !DefVD->hasConstantInitialization())
+    return false;
+  // C++98 [expr.const]p1:
+  //   An integral constant-expression can involve only [...] const variables
+  //   or static data members of integral or enumeration types initialized with
+  //   [integer] constant expressions (dcl.init)
+  if ((Context.getLangOpts().CPlusPlus || Context.getLangOpts().OpenCL) &&
+      !Context.getLangOpts().CPlusPlus11 && !DefVD->hasICEInitializer(Context))
+    return false;
+  return true;
 }
 
 /// Convert the initializer for this declaration to the elaborated EvaluatedStmt
@@ -2343,14 +2360,21 @@ EvaluatedStmt *VarDecl::ensureEvaluatedStmt() const {
   return Eval;
 }
 
-APValue *VarDecl::evaluateValue() const {
-  SmallVector<PartialDiagnosticAt, 8> Notes;
-  return evaluateValue(Notes);
+EvaluatedStmt *VarDecl::getEvaluatedStmt() const {
+  return Init.dyn_cast<EvaluatedStmt *>();
 }
 
-APValue *VarDecl::evaluateValue(
-    SmallVectorImpl<PartialDiagnosticAt> &Notes) const {
+APValue *VarDecl::evaluateValue() const {
+  SmallVector<PartialDiagnosticAt, 8> Notes;
+  return evaluateValueImpl(Notes, hasConstantInitialization());
+}
+
+APValue *VarDecl::evaluateValueImpl(SmallVectorImpl<PartialDiagnosticAt> &Notes,
+                                    bool IsConstantInitialization) const {
   EvaluatedStmt *Eval = ensureEvaluatedStmt();
+
+  const auto *Init = cast<Expr>(Eval->Value);
+  assert(!Init->isValueDependent());
 
   // We only produce notes indicating why an initializer is non-constant the
   // first time it is evaluated. FIXME: The notes won't always be emitted the
@@ -2358,20 +2382,23 @@ APValue *VarDecl::evaluateValue(
   if (Eval->WasEvaluated)
     return Eval->Evaluated.isAbsent() ? nullptr : &Eval->Evaluated;
 
-  const auto *Init = cast<Expr>(Eval->Value);
-  assert(!Init->isValueDependent());
-
   if (Eval->IsEvaluating) {
     // FIXME: Produce a diagnostic for self-initialization.
-    Eval->CheckedICE = true;
-    Eval->IsICE = false;
     return nullptr;
   }
 
   Eval->IsEvaluating = true;
 
-  bool Result = Init->EvaluateAsInitializer(Eval->Evaluated, getASTContext(),
-                                            this, Notes);
+  ASTContext &Ctx = getASTContext();
+  bool Result = Init->EvaluateAsInitializer(Eval->Evaluated, Ctx, this, Notes,
+                                            IsConstantInitialization);
+
+  // In C++11, this isn't a constant initializer if we produced notes. In that
+  // case, we can't keep the result, because it may only be correct under the
+  // assumption that the initializer is a constant context.
+  if (IsConstantInitialization && Ctx.getLangOpts().CPlusPlus11 &&
+      !Notes.empty())
+    Result = false;
 
   // Ensure the computed APValue is cleaned up later if evaluation succeeded,
   // or that it's empty (so that there's nothing to clean up) if evaluation
@@ -2379,76 +2406,69 @@ APValue *VarDecl::evaluateValue(
   if (!Result)
     Eval->Evaluated = APValue();
   else if (Eval->Evaluated.needsCleanup())
-    getASTContext().addDestruction(&Eval->Evaluated);
+    Ctx.addDestruction(&Eval->Evaluated);
 
   Eval->IsEvaluating = false;
   Eval->WasEvaluated = true;
-
-  // In C++11, we have determined whether the initializer was a constant
-  // expression as a side-effect.
-  if (getASTContext().getLangOpts().CPlusPlus11 && !Eval->CheckedICE) {
-    Eval->CheckedICE = true;
-    Eval->IsICE = Result && Notes.empty();
-  }
 
   return Result ? &Eval->Evaluated : nullptr;
 }
 
 APValue *VarDecl::getEvaluatedValue() const {
-  if (EvaluatedStmt *Eval = Init.dyn_cast<EvaluatedStmt *>())
+  if (EvaluatedStmt *Eval = getEvaluatedStmt())
     if (Eval->WasEvaluated)
       return &Eval->Evaluated;
 
   return nullptr;
 }
 
-bool VarDecl::isInitKnownICE() const {
-  if (EvaluatedStmt *Eval = Init.dyn_cast<EvaluatedStmt *>())
-    return Eval->CheckedICE;
+bool VarDecl::hasICEInitializer(const ASTContext &Context) const {
+  const Expr *Init = getInit();
+  assert(Init && "no initializer");
+
+  EvaluatedStmt *Eval = ensureEvaluatedStmt();
+  if (!Eval->CheckedForICEInit) {
+    Eval->CheckedForICEInit = true;
+    Eval->HasICEInit = Init->isIntegerConstantExpr(Context);
+  }
+  return Eval->HasICEInit;
+}
+
+bool VarDecl::hasConstantInitialization() const {
+  // In C, all globals (and only globals) have constant initialization.
+  if (hasGlobalStorage() && !getASTContext().getLangOpts().CPlusPlus)
+    return true;
+
+  // In C++, it depends on whether the evaluation at the point of definition
+  // was evaluatable as a constant initializer.
+  if (EvaluatedStmt *Eval = getEvaluatedStmt())
+    return Eval->HasConstantInitialization;
 
   return false;
 }
 
-bool VarDecl::isInitICE() const {
-  assert(isInitKnownICE() &&
-         "Check whether we already know that the initializer is an ICE");
-  return Init.get<EvaluatedStmt *>()->IsICE;
-}
-
-bool VarDecl::checkInitIsICE() const {
-  // Initializers of weak variables are never ICEs.
-  if (isWeak())
-    return false;
-
+bool VarDecl::checkForConstantInitialization(
+    SmallVectorImpl<PartialDiagnosticAt> &Notes) const {
   EvaluatedStmt *Eval = ensureEvaluatedStmt();
-  if (Eval->CheckedICE)
-    // We have already checked whether this subexpression is an
-    // integral constant expression.
-    return Eval->IsICE;
+  // If we ask for the value before we know whether we have a constant
+  // initializer, we can compute the wrong value (for example, due to
+  // std::is_constant_evaluated()).
+  assert(!Eval->WasEvaluated &&
+         "already evaluated var value before checking for constant init");
+  assert(getASTContext().getLangOpts().CPlusPlus && "only meaningful in C++");
 
-  const auto *Init = cast<Expr>(Eval->Value);
-  assert(!Init->isValueDependent());
+  assert(!cast<Expr>(Eval->Value)->isValueDependent());
 
-  // In C++11, evaluate the initializer to check whether it's a constant
-  // expression.
-  if (getASTContext().getLangOpts().CPlusPlus11) {
-    SmallVector<PartialDiagnosticAt, 8> Notes;
-    evaluateValue(Notes);
-    return Eval->IsICE;
-  }
+  // Evaluate the initializer to check whether it's a constant expression.
+  Eval->HasConstantInitialization =
+      evaluateValueImpl(Notes, true) && Notes.empty();
 
-  // It's an ICE whether or not the definition we found is
-  // out-of-line.  See DR 721 and the discussion in Clang PR
-  // 6206 for details.
+  // If evaluation as a constant initializer failed, allow re-evaluation as a
+  // non-constant initializer if we later find we want the value.
+  if (!Eval->HasConstantInitialization)
+    Eval->WasEvaluated = false;
 
-  if (Eval->CheckingICE)
-    return false;
-  Eval->CheckingICE = true;
-
-  Eval->IsICE = Init->isIntegerConstantExpr(getASTContext());
-  Eval->CheckingICE = false;
-  Eval->CheckedICE = true;
-  return Eval->IsICE;
+  return Eval->HasConstantInitialization;
 }
 
 bool VarDecl::isParameterPack() const {
@@ -2601,7 +2621,7 @@ bool VarDecl::isNoDestroy(const ASTContext &Ctx) const {
 
 QualType::DestructionKind
 VarDecl::needsDestruction(const ASTContext &Ctx) const {
-  if (EvaluatedStmt *Eval = Init.dyn_cast<EvaluatedStmt *>())
+  if (EvaluatedStmt *Eval = getEvaluatedStmt())
     if (Eval->HasConstantDestruction)
       return QualType::DK_none;
 
@@ -3165,37 +3185,16 @@ FunctionDecl *FunctionDecl::getCanonicalDecl() { return getFirstDecl(); }
 /// functions as their wrapped builtins. This shouldn't be done in general, but
 /// it's useful in Sema to diagnose calls to wrappers based on their semantics.
 unsigned FunctionDecl::getBuiltinID(bool ConsiderWrapperFunctions) const {
-  unsigned BuiltinID;
+  unsigned BuiltinID = 0;
 
   if (const auto *ABAA = getAttr<ArmBuiltinAliasAttr>()) {
     BuiltinID = ABAA->getBuiltinName()->getBuiltinID();
-  } else {
-    if (!getIdentifier())
-      return 0;
-
-    BuiltinID = getIdentifier()->getBuiltinID();
+  } else if (const auto *A = getAttr<BuiltinAttr>()) {
+    BuiltinID = A->getID();
   }
 
   if (!BuiltinID)
     return 0;
-
-  ASTContext &Context = getASTContext();
-  if (Context.getLangOpts().CPlusPlus) {
-    const auto *LinkageDecl =
-        dyn_cast<LinkageSpecDecl>(getFirstDecl()->getDeclContext());
-    // In C++, the first declaration of a builtin is always inside an implicit
-    // extern "C".
-    // FIXME: A recognised library function may not be directly in an extern "C"
-    // declaration, for instance "extern "C" { namespace std { decl } }".
-    if (!LinkageDecl) {
-      if (BuiltinID == Builtin::BI__GetExceptionInfo &&
-          Context.getTargetInfo().getCXXABI().isMicrosoft())
-        return Builtin::BI__GetExceptionInfo;
-      return 0;
-    }
-    if (LinkageDecl->getLanguage() != LinkageSpecDecl::lang_c)
-      return 0;
-  }
 
   // If the function is marked "overloadable", it has a different mangled name
   // and is not the C library function.
@@ -3203,6 +3202,7 @@ unsigned FunctionDecl::getBuiltinID(bool ConsiderWrapperFunctions) const {
       !hasAttr<ArmBuiltinAliasAttr>())
     return 0;
 
+  ASTContext &Context = getASTContext();
   if (!Context.BuiltinInfo.isPredefinedLibFunction(BuiltinID))
     return BuiltinID;
 
@@ -3267,11 +3267,25 @@ unsigned FunctionDecl::getMinRequiredArguments() const {
   if (!getASTContext().getLangOpts().CPlusPlus)
     return getNumParams();
 
+  // Note that it is possible for a parameter with no default argument to
+  // follow a parameter with a default argument.
   unsigned NumRequiredArgs = 0;
-  for (auto *Param : parameters())
-    if (!Param->isParameterPack() && !Param->hasDefaultArg())
-      ++NumRequiredArgs;
+  unsigned MinParamsSoFar = 0;
+  for (auto *Param : parameters()) {
+    if (!Param->isParameterPack()) {
+      ++MinParamsSoFar;
+      if (!Param->hasDefaultArg())
+        NumRequiredArgs = MinParamsSoFar;
+    }
+  }
   return NumRequiredArgs;
+}
+
+bool FunctionDecl::hasOneParamOrDefaultArgs() const {
+  return getNumParams() == 1 ||
+         (getNumParams() > 1 &&
+          std::all_of(param_begin() + 1, param_end(),
+                      [](ParmVarDecl *P) { return P->hasDefaultArg(); }));
 }
 
 /// The combination of the extern and inline keywords under MSVC forces
@@ -3612,7 +3626,8 @@ bool FunctionDecl::isTemplateInstantiation() const {
   return clang::isTemplateInstantiation(getTemplateSpecializationKind());
 }
 
-FunctionDecl *FunctionDecl::getTemplateInstantiationPattern() const {
+FunctionDecl *
+FunctionDecl::getTemplateInstantiationPattern(bool ForDefinition) const {
   // If this is a generic lambda call operator specialization, its
   // instantiation pattern is always its primary template's pattern
   // even if its primary template was instantiated from another
@@ -3629,18 +3644,20 @@ FunctionDecl *FunctionDecl::getTemplateInstantiationPattern() const {
   }
 
   if (MemberSpecializationInfo *Info = getMemberSpecializationInfo()) {
-    if (!clang::isTemplateInstantiation(Info->getTemplateSpecializationKind()))
+    if (ForDefinition &&
+        !clang::isTemplateInstantiation(Info->getTemplateSpecializationKind()))
       return nullptr;
     return getDefinitionOrSelf(cast<FunctionDecl>(Info->getInstantiatedFrom()));
   }
 
-  if (!clang::isTemplateInstantiation(getTemplateSpecializationKind()))
+  if (ForDefinition &&
+      !clang::isTemplateInstantiation(getTemplateSpecializationKind()))
     return nullptr;
 
   if (FunctionTemplateDecl *Primary = getPrimaryTemplate()) {
     // If we hit a point where the user provided a specialization of this
     // template, we're done looking.
-    while (!Primary->isMemberSpecialization()) {
+    while (!ForDefinition || !Primary->isMemberSpecialization()) {
       auto *NewPrimary = Primary->getInstantiatedFromMemberTemplate();
       if (!NewPrimary)
         break;
@@ -4511,11 +4528,11 @@ bool RecordDecl::mayInsertExtraPadding(bool EmitRemark) const {
     ReasonToReject = 5;  // is standard layout.
   else if (Blacklist.isBlacklistedLocation(EnabledAsanMask, getLocation(),
                                            "field-padding"))
-    ReasonToReject = 6;  // is in a blacklisted file.
+    ReasonToReject = 6;  // is in an excluded file.
   else if (Blacklist.isBlacklistedType(EnabledAsanMask,
                                        getQualifiedNameAsString(),
                                        "field-padding"))
-    ReasonToReject = 7;  // is blacklisted.
+    ReasonToReject = 7;  // The type is excluded.
 
   if (EmitRemark) {
     if (ReasonToReject >= 0)
@@ -4691,11 +4708,9 @@ char *Buffer = new (getASTContext(), 1) char[Name.size() + 1];
 void ValueDecl::anchor() {}
 
 bool ValueDecl::isWeak() const {
-  for (const auto *I : attrs())
-    if (isa<WeakAttr>(I) || isa<WeakRefAttr>(I))
-      return true;
-
-  return isWeakImported();
+  auto *MostRecent = getMostRecentDecl();
+  return MostRecent->hasAttr<WeakAttr>() ||
+         MostRecent->hasAttr<WeakRefAttr>() || isWeakImported();
 }
 
 void ImplicitParamDecl::anchor() {}

@@ -48,6 +48,10 @@ void IO::setContext(void *Context) {
   Ctxt = Context;
 }
 
+void IO::setAllowUnknownKeys(bool Allow) {
+  llvm_unreachable("Only supported for Input");
+}
+
 //===----------------------------------------------------------------------===//
 //  Input
 //===----------------------------------------------------------------------===//
@@ -166,6 +170,8 @@ bool Input::preflightKey(const char *Key, bool Required, bool, bool &UseDefault,
   if (!MN) {
     if (Required || !isa<EmptyHNode>(CurrentNode))
       setError(CurrentNode, "not a mapping");
+    else
+      UseDefault = true;
     return false;
   }
   MN->ValidKeys.push_back(Key);
@@ -195,8 +201,12 @@ void Input::endMapping() {
     return;
   for (const auto &NN : MN->Mapping) {
     if (!is_contained(MN->ValidKeys, NN.first())) {
-      setError(NN.second.get(), Twine("unknown key '") + NN.first() + "'");
-      break;
+      HNode *ReportNode = NN.second.get();
+      if (!AllowUnknownKeys) {
+        setError(ReportNode, Twine("unknown key '") + NN.first() + "'");
+        break;
+      } else
+        reportWarning(ReportNode, Twine("unknown key '") + NN.first() + "'");
     }
   }
 }
@@ -368,6 +378,11 @@ void Input::setError(Node *node, const Twine &message) {
   EC = make_error_code(errc::invalid_argument);
 }
 
+void Input::reportWarning(HNode *hnode, const Twine &message) {
+  assert(hnode && "HNode must not be NULL");
+  Strm->printError(hnode->_node, message, SourceMgr::DK_Warning);
+}
+
 std::unique_ptr<Input::HNode> Input::createHNodes(Node *N) {
   SmallString<128> StringStorage;
   if (ScalarNode *SN = dyn_cast<ScalarNode>(N)) {
@@ -425,6 +440,8 @@ std::unique_ptr<Input::HNode> Input::createHNodes(Node *N) {
 void Input::setError(const Twine &Message) {
   setError(CurrentNode, Message);
 }
+
+void Input::setAllowUnknownKeys(bool Allow) { AllowUnknownKeys = Allow; }
 
 bool Input::canElideEmptySequence() {
   return false;
@@ -876,12 +893,12 @@ StringRef ScalarTraits<StringRef>::input(StringRef Scalar, void *,
 }
 
 void ScalarTraits<std::string>::output(const std::string &Val, void *,
-                                     raw_ostream &Out) {
+                                       raw_ostream &Out) {
   Out << Val;
 }
 
 StringRef ScalarTraits<std::string>::input(StringRef Scalar, void *,
-                                         std::string &Val) {
+                                           std::string &Val) {
   Val = Scalar.str();
   return StringRef();
 }
@@ -1083,5 +1100,17 @@ StringRef ScalarTraits<Hex64>::input(StringRef Scalar, void *, Hex64 &Val) {
   if (getAsUnsignedInteger(Scalar, 0, Num))
     return "invalid hex64 number";
   Val = Num;
+  return StringRef();
+}
+
+void ScalarTraits<VersionTuple>::output(const VersionTuple &Val, void *,
+                                        llvm::raw_ostream &Out) {
+  Out << Val.getAsString();
+}
+
+StringRef ScalarTraits<VersionTuple>::input(StringRef Scalar, void *,
+                                            VersionTuple &Val) {
+  if (Val.tryParse(Scalar))
+    return "invalid version format";
   return StringRef();
 }

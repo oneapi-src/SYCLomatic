@@ -26,15 +26,15 @@ b:
 // DWARF: .debug_info contents:
 // DWARF: DW_TAG_compile_unit
 // DWARF-NOT: DW_TAG_
-// DWARF:               DW_AT_low_pc {{.*}}(0x0000000000000000)
-// DWARF:               DW_AT_high_pc {{.*}}(0x0000000000000004)
+// DWARF:               DW_AT_low_pc {{.*}}(0x00000000)
+// DWARF:               DW_AT_high_pc {{.*}}(0x00000004)
 
 // DWARF: DW_TAG_label
 // DWARF-NEXT: DW_AT_name {{.*}}("a")
 
 
 // DWARF: .debug_aranges contents:
-// DWARF-NEXT: Address Range Header: length = 0x00000024, version = 0x0002, cu_offset = 0x00000000, addr_size = 0x04, seg_size = 0x00
+// DWARF-NEXT: Address Range Header: length = 0x00000024, format = DWARF32, version = 0x0002, cu_offset = 0x00000000, addr_size = 0x04, seg_size = 0x00
 // DWARF-NEXT: [0x00000000, 0x00000004)
 // DWARF-NEXT: [0x00000000, 0x00000004)
 

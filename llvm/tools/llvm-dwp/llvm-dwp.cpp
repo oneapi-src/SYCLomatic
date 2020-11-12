@@ -30,6 +30,7 @@
 #include "llvm/MC/MCTargetOptionsCommandFlags.h"
 #include "llvm/Object/Decompressor.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/DataExtractor.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
@@ -376,7 +377,8 @@ writeIndex(MCStreamer &Out, MCSection *Section,
                   &DWARFUnitIndex::Entry::SectionContribution::Length);
 }
 
-std::string buildDWODescription(StringRef Name, StringRef DWPName, StringRef DWOName) {
+static std::string buildDWODescription(StringRef Name, StringRef DWPName,
+                                       StringRef DWOName) {
   std::string Text = "\'";
   Text += Name;
   Text += '\'';

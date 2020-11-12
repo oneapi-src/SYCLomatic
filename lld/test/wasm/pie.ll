@@ -1,4 +1,4 @@
-; RUN: llc -relocation-model=pic -filetype=obj %s -o %t.o
+; RUN: llc -relocation-model=pic -mattr=+mutable-globals -filetype=obj %s -o %t.o
 ; RUN: wasm-ld --no-gc-sections --allow-undefined -pie -o %t.wasm %t.o
 ; RUN: obj2yaml %t.wasm | FileCheck %s
 
@@ -36,6 +36,7 @@ define void @_start() {
 ; CHECK-NEXT:         Field:           __indirect_function_table
 ; CHECK-NEXT:         Kind:            TABLE
 ; CHECK-NEXT:         Table:
+; CHECK-NEXT:           Index:           0
 ; CHECK-NEXT:           ElemType:        FUNCREF
 ; CHECK-NEXT:           Limits:
 ; CHECK-NEXT:             Initial:         0x00000001

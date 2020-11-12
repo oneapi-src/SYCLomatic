@@ -1,24 +1,8 @@
 // RUN: mlir-opt -allow-unregistered-dialect %s -split-input-file -verify-diagnostics
 
-func @dim(tensor<1xf32>) {
-^bb(%0: tensor<1xf32>):
-  "std.dim"(%0){index = "xyz"} : (tensor<1xf32>)->index // expected-error {{attribute 'index' failed to satisfy constraint: arbitrary integer attribute}}
-  return
-}
-
-// -----
-
-func @dim2(tensor<1xf32>) {
-^bb(%0: tensor<1xf32>):
-  "std.dim"(){index = "xyz"} : ()->index // expected-error {{'std.dim' op requires a single operand}}
-  return
-}
-
-// -----
-
-func @dim3(tensor<1xf32>) {
-^bb(%0: tensor<1xf32>):
-  "std.dim"(%0){index = 1} : (tensor<1xf32>)->index // expected-error {{'std.dim' op index is out of range}}
+func @dim(%arg : tensor<1x?xf32>) {
+  %c2 = constant 2 : index
+  dim %arg, %c2 : tensor<1x?xf32> // expected-error {{'std.dim' op index is out of range}}
   return
 }
 
@@ -26,7 +10,7 @@ func @dim3(tensor<1xf32>) {
 
 func @rank(f32) {
 ^bb(%0: f32):
-  "std.rank"(%0): (f32)->index // expected-error {{'std.rank' op operand #0 must be tensor of any type values}}
+  "std.rank"(%0): (f32)->index // expected-error {{'std.rank' op operand #0 must be any tensor or memref type}}
   return
 }
 
@@ -58,7 +42,7 @@ func @constant_wrong_type() {
 func @affine_apply_no_map() {
 ^bb0:
   %i = constant 0 : index
-  %x = "affine.apply" (%i) { } : (index) -> (index) //  expected-error {{'affine.apply' op requires attribute 'map'}}
+  %x = "affine.apply" (%i) { } : (index) -> (index) //  expected-error {{requires attribute 'map'}}
   return
 }
 
@@ -611,18 +595,18 @@ func @extract_element_tensor_too_few_indices(%t : tensor<2x3xf32>, %i : index) {
 // -----
 
 func @tensor_from_elements_wrong_result_type() {
-  // expected-error@+2 {{expected result type to be a ranked tensor}}
+  // expected-error@+2 {{'result' must be 1D tensor of any type values, but got 'tensor<*xi32>'}}
   %c0 = constant 0 : i32
-  %0 = tensor_from_elements(%c0) : tensor<*xi32>
+  %0 = tensor_from_elements %c0 : tensor<*xi32>
   return
 }
 
 // -----
 
 func @tensor_from_elements_wrong_elements_count() {
-  // expected-error@+2 {{expected result type to be a 1D tensor with 1 element}}
+  // expected-error@+2 {{1 operands present, but expected 2}}
   %c0 = constant 0 : index
-  %0 = tensor_from_elements(%c0) : tensor<2xindex>
+  %0 = tensor_from_elements %c0 : tensor<2xindex>
   return
 }
 
@@ -701,7 +685,7 @@ func @fpext_f32_to_i32(%arg0 : f32) {
 // -----
 
 func @fpext_vec(%arg0 : vector<2xf16>) {
-  // expected-error@+1 {{are cast incompatible}}
+  // expected-error@+1 {{requires the same shape for all operands and results}}
   %0 = fpext %arg0 : vector<2xf16> to vector<3xf32>
   return
 }
@@ -773,7 +757,7 @@ func @fptrunc_f32_to_i32(%arg0 : f32) {
 // -----
 
 func @fptrunc_vec(%arg0 : vector<2xf16>) {
-  // expected-error@+1 {{are cast incompatible}}
+  // expected-error@+1 {{requires the same shape for all operands and results}}
   %0 = fptrunc %arg0 : vector<2xf16> to vector<3xf32>
   return
 }
@@ -1027,10 +1011,50 @@ func @invalid_subview(%arg0 : index, %arg1 : index, %arg2 : index) {
 
 func @invalid_subview(%arg0 : index, %arg1 : index, %arg2 : index) {
   %0 = alloc() : memref<8x16x4xf32>
-  // expected-error@+1 {{expected result type to be 'memref<?x?x?xf32, affine_map<(d0, d1, d2)[s0, s1, s2, s3] -> (d0 * s1 + s0 + d1 * s2 + d2 * s3)>>'}}
+  // expected-error@+1 {{expected result type to be 'memref<?x?x?xf32, affine_map<(d0, d1, d2)[s0, s1, s2, s3] -> (d0 * s1 + s0 + d1 * s2 + d2 * s3)>>' or a rank-reduced version. (mismatch of result strides)}}
   %1 = subview %0[%arg0, %arg1, %arg2][%arg0, %arg1, %arg2][%arg0, %arg1, %arg2]
     : memref<8x16x4xf32> to
       memref<?x?x?xf32, offset: ?, strides: [64, 4, 1]>
+  return
+}
+
+// -----
+
+func @invalid_subview(%arg0 : index, %arg1 : index, %arg2 : index) {
+  %0 = alloc() : memref<8x16x4xf32>
+  // expected-error@+1 {{expected result element type to be 'f32'}}
+  %1 = subview %0[0, 0, 0][8, 16, 4][1, 1, 1]
+    : memref<8x16x4xf32> to
+      memref<8x16x4xi32>
+  return
+}
+
+// -----
+
+func @invalid_subview(%arg0 : index, %arg1 : index, %arg2 : index) {
+  %0 = alloc() : memref<8x16x4xf32>
+  // expected-error@+1 {{expected result rank to be smaller or equal to the source rank.}}
+  %1 = subview %0[0, 0, 0][8, 16, 4][1, 1, 1]
+    : memref<8x16x4xf32> to
+      memref<8x16x4x3xi32>
+  return
+}
+
+// -----
+
+func @invalid_rank_reducing_subview(%arg0 : index, %arg1 : index, %arg2 : index) {
+  %0 = alloc() : memref<8x16x4xf32>
+  // expected-error@+1 {{expected result type to be 'memref<8x16x4xf32, affine_map<(d0, d1, d2) -> (d0 * 64 + d1 * 4 + d2)>>' or a rank-reduced version. (mismatch of result sizes)}}
+  %1 = subview %0[0, 0, 0][8, 16, 4][1, 1, 1]
+    : memref<8x16x4xf32> to memref<16x4xf32>
+  return
+}
+
+// -----
+
+func @invalid_rank_reducing_subview(%arg0 : memref<?x?xf32>, %arg1 : index, %arg2 : index) {
+  // expected-error@+1 {{expected result type to be 'memref<?x1xf32, affine_map<(d0, d1)[s0, s1] -> (d0 * s1 + s0 + d1)>>' or a rank-reduced version. (mismatch of result strides)}}
+  %0 = subview %arg0[0, %arg1][%arg2, 1][1, 1] : memref<?x?xf32> to memref<?xf32>
   return
 }
 
@@ -1092,7 +1116,7 @@ func @invalid_prefetch_locality_hint(%i : index) {
 // incompatible memory space
 func @invalid_memref_cast() {
   %0 = alloc() : memref<2x5xf32, 0>
-  // expected-error@+1 {{operand type 'memref<2x5xf32>' and result type 'memref<*xf32>' are cast incompatible}}
+  // expected-error@+1 {{operand type 'memref<2x5xf32>' and result type 'memref<*xf32, 1>' are cast incompatible}}
   %1 = memref_cast %0 : memref<2x5xf32, 0> to memref<*xf32, 1>
   return
 }
@@ -1205,7 +1229,7 @@ func @assume_alignment(%0: memref<4x4xf16>) {
 
 // 0 alignment value.
 func @assume_alignment(%0: memref<4x4xf16>) {
-  // expected-error@+1 {{'std.assume_alignment' op attribute 'alignment' failed to satisfy constraint: 32-bit signless integer attribute whose value is positive}}
+  // expected-error@+1 {{attribute 'alignment' failed to satisfy constraint: 32-bit signless integer attribute whose value is positive}}
   std.assume_alignment %0, 0 : memref<4x4xf16>
   return
 }
@@ -1259,5 +1283,25 @@ func @real_part_from_incompatible_complex_type(%cplx: complex<f32>) {
 func @imaginary_part_from_incompatible_complex_type(%cplx: complex<f64>) {
   // expected-error@+1 {{expects different type than prior uses: 'complex<f32>' vs 'complex<f64>'}}
   std.re %cplx : complex<f32>
+  return
+}
+
+// -----
+
+func @subtensor_wrong_dynamic_type(%t: tensor<8x16x4xf32>, %idx : index) {
+      // expected-error @+1 {{expected result type to be 'tensor<4x4x4xf32>' or a rank-reduced version. (mismatch of result sizes)}}
+  %0 = subtensor %t[0, 2, 0][4, 4, 4][1, 1, 1]
+    : tensor<8x16x4xf32> to tensor<?x4x4xf32>
+
+  return
+}
+
+// -----
+
+func @subtensor_wrong_static_type(%t: tensor<8x16x4xf32>, %idx : index) {
+      // expected-error @+1 {{expected result type to be 'tensor<?x3x?xf32>' or a rank-reduced version. (mismatch of result sizes)}}
+  %0 = subtensor %t[0, 0, 0][%idx, 3, %idx][1, 1, 1]
+    : tensor<8x16x4xf32> to tensor<4x4x4xf32>
+
   return
 }

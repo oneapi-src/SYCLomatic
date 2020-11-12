@@ -8,11 +8,28 @@
 
 #include "llvm/Support/FileCollector.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Process.h"
 
 using namespace llvm;
+
+FileCollectorBase::FileCollectorBase() = default;
+FileCollectorBase::~FileCollectorBase() = default;
+
+void FileCollectorBase::addFile(const Twine &File) {
+  std::lock_guard<std::mutex> lock(Mutex);
+  std::string FileStr = File.str();
+  if (markAsSeen(FileStr))
+    addFileImpl(FileStr);
+}
+
+void FileCollectorBase::addDirectory(const Twine &Dir) {
+  assert(sys::fs::is_directory(Dir));
+  std::error_code EC;
+  addDirectoryImpl(Dir, vfs::getRealFileSystem(), EC);
+}
 
 static bool isCaseSensitivePath(StringRef Path) {
   SmallString<256> TmpDest = Path, UpperDest, RealDest;
@@ -58,19 +75,6 @@ bool FileCollector::getRealPath(StringRef SrcPath,
   sys::path::append(RealPath, FileName);
   Result.swap(RealPath);
   return true;
-}
-
-void FileCollector::addFile(const Twine &File) {
-  std::lock_guard<std::mutex> lock(Mutex);
-  std::string FileStr = File.str();
-  if (markAsSeen(FileStr))
-    addFileImpl(FileStr);
-}
-
-void FileCollector::addDirectory(const Twine &Dir) {
-  assert(sys::fs::is_directory(Dir));
-  std::error_code EC;
-  addDirectoryImpl(Dir, vfs::getRealFileSystem(), EC);
 }
 
 void FileCollector::addFileImpl(StringRef SrcPath) {
@@ -157,20 +161,24 @@ std::error_code FileCollector::copyFiles(bool StopOnError) {
   std::lock_guard<std::mutex> lock(Mutex);
 
   for (auto &entry : VFSWriter.getMappings()) {
-    // Create directory tree.
-    if (std::error_code EC =
-            sys::fs::create_directories(sys::path::parent_path(entry.RPath),
-                                        /*IgnoreExisting=*/true)) {
-      if (StopOnError)
-        return EC;
-    }
-
     // Get the status of the original file/directory.
     sys::fs::file_status Stat;
     if (std::error_code EC = sys::fs::status(entry.VPath, Stat)) {
       if (StopOnError)
         return EC;
       continue;
+    }
+
+    // Continue if the file doesn't exist.
+    if (Stat.type() == sys::fs::file_type::file_not_found)
+      continue;
+
+    // Create directory tree.
+    if (std::error_code EC =
+            sys::fs::create_directories(sys::path::parent_path(entry.RPath),
+                                        /*IgnoreExisting=*/true)) {
+      if (StopOnError)
+        return EC;
     }
 
     if (Stat.type() == sys::fs::file_type::directory_file) {

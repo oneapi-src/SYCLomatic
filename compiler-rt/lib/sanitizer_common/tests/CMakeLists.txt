@@ -3,7 +3,7 @@ include(CompilerRTCompile)
 clang_compiler_add_cxx_check()
 
 # FIXME: use SANITIZER_COMMON_SUPPORTED_ARCH here
-filter_available_targets(SANITIZER_UNITTEST_SUPPORTED_ARCH x86_64 i386 mips64 mips64el)
+filter_available_targets(SANITIZER_UNITTEST_SUPPORTED_ARCH x86_64 i386 mips64 mips64el riscv64)
 if(APPLE)
   darwin_filter_host_archs(SANITIZER_UNITTEST_SUPPORTED_ARCH SANITIZER_UNITTEST_SUPPORTED_ARCH)
 endif()
@@ -21,6 +21,7 @@ set(SANITIZER_UNITTESTS
   sanitizer_libc_test.cpp
   sanitizer_linux_test.cpp
   sanitizer_list_test.cpp
+  sanitizer_mac_test.cpp
   sanitizer_mutex_test.cpp
   sanitizer_nolibc_test.cpp
   sanitizer_posix_test.cpp

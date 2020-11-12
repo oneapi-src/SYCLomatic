@@ -58,6 +58,7 @@ enum NodeType {
   /// of the extension
   AssertSext,
   AssertZext,
+  AssertAlign,
 
   /// Various leaf nodes.
   BasicBlock,
@@ -85,7 +86,16 @@ enum NodeType {
   /// the parent's frame or return address, and so on.
   FRAMEADDR,
   RETURNADDR,
+
+  /// ADDROFRETURNADDR - Represents the llvm.addressofreturnaddress intrinsic.
+  /// This node takes no operand, returns a target-specific pointer to the
+  /// place in the stack frame where the return address of the current
+  /// function is stored.
   ADDROFRETURNADDR,
+
+  /// SPONENTRY - Represents the llvm.sponentry intrinsic. Takes no argument
+  /// and returns the stack pointer value at the entry of the current
+  /// function calling this intrinsic.
   SPONENTRY,
 
   /// LOCAL_RECOVER - Represents the llvm.localrecover intrinsic.
@@ -273,6 +283,16 @@ enum NodeType {
   ADDCARRY,
   SUBCARRY,
 
+  /// Carry-using overflow-aware nodes for multiple precision addition and
+  /// subtraction. These nodes take three operands: The first two are normal lhs
+  /// and rhs to the add or sub, and the third is a boolean indicating if there
+  /// is an incoming carry. They produce two results: the normal result of the
+  /// add or sub, and a boolean that indicates if an overflow occured (*not*
+  /// flag, because it may be a store to memory, etc.). If the type of the
+  /// boolean is not i1 then the high bits conform to getBooleanContents.
+  SADDO_CARRY,
+  SSUBO_CARRY,
+
   /// RESULT, BOOL = [SU]ADDO(LHS, RHS) - Overflow-aware nodes for addition.
   /// These nodes take two operands: the normal LHS and RHS to the add. They
   /// produce two results: the normal result of the add, and a boolean that
@@ -308,6 +328,16 @@ enum NodeType {
   /// resulting value is this minimum value.
   SSUBSAT,
   USUBSAT,
+
+  /// RESULT = [US]SHLSAT(LHS, RHS) - Perform saturation left shift. The first
+  /// operand is the value to be shifted, and the second argument is the amount
+  /// to shift by. Both must be integers of the same bit width (W). If the true
+  /// value of LHS << RHS exceeds the largest value that can be represented by
+  /// W bits, the resulting value is this maximum value, Otherwise, if this
+  /// value is less than the smallest value that can be represented by W bits,
+  /// the resulting value is this minimum value.
+  SSHLSAT,
+  USHLSAT,
 
   /// RESULT = [US]MULFIX(LHS, RHS, SCALE) - Perform fixed point multiplication
   /// on
@@ -447,11 +477,11 @@ enum NodeType {
   FCANONICALIZE,
 
   /// BUILD_VECTOR(ELT0, ELT1, ELT2, ELT3,...) - Return a fixed-width vector
-  /// with the specified, possibly variable, elements.  The number of elements
-  /// is required to be a power of two. The types of the operands must all be
-  /// the same and must match the vector element type, except that integer types
-  /// are allowed to be larger than the element type, in which case the operands
-  /// are implicitly truncated.
+  /// with the specified, possibly variable, elements. The types of the
+  /// operands must match the vector element type, except that integer types
+  /// are allowed to be larger than the element type, in which case the
+  /// operands are implicitly truncated. The types of the operands must all
+  /// be the same.
   BUILD_VECTOR,
 
   /// INSERT_VECTOR_ELT(VECTOR, VAL, IDX) - Returns VECTOR with the element
@@ -503,7 +533,8 @@ enum NodeType {
   /// IDX is first scaled by the runtime scaling factor of T. Elements IDX
   /// through (IDX + num_elements(T) - 1) must be valid VECTOR indices. If this
   /// condition cannot be determined statically but is false at runtime, then
-  /// the result vector is undefined.
+  /// the result vector is undefined. The IDX parameter must be a vector index
+  /// constant type, which for most targets will be an integer pointer type.
   ///
   /// This operation supports extracting a fixed-width vector from a scalable
   /// vector, but not the other way around.
@@ -586,6 +617,7 @@ enum NodeType {
   CTLZ,
   CTPOP,
   BITREVERSE,
+  PARITY,
 
   /// Bit counting operators with an undefined result for zero inputs.
   CTTZ_ZERO_UNDEF,
@@ -869,7 +901,7 @@ enum NodeType {
   /// SDOperands.
   INLINEASM,
 
-  /// INLINEASM_BR - Terminator version of inline asm. Used by asm-goto.
+  /// INLINEASM_BR - Branching version of inline asm. Used by asm-goto.
   INLINEASM_BR,
 
   /// EH_LABEL - Represents a label in mid basic block used to track
@@ -1081,12 +1113,25 @@ enum NodeType {
 
   /// Generic reduction nodes. These nodes represent horizontal vector
   /// reduction operations, producing a scalar result.
-  /// The STRICT variants perform reductions in sequential order. The first
+  /// The SEQ variants perform reductions in sequential order. The first
   /// operand is an initial scalar accumulator value, and the second operand
   /// is the vector to reduce.
-  VECREDUCE_STRICT_FADD,
-  VECREDUCE_STRICT_FMUL,
-  /// These reductions are non-strict, and have a single vector operand.
+  /// E.g. RES = VECREDUCE_SEQ_FADD f32 ACC, <4 x f32> SRC_VEC
+  ///  ... is equivalent to
+  /// RES = (((ACC + SRC_VEC[0]) + SRC_VEC[1]) + SRC_VEC[2]) + SRC_VEC[3]
+  VECREDUCE_SEQ_FADD,
+  VECREDUCE_SEQ_FMUL,
+
+  /// These reductions have relaxed evaluation order semantics, and have a
+  /// single vector operand. The order of evaluation is unspecified. For
+  /// pow-of-2 vectors, one valid legalizer expansion is to use a tree
+  /// reduction, i.e.:
+  /// For RES = VECREDUCE_FADD <8 x f16> SRC_VEC
+  ///   PART_RDX = FADD SRC_VEC[0:3], SRC_VEC[4:7]
+  ///   PART_RDX2 = FADD PART_RDX[0:1], PART_RDX[2:3]
+  ///   RES = FADD PART_RDX2[0], PART_RDX2[1]
+  /// For non-pow-2 vectors, this can be computed by extracting each element
+  /// and performing the operation as if it were scalarized.
   VECREDUCE_FADD,
   VECREDUCE_FMUL,
   /// FMIN/FMAX nodes can have flags, for NaN/NoNaN variants.

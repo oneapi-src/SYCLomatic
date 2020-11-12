@@ -253,8 +253,13 @@ ApplyNonVirtualAndVirtualOffset(CodeGenFunction &CGF, Address addr,
   // Compute the offset from the static and dynamic components.
   llvm::Value *baseOffset;
   if (!nonVirtualOffset.isZero()) {
-    baseOffset = llvm::ConstantInt::get(CGF.PtrDiffTy,
-                                        nonVirtualOffset.getQuantity());
+    llvm::Type *OffsetType =
+        (CGF.CGM.getTarget().getCXXABI().isItaniumFamily() &&
+         CGF.CGM.getItaniumVTableContext().isRelativeLayout())
+            ? CGF.Int32Ty
+            : CGF.PtrDiffTy;
+    baseOffset =
+        llvm::ConstantInt::get(OffsetType, nonVirtualOffset.getQuantity());
     if (virtualOffset) {
       baseOffset = CGF.Builder.CreateAdd(virtualOffset, baseOffset);
     }
@@ -747,7 +752,7 @@ bool CodeGenFunction::IsConstructorDelegationValid(
     //    parameters
     //  - etc.
     // If we ever add any of the above cases, remember that:
-    //  - function-try-blocks will always blacklist this optimization
+    //  - function-try-blocks will always exclude this optimization
     //  - we need to perform the constructor prologue and cleanup in
     //    EmitConstructorBody.
 
@@ -793,9 +798,8 @@ void CodeGenFunction::EmitAsanPrologueOrEpilogue(bool Prologue) {
   size_t NumFields = 0;
   for (const auto *Field : ClassDecl->fields()) {
     const FieldDecl *D = Field;
-    std::pair<CharUnits, CharUnits> FieldInfo =
-        Context.getTypeInfoInChars(D->getType());
-    CharUnits FieldSize = FieldInfo.first;
+    auto FieldInfo = Context.getTypeInfoInChars(D->getType());
+    CharUnits FieldSize = FieldInfo.Width;
     assert(NumFields < SSV.size());
     SSV[NumFields].Size = D->isBitField() ? 0 : FieldSize.getQuantity();
     NumFields++;
@@ -942,7 +946,7 @@ namespace {
           LastField->isBitField()
               ? LastField->getBitWidthValue(Ctx)
               : Ctx.toBits(
-                    Ctx.getTypeInfoDataSizeInChars(LastField->getType()).first);
+                    Ctx.getTypeInfoDataSizeInChars(LastField->getType()).Width);
       uint64_t MemcpySizeBits = LastFieldOffset + LastFieldSize -
                                 FirstByteOffset + Ctx.getCharWidth() - 1;
       CharUnits MemcpySize = Ctx.toCharUnitsFromBits(MemcpySizeBits);

@@ -13,7 +13,6 @@
 #ifndef LINALG_OPS
 #define LINALG_OPS
 
-include "mlir/Dialect/Affine/IR/AffineOpsBase.td"
 include "mlir/Dialect/Linalg/IR/LinalgBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/ViewLikeInterface.td"
@@ -49,11 +48,10 @@ def Linalg_RangeOp :
     ````
   }];
   let builders = [OpBuilder<
-    "OpBuilder &builder, OperationState &result, Value min, Value max, "
-    "Value step",
+    "Value min, Value max, Value step",
     [{
-      auto rangeType = RangeType::get(builder.getContext());
-      build(builder, result, rangeType, min, max, step);
+      auto rangeType = RangeType::get($_builder.getContext());
+      build($_builder, $_state, rangeType, min, max, step);
     }]>];
 
   // Fully specified by traits.
@@ -61,19 +59,35 @@ def Linalg_RangeOp :
   let assemblyFormat = "$min `:` $max `:` $step attr-dict `:` type(results)";
 }
 
-class Linalg_ReshapeLikeOp<string mnemonic> :
-    Linalg_Op<mnemonic, [NoSideEffect]> {
+class Linalg_ReshapeLikeOp<string mnemonic, list<OpTrait> traits = []> :
+    Linalg_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
   let builders = [
-    // Builder for a contracting reshape whose result type is computed from
+    // Builders for a contracting reshape whose result type is computed from
     // `src` and `reassociation`.
-    OpBuilder<"OpBuilder &b, OperationState &result, Value src, "
-    "ArrayRef<ArrayRef<AffineExpr>> reassociation, "
-    "ArrayRef<NamedAttribute> attrs = {}">,
-    // Builder for a reshape whose result type is passed explicitly. This may be
-    // either a contracting or expanding reshape.
-    OpBuilder<"OpBuilder &b, OperationState &result, Type resultType, Value src,"
-    "ArrayRef<ArrayRef<AffineExpr>> reassociation, "
-    "ArrayRef<NamedAttribute> attrs = {}">];
+    OpBuilder<"Value src, "
+              "ArrayRef<ReassociationExprs> reassociation, "
+              "ArrayRef<NamedAttribute> attrs = {}">,
+    OpBuilder<"Value src, "
+              "ArrayRef<ReassociationIndices> reassociation, "
+              "ArrayRef<NamedAttribute> attrs = {}", [{
+      auto reassociationMaps =
+          convertReassociationIndicesToMaps($_builder, reassociation);
+      build($_builder, $_state, src, reassociationMaps, attrs);
+    }]>,
+
+    // Builders for a reshape whose result type is passed explicitly. This may
+    // be either a contracting or expanding reshape.
+    OpBuilder<"Type resultType, Value src, "
+              "ArrayRef<ReassociationExprs> reassociation, "
+              "ArrayRef<NamedAttribute> attrs = {}">,
+    OpBuilder<"Type resultType, Value src, "
+              "ArrayRef<ReassociationIndices> reassociation, "
+              "ArrayRef<NamedAttribute> attrs = {}", [{
+      auto reassociationMaps =
+          convertReassociationIndicesToMaps($_builder, reassociation);
+      build($_builder, $_state, resultType, src, reassociationMaps, attrs);
+    }]>
+  ];
 
   code commonExtraClassDeclaration = [{
     static StringRef getReassociationAttrName() { return "reassociation"; }
@@ -87,7 +101,8 @@ class Linalg_ReshapeLikeOp<string mnemonic> :
   }];
 }
 
-def Linalg_ReshapeOp : Linalg_ReshapeLikeOp<"reshape">,
+def Linalg_ReshapeOp : Linalg_ReshapeLikeOp<"reshape",
+    [DeclareOpInterfaceMethods<ViewLikeOpInterface>]>,
     Arguments<(ins AnyStridedMemRef:$src, AffineMapArrayAttr:$reassociation)>,
     Results<(outs AnyStridedMemRef:$result)> {
   let summary = "linalg.reshape produces a new view into the operand view";
@@ -243,9 +258,7 @@ def Linalg_SliceOp : Linalg_Op<"slice", [
       ```
   }];
 
-  let builders = [OpBuilder<
-    "OpBuilder &b, OperationState &result, Value base, "
-    "ValueRange indexings">];
+  let builders = [OpBuilder<"Value base, ValueRange indexings">];
 
   let extraClassDeclaration = [{
     enum { FirstIndexingOperand = 1 };
@@ -266,42 +279,6 @@ def Linalg_SliceOp : Linalg_Op<"slice", [
           res.push_back(operand);
       return res;
     }
-  }];
-
-  let hasFolder = 1;
-}
-
-def Linalg_TransposeOp : Linalg_Op<"transpose", [NoSideEffect]>,
-    Arguments<(ins AnyStridedMemRef:$view, AffineMapAttr:$permutation)>,
-    Results<(outs AnyStridedMemRef)> {
-  let summary = "`transpose` produces a new strided memref (metadata-only)";
-  let description = [{
-    The `linalg.transpose` op produces a strided memref whose sizes and strides
-    are a permutation of the original `view`. This is a pure metadata
-    transformation.
-
-    Example:
-
-    ```mlir
-    %1 = linalg.transpose %0 (i, j) -> (j, i) : memref<?x?xf32, stride_spec>
-    ```
-  }];
-
-  let builders = [OpBuilder<
-    "OpBuilder &b, OperationState &result, Value view, "
-    "AffineMapAttr permutation, ArrayRef<NamedAttribute> attrs = {}">];
-
-  let verifier = [{
-    if (!permutation().isPermutation())
-      return emitOpError("expected a permutation map");
-    if (permutation().getNumDims() != getShapedType().getRank())
-      return emitOpError("expected a permutation map of same rank as the view");
-    return success();
-  }];
-
-  let extraClassDeclaration = [{
-    static StringRef getPermutationAttrName() { return "permutation"; }
-    ShapedType getShapedType() { return view().getType().cast<ShapedType>(); }
   }];
 
   let hasFolder = 1;

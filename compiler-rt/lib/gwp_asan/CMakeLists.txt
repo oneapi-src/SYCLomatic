@@ -12,6 +12,7 @@ set(GWP_ASAN_SOURCES
   guarded_pool_allocator.cpp
   random.cpp
   stack_trace_compressor.cpp
+  utilities.cpp
 )
 
 set(GWP_ASAN_HEADERS
@@ -31,10 +32,8 @@ set(GWP_ASAN_HEADERS
 # allocators. Some supporting allocators (e.g. scudo standalone) cannot use any
 # parts of the C++ standard library.
 set(GWP_ASAN_CFLAGS ${SANITIZER_COMMON_CFLAGS} -fno-rtti -fno-exceptions
-    -nostdinc++ -pthread)
+    -nostdinc++ -pthread -fno-omit-frame-pointer)
 append_list_if(COMPILER_RT_HAS_FPIC_FLAG -fPIC GWP_ASAN_CFLAGS)
-append_list_if(COMPILER_RT_HAS_OMIT_FRAME_POINTER_FLAG -fno-omit-frame-pointer
-               GWP_ASAN_CFLAGS)
 
 # Remove -stdlib= which is unused when passing -nostdinc++.
 string(REGEX REPLACE "-stdlib=[a-zA-Z+]*" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})

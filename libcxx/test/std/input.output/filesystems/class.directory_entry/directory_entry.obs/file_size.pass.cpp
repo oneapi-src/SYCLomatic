@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 // <filesystem>
 
@@ -21,8 +21,6 @@
 
 #include "filesystem_test_helper.h"
 #include "rapid-cxx-test.h"
-
-#include <iostream>
 
 #include "test_macros.h"
 

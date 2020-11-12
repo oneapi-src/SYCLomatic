@@ -356,11 +356,19 @@ public:
   }
 
   // C1564
+  void Post(const parser::InterfaceBody::Function &func) {
+    CheckOptionalName<parser::FunctionStmt>("FUNCTION", func,
+        std::get<parser::Statement<parser::EndFunctionStmt>>(func.t));
+  }
+
+  // C1564
   void Post(const parser::FunctionSubprogram &functionSubprogram) {
     CheckOptionalName<parser::FunctionStmt>("FUNCTION", functionSubprogram,
         std::get<parser::Statement<parser::EndFunctionStmt>>(
             functionSubprogram.t));
   }
+
+  // C1502
   void Post(const parser::InterfaceBlock &interfaceBlock) {
     auto &interfaceStmt{
         std::get<parser::Statement<parser::InterfaceStmt>>(interfaceBlock.t)};
@@ -381,7 +389,7 @@ public:
                 context_
                     .Say(currentPosition_,
                         parser::MessageFormattedText{
-                            "INTERFACE generic-name (%s) mismatch"_en_US,
+                            "INTERFACE generic-name (%s) mismatch"_err_en_US,
                             namePointer->source})
                     .Attach(interfaceStmt.source, "mismatched INTERFACE"_en_US);
               }
@@ -430,6 +438,12 @@ public:
   void Post(const parser::Submodule &submodule) {
     CheckOptionalName<parser::SubmoduleStmt>("SUBMODULE", submodule,
         std::get<parser::Statement<parser::EndSubmoduleStmt>>(submodule.t));
+  }
+
+  // C1567
+  void Post(const parser::InterfaceBody::Subroutine &sub) {
+    CheckOptionalName<parser::SubroutineStmt>("SUBROUTINE", sub,
+        std::get<parser::Statement<parser::EndSubroutineStmt>>(sub.t));
   }
 
   // C1567
@@ -935,6 +949,12 @@ void CheckScopeConstraints(const SourceStmtList &stmts,
           parser::MessageFormattedText{
               "Label '%u' was not found"_err_en_US, SayLabel(label)});
     } else if (!InInclusiveScope(scopes, scope, target.proxyForScope)) {
+      // Clause 11.1.2.1 prohibits transfer of control to the interior of a
+      // block from outside the block, but this does not apply to formats.
+      if (target.labeledStmtClassificationSet.test(
+              TargetStatementEnum::Format)) {
+        continue;
+      }
       context.Say(position,
           parser::MessageFormattedText{
               "Label '%u' is not in scope"_en_US, SayLabel(label)});

@@ -74,19 +74,9 @@ protected:
   PacketResult SendOKResponse();
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(GDBRemoteCommunicationServer);
-};
-
-class PacketUnimplementedError
-    : public llvm::ErrorInfo<PacketUnimplementedError, llvm::StringError> {
-public:
-  static char ID;
-  using llvm::ErrorInfo<PacketUnimplementedError,
-                        llvm::StringError>::ErrorInfo; // inherit constructors
-  PacketUnimplementedError(const llvm::Twine &S)
-      : ErrorInfo(S, llvm::errc::not_supported) {}
-
-  PacketUnimplementedError() : ErrorInfo(llvm::errc::not_supported) {}
+  GDBRemoteCommunicationServer(const GDBRemoteCommunicationServer &) = delete;
+  const GDBRemoteCommunicationServer &
+  operator=(const GDBRemoteCommunicationServer &) = delete;
 };
 
 } // namespace process_gdb_remote

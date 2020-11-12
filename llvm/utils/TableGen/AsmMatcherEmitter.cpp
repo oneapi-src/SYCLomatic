@@ -612,7 +612,7 @@ struct MatchableInfo {
   /// operator< - Compare two matchables.
   bool operator<(const MatchableInfo &RHS) const {
     // The primary comparator is the instruction mnemonic.
-    if (int Cmp = Mnemonic.compare(RHS.Mnemonic))
+    if (int Cmp = Mnemonic.compare_lower(RHS.Mnemonic))
       return Cmp == -1;
 
     if (AsmOperands.size() != RHS.AsmOperands.size())
@@ -2880,7 +2880,7 @@ static void emitCustomOperandParsing(raw_ostream &OS, CodeGenTarget &Target,
     OS << "  { ";
 
     // Store a pascal-style length byte in the mnemonic.
-    std::string LenMnemonic = char(II.Mnemonic.size()) + II.Mnemonic.str();
+    std::string LenMnemonic = char(II.Mnemonic.size()) + II.Mnemonic.lower();
     OS << StringTable.GetOrAddStringOffset(LenMnemonic, false)
        << " /* " << II.Mnemonic << " */, ";
 
@@ -3094,6 +3094,67 @@ static void emitMnemonicSpellChecker(raw_ostream &OS, CodeGenTarget &Target,
   OS << "\n";
 }
 
+static void emitMnemonicChecker(raw_ostream &OS,
+                                CodeGenTarget &Target,
+                                unsigned VariantCount,
+                                bool HasMnemonicFirst,
+                                bool HasMnemonicAliases) {
+  OS << "static bool " << Target.getName()
+     << "CheckMnemonic(StringRef Mnemonic,\n";
+  OS << "                                "
+     << "const FeatureBitset &AvailableFeatures,\n";
+  OS << "                                "
+     << "unsigned VariantID) {\n";
+
+  if (!VariantCount) {
+    OS <<  "  return false;\n";
+  } else {
+    if (HasMnemonicAliases) {
+      OS << "  // Process all MnemonicAliases to remap the mnemonic.\n";
+      OS << "  applyMnemonicAliases(Mnemonic, AvailableFeatures, VariantID);";
+      OS << "\n\n";
+    }
+    OS << "  // Find the appropriate table for this asm variant.\n";
+    OS << "  const MatchEntry *Start, *End;\n";
+    OS << "  switch (VariantID) {\n";
+    OS << "  default: llvm_unreachable(\"invalid variant!\");\n";
+    for (unsigned VC = 0; VC != VariantCount; ++VC) {
+      Record *AsmVariant = Target.getAsmParserVariant(VC);
+      int AsmVariantNo = AsmVariant->getValueAsInt("Variant");
+      OS << "  case " << AsmVariantNo << ": Start = std::begin(MatchTable" << VC
+         << "); End = std::end(MatchTable" << VC << "); break;\n";
+    }
+    OS << "  }\n\n";
+
+    OS << "  // Search the table.\n";
+    if (HasMnemonicFirst) {
+      OS << "  auto MnemonicRange = "
+            "std::equal_range(Start, End, Mnemonic, LessOpcode());\n\n";
+    } else {
+      OS << "  auto MnemonicRange = std::make_pair(Start, End);\n";
+      OS << "  unsigned SIndex = Mnemonic.empty() ? 0 : 1;\n";
+      OS << "  if (!Mnemonic.empty())\n";
+      OS << "    MnemonicRange = "
+         << "std::equal_range(Start, End, Mnemonic.lower(), LessOpcode());\n\n";
+    }
+
+    OS << "  if (MnemonicRange.first == MnemonicRange.second)\n";
+    OS << "    return false;\n\n";
+
+    OS << "  for (const MatchEntry *it = MnemonicRange.first, "
+       << "*ie = MnemonicRange.second;\n";
+    OS << "       it != ie; ++it) {\n";
+    OS << "    const FeatureBitset &RequiredFeatures =\n";
+    OS << "      FeatureBitsets[it->RequiredFeaturesIdx];\n";
+    OS << "    if ((AvailableFeatures & RequiredFeatures) == ";
+    OS << "RequiredFeatures)\n";
+    OS << "      return true;\n";
+    OS << "  }\n";
+    OS << "  return false;\n";
+  }
+  OS << "}\n";
+  OS << "\n";
+}
 
 // Emit a function mapping match classes to strings, for debugging.
 static void emitMatchClassKindNames(std::forward_list<ClassInfo> &Infos,
@@ -3324,7 +3385,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
     HasDeprecation |= MI->HasDeprecation;
 
     // Store a pascal-style length byte in the mnemonic.
-    std::string LenMnemonic = char(MI->Mnemonic.size()) + MI->Mnemonic.str();
+    std::string LenMnemonic = char(MI->Mnemonic.size()) + MI->Mnemonic.lower();
     MaxMnemonicIndex = std::max(MaxMnemonicIndex,
                         StringTable.GetOrAddStringOffset(LenMnemonic, false));
   }
@@ -3438,7 +3499,8 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
         continue;
 
       // Store a pascal-style length byte in the mnemonic.
-      std::string LenMnemonic = char(MI->Mnemonic.size()) + MI->Mnemonic.str();
+      std::string LenMnemonic =
+          char(MI->Mnemonic.size()) + MI->Mnemonic.lower();
       OS << "  { " << StringTable.GetOrAddStringOffset(LenMnemonic, false)
          << " /* " << MI->Mnemonic << " */, "
          << Target.getInstNamespace() << "::"
@@ -3908,6 +3970,14 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
   emitMnemonicSpellChecker(OS, Target, VariantCount);
 
   OS << "#endif // GET_MNEMONIC_SPELL_CHECKER\n\n";
+
+  OS << "\n#ifdef GET_MNEMONIC_CHECKER\n";
+  OS << "#undef GET_MNEMONIC_CHECKER\n\n";
+
+  emitMnemonicChecker(OS, Target, VariantCount,
+                      HasMnemonicFirst, HasMnemonicAliases);
+
+  OS << "#endif // GET_MNEMONIC_CHECKER\n\n";
 }
 
 namespace llvm {

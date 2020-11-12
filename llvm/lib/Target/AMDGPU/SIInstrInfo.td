@@ -172,19 +172,6 @@ class SDBufferAtomic<string opcode> : SDNode <opcode,
   [SDNPMemOperand, SDNPHasChain, SDNPMayLoad, SDNPMayStore]
 >;
 
-class SDBufferAtomicNoRtn<string opcode, ValueType ty> : SDNode <opcode,
-  SDTypeProfile<0, 8,
-      [SDTCisVT<0, ty>,    // vdata
-       SDTCisVT<1, v4i32>, // rsrc
-       SDTCisVT<2, i32>,   // vindex(VGPR)
-       SDTCisVT<3, i32>,   // voffset(VGPR)
-       SDTCisVT<4, i32>,   // soffset(SGPR)
-       SDTCisVT<5, i32>,   // offset(imm)
-       SDTCisVT<6, i32>,   // cachepolicy(imm)
-       SDTCisVT<7, i1>]>,  // idxen(imm)
-  [SDNPMemOperand, SDNPHasChain, SDNPMayLoad, SDNPMayStore]
->;
-
 def SIbuffer_atomic_swap : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_SWAP">;
 def SIbuffer_atomic_add : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_ADD">;
 def SIbuffer_atomic_sub : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_SUB">;
@@ -197,8 +184,8 @@ def SIbuffer_atomic_or : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_OR">;
 def SIbuffer_atomic_xor : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_XOR">;
 def SIbuffer_atomic_inc : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_INC">;
 def SIbuffer_atomic_dec : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_DEC">;
-def SIbuffer_atomic_fadd : SDBufferAtomicNoRtn <"AMDGPUISD::BUFFER_ATOMIC_FADD", f32>;
-def SIbuffer_atomic_pk_fadd : SDBufferAtomicNoRtn <"AMDGPUISD::BUFFER_ATOMIC_PK_FADD", v2f16>;
+def SIbuffer_atomic_csub : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_CSUB">;
+def SIbuffer_atomic_fadd : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_FADD">;
 
 def SIbuffer_atomic_cmpswap : SDNode <"AMDGPUISD::BUFFER_ATOMIC_CMPSWAP",
   SDTypeProfile<1, 9,
@@ -221,8 +208,6 @@ class SDGlobalAtomicNoRtn<string opcode, ValueType ty> : SDNode <opcode,
        SDTCisVT<1, ty>]>,  // vdata
   [SDNPMemOperand, SDNPHasChain, SDNPMayLoad, SDNPMayStore]
 >;
-
-def SIglobal_atomic_pk_fadd : SDGlobalAtomicNoRtn <"AMDGPUISD::ATOMIC_PK_FADD", v2f16>;
 
 def SIpc_add_rel_offset : SDNode<"AMDGPUISD::PC_ADD_REL_OFFSET",
   SDTypeProfile<1, 2, [SDTCisVT<0, iPTR>, SDTCisSameAs<0,1>, SDTCisSameAs<0,2>]>
@@ -318,23 +303,6 @@ defm atomic_load_fmax_#as : binary_atomic_op<SIatomic_fmax, 0>;
 } // End let AddressSpaces = ...
 } // End foreach AddrSpace
 
-def atomic_fadd_global_noret : PatFrag<
-  (ops node:$ptr, node:$value),
-  (atomic_load_fadd node:$ptr, node:$value)> {
-  // FIXME: Move this
-  let MemoryVT = f32;
-  let IsAtomic = 1;
-  let AddressSpaces = StoreAddress_global.AddrSpaces;
-}
-
-def atomic_pk_fadd_global_noret : PatFrag<
-    (ops node:$ptr, node:$value),
-    (SIglobal_atomic_pk_fadd node:$ptr, node:$value)> {
-  // FIXME: Move this
-  let MemoryVT = v2f16;
-  let IsAtomic = 1;
-  let AddressSpaces = StoreAddress_global.AddrSpaces;
-}
 
 //===----------------------------------------------------------------------===//
 // SDNodes PatFrags for loads/stores with a glue input.
@@ -440,16 +408,15 @@ def zextloadi16_local_m0 : PatFrag<(ops node:$ptr), (zextloadi16_glue node:$ptr)
 }
 
 def load_align8_local_m0 : PatFrag<(ops node:$ptr),
-                                   (load_local_m0 node:$ptr)> {
+                                   (load_local_m0 node:$ptr)>, Aligned<8> {
   let IsLoad = 1;
   let IsNonExtLoad = 1;
-  let MinAlignment = 8;
 }
+
 def load_align16_local_m0 : PatFrag<(ops node:$ptr),
-                                    (load_local_m0 node:$ptr)> {
+                                   (load_local_m0 node:$ptr)>, Aligned<16> {
   let IsLoad = 1;
   let IsNonExtLoad = 1;
-  let MinAlignment = 16;
 }
 
 } // End IsLoad = 1
@@ -525,20 +492,18 @@ def truncstorei16_local_m0 : PatFrag<(ops node:$val, node:$ptr),
 }
 }
 
-def store_align16_local_m0 : PatFrag <
-  (ops node:$value, node:$ptr),
-  (store_local_m0 node:$value, node:$ptr)> {
+def store_align8_local_m0 : PatFrag <(ops node:$value, node:$ptr),
+                                     (store_local_m0 node:$value, node:$ptr)>,
+                            Aligned<8> {
   let IsStore = 1;
   let IsTruncStore = 0;
-  let MinAlignment = 16;
 }
 
-def store_align8_local_m0 : PatFrag <
-  (ops node:$value, node:$ptr),
-  (store_local_m0 node:$value, node:$ptr)> {
+def store_align16_local_m0 : PatFrag <(ops node:$value, node:$ptr),
+                                     (store_local_m0 node:$value, node:$ptr)>,
+                            Aligned<16> {
   let IsStore = 1;
   let IsTruncStore = 0;
-  let MinAlignment = 8;
 }
 
 let AddressSpaces = StoreAddress_local.AddrSpaces in {
@@ -571,6 +536,48 @@ def si_setcc_uniform : PatFrag <
   }
   return true;
 }]>;
+
+//===----------------------------------------------------------------------===//
+// SDNodes PatFrags for a16 loads and stores with 3 components.
+// v3f16/v3i16 is widened to v4f16/v4i16, so we need to match on the memory
+// load/store size.
+//===----------------------------------------------------------------------===//
+
+class mubuf_intrinsic_load<SDPatternOperator name, ValueType vt> : PatFrag <
+  (ops node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$auxiliary, node:$idxen),
+  (name node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$auxiliary, node:$idxen)> {
+  let IsLoad = 1;
+  let MemoryVT = vt;
+}
+
+class mubuf_intrinsic_store<SDPatternOperator name, ValueType vt> : PatFrag <
+  (ops node:$vdata, node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$auxiliary, node:$idxen),
+  (name node:$vdata, node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$auxiliary, node:$idxen)> {
+  let IsStore = 1;
+  let MemoryVT = vt;
+}
+
+class mtbuf_intrinsic_load<SDPatternOperator name, ValueType vt> : PatFrag <
+  (ops node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$format, node:$auxiliary, node:$idxen),
+  (name node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$format, node:$auxiliary, node:$idxen)> {
+  let IsLoad = 1;
+  let MemoryVT = vt;
+}
+
+class mtbuf_intrinsic_store<SDPatternOperator name, ValueType vt> : PatFrag <
+  (ops node:$vdata, node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$format, node:$auxiliary, node:$idxen),
+  (name node:$vdata, node:$rsrc, node:$vindex, node:$voffset, node:$soffset, node:$offset,
+            node:$format, node:$auxiliary, node:$idxen)> {
+  let IsStore = 1;
+  let MemoryVT = vt;
+}
 
 //===----------------------------------------------------------------------===//
 // SDNodes PatFrags for d16 loads
@@ -777,7 +784,7 @@ def NegSubInlineConst32 : ImmLeaf<i32, [{
   return Imm < -16 && Imm >= -64;
 }], NegateImm>;
 
-def NegSubInlineConst16 : ImmLeaf<i16, [{
+def NegSubInlineIntConst16 : ImmLeaf<i16, [{
   return Imm < -16 && Imm >= -64;
 }], NegateImm>;
 
@@ -1091,8 +1098,14 @@ def clampmod0 : NamedOperandBit_0<"ClampSI", NamedMatchClass<"ClampSI">>;
 def highmod : NamedOperandBit<"High", NamedMatchClass<"High">>;
 
 def DLC : NamedOperandBit<"DLC", NamedMatchClass<"DLC">>;
+def DLC_0 : NamedOperandBit_0<"DLC", NamedMatchClass<"DLC">>;
+
 def GLC : NamedOperandBit<"GLC", NamedMatchClass<"GLC">>;
+def GLC_0 : NamedOperandBit_0<"GLC", NamedMatchClass<"GLC">>;
+
 def SLC : NamedOperandBit<"SLC", NamedMatchClass<"SLC">>;
+def SLC_0 : NamedOperandBit_0<"SLC", NamedMatchClass<"SLC">>;
+
 def TFE : NamedOperandBit<"TFE", NamedMatchClass<"TFE">>;
 def SWZ : NamedOperandBit<"SWZ", NamedMatchClass<"SWZ">>;
 def UNorm : NamedOperandBit<"UNorm", NamedMatchClass<"UNorm">>;
@@ -1104,7 +1117,7 @@ def LWE : NamedOperandBit<"LWE", NamedMatchClass<"LWE">>;
 def exp_compr : NamedOperandBit<"ExpCompr", NamedMatchClass<"ExpCompr">>;
 def exp_vm : NamedOperandBit<"ExpVM", NamedMatchClass<"ExpVM">>;
 
-def FORMAT : NamedOperandU8<"FORMAT", NamedMatchClass<"FORMAT">>;
+def FORMAT : NamedOperandU8<"FORMAT", NamedMatchClass<"FORMAT", 0>>;
 
 def DMask : NamedOperandU16<"DMask", NamedMatchClass<"DMask">>;
 def Dim : NamedOperandU8<"Dim", NamedMatchClass<"Dim", 0>>;
@@ -1297,6 +1310,7 @@ def PackedI16InputMods : PackedIntInputMods<PackedI16InputModsMatchClass>;
 
 def DS1Addr1Offset : ComplexPattern<i32, 2, "SelectDS1Addr1Offset">;
 def DS64Bit4ByteAligned : ComplexPattern<i32, 3, "SelectDS64Bit4ByteAligned">;
+def DS128Bit8ByteAligned : ComplexPattern<i64, 3, "SelectDS128Bit8ByteAligned">;
 
 def MOVRELOffset : ComplexPattern<i32, 2, "SelectMOVRELOffset">;
 
@@ -1374,12 +1388,13 @@ def HWREG {
   int FLAT_SCR_HI = 21;
   int XNACK_MASK = 22;
   int POPS_PACKER = 25;
+  int SHADER_CYCLES = 29;
 }
 
 class getHwRegImm<int Reg, int Offset = 0, int Size = 32> {
-  int ret = !or(Reg,
-                !or(!shl(Offset, 6),
-                    !shl(!add(Size, -1), 11)));
+  int ret = !and(!or(Reg,
+                  !or(!shl(Offset, 6),
+                      !shl(!add(Size, -1), 11))), 65535);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1516,6 +1531,10 @@ class getVOPSrc0ForVT<ValueType VT> {
     );
 }
 
+class getSOPSrcForVT<ValueType VT> {
+  RegisterOperand ret = !if(!eq(VT.Size, 64), SSrc_b64, SSrc_b32);
+}
+
 // Returns the vreg register class to use for source operand given VT
 class getVregSrcForVT<ValueType VT> {
   RegisterClass ret = !if(!eq(VT.Size, 128), VReg_128,
@@ -1632,20 +1651,20 @@ class getIns64 <RegisterOperand Src0RC, RegisterOperand Src1RC,
       (ins),
       /* else */
     !if (!eq(NumSrcArgs, 1),
-      !if (!eq(HasModifiers, 1),
+      !if (HasModifiers,
         // VOP1 with modifiers
         (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
              clampmod0:$clamp, omod0:$omod)
       /* else */,
         // VOP1 without modifiers
-        !if (!eq(HasIntClamp, 1),
+        !if (HasIntClamp,
           (ins Src0RC:$src0, clampmod0:$clamp),
           (ins Src0RC:$src0))
       /* endif */ ),
     !if (!eq(NumSrcArgs, 2),
-      !if (!eq(HasModifiers, 1),
+      !if (HasModifiers,
         // VOP 2 with modifiers
-        !if( !eq(HasOMod, 1),
+        !if(HasOMod,
           (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                Src1Mod:$src1_modifiers, Src1RC:$src1,
                clampmod0:$clamp, omod0:$omod),
@@ -1654,21 +1673,21 @@ class getIns64 <RegisterOperand Src0RC, RegisterOperand Src1RC,
                clampmod0:$clamp))
       /* else */,
         // VOP2 without modifiers
-        !if (!eq(HasIntClamp, 1),
+        !if (HasIntClamp,
           (ins Src0RC:$src0, Src1RC:$src1, clampmod0:$clamp),
           (ins Src0RC:$src0, Src1RC:$src1))
 
       /* endif */ )
     /* NumSrcArgs == 3 */,
-      !if (!eq(HasModifiers, 1),
-        !if (!eq(HasSrc2Mods, 1),
+      !if (HasModifiers,
+        !if (HasSrc2Mods,
           // VOP3 with modifiers
-          !if (!eq(HasOMod, 1),
+          !if (HasOMod,
             (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                  Src1Mod:$src1_modifiers, Src1RC:$src1,
                  Src2Mod:$src2_modifiers, Src2RC:$src2,
                  clampmod0:$clamp, omod0:$omod),
-            !if (!eq(HasIntClamp, 1),
+            !if (HasIntClamp,
               (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                    Src1Mod:$src1_modifiers, Src1RC:$src1,
                    Src2Mod:$src2_modifiers, Src2RC:$src2,
@@ -1677,11 +1696,11 @@ class getIns64 <RegisterOperand Src0RC, RegisterOperand Src1RC,
                    Src1Mod:$src1_modifiers, Src1RC:$src1,
                    Src2Mod:$src2_modifiers, Src2RC:$src2))),
           // VOP3 with modifiers except src2
-          !if (!eq(HasOMod, 1),
+          !if (HasOMod,
             (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                  Src1Mod:$src1_modifiers, Src1RC:$src1,
                  Src2RC:$src2, clampmod0:$clamp, omod0:$omod),
-            !if (!eq(HasIntClamp, 1),
+            !if (HasIntClamp,
               (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                    Src1Mod:$src1_modifiers, Src1RC:$src1,
                    Src2RC:$src2, clampmod0:$clamp),
@@ -1690,7 +1709,7 @@ class getIns64 <RegisterOperand Src0RC, RegisterOperand Src1RC,
                    Src2RC:$src2))))
       /* else */,
         // VOP3 without modifiers
-        !if (!eq(HasIntClamp, 1),
+        !if (HasIntClamp,
           (ins Src0RC:$src0, Src1RC:$src1, Src2RC:$src2, clampmod0:$clamp),
           (ins Src0RC:$src0, Src1RC:$src1, Src2RC:$src2))
       /* endif */ ))));
@@ -1772,7 +1791,7 @@ class getInsDPP <RegisterOperand DstRC, RegisterClass Src0RC, RegisterClass Src1
                 (ins dpp_ctrl:$dpp_ctrl, row_mask:$row_mask,
                      bank_mask:$bank_mask, bound_ctrl:$bound_ctrl),
             !if (!eq(NumSrcArgs, 1),
-              !if (!eq(HasModifiers, 1),
+              !if (HasModifiers,
                 // VOP1_DPP with modifiers
                 (ins DstRC:$old, Src0Mod:$src0_modifiers,
                      Src0RC:$src0, dpp_ctrl:$dpp_ctrl, row_mask:$row_mask,
@@ -1784,7 +1803,7 @@ class getInsDPP <RegisterOperand DstRC, RegisterClass Src0RC, RegisterClass Src1
                      bank_mask:$bank_mask, bound_ctrl:$bound_ctrl)
               /* endif */)
               /* NumSrcArgs == 2 */,
-              !if (!eq(HasModifiers, 1),
+              !if (HasModifiers,
                 // VOP2_DPP with modifiers
                 (ins DstRC:$old,
                      Src0Mod:$src0_modifiers, Src0RC:$src0,
@@ -1815,7 +1834,7 @@ class getInsDPP8 <RegisterOperand DstRC, RegisterClass Src0RC, RegisterClass Src
                 // VOP1 without input operands (V_NOP)
                 (ins dpp8:$dpp8, FI:$fi),
             !if (!eq(NumSrcArgs, 1),
-              !if (!eq(HasModifiers, 1),
+              !if (HasModifiers,
                 // VOP1_DPP with modifiers
                 (ins DstRC:$old, Src0Mod:$src0_modifiers,
                      Src0RC:$src0, dpp8:$dpp8, FI:$fi)
@@ -1824,7 +1843,7 @@ class getInsDPP8 <RegisterOperand DstRC, RegisterClass Src0RC, RegisterClass Src
                 (ins DstRC:$old, Src0RC:$src0, dpp8:$dpp8, FI:$fi)
               /* endif */)
               /* NumSrcArgs == 2 */,
-              !if (!eq(HasModifiers, 1),
+              !if (HasModifiers,
                 // VOP2_DPP with modifiers
                 (ins DstRC:$old,
                      Src0Mod:$src0_modifiers, Src0RC:$src0,
@@ -1848,7 +1867,7 @@ class getInsSDWA <RegisterOperand Src0RC, RegisterOperand Src1RC, int NumSrcArgs
                (ins),
             !if(!eq(NumSrcArgs, 1),
                // VOP1
-               !if(!eq(HasSDWAOMod, 0),
+               !if(!not(HasSDWAOMod),
                   // VOP1_SDWA without omod
                   (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                        clampmod:$clamp,
@@ -1866,7 +1885,7 @@ class getInsSDWA <RegisterOperand Src0RC, RegisterOperand Src1RC, int NumSrcArgs
                        Src1Mod:$src1_modifiers, Src1RC:$src1,
                        clampmod:$clamp, src0_sel:$src0_sel, src1_sel:$src1_sel),
                   // VOP2_SDWA
-                  !if(!eq(HasSDWAOMod, 0),
+                  !if(!not(HasSDWAOMod),
                      // VOP2_SDWA without omod
                      (ins Src0Mod:$src0_modifiers, Src0RC:$src0,
                           Src1Mod:$src1_modifiers, Src1RC:$src1,
@@ -1926,7 +1945,7 @@ class getAsm64 <bit HasDst, int NumSrcArgs, bit HasIntClamp, bit HasModifiers,
   string src2 = !if(!eq(NumSrcArgs, 3), " $src2_modifiers", "");
   string iclamp = !if(HasIntClamp, "$clamp", "");
   string ret =
-  !if(!eq(HasModifiers, 0),
+  !if(!not(HasModifiers),
       getAsm32<HasDst, NumSrcArgs, DstVT>.ret # iclamp,
       dst#", "#src0#src1#src2#"$clamp"#!if(HasOMod, "$omod", ""));
 }
@@ -1988,7 +2007,7 @@ class getAsmDPP <bit HasDst, int NumSrcArgs, bit HasModifiers, ValueType DstVT =
   string src1 = !if(!eq(NumSrcArgs, 1), "",
                    !if(!eq(NumSrcArgs, 2), " $src1_modifiers",
                                            " $src1_modifiers,"));
-  string args = !if(!eq(HasModifiers, 0),
+  string args = !if(!not(HasModifiers),
                      getAsm32<0, NumSrcArgs, DstVT>.ret,
                      ", "#src0#src1);
   string ret = dst#args#" $dpp_ctrl$row_mask$bank_mask$bound_ctrl";
@@ -2008,7 +2027,7 @@ class getAsmDPP8 <bit HasDst, int NumSrcArgs, bit HasModifiers, ValueType DstVT 
   string src1 = !if(!eq(NumSrcArgs, 1), "",
                    !if(!eq(NumSrcArgs, 2), " $src1_modifiers",
                                            " $src1_modifiers,"));
-  string args = !if(!eq(HasModifiers, 0),
+  string args = !if(!not(HasModifiers),
                      getAsm32<0, NumSrcArgs, DstVT>.ret,
                      ", "#src0#src1);
   string ret = dst#args#"$dpp8$fi";
@@ -2051,7 +2070,7 @@ class getAsmSDWA9 <bit HasDst, bit HasOMod, int NumSrcArgs,
                     "");
   string src0 = "$src0_modifiers";
   string src1 = "$src1_modifiers";
-  string out_mods = !if(!eq(HasOMod, 0), "$clamp", "$clamp$omod");
+  string out_mods = !if(!not(HasOMod), "$clamp", "$clamp$omod");
   string args = !if(!eq(NumSrcArgs, 0), "",
                     !if(!eq(NumSrcArgs, 1),
                         ", "#src0,

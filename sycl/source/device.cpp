@@ -27,11 +27,12 @@ void force_type(info::device_type &t, const info::device_type &ft) {
 }
 } // namespace detail
 
-device::device() : impl(std::make_shared<detail::device_impl>()) {}
+device::device() : impl(detail::device_impl::getHostDeviceImpl()) {}
 
 device::device(cl_device_id deviceId)
     : impl(std::make_shared<detail::device_impl>(
-          detail::pi::cast<pi_native_handle>(deviceId), *RT::GlobalPlugin)) {
+          detail::pi::cast<pi_native_handle>(deviceId),
+          RT::getPlugin<backend::opencl>())) {
   // The implementation constructor takes ownership of the native handle so we
   // must retain it in order to adhere to SYCL 1.2.1 spec (Rev6, section 4.3.1.)
   clRetainDevice(deviceId);
@@ -127,15 +128,17 @@ device::get_info() const {
   return impl->template get_info<param>();
 }
 
-#define PARAM_TRAITS_SPEC(param_type, param, ret_type)                         \
+#define __SYCL_PARAM_TRAITS_SPEC(param_type, param, ret_type)                  \
   template __SYCL_EXPORT ret_type device::get_info<info::param_type::param>()  \
       const;
 
 #include <CL/sycl/info/device_traits.def>
 
-#undef PARAM_TRAITS_SPEC
+#undef __SYCL_PARAM_TRAITS_SPEC
 
 pi_native_handle device::getNative() const { return impl->getNative(); }
+
+bool device::has(aspect Aspect) const { return impl->has(Aspect); }
 
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

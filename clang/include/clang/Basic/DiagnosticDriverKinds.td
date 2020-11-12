@@ -56,12 +56,12 @@ def err_drv_no_cuda_libdevice : Error<
   "cannot find libdevice for %0. Provide path to different CUDA installation "
   "via --cuda-path, or pass -nocudalib to build without linking with libdevice.">;
 
-def err_drv_no_rocm_installation : Error<
-  "cannot find ROCm installation.  Provide its path via --rocm-path, or pass "
-  "-nogpulib.">;
 def err_drv_no_rocm_device_lib : Error<
-  "cannot find device library for %0. Provide path to different ROCm installation "
-  "via --rocm-path, or pass -nogpulib to build without linking default libraries.">;
+  "cannot find ROCm device library%select{| for %1}0. Provide its path via --rocm-path or "
+  "--rocm-device-lib-path, or pass -nogpulib to build without ROCm device library.">;
+def err_drv_no_hip_runtime : Error<
+  "cannot find HIP runtime. Provide its path via --rocm-path, or pass "
+  "-nogpuinc to build without HIP runtime.">;
 
 def err_drv_cuda_version_unsupported : Error<
   "GPU arch %0 is supported by CUDA versions between %1 and %2 (inclusive), "
@@ -84,6 +84,11 @@ def err_drv_no_sycl_libspirv : Error<
 def err_drv_mix_cuda_hip : Error<"Mixed Cuda and HIP migration is not supported.">;
 //INTEL_CUSTOMIZATION end
 
+def err_drv_bad_target_id : Error<"Invalid target ID: %0 (A target ID is a processor name "
+  "followed by an optional list of predefined features post-fixed by a plus or minus sign deliminated "
+  "by colon, e.g. 'gfx908:sram-ecc+:xnack-')">;
+def err_drv_bad_offload_arch_combo : Error<"Invalid offload arch combinations: %0 and %1 (For a specific "
+  "processor, a feature should either exist in all offload archs, or not exist in any offload archs)">;
 def err_drv_invalid_thread_model_for_target : Error<
   "invalid thread model '%0' in '%1' for this target">;
 def err_drv_invalid_linker_name : Error<
@@ -135,6 +140,7 @@ def err_drv_invalid_Xsycl_frontend_with_args : Error<
   "invalid -Xsycl-target-frontend argument: '%0', options requiring arguments are unsupported">;
 def err_drv_bad_fpga_device_count : Error<
   "More than one FPGA specific device binary found in input objects">;
+def err_drv_unsupported_opt_dpcpp : Error<"option '%0' unsupported with DPC++">;
 def err_drv_argument_only_allowed_with : Error<
   "invalid argument '%0' only allowed with '%1'">;
 def err_drv_argument_not_allowed_with : Error<
@@ -270,6 +276,7 @@ def err_drv_optimization_remark_format : Error<
 def err_drv_no_neon_modifier : Error<"[no]neon is not accepted as modifier, please use [no]simd instead">;
 def err_drv_invalid_omp_target : Error<"OpenMP target is invalid: '%0'">;
 def err_drv_invalid_sycl_target : Error<"SYCL target is invalid: '%0'">;
+def err_drv_incompatible_omp_arch : Error<"OpenMP target architecture '%0' pointer size is incompatible with host '%1'">;
 def err_drv_option_conflict : Error<"The option %0 conflicts with %1">;
 def err_drv_omp_host_ir_file_not_found : Error<
   "The provided host compiler IR file '%0' is required to generate code for OpenMP target regions but cannot be found.">;
@@ -280,7 +287,7 @@ def err_drv_expecting_fopenmp_with_fopenmp_targets : Error<
 def err_drv_expecting_fsycl_with_sycl_opt : Error<
   "The option %0 must be used in conjunction with -fsycl to enable offloading.">;
 def err_drv_fsycl_with_c_type : Error<
-  "The option %0%1 must not be used in conjunction with -fsycl which expects C++ source.">;
+  "The option '%0' must not be used in conjunction with '-fsycl', which expects C++ source.">;
 def warn_drv_omp_offload_target_duplicate : Warning<
   "The OpenMP offloading target '%0' is similar to target '%1' already specified - will be ignored.">,
   InGroup<OpenMPTarget>;
@@ -372,10 +379,12 @@ def warn_drv_disabling_vptr_no_rtti_default : Warning<
 def warn_drv_object_size_disabled_O0 : Warning<
   "the object size sanitizer has no effect at -O0, but is explicitly enabled: %0">,
   InGroup<InvalidCommandLineArgument>, DefaultWarnNoWerror;
-def err_invalid_branch_protection: Error <
-  "invalid branch protection option '%0' in '%1'">;
 def warn_drv_deprecated_option : Warning<
   "option '%0' is deprecated, use '%1' directly instead">, InGroup<Deprecated>;
+def err_invalid_branch_protection: Error <
+  "invalid branch protection option '%0' in '%1'">;
+def err_invalid_sls_hardening : Error<
+  "invalid sls hardening option '%0' in '%1'">;
 
 def note_drv_command_failed_diag_msg : Note<
   "diagnostic msg: %0">;
@@ -498,6 +507,10 @@ def warn_drv_msvc_not_found : Warning<
   "try running Clang from a developer command prompt">,
   InGroup<DiagGroup<"msvc-not-found">>;
 
+def warn_drv_fuse_ld_path : Warning<
+  "'-fuse-ld=' taking a path is deprecated. Use '--ld-path=' instead">,
+  InGroup<FUseLdPath>, DefaultIgnore;
+
 def warn_drv_fine_grained_bitfield_accesses_ignored : Warning<
   "option '-ffine-grained-bitfield-accesses' cannot be enabled together with a sanitizer; flag ignored">,
   InGroup<OptionIgnored>;
@@ -526,6 +539,12 @@ def err_drv_trivial_auto_var_init_zero_disabled : Error<
   "-ftrivial-auto-var-init=zero hasn't been enabled. Enable it at your own peril for benchmarking purpose only with "
   "-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang">;
 
+def err_drv_trivial_auto_var_init_stop_after_missing_dependency : Error<
+  "-ftrivial-auto-var-init-stop-after=* is used without -ftrivial-auto-var-init=zero or -ftrivial-auto-var-init=pattern.">;
+
+def err_drv_trivial_auto_var_init_stop_after_invalid_value : Error<
+  "-ftrivial-auto-var-init-stop-after=* only accepts positive integers.">;
+
 def warn_drv_msp430_hwmult_unsupported : Warning<"the given MCU does not "
   "support hardware multiply, but -mhwmult is set to %0.">,
    InGroup<InvalidCommandLineArgument>;
@@ -543,4 +562,9 @@ def warn_drv_libstdcxx_not_found : Warning<
   InGroup<DiagGroup<"stdlibcxx-not-found">>;
 
 def err_drv_cannot_mix_options : Error<"cannot specify '%1' along with '%0'">;
+
+def err_drv_invalid_object_mode : Error<"OBJECT_MODE setting %0 is not recognized and is not a valid setting.">;
+
+def err_drv_invalid_sve_vector_bits : Error<
+  "'-msve-vector-bits' is not supported without SVE enabled">;
 }

@@ -18,6 +18,8 @@ multiclass B<string name, string help1, string help2> {
 }
 
 // The following flags are shared with the ELF linker
+def Bsymbolic: F<"Bsymbolic">, HelpText<"Bind defined symbols locally">;
+
 def color_diagnostics: F<"color-diagnostics">,
   HelpText<"Use colors in diagnostics">;
 
@@ -62,7 +64,11 @@ def l: JoinedOrSeparate<["-"], "l">, MetaVarName<"<libName>">,
 def L: JoinedOrSeparate<["-"], "L">, MetaVarName<"<dir>">,
   HelpText<"Add a directory to the library search path">;
 
+def m: JoinedOrSeparate<["-"], "m">, HelpText<"Set target emulation">;
+
 def mllvm: S<"mllvm">, HelpText<"Options to pass to LLVM">;
+
+defm Map: Eq<"Map", "Print a link map to the specified file">;
 
 def no_color_diagnostics: F<"no-color-diagnostics">,
   HelpText<"Do not use colors in diagnostics">;
@@ -81,6 +87,9 @@ defm pie: B<"pie",
 defm print_gc_sections: B<"print-gc-sections",
     "List removed unused sections",
     "Do not list removed unused sections">;
+
+def print_map: F<"print-map">,
+  HelpText<"Print a link map to the standard output">;
 
 def relocatable: F<"relocatable">, HelpText<"Create relocatable object file">;
 
@@ -179,7 +188,7 @@ def: JoinedOrSeparate<["-"], "e">, Alias<entry>;
 def: J<"entry=">, Alias<entry>;
 def: Flag<["-"], "E">, Alias<export_dynamic>, HelpText<"Alias for --export-dynamic">;
 def: Flag<["-"], "i">, Alias<initial_memory>;
-def: Flag<["-"], "m">, Alias<max_memory>;
+def: Flag<["-"], "M">, Alias<print_map>, HelpText<"Alias for --print-map">;
 def: Flag<["-"], "r">, Alias<relocatable>;
 def: Flag<["-"], "s">, Alias<strip_all>, HelpText<"Alias for --strip-all">;
 def: Flag<["-"], "S">, Alias<strip_debug>, HelpText<"Alias for --strip-debug">;
@@ -199,3 +208,7 @@ def thinlto_cache_dir: J<"thinlto-cache-dir=">,
 defm thinlto_cache_policy: Eq<"thinlto-cache-policy", "Pruning policy for the ThinLTO cache">;
 def thinlto_jobs: J<"thinlto-jobs=">,
   HelpText<"Number of ThinLTO jobs. Default to --threads=">;
+
+// Experimental PIC mode.
+def experimental_pic: F<"experimental-pic">,
+  HelpText<"Enable Experimental PIC">;

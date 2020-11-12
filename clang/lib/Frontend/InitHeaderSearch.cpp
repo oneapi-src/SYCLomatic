@@ -275,6 +275,7 @@ void InitHeaderSearch::AddDefaultCIncludePaths(const llvm::Triple &triple,
   case llvm::Triple::Linux:
   case llvm::Triple::Hurd:
   case llvm::Triple::Solaris:
+  case llvm::Triple::OpenBSD:
     llvm_unreachable("Include management is handled in the driver.");
 
   case llvm::Triple::CloudABI: {
@@ -386,6 +387,7 @@ void InitHeaderSearch::AddDefaultCPlusPlusIncludePaths(
   case llvm::Triple::Linux:
   case llvm::Triple::Hurd:
   case llvm::Triple::Solaris:
+  case llvm::Triple::AIX:
     llvm_unreachable("Include management is handled in the driver.");
     break;
   case llvm::Triple::Win32:
@@ -427,8 +429,10 @@ void InitHeaderSearch::AddDefaultIncludePaths(const LangOptions &Lang,
   case llvm::Triple::Emscripten:
   case llvm::Triple::Linux:
   case llvm::Triple::Hurd:
+  case llvm::Triple::OpenBSD:
   case llvm::Triple::Solaris:
   case llvm::Triple::WASI:
+  case llvm::Triple::AIX:
     return;
 
   case llvm::Triple::Win32:

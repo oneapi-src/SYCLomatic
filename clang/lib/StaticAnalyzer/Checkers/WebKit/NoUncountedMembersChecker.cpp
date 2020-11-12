@@ -75,8 +75,12 @@ public:
         continue;
 
       if (auto *MemberCXXRD = MemberType->getPointeeCXXRecordDecl()) {
-        if (isRefCountable(MemberCXXRD))
-          reportBug(Member, MemberType, MemberCXXRD, RD);
+        // If we don't see the definition we just don't know.
+        if (MemberCXXRD->hasDefinition()) {
+          llvm::Optional<bool> isRCAble = isRefCountable(MemberCXXRD);
+          if (isRCAble && *isRCAble)
+            reportBug(Member, MemberType, MemberCXXRD, RD);
+        }
       }
     }
   }
@@ -108,7 +112,11 @@ public:
 
     // Ref-counted smartpointers actually have raw-pointer to uncounted type as
     // a member but we trust them to handle it correctly.
-    return isRefCounted(llvm::dyn_cast_or_null<CXXRecordDecl>(RD));
+    auto CXXRD = llvm::dyn_cast_or_null<CXXRecordDecl>(RD);
+    if (CXXRD)
+      return isRefCounted(CXXRD);
+
+    return false;
   }
 
   void reportBug(const FieldDecl *Member, const Type *MemberType,
@@ -140,11 +148,11 @@ public:
 };
 } // namespace
 
-void ento::registerWebKitNoUncountedMemberChecker(CheckerManager &Mgr) {
+void ento::registerNoUncountedMemberChecker(CheckerManager &Mgr) {
   Mgr.registerChecker<NoUncountedMemberChecker>();
 }
 
-bool ento::shouldRegisterWebKitNoUncountedMemberChecker(
+bool ento::shouldRegisterNoUncountedMemberChecker(
     const CheckerManager &Mgr) {
   return true;
 }

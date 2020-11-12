@@ -103,9 +103,6 @@ protected:
                                             // exec's when talking to
                                             // debugservers that don't support
                                             // the "reason:exec" annotation.
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(DynamicLoaderMacOS);
 };
 
 #endif // LLDB_SOURCE_PLUGINS_DYNAMICLOADER_MACOSX_DYLD_DYNAMICLOADERMACOS_H

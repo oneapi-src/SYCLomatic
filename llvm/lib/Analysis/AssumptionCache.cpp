@@ -102,13 +102,12 @@ findAffectedValues(CallInst *CI,
         }
 
         Value *B;
-        ConstantInt *C;
         // (A & B) or (A | B) or (A ^ B).
         if (match(V, m_BitwiseLogic(m_Value(A), m_Value(B)))) {
           AddAffected(A);
           AddAffected(B);
         // (A << C) or (A >>_s C) or (A >>_u C) where C is some constant.
-        } else if (match(V, m_Shift(m_Value(A), m_ConstantInt(C)))) {
+        } else if (match(V, m_Shift(m_Value(A), m_ConstantInt()))) {
           AddAffected(A);
         }
       };
@@ -175,7 +174,7 @@ void AssumptionCache::transferAffectedValuesInCache(Value *OV, Value *NV) {
     return;
 
   for (auto &A : AVI->second)
-    if (std::find(NAVV.begin(), NAVV.end(), A) == NAVV.end())
+    if (!llvm::is_contained(NAVV, A))
       NAVV.push_back(A);
   AffectedValues.erase(OV);
 }

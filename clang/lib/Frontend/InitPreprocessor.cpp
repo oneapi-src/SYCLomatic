@@ -445,6 +445,9 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
       case 200:
         Builder.defineMacro("__OPENCL_C_VERSION__", "200");
         break;
+      case 300:
+        Builder.defineMacro("__OPENCL_C_VERSION__", "300");
+        break;
       default:
         llvm_unreachable("Unsupported OpenCL version");
       }
@@ -453,6 +456,7 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
     Builder.defineMacro("CL_VERSION_1_1", "110");
     Builder.defineMacro("CL_VERSION_1_2", "120");
     Builder.defineMacro("CL_VERSION_2_0", "200");
+    Builder.defineMacro("CL_VERSION_3_0", "300");
 
     if (TI.isLittleEndian())
       Builder.defineMacro("__ENDIAN_LITTLE__");
@@ -463,8 +467,15 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
 
   if (LangOpts.SYCL) {
     // SYCL Version is set to a value when building SYCL applications
-    if (LangOpts.SYCLVersion == 2017)
+    if (LangOpts.SYCLVersion == 2017) {
       Builder.defineMacro("CL_SYCL_LANGUAGE_VERSION", "121");
+      Builder.defineMacro("SYCL_LANGUAGE_VERSION", "201707");
+    } else if (LangOpts.SYCLVersion == 2020) {
+      Builder.defineMacro("SYCL_LANGUAGE_VERSION", "202001");
+    }
+
+    if (LangOpts.SYCLValueFitInMaxInt)
+      Builder.defineMacro("__SYCL_ID_QUERIES_FIT_IN_INT__", "1");
   }
 
   if (LangOpts.DeclareSPIRVBuiltins) {
@@ -1080,12 +1091,12 @@ static void InitializePredefinedMacros(const TargetInfo &TI,
     case 40:
       Builder.defineMacro("_OPENMP", "201307");
       break;
-    case 50:
-      Builder.defineMacro("_OPENMP", "201811");
+    case 45:
+      Builder.defineMacro("_OPENMP", "201511");
       break;
     default:
-      // Default version is OpenMP 4.5
-      Builder.defineMacro("_OPENMP", "201511");
+      // Default version is OpenMP 5.0
+      Builder.defineMacro("_OPENMP", "201811");
       break;
     }
   }

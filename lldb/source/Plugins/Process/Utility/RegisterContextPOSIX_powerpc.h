@@ -14,8 +14,6 @@
 #include "lldb/Target/RegisterContext.h"
 #include "lldb/Utility/Log.h"
 
-class ProcessMonitor;
-
 // Internal codes for all powerpc registers.
 enum {
   k_first_gpr_powerpc,
@@ -165,9 +163,6 @@ public:
 
   const char *GetRegisterName(unsigned reg);
 
-  uint32_t ConvertRegisterKindToRegisterNumber(lldb::RegisterKind kind,
-                                               uint32_t num) override;
-
 protected:
   uint64_t
       m_gpr_powerpc[k_num_gpr_registers_powerpc]; // general purpose registers.
@@ -188,8 +183,6 @@ protected:
   bool IsFPR(unsigned reg);
 
   bool IsVMX(unsigned reg);
-
-  lldb::ByteOrder GetByteOrder();
 
   virtual bool ReadGPR() = 0;
   virtual bool ReadFPR() = 0;

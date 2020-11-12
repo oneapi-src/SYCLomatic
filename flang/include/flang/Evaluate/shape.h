@@ -93,9 +93,7 @@ public:
 
   Result operator()(const ImpliedDoIndex &) const { return Scalar(); }
   Result operator()(const DescriptorInquiry &) const { return Scalar(); }
-  template <int KIND> Result operator()(const TypeParamInquiry<KIND> &) const {
-    return Scalar();
-  }
+  Result operator()(const TypeParamInquiry &) const { return Scalar(); }
   Result operator()(const BOZLiteralConstant &) const { return Scalar(); }
   Result operator()(const StaticDataObject::Pointer &) const {
     return Scalar();
@@ -188,11 +186,38 @@ std::optional<Shape> GetShape(FoldingContext &context, const A &x) {
   return GetShapeHelper{context}(x);
 }
 
+template <typename A>
+std::optional<Constant<ExtentType>> GetConstantShape(
+    FoldingContext &context, const A &x) {
+  if (auto shape{GetShape(context, x)}) {
+    return AsConstantShape(context, *shape);
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename A>
+std::optional<ConstantSubscripts> GetConstantExtents(
+    FoldingContext &context, const A &x) {
+  if (auto shape{GetShape(context, x)}) {
+    return AsConstantExtents(context, *shape);
+  } else {
+    return std::nullopt;
+  }
+}
+
 // Compilation-time shape conformance checking, when corresponding extents
 // are known.
 bool CheckConformance(parser::ContextualMessages &, const Shape &left,
     const Shape &right, const char *leftIs = "left operand",
     const char *rightIs = "right operand");
+
+// Increments one-based subscripts in element order (first varies fastest)
+// and returns true when they remain in range; resets them all to one and
+// return false otherwise (including the case where one or more of the
+// extents are zero).
+bool IncrementSubscripts(
+    ConstantSubscripts &, const ConstantSubscripts &extents);
 
 } // namespace Fortran::evaluate
 #endif // FORTRAN_EVALUATE_SHAPE_H_

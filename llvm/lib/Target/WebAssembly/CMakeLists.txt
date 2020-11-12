@@ -24,6 +24,7 @@ add_llvm_target(WebAssemblyCodeGen
   WebAssemblyExceptionInfo.cpp
   WebAssemblyExplicitLocals.cpp
   WebAssemblyFastISel.cpp
+  WebAssemblyFixBrTableDefaults.cpp
   WebAssemblyFixIrreducibleControlFlow.cpp
   WebAssemblyFixFunctionBitcasts.cpp
   WebAssemblyFrameLowering.cpp
@@ -47,6 +48,7 @@ add_llvm_target(WebAssemblyCodeGen
   WebAssemblyRuntimeLibcallSignatures.cpp
   WebAssemblySelectionDAGInfo.cpp
   WebAssemblySetP2AlignOperands.cpp
+  WebAssemblySortRegion.cpp
   WebAssemblyMemIntrinsicResults.cpp
   WebAssemblySubtarget.cpp
   WebAssemblyTargetMachine.cpp

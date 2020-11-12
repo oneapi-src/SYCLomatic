@@ -41,6 +41,7 @@ static bool isDereferenceableAndAlignedPointer(
     const Value *V, Align Alignment, const APInt &Size, const DataLayout &DL,
     const Instruction *CtxI, const DominatorTree *DT,
     SmallPtrSetImpl<const Value *> &Visited, unsigned MaxDepth) {
+  assert(V->getType()->isPointerTy() && "Base must be pointer");
 
   // Recursion limit.
   if (MaxDepth-- == 0)
@@ -54,10 +55,11 @@ static bool isDereferenceableAndAlignedPointer(
   // malloc may return null.
 
   // bitcast instructions are no-ops as far as dereferenceability is concerned.
-  if (const BitCastOperator *BC = dyn_cast<BitCastOperator>(V))
-    return isDereferenceableAndAlignedPointer(BC->getOperand(0), Alignment,
-                                              Size, DL, CtxI, DT, Visited,
-                                              MaxDepth);
+  if (const BitCastOperator *BC = dyn_cast<BitCastOperator>(V)) {
+    if (BC->getSrcTy()->isPointerTy())
+      return isDereferenceableAndAlignedPointer(
+          BC->getOperand(0), Alignment, Size, DL, CtxI, DT, Visited, MaxDepth);
+  }
 
   bool CheckForNonNull = false;
   APInt KnownDerefBytes(Size.getBitWidth(),
@@ -352,7 +354,7 @@ Value *llvm::FindAvailableLoadedValue(LoadInst *Load,
                                       BasicBlock *ScanBB,
                                       BasicBlock::iterator &ScanFrom,
                                       unsigned MaxInstsToScan,
-                                      AliasAnalysis *AA, bool *IsLoad,
+                                      AAResults *AA, bool *IsLoad,
                                       unsigned *NumScanedInst) {
   // Don't CSE load that is volatile or anything stronger than unordered.
   if (!Load->isUnordered())
@@ -389,7 +391,7 @@ Value *llvm::FindAvailablePtrLoadStore(Value *Ptr, Type *AccessTy,
                                        bool AtLeastAtomic, BasicBlock *ScanBB,
                                        BasicBlock::iterator &ScanFrom,
                                        unsigned MaxInstsToScan,
-                                       AliasAnalysis *AA, bool *IsLoadCSE,
+                                       AAResults *AA, bool *IsLoadCSE,
                                        unsigned *NumScanedInst) {
   if (MaxInstsToScan == 0)
     MaxInstsToScan = ~0U;
@@ -500,4 +502,24 @@ Value *llvm::FindAvailablePtrLoadStore(Value *Ptr, Type *AccessTy,
   // Got to the start of the block, we didn't find it, but are done for this
   // block.
   return nullptr;
+}
+
+bool llvm::canReplacePointersIfEqual(Value *A, Value *B, const DataLayout &DL,
+                                     Instruction *CtxI) {
+  Type *Ty = A->getType();
+  assert(Ty == B->getType() && Ty->isPointerTy() &&
+         "values must have matching pointer types");
+
+  // NOTE: The checks in the function are incomplete and currently miss illegal
+  // cases! The current implementation is a starting point and the
+  // implementation should be made stricter over time.
+  if (auto *C = dyn_cast<Constant>(B)) {
+    // Do not allow replacing a pointer with a constant pointer, unless it is
+    // either null or at least one byte is dereferenceable.
+    APInt OneByte(DL.getPointerTypeSizeInBits(Ty), 1);
+    return C->isNullValue() ||
+           isDereferenceableAndAlignedPointer(B, Align(1), OneByte, DL, CtxI);
+  }
+
+  return true;
 }

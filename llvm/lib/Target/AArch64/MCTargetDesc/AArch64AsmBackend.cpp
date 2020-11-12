@@ -88,8 +88,6 @@ public:
                   uint64_t Value, bool IsResolved,
                   const MCSubtargetInfo *STI) const override;
 
-  bool mayNeedRelaxation(const MCInst &Inst,
-                         const MCSubtargetInfo &STI) const override;
   bool fixupNeedsRelaxation(const MCFixup &Fixup, uint64_t Value,
                             const MCRelaxableFragment *DF,
                             const MCAsmLayout &Layout) const override;
@@ -154,19 +152,6 @@ static unsigned AdrImmBits(unsigned Value) {
   unsigned lo2 = Value & 0x3;
   unsigned hi19 = (Value & 0x1ffffc) >> 2;
   return (hi19 << 5) | (lo2 << 29);
-}
-
-static bool valueFitsIntoFixupKind(unsigned Kind, uint64_t Value) {
-  unsigned NumBits;
-  switch(Kind) {
-  case FK_Data_1: NumBits = 8; break;
-  case FK_Data_2: NumBits = 16; break;
-  case FK_Data_4: NumBits = 32; break;
-  case FK_Data_8: NumBits = 64; break;
-  default: return true;
-  }
-  return isUIntN(NumBits, Value) ||
-    isIntN(NumBits, static_cast<int64_t>(Value));
 }
 
 static uint64_t adjustFixupValue(const MCFixup &Fixup, const MCValue &Target,
@@ -243,11 +228,22 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, const MCValue &Target,
         static_cast<AArch64MCExpr::VariantKind>(Target.getRefKind());
     if (AArch64MCExpr::getSymbolLoc(RefKind) != AArch64MCExpr::VK_ABS &&
         AArch64MCExpr::getSymbolLoc(RefKind) != AArch64MCExpr::VK_SABS) {
-      // VK_GOTTPREL, VK_TPREL, VK_DTPREL are movw fixups, but they can't
-      // ever be resolved in the assembler.
-      Ctx.reportError(Fixup.getLoc(),
-                      "relocation for a thread-local variable points to an "
-                      "absolute symbol");
+      if (!RefKind) {
+        // The fixup is an expression
+        if (SignedValue > 0xFFFF || SignedValue < -0xFFFF)
+          Ctx.reportError(Fixup.getLoc(),
+                          "fixup value out of range [-0xFFFF, 0xFFFF]");
+
+        // Invert the negative immediate because it will feed into a MOVN.
+        if (SignedValue < 0)
+          SignedValue = ~SignedValue;
+        Value = static_cast<uint64_t>(SignedValue);
+      } else
+        // VK_GOTTPREL, VK_TPREL, VK_DTPREL are movw fixups, but they can't
+        // ever be resolved in the assembler.
+        Ctx.reportError(Fixup.getLoc(),
+                        "relocation for a thread-local variable points to an "
+                        "absolute symbol");
       return Value;
     }
 
@@ -332,9 +328,6 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, const MCValue &Target,
   case FK_Data_2:
   case FK_Data_4:
   case FK_Data_8:
-    if (!valueFitsIntoFixupKind(Fixup.getTargetKind(), Value))
-      Ctx.reportError(Fixup.getLoc(), "fixup value too large for data type!");
-    LLVM_FALLTHROUGH;
   case FK_SecRel_2:
   case FK_SecRel_4:
     return Value;
@@ -440,8 +433,9 @@ void AArch64AsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
   // FIXME: getFixupKindInfo() and getFixupKindNumBytes() could be fixed to
   // handle this more cleanly. This may affect the output of -show-mc-encoding.
   AArch64MCExpr::VariantKind RefKind =
-    static_cast<AArch64MCExpr::VariantKind>(Target.getRefKind());
-  if (AArch64MCExpr::getSymbolLoc(RefKind) == AArch64MCExpr::VK_SABS) {
+      static_cast<AArch64MCExpr::VariantKind>(Target.getRefKind());
+  if (AArch64MCExpr::getSymbolLoc(RefKind) == AArch64MCExpr::VK_SABS ||
+      (!RefKind && Fixup.getTargetKind() == AArch64::fixup_aarch64_movw)) {
     // If the immediate is negative, generate MOVN else MOVZ.
     // (Bit 30 = 0) ==> MOVN, (Bit 30 = 1) ==> MOVZ.
     if (SignedValue < 0)
@@ -449,11 +443,6 @@ void AArch64AsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
     else
       Data[Offset + 3] |= (1 << 6);
   }
-}
-
-bool AArch64AsmBackend::mayNeedRelaxation(const MCInst &Inst,
-                                          const MCSubtargetInfo &STI) const {
-  return false;
 }
 
 bool AArch64AsmBackend::fixupNeedsRelaxation(const MCFixup &Fixup,

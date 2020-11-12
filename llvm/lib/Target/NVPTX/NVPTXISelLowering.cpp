@@ -19,6 +19,7 @@
 #include "NVPTXTargetObjectFile.h"
 #include "NVPTXUtilities.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/Analysis.h"
@@ -2302,10 +2303,10 @@ NVPTXTargetLowering::LowerSTOREVector(SDValue Op, SelectionDAG &DAG) const {
     MemSDNode *MemSD = cast<MemSDNode>(N);
     const DataLayout &TD = DAG.getDataLayout();
 
-    unsigned Align = MemSD->getAlignment();
-    unsigned PrefAlign =
-        TD.getPrefTypeAlignment(ValVT.getTypeForEVT(*DAG.getContext()));
-    if (Align < PrefAlign) {
+    Align Alignment = MemSD->getAlign();
+    Align PrefAlign =
+        TD.getPrefTypeAlign(ValVT.getTypeForEVT(*DAG.getContext()));
+    if (Alignment < PrefAlign) {
       // This store is not sufficiently aligned, so bail out and let this vector
       // store be scalarized.  Note that we may still be able to emit smaller
       // vector stores.  For example, if we are storing a <4 x float> with an
@@ -2438,8 +2439,7 @@ static bool isImageOrSamplerVal(const Value *arg, const Module *context) {
   if (!STy || STy->isLiteral())
     return false;
 
-  return std::find(std::begin(specialTypes), std::end(specialTypes),
-                   STy->getName()) != std::end(specialTypes);
+  return llvm::is_contained(specialTypes, STy->getName());
 }
 
 SDValue NVPTXTargetLowering::LowerFormalArguments(
@@ -2590,7 +2590,8 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
             // Extend the element if necessary (e.g. an i8 is loaded
             // into an i16 register)
             if (Ins[InsIdx].VT.isInteger() &&
-                Ins[InsIdx].VT.getSizeInBits() > LoadVT.getSizeInBits()) {
+                Ins[InsIdx].VT.getFixedSizeInBits() >
+                    LoadVT.getFixedSizeInBits()) {
               unsigned Extend = Ins[InsIdx].Flags.isSExt() ? ISD::SIGN_EXTEND
                                                            : ISD::ZERO_EXTEND;
               Elt = DAG.getNode(Extend, dl, Ins[InsIdx].VT, Elt);
@@ -3780,8 +3781,7 @@ bool NVPTXTargetLowering::getTgtMemIntrinsic(
     Info.ptrVal = I.getArgOperand(0);
     Info.offset = 0;
     Info.flags = MachineMemOperand::MOLoad;
-    Info.align =
-        MaybeAlign(cast<ConstantInt>(I.getArgOperand(1))->getZExtValue());
+    Info.align = cast<ConstantInt>(I.getArgOperand(1))->getMaybeAlignValue();
 
     return true;
   }
@@ -3800,8 +3800,7 @@ bool NVPTXTargetLowering::getTgtMemIntrinsic(
     Info.ptrVal = I.getArgOperand(0);
     Info.offset = 0;
     Info.flags = MachineMemOperand::MOLoad;
-    Info.align =
-        MaybeAlign(cast<ConstantInt>(I.getArgOperand(1))->getZExtValue());
+    Info.align = cast<ConstantInt>(I.getArgOperand(1))->getMaybeAlignValue();
 
     return true;
   }
@@ -4566,13 +4565,13 @@ static bool IsMulWideOperandDemotable(SDValue Op,
   if (Op.getOpcode() == ISD::SIGN_EXTEND ||
       Op.getOpcode() == ISD::SIGN_EXTEND_INREG) {
     EVT OrigVT = Op.getOperand(0).getValueType();
-    if (OrigVT.getSizeInBits() <= OptSize) {
+    if (OrigVT.getFixedSizeInBits() <= OptSize) {
       S = Signed;
       return true;
     }
   } else if (Op.getOpcode() == ISD::ZERO_EXTEND) {
     EVT OrigVT = Op.getOperand(0).getValueType();
-    if (OrigVT.getSizeInBits() <= OptSize) {
+    if (OrigVT.getFixedSizeInBits() <= OptSize) {
       S = Unsigned;
       return true;
     }
@@ -4791,11 +4790,10 @@ static void ReplaceLoadVector(SDNode *N, SelectionDAG &DAG,
 
   LoadSDNode *LD = cast<LoadSDNode>(N);
 
-  unsigned Align = LD->getAlignment();
+  Align Alignment = LD->getAlign();
   auto &TD = DAG.getDataLayout();
-  unsigned PrefAlign =
-      TD.getPrefTypeAlignment(ResVT.getTypeForEVT(*DAG.getContext()));
-  if (Align < PrefAlign) {
+  Align PrefAlign = TD.getPrefTypeAlign(ResVT.getTypeForEVT(*DAG.getContext()));
+  if (Alignment < PrefAlign) {
     // This load is not sufficiently aligned, so bail out and let this vector
     // load be scalarized.  Note that we may still be able to emit smaller
     // vector loads.  For example, if we are loading a <4 x float> with an

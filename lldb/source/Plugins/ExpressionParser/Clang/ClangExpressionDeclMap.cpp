@@ -19,6 +19,7 @@
 #include "lldb/Core/ModuleSpec.h"
 #include "lldb/Core/ValueObjectConstResult.h"
 #include "lldb/Core/ValueObjectVariable.h"
+#include "lldb/Expression/DiagnosticManager.h"
 #include "lldb/Expression/Materializer.h"
 #include "lldb/Symbol/CompileUnit.h"
 #include "lldb/Symbol/CompilerDecl.h"
@@ -125,6 +126,12 @@ void ClangExpressionDeclMap::InstallCodeGenerator(
   m_parser_vars->m_code_gen = code_gen;
 }
 
+void ClangExpressionDeclMap::InstallDiagnosticManager(
+    DiagnosticManager &diag_manager) {
+  assert(m_parser_vars);
+  m_parser_vars->m_diagnostics = &diag_manager;
+}
+
 void ClangExpressionDeclMap::DidParse() {
   if (m_parser_vars && m_parser_vars->m_persistent_vars) {
     for (size_t entity_index = 0, num_entities = m_found_entities.GetSize();
@@ -195,6 +202,17 @@ bool ClangExpressionDeclMap::AddPersistentVariable(const NamedDecl *decl,
       llvm::dyn_cast_or_null<TypeSystemClang>(parser_type.GetTypeSystem());
   if (ast == nullptr)
     return false;
+
+  // Check if we already declared a persistent variable with the same name.
+  if (lldb::ExpressionVariableSP conflicting_var =
+          m_parser_vars->m_persistent_vars->GetVariable(name)) {
+    std::string msg = llvm::formatv("redefinition of persistent variable '{0}'",
+                                    name).str();
+    m_parser_vars->m_diagnostics->AddDiagnostic(
+        msg, DiagnosticSeverity::eDiagnosticSeverityError,
+        DiagnosticOrigin::eDiagnosticOriginLLDB);
+    return false;
+  }
 
   if (m_parser_vars->m_materializer && is_result) {
     Status err;
@@ -632,11 +650,6 @@ void ClangExpressionDeclMap::FindExternalVisibleDecls(
 
   Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_EXPRESSIONS));
 
-  if (GetImportInProgress()) {
-    LLDB_LOGV(log, "Ignoring a query during an import");
-    return;
-  }
-
   if (log) {
     if (!context.m_decl_context)
       LLDB_LOG(log,
@@ -759,7 +772,7 @@ void ClangExpressionDeclMap::LookUpLldbClass(NameSearchContext &context) {
     if (!ctx_obj_ptr || status.Fail())
       return;
 
-    AddThisType(context, TypeFromUser(m_ctx_obj->GetCompilerType()));
+    AddContextClassType(context, TypeFromUser(m_ctx_obj->GetCompilerType()));
 
     m_struct_vars->m_object_pointer_type =
         TypeFromUser(ctx_obj_ptr->GetCompilerType());
@@ -797,7 +810,7 @@ void ClangExpressionDeclMap::LookUpLldbClass(NameSearchContext &context) {
     LLDB_LOG(log, "  CEDM::FEVD Adding type for $__lldb_class: {1}",
              class_qual_type.getAsString());
 
-    AddThisType(context, class_user_type);
+    AddContextClassType(context, class_user_type);
 
     if (method_decl->isInstance()) {
       // self is a pointer to the object
@@ -839,7 +852,7 @@ void ClangExpressionDeclMap::LookUpLldbClass(NameSearchContext &context) {
     LLDB_LOG(log, "  FEVD Adding type for $__lldb_class: {1}",
              ClangUtil::GetQualType(pointee_type).getAsString());
 
-    AddThisType(context, pointee_type);
+    AddContextClassType(context, pointee_type);
     TypeFromUser this_user_type(this_type->GetFullCompilerType());
     m_struct_vars->m_object_pointer_type = this_user_type;
   }
@@ -1876,8 +1889,8 @@ void ClangExpressionDeclMap::AddOneFunction(NameSearchContext &context,
   }
 }
 
-void ClangExpressionDeclMap::AddThisType(NameSearchContext &context,
-                                         const TypeFromUser &ut) {
+void ClangExpressionDeclMap::AddContextClassType(NameSearchContext &context,
+                                                 const TypeFromUser &ut) {
   CompilerType copied_clang_type = GuardedCopyType(ut);
 
   Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_EXPRESSIONS));

@@ -25,6 +25,7 @@
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/MC/MCDwarf.h"
 #include "llvm/Target/TargetIntrinsicInfo.h"
@@ -84,7 +85,7 @@ void MachineOperand::substVirtReg(Register Reg, unsigned SubIdx,
 }
 
 void MachineOperand::substPhysReg(MCRegister Reg, const TargetRegisterInfo &TRI) {
-  assert(Reg.isPhysical());
+  assert(Register::isPhysicalRegister(Reg));
   if (getSubReg()) {
     Reg = TRI.getSubReg(Reg, getSubReg());
     // Note that getSubReg() may return 0 if the sub-register doesn't exist.
@@ -152,22 +153,25 @@ void MachineOperand::removeRegFromUses() {
 /// ChangeToImmediate - Replace this operand with a new immediate operand of
 /// the specified value.  If an operand is known to be an immediate already,
 /// the setImm method should be used.
-void MachineOperand::ChangeToImmediate(int64_t ImmVal) {
+void MachineOperand::ChangeToImmediate(int64_t ImmVal, unsigned TargetFlags) {
   assert((!isReg() || !isTied()) && "Cannot change a tied operand into an imm");
 
   removeRegFromUses();
 
   OpKind = MO_Immediate;
   Contents.ImmVal = ImmVal;
+  setTargetFlags(TargetFlags);
 }
 
-void MachineOperand::ChangeToFPImmediate(const ConstantFP *FPImm) {
+void MachineOperand::ChangeToFPImmediate(const ConstantFP *FPImm,
+                                         unsigned TargetFlags) {
   assert((!isReg() || !isTied()) && "Cannot change a tied operand into an imm");
 
   removeRegFromUses();
 
   OpKind = MO_FPImmediate;
   Contents.CFP = FPImm;
+  setTargetFlags(TargetFlags);
 }
 
 void MachineOperand::ChangeToES(const char *SymName,
@@ -196,7 +200,7 @@ void MachineOperand::ChangeToGA(const GlobalValue *GV, int64_t Offset,
   setTargetFlags(TargetFlags);
 }
 
-void MachineOperand::ChangeToMCSymbol(MCSymbol *Sym) {
+void MachineOperand::ChangeToMCSymbol(MCSymbol *Sym, unsigned TargetFlags) {
   assert((!isReg() || !isTied()) &&
          "Cannot change a tied operand into an MCSymbol");
 
@@ -204,9 +208,10 @@ void MachineOperand::ChangeToMCSymbol(MCSymbol *Sym) {
 
   OpKind = MO_MCSymbol;
   Contents.Sym = Sym;
+  setTargetFlags(TargetFlags);
 }
 
-void MachineOperand::ChangeToFrameIndex(int Idx) {
+void MachineOperand::ChangeToFrameIndex(int Idx, unsigned TargetFlags) {
   assert((!isReg() || !isTied()) &&
          "Cannot change a tied operand into a FrameIndex");
 
@@ -214,6 +219,7 @@ void MachineOperand::ChangeToFrameIndex(int Idx) {
 
   OpKind = MO_FrameIndex;
   setIndex(Idx);
+  setTargetFlags(TargetFlags);
 }
 
 void MachineOperand::ChangeToTargetIndex(unsigned Idx, int64_t Offset,
@@ -412,6 +418,11 @@ static const char *getTargetIndexName(const MachineFunction &MF, int Index) {
   if (Found != Indices.end())
     return Found->second;
   return nullptr;
+}
+
+const char *MachineOperand::getTargetIndexName() const {
+  const MachineFunction *MF = getMFIfAvailable(*this);
+  return MF ? ::getTargetIndexName(*MF, this->getIndex()) : nullptr;
 }
 
 static const char *getTargetFlagName(const TargetInstrInfo *TII, unsigned TF) {
@@ -669,7 +680,7 @@ static void printCFI(raw_ostream &OS, const MCCFIInstruction &CFI,
       size_t e = CFI.getValues().size() - 1;
       for (size_t i = 0; i < e; ++i)
         OS << format("0x%02x", uint8_t(CFI.getValues()[i])) << ", ";
-      OS << format("0x%02x", uint8_t(CFI.getValues()[e])) << ", ";
+      OS << format("0x%02x", uint8_t(CFI.getValues()[e]));
     }
     break;
   }
@@ -822,7 +833,7 @@ void MachineOperand::print(raw_ostream &OS, ModuleSlotTracker &MST,
     OS << "target-index(";
     const char *Name = "<unknown>";
     if (const MachineFunction *MF = getMFIfAvailable(*this))
-      if (const auto *TargetIndexName = getTargetIndexName(*MF, getIndex()))
+      if (const auto *TargetIndexName = ::getTargetIndexName(*MF, getIndex()))
         Name = TargetIndexName;
     OS << Name << ')';
     printOperandOffset(OS, getOffset());
@@ -1141,7 +1152,7 @@ void MachineMemOperand::print(raw_ostream &OS, ModuleSlotTracker &MST,
       const MIRFormatter *Formatter = TII->getMIRFormatter();
       // FIXME: This is not necessarily the correct MIR serialization format for
       // a custom pseudo source value, but at least it allows
-      // -print-machineinstrs to work on a target with custom pseudo source
+      // MIR printing to work on a target with custom pseudo source
       // values.
       OS << "custom \"";
       Formatter->printCustomPseudoSourceValue(OS, MST, *PVal);

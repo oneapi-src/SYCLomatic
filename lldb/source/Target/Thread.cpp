@@ -1066,7 +1066,7 @@ ThreadPlanStack &Thread::GetPlans() const {
   // ThreadPlanNull as its base plan.  That will give the right answers to the
   // queries GetDescription makes, and only assert if you try to run the thread.
   if (!m_null_plan_stack_up)
-    m_null_plan_stack_up.reset(new ThreadPlanStack(*this, true));
+    m_null_plan_stack_up = std::make_unique<ThreadPlanStack>(*this, true);
   return *(m_null_plan_stack_up.get());
 }
 
@@ -1101,6 +1101,22 @@ void Thread::DiscardPlan() {
   LLDB_LOGF(log, "Discarding plan: \"%s\", tid = 0x%4.4" PRIx64 ".",
             discarded_plan_sp->GetName(), 
             discarded_plan_sp->GetThread().GetID());
+}
+
+void Thread::AutoCompleteThreadPlans(CompletionRequest &request) const {
+  const ThreadPlanStack &plans = GetPlans();
+  if (!plans.AnyPlans())
+    return;
+
+  // Iterate from the second plan (index: 1) to skip the base plan.
+  ThreadPlanSP p;
+  uint32_t i = 1;
+  while ((p = plans.GetPlanByIndex(i, false))) {
+    StreamString strm;
+    p->GetDescription(&strm, eDescriptionLevelInitial);
+    request.TryCompleteCurrentArg(std::to_string(i), strm.GetString());
+    i++;
+  }
 }
 
 ThreadPlan *Thread::GetCurrentPlan() const {
@@ -1380,7 +1396,7 @@ lldb::ThreadPlanSP Thread::QueueThreadPlanForStepScripted(
 
   ThreadPlanSP thread_plan_sp(new ThreadPlanPython(*this, class_name, 
                                                    extra_args_impl));
-
+  thread_plan_sp->SetStopOthers(stop_other_threads);
   status = QueueThreadPlan(thread_plan_sp, abort_other_plans);
   return thread_plan_sp;
 }
@@ -1661,7 +1677,7 @@ Thread::GetStackFrameSPForStackFramePtr(StackFrame *stack_frame_ptr) {
   return GetStackFrameList()->GetStackFrameSPForStackFramePtr(stack_frame_ptr);
 }
 
-const char *Thread::StopReasonAsCString(lldb::StopReason reason) {
+std::string Thread::StopReasonAsString(lldb::StopReason reason) {
   switch (reason) {
   case eStopReasonInvalid:
     return "invalid";
@@ -1687,13 +1703,10 @@ const char *Thread::StopReasonAsCString(lldb::StopReason reason) {
     return "instrumentation break";
   }
 
-  static char unknown_state_string[64];
-  snprintf(unknown_state_string, sizeof(unknown_state_string),
-           "StopReason = %i", reason);
-  return unknown_state_string;
+  return "StopReason = " + std::to_string(reason);
 }
 
-const char *Thread::RunModeAsCString(lldb::RunMode mode) {
+std::string Thread::RunModeAsString(lldb::RunMode mode) {
   switch (mode) {
   case eOnlyThisThread:
     return "only this thread";
@@ -1703,10 +1716,7 @@ const char *Thread::RunModeAsCString(lldb::RunMode mode) {
     return "only during stepping";
   }
 
-  static char unknown_state_string[64];
-  snprintf(unknown_state_string, sizeof(unknown_state_string), "RunMode = %i",
-           mode);
-  return unknown_state_string;
+  return "RunMode = " + std::to_string(mode);
 }
 
 size_t Thread::GetStatus(Stream &strm, uint32_t start_frame,
@@ -1859,7 +1869,7 @@ size_t Thread::GetStackFrameStatus(Stream &strm, uint32_t first_frame,
 
 Unwind &Thread::GetUnwinder() {
   if (!m_unwinder_up)
-    m_unwinder_up.reset(new UnwindLLDB(*this));
+    m_unwinder_up = std::make_unique<UnwindLLDB>(*this);
   return *m_unwinder_up;
 }
 

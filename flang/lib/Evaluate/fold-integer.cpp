@@ -157,9 +157,8 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
   } else if (name == "ceiling" || name == "floor" || name == "nint") {
     if (const auto *cx{UnwrapExpr<Expr<SomeReal>>(args[0])}) {
       // NINT rounds ties away from zero, not to even
-      common::RoundingMode mode{name == "ceiling"
-              ? common::RoundingMode::Up
-              : name == "floor" ? common::RoundingMode::Down
+      common::RoundingMode mode{name == "ceiling" ? common::RoundingMode::Up
+              : name == "floor"                   ? common::RoundingMode::Down
                                 : common::RoundingMode::TiesAwayFromZero};
       return std::visit(
           [&](const auto &kx) {
@@ -322,8 +321,8 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
                         return name == "index"
                             ? CharacterUtils<TC::kind>::INDEX(str, other)
                             : name == "scan"
-                                ? CharacterUtils<TC::kind>::SCAN(str, other)
-                                : CharacterUtils<TC::kind>::VERIFY(str, other);
+                            ? CharacterUtils<TC::kind>::SCAN(str, other)
+                            : CharacterUtils<TC::kind>::VERIFY(str, other);
                       }});
             }
           },
@@ -423,6 +422,8 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
         }));
   } else if (name == "max") {
     return FoldMINorMAX(context, std::move(funcRef), Ordering::Greater);
+  } else if (name == "max0" || name == "max1") {
+    return RewriteSpecificMINorMAX(context, std::move(funcRef));
   } else if (name == "maxexponent") {
     if (auto *sx{UnwrapExpr<Expr<SomeReal>>(args[0])}) {
       return std::visit(
@@ -448,6 +449,8 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
     }
   } else if (name == "min") {
     return FoldMINorMAX(context, std::move(funcRef), Ordering::Less);
+  } else if (name == "min0" || name == "min1") {
+    return RewriteSpecificMINorMAX(context, std::move(funcRef));
   } else if (name == "mod") {
     return FoldElementalIntrinsic<T, T, T>(context, std::move(funcRef),
         ScalarFuncWithContext<T, T, T>(
@@ -597,10 +600,8 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
 }
 
 // Substitute a bare type parameter reference with its value if it has one now
-template <int KIND>
-Expr<Type<TypeCategory::Integer, KIND>> FoldOperation(
-    FoldingContext &context, TypeParamInquiry<KIND> &&inquiry) {
-  using IntKIND = Type<TypeCategory::Integer, KIND>;
+Expr<TypeParamInquiry::Result> FoldOperation(
+    FoldingContext &context, TypeParamInquiry &&inquiry) {
   if (!inquiry.base()) {
     // A "bare" type parameter: replace with its value, if that's now known.
     if (const auto *pdt{context.pdtInstance()}) {
@@ -609,24 +610,25 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldOperation(
         if (iter != scope->end()) {
           const Symbol &symbol{*iter->second};
           const auto *details{symbol.detailsIf<semantics::TypeParamDetails>()};
-          if (details && details->init()) {
+          if (details && details->init() &&
+              (details->attr() == common::TypeParamAttr::Kind ||
+                  IsConstantExpr(*details->init()))) {
             Expr<SomeInteger> expr{*details->init()};
             return Fold(context,
-                Expr<IntKIND>{
-                    Convert<IntKIND, TypeCategory::Integer>(std::move(expr))});
+                ConvertToType<TypeParamInquiry::Result>(std::move(expr)));
           }
         }
       }
       if (const auto *value{pdt->FindParameter(inquiry.parameter().name())}) {
         if (value->isExplicit()) {
           return Fold(context,
-              Expr<IntKIND>{Convert<IntKIND, TypeCategory::Integer>(
-                  Expr<SomeInteger>{value->GetExplicit().value()})});
+              AsExpr(ConvertToType<TypeParamInquiry::Result>(
+                  Expr<SomeInteger>{value->GetExplicit().value()})));
         }
       }
     }
   }
-  return Expr<IntKIND>{std::move(inquiry)};
+  return AsExpr(std::move(inquiry));
 }
 
 std::optional<std::int64_t> ToInt64(const Expr<SomeInteger> &expr) {

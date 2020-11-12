@@ -22,19 +22,25 @@
 #include "index/Relation.h"
 #include "index/Serialization.h"
 #include "index/Symbol.h"
+#include "index/SymbolID.h"
+#include "support/Threading.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/Utils.h"
 #include "clang/Index/IndexSymbol.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Tooling/CompilationDatabase.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/Support/Allocator.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <utility>
+#include <vector>
 
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Gt;
 using ::testing::IsEmpty;
 using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
@@ -85,6 +91,13 @@ std::unique_ptr<RefSlab> refSlab(const SymbolID &ID, const char *Path) {
   R.Kind = RefKind::Reference;
   Slab.insert(ID, R);
   return std::make_unique<RefSlab>(std::move(Slab).build());
+}
+
+std::unique_ptr<RelationSlab> relSlab(llvm::ArrayRef<const Relation> Rels) {
+  RelationSlab::Builder RelBuilder;
+  for (auto &Rel : Rels)
+    RelBuilder.insert(Rel);
+  return std::make_unique<RelationSlab>(std::move(RelBuilder).build());
 }
 
 TEST(FileSymbolsTest, UpdateAndGet) {
@@ -272,14 +285,14 @@ TEST(FileIndexTest, RebuildWithPreamble) {
   PI.CompileCommand.Filename = FooCpp;
   PI.CompileCommand.CommandLine = {"clang", "-xc++", FooCpp};
 
-  llvm::StringMap<std::string> Files;
-  Files[FooCpp] = "";
-  Files[FooH] = R"cpp(
+  MockFS FS;
+  FS.Files[FooCpp] = "";
+  FS.Files[FooH] = R"cpp(
     namespace ns_in_header {
       int func_in_header();
     }
   )cpp";
-  PI.FS = buildTestFS(std::move(Files));
+  PI.TFS = &FS;
 
   PI.Contents = R"cpp(
     #include "foo.h"
@@ -509,6 +522,31 @@ TEST(FileIndexTest, StalePreambleSymbolsDeleted) {
   EXPECT_THAT(runFuzzyFind(M, ""), UnorderedElementsAre(QName("b")));
 }
 
+// Verifies that concurrent calls to updateMain don't "lose" any updates.
+TEST(FileIndexTest, Threadsafety) {
+  FileIndex M;
+  Notification Go;
+
+  constexpr int Count = 10;
+  {
+    // Set up workers to concurrently call updateMain() with separate files.
+    AsyncTaskRunner Pool;
+    for (unsigned I = 0; I < Count; ++I) {
+      auto TU = TestTU::withCode(llvm::formatv("int xxx{0};", I).str());
+      TU.Filename = llvm::formatv("x{0}.c", I).str();
+      Pool.runAsync(TU.Filename, [&, Filename(testPath(TU.Filename)),
+                                  AST(TU.build())]() mutable {
+        Go.wait();
+        M.updateMain(Filename, AST);
+      });
+    }
+    // On your marks, get set...
+    Go.notify();
+  }
+
+  EXPECT_THAT(runFuzzyFind(M, "xxx"), ::testing::SizeIs(Count));
+}
+
 TEST(FileShardedIndexTest, Sharding) {
   auto AHeaderUri = URI::create(testPath("a.h")).toString();
   auto BHeaderUri = URI::create(testPath("b.h")).toString();
@@ -520,6 +558,8 @@ TEST(FileShardedIndexTest, Sharding) {
   auto Sym2 = symbol("2");
   Sym2.CanonicalDeclaration.FileURI = BHeaderUri.c_str();
   Sym2.Definition.FileURI = BSourceUri.c_str();
+
+  auto Sym3 = symbol("3"); // not stored
 
   IndexFileIn IF;
   {
@@ -536,12 +576,13 @@ TEST(FileShardedIndexTest, Sharding) {
   }
   {
     RelationSlab::Builder B;
-    // Should be stored in a.h
+    // Should be stored in a.h and b.h
     B.insert(Relation{Sym1.ID, RelationKind::BaseOf, Sym2.ID});
-    // Should be stored in b.h
+    // Should be stored in a.h and b.h
     B.insert(Relation{Sym2.ID, RelationKind::BaseOf, Sym1.ID});
-    // Dangling relation should be dropped.
-    B.insert(Relation{symbol("3").ID, RelationKind::BaseOf, Sym1.ID});
+    // Should be stored in a.h (where Sym1 is stored) even though
+    // the relation is dangling as Sym3 is unknown.
+    B.insert(Relation{Sym3.ID, RelationKind::BaseOf, Sym1.ID});
     IF.Relations.emplace(std::move(B).build());
   }
 
@@ -579,7 +620,9 @@ TEST(FileShardedIndexTest, Sharding) {
     EXPECT_THAT(*Shard->Refs, IsEmpty());
     EXPECT_THAT(
         *Shard->Relations,
-        UnorderedElementsAre(Relation{Sym1.ID, RelationKind::BaseOf, Sym2.ID}));
+        UnorderedElementsAre(Relation{Sym1.ID, RelationKind::BaseOf, Sym2.ID},
+                             Relation{Sym2.ID, RelationKind::BaseOf, Sym1.ID},
+                             Relation{Sym3.ID, RelationKind::BaseOf, Sym1.ID}));
     ASSERT_THAT(Shard->Sources->keys(), UnorderedElementsAre(AHeaderUri));
     EXPECT_THAT(Shard->Sources->lookup(AHeaderUri).DirectIncludes, IsEmpty());
     EXPECT_TRUE(Shard->Cmd.hasValue());
@@ -591,7 +634,8 @@ TEST(FileShardedIndexTest, Sharding) {
     EXPECT_THAT(*Shard->Refs, IsEmpty());
     EXPECT_THAT(
         *Shard->Relations,
-        UnorderedElementsAre(Relation{Sym2.ID, RelationKind::BaseOf, Sym1.ID}));
+        UnorderedElementsAre(Relation{Sym1.ID, RelationKind::BaseOf, Sym2.ID},
+                             Relation{Sym2.ID, RelationKind::BaseOf, Sym1.ID}));
     ASSERT_THAT(Shard->Sources->keys(),
                 UnorderedElementsAre(BHeaderUri, AHeaderUri));
     EXPECT_THAT(Shard->Sources->lookup(BHeaderUri).DirectIncludes,
@@ -610,6 +654,50 @@ TEST(FileShardedIndexTest, Sharding) {
                 UnorderedElementsAre(BHeaderUri));
     EXPECT_TRUE(Shard->Cmd.hasValue());
   }
+}
+
+TEST(FileIndexTest, Profile) {
+  FileIndex FI;
+
+  auto FileName = testPath("foo.cpp");
+  auto AST = TestTU::withHeaderCode("int a;").build();
+  FI.updateMain(FileName, AST);
+  FI.updatePreamble(FileName, "v1", AST.getASTContext(),
+                    AST.getPreprocessorPtr(), AST.getCanonicalIncludes());
+
+  llvm::BumpPtrAllocator Alloc;
+  MemoryTree MT(&Alloc);
+  FI.profile(MT);
+  ASSERT_THAT(MT.children(),
+              UnorderedElementsAre(Pair("preamble", _), Pair("main_file", _)));
+
+  ASSERT_THAT(MT.child("preamble").children(),
+              UnorderedElementsAre(Pair("index", _), Pair("slabs", _)));
+  ASSERT_THAT(MT.child("main_file").children(),
+              UnorderedElementsAre(Pair("index", _), Pair("slabs", _)));
+
+  ASSERT_THAT(MT.child("preamble").child("index").total(), Gt(0U));
+  ASSERT_THAT(MT.child("main_file").child("index").total(), Gt(0U));
+}
+
+TEST(FileSymbolsTest, Profile) {
+  FileSymbols FS;
+  FS.update("f1", numSlab(1, 2), nullptr, nullptr, false);
+  FS.update("f2", nullptr, refSlab(SymbolID("1"), "f1"), nullptr, false);
+  FS.update("f3", nullptr, nullptr,
+            relSlab({{SymbolID("1"), RelationKind::BaseOf, SymbolID("2")}}),
+            false);
+  llvm::BumpPtrAllocator Alloc;
+  MemoryTree MT(&Alloc);
+  FS.profile(MT);
+  ASSERT_THAT(MT.children(), UnorderedElementsAre(Pair("f1", _), Pair("f2", _),
+                                                  Pair("f3", _)));
+  EXPECT_THAT(MT.child("f1").children(), ElementsAre(Pair("symbols", _)));
+  EXPECT_THAT(MT.child("f1").total(), Gt(0U));
+  EXPECT_THAT(MT.child("f2").children(), ElementsAre(Pair("references", _)));
+  EXPECT_THAT(MT.child("f2").total(), Gt(0U));
+  EXPECT_THAT(MT.child("f3").children(), ElementsAre(Pair("relations", _)));
+  EXPECT_THAT(MT.child("f3").total(), Gt(0U));
 }
 } // namespace
 } // namespace clangd

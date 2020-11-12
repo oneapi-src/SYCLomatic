@@ -32,7 +32,7 @@ VulkanLayoutUtils::decorateType(spirv::StructType structType,
   }
 
   SmallVector<Type, 4> memberTypes;
-  SmallVector<Size, 4> layoutInfo;
+  SmallVector<spirv::StructType::OffsetInfo, 4> offsetInfo;
   SmallVector<spirv::StructType::MemberDecorationInfo, 4> memberDecorations;
 
   Size structMemberOffset = 0;
@@ -46,7 +46,8 @@ VulkanLayoutUtils::decorateType(spirv::StructType structType,
         decorateType(structType.getElementType(i), memberSize, memberAlignment);
     structMemberOffset = llvm::alignTo(structMemberOffset, memberAlignment);
     memberTypes.push_back(memberType);
-    layoutInfo.push_back(structMemberOffset);
+    offsetInfo.push_back(
+        static_cast<spirv::StructType::OffsetInfo>(structMemberOffset));
     // If the member's size is the max value, it must be the last member and it
     // must be a runtime array.
     assert(memberSize != std::numeric_limits<Size>().max() ||
@@ -66,7 +67,13 @@ VulkanLayoutUtils::decorateType(spirv::StructType structType,
   size = llvm::alignTo(structMemberOffset, maxMemberAlignment);
   alignment = maxMemberAlignment;
   structType.getMemberDecorations(memberDecorations);
-  return spirv::StructType::get(memberTypes, layoutInfo, memberDecorations);
+
+  if (!structType.isIdentified())
+    return spirv::StructType::get(memberTypes, offsetInfo, memberDecorations);
+
+  // Identified structs are uniqued by identifier so it is not possible
+  // to create 2 structs with the same name but different decorations.
+  return nullptr;
 }
 
 Type VulkanLayoutUtils::decorateType(Type type, VulkanLayoutUtils::Size &size,
@@ -77,20 +84,17 @@ Type VulkanLayoutUtils::decorateType(Type type, VulkanLayoutUtils::Size &size,
     size = alignment;
     return type;
   }
-
-  switch (type.getKind()) {
-  case spirv::TypeKind::Struct:
-    return decorateType(type.cast<spirv::StructType>(), size, alignment);
-  case spirv::TypeKind::Array:
-    return decorateType(type.cast<spirv::ArrayType>(), size, alignment);
-  case StandardTypes::Vector:
-    return decorateType(type.cast<VectorType>(), size, alignment);
-  case spirv::TypeKind::RuntimeArray:
+  if (auto structType = type.dyn_cast<spirv::StructType>())
+    return decorateType(structType, size, alignment);
+  if (auto arrayType = type.dyn_cast<spirv::ArrayType>())
+    return decorateType(arrayType, size, alignment);
+  if (auto vectorType = type.dyn_cast<VectorType>())
+    return decorateType(vectorType, size, alignment);
+  if (auto arrayType = type.dyn_cast<spirv::RuntimeArrayType>()) {
     size = std::numeric_limits<Size>().max();
-    return decorateType(type.cast<spirv::RuntimeArrayType>(), alignment);
-  default:
-    llvm_unreachable("unhandled SPIR-V type");
+    return decorateType(arrayType, alignment);
   }
+  llvm_unreachable("unhandled SPIR-V type");
 }
 
 Type VulkanLayoutUtils::decorateType(VectorType vectorType,
@@ -168,7 +172,7 @@ bool VulkanLayoutUtils::isLegalType(Type type) {
   case spirv::StorageClass::StorageBuffer:
   case spirv::StorageClass::PushConstant:
   case spirv::StorageClass::PhysicalStorageBuffer:
-    return structType.hasLayout() || !structType.getNumElements();
+    return structType.hasOffset() || !structType.getNumElements();
   default:
     return true;
   }

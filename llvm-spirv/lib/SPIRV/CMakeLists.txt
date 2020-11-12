@@ -4,14 +4,15 @@ add_llvm_library(LLVMSPIRVLib
   Mangler/Mangler.cpp
   Mangler/ManglingUtils.cpp
   Mangler/ParameterType.cpp
-  OCL20ToSPIRV.cpp
-  OCL21ToSPIRV.cpp
+  OCLToSPIRV.cpp
   OCLTypeToSPIRV.cpp
   OCLUtil.cpp
+  VectorComputeUtil.cpp
   SPIRVLowerBool.cpp
   SPIRVLowerConstExpr.cpp
   SPIRVLowerMemmove.cpp
   SPIRVLowerOCLBlocks.cpp
+  SPIRVLowerSaddWithOverflow.cpp
   SPIRVLowerSPIRBlocks.cpp
   SPIRVReader.cpp
   SPIRVRegularizeLLVM.cpp
@@ -37,6 +38,8 @@ add_llvm_library(LLVMSPIRVLib
     Analysis
     BitWriter
     Core
+    IRReader
+    Linker
     Support
     TransformUtils
   DEPENDS

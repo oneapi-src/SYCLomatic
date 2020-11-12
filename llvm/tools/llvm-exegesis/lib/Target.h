@@ -69,7 +69,7 @@ public:
 
   // Targets can use this to create target-specific perf counters.
   virtual Expected<std::unique_ptr<pfm::Counter>>
-  createCounter(const char *CounterName, const LLVMState &State) const;
+  createCounter(StringRef CounterName, const LLVMState &State) const;
 
   // Targets can use this to add target-specific passes in assembleToStream();
   virtual void addTargetSpecificPasses(PassManagerBase &PM) const {}
@@ -142,15 +142,21 @@ public:
     return {&Instr};
   }
 
+  // Checks hardware and software support for current benchmark mode.
+  // Returns an error if the target host does not have support to run the
+  // benchmark.
+  virtual Error checkFeatureSupport() const { return Error::success(); }
+
   // Creates a snippet generator for the given mode.
   std::unique_ptr<SnippetGenerator>
   createSnippetGenerator(InstructionBenchmark::ModeE Mode,
                          const LLVMState &State,
                          const SnippetGenerator::Options &Opts) const;
   // Creates a benchmark runner for the given mode.
-  Expected<std::unique_ptr<BenchmarkRunner>>
-  createBenchmarkRunner(InstructionBenchmark::ModeE Mode,
-                        const LLVMState &State) const;
+  Expected<std::unique_ptr<BenchmarkRunner>> createBenchmarkRunner(
+      InstructionBenchmark::ModeE Mode, const LLVMState &State,
+      InstructionBenchmark::ResultAggregationModeE ResultAggMode =
+          InstructionBenchmark::Min) const;
 
   // Returns the ExegesisTarget for the given triple or nullptr if the target
   // does not exist.
@@ -176,9 +182,11 @@ private:
   std::unique_ptr<SnippetGenerator> virtual createParallelSnippetGenerator(
       const LLVMState &State, const SnippetGenerator::Options &Opts) const;
   std::unique_ptr<BenchmarkRunner> virtual createLatencyBenchmarkRunner(
-      const LLVMState &State, InstructionBenchmark::ModeE Mode) const;
+      const LLVMState &State, InstructionBenchmark::ModeE Mode,
+      InstructionBenchmark::ResultAggregationModeE ResultAggMode) const;
   std::unique_ptr<BenchmarkRunner> virtual createUopsBenchmarkRunner(
-      const LLVMState &State) const;
+      const LLVMState &State,
+      InstructionBenchmark::ResultAggregationModeE ResultAggMode) const;
 
   const ExegesisTarget *Next = nullptr;
   const ArrayRef<CpuAndPfmCounters> CpuPfmCounters;

@@ -628,7 +628,7 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (DRE->getType()->isReferenceType()) {
     IsRedeclareRequired = true;
-  } else if (!DRE->getDecl()->isInLocalScope()) {
+  } else if (!isLexicallyInLocalScope(DRE->getDecl())) {
     IsRedeclareRequired = true;
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     bool PreviousFlag = IsRedeclareRequired;
@@ -636,7 +636,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       IsRedeclareRequired = true;
       // exclude const variable with zero-init and const-init
       if (VD->getType().isConstQualified()) {
-        if (VD->hasInit() && VD->checkInitIsICE()) {
+        if (VD->hasInit() && VD->hasICEInitializer(Context)) {
           IsRedeclareRequired = PreviousFlag;
         }
       }

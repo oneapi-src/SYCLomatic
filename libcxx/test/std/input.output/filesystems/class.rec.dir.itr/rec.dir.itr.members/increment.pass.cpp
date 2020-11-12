@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+// UNSUPPORTED: c++03
 
 // <filesystem>
 
@@ -314,7 +314,7 @@ TEST_CASE(test_PR35078)
       ExceptionChecker Checker(std::errc::permission_denied,
                                "recursive_directory_iterator::operator++()",
                                format_string("attempting recursion into \"%s\"",
-                                             nestedDir.native()));
+                                             nestedDir.string().c_str()));
       TEST_CHECK_THROW_RESULT(filesystem_error, Checker, ++it);
     }
 }

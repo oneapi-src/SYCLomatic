@@ -107,7 +107,8 @@ llvm::Type *CodeGenTypes::ConvertTypeForMem(QualType T, bool ForBitField) {
 
   // If this is a bool type, or an ExtIntType in a bitfield representation,
   // map this integer to the target-specified size.
-  if ((ForBitField && T->isExtIntType()) || R->isIntegerTy(1))
+  if ((ForBitField && T->isExtIntType()) ||
+      (!T->isExtIntType() && R->isIntegerTy(1)))
     return llvm::IntegerType::get(getLLVMContext(),
                                   (unsigned)Context.getTypeSize(T));
 
@@ -314,6 +315,8 @@ static llvm::Type *getTypeForFormat(llvm::LLVMContext &VMContext,
     else
       return llvm::Type::getInt16Ty(VMContext);
   }
+  if (&format == &llvm::APFloat::BFloat())
+    return llvm::Type::getBFloatTy(VMContext);
   if (&format == &llvm::APFloat::IEEEsingle())
     return llvm::Type::getFloatTy(VMContext);
   if (&format == &llvm::APFloat::IEEEdouble())
@@ -512,6 +515,7 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
           Context.getLangOpts().NativeHalfType ||
               !Context.getTargetInfo().useFP16ConversionIntrinsics());
       break;
+    case BuiltinType::BFloat16:
     case BuiltinType::Float:
     case BuiltinType::Double:
     case BuiltinType::LongDouble:
@@ -534,6 +538,11 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
 #define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix) \
     case BuiltinType::Id:
 #include "clang/Basic/OpenCLImageTypes.def"
+#define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix)                   \
+  case BuiltinType::Sampled##Id:
+#define IMAGE_WRITE_TYPE(Type, Id, Ext)
+#define IMAGE_READ_WRITE_TYPE(Type, Id, Ext)
+#include "clang/Basic/OpenCLImageTypes.def"
 #define EXT_OPAQUE_TYPE(ExtType, Id, Ext) \
     case BuiltinType::Id:
 #include "clang/Basic/OpenCLExtensionTypes.def"
@@ -546,42 +555,59 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
       break;
     case BuiltinType::SveInt8:
     case BuiltinType::SveUint8:
-      return llvm::VectorType::get(llvm::IntegerType::get(getLLVMContext(), 8),
-                                   {16, true});
+    case BuiltinType::SveInt8x2:
+    case BuiltinType::SveUint8x2:
+    case BuiltinType::SveInt8x3:
+    case BuiltinType::SveUint8x3:
+    case BuiltinType::SveInt8x4:
+    case BuiltinType::SveUint8x4:
     case BuiltinType::SveInt16:
     case BuiltinType::SveUint16:
-      return llvm::VectorType::get(llvm::IntegerType::get(getLLVMContext(), 16),
-                                   {8, true});
+    case BuiltinType::SveInt16x2:
+    case BuiltinType::SveUint16x2:
+    case BuiltinType::SveInt16x3:
+    case BuiltinType::SveUint16x3:
+    case BuiltinType::SveInt16x4:
+    case BuiltinType::SveUint16x4:
     case BuiltinType::SveInt32:
     case BuiltinType::SveUint32:
-      return llvm::VectorType::get(llvm::IntegerType::get(getLLVMContext(), 32),
-                                   {4, true});
+    case BuiltinType::SveInt32x2:
+    case BuiltinType::SveUint32x2:
+    case BuiltinType::SveInt32x3:
+    case BuiltinType::SveUint32x3:
+    case BuiltinType::SveInt32x4:
+    case BuiltinType::SveUint32x4:
     case BuiltinType::SveInt64:
     case BuiltinType::SveUint64:
-      return llvm::VectorType::get(llvm::IntegerType::get(getLLVMContext(), 64),
-                                   {2, true});
-    case BuiltinType::SveFloat16:
-      return llvm::VectorType::get(
-          getTypeForFormat(getLLVMContext(),
-                           Context.getFloatTypeSemantics(Context.HalfTy),
-                           /* UseNativeHalf = */ true),
-          {8, true});
-    case BuiltinType::SveFloat32:
-      return llvm::VectorType::get(
-          getTypeForFormat(getLLVMContext(),
-                           Context.getFloatTypeSemantics(Context.FloatTy),
-                           /* UseNativeHalf = */ false),
-          {4, true});
-    case BuiltinType::SveFloat64:
-      return llvm::VectorType::get(
-          getTypeForFormat(getLLVMContext(),
-                           Context.getFloatTypeSemantics(Context.DoubleTy),
-                           /* UseNativeHalf = */ false),
-          {2, true});
+    case BuiltinType::SveInt64x2:
+    case BuiltinType::SveUint64x2:
+    case BuiltinType::SveInt64x3:
+    case BuiltinType::SveUint64x3:
+    case BuiltinType::SveInt64x4:
+    case BuiltinType::SveUint64x4:
     case BuiltinType::SveBool:
-      return llvm::VectorType::get(llvm::IntegerType::get(getLLVMContext(), 1),
-                                   {16, true});
-      break;
+    case BuiltinType::SveFloat16:
+    case BuiltinType::SveFloat16x2:
+    case BuiltinType::SveFloat16x3:
+    case BuiltinType::SveFloat16x4:
+    case BuiltinType::SveFloat32:
+    case BuiltinType::SveFloat32x2:
+    case BuiltinType::SveFloat32x3:
+    case BuiltinType::SveFloat32x4:
+    case BuiltinType::SveFloat64:
+    case BuiltinType::SveFloat64x2:
+    case BuiltinType::SveFloat64x3:
+    case BuiltinType::SveFloat64x4:
+    case BuiltinType::SveBFloat16:
+    case BuiltinType::SveBFloat16x2:
+    case BuiltinType::SveBFloat16x3:
+    case BuiltinType::SveBFloat16x4: {
+      ASTContext::BuiltinVectorTypeInfo Info =
+          Context.getBuiltinVectorTypeInfo(cast<BuiltinType>(Ty));
+      return llvm::ScalableVectorType::get(ConvertType(Info.ElementType),
+                                           Info.EC.getKnownMinValue() *
+                                               Info.NumVectors);
+    }
     case BuiltinType::Dependent:
 #define BUILTIN_TYPE(Id, SingletonId)
 #define PLACEHOLDER_TYPE(Id, SingletonId) \

@@ -130,6 +130,11 @@ def PROBED_ALLOCA_64 : I<0, Pseudo, (outs GR64:$dst), (ins GR64:$size),
                     Requires<[In64BitMode]>;
 }
 
+let hasNoSchedulingInfo = 1 in
+def STACKALLOC_W_PROBING : I<0, Pseudo, (outs), (ins i64imm:$stacksize),
+                             "# fixed size alloca with probing",
+                             []>;
+
 // Dynamic stack allocation yields a _chkstk or _alloca call for all Windows
 // targets.  These calls are needed to probe the stack when allocating more than
 // 4k bytes in one go. Touching the stack at 4K increments is necessary to
@@ -313,15 +318,14 @@ def MOV64ImmSExti8 : I<0, Pseudo, (outs GR64:$dst), (ins i64i8imm:$src), "",
 // Materialize i64 constant where top 32-bits are zero. This could theoretically
 // use MOV32ri with a SUBREG_TO_REG to represent the zero-extension, however
 // that would make it more difficult to rematerialize.
-let isReMaterializable = 1, isAsCheapAsAMove = 1,
-    isPseudo = 1, hasSideEffects = 0, SchedRW = [WriteMove] in
-def MOV32ri64 : I<0, Pseudo, (outs GR64:$dst), (ins i64i32imm:$src), "", []>;
+let AddedComplexity = 1, isReMaterializable = 1, isAsCheapAsAMove = 1,
+    isPseudo = 1, SchedRW = [WriteMove] in
+def MOV32ri64 : I<0, Pseudo, (outs GR64:$dst), (ins i64i32imm:$src), "",
+                  [(set GR64:$dst, i64immZExt32:$src)]>;
 
-// This 64-bit pseudo-move can be used for both a 64-bit constant that is
-// actually the zero-extension of a 32-bit constant and for labels in the
-// x86-64 small code model.
-def mov64imm32 : ComplexPattern<i64, 1, "selectMOV64Imm32", [imm, X86Wrapper]>;
-
+// This 64-bit pseudo-move can also be used for labels in the x86-64 small code
+// model.
+def mov64imm32 : ComplexPattern<i64, 1, "selectMOV64Imm32", [X86Wrapper]>;
 def : Pat<(i64 mov64imm32:$src), (MOV32ri64 mov64imm32:$src)>;
 
 // Use sbb to materialize carry bit.
@@ -805,15 +809,6 @@ let Predicates = [UseIncDec] in {
 }
 
 // Atomic compare and swap.
-multiclass LCMPXCHG_UnOp<bits<8> Opc, Format Form, string mnemonic,
-                         SDPatternOperator frag, X86MemOperand x86memop> {
-let isCodeGenOnly = 1, usesCustomInserter = 1 in {
-  def NAME : I<Opc, Form, (outs), (ins x86memop:$ptr),
-               !strconcat(mnemonic, "\t$ptr"),
-               [(frag addr:$ptr)]>, TB, LOCK;
-}
-}
-
 multiclass LCMPXCHG_BinOp<bits<8> Opc8, bits<8> Opc, Format Form,
                           string mnemonic, SDPatternOperator frag> {
 let isCodeGenOnly = 1, SchedRW = [WriteCMPXCHGRMW] in {
@@ -837,8 +832,19 @@ let isCodeGenOnly = 1, SchedRW = [WriteCMPXCHGRMW] in {
 }
 
 let Defs = [EAX, EDX, EFLAGS], Uses = [EAX, EBX, ECX, EDX],
-    Predicates = [HasCmpxchg8b], SchedRW = [WriteCMPXCHGRMW] in {
-defm LCMPXCHG8B : LCMPXCHG_UnOp<0xC7, MRM1m, "cmpxchg8b", X86cas8, i64mem>;
+    Predicates = [HasCmpxchg8b], SchedRW = [WriteCMPXCHGRMW],
+    isCodeGenOnly = 1, usesCustomInserter = 1 in {
+def LCMPXCHG8B : I<0xC7, MRM1m, (outs), (ins i64mem:$ptr),
+                   "cmpxchg8b\t$ptr",
+                   [(X86cas8 addr:$ptr)]>, TB, LOCK;
+}
+
+let Defs = [RAX, RDX, EFLAGS], Uses = [RAX, RBX, RCX, RDX],
+    Predicates = [HasCmpxchg16b,In64BitMode], SchedRW = [WriteCMPXCHGRMW],
+    isCodeGenOnly = 1, mayLoad = 1, mayStore = 1, hasSideEffects = 0 in {
+def LCMPXCHG16B : RI<0xC7, MRM1m, (outs), (ins i128mem:$ptr),
+                     "cmpxchg16b\t$ptr",
+                     []>, TB, LOCK;
 }
 
 // This pseudo must be used when the frame uses RBX as
@@ -848,49 +854,63 @@ defm LCMPXCHG8B : LCMPXCHG_UnOp<0xC7, MRM1m, "cmpxchg8b", X86cas8, i64mem>;
 // RBX that will happen when setting the arguments for the instrucion.
 //
 // Unlike the actual related instruction, we mark that this one
-// defines EBX (instead of using EBX).
+// defines RBX (instead of using RBX).
 // The rationale is that we will define RBX during the expansion of
-// the pseudo. The argument feeding EBX is ebx_input.
+// the pseudo. The argument feeding RBX is rbx_input.
 //
-// The additional argument, $ebx_save, is a temporary register used to
+// The additional argument, $rbx_save, is a temporary register used to
 // save the value of RBX across the actual instruction.
 //
-// To make sure the register assigned to $ebx_save does not interfere with
+// To make sure the register assigned to $rbx_save does not interfere with
 // the definition of the actual instruction, we use a definition $dst which
 // is tied to $rbx_save. That way, the live-range of $rbx_save spans across
 // the instruction and we are sure we will have a valid register to restore
 // the value of RBX.
-let Defs = [EAX, EDX, EBX, EFLAGS], Uses = [EAX, ECX, EDX],
-    Predicates = [HasCmpxchg8b], SchedRW = [WriteCMPXCHGRMW],
-    isCodeGenOnly = 1, isPseudo = 1, Constraints = "$ebx_save = $dst",
-    usesCustomInserter = 1 in {
-def LCMPXCHG8B_SAVE_EBX :
-    I<0, Pseudo, (outs GR32:$dst),
-      (ins i64mem:$ptr, GR32:$ebx_input, GR32:$ebx_save),
-      !strconcat("cmpxchg8b", "\t$ptr"),
-      [(set GR32:$dst, (X86cas8save_ebx addr:$ptr, GR32:$ebx_input,
-                                        GR32:$ebx_save))]>;
-}
-
-
-let Defs = [RAX, RDX, EFLAGS], Uses = [RAX, RBX, RCX, RDX],
-    Predicates = [HasCmpxchg16b,In64BitMode], SchedRW = [WriteCMPXCHGRMW] in {
-defm LCMPXCHG16B : LCMPXCHG_UnOp<0xC7, MRM1m, "cmpxchg16b",
-                                 X86cas16, i128mem>, REX_W;
-}
-
-// Same as LCMPXCHG8B_SAVE_RBX but for the 16 Bytes variant.
 let Defs = [RAX, RDX, RBX, EFLAGS], Uses = [RAX, RCX, RDX],
     Predicates = [HasCmpxchg16b,In64BitMode], SchedRW = [WriteCMPXCHGRMW],
-    isCodeGenOnly = 1, isPseudo = 1, Constraints = "$rbx_save = $dst",
-    usesCustomInserter = 1 in {
+    isCodeGenOnly = 1, isPseudo = 1,
+    mayLoad = 1, mayStore = 1, hasSideEffects = 0,
+    Constraints = "$rbx_save = $dst" in {
 def LCMPXCHG16B_SAVE_RBX :
     I<0, Pseudo, (outs GR64:$dst),
-      (ins i128mem:$ptr, GR64:$rbx_input, GR64:$rbx_save),
-      !strconcat("cmpxchg16b", "\t$ptr"),
-      [(set GR64:$dst, (X86cas16save_rbx addr:$ptr, GR64:$rbx_input,
-                                                    GR64:$rbx_save))]>;
+      (ins i128mem:$ptr, GR64:$rbx_input, GR64:$rbx_save), "", []>;
 }
+
+// Pseudo instruction that doesn't read/write RBX. Will be turned into either
+// LCMPXCHG16B_SAVE_RBX or LCMPXCHG16B via a custom inserter.
+let Defs = [RAX, RDX, EFLAGS], Uses = [RAX, RCX, RDX],
+    Predicates = [HasCmpxchg16b,In64BitMode], SchedRW = [WriteCMPXCHGRMW],
+    isCodeGenOnly = 1, isPseudo = 1,
+    mayLoad = 1, mayStore = 1, hasSideEffects = 0,
+    usesCustomInserter = 1 in {
+def LCMPXCHG16B_NO_RBX :
+    I<0, Pseudo, (outs), (ins i128mem:$ptr, GR64:$rbx_input), "",
+      [(X86cas16 addr:$ptr, GR64:$rbx_input)]>;
+}
+
+// This pseudo must be used when the frame uses RBX/EBX as
+// the base pointer.
+// cf comment for LCMPXCHG16B_SAVE_RBX.
+let Defs = [EBX], Uses = [ECX, EAX],
+    Predicates = [HasMWAITX], SchedRW = [WriteSystem],
+    isCodeGenOnly = 1, isPseudo = 1, Constraints = "$rbx_save = $dst" in {
+def MWAITX_SAVE_RBX :
+    I<0, Pseudo, (outs GR64:$dst),
+      (ins GR32:$ebx_input, GR64:$rbx_save),
+      "mwaitx",
+      []>;
+}
+
+// Pseudo mwaitx instruction to use for custom insertion.
+let Predicates = [HasMWAITX], SchedRW = [WriteSystem],
+    isCodeGenOnly = 1, isPseudo = 1,
+    usesCustomInserter = 1 in {
+def MWAITX :
+    I<0, Pseudo, (outs), (ins GR32:$ecx, GR32:$eax, GR32:$ebx),
+      "mwaitx",
+      [(int_x86_mwaitx GR32:$ecx, GR32:$eax, GR32:$ebx)]>;
+}
+
 
 defm LCMPXCHG : LCMPXCHG_BinOp<0xB0, 0xB1, MRMDestMem, "cmpxchg", X86cas>;
 
@@ -1694,6 +1714,16 @@ def : Pat<(store (i8 (trunc_su (srl_su GR16:$src, (i8 8)))), addr:$dst),
             (EXTRACT_SUBREG GR16:$src, sub_8bit_hi))>,
       Requires<[In64BitMode]>;
 
+// Special pattern to catch the last step of __builtin_parity handling. Our
+// goal is to use an xor of an h-register with the corresponding l-register.
+// The above patterns would handle this on non 64-bit targets, but for 64-bit
+// we need to be more careful. We're using a NOREX instruction here in case
+// register allocation fails to keep the two registers together. So we need to
+// make sure we can't accidentally mix R8-R15 with an h-register.
+def : Pat<(X86xor_flag (i8 (trunc GR32:$src)),
+                       (i8 (trunc (srl_su GR32:$src, (i8 8))))),
+          (XOR8rr_NOREX (EXTRACT_SUBREG GR32:$src, sub_8bit),
+                        (EXTRACT_SUBREG GR32:$src, sub_8bit_hi))>;
 
 // (shl x, 1) ==> (add x, x)
 // Note that if x is undef (immediate or otherwise), we could theoretically
@@ -1959,10 +1989,6 @@ def : Pat<(X86sub_flag 0, GR8 :$src), (NEG8r  GR8 :$src)>;
 def : Pat<(X86sub_flag 0, GR16:$src), (NEG16r GR16:$src)>;
 def : Pat<(X86sub_flag 0, GR32:$src), (NEG32r GR32:$src)>;
 def : Pat<(X86sub_flag 0, GR64:$src), (NEG64r GR64:$src)>;
-
-// sub reg, relocImm
-def : Pat<(X86sub_flag GR64:$src1, i64relocImmSExt8_su:$src2),
-          (SUB64ri8 GR64:$src1, i64relocImmSExt8_su:$src2)>;
 
 // mul reg, reg
 def : Pat<(mul GR16:$src1, GR16:$src2),

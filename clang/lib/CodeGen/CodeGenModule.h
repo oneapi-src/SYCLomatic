@@ -303,6 +303,7 @@ private:
   const HeaderSearchOptions &HeaderSearchOpts; // Only used for debug info.
   const PreprocessorOptions &PreprocessorOpts; // Only used for debug info.
   const CodeGenOptions &CodeGenOpts;
+  unsigned NumAutoVarInit = 0;
   llvm::Module &TheModule;
   DiagnosticsEngine &Diags;
   const TargetInfo &Target;
@@ -324,7 +325,6 @@ private:
   std::unique_ptr<CGObjCRuntime> ObjCRuntime;
   std::unique_ptr<CGOpenCLRuntime> OpenCLRuntime;
   std::unique_ptr<CGOpenMPRuntime> OpenMPRuntime;
-  std::unique_ptr<llvm::OpenMPIRBuilder> OMPBuilder;
   std::unique_ptr<CGCUDARuntime> CUDARuntime;
   std::unique_ptr<CGSYCLRuntime> SYCLRuntime;
   std::unique_ptr<CGDebugInfo> DebugInfo;
@@ -344,6 +344,11 @@ private:
   /// used. If a decl is in this, then it is known to have not been referenced
   /// yet.
   std::map<StringRef, GlobalDecl> DeferredDecls;
+
+  /// This contains all the aliases that are deferred for emission until
+  /// they or what they alias are actually used.  Note that the StringRef
+  /// associated in this map is that of the aliasee.
+  std::map<StringRef, GlobalDecl> DeferredAliases;
 
   /// This is a list of deferred decls which we have seen that *are* actually
   /// referenced. These get code generated when the module is done.
@@ -466,9 +471,11 @@ private:
   SmallVector<GlobalInitData, 8> PrioritizedCXXGlobalInits;
 
   /// Global destructor functions and arguments that need to run on termination.
+  /// When UseSinitAndSterm is set, it instead contains sterm finalizer
+  /// functions, which also run on unloading a shared library.
   std::vector<
       std::tuple<llvm::FunctionType *, llvm::WeakTrackingVH, llvm::Constant *>>
-      CXXGlobalDtors;
+      CXXGlobalDtorsOrStermFinalizers;
 
   /// The complete set of modules that has been imported.
   llvm::SetVector<clang::Module *> ImportedModules;
@@ -592,9 +599,6 @@ public:
     assert(OpenMPRuntime != nullptr);
     return *OpenMPRuntime;
   }
-
-  /// Return a pointer to the configured OpenMPIRBuilder, if any.
-  llvm::OpenMPIRBuilder *getOpenMPIRBuilder() { return OMPBuilder.get(); }
 
   /// Return a reference to the configured CUDA runtime.
   CGCUDARuntime &getCUDARuntime() {
@@ -798,6 +802,9 @@ public:
   /// variable declaration D.
   void setTLSMode(llvm::GlobalValue *GV, const VarDecl &D) const;
 
+  /// Get LLVM TLS mode from CodeGenOptions.
+  llvm::GlobalVariable::ThreadLocalMode GetDefaultLLVMTLSModel() const;
+
   static llvm::GlobalValue::VisibilityTypes GetLLVMVisibility(Visibility V) {
     switch (V) {
     case DefaultVisibility:   return llvm::GlobalValue::DefaultVisibility;
@@ -820,11 +827,9 @@ public:
                                     llvm::GlobalValue::LinkageTypes Linkage,
                                     unsigned Alignment);
 
-  llvm::Function *
-  CreateGlobalInitOrDestructFunction(llvm::FunctionType *ty, const Twine &name,
-                                     const CGFunctionInfo &FI,
-                                     SourceLocation Loc = SourceLocation(),
-                                     bool TLS = false);
+  llvm::Function *CreateGlobalInitOrCleanUpFunction(
+      llvm::FunctionType *ty, const Twine &name, const CGFunctionInfo &FI,
+      SourceLocation Loc = SourceLocation(), bool TLS = false);
 
   /// Return the AST address space of the underlying global variable for D, as
   /// determined by its declaration. Normally this is the same as the address
@@ -1057,8 +1062,20 @@ public:
 
   /// Add a destructor and object to add to the C++ global destructor function.
   void AddCXXDtorEntry(llvm::FunctionCallee DtorFn, llvm::Constant *Object) {
-    CXXGlobalDtors.emplace_back(DtorFn.getFunctionType(), DtorFn.getCallee(),
-                                Object);
+    CXXGlobalDtorsOrStermFinalizers.emplace_back(DtorFn.getFunctionType(),
+                                                 DtorFn.getCallee(), Object);
+  }
+
+  /// Add an sterm finalizer to the C++ global cleanup function.
+  void AddCXXStermFinalizerEntry(llvm::FunctionCallee DtorFn) {
+    CXXGlobalDtorsOrStermFinalizers.emplace_back(DtorFn.getFunctionType(),
+                                                 DtorFn.getCallee(), nullptr);
+  }
+
+  /// Add an sterm finalizer to its own llvm.global_dtors entry.
+  void AddCXXStermFinalizerToGlobalDtor(llvm::Function *StermFinalizer,
+                                        int Priority) {
+    AddGlobalDtor(StermFinalizer, Priority);
   }
 
   /// Create or return a runtime function declaration with the specified type
@@ -1068,16 +1085,6 @@ public:
   CreateRuntimeFunction(llvm::FunctionType *Ty, StringRef Name,
                         llvm::AttributeList ExtraAttrs = llvm::AttributeList(),
                         bool Local = false, bool AssumeConvergent = false);
-
-  /// Create or return a runtime function declaration with the specified type
-  /// and name. This will automatically add the convergent attribute to the
-  /// function declaration.
-  llvm::FunctionCallee CreateConvergentRuntimeFunction(
-      llvm::FunctionType *Ty, StringRef Name,
-      llvm::AttributeList ExtraAttrs = llvm::AttributeList(),
-      bool Local = false) {
-    return CreateRuntimeFunction(Ty, Name, ExtraAttrs, Local, true);
-  }
 
   /// Create a new runtime global variable with the specified type and name.
   llvm::Constant *CreateRuntimeVariable(llvm::Type *Ty,
@@ -1406,6 +1413,7 @@ public:
   CharUnits getNaturalPointeeTypeAlignment(QualType T,
                                            LValueBaseInfo *BaseInfo = nullptr,
                                            TBAAAccessInfo *TBAAInfo = nullptr);
+  bool stopAutoInit();
 
 private:
   llvm::Constant *GetOrCreateLLVMFunction(
@@ -1457,8 +1465,8 @@ private:
   /// Emit the function that initializes C++ globals.
   void EmitCXXGlobalInitFunc();
 
-  /// Emit the function that destroys C++ globals.
-  void EmitCXXGlobalDtorFunc();
+  /// Emit the function that performs cleanup associated with C++ globals.
+  void EmitCXXGlobalCleanUpFunc();
 
   /// Emit the function that initializes the specified global (if PerformInit is
   /// true) and registers its destructor.
@@ -1528,9 +1536,6 @@ private:
 
   /// Emit the Clang commandline as llvm.commandline metadata.
   void EmitCommandLineMetadata();
-
-  /// Emits target specific Metadata for global declarations.
-  void EmitTargetMetadata();
 
   /// Emit the module flag metadata used to pass options controlling the
   /// the backend to LLVM.

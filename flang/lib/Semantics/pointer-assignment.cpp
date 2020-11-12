@@ -54,18 +54,18 @@ public:
   PointerAssignmentChecker &set_isContiguous(bool);
   PointerAssignmentChecker &set_isVolatile(bool);
   PointerAssignmentChecker &set_isBoundsRemapping(bool);
-  void Check(const SomeExpr &);
+  bool Check(const SomeExpr &);
 
 private:
-  template <typename T> void Check(const T &);
-  template <typename T> void Check(const evaluate::Expr<T> &);
-  template <typename T> void Check(const evaluate::FunctionRef<T> &);
-  template <typename T> void Check(const evaluate::Designator<T> &);
-  void Check(const evaluate::NullPointer &);
-  void Check(const evaluate::ProcedureDesignator &);
-  void Check(const evaluate::ProcedureRef &);
+  template <typename T> bool Check(const T &);
+  template <typename T> bool Check(const evaluate::Expr<T> &);
+  template <typename T> bool Check(const evaluate::FunctionRef<T> &);
+  template <typename T> bool Check(const evaluate::Designator<T> &);
+  bool Check(const evaluate::NullPointer &);
+  bool Check(const evaluate::ProcedureDesignator &);
+  bool Check(const evaluate::ProcedureRef &);
   // Target is a procedure
-  void Check(
+  bool Check(
       parser::CharBlock rhsName, bool isCall, const Procedure * = nullptr);
   bool LhsOkForUnlimitedPoly() const;
   template <typename... A> parser::Message *Say(A &&...);
@@ -105,34 +105,37 @@ PointerAssignmentChecker &PointerAssignmentChecker::set_isBoundsRemapping(
   return *this;
 }
 
-template <typename T> void PointerAssignmentChecker::Check(const T &) {
+template <typename T> bool PointerAssignmentChecker::Check(const T &) {
   // Catch-all case for really bad target expression
   Say("Target associated with %s must be a designator or a call to a"
       " pointer-valued function"_err_en_US,
       description_);
+  return false;
 }
 
 template <typename T>
-void PointerAssignmentChecker::Check(const evaluate::Expr<T> &x) {
-  std::visit([&](const auto &x) { Check(x); }, x.u);
+bool PointerAssignmentChecker::Check(const evaluate::Expr<T> &x) {
+  return std::visit([&](const auto &x) { return Check(x); }, x.u);
 }
 
-void PointerAssignmentChecker::Check(const SomeExpr &rhs) {
+bool PointerAssignmentChecker::Check(const SomeExpr &rhs) {
   if (HasVectorSubscript(rhs)) { // C1025
     Say("An array section with a vector subscript may not be a pointer target"_err_en_US);
+    return false;
   } else if (ExtractCoarrayRef(rhs)) { // C1026
     Say("A coindexed object may not be a pointer target"_err_en_US);
+    return false;
   } else {
-    std::visit([&](const auto &x) { Check(x); }, rhs.u);
+    return std::visit([&](const auto &x) { return Check(x); }, rhs.u);
   }
 }
 
-void PointerAssignmentChecker::Check(const evaluate::NullPointer &) {
-  // P => NULL() without MOLD=; always OK
+bool PointerAssignmentChecker::Check(const evaluate::NullPointer &) {
+  return true; // P => NULL() without MOLD=; always OK
 }
 
 template <typename T>
-void PointerAssignmentChecker::Check(const evaluate::FunctionRef<T> &f) {
+bool PointerAssignmentChecker::Check(const evaluate::FunctionRef<T> &f) {
   std::string funcName;
   const auto *symbol{f.proc().GetSymbol()};
   if (symbol) {
@@ -142,7 +145,7 @@ void PointerAssignmentChecker::Check(const evaluate::FunctionRef<T> &f) {
   }
   auto proc{Procedure::Characterize(f.proc(), context_.intrinsics())};
   if (!proc) {
-    return;
+    return false;
   }
   std::optional<MessageFixedText> msg;
   const auto &funcResult{proc->functionResult}; // C1025
@@ -174,17 +177,19 @@ void PointerAssignmentChecker::Check(const evaluate::FunctionRef<T> &f) {
   if (msg) {
     auto restorer{common::ScopedSet(lhs_, symbol)};
     Say(*msg, description_, funcName);
+    return false;
   }
+  return true;
 }
 
 template <typename T>
-void PointerAssignmentChecker::Check(const evaluate::Designator<T> &d) {
+bool PointerAssignmentChecker::Check(const evaluate::Designator<T> &d) {
   const Symbol *last{d.GetLastSymbol()};
   const Symbol *base{d.GetBaseObject().symbol()};
   if (!last || !base) {
     // P => "character literal"(1:3)
     context_.messages().Say("Pointer target is not a named entity"_err_en_US);
-    return;
+    return false;
   }
   std::optional<std::variant<MessageFixedText, MessageFormattedText>> msg;
   if (procedure_) {
@@ -214,14 +219,14 @@ void PointerAssignmentChecker::Check(const evaluate::Designator<T> &d) {
               " derived type when target is unlimited polymorphic"_err_en_US;
       }
     } else {
-      if (!lhsType_->type().IsTypeCompatibleWith(rhsType->type())) {
+      if (!lhsType_->type().IsTkCompatibleWith(rhsType->type())) {
         msg = MessageFormattedText{
             "Target type %s is not compatible with pointer type %s"_err_en_US,
             rhsType->type().AsFortran(), lhsType_->type().AsFortran()};
 
       } else if (!isBoundsRemapping_) {
-        std::size_t lhsRank{lhsType_->shape().size()};
-        std::size_t rhsRank{rhsType->shape().size()};
+        int lhsRank{evaluate::GetRank(lhsType_->shape())};
+        int rhsRank{evaluate::GetRank(rhsType->shape())};
         if (lhsRank != rhsRank) {
           msg = MessageFormattedText{
               "Pointer has rank %d but target has rank %d"_err_en_US, lhsRank,
@@ -240,75 +245,31 @@ void PointerAssignmentChecker::Check(const evaluate::Designator<T> &d) {
     } else {
       Say(std::get<MessageFormattedText>(*msg));
     }
+    return false;
   }
-}
-
-// Compare procedure characteristics for equality except that lhs may be
-// Pure or Elemental when rhs is not.
-static bool CharacteristicsMatch(const Procedure &lhs, const Procedure &rhs) {
-  using Attr = Procedure::Attr;
-  auto lhsAttrs{rhs.attrs};
-  lhsAttrs.set(
-      Attr::Pure, lhs.attrs.test(Attr::Pure) | rhs.attrs.test(Attr::Pure));
-  lhsAttrs.set(Attr::Elemental,
-      lhs.attrs.test(Attr::Elemental) | rhs.attrs.test(Attr::Elemental));
-  return lhsAttrs == rhs.attrs && lhs.functionResult == rhs.functionResult &&
-      lhs.dummyArguments == rhs.dummyArguments;
+  return true;
 }
 
 // Common handling for procedure pointer right-hand sides
-void PointerAssignmentChecker::Check(
+bool PointerAssignmentChecker::Check(
     parser::CharBlock rhsName, bool isCall, const Procedure *rhsProcedure) {
-  std::optional<MessageFixedText> msg;
-  if (!procedure_) {
-    msg = "In assignment to object %s, the target '%s' is a procedure"
-          " designator"_err_en_US;
-  } else if (!rhsProcedure) {
-    msg = "In assignment to procedure %s, the characteristics of the target"
-          " procedure '%s' could not be determined"_err_en_US;
-  } else if (CharacteristicsMatch(*procedure_, *rhsProcedure)) {
-    // OK
-  } else if (isCall) {
-    msg = "Procedure %s associated with result of reference to function '%s'"
-          " that is an incompatible procedure pointer"_err_en_US;
-  } else if (procedure_->IsPure() && !rhsProcedure->IsPure()) {
-    msg = "PURE procedure %s may not be associated with non-PURE"
-          " procedure designator '%s'"_err_en_US;
-  } else if (procedure_->IsElemental() && !rhsProcedure->IsElemental()) {
-    msg = "ELEMENTAL procedure %s may not be associated with non-ELEMENTAL"
-          " procedure designator '%s'"_err_en_US;
-  } else if (procedure_->IsFunction() && !rhsProcedure->IsFunction()) {
-    msg = "Function %s may not be associated with subroutine"
-          " designator '%s'"_err_en_US;
-  } else if (!procedure_->IsFunction() && rhsProcedure->IsFunction()) {
-    msg = "Subroutine %s may not be associated with function"
-          " designator '%s'"_err_en_US;
-  } else if (procedure_->HasExplicitInterface() &&
-      !rhsProcedure->HasExplicitInterface()) {
-    msg = "Procedure %s with explicit interface may not be associated with"
-          " procedure designator '%s' with implicit interface"_err_en_US;
-  } else if (!procedure_->HasExplicitInterface() &&
-      rhsProcedure->HasExplicitInterface()) {
-    msg = "Procedure %s with implicit interface may not be associated with"
-          " procedure designator '%s' with explicit interface"_err_en_US;
-  } else {
-    msg = "Procedure %s associated with incompatible procedure"
-          " designator '%s'"_err_en_US;
-  }
-  if (msg) {
+  if (std::optional<MessageFixedText> msg{
+          evaluate::CheckProcCompatibility(isCall, procedure_, rhsProcedure)}) {
     Say(std::move(*msg), description_, rhsName);
+    return false;
   }
+  return true;
 }
 
-void PointerAssignmentChecker::Check(const evaluate::ProcedureDesignator &d) {
+bool PointerAssignmentChecker::Check(const evaluate::ProcedureDesignator &d) {
   if (auto chars{Procedure::Characterize(d, context_.intrinsics())}) {
-    Check(d.GetName(), false, &*chars);
+    return Check(d.GetName(), false, &*chars);
   } else {
-    Check(d.GetName(), false);
+    return Check(d.GetName(), false);
   }
 }
 
-void PointerAssignmentChecker::Check(const evaluate::ProcedureRef &ref) {
+bool PointerAssignmentChecker::Check(const evaluate::ProcedureRef &ref) {
   const Procedure *procedure{nullptr};
   auto chars{Procedure::Characterize(ref, context_.intrinsics())};
   if (chars) {
@@ -319,7 +280,7 @@ void PointerAssignmentChecker::Check(const evaluate::ProcedureRef &ref) {
       }
     }
   }
-  Check(ref.proc().GetName(), true, procedure);
+  return Check(ref.proc().GetName(), true, procedure);
 }
 
 // The target can be unlimited polymorphic if the pointer is, or if it is
@@ -336,7 +297,7 @@ bool PointerAssignmentChecker::LhsOkForUnlimitedPoly() const {
 }
 
 template <typename... A>
-parser::Message *PointerAssignmentChecker::Say(A &&... x) {
+parser::Message *PointerAssignmentChecker::Say(A &&...x) {
   auto *msg{context_.messages().Say(std::forward<A>(x)...)};
   if (lhs_) {
     return evaluate::AttachDeclaration(msg, *lhs_);
@@ -404,44 +365,53 @@ static bool CheckPointerBounds(
   return isBoundsRemapping;
 }
 
-void CheckPointerAssignment(
+bool CheckPointerAssignment(
     evaluate::FoldingContext &context, const evaluate::Assignment &assignment) {
-  const SomeExpr &lhs{assignment.lhs};
-  const SomeExpr &rhs{assignment.rhs};
+  return CheckPointerAssignment(context, assignment.lhs, assignment.rhs,
+      CheckPointerBounds(context, assignment));
+}
+
+bool CheckPointerAssignment(evaluate::FoldingContext &context,
+    const SomeExpr &lhs, const SomeExpr &rhs, bool isBoundsRemapping) {
   const Symbol *pointer{GetLastSymbol(lhs)};
   if (!pointer) {
-    return; // error was reported
+    return false; // error was reported
   }
   if (!IsPointer(*pointer)) {
     evaluate::SayWithDeclaration(context.messages(), *pointer,
         "'%s' is not a pointer"_err_en_US, pointer->name());
-    return;
+    return false;
   }
   if (pointer->has<ProcEntityDetails>() && evaluate::ExtractCoarrayRef(lhs)) {
     context.messages().Say( // C1027
         "Procedure pointer may not be a coindexed object"_err_en_US);
-    return;
+    return false;
   }
-  bool isBoundsRemapping{CheckPointerBounds(context, assignment)};
-  PointerAssignmentChecker{context, *pointer}
+  return PointerAssignmentChecker{context, *pointer}
       .set_isBoundsRemapping(isBoundsRemapping)
       .Check(rhs);
 }
 
-void CheckPointerAssignment(
+bool CheckPointerAssignment(
     evaluate::FoldingContext &context, const Symbol &lhs, const SomeExpr &rhs) {
   CHECK(IsPointer(lhs));
-  PointerAssignmentChecker{context, lhs}.Check(rhs);
+  return PointerAssignmentChecker{context, lhs}.Check(rhs);
 }
 
-void CheckPointerAssignment(evaluate::FoldingContext &context,
+bool CheckPointerAssignment(evaluate::FoldingContext &context,
     parser::CharBlock source, const std::string &description,
     const DummyDataObject &lhs, const SomeExpr &rhs) {
-  PointerAssignmentChecker{context, source, description}
+  return PointerAssignmentChecker{context, source, description}
       .set_lhsType(common::Clone(lhs.type))
       .set_isContiguous(lhs.attrs.test(DummyDataObject::Attr::Contiguous))
       .set_isVolatile(lhs.attrs.test(DummyDataObject::Attr::Volatile))
       .Check(rhs);
+}
+
+bool CheckInitialTarget(evaluate::FoldingContext &context,
+    const SomeExpr &pointer, const SomeExpr &init) {
+  return evaluate::IsInitialDataTarget(init, &context.messages()) &&
+      CheckPointerAssignment(context, pointer, init);
 }
 
 } // namespace Fortran::semantics

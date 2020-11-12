@@ -477,6 +477,7 @@ bool SimplifyIndvar::eliminateOverflowIntrinsic(WithOverflowInst *WO) {
   if (WO->use_empty())
     WO->eraseFromParent();
 
+  Changed = true;
   return true;
 }
 
@@ -657,7 +658,7 @@ static Instruction *GetLoopInvariantInsertPosition(Loop *L, Instruction *Hint) {
   return Hint;
 }
 
-/// Replace the UseInst with a constant if possible.
+/// Replace the UseInst with a loop invariant expression if it is safe.
 bool SimplifyIndvar::replaceIVUserWithLoopInvariant(Instruction *I) {
   if (!SE->isSCEVable(I->getType()))
     return false;
@@ -673,6 +674,13 @@ bool SimplifyIndvar::replaceIVUserWithLoopInvariant(Instruction *I) {
     return false;
 
   auto *IP = GetLoopInvariantInsertPosition(L, I);
+
+  if (!isSafeToExpandAt(S, IP, *SE)) {
+    LLVM_DEBUG(dbgs() << "INDVARS: Can not replace IV user: " << *I
+                      << " with non-speculable loop invariant: " << *S << '\n');
+    return false;
+  }
+
   auto *Invariant = Rewriter.expandCodeFor(S, I->getType(), IP);
 
   I->replaceAllUsesWith(Invariant);

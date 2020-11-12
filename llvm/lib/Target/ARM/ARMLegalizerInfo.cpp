@@ -88,7 +88,7 @@ ARMLegalizerInfo::ARMLegalizerInfo(const ARMSubtarget &ST) {
 
   getActionDefinitionsBuilder({G_MUL, G_AND, G_OR, G_XOR})
       .legalFor({s32})
-      .minScalar(0, s32);
+      .clampScalar(0, s32, s32);
 
   if (ST.hasNEON())
     getActionDefinitionsBuilder({G_ADD, G_SUB})
@@ -357,13 +357,12 @@ ARMLegalizerInfo::getFCmpLibcalls(CmpInst::Predicate Predicate,
   llvm_unreachable("Unsupported size for FCmp predicate");
 }
 
-bool ARMLegalizerInfo::legalizeCustom(MachineInstr &MI,
-                                      MachineRegisterInfo &MRI,
-                                      MachineIRBuilder &MIRBuilder,
-                                      GISelChangeObserver &Observer) const {
+bool ARMLegalizerInfo::legalizeCustom(LegalizerHelper &Helper,
+                                      MachineInstr &MI) const {
   using namespace TargetOpcode;
 
-  MIRBuilder.setInstr(MI);
+  MachineIRBuilder &MIRBuilder = Helper.MIRBuilder;
+  MachineRegisterInfo &MRI = *MIRBuilder.getMRI();
   LLVMContext &Ctx = MIRBuilder.getMF().getFunction().getContext();
 
   switch (MI.getOpcode()) {

@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CGDebugInfo.h"
+#include "CGOpenMPRuntime.h"
 #include "CodeGenFunction.h"
 #include "CodeGenModule.h"
 #include "TargetInfo.h"
@@ -49,7 +50,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   PGO.setCurrentStmt(S);
 
   // These statements have their own debug info handling.
-  if (EmitSimpleStmt(S))
+  if (EmitSimpleStmt(S, Attrs))
     return;
 
   // Check if we are generating unreachable code.
@@ -252,7 +253,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
     EmitOMPDepobjDirective(cast<OMPDepobjDirective>(*S));
     break;
   case Stmt::OMPScanDirectiveClass:
-    llvm_unreachable("Scan directive not supported yet.");
+    EmitOMPScanDirective(cast<OMPScanDirective>(*S));
     break;
   case Stmt::OMPOrderedDirectiveClass:
     EmitOMPOrderedDirective(cast<OMPOrderedDirective>(*S));
@@ -369,23 +370,44 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   }
 }
 
-bool CodeGenFunction::EmitSimpleStmt(const Stmt *S) {
+bool CodeGenFunction::EmitSimpleStmt(const Stmt *S,
+                                     ArrayRef<const Attr *> Attrs) {
   switch (S->getStmtClass()) {
-  default: return false;
-  case Stmt::NullStmtClass: break;
-  case Stmt::CompoundStmtClass: EmitCompoundStmt(cast<CompoundStmt>(*S)); break;
-  case Stmt::DeclStmtClass:     EmitDeclStmt(cast<DeclStmt>(*S));         break;
-  case Stmt::LabelStmtClass:    EmitLabelStmt(cast<LabelStmt>(*S));       break;
+  default:
+    return false;
+  case Stmt::NullStmtClass:
+    break;
+  case Stmt::CompoundStmtClass:
+    EmitCompoundStmt(cast<CompoundStmt>(*S));
+    break;
+  case Stmt::DeclStmtClass:
+    EmitDeclStmt(cast<DeclStmt>(*S));
+    break;
+  case Stmt::LabelStmtClass:
+    EmitLabelStmt(cast<LabelStmt>(*S));
+    break;
   case Stmt::AttributedStmtClass:
-                            EmitAttributedStmt(cast<AttributedStmt>(*S)); break;
-  case Stmt::GotoStmtClass:     EmitGotoStmt(cast<GotoStmt>(*S));         break;
-  case Stmt::BreakStmtClass:    EmitBreakStmt(cast<BreakStmt>(*S));       break;
-  case Stmt::ContinueStmtClass: EmitContinueStmt(cast<ContinueStmt>(*S)); break;
-  case Stmt::DefaultStmtClass:  EmitDefaultStmt(cast<DefaultStmt>(*S));   break;
-  case Stmt::CaseStmtClass:     EmitCaseStmt(cast<CaseStmt>(*S));         break;
-  case Stmt::SEHLeaveStmtClass: EmitSEHLeaveStmt(cast<SEHLeaveStmt>(*S)); break;
+    EmitAttributedStmt(cast<AttributedStmt>(*S));
+    break;
+  case Stmt::GotoStmtClass:
+    EmitGotoStmt(cast<GotoStmt>(*S));
+    break;
+  case Stmt::BreakStmtClass:
+    EmitBreakStmt(cast<BreakStmt>(*S));
+    break;
+  case Stmt::ContinueStmtClass:
+    EmitContinueStmt(cast<ContinueStmt>(*S));
+    break;
+  case Stmt::DefaultStmtClass:
+    EmitDefaultStmt(cast<DefaultStmt>(*S), Attrs);
+    break;
+  case Stmt::CaseStmtClass:
+    EmitCaseStmt(cast<CaseStmt>(*S), Attrs);
+    break;
+  case Stmt::SEHLeaveStmtClass:
+    EmitSEHLeaveStmt(cast<SEHLeaveStmt>(*S));
+    break;
   }
-
   return true;
 }
 
@@ -694,8 +716,14 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
   if (S.getElse())
     ElseBlock = createBasicBlock("if.else");
 
-  EmitBranchOnBoolExpr(S.getCond(), ThenBlock, ElseBlock,
-                       getProfileCount(S.getThen()));
+  // Prefer the PGO based weights over the likelihood attribute.
+  // When the build isn't optimized the metadata isn't used, so don't generate
+  // it.
+  Stmt::Likelihood LH = Stmt::LH_None;
+  uint64_t Count = getProfileCount(S.getThen());
+  if (!Count && CGM.getCodeGenOpts().OptimizationLevel)
+    LH = Stmt::getLikelihood(S.getThen(), S.getElse());
+  EmitBranchOnBoolExpr(S.getCond(), ThenBlock, ElseBlock, Count, LH);
 
   // Emit the 'then' code.
   EmitBlock(ThenBlock);
@@ -1069,6 +1097,19 @@ void CodeGenFunction::EmitReturnOfRValue(RValue RV, QualType Ty) {
   EmitBranchThroughCleanup(ReturnBlock);
 }
 
+namespace {
+// RAII struct used to save and restore a return statment's result expression.
+struct SaveRetExprRAII {
+  SaveRetExprRAII(const Expr *RetExpr, CodeGenFunction &CGF)
+      : OldRetExpr(CGF.RetExpr), CGF(CGF) {
+    CGF.RetExpr = RetExpr;
+  }
+  ~SaveRetExprRAII() { CGF.RetExpr = OldRetExpr; }
+  const Expr *OldRetExpr;
+  CodeGenFunction &CGF;
+};
+} // namespace
+
 /// EmitReturnStmt - Note that due to GCC extensions, this can have an operand
 /// if the function returns void, or may be missing one if the function returns
 /// non-void.  Fun stuff :).
@@ -1094,20 +1135,28 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
   // Emit the result value, even if unused, to evaluate the side effects.
   const Expr *RV = S.getRetValue();
 
-  // Treat block literals in a return expression as if they appeared
-  // in their own scope.  This permits a small, easily-implemented
-  // exception to our over-conservative rules about not jumping to
-  // statements following block literals with non-trivial cleanups.
-  RunCleanupsScope cleanupScope(*this);
-  if (const FullExpr *fe = dyn_cast_or_null<FullExpr>(RV)) {
-    enterFullExpression(fe);
-    RV = fe->getSubExpr();
-  }
+  // Record the result expression of the return statement. The recorded
+  // expression is used to determine whether a block capture's lifetime should
+  // end at the end of the full expression as opposed to the end of the scope
+  // enclosing the block expression.
+  //
+  // This permits a small, easily-implemented exception to our over-conservative
+  // rules about not jumping to statements following block literals with
+  // non-trivial cleanups.
+  SaveRetExprRAII SaveRetExpr(RV, *this);
 
+  RunCleanupsScope cleanupScope(*this);
+  if (const auto *EWC = dyn_cast_or_null<ExprWithCleanups>(RV))
+    RV = EWC->getSubExpr();
   // FIXME: Clean this up by using an LValue for ReturnTemp,
   // EmitStoreThroughLValue, and EmitAnyExpr.
-  if (getLangOpts().ElideConstructors &&
-      S.getNRVOCandidate() && S.getNRVOCandidate()->isNRVOVariable()) {
+  // Check if the NRVO candidate was not globalized in OpenMP mode.
+  if (getLangOpts().ElideConstructors && S.getNRVOCandidate() &&
+      S.getNRVOCandidate()->isNRVOVariable() &&
+      (!getLangOpts().OpenMP ||
+       !CGM.getOpenMPRuntime()
+            .getAddressOfLocalVariable(*this, S.getNRVOCandidate())
+            .isValid())) {
     // Apply the named return value optimization for this return statement,
     // which means doing nothing: the appropriate result has already been
     // constructed into the NRVO variable.
@@ -1216,7 +1265,8 @@ void CodeGenFunction::EmitContinueStmt(const ContinueStmt &S) {
 /// EmitCaseStmtRange - If case statement range is not too big then
 /// add multiple cases to switch instruction, one for each value within
 /// the range. If range is too big then emit "if" condition check.
-void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S) {
+void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S,
+                                        ArrayRef<const Attr *> Attrs) {
   assert(S.getRHS() && "Expected RHS value in CaseStmt");
 
   llvm::APSInt LHS = S.getLHS()->EvaluateKnownConstInt(getContext());
@@ -1233,6 +1283,7 @@ void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S) {
   if (LHS.isSigned() ? RHS.slt(LHS) : RHS.ult(LHS))
     return;
 
+  Stmt::Likelihood LH = Stmt::getLikelihood(Attrs);
   llvm::APInt Range = RHS - LHS;
   // FIXME: parameters such as this should not be hardcoded.
   if (Range.ult(llvm::APInt(Range.getBitWidth(), 64))) {
@@ -1247,6 +1298,9 @@ void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S) {
     for (unsigned I = 0; I != NCases; ++I) {
       if (SwitchWeights)
         SwitchWeights->push_back(Weight + (Rem ? 1 : 0));
+      else if (SwitchLikelihood)
+        SwitchLikelihood->push_back(LH);
+
       if (Rem)
         Rem--;
       SwitchInsn->addCase(Builder.getInt(LHS), CaseDest);
@@ -1284,7 +1338,9 @@ void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S) {
     // need to update the weight for the default, ie, the first case, to include
     // this case.
     (*SwitchWeights)[0] += ThisCount;
-  }
+  } else if (SwitchLikelihood)
+    Weights = createBranchWeights(LH);
+
   Builder.CreateCondBr(Cond, CaseDest, FalseDest, Weights);
 
   // Restore the appropriate insertion point.
@@ -1294,7 +1350,8 @@ void CodeGenFunction::EmitCaseStmtRange(const CaseStmt &S) {
     Builder.ClearInsertionPoint();
 }
 
-void CodeGenFunction::EmitCaseStmt(const CaseStmt &S) {
+void CodeGenFunction::EmitCaseStmt(const CaseStmt &S,
+                                   ArrayRef<const Attr *> Attrs) {
   // If there is no enclosing switch instance that we're aware of, then this
   // case statement and its block can be elided.  This situation only happens
   // when we've constant-folded the switch, are emitting the constant case,
@@ -1307,12 +1364,14 @@ void CodeGenFunction::EmitCaseStmt(const CaseStmt &S) {
 
   // Handle case ranges.
   if (S.getRHS()) {
-    EmitCaseStmtRange(S);
+    EmitCaseStmtRange(S, Attrs);
     return;
   }
 
   llvm::ConstantInt *CaseVal =
     Builder.getInt(S.getLHS()->EvaluateKnownConstInt(getContext()));
+  if (SwitchLikelihood)
+    SwitchLikelihood->push_back(Stmt::getLikelihood(Attrs));
 
   // If the body of the case is just a 'break', try to not emit an empty block.
   // If we're profiling or we're not optimizing, leave the block in for better
@@ -1353,6 +1412,10 @@ void CodeGenFunction::EmitCaseStmt(const CaseStmt &S) {
   // that falls through to the next case which is IR intensive.  It also causes
   // deep recursion which can run into stack depth limitations.  Handle
   // sequential non-range case statements specially.
+  //
+  // TODO When the next case has a likelihood attribute the code returns to the
+  // recursive algorithm. Maybe improve this case if it becomes common practice
+  // to use a lot of attributes.
   const CaseStmt *CurCase = &S;
   const CaseStmt *NextCase = dyn_cast<CaseStmt>(S.getSubStmt());
 
@@ -1368,6 +1431,10 @@ void CodeGenFunction::EmitCaseStmt(const CaseStmt &S) {
       CaseDest = createBasicBlock("sw.bb");
       EmitBlockWithFallThrough(CaseDest, &S);
     }
+    // Since this loop is only executed when the CaseStmt has no attributes
+    // use a hard-coded value.
+    if (SwitchLikelihood)
+      SwitchLikelihood->push_back(Stmt::LH_None);
 
     SwitchInsn->addCase(CaseVal, CaseDest);
     NextCase = dyn_cast<CaseStmt>(CurCase->getSubStmt());
@@ -1377,7 +1444,8 @@ void CodeGenFunction::EmitCaseStmt(const CaseStmt &S) {
   EmitStmt(CurCase->getSubStmt());
 }
 
-void CodeGenFunction::EmitDefaultStmt(const DefaultStmt &S) {
+void CodeGenFunction::EmitDefaultStmt(const DefaultStmt &S,
+                                      ArrayRef<const Attr *> Attrs) {
   // If there is no enclosing switch instance that we're aware of, then this
   // default statement can be elided. This situation only happens when we've
   // constant-folded the switch.
@@ -1389,6 +1457,9 @@ void CodeGenFunction::EmitDefaultStmt(const DefaultStmt &S) {
   llvm::BasicBlock *DefaultBlock = SwitchInsn->getDefaultDest();
   assert(DefaultBlock->empty() &&
          "EmitDefaultStmt: Default block already defined?");
+
+  if (SwitchLikelihood)
+    SwitchLikelihood->front() = Stmt::getLikelihood(Attrs);
 
   EmitBlockWithFallThrough(DefaultBlock, &S);
 
@@ -1627,10 +1698,67 @@ static bool FindCaseStatementsForValue(const SwitchStmt &S,
          FoundCase;
 }
 
+static Optional<SmallVector<uint64_t, 16>>
+getLikelihoodWeights(ArrayRef<Stmt::Likelihood> Likelihoods) {
+  // Are there enough branches to weight them?
+  if (Likelihoods.size() <= 1)
+    return None;
+
+  uint64_t NumUnlikely = 0;
+  uint64_t NumNone = 0;
+  uint64_t NumLikely = 0;
+  for (const auto LH : Likelihoods) {
+    switch (LH) {
+    case Stmt::LH_Unlikely:
+      ++NumUnlikely;
+      break;
+    case Stmt::LH_None:
+      ++NumNone;
+      break;
+    case Stmt::LH_Likely:
+      ++NumLikely;
+      break;
+    }
+  }
+
+  // Is there a likelihood attribute used?
+  if (NumUnlikely == 0 && NumLikely == 0)
+    return None;
+
+  // When multiple cases share the same code they can be combined during
+  // optimization. In that case the weights of the branch will be the sum of
+  // the individual weights. Make sure the combined sum of all neutral cases
+  // doesn't exceed the value of a single likely attribute.
+  // The additions both avoid divisions by 0 and make sure the weights of None
+  // don't exceed the weight of Likely.
+  const uint64_t Likely = INT32_MAX / (NumLikely + 2);
+  const uint64_t None = Likely / (NumNone + 1);
+  const uint64_t Unlikely = 0;
+
+  SmallVector<uint64_t, 16> Result;
+  Result.reserve(Likelihoods.size());
+  for (const auto LH : Likelihoods) {
+    switch (LH) {
+    case Stmt::LH_Unlikely:
+      Result.push_back(Unlikely);
+      break;
+    case Stmt::LH_None:
+      Result.push_back(None);
+      break;
+    case Stmt::LH_Likely:
+      Result.push_back(Likely);
+      break;
+    }
+  }
+
+  return Result;
+}
+
 void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
   // Handle nested switch statements.
   llvm::SwitchInst *SavedSwitchInsn = SwitchInsn;
   SmallVector<uint64_t, 16> *SavedSwitchWeights = SwitchWeights;
+  SmallVector<Stmt::Likelihood, 16> *SavedSwitchLikelihood = SwitchLikelihood;
   llvm::BasicBlock *SavedCRBlock = CaseRangeBlock;
 
   // See if we can constant fold the condition of the switch and therefore only
@@ -1705,7 +1833,12 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
     // The default needs to be first. We store the edge count, so we already
     // know the right weight.
     SwitchWeights->push_back(DefaultCount);
+  } else if (CGM.getCodeGenOpts().OptimizationLevel) {
+    SwitchLikelihood = new SmallVector<Stmt::Likelihood, 16>();
+    // Initialize the default case.
+    SwitchLikelihood->push_back(Stmt::LH_None);
   }
+
   CaseRangeBlock = DefaultBlock;
 
   // Clear the insertion point to indicate we are in unreachable code.
@@ -1769,9 +1902,21 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
       SwitchInsn->setMetadata(llvm::LLVMContext::MD_prof,
                               createProfileWeights(*SwitchWeights));
     delete SwitchWeights;
+  } else if (SwitchLikelihood) {
+    assert(SwitchLikelihood->size() == 1 + SwitchInsn->getNumCases() &&
+           "switch likelihoods do not match switch cases");
+    Optional<SmallVector<uint64_t, 16>> LHW =
+        getLikelihoodWeights(*SwitchLikelihood);
+    if (LHW) {
+      llvm::MDBuilder MDHelper(CGM.getLLVMContext());
+      SwitchInsn->setMetadata(llvm::LLVMContext::MD_prof,
+                              createProfileWeights(*LHW));
+    }
+    delete SwitchLikelihood;
   }
   SwitchInsn = SavedSwitchInsn;
   SwitchWeights = SavedSwitchWeights;
+  SwitchLikelihood = SavedSwitchLikelihood;
   CaseRangeBlock = SavedCRBlock;
 }
 
@@ -1955,12 +2100,16 @@ static llvm::MDNode *getAsmSrcLocInfo(const StringLiteral *Str,
 }
 
 static void UpdateAsmCallInst(llvm::CallBase &Result, bool HasSideEffect,
-                              bool ReadOnly, bool ReadNone, const AsmStmt &S,
+                              bool ReadOnly, bool ReadNone, bool NoMerge,
+                              const AsmStmt &S,
                               const std::vector<llvm::Type *> &ResultRegTypes,
                               CodeGenFunction &CGF,
                               std::vector<llvm::Value *> &RegResults) {
   Result.addAttribute(llvm::AttributeList::FunctionIndex,
                       llvm::Attribute::NoUnwind);
+  if (NoMerge)
+    Result.addAttribute(llvm::AttributeList::FunctionIndex,
+                        llvm::Attribute::NoMerge);
   // Attach readnone and readonly attributes.
   if (!HasSideEffect) {
     if (ReadNone)
@@ -2335,12 +2484,14 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
         Builder.CreateCallBr(IA, Fallthrough, Transfer, Args);
     EmitBlock(Fallthrough);
     UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, ReadOnly,
-                      ReadNone, S, ResultRegTypes, *this, RegResults);
+                      ReadNone, InNoMergeAttributedStmt, S, ResultRegTypes,
+                      *this, RegResults);
   } else {
     llvm::CallInst *Result =
         Builder.CreateCall(IA, Args, getBundlesForFunclet(IA));
     UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, ReadOnly,
-                      ReadNone, S, ResultRegTypes, *this, RegResults);
+                      ReadNone, InNoMergeAttributedStmt, S, ResultRegTypes,
+                      *this, RegResults);
   }
 
   assert(RegResults.size() == ResultRegTypes.size());
@@ -2413,8 +2564,7 @@ LValue CodeGenFunction::InitCapturedStruct(const CapturedStmt &S) {
        I != E; ++I, ++CurField) {
     LValue LV = EmitLValueForFieldInitialization(SlotLV, *CurField);
     if (CurField->hasCapturedVLAType()) {
-      auto VAT = CurField->getCapturedVLAType();
-      EmitStoreThroughLValue(RValue::get(VLASizeMap[VAT->getSizeExpr()]), LV);
+      EmitLambdaVLACapture(CurField->getCapturedVLAType(), LV);
     } else {
       EmitInitializerForField(*CurField, LV, *I);
     }

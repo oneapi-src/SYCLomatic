@@ -21,9 +21,9 @@
 // Therefore, IssueWidth is set to the narrower of the two at three, while still
 // modeling the machine as out-of-order.
 
-def IsCPSRDefinedPred : SchedPredicate<[{TII->isCPSRDefined(*MI)}]>;
+def IsCPSRDefinedAndPredicated : CheckAll<[IsCPSRDefined, IsPredicated]>;
 def IsCPSRDefinedAndPredicatedPred :
-  SchedPredicate<[{TII->isCPSRDefined(*MI) && TII->isPredicated(*MI)}]>;
+    MCSchedPredicate<IsCPSRDefinedAndPredicated>;
 
 // Cortex A57 rev. r1p0 or later (false = r0px)
 def IsR1P0AndLaterPred : SchedPredicate<[{false}]>;
@@ -1201,7 +1201,7 @@ def : InstRW<[A57Write_5cyc_1V], (instregex
 // --- 3.16 ASIMD Miscellaneous Instructions ---
 
 // ASIMD bitwise insert
-def : InstRW<[A57Write_3cyc_1V], (instregex "VBIF", "VBIT", "VBSL")>;
+def : InstRW<[A57Write_3cyc_1V], (instregex "VBIF", "VBIT", "VBSL", "VBSP")>;
 
 // ASIMD count
 def : InstRW<[A57Write_3cyc_1V], (instregex "VCLS", "VCLZ", "VCNT")>;

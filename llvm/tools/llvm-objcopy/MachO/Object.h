@@ -94,6 +94,9 @@ struct LoadCommand {
 
   // Returns the segment name if the load command is a segment command.
   Optional<StringRef> getSegmentName() const;
+
+  // Returns the segment vm address if the load command is a segment command.
+  Optional<uint64_t> getSegmentVMAddr() const;
 };
 
 // A symbol information. Fields which starts with "n_" are same as them in the
@@ -302,9 +305,12 @@ struct Object {
   IndirectSymbolTable IndirectSymTable;
   LinkData DataInCode;
   LinkData FunctionStarts;
+  LinkData CodeSignature;
 
   Optional<uint32_t> SwiftVersion;
 
+  /// The index of LC_CODE_SIGNATURE load command if present.
+  Optional<size_t> CodeSignatureCommandIndex;
   /// The index of LC_SYMTAB load command if present.
   Optional<size_t> SymTabCommandIndex;
   /// The index of LC_DYLD_INFO or LC_DYLD_INFO_ONLY load command if present.
@@ -323,7 +329,10 @@ struct Object {
 
   Error
   removeSections(function_ref<bool(const std::unique_ptr<Section> &)> ToRemove);
-  void addLoadCommand(LoadCommand LC);
+
+  Error removeLoadCommands(function_ref<bool(const LoadCommand &)> ToRemove);
+
+  void updateLoadCommandIndexes();
 
   /// Creates a new segment load command in the object and returns a reference
   /// to the newly created load command. The caller should verify that SegName
@@ -334,6 +343,8 @@ struct Object {
     return Header.Magic == MachO::MH_MAGIC_64 ||
            Header.Magic == MachO::MH_CIGAM_64;
   }
+
+  uint64_t nextAvailableSegmentAddress() const;
 };
 
 } // end namespace macho

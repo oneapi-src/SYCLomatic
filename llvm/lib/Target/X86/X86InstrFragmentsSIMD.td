@@ -87,16 +87,16 @@ def X86multishift   : SDNode<"X86ISD::MULTISHIFT",
                                       SDTCisSameAs<1,2>]>>;
 def X86pextrb  : SDNode<"X86ISD::PEXTRB",
                  SDTypeProfile<1, 2, [SDTCisVT<0, i32>, SDTCisVT<1, v16i8>,
-                                      SDTCisPtrTy<2>]>>;
+                                      SDTCisVT<2, i8>]>>;
 def X86pextrw  : SDNode<"X86ISD::PEXTRW",
                  SDTypeProfile<1, 2, [SDTCisVT<0, i32>, SDTCisVT<1, v8i16>,
-                                      SDTCisPtrTy<2>]>>;
+                                      SDTCisVT<2, i8>]>>;
 def X86pinsrb  : SDNode<"X86ISD::PINSRB",
                  SDTypeProfile<1, 3, [SDTCisVT<0, v16i8>, SDTCisSameAs<0,1>,
-                                      SDTCisVT<2, i32>, SDTCisPtrTy<3>]>>;
+                                      SDTCisVT<2, i32>, SDTCisVT<3, i8>]>>;
 def X86pinsrw  : SDNode<"X86ISD::PINSRW",
                  SDTypeProfile<1, 3, [SDTCisVT<0, v8i16>, SDTCisSameAs<0,1>,
-                                      SDTCisVT<2, i32>, SDTCisPtrTy<3>]>>;
+                                      SDTCisVT<2, i32>, SDTCisVT<3, i8>]>>;
 def X86insertps : SDNode<"X86ISD::INSERTPS",
                  SDTypeProfile<1, 3, [SDTCisVT<0, v4f32>, SDTCisSameAs<0,1>,
                                       SDTCisVT<2, v4f32>, SDTCisVT<3, i8>]>>;
@@ -207,16 +207,21 @@ def X86CmpMaskCC :
       SDTypeProfile<1, 3, [SDTCisVec<0>, SDTCVecEltisVT<0, i1>,
                        SDTCisVec<1>, SDTCisSameAs<2, 1>,
                        SDTCisSameNumEltsAs<0, 1>, SDTCisVT<3, i8>]>;
+def X86MaskCmpMaskCC :
+      SDTypeProfile<1, 4, [SDTCisVec<0>, SDTCVecEltisVT<0, i1>,
+                       SDTCisVec<1>, SDTCisSameAs<2, 1>,
+                       SDTCisSameNumEltsAs<0, 1>, SDTCisVT<3, i8>, SDTCisSameAs<4, 0>]>;
 def X86CmpMaskCCScalar :
       SDTypeProfile<1, 3, [SDTCisInt<0>, SDTCisFP<1>, SDTCisSameAs<1, 2>,
                            SDTCisVT<3, i8>]>;
 
 def X86cmpm     : SDNode<"X86ISD::CMPM",     X86CmpMaskCC>;
+def X86cmpmm    : SDNode<"X86ISD::CMPMM",    X86MaskCmpMaskCC>;
 def X86strict_cmpm : SDNode<"X86ISD::STRICT_CMPM", X86CmpMaskCC, [SDNPHasChain]>;
 def X86any_cmpm    : PatFrags<(ops node:$src1, node:$src2, node:$src3),
                                [(X86strict_cmpm node:$src1, node:$src2, node:$src3),
                                 (X86cmpm node:$src1, node:$src2, node:$src3)]>;
-def X86cmpmSAE  : SDNode<"X86ISD::CMPM_SAE", X86CmpMaskCC>;
+def X86cmpmmSAE : SDNode<"X86ISD::CMPMM_SAE", X86MaskCmpMaskCC>;
 def X86cmpms    : SDNode<"X86ISD::FSETCCM",   X86CmpMaskCCScalar>;
 def X86cmpmsSAE : SDNode<"X86ISD::FSETCCM_SAE",   X86CmpMaskCCScalar>;
 

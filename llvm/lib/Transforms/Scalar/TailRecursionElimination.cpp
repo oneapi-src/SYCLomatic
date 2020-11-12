@@ -92,7 +92,10 @@ STATISTIC(NumAccumAdded, "Number of accumulators introduced");
 /// Scan the specified function for alloca instructions.
 /// If it contains any dynamic allocas, returns false.
 static bool canTRE(Function &F) {
-  // Because of PR962, we don't TRE dynamic allocas.
+  // FIXME: The code generator produces really bad code when an 'escaping
+  // alloca' is changed from being a static alloca to being a dynamic alloca.
+  // Until this is resolved, disable this transformation if that would ever
+  // happen.  This bug is PR962.
   return llvm::all_of(instructions(F), [](Instruction &I) {
     auto *AI = dyn_cast<AllocaInst>(&I);
     return !AI || AI->isStaticAlloca();
@@ -354,89 +357,23 @@ static bool canMoveAboveCall(Instruction *I, CallInst *CI, AliasAnalysis *AA) {
   return !is_contained(I->operands(), CI);
 }
 
-/// Return true if the specified value is the same when the return would exit
-/// as it was when the initial iteration of the recursive function was executed.
-///
-/// We currently handle static constants and arguments that are not modified as
-/// part of the recursion.
-static bool isDynamicConstant(Value *V, CallInst *CI, ReturnInst *RI) {
-  if (isa<Constant>(V)) return true; // Static constants are always dyn consts
+static bool canTransformAccumulatorRecursion(Instruction *I, CallInst *CI) {
+  if (!I->isAssociative() || !I->isCommutative())
+    return false;
 
-  // Check to see if this is an immutable argument, if so, the value
-  // will be available to initialize the accumulator.
-  if (Argument *Arg = dyn_cast<Argument>(V)) {
-    // Figure out which argument number this is...
-    unsigned ArgNo = 0;
-    Function *F = CI->getParent()->getParent();
-    for (Function::arg_iterator AI = F->arg_begin(); &*AI != Arg; ++AI)
-      ++ArgNo;
-
-    // If we are passing this argument into call as the corresponding
-    // argument operand, then the argument is dynamically constant.
-    // Otherwise, we cannot transform this function safely.
-    if (CI->getArgOperand(ArgNo) == Arg)
-      return true;
-  }
-
-  // Switch cases are always constant integers. If the value is being switched
-  // on and the return is only reachable from one of its cases, it's
-  // effectively constant.
-  if (BasicBlock *UniquePred = RI->getParent()->getUniquePredecessor())
-    if (SwitchInst *SI = dyn_cast<SwitchInst>(UniquePred->getTerminator()))
-      if (SI->getCondition() == V)
-        return SI->getDefaultDest() != RI->getParent();
-
-  // Not a constant or immutable argument, we can't safely transform.
-  return false;
-}
-
-/// Check to see if the function containing the specified tail call consistently
-/// returns the same runtime-constant value at all exit points except for
-/// IgnoreRI. If so, return the returned value.
-static Value *getCommonReturnValue(ReturnInst *IgnoreRI, CallInst *CI) {
-  Function *F = CI->getParent()->getParent();
-  Value *ReturnedValue = nullptr;
-
-  for (BasicBlock &BBI : *F) {
-    ReturnInst *RI = dyn_cast<ReturnInst>(BBI.getTerminator());
-    if (RI == nullptr || RI == IgnoreRI) continue;
-
-    // We can only perform this transformation if the value returned is
-    // evaluatable at the start of the initial invocation of the function,
-    // instead of at the end of the evaluation.
-    //
-    Value *RetOp = RI->getOperand(0);
-    if (!isDynamicConstant(RetOp, CI, RI))
-      return nullptr;
-
-    if (ReturnedValue && RetOp != ReturnedValue)
-      return nullptr;     // Cannot transform if differing values are returned.
-    ReturnedValue = RetOp;
-  }
-  return ReturnedValue;
-}
-
-/// If the specified instruction can be transformed using accumulator recursion
-/// elimination, return the constant which is the start of the accumulator
-/// value.  Otherwise return null.
-static Value *canTransformAccumulatorRecursion(Instruction *I, CallInst *CI) {
-  if (!I->isAssociative() || !I->isCommutative()) return nullptr;
   assert(I->getNumOperands() == 2 &&
          "Associative/commutative operations should have 2 args!");
 
   // Exactly one operand should be the result of the call instruction.
   if ((I->getOperand(0) == CI && I->getOperand(1) == CI) ||
       (I->getOperand(0) != CI && I->getOperand(1) != CI))
-    return nullptr;
+    return false;
 
   // The only user of this instruction we allow is a single return instruction.
   if (!I->hasOneUse() || !isa<ReturnInst>(I->user_back()))
-    return nullptr;
+    return false;
 
-  // Ok, now we have to check all of the other return instructions in this
-  // function.  If they return non-constants or differing values, then we cannot
-  // transform the function safely.
-  return getCommonReturnValue(cast<ReturnInst>(I->user_back()), CI);
+  return true;
 }
 
 static Instruction *firstNonDbg(BasicBlock::iterator I) {
@@ -470,27 +407,33 @@ class TailRecursionEliminator {
   // to either propagate RetPN or select a new return value.
   SmallVector<SelectInst *, 8> RetSelects;
 
+  // The below are shared state needed when performing accumulator recursion.
+  // There values should be populated by insertAccumulator the first time we
+  // find an elimination that requires an accumulator.
+
+  // PHI node to store our current accumulated value.
+  PHINode *AccPN = nullptr;
+
+  // The instruction doing the accumulating.
+  Instruction *AccumulatorRecursionInstr = nullptr;
+
   TailRecursionEliminator(Function &F, const TargetTransformInfo *TTI,
                           AliasAnalysis *AA, OptimizationRemarkEmitter *ORE,
                           DomTreeUpdater &DTU)
       : F(F), TTI(TTI), AA(AA), ORE(ORE), DTU(DTU) {}
 
-  CallInst *findTRECandidate(Instruction *TI,
+  CallInst *findTRECandidate(BasicBlock *BB,
                              bool CannotTailCallElimCallsMarkedTail);
 
   void createTailRecurseLoopHeader(CallInst *CI);
 
-  PHINode *insertAccumulator(Value *AccumulatorRecursionEliminationInitVal);
+  void insertAccumulator(Instruction *AccRecInstr);
 
   bool eliminateCall(CallInst *CI);
 
-  bool foldReturnAndProcessPred(ReturnInst *Ret,
-                                bool CannotTailCallElimCallsMarkedTail);
-
-  bool processReturningBlock(ReturnInst *Ret,
-                             bool CannotTailCallElimCallsMarkedTail);
-
   void cleanupAndFinalize();
+
+  bool processBlock(BasicBlock &BB, bool CannotTailCallElimCallsMarkedTail);
 
 public:
   static bool eliminate(Function &F, const TargetTransformInfo *TTI,
@@ -500,8 +443,8 @@ public:
 } // namespace
 
 CallInst *TailRecursionEliminator::findTRECandidate(
-    Instruction *TI, bool CannotTailCallElimCallsMarkedTail) {
-  BasicBlock *BB = TI->getParent();
+    BasicBlock *BB, bool CannotTailCallElimCallsMarkedTail) {
+  Instruction *TI = BB->getTerminator();
 
   if (&BB->front() == TI) // Make sure there is something before the terminator.
     return nullptr;
@@ -608,47 +551,44 @@ void TailRecursionEliminator::createTailRecurseLoopHeader(CallInst *CI) {
   DTU.recalculate(*NewEntry->getParent());
 }
 
-PHINode *TailRecursionEliminator::insertAccumulator(
-    Value *AccumulatorRecursionEliminationInitVal) {
+void TailRecursionEliminator::insertAccumulator(Instruction *AccRecInstr) {
+  assert(!AccPN && "Trying to insert multiple accumulators");
+
+  AccumulatorRecursionInstr = AccRecInstr;
+
   // Start by inserting a new PHI node for the accumulator.
   pred_iterator PB = pred_begin(HeaderBB), PE = pred_end(HeaderBB);
-  PHINode *AccPN = PHINode::Create(
-      AccumulatorRecursionEliminationInitVal->getType(),
-      std::distance(PB, PE) + 1, "accumulator.tr", &HeaderBB->front());
+  AccPN = PHINode::Create(F.getReturnType(), std::distance(PB, PE) + 1,
+                          "accumulator.tr", &HeaderBB->front());
 
   // Loop over all of the predecessors of the tail recursion block.  For the
-  // real entry into the function we seed the PHI with the initial value,
-  // computed earlier.  For any other existing branches to this block (due to
-  // other tail recursions eliminated) the accumulator is not modified.
+  // real entry into the function we seed the PHI with the identity constant for
+  // the accumulation operation.  For any other existing branches to this block
+  // (due to other tail recursions eliminated) the accumulator is not modified.
   // Because we haven't added the branch in the current block to HeaderBB yet,
   // it will not show up as a predecessor.
   for (pred_iterator PI = PB; PI != PE; ++PI) {
     BasicBlock *P = *PI;
-    if (P == &F.getEntryBlock())
-      AccPN->addIncoming(AccumulatorRecursionEliminationInitVal, P);
-    else
+    if (P == &F.getEntryBlock()) {
+      Constant *Identity = ConstantExpr::getBinOpIdentity(
+          AccRecInstr->getOpcode(), AccRecInstr->getType());
+      AccPN->addIncoming(Identity, P);
+    } else {
       AccPN->addIncoming(AccPN, P);
+    }
   }
 
-  return AccPN;
+  ++NumAccumAdded;
 }
 
 bool TailRecursionEliminator::eliminateCall(CallInst *CI) {
   ReturnInst *Ret = cast<ReturnInst>(CI->getParent()->getTerminator());
 
-  // If we are introducing accumulator recursion to eliminate operations after
-  // the call instruction that are both associative and commutative, the initial
-  // value for the accumulator is placed in this variable.  If this value is set
-  // then we actually perform accumulator recursion elimination instead of
-  // simple tail recursion elimination.  If the operation is an LLVM instruction
-  // (eg: "add") then it is recorded in AccumulatorRecursionInstr.
-  Value *AccumulatorRecursionEliminationInitVal = nullptr;
-  Instruction *AccumulatorRecursionInstr = nullptr;
-
   // Ok, we found a potential tail call.  We can currently only transform the
   // tail call if all of the instructions between the call and the return are
   // movable to above the call itself, leaving the call next to the return.
   // Check that this is the case now.
+  Instruction *AccRecInstr = nullptr;
   BasicBlock::iterator BBI(CI);
   for (++BBI; &*BBI != Ret; ++BBI) {
     if (canMoveAboveCall(&*BBI, CI, AA))
@@ -657,15 +597,13 @@ bool TailRecursionEliminator::eliminateCall(CallInst *CI) {
     // If we can't move the instruction above the call, it might be because it
     // is an associative and commutative operation that could be transformed
     // using accumulator recursion elimination.  Check to see if this is the
-    // case, and if so, remember the initial accumulator value for later.
-    if ((AccumulatorRecursionEliminationInitVal =
-             canTransformAccumulatorRecursion(&*BBI, CI))) {
-      // Yes, this is accumulator recursion.  Remember which instruction
-      // accumulates.
-      AccumulatorRecursionInstr = &*BBI;
-    } else {
-      return false;   // Otherwise, we cannot eliminate the tail recursion!
-    }
+    // case, and if so, remember which instruction accumulates for later.
+    if (AccPN || !canTransformAccumulatorRecursion(&*BBI, CI))
+      return false; // We cannot eliminate the tail recursion!
+
+    // Yes, this is accumulator recursion.  Remember which instruction
+    // accumulates.
+    AccRecInstr = &*BBI;
   }
 
   BasicBlock *BB = Ret->getParent();
@@ -690,37 +628,18 @@ bool TailRecursionEliminator::eliminateCall(CallInst *CI) {
   for (unsigned i = 0, e = CI->getNumArgOperands(); i != e; ++i)
     ArgumentPHIs[i]->addIncoming(CI->getArgOperand(i), BB);
 
-  // If we are introducing an accumulator variable to eliminate the recursion,
-  // do so now.  Note that we _know_ that no subsequent tail recursion
-  // eliminations will happen on this function because of the way the
-  // accumulator recursion predicate is set up.
-  //
-  if (AccumulatorRecursionEliminationInitVal) {
-    PHINode *AccPN = insertAccumulator(AccumulatorRecursionEliminationInitVal);
+  if (AccRecInstr) {
+    insertAccumulator(AccRecInstr);
 
-    Instruction *AccRecInstr = AccumulatorRecursionInstr;
-
-    // Add an incoming argument for the current block, which is computed by
-    // our associative and commutative accumulator instruction.
-    AccPN->addIncoming(AccRecInstr, BB);
-
-    // Next, rewrite the accumulator recursion instruction so that it does not
-    // use the result of the call anymore, instead, use the PHI node we just
+    // Rewrite the accumulator recursion instruction so that it does not use
+    // the result of the call anymore, instead, use the PHI node we just
     // inserted.
     AccRecInstr->setOperand(AccRecInstr->getOperand(0) != CI, AccPN);
-
-    // Finally, rewrite any return instructions in the program to return the PHI
-    // node instead of the "initval" that they do currently.  This loop will
-    // actually rewrite the return value we are destroying, but that's ok.
-    for (BasicBlock &BBI : F)
-      if (ReturnInst *RI = dyn_cast<ReturnInst>(BBI.getTerminator()))
-        RI->setOperand(0, AccPN);
-    ++NumAccumAdded;
   }
 
   // Update our return value tracking
   if (RetPN) {
-    if (Ret->getReturnValue() == CI || AccumulatorRecursionEliminationInitVal) {
+    if (Ret->getReturnValue() == CI || AccRecInstr) {
       // Defer selecting a return value
       RetPN->addIncoming(RetPN, BB);
       RetKnownPN->addIncoming(RetKnownPN, BB);
@@ -735,6 +654,9 @@ bool TailRecursionEliminator::eliminateCall(CallInst *CI) {
       RetPN->addIncoming(SI, BB);
       RetKnownPN->addIncoming(ConstantInt::getTrue(RetKnownPN->getType()), BB);
     }
+
+    if (AccPN)
+      AccPN->addIncoming(AccRecInstr ? AccRecInstr : AccPN, BB);
   }
 
   // Now that all of the PHI nodes are in place, remove the call and
@@ -747,63 +669,6 @@ bool TailRecursionEliminator::eliminateCall(CallInst *CI) {
   DTU.applyUpdates({{DominatorTree::Insert, BB, HeaderBB}});
   ++NumEliminated;
   return true;
-}
-
-bool TailRecursionEliminator::foldReturnAndProcessPred(
-    ReturnInst *Ret, bool CannotTailCallElimCallsMarkedTail) {
-  BasicBlock *BB = Ret->getParent();
-
-  bool Change = false;
-
-  // Make sure this block is a trivial return block.
-  assert(BB->getFirstNonPHIOrDbg() == Ret &&
-         "Trying to fold non-trivial return block");
-
-  // If the return block contains nothing but the return and PHI's,
-  // there might be an opportunity to duplicate the return in its
-  // predecessors and perform TRE there. Look for predecessors that end
-  // in unconditional branch and recursive call(s).
-  SmallVector<BranchInst*, 8> UncondBranchPreds;
-  for (pred_iterator PI = pred_begin(BB), E = pred_end(BB); PI != E; ++PI) {
-    BasicBlock *Pred = *PI;
-    Instruction *PTI = Pred->getTerminator();
-    if (BranchInst *BI = dyn_cast<BranchInst>(PTI))
-      if (BI->isUnconditional())
-        UncondBranchPreds.push_back(BI);
-  }
-
-  while (!UncondBranchPreds.empty()) {
-    BranchInst *BI = UncondBranchPreds.pop_back_val();
-    BasicBlock *Pred = BI->getParent();
-    if (CallInst *CI =
-            findTRECandidate(BI, CannotTailCallElimCallsMarkedTail)) {
-      LLVM_DEBUG(dbgs() << "FOLDING: " << *BB
-                        << "INTO UNCOND BRANCH PRED: " << *Pred);
-      FoldReturnIntoUncondBranch(Ret, BB, Pred, &DTU);
-
-      // Cleanup: if all predecessors of BB have been eliminated by
-      // FoldReturnIntoUncondBranch, delete it.  It is important to empty it,
-      // because the ret instruction in there is still using a value which
-      // eliminateRecursiveTailCall will attempt to remove.
-      if (!BB->hasAddressTaken() && pred_begin(BB) == pred_end(BB))
-        DTU.deleteBB(BB);
-
-      eliminateCall(CI);
-      ++NumRetDuped;
-      Change = true;
-    }
-  }
-
-  return Change;
-}
-
-bool TailRecursionEliminator::processReturningBlock(
-    ReturnInst *Ret, bool CannotTailCallElimCallsMarkedTail) {
-  CallInst *CI = findTRECandidate(Ret, CannotTailCallElimCallsMarkedTail);
-  if (!CI)
-    return false;
-
-  return eliminateCall(CI);
 }
 
 void TailRecursionEliminator::cleanupAndFinalize() {
@@ -829,6 +694,24 @@ void TailRecursionEliminator::cleanupAndFinalize() {
 
       RetKnownPN->dropAllReferences();
       RetKnownPN->eraseFromParent();
+
+      if (AccPN) {
+        // We need to insert a copy of our accumulator instruction before any
+        // return in the function, and return its result instead.
+        Instruction *AccRecInstr = AccumulatorRecursionInstr;
+        for (BasicBlock &BB : F) {
+          ReturnInst *RI = dyn_cast<ReturnInst>(BB.getTerminator());
+          if (!RI)
+            continue;
+
+          Instruction *AccRecInstrNew = AccRecInstr->clone();
+          AccRecInstrNew->setName("accumulator.ret.tr");
+          AccRecInstrNew->setOperand(AccRecInstr->getOperand(0) == AccPN,
+                                     RI->getOperand(0));
+          AccRecInstrNew->insertBefore(RI);
+          RI->setOperand(0, AccRecInstrNew);
+        }
+      }
     } else {
       // We need to insert a select instruction before any return left in the
       // function to select our stored return value if we have one.
@@ -839,10 +722,69 @@ void TailRecursionEliminator::cleanupAndFinalize() {
 
         SelectInst *SI = SelectInst::Create(
             RetKnownPN, RetPN, RI->getOperand(0), "current.ret.tr", RI);
+        RetSelects.push_back(SI);
         RI->setOperand(0, SI);
+      }
+
+      if (AccPN) {
+        // We need to insert a copy of our accumulator instruction before any
+        // of the selects we inserted, and select its result instead.
+        Instruction *AccRecInstr = AccumulatorRecursionInstr;
+        for (SelectInst *SI : RetSelects) {
+          Instruction *AccRecInstrNew = AccRecInstr->clone();
+          AccRecInstrNew->setName("accumulator.ret.tr");
+          AccRecInstrNew->setOperand(AccRecInstr->getOperand(0) == AccPN,
+                                     SI->getFalseValue());
+          AccRecInstrNew->insertBefore(SI);
+          SI->setFalseValue(AccRecInstrNew);
+        }
       }
     }
   }
+}
+
+bool TailRecursionEliminator::processBlock(
+    BasicBlock &BB, bool CannotTailCallElimCallsMarkedTail) {
+  Instruction *TI = BB.getTerminator();
+
+  if (BranchInst *BI = dyn_cast<BranchInst>(TI)) {
+    if (BI->isConditional())
+      return false;
+
+    BasicBlock *Succ = BI->getSuccessor(0);
+    ReturnInst *Ret = dyn_cast<ReturnInst>(Succ->getFirstNonPHIOrDbg());
+
+    if (!Ret)
+      return false;
+
+    CallInst *CI = findTRECandidate(&BB, CannotTailCallElimCallsMarkedTail);
+
+    if (!CI)
+      return false;
+
+    LLVM_DEBUG(dbgs() << "FOLDING: " << *Succ
+                      << "INTO UNCOND BRANCH PRED: " << BB);
+    FoldReturnIntoUncondBranch(Ret, Succ, &BB, &DTU);
+    ++NumRetDuped;
+
+    // If all predecessors of Succ have been eliminated by
+    // FoldReturnIntoUncondBranch, delete it.  It is important to empty it,
+    // because the ret instruction in there is still using a value which
+    // eliminateCall will attempt to remove.  This block can only contain
+    // instructions that can't have uses, therefore it is safe to remove.
+    if (pred_empty(Succ))
+      DTU.deleteBB(Succ);
+
+    eliminateCall(CI);
+    return true;
+  } else if (isa<ReturnInst>(TI)) {
+    CallInst *CI = findTRECandidate(&BB, CannotTailCallElimCallsMarkedTail);
+
+    if (CI)
+      return eliminateCall(CI);
+  }
+
+  return false;
 }
 
 bool TailRecursionEliminator::eliminate(Function &F,
@@ -862,30 +804,18 @@ bool TailRecursionEliminator::eliminate(Function &F,
   // If this function is a varargs function, we won't be able to PHI the args
   // right, so don't even try to convert it...
   if (F.getFunctionType()->isVarArg())
-    return false;
+    return MadeChange;
 
   // If false, we cannot perform TRE on tail calls marked with the 'tail'
   // attribute, because doing so would cause the stack size to increase (real
   // TRE would deallocate variable sized allocas, TRE doesn't).
   bool CanTRETailMarkedCall = canTRE(F);
 
+  // Change any tail recursive calls to loops.
   TailRecursionEliminator TRE(F, TTI, AA, ORE, DTU);
 
-  // Change any tail recursive calls to loops.
-  //
-  // FIXME: The code generator produces really bad code when an 'escaping
-  // alloca' is changed from being a static alloca to being a dynamic alloca.
-  // Until this is resolved, disable this transformation if that would ever
-  // happen.  This bug is PR962.
-  for (Function::iterator BBI = F.begin(), E = F.end(); BBI != E; /*in loop*/) {
-    BasicBlock *BB = &*BBI++; // foldReturnAndProcessPred may delete BB.
-    if (ReturnInst *Ret = dyn_cast<ReturnInst>(BB->getTerminator())) {
-      bool Change = TRE.processReturningBlock(Ret, !CanTRETailMarkedCall);
-      if (!Change && BB->getFirstNonPHIOrDbg() == Ret)
-        Change = TRE.foldReturnAndProcessPred(Ret, !CanTRETailMarkedCall);
-      MadeChange |= Change;
-    }
-  }
+  for (BasicBlock &BB : F)
+    MadeChange |= TRE.processBlock(BB, !CanTRETailMarkedCall);
 
   TRE.cleanupAndFinalize();
 

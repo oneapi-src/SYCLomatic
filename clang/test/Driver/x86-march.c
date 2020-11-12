@@ -104,6 +104,10 @@
 // RUN:   | FileCheck %s -check-prefix=tremont
 // tremont: "-target-cpu" "tremont"
 //
+// RUN: %clang -target x86_64-unknown-unknown -c -### %s -march=sapphirerapids 2>&1 \
+// RUN:   | FileCheck %s -check-prefix=sapphirerapids
+// sapphirerapids: "-target-cpu" "sapphirerapids"
+//
 // RUN: %clang -target x86_64-unknown-unknown -c -### %s -march=k8 2>&1 \
 // RUN:   | FileCheck %s -check-prefix=k8
 // k8: "-target-cpu" "k8"
@@ -171,3 +175,12 @@
 // RUN: %clang -target x86_64-unknown-unknown -c -### %s -march=znver2 2>&1 \
 // RUN:   | FileCheck %s -check-prefix=znver2
 // znver2: "-target-cpu" "znver2"
+
+// RUN: %clang -target x86_64 -c -### %s -march=x86-64 2>&1 | FileCheck %s --check-prefix=x86-64
+// x86-64: "-target-cpu" "x86-64"
+// RUN: %clang -target x86_64 -c -### %s -march=x86-64-v2 2>&1 | FileCheck %s --check-prefix=x86-64-v2
+// x86-64-v2: "-target-cpu" "x86-64-v2"
+// RUN: %clang -target x86_64 -c -### %s -march=x86-64-v3 2>&1 | FileCheck %s --check-prefix=x86-64-v3
+// x86-64-v3: "-target-cpu" "x86-64-v3"
+// RUN: %clang -target x86_64 -c -### %s -march=x86-64-v4 2>&1 | FileCheck %s --check-prefix=x86-64-v4
+// x86-64-v4: "-target-cpu" "x86-64-v4"

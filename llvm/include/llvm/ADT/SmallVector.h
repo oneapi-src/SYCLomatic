@@ -14,7 +14,6 @@
 #define LLVM_ADT_SMALLVECTOR_H
 
 #include "llvm/ADT/iterator_range.h"
-#include "llvm/Support/AlignOf.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
@@ -60,7 +59,14 @@ protected:
   /// This is an implementation of the grow() method which only works
   /// on POD-like data types and is out of line to reduce code duplication.
   /// This function will report a fatal error if it cannot increase capacity.
-  void grow_pod(void *FirstEl, size_t MinCapacity, size_t TSize);
+  void grow_pod(void *FirstEl, size_t MinSize, size_t TSize);
+
+  /// Report that MinSize doesn't fit into this vector's size type. Throws
+  /// std::length_error or calls report_fatal_error.
+  LLVM_ATTRIBUTE_NORETURN static void report_size_overflow(size_t MinSize);
+  /// Report that this vector is already at maximum capacity. Throws
+  /// std::length_error or calls report_fatal_error.
+  LLVM_ATTRIBUTE_NORETURN static void report_at_maximum_capacity();
 
 public:
   size_t size() const { return Size; }
@@ -90,8 +96,9 @@ using SmallVectorSizeType =
 
 /// Figure out the offset of the first element.
 template <class T, typename = void> struct SmallVectorAlignmentAndSize {
-  AlignedCharArrayUnion<SmallVectorBase<SmallVectorSizeType<T>>> Base;
-  AlignedCharArrayUnion<T> FirstEl;
+  alignas(SmallVectorBase<SmallVectorSizeType<T>>) char Base[sizeof(
+      SmallVectorBase<SmallVectorSizeType<T>>)];
+  alignas(T) char FirstEl[sizeof(T)];
 };
 
 /// This is the part of SmallVectorTemplateBase which does not depend on whether
@@ -115,8 +122,8 @@ class SmallVectorTemplateCommon
 protected:
   SmallVectorTemplateCommon(size_t Size) : Base(getFirstEl(), Size) {}
 
-  void grow_pod(size_t MinCapacity, size_t TSize) {
-    Base::grow_pod(getFirstEl(), MinCapacity, TSize);
+  void grow_pod(size_t MinSize, size_t TSize) {
+    Base::grow_pod(getFirstEl(), MinSize, TSize);
   }
 
   /// Return true if this is a smallvector which has not had dynamic
@@ -269,14 +276,14 @@ void SmallVectorTemplateBase<T, TriviallyCopyable>::grow(size_t MinSize) {
   // Ensure we can fit the new capacity.
   // This is only going to be applicable when the capacity is 32 bit.
   if (MinSize > this->SizeTypeMax())
-    report_bad_alloc_error("SmallVector capacity overflow during allocation");
+    this->report_size_overflow(MinSize);
 
   // Ensure we can meet the guarantee of space for at least one more element.
   // The above check alone will not catch the case where grow is called with a
-  // default MinCapacity of 0, but the current capacity cannot be increased.
+  // default MinSize of 0, but the current capacity cannot be increased.
   // This is only going to be applicable when the capacity is 32 bit.
   if (this->capacity() == this->SizeTypeMax())
-    report_bad_alloc_error("SmallVector capacity unable to grow");
+    this->report_at_maximum_capacity();
 
   // Always grow, even from zero.
   size_t NewCapacity = size_t(NextPowerOf2(this->capacity() + 2));
@@ -863,13 +870,13 @@ SmallVectorImpl<T> &SmallVectorImpl<T>::operator=(SmallVectorImpl<T> &&RHS) {
 /// to avoid allocating unnecessary storage.
 template <typename T, unsigned N>
 struct SmallVectorStorage {
-  AlignedCharArrayUnion<T> InlineElts[N];
+  alignas(T) char InlineElts[N * sizeof(T)];
 };
 
 /// We need the storage to be properly aligned even for small-size of 0 so that
 /// the pointer math in \a SmallVectorTemplateCommon::getFirstEl() is
 /// well-defined.
-template <typename T> struct alignas(alignof(T)) SmallVectorStorage<T, 0> {};
+template <typename T> struct alignas(T) SmallVectorStorage<T, 0> {};
 
 /// This is a 'vector' (really, a variable-sized array), optimized
 /// for the case when the array is small.  It contains some number of elements

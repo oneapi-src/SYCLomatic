@@ -13,6 +13,7 @@
 
 #include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
+#include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/TargetLowering.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
@@ -42,8 +43,7 @@ CCState::CCState(CallingConv::ID CC, bool isVarArg, MachineFunction &mf,
 /// its parameter attribute.
 void CCState::HandleByVal(unsigned ValNo, MVT ValVT, MVT LocVT,
                           CCValAssign::LocInfo LocInfo, int MinSize,
-                          int MinAlignment, ISD::ArgFlagsTy ArgFlags) {
-  Align MinAlign(MinAlignment);
+                          Align MinAlign, ISD::ArgFlagsTy ArgFlags) {
   Align Alignment = ArgFlags.getNonZeroByValAlign();
   unsigned Size  = ArgFlags.getByValSize();
   if (MinSize > (int)Size)
@@ -51,10 +51,9 @@ void CCState::HandleByVal(unsigned ValNo, MVT ValVT, MVT LocVT,
   if (MinAlign > Alignment)
     Alignment = MinAlign;
   ensureMaxAlignment(Alignment);
-  MF.getSubtarget().getTargetLowering()->HandleByVal(this, Size,
-                                                     Alignment.value());
+  MF.getSubtarget().getTargetLowering()->HandleByVal(this, Size, Alignment);
   Size = unsigned(alignTo(Size, MinAlign));
-  unsigned Offset = AllocateStack(Size, Alignment.value());
+  unsigned Offset = AllocateStack(Size, Alignment);
   addLoc(CCValAssign::getMem(ValNo, ValVT, Offset, LocVT, LocInfo));
 }
 
@@ -186,14 +185,17 @@ void CCState::AnalyzeCallResult(MVT VT, CCAssignFn Fn) {
   }
 }
 
+void CCState::ensureMaxAlignment(Align Alignment) {
+  if (!AnalyzingMustTailForwardedRegs)
+    MF.getFrameInfo().ensureMaxAlignment(Alignment);
+}
+
 static bool isValueTypeInRegForCC(CallingConv::ID CC, MVT VT) {
   if (VT.isVector())
     return true; // Assume -msse-regparm might be in effect.
   if (!VT.isInteger())
     return false;
-  if (CC == CallingConv::X86_VectorCall || CC == CallingConv::X86_FastCall)
-    return true;
-  return false;
+  return (CC == CallingConv::X86_VectorCall || CC == CallingConv::X86_FastCall);
 }
 
 void CCState::getRemainingRegParmsForType(SmallVectorImpl<MCPhysReg> &Regs,
@@ -209,8 +211,8 @@ void CCState::getRemainingRegParmsForType(SmallVectorImpl<MCPhysReg> &Regs,
 
   // Allocate something of this value type repeatedly until we get assigned a
   // location in memory.
-  bool HaveRegParm = true;
-  while (HaveRegParm) {
+  bool HaveRegParm;
+  do {
     if (Fn(0, VT, VT, CCValAssign::Full, Flags, *this)) {
 #ifndef NDEBUG
       dbgs() << "Call has unhandled type " << EVT(VT).getEVTString()
@@ -219,7 +221,7 @@ void CCState::getRemainingRegParmsForType(SmallVectorImpl<MCPhysReg> &Regs,
       llvm_unreachable(nullptr);
     }
     HaveRegParm = Locs.back().isRegLoc();
-  }
+  } while (HaveRegParm);
 
   // Copy all the registers from the value locations we added.
   assert(NumLocs < Locs.size() && "CC assignment failed to add location");
@@ -250,7 +252,7 @@ void CCState::analyzeMustTailForwardedRegisters(
     const TargetLowering *TL = MF.getSubtarget().getTargetLowering();
     const TargetRegisterClass *RC = TL->getRegClassFor(RegVT);
     for (MCPhysReg PReg : RemainingRegs) {
-      unsigned VReg = MF.addLiveIn(PReg, RC);
+      Register VReg = MF.addLiveIn(PReg, RC);
       Forwards.push_back(ForwardedRegister(VReg, PReg, RegVT));
     }
   }

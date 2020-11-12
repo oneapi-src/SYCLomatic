@@ -72,6 +72,11 @@ class CGDebugInfo {
 #define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix)                   \
   llvm::DIType *SingletonId = nullptr;
 #include "clang/Basic/OpenCLImageTypes.def"
+#define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix)                   \
+  llvm::DIType *Sampled##SingletonId = nullptr;
+#define IMAGE_WRITE_TYPE(Type, Id, Ext)
+#define IMAGE_READ_WRITE_TYPE(Type, Id, Ext)
+#include "clang/Basic/OpenCLImageTypes.def"
   llvm::DIType *OCLSamplerDITy = nullptr;
   llvm::DIType *OCLEventDITy = nullptr;
   llvm::DIType *OCLClkEventDITy = nullptr;
@@ -490,6 +495,9 @@ public:
   /// Emit the type explicitly casted to.
   void EmitExplicitCastType(QualType Ty);
 
+  /// Emit the type even if it might not be used.
+  void EmitAndRetainType(QualType Ty);
+
   /// Emit C++ using declaration.
   void EmitUsingDecl(const UsingDecl &UD);
 
@@ -509,7 +517,7 @@ public:
   llvm::DIType *getOrCreateStandaloneType(QualType Ty, SourceLocation Loc);
 
   /// Add heapallocsite metadata for MSAllocator calls.
-  void addHeapAllocSiteMetadata(llvm::Instruction *CallSite, QualType Ty,
+  void addHeapAllocSiteMetadata(llvm::CallBase *CallSite, QualType AllocatedTy,
                                 SourceLocation Loc);
 
   void completeType(const EnumDecl *ED);

@@ -17,6 +17,7 @@
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
+#include "llvm/CodeGen/MachineCfgTraits.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/Support/GenericDomTree.h"
@@ -92,15 +93,6 @@ public:
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override;
-
-  /// getRoots -  Return the root blocks of the current CFG.  This may include
-  /// multiple blocks if we are computing post dominators.  For forward
-  /// dominators, this will always be a single block (the entry node).
-  ///
-  const SmallVectorImpl<MachineBasicBlock*> &getRoots() const {
-    applySplitCriticalEdges();
-    return DT->getRoots();
-  }
 
   MachineBasicBlock *getRoot() const {
     applySplitCriticalEdges();
@@ -270,7 +262,8 @@ template <class T> struct GraphTraits;
 template <>
 struct GraphTraits<MachineDomTreeNode *>
     : public MachineDomTreeGraphTraitsBase<MachineDomTreeNode,
-                                           MachineDomTreeNode::iterator> {};
+                                           MachineDomTreeNode::const_iterator> {
+};
 
 template <>
 struct GraphTraits<const MachineDomTreeNode *>

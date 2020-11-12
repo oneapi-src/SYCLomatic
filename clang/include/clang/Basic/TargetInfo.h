@@ -15,6 +15,7 @@
 #define LLVM_CLANG_BASIC_TARGETINFO_H
 
 #include "clang/Basic/AddressSpaces.h"
+#include "clang/Basic/CodeGenOptions.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/Specifiers.h"
@@ -29,6 +30,7 @@
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/Frontend/OpenMP/OMPGridValues.h"
 #include "llvm/Support/DataTypes.h"
 #include "llvm/Support/VersionTuple.h"
 #include <cassert>
@@ -59,6 +61,7 @@ struct TransferrableTargetInfo {
   unsigned char BoolWidth, BoolAlign;
   unsigned char IntWidth, IntAlign;
   unsigned char HalfWidth, HalfAlign;
+  unsigned char BFloat16Width, BFloat16Align;
   unsigned char FloatWidth, FloatAlign;
   unsigned char DoubleWidth, DoubleAlign;
   unsigned char LongDoubleWidth, LongDoubleAlign, Float128Align;
@@ -97,11 +100,11 @@ struct TransferrableTargetInfo {
   unsigned char MinGlobalAlign;
 
   unsigned short NewAlign;
-  unsigned short MaxVectorAlign;
-  unsigned short MaxTLSAlign;
+  unsigned MaxVectorAlign;
+  unsigned MaxTLSAlign;
 
-  const llvm::fltSemantics *HalfFormat, *FloatFormat, *DoubleFormat,
-    *LongDoubleFormat, *Float128Format;
+  const llvm::fltSemantics *HalfFormat, *BFloat16Format, *FloatFormat,
+    *DoubleFormat, *LongDoubleFormat, *Float128Format;
 
   ///===---- Target Data Type Query Methods -------------------------------===//
   enum IntType {
@@ -188,6 +191,8 @@ protected:
                          // LLVM IR type.
   bool HasFloat128;
   bool HasFloat16;
+  bool HasBFloat16;
+  bool HasStrictFP;
 
   unsigned char MaxAtomicPromoteWidth, MaxAtomicInlineWidth;
   unsigned short SimdDefaultAlign;
@@ -196,6 +201,9 @@ protected:
   unsigned char RegParmMax, SSERegParmMax;
   TargetCXXABI TheCXXABI;
   const LangASMap *AddrSpaceMap;
+  const unsigned *GridValues =
+      nullptr; // Array of target-specific GPU grid values that must be
+               // consistent between host RTL (plugin), device RTL, and clang.
 
   mutable StringRef PlatformName;
   mutable VersionTuple PlatformMinVersion;
@@ -567,6 +575,12 @@ public:
   /// Determine whether the _Float16 type is supported on this target.
   virtual bool hasFloat16Type() const { return HasFloat16; }
 
+  /// Determine whether the _BFloat16 type is supported on this target.
+  virtual bool hasBFloat16Type() const { return HasBFloat16; }
+
+  /// Determine whether constrained floating point is supported on this target.
+  virtual bool hasStrictFP() const { return HasStrictFP; }
+
   /// Return the alignment that is suitable for storing any
   /// object with a fundamental alignment requirement.
   unsigned getSuitableAlign() const { return SuitableAlign; }
@@ -615,6 +629,11 @@ public:
   unsigned getFloatAlign() const { return FloatAlign; }
   const llvm::fltSemantics &getFloatFormat() const { return *FloatFormat; }
 
+  /// getBFloat16Width/Align/Format - Return the size/align/format of '__bf16'.
+  unsigned getBFloat16Width() const { return BFloat16Width; }
+  unsigned getBFloat16Align() const { return BFloat16Align; }
+  const llvm::fltSemantics &getBFloat16Format() const { return *BFloat16Format; }
+
   /// getDoubleWidth/Align/Format - Return the size/align/format of 'double'.
   unsigned getDoubleWidth() const { return DoubleWidth; }
   unsigned getDoubleAlign() const { return DoubleAlign; }
@@ -641,6 +660,11 @@ public:
 
   /// Return the mangled code of __float128.
   virtual const char *getFloat128Mangling() const { return "g"; }
+
+  /// Return the mangled code of bfloat.
+  virtual const char *getBFloat16Mangling() const {
+    llvm_unreachable("bfloat not implemented on this target");
+  }
 
   /// Return the value for the C99 FLT_EVAL_METHOD macro.
   virtual unsigned getFloatEvalMethod() const { return 0; }
@@ -1037,6 +1061,9 @@ public:
     return Triple;
   }
 
+  /// Returns the target ID if supported.
+  virtual llvm::Optional<std::string> getTargetID() const { return llvm::None; }
+
   const llvm::DataLayout &getDataLayout() const {
     assert(DataLayout && "Uninitialized DataLayout!");
     return *DataLayout;
@@ -1116,9 +1143,25 @@ public:
   /// Fill a SmallVectorImpl with the valid values to setCPU.
   virtual void fillValidCPUList(SmallVectorImpl<StringRef> &Values) const {}
 
+  /// Fill a SmallVectorImpl with the valid values for tuning CPU.
+  virtual void fillValidTuneCPUList(SmallVectorImpl<StringRef> &Values) const {
+    fillValidCPUList(Values);
+  }
+
   /// brief Determine whether this TargetInfo supports the given CPU name.
   virtual bool isValidCPUName(StringRef Name) const {
     return true;
+  }
+
+  /// brief Determine whether this TargetInfo supports the given CPU name for
+  // tuning.
+  virtual bool isValidTuneCPUName(StringRef Name) const {
+    return isValidCPUName(Name);
+  }
+
+  /// brief Determine whether this TargetInfo supports tune in target attribute.
+  virtual bool supportsTargetAttributeTune() const {
+    return false;
   }
 
   /// Use the specified ABI.
@@ -1247,9 +1290,7 @@ public:
   ///
   /// Gets the maximum alignment (in bits) of a TLS variable on this target.
   /// Returns zero if there is no such constraint.
-  unsigned short getMaxTLSAlign() const {
-    return MaxTLSAlign;
-  }
+  unsigned getMaxTLSAlign() const { return MaxTLSAlign; }
 
   /// Whether target supports variable-length arrays.
   bool isVLASupported() const { return VLASupported; }
@@ -1304,6 +1345,12 @@ public:
   /// this may return None, and such optimizations will be disabled.
   virtual llvm::Optional<LangAS> getConstantAddressSpace() const {
     return LangAS::Default;
+  }
+
+  /// Return a target-specific GPU grid value based on the GVIDX enum \p gv
+  unsigned getGridValue(llvm::omp::GVIDX gv) const {
+    assert(GridValues != nullptr && "GridValues not initialized");
+    return GridValues[gv];
   }
 
   /// Retrieve the name of the platform as it is used in the
@@ -1370,6 +1417,9 @@ public:
 
   /// Whether target allows to overalign ABI-specified preferred alignment
   virtual bool allowsLargerPreferedTypeAlignment() const { return true; }
+
+  /// Whether target defaults to the `power` alignment rules of AIX.
+  virtual bool defaultsToAIXPowerAlignment() const { return false; }
 
   /// Set supported OpenCL extensions and optional core features.
   virtual void setSupportedOpenCLOpts() {}

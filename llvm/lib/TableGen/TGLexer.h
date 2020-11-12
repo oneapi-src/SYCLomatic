@@ -40,9 +40,10 @@ namespace tgtok {
     l_paren, r_paren,   // ( )
     less, greater,      // < >
     colon, semi,        // : ;
-    comma, period,      // , .
+    comma, dot,         // , .
     equal, question,    // = ?
     paste,              // #
+    dotdotdot,          // ...
 
     // Keywords. ('ElseKW' is named to distinguish it from the existing 'Else'
     // that means the preprocessor #else.)
@@ -50,9 +51,10 @@ namespace tgtok {
     MultiClass, String, Defset, Defvar, If, Then, ElseKW,
 
     // !keywords.
-    XConcat, XADD, XMUL, XAND, XOR, XSRA, XSRL, XSHL, XListConcat, XListSplat,
-    XStrConcat, XCast, XSubst, XForEach, XFoldl, XHead, XTail, XSize, XEmpty,
-    XIf, XCond, XEq, XIsA, XDag, XNe, XLe, XLt, XGe, XGt, XSetOp, XGetOp,
+    XConcat, XADD, XMUL, XNOT, XAND, XOR, XXOR, XSRA, XSRL, XSHL,
+    XListConcat, XListSplat, XStrConcat, XCast, XSubst, XForEach, XFoldl,
+    XHead, XTail, XSize, XEmpty, XIf, XCond, XEq, XIsA, XDag, XNe, XLe,
+    XLt, XGe, XGt, XSetOp, XGetOp,
 
     // Integer value.
     IntVal,

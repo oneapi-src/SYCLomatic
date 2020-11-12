@@ -26,24 +26,26 @@ using namespace llvm;
 using namespace dwarf;
 using namespace object;
 
-DWARFVerifier::DieRangeInfo::address_range_iterator
+Optional<DWARFAddressRange>
 DWARFVerifier::DieRangeInfo::insert(const DWARFAddressRange &R) {
   auto Begin = Ranges.begin();
   auto End = Ranges.end();
   auto Pos = std::lower_bound(Begin, End, R);
 
   if (Pos != End) {
-    if (Pos->intersects(R))
-      return std::move(Pos);
-    if (Pos != Begin) {
-      auto Iter = Pos - 1;
-      if (Iter->intersects(R))
-        return std::move(Iter);
-    }
+    DWARFAddressRange Range(*Pos);
+    if (Pos->merge(R))
+      return Range;
+  }
+  if (Pos != Begin) {
+    auto Iter = Pos - 1;
+    DWARFAddressRange Range(*Iter);
+    if (Iter->merge(R))
+      return Range;
   }
 
   Ranges.insert(Pos, R);
-  return Ranges.end();
+  return None;
 }
 
 DWARFVerifier::DieRangeInfo::die_range_info_iterator
@@ -133,7 +135,7 @@ bool DWARFVerifier::verifyUnitHeader(const DWARFDataExtractor DebugInfoData,
 
   ValidLength = DebugInfoData.isValidOffset(OffsetStart + Length + 3);
   ValidVersion = DWARFContext::isSupportedVersion(Version);
-  ValidAddrSize = AddrSize == 4 || AddrSize == 8;
+  ValidAddrSize = DWARFContext::isAddressSizeSupported(AddrSize);
   if (!ValidLength || !ValidVersion || !ValidAddrSize || !ValidAbbrevOffset ||
       !ValidType) {
     Success = false;
@@ -168,6 +170,15 @@ unsigned DWARFVerifier::verifyUnitContents(DWARFUnit &Unit) {
     for (auto AttrValue : Die.attributes()) {
       NumUnitErrors += verifyDebugInfoAttribute(Die, AttrValue);
       NumUnitErrors += verifyDebugInfoForm(Die, AttrValue);
+    }
+
+    if (Die.hasChildren()) {
+      if (Die.getFirstChild().isValid() &&
+          Die.getFirstChild().getTag() == DW_TAG_null) {
+        warn() << dwarf::TagString(Die.getTag())
+               << " has DW_CHILDREN_yes but DIE has no children: ";
+        Die.dump(OS);
+      }
     }
 
     NumUnitErrors += verifyDebugInfoCallSite(Die);
@@ -397,22 +408,30 @@ unsigned DWARFVerifier::verifyDieRanges(const DWARFDie &Die,
   // processing an object file.
 
   if (!IsObjectFile || IsMachOObject || Die.getTag() != DW_TAG_compile_unit) {
+    bool DumpDieAfterError = false;
     for (auto Range : Ranges) {
       if (!Range.valid()) {
         ++NumErrors;
         error() << "Invalid address range " << Range << "\n";
+        DumpDieAfterError = true;
         continue;
       }
 
-      // Verify that ranges don't intersect.
-      const auto IntersectingRange = RI.insert(Range);
-      if (IntersectingRange != RI.Ranges.end()) {
+      // Verify that ranges don't intersect and also build up the DieRangeInfo
+      // address ranges. Don't break out of the loop below early, or we will
+      // think this DIE doesn't have all of the address ranges it is supposed
+      // to have. Compile units often have DW_AT_ranges that can contain one or
+      // more dead stripped address ranges which tend to all be at the same
+      // address: 0 or -1.
+      if (auto PrevRange = RI.insert(Range)) {
         ++NumErrors;
-        error() << "DIE has overlapping address ranges: " << Range << " and "
-                << *IntersectingRange << "\n";
-        break;
+        error() << "DIE has overlapping ranges in DW_AT_ranges attribute: "
+                << *PrevRange << " and " << Range << '\n';
+        DumpDieAfterError = true;
       }
     }
+    if (DumpDieAfterError)
+      dump(Die, 2) << '\n';
   }
 
   // Verify that children don't intersect.
@@ -525,6 +544,39 @@ unsigned DWARFVerifier::verifyDebugInfoAttribute(const DWARFDie &Die,
     if (TypeDie && !isType(TypeDie.getTag())) {
       ReportError("DIE has " + AttributeString(Attr) +
                   " with incompatible tag " + TagString(TypeDie.getTag()));
+    }
+    break;
+  }
+  case DW_AT_call_file:
+  case DW_AT_decl_file: {
+    if (auto FileIdx = AttrValue.Value.getAsUnsignedConstant()) {
+      DWARFUnit *U = Die.getDwarfUnit();
+      const auto *LT = U->getContext().getLineTableForUnit(U);
+      if (LT) {
+        if (!LT->hasFileAtIndex(*FileIdx)) {
+          bool IsZeroIndexed = LT->Prologue.getVersion() >= 5;
+          if (Optional<uint64_t> LastFileIdx = LT->getLastValidFileIndex()) {
+            ReportError("DIE has " + AttributeString(Attr) +
+                        " with an invalid file index " +
+                        llvm::formatv("{0}", *FileIdx) +
+                        " (valid values are [" + (IsZeroIndexed ? "0-" : "1-") +
+                        llvm::formatv("{0}", *LastFileIdx) + "])");
+          } else {
+            ReportError("DIE has " + AttributeString(Attr) +
+                        " with an invalid file index " +
+                        llvm::formatv("{0}", *FileIdx) +
+                        " (the file table in the prologue is empty)");
+          }
+        }
+      } else {
+        ReportError("DIE has " + AttributeString(Attr) +
+                    " that references a file with index " +
+                    llvm::formatv("{0}", *FileIdx) +
+                    " and the compile unit has no line table");
+      }
+    } else {
+      ReportError("DIE has " + AttributeString(Attr) +
+                  " with invalid encoding");
     }
     break;
   }
@@ -763,7 +815,7 @@ void DWARFVerifier::verifyDebugLineRows() {
                 << "] row[" << RowIndex
                 << "] decreases in address from previous row:\n";
 
-        DWARFDebugLine::Row::dumpTableHeader(OS);
+        DWARFDebugLine::Row::dumpTableHeader(OS, 0);
         if (RowIndex > 0)
           LineTable->Rows[RowIndex - 1].dump(OS);
         Row.dump(OS);
@@ -781,7 +833,7 @@ void DWARFVerifier::verifyDebugLineRows() {
                 << " (valid values are [" << (isDWARF5 ? "0," : "1,")
                 << LineTable->Prologue.FileNames.size()
                 << (isDWARF5 ? ")" : "]") << "):\n";
-        DWARFDebugLine::Row::dumpTableHeader(OS);
+        DWARFDebugLine::Row::dumpTableHeader(OS, 0);
         Row.dump(OS);
         OS << '\n';
       }
@@ -1336,9 +1388,7 @@ unsigned DWARFVerifier::verifyNameIndexCompleteness(
   // "The name index must contain an entry for each debugging information entry
   // that defines a named subprogram, label, variable, type, or namespace,
   // subject to ..."
-  // Instead whitelisting all TAGs representing a "type" or a "subprogram", to
-  // make sure we catch any missing items, we instead blacklist all TAGs that we
-  // know shouldn't be indexed.
+  // Explicitly exclude all TAGs that we know shouldn't be indexed.
   switch (Die.getTag()) {
   // Compile units and modules have names but shouldn't be indexed.
   case DW_TAG_compile_unit:

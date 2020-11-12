@@ -3,7 +3,7 @@
 # An important constraint of the build is that it only produces libraries
 # based on the ability of the host toolchain to target various platforms.
 
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.13.4)
 
 if(POLICY CMP0075)
   cmake_policy(SET CMP0075 NEW)
@@ -45,6 +45,8 @@ option(COMPILER_RT_BUILD_LIBFUZZER "Build libFuzzer" ON)
 mark_as_advanced(COMPILER_RT_BUILD_LIBFUZZER)
 option(COMPILER_RT_BUILD_PROFILE "Build profile runtime" ON)
 mark_as_advanced(COMPILER_RT_BUILD_PROFILE)
+option(COMPILER_RT_BUILD_MEMPROF "Build memory profiling runtime" ON)
+mark_as_advanced(COMPILER_RT_BUILD_MEMPROF)
 option(COMPILER_RT_BUILD_XRAY_NO_PREINIT "Build xray with no preinit patching" OFF)
 mark_as_advanced(COMPILER_RT_BUILD_XRAY_NO_PREINIT)
 
@@ -81,38 +83,23 @@ if (COMPILER_RT_STANDALONE_BUILD)
     set_target_properties(intrinsics_gen PROPERTIES FOLDER "Compiler-RT Misc")
   endif()
 
-  if(CMAKE_VERSION VERSION_LESS 3.12)
-    # Find Python interpreter.
-    include(FindPythonInterp)
-    if(NOT PYTHONINTERP_FOUND)
-      message(FATAL_ERROR "
-        Unable to find Python interpreter required testing. Please install Python
-        or specify the PYTHON_EXECUTABLE CMake variable.")
+  find_package(Python3 COMPONENTS Interpreter)
+  if(NOT Python3_Interpreter_FOUND)
+    message(WARNING "Python3 not found, using python2 as a fallback")
+    find_package(Python2 COMPONENTS Interpreter REQUIRED)
+    if(Python2_VERSION VERSION_LESS 2.7)
+      message(SEND_ERROR "Python 2.7 or newer is required")
     endif()
 
+    # Treat python2 as python3
     add_executable(Python3::Interpreter IMPORTED)
     set_target_properties(Python3::Interpreter PROPERTIES
-      IMPORTED_LOCATION ${PYTHON_EXECUTABLE})
-    set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
-  else()
-    find_package(Python3 COMPONENTS Interpreter)
-    if(NOT Python3_Interpreter_FOUND)
-      message(WARNING "Python3 not found, using python2 as a fallback")
-      find_package(Python2 COMPONENTS Interpreter REQUIRED)
-      if(Python2_VERSION VERSION_LESS 2.7)
-        message(SEND_ERROR "Python 2.7 or newer is required")
-      endif()
-
-      # Treat python2 as python3
-      add_executable(Python3::Interpreter IMPORTED)
-      set_target_properties(Python3::Interpreter PROPERTIES
-        IMPORTED_LOCATION ${Python2_EXECUTABLE})
-      set(Python3_EXECUTABLE ${Python2_EXECUTABLE})
-    endif()
+      IMPORTED_LOCATION ${Python2_EXECUTABLE})
+    set(Python3_EXECUTABLE ${Python2_EXECUTABLE})
   endif()
 
   # Ensure that fat libraries are built correctly on Darwin
-  if(CMAKE_HOST_APPLE AND APPLE)
+  if(APPLE)
     include(UseLibtool)
   endif()
 
@@ -129,6 +116,7 @@ construct_compiler_rt_default_triple()
 if ("${COMPILER_RT_DEFAULT_TARGET_TRIPLE}" MATCHES ".*hf$")
   if (${COMPILER_RT_DEFAULT_TARGET_ARCH} MATCHES "^arm")
     set(COMPILER_RT_DEFAULT_TARGET_ARCH "armhf")
+    CHECK_SYMBOL_EXISTS (__thumb__ "" COMPILER_RT_ARM_THUMB)
   endif()
 endif()
 if ("${COMPILER_RT_DEFAULT_TARGET_TRIPLE}" MATCHES ".*android.*")
@@ -497,6 +485,15 @@ if (CMAKE_LINKER MATCHES "link.exe$")
   set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4221")
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+  set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> -X32_64 qc <TARGET> <LINK_FLAGS> <OBJECTS>")
+  set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> -X32_64 qc <TARGET> <LINK_FLAGS> <OBJECTS>")
+  set(CMAKE_C_ARCHIVE_APPEND "<CMAKE_AR> -X32_64 q <TARGET> <LINK_FLAGS> <OBJECTS>")
+  set(CMAKE_CXX_ARCHIVE_APPEND "<CMAKE_AR> -X32_64 q <TARGET> <LINK_FLAGS> <OBJECTS>")
+  set(CMAKE_C_ARCHIVE_FINISH "<CMAKE_RANLIB> -X32_64 <TARGET>")
+  set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -X32_64 <TARGET>")
+endif()
+
 add_subdirectory(include)
 
 option(COMPILER_RT_USE_LIBCXX
@@ -535,8 +532,6 @@ else()
   set(COMPILER_RT_LLD_PATH ${LLVM_MAIN_SRC_DIR}/../lld)
   if(EXISTS ${COMPILER_RT_LLD_PATH}/ AND LLVM_TOOL_LLD_BUILD)
     set(COMPILER_RT_HAS_LLD TRUE)
-  else()
-    set(COMPILER_RT_HAS_LLD ${COMPILER_RT_HAS_FUSE_LD_LLD_FLAG})
   endif()
 endif()
 pythonize_bool(COMPILER_RT_HAS_LLD)
@@ -546,7 +541,8 @@ add_subdirectory(lib)
 if(COMPILER_RT_INCLUDE_TESTS)
   add_subdirectory(unittests)
   add_subdirectory(test)
-  if (COMPILER_RT_STANDALONE_BUILD)
+  # Don't build llvm-lit for runtimes-build, it will clean up map_config.
+  if (COMPILER_RT_STANDALONE_BUILD AND NOT RUNTIMES_BUILD)
     # If we have a valid source tree, generate llvm-lit into the bin directory.
     # The user can still choose to have the check targets *use* a different lit
     # by specifying -DLLVM_EXTERNAL_LIT, but we generate it regardless.

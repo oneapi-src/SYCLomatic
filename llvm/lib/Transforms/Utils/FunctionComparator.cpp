@@ -329,8 +329,8 @@ int FunctionComparator::cmpConstants(const Constant *L,
   case Value::ConstantVectorVal: {
     const ConstantVector *LV = cast<ConstantVector>(L);
     const ConstantVector *RV = cast<ConstantVector>(R);
-    unsigned NumElementsL = cast<VectorType>(TyL)->getNumElements();
-    unsigned NumElementsR = cast<VectorType>(TyR)->getNumElements();
+    unsigned NumElementsL = cast<FixedVectorType>(TyL)->getNumElements();
+    unsigned NumElementsR = cast<FixedVectorType>(TyR)->getNumElements();
     if (int Res = cmpNumbers(NumElementsL, NumElementsR))
       return Res;
     for (uint64_t i = 0; i < NumElementsL; ++i) {
@@ -488,12 +488,13 @@ int FunctionComparator::cmpTypes(Type *TyL, Type *TyR) const {
   case Type::ScalableVectorTyID: {
     auto *STyL = cast<VectorType>(TyL);
     auto *STyR = cast<VectorType>(TyR);
-    if (STyL->getElementCount().Scalable != STyR->getElementCount().Scalable)
-      return cmpNumbers(STyL->getElementCount().Scalable,
-                        STyR->getElementCount().Scalable);
-    if (STyL->getElementCount().Min != STyR->getElementCount().Min)
-      return cmpNumbers(STyL->getElementCount().Min,
-                        STyR->getElementCount().Min);
+    if (STyL->getElementCount().isScalable() !=
+        STyR->getElementCount().isScalable())
+      return cmpNumbers(STyL->getElementCount().isScalable(),
+                        STyR->getElementCount().isScalable());
+    if (STyL->getElementCount() != STyR->getElementCount())
+      return cmpNumbers(STyL->getElementCount().getKnownMinValue(),
+                        STyR->getElementCount().getKnownMinValue());
     return cmpTypes(STyL->getElementType(), STyR->getElementType());
   }
   }

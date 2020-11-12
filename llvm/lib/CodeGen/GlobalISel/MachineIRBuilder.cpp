@@ -9,8 +9,8 @@
 /// This file implements the MachineIRBuidler class.
 //===----------------------------------------------------------------------===//
 #include "llvm/CodeGen/GlobalISel/MachineIRBuilder.h"
+#include "llvm/Analysis/MemoryLocation.h"
 #include "llvm/CodeGen/GlobalISel/GISelChangeObserver.h"
-
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
@@ -33,47 +33,9 @@ void MachineIRBuilder::setMF(MachineFunction &MF) {
   State.Observer = nullptr;
 }
 
-void MachineIRBuilder::setMBB(MachineBasicBlock &MBB) {
-  State.MBB = &MBB;
-  State.II = MBB.end();
-  assert(&getMF() == MBB.getParent() &&
-         "Basic block is in a different function");
-}
-
-void MachineIRBuilder::setInstr(MachineInstr &MI) {
-  assert(MI.getParent() && "Instruction is not part of a basic block");
-  setMBB(*MI.getParent());
-  State.II = MI.getIterator();
-}
-
-void MachineIRBuilder::setCSEInfo(GISelCSEInfo *Info) { State.CSEInfo = Info; }
-
-void MachineIRBuilder::setInsertPt(MachineBasicBlock &MBB,
-                                   MachineBasicBlock::iterator II) {
-  assert(MBB.getParent() == &getMF() &&
-         "Basic block is in a different function");
-  State.MBB = &MBB;
-  State.II = II;
-}
-
-void MachineIRBuilder::recordInsertion(MachineInstr *InsertedInstr) const {
-  if (State.Observer)
-    State.Observer->createdInstr(*InsertedInstr);
-}
-
-void MachineIRBuilder::setChangeObserver(GISelChangeObserver &Observer) {
-  State.Observer = &Observer;
-}
-
-void MachineIRBuilder::stopObservingChanges() { State.Observer = nullptr; }
-
 //------------------------------------------------------------------------------
 // Build instruction variants.
 //------------------------------------------------------------------------------
-
-MachineInstrBuilder MachineIRBuilder::buildInstr(unsigned Opcode) {
-  return insertInstr(buildInstrNoInsert(Opcode));
-}
 
 MachineInstrBuilder MachineIRBuilder::buildInstrNoInsert(unsigned Opcode) {
   MachineInstrBuilder MIB = BuildMI(getMF(), getDL(), getTII().get(Opcode));
@@ -135,7 +97,7 @@ MachineInstrBuilder MachineIRBuilder::buildConstDbgValue(const Constant &C,
   assert(
       cast<DILocalVariable>(Variable)->isValidLocationForIntrinsic(getDL()) &&
       "Expected inlined-at fields to agree");
-  auto MIB = buildInstr(TargetOpcode::DBG_VALUE);
+  auto MIB = buildInstrNoInsert(TargetOpcode::DBG_VALUE);
   if (auto *CI = dyn_cast<ConstantInt>(&C)) {
     if (CI->getBitWidth() > 64)
       MIB.addCImm(CI);
@@ -144,11 +106,12 @@ MachineInstrBuilder MachineIRBuilder::buildConstDbgValue(const Constant &C,
   } else if (auto *CFP = dyn_cast<ConstantFP>(&C)) {
     MIB.addFPImm(CFP);
   } else {
-    // Insert %noreg if we didn't find a usable constant and had to drop it.
-    MIB.addReg(0U);
+    // Insert $noreg if we didn't find a usable constant and had to drop it.
+    MIB.addReg(Register());
   }
 
-  return MIB.addImm(0).addMetadata(Variable).addMetadata(Expr);
+  MIB.addImm(0).addMetadata(Variable).addMetadata(Expr);
+  return insertInstr(MIB);
 }
 
 MachineInstrBuilder MachineIRBuilder::buildDbgLabel(const MDNode *Label) {
@@ -197,6 +160,11 @@ MachineInstrBuilder MachineIRBuilder::buildJumpTable(const LLT PtrTy,
                                                      unsigned JTI) {
   return buildInstr(TargetOpcode::G_JUMP_TABLE, {PtrTy}, {})
       .addJumpTableIndex(JTI);
+}
+
+void MachineIRBuilder::validateUnaryOp(const LLT Res, const LLT Op0) {
+  assert((Res.isScalar() || Res.isVector()) && "invalid operand type");
+  assert((Res == Op0) && "type mismatch");
 }
 
 void MachineIRBuilder::validateBinaryOp(const LLT Res, const LLT Op0,
@@ -349,17 +317,29 @@ MachineInstrBuilder MachineIRBuilder::buildFConstant(const DstOp &Res,
   return buildFConstant(Res, *CFP);
 }
 
-MachineInstrBuilder MachineIRBuilder::buildBrCond(Register Tst,
+MachineInstrBuilder MachineIRBuilder::buildBrCond(const SrcOp &Tst,
                                                   MachineBasicBlock &Dest) {
-  assert(getMRI()->getType(Tst).isScalar() && "invalid operand type");
+  assert(Tst.getLLTTy(*getMRI()).isScalar() && "invalid operand type");
 
-  return buildInstr(TargetOpcode::G_BRCOND).addUse(Tst).addMBB(&Dest);
+  auto MIB = buildInstr(TargetOpcode::G_BRCOND);
+  Tst.addSrcToMIB(MIB);
+  MIB.addMBB(&Dest);
+  return MIB;
 }
 
-MachineInstrBuilder MachineIRBuilder::buildLoad(const DstOp &Res,
-                                                const SrcOp &Addr,
-                                                MachineMemOperand &MMO) {
-  return buildLoadInstr(TargetOpcode::G_LOAD, Res, Addr, MMO);
+MachineInstrBuilder
+MachineIRBuilder::buildLoad(const DstOp &Dst, const SrcOp &Addr,
+                            MachinePointerInfo PtrInfo, Align Alignment,
+                            MachineMemOperand::Flags MMOFlags,
+                            const AAMDNodes &AAInfo) {
+  MMOFlags |= MachineMemOperand::MOLoad;
+  assert((MMOFlags & MachineMemOperand::MOStore) == 0);
+
+  uint64_t Size = MemoryLocation::getSizeOrUnknown(
+      TypeSize::Fixed(Dst.getLLTTy(*getMRI()).getSizeInBytes()));
+  MachineMemOperand *MMO =
+      getMF().getMachineMemOperand(PtrInfo, MMOFlags, Size, Alignment, AAInfo);
+  return buildLoad(Dst, Addr, *MMO);
 }
 
 MachineInstrBuilder MachineIRBuilder::buildLoadInstr(unsigned Opcode,
@@ -376,6 +356,23 @@ MachineInstrBuilder MachineIRBuilder::buildLoadInstr(unsigned Opcode,
   return MIB;
 }
 
+MachineInstrBuilder MachineIRBuilder::buildLoadFromOffset(
+  const DstOp &Dst, const SrcOp &BasePtr,
+  MachineMemOperand &BaseMMO, int64_t Offset) {
+  LLT LoadTy = Dst.getLLTTy(*getMRI());
+  MachineMemOperand *OffsetMMO =
+    getMF().getMachineMemOperand(&BaseMMO, Offset, LoadTy.getSizeInBytes());
+
+  if (Offset == 0) // This may be a size or type changing load.
+    return buildLoad(Dst, BasePtr, *OffsetMMO);
+
+  LLT PtrTy = BasePtr.getLLTTy(*getMRI());
+  LLT OffsetTy = LLT::scalar(PtrTy.getSizeInBits());
+  auto ConstOffset = buildConstant(OffsetTy, Offset);
+  auto Ptr = buildPtrAdd(PtrTy, BasePtr, ConstOffset);
+  return buildLoad(Dst, Ptr, *OffsetMMO);
+}
+
 MachineInstrBuilder MachineIRBuilder::buildStore(const SrcOp &Val,
                                                  const SrcOp &Addr,
                                                  MachineMemOperand &MMO) {
@@ -387,6 +384,21 @@ MachineInstrBuilder MachineIRBuilder::buildStore(const SrcOp &Val,
   Addr.addSrcToMIB(MIB);
   MIB.addMemOperand(&MMO);
   return MIB;
+}
+
+MachineInstrBuilder
+MachineIRBuilder::buildStore(const SrcOp &Val, const SrcOp &Addr,
+                             MachinePointerInfo PtrInfo, Align Alignment,
+                             MachineMemOperand::Flags MMOFlags,
+                             const AAMDNodes &AAInfo) {
+  MMOFlags |= MachineMemOperand::MOStore;
+  assert((MMOFlags & MachineMemOperand::MOLoad) == 0);
+
+  uint64_t Size = MemoryLocation::getSizeOrUnknown(
+      TypeSize::Fixed(Val.getLLTTy(*getMRI()).getSizeInBytes()));
+  MachineMemOperand *MMO =
+      getMF().getMachineMemOperand(PtrInfo, MMOFlags, Size, Alignment, AAInfo);
+  return buildStore(Val, Addr, *MMO);
 }
 
 MachineInstrBuilder MachineIRBuilder::buildAnyExt(const DstOp &Res,
@@ -945,6 +957,14 @@ MachineInstrBuilder MachineIRBuilder::buildInstr(unsigned Opc,
         SrcOps[1].getLLTTy(*getMRI()), SrcOps[2].getLLTTy(*getMRI()));
     break;
   }
+  case TargetOpcode::G_FNEG:
+  case TargetOpcode::G_ABS:
+    // All these are unary ops.
+    assert(DstOps.size() == 1 && "Invalid Dst");
+    assert(SrcOps.size() == 1 && "Invalid Srcs");
+    validateUnaryOp(DstOps[0].getLLTTy(*getMRI()),
+                    SrcOps[0].getLLTTy(*getMRI()));
+    break;
   case TargetOpcode::G_ADD:
   case TargetOpcode::G_AND:
   case TargetOpcode::G_MUL:
@@ -973,7 +993,9 @@ MachineInstrBuilder MachineIRBuilder::buildInstr(unsigned Opc,
   }
   case TargetOpcode::G_SHL:
   case TargetOpcode::G_ASHR:
-  case TargetOpcode::G_LSHR: {
+  case TargetOpcode::G_LSHR:
+  case TargetOpcode::G_USHLSAT:
+  case TargetOpcode::G_SSHLSAT: {
     assert(DstOps.size() == 1 && "Invalid Dst");
     assert(SrcOps.size() == 2 && "Invalid Srcs");
     validateShiftOp(DstOps[0].getLLTTy(*getMRI()),

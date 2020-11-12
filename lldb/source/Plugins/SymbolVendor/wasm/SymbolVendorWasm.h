@@ -33,9 +33,6 @@ public:
   lldb_private::ConstString GetPluginName() override;
   uint32_t GetPluginVersion() override;
   /// \}
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(SymbolVendorWasm);
 };
 
 } // namespace wasm

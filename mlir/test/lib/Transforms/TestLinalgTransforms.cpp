@@ -11,9 +11,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
+#include "mlir/Dialect/GPU/GPUDialect.h"
 #include "mlir/Dialect/Linalg/IR/LinalgOps.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/Linalg/Utils/Utils.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Vector/VectorOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
@@ -28,6 +30,16 @@ struct TestLinalgTransforms
     : public PassWrapper<TestLinalgTransforms, FunctionPass> {
   TestLinalgTransforms() = default;
   TestLinalgTransforms(const TestLinalgTransforms &pass) {}
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    // clang-format off
+    registry.insert<AffineDialect,
+                    scf::SCFDialect,
+                    StandardOpsDialect,
+                    vector::VectorDialect,
+                    gpu::GPUDialect>();
+    // clang-format on
+  }
 
   void runOnFunction() override;
 
@@ -49,10 +61,23 @@ struct TestLinalgTransforms
   Option<bool> testPromotionOptions{*this, "test-linalg-promotion-options",
                                     llvm::cl::desc("Test promotion options"),
                                     llvm::cl::init(false)};
+  Option<bool> testTileAndDistributionOptions{
+      *this, "test-tile-and-distribute-options",
+      llvm::cl::desc("Test tile and distribute options"),
+      llvm::cl::init(false)};
   Option<bool> testVectorTransferForwardingPatterns{
       *this, "test-vector-transfer-forwarding-patterns",
       llvm::cl::desc(
           "Test a fused pass that forwards linalg.copy to vector.transfer"),
+      llvm::cl::init(false)};
+  Option<bool> testGenericToVectorPattern{
+      *this, "test-contraction-to-vector-patterns",
+      llvm::cl::desc("Test a set of patterns that rewrite a linalg contraction "
+                     "in vector.contract form"),
+      llvm::cl::init(false)};
+  Option<bool> testAffineMinSCFCanonicalizationPatterns{
+      *this, "test-affine-min-scf-canonicalization-patterns",
+      llvm::cl::desc("Test affine-min + scf canonicalization patterns."),
       llvm::cl::init(false)};
 };
 } // end anonymous namespace
@@ -66,26 +91,29 @@ static void applyPatterns(FuncOp funcOp) {
   //===--------------------------------------------------------------------===//
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx, LinalgTilingOptions().setTileSizes({2000, 3000, 4000}),
-      LinalgMarker({"MEM", {}}, "L3"));
+      LinalgMarker(Identifier::get("MEM", ctx), Identifier::get("L3", ctx)));
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx, LinalgTilingOptions().setTileSizes({200, 300, 400}),
-      LinalgMarker({"L3"}, "L2"));
+      LinalgMarker(Identifier::get("L3", ctx), Identifier::get("L2", ctx)));
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx, LinalgTilingOptions().setTileSizes({20, 30, 40}),
-      LinalgMarker({"L2"}, "L1"));
+      LinalgMarker(Identifier::get("L2", ctx), Identifier::get("L1", ctx)));
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx, LinalgTilingOptions().setTileSizes({2, 3, 4}),
-      LinalgMarker({"L1"}, "REG"));
+      LinalgMarker(Identifier::get("L1", ctx), Identifier::get("REG", ctx)));
 
   patterns.insert<LinalgTilingPattern<MatvecOp>>(
       ctx,
       LinalgTilingOptions().setTileSizes({5, 6}).setLoopType(
           LinalgTilingLoopType::ParallelLoops),
-      LinalgMarker({}, "L1"));
+      LinalgMarker({}, Identifier::get("L1", ctx)));
 
   patterns.insert<LinalgTilingPattern<DotOp>>(
       ctx, LinalgTilingOptions().setTileSizes(8000),
-      LinalgMarker({"MEM", "L3", "L2", {}}, "REG"));
+      LinalgMarker(ArrayRef<Identifier>{Identifier::get("MEM", ctx),
+                                        Identifier::get("L3", ctx),
+                                        Identifier::get("L2", ctx)},
+                   Identifier::get("REG", ctx)));
 
   //===--------------------------------------------------------------------===//
   // Linalg tiling and permutation patterns.
@@ -95,20 +123,24 @@ static void applyPatterns(FuncOp funcOp) {
       LinalgTilingOptions()
           .setTileSizes({2000, 3000, 4000})
           .setInterchange({1, 2, 0}),
-      LinalgMarker({"__with_perm__"}, "L2__with_perm__"));
+      LinalgMarker(Identifier::get("__with_perm__", ctx),
+                   Identifier::get("L2__with_perm__", ctx)));
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx,
       LinalgTilingOptions()
           .setTileSizes({200, 300, 400})
           .setInterchange({1, 0, 2}),
-      LinalgMarker({"L2__with_perm__"}, "L1__with_perm__"));
+      LinalgMarker(Identifier::get("L2__with_perm__", ctx),
+                   Identifier::get("L1__with_perm__", ctx)));
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx, LinalgTilingOptions().setTileSizes({20, 30, 40}),
-      LinalgMarker({"L1__with_perm__"}, "REG__with_perm__"));
+      LinalgMarker(Identifier::get("L1__with_perm__", ctx),
+                   Identifier::get("REG__with_perm__", ctx)));
 
   patterns.insert<LinalgTilingPattern<MatvecOp>>(
       ctx, LinalgTilingOptions().setTileSizes({5, 6}).setInterchange({1, 0}),
-      LinalgMarker({"__with_perm__"}, "L1__with_perm__"));
+      LinalgMarker(Identifier::get("__with_perm__", ctx),
+                   Identifier::get("L1__with_perm__", ctx)));
 
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
       ctx,
@@ -116,22 +148,30 @@ static void applyPatterns(FuncOp funcOp) {
           .setTileSizes({16, 8, 4})
           .setInterchange({1, 2, 0})
           .setLoopType(LinalgTilingLoopType::ParallelLoops),
-      LinalgMarker({"par__with_perm__"}, "after_par__with_perm__"));
+      LinalgMarker(Identifier::get("par__with_perm__", ctx),
+                   Identifier::get("after_par__with_perm__", ctx)));
 
   //===--------------------------------------------------------------------===//
   // Linalg to loops patterns.
   //===--------------------------------------------------------------------===//
   patterns.insert<LinalgLoweringPattern<DotOp>>(
       ctx,
-      /*loweringType=*/LinalgLoweringType::Loops, LinalgMarker({"REG"}));
+      /*loweringType=*/LinalgLoweringType::Loops,
+      LinalgMarker(Identifier::get("REG", ctx)));
+
+  //===--------------------------------------------------------------------===//
+  // Linalg distribution patterns.
+  //===--------------------------------------------------------------------===//
+  LinalgLoopDistributionOptions distributionOptions;
 
   //===--------------------------------------------------------------------===//
   // Linalg to vector contraction patterns.
   //===--------------------------------------------------------------------===//
   patterns.insert<LinalgVectorizationPattern<MatmulOp>,
                   LinalgVectorizationPattern<FillOp>,
+                  LinalgVectorizationPattern<CopyOp>,
                   LinalgVectorizationPattern<GenericOp>>(
-      ctx, LinalgMarker({"VECTORIZE"}));
+      ctx, LinalgMarker(Identifier::get("VECTORIZE", ctx)));
 
   //===--------------------------------------------------------------------===//
   // Linalg generic permutation patterns.
@@ -139,31 +179,34 @@ static void applyPatterns(FuncOp funcOp) {
   patterns.insert<LinalgInterchangePattern<GenericOp>>(
       ctx,
       /*interchangeVector=*/ArrayRef<unsigned>{1, 2, 0},
-      LinalgMarker({}, "PERMUTED"));
+      LinalgMarker({}, Identifier::get("PERMUTED", ctx)));
   patterns.insert<LinalgInterchangePattern<IndexedGenericOp>>(
       ctx,
       /*interchangeVector=*/ArrayRef<unsigned>{1, 2, 0},
-      LinalgMarker({}, "PERMUTED"));
+      LinalgMarker({}, Identifier::get("PERMUTED", ctx)));
 
   //===--------------------------------------------------------------------===//
   // Linalg subview operands promotion.
   //===--------------------------------------------------------------------===//
   patterns.insert<LinalgPromotionPattern<MatmulOp>>(
-      ctx, LinalgPromotionOptions().useFullTileBuffersByDefault(),
-      LinalgMarker({"_promote_views_"}, "_views_promoted_"));
+      ctx, LinalgPromotionOptions().setUseFullTileBuffersByDefault(true),
+      LinalgMarker(Identifier::get("_promote_views_", ctx),
+                   Identifier::get("_views_promoted_", ctx)));
   patterns.insert<LinalgPromotionPattern<MatmulOp>>(
       ctx,
       LinalgPromotionOptions()
           .setOperandsToPromote({0})
-          .useFullTileBuffersByDefault(),
-      LinalgMarker({"_promote_first_view_"}, "_first_view_promoted_"));
+          .setUseFullTileBuffersByDefault(true),
+      LinalgMarker(Identifier::get("_promote_first_view_", ctx),
+                   Identifier::get("_first_view_promoted_", ctx)));
   patterns.insert<LinalgPromotionPattern<FillOp>>(
       ctx,
       LinalgPromotionOptions()
           .setOperandsToPromote({0})
           .setUseFullTileBuffers({true})
           .setAlignment(32),
-      LinalgMarker({"_promote_views_aligned_"}, "_views_aligned_promoted_"));
+      LinalgMarker(Identifier::get("_promote_views_aligned_", ctx),
+                   Identifier::get("_views_aligned_promoted_", ctx)));
 
   applyPatternsAndFoldGreedily(funcOp, patterns);
 
@@ -176,21 +219,22 @@ static void applyPatterns(FuncOp funcOp) {
 static void fillL1TilingAndMatmulToVectorPatterns(
     FuncOp funcOp, StringRef startMarker,
     SmallVectorImpl<OwningRewritePatternList> &patternsVector) {
-  MLIRContext *context = funcOp.getContext();
+  MLIRContext *ctx = funcOp.getContext();
   patternsVector.emplace_back(LinalgTilingPattern<MatmulOp>(
-      context,
+      ctx,
       LinalgTilingOptions().setTileSizes({8, 12, 16}).setInterchange({1, 0, 2}),
-      LinalgMarker({startMarker}, "L1")));
+      LinalgMarker(Identifier::get(startMarker, ctx),
+                   Identifier::get("L1", ctx))));
 
   patternsVector.emplace_back(LinalgPromotionPattern<MatmulOp>(
-      context, LinalgPromotionOptions().useFullTileBuffersByDefault(),
-      LinalgMarker({"L1"}, "VEC")));
+      ctx, LinalgPromotionOptions().setUseFullTileBuffersByDefault(true),
+      LinalgMarker(Identifier::get("L1", ctx), Identifier::get("VEC", ctx))));
 
-  patternsVector.emplace_back(
-      LinalgVectorizationPattern<MatmulOp>(context, LinalgMarker({"VEC"})));
+  patternsVector.emplace_back(LinalgVectorizationPattern<MatmulOp>(
+      ctx, LinalgMarker(Identifier::get("VEC", ctx))));
   patternsVector.back()
       .insert<LinalgVectorizationPattern<FillOp>,
-              LinalgVectorizationPattern<CopyOp>>(context);
+              LinalgVectorizationPattern<CopyOp>>(ctx);
 }
 
 //===----------------------------------------------------------------------===//
@@ -231,13 +275,14 @@ static LogicalResult copyCallBackFn(OpBuilder &b, Value src, Value dst,
   return success();
 }
 
-void fillPromotionCallBackPatterns(MLIRContext *context,
-                                   OwningRewritePatternList &patterns) {
+static void fillPromotionCallBackPatterns(MLIRContext *ctx,
+                                          OwningRewritePatternList &patterns) {
   patterns.insert<LinalgTilingPattern<MatmulOp>>(
-      context, LinalgTilingOptions().setTileSizes({16, 16, 16}),
-      LinalgMarker({"START"}, "PROMOTE"));
+      ctx, LinalgTilingOptions().setTileSizes({16, 16, 16}),
+      LinalgMarker(Identifier::get("START", ctx),
+                   Identifier::get("PROMOTE", ctx)));
   patterns.insert<LinalgPromotionPattern<MatmulOp>>(
-      context,
+      ctx,
       LinalgPromotionOptions()
           .setOperandsToPromote({0, 2})
           .setUseFullTileBuffers({false, false})
@@ -251,7 +296,119 @@ void fillPromotionCallBackPatterns(MLIRContext *context,
                 copyCallBackFn(b, src, dst, true);
                 return success();
               }),
-      LinalgMarker({"PROMOTE"}));
+      LinalgMarker(Identifier::get("PROMOTE", ctx)));
+}
+
+template <typename IdOp, typename NProcsOp>
+static SmallVector<ProcInfo, 2>
+getGpuProcIds(OpBuilder &b, Location loc, ArrayRef<Range> parallelLoopRanges) {
+  Type indexType = b.getIndexType();
+  SmallVector<ProcInfo, 2> procInfo(2);
+  procInfo[0] = {b.create<IdOp>(loc, indexType, b.getStringAttr("y")),
+                 b.create<NProcsOp>(loc, indexType, b.getStringAttr("y"))};
+  procInfo[1] = {b.create<IdOp>(loc, indexType, b.getStringAttr("x")),
+                 b.create<NProcsOp>(loc, indexType, b.getStringAttr("x"))};
+  return procInfo;
+}
+
+static void fillTileAndDistributePatterns(MLIRContext *context,
+                                          OwningRewritePatternList &patterns) {
+  {
+    LinalgLoopDistributionOptions cyclicNprocsEqNiters;
+    cyclicNprocsEqNiters.distributionMethod.resize(
+        2, DistributionMethod::CyclicNumProcsEqNumIters);
+    cyclicNprocsEqNiters.procInfo =
+        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsEqNiters),
+        LinalgMarker(Identifier::get("distribute1", context),
+                     Identifier::get("after_distribute1", context)));
+  }
+
+  {
+    LinalgLoopDistributionOptions cyclicNprocsGeNiters;
+    cyclicNprocsGeNiters.distributionMethod.resize(
+        2, DistributionMethod::CyclicNumProcsGeNumIters);
+    cyclicNprocsGeNiters.procInfo =
+        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsGeNiters),
+        LinalgMarker(Identifier::get("distribute2", context),
+                     Identifier::get("after_distribute2", context)));
+  }
+
+  {
+    LinalgLoopDistributionOptions cyclicNprocsDefault;
+    cyclicNprocsDefault.distributionMethod.resize(2,
+                                                  DistributionMethod::Cyclic);
+    cyclicNprocsDefault.procInfo =
+        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsDefault),
+        LinalgMarker(Identifier::get("distribute3", context),
+                     Identifier::get("after_distribute3", context)));
+  }
+
+  {
+    LinalgLoopDistributionOptions cyclicNprocsMixed1;
+    cyclicNprocsMixed1.distributionMethod = {
+        DistributionMethod::CyclicNumProcsEqNumIters,
+        DistributionMethod::CyclicNumProcsGeNumIters};
+    cyclicNprocsMixed1.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsMixed1),
+        LinalgMarker(Identifier::get("distribute4", context),
+                     Identifier::get("after_distribute4", context)));
+  }
+
+  {
+    LinalgLoopDistributionOptions cyclicNprocsMixed2;
+    cyclicNprocsMixed2.distributionMethod = {
+        DistributionMethod::CyclicNumProcsGeNumIters,
+        DistributionMethod::Cyclic};
+    cyclicNprocsMixed2.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsMixed2),
+        LinalgMarker(Identifier::get("distribute5", context),
+                     Identifier::get("after_distribute5", context)));
+  }
+
+  {
+    LinalgLoopDistributionOptions cyclicNprocsMixed3;
+    cyclicNprocsMixed3.distributionMethod = {
+        DistributionMethod::Cyclic,
+        DistributionMethod::CyclicNumProcsEqNumIters};
+    cyclicNprocsMixed3.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+
+    patterns.insert<LinalgTilingPattern<MatmulOp>>(
+        context,
+        LinalgTilingOptions()
+            .setTileSizes({8, 8, 4})
+            .setLoopType(LinalgTilingLoopType::ParallelLoops)
+            .setDistributionOptions(cyclicNprocsMixed3),
+        LinalgMarker(Identifier::get("distribute6", context),
+                     Identifier::get("after_distribute6", context)));
+  }
 }
 
 static void
@@ -261,15 +418,18 @@ applyMatmulToVectorPatterns(FuncOp funcOp,
   MLIRContext *ctx = funcOp.getContext();
   SmallVector<OwningRewritePatternList, 4> stage1Patterns;
   if (testMatmulToVectorPatterns1dTiling) {
-    fillL1TilingAndMatmulToVectorPatterns(funcOp, "START", stage1Patterns);
+    fillL1TilingAndMatmulToVectorPatterns(funcOp, Identifier::get("START", ctx),
+                                          stage1Patterns);
   } else if (testMatmulToVectorPatterns2dTiling) {
-    stage1Patterns.emplace_back(
-        LinalgTilingPattern<MatmulOp>(ctx,
-                                      LinalgTilingOptions()
-                                          .setTileSizes({768, 264, 768})
-                                          .setInterchange({1, 2, 0}),
-                                      LinalgMarker({"START"}, "L2")));
-    fillL1TilingAndMatmulToVectorPatterns(funcOp, "L2", stage1Patterns);
+    stage1Patterns.emplace_back(LinalgTilingPattern<MatmulOp>(
+        ctx,
+        LinalgTilingOptions()
+            .setTileSizes({768, 264, 768})
+            .setInterchange({1, 2, 0}),
+        LinalgMarker(Identifier::get("START", ctx),
+                     Identifier::get("L2", ctx))));
+    fillL1TilingAndMatmulToVectorPatterns(funcOp, Identifier::get("L2", ctx),
+                                          stage1Patterns);
   }
   OwningRewritePatternList stage2Patterns =
       getLinalgTilingCanonicalizationPatterns(ctx);
@@ -283,6 +443,26 @@ static void applyVectorTransferForwardingPatterns(FuncOp funcOp) {
   applyPatternsAndFoldGreedily(funcOp, forwardPattern);
 }
 
+static void applyContractionToVectorPatterns(FuncOp funcOp) {
+  OwningRewritePatternList patterns;
+  patterns.insert<LinalgVectorizationPattern<BatchMatmulOp>,
+                  LinalgVectorizationPattern<MatmulOp>,
+                  LinalgVectorizationPattern<MatvecOp>,
+                  LinalgVectorizationPattern<VecmatOp>,
+                  LinalgVectorizationPattern<DotOp>,
+                  LinalgVectorizationPattern<GenericOp>>(funcOp.getContext());
+  applyPatternsAndFoldGreedily(funcOp, patterns);
+}
+
+static void applyAffineMinSCFCanonicalizationPatterns(FuncOp funcOp) {
+  OwningRewritePatternList foldPattern;
+  foldPattern.insert<AffineMinSCFCanonicalizationPattern>(funcOp.getContext());
+  // Explicitly walk and apply the pattern locally to avoid more general folding
+  // on the rest of the IR.
+  funcOp.walk([&foldPattern](AffineMinOp minOp) {
+    applyOpPatternsAndFold(minOp, foldPattern);
+  });
+}
 /// Apply transformations specified as patterns.
 void TestLinalgTransforms::runOnFunction() {
   auto lambda = [&](void *) {
@@ -298,6 +478,12 @@ void TestLinalgTransforms::runOnFunction() {
     applyPatternsAndFoldGreedily(getFunction(), patterns);
     return;
   }
+  if (testTileAndDistributionOptions) {
+    OwningRewritePatternList patterns;
+    fillTileAndDistributePatterns(&getContext(), patterns);
+    applyPatternsAndFoldGreedily(getFunction(), patterns);
+    return;
+  }
   if (testPatterns)
     return applyPatterns(getFunction());
   if (testMatmulToVectorPatterns1dTiling || testMatmulToVectorPatterns2dTiling)
@@ -306,6 +492,10 @@ void TestLinalgTransforms::runOnFunction() {
                                        testMatmulToVectorPatterns2dTiling);
   if (testVectorTransferForwardingPatterns)
     return applyVectorTransferForwardingPatterns(getFunction());
+  if (testGenericToVectorPattern)
+    return applyContractionToVectorPatterns(getFunction());
+  if (testAffineMinSCFCanonicalizationPatterns)
+    return applyAffineMinSCFCanonicalizationPatterns(getFunction());
 }
 
 namespace mlir {

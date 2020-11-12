@@ -228,6 +228,7 @@ def VOP3b_I64_I1_I32_I32_I64 : VOPProfile<[i64, i32, i32, i64]> {
 class VOP3Interp<string OpName, VOPProfile P, list<dag> pattern = []> :
                  VOP3_Pseudo<OpName, P, pattern> {
   let AsmMatchConverter = "cvtVOP3Interp";
+  let mayRaiseFPException = 0;
 }
 
 def VOP3_INTERP : VOPProfile<[f32, f32, i32, untyped]> {
@@ -291,19 +292,26 @@ class VOP3_INTERP16 <list<ValueType> ArgVT> : VOPProfile<ArgVT> {
 let isCommutable = 1 in {
 
 let mayRaiseFPException = 0 in {
+let SubtargetPredicate = HasMadMacF32Insts in {
 def V_MAD_LEGACY_F32 : VOP3Inst <"v_mad_legacy_f32", VOP3_Profile<VOP_F32_F32_F32_F32>>;
 def V_MAD_F32 : VOP3Inst <"v_mad_f32", VOP3_Profile<VOP_F32_F32_F32_F32>, fmad>;
+} // End SubtargetPredicate = HasMadMacInsts
+
+let SubtargetPredicate = HasNoMadMacF32Insts in
+def V_FMA_LEGACY_F32 : VOP3Inst <"v_fma_legacy_f32",
+                                 VOP3_Profile<VOP_F32_F32_F32_F32>,
+                                 int_amdgcn_fma_legacy>;
 }
 
 def V_MAD_I32_I24 : VOP3Inst <"v_mad_i32_i24", VOP3_Profile<VOP_I32_I32_I32_I32, VOP3_CLAMP>>;
 def V_MAD_U32_U24 : VOP3Inst <"v_mad_u32_u24", VOP3_Profile<VOP_I32_I32_I32_I32, VOP3_CLAMP>>;
-def V_FMA_F32 : VOP3Inst <"v_fma_f32", VOP3_Profile<VOP_F32_F32_F32_F32>, fma>;
+def V_FMA_F32 : VOP3Inst <"v_fma_f32", VOP3_Profile<VOP_F32_F32_F32_F32>, any_fma>;
 def V_LERP_U8 : VOP3Inst <"v_lerp_u8", VOP3_Profile<VOP_I32_I32_I32_I32>, int_amdgcn_lerp>;
 
 let SchedRW = [WriteDoubleAdd] in {
 let FPDPRounding = 1 in {
-def V_FMA_F64 : VOP3Inst <"v_fma_f64", VOP3_Profile<VOP_F64_F64_F64_F64>, fma>;
-def V_ADD_F64 : VOP3Inst <"v_add_f64", VOP3_Profile<VOP_F64_F64_F64>, fadd, 1>;
+def V_FMA_F64 : VOP3Inst <"v_fma_f64", VOP3_Profile<VOP_F64_F64_F64_F64>, any_fma>;
+def V_ADD_F64 : VOP3Inst <"v_add_f64", VOP3_Profile<VOP_F64_F64_F64>, any_fadd, 1>;
 def V_MUL_F64 : VOP3Inst <"v_mul_f64", VOP3_Profile<VOP_F64_F64_F64>, fmul, 1>;
 } // End FPDPRounding = 1
 def V_MIN_F64 : VOP3Inst <"v_min_f64", VOP3_Profile<VOP_F64_F64_F64>, fminnum_like, 1>;
@@ -397,7 +405,7 @@ let Constraints = "@earlyclobber $vdst" in {
 def V_MQSAD_PK_U16_U8 : VOP3Inst <"v_mqsad_pk_u16_u8", VOP3_Profile<VOP_I64_I64_I32_I64, VOP3_CLAMP>>;
 } // End Constraints = "@earlyclobber $vdst"
 
-def V_TRIG_PREOP_F64 : VOP3Inst <"v_trig_preop_f64", VOP3_Profile<VOP_F64_F64_I32>, AMDGPUtrig_preop> {
+def V_TRIG_PREOP_F64 : VOP3Inst <"v_trig_preop_f64", VOP3_Profile<VOP_F64_F64_I32>, int_amdgcn_trig_preop> {
   let SchedRW = [WriteDouble];
 }
 
@@ -467,11 +475,11 @@ def V_DIV_FIXUP_F16_gfx9 : VOP3Inst <"v_div_fixup_f16_gfx9",
   let FPDPRounding = 1;
 }
 
-def V_FMA_F16 : VOP3Inst <"v_fma_f16", VOP3_Profile<VOP_F16_F16_F16_F16>, fma> {
+def V_FMA_F16 : VOP3Inst <"v_fma_f16", VOP3_Profile<VOP_F16_F16_F16_F16>, any_fma> {
   let Predicates = [Has16BitInsts, isGFX8Only];
   let FPDPRounding = 1;
 }
-def V_FMA_F16_gfx9 : VOP3Inst <"v_fma_f16_gfx9", VOP3_Profile<VOP_F16_F16_F16_F16, VOP3_OPSEL>, fma> {
+def V_FMA_F16_gfx9 : VOP3Inst <"v_fma_f16_gfx9", VOP3_Profile<VOP_F16_F16_F16_F16, VOP3_OPSEL>, any_fma> {
   let renamedInGFX9 = 1;
   let Predicates = [Has16BitInsts, isGFX9Plus];
   let FPDPRounding = 1;
@@ -599,16 +607,24 @@ class ThreeOpFrag<SDPatternOperator op1, SDPatternOperator op2> : PatFrag<
   let PredicateCodeUsesOperands = 1;
 
   // The divergence predicate is irrelevant in GlobalISel, as we have
-  // proper register bank checks. We also force all VOP instruction
-  // operands to VGPR, so we should not need to check the constant bus
-  // restriction.
+  // proper register bank checks. We just need to verify the constant
+  // bus restriction when all the sources are considered.
   //
   // FIXME: With unlucky SGPR operands, we could penalize code by
   // blocking folding SGPR->VGPR copies later.
   // FIXME: There's no register bank verifier
-  // FIXME: Should add a way for the emitter to recognize this is a
-  // trivially true predicate to eliminate the check.
-  let GISelPredicateCode = [{return true;}];
+  let GISelPredicateCode = [{
+    const int ConstantBusLimit = Subtarget->getConstantBusLimit(AMDGPU::V_ADD3_U32);
+    int ConstantBusUses = 0;
+    for (unsigned i = 0; i < 3; ++i) {
+      const RegisterBank *RegBank = RBI.getRegBank(Operands[i]->getReg(), MRI, TRI);
+      if (RegBank->getID() == AMDGPU::SGPRRegBankID) {
+        if (++ConstantBusUses > ConstantBusLimit)
+          return false;
+      }
+    }
+    return true;
+  }];
 }
 
 let SubtargetPredicate = isGFX9Plus in {
@@ -643,8 +659,8 @@ def V_MAD_I32_I16 : VOP3Inst <"v_mad_i32_i16", VOP3_Profile<VOP_I32_I16_I16_I32,
 def V_CVT_PKNORM_I16_F16 : VOP3Inst <"v_cvt_pknorm_i16_f16", VOP3_Profile<VOP_B32_F16_F16, VOP3_OPSEL>>;
 def V_CVT_PKNORM_U16_F16 : VOP3Inst <"v_cvt_pknorm_u16_f16", VOP3_Profile<VOP_B32_F16_F16, VOP3_OPSEL>>;
 
-def V_ADD_I32_gfx9 : VOP3Inst <"v_add_i32_gfx9", VOP3_Profile<VOP_I32_I32_I32_ARITH>>;
-def V_SUB_I32_gfx9 : VOP3Inst <"v_sub_i32_gfx9", VOP3_Profile<VOP_I32_I32_I32_ARITH>>;
+def V_ADD_I32 : VOP3Inst <"v_add_i32", VOP3_Profile<VOP_I32_I32_I32_ARITH>>;
+def V_SUB_I32 : VOP3Inst <"v_sub_i32", VOP3_Profile<VOP_I32_I32_I32_ARITH>>;
 
 
 class ThreeOp_i32_Pats <SDPatternOperator op1, SDPatternOperator op2, Instruction inst> : GCNPat <
@@ -661,6 +677,20 @@ def : ThreeOp_i32_Pats<and, or, V_AND_OR_B32>;
 def : ThreeOp_i32_Pats<or, or, V_OR3_B32>;
 def : ThreeOp_i32_Pats<xor, add, V_XAD_U32>;
 
+def : VOPBinOpClampPat<saddsat, V_ADD_I32, i32>;
+def : VOPBinOpClampPat<ssubsat, V_SUB_I32, i32>;
+
+
+// FIXME: Probably should hardcode clamp bit in pseudo and avoid this.
+class OpSelBinOpClampPat<SDPatternOperator node,
+                         Instruction inst> : GCNPat<
+ (node (i16 (VOP3OpSel i16:$src0, i32:$src0_modifiers)),
+       (i16 (VOP3OpSel i16:$src1, i32:$src1_modifiers))),
+  (inst $src0_modifiers, $src0, $src1_modifiers, $src1, DSTCLAMP.ENABLE, 0)
+>;
+
+def : OpSelBinOpClampPat<saddsat, V_ADD_I16>;
+def : OpSelBinOpClampPat<ssubsat, V_SUB_I16>;
 } // End SubtargetPredicate = isGFX9Plus
 
 def VOP3_PERMLANE_Profile : VOP3_Profile<VOPProfile <[i32, i32, i32, i32]>, VOP3_OPSEL> {
@@ -862,9 +892,9 @@ defm V_ADD_NC_I16 :
 defm V_SUB_NC_I16 :
   VOP3OpSel_Real_gfx10_with_name<0x30e, "V_SUB_I16", "v_sub_nc_i16">;
 defm V_SUB_NC_I32 :
-  VOP3_Real_gfx10_with_name<0x376, "V_SUB_I32_gfx9", "v_sub_nc_i32">;
+  VOP3_Real_gfx10_with_name<0x376, "V_SUB_I32", "v_sub_nc_i32">;
 defm V_ADD_NC_I32 :
-  VOP3_Real_gfx10_with_name<0x37f, "V_ADD_I32_gfx9", "v_add_nc_i32">;
+  VOP3_Real_gfx10_with_name<0x37f, "V_ADD_I32", "v_add_nc_i32">;
 
 defm V_INTERP_P1_F32_e64  : VOP3Interp_Real_gfx10<0x200>;
 defm V_INTERP_P2_F32_e64  : VOP3Interp_Real_gfx10<0x201>;
@@ -1019,6 +1049,10 @@ defm V_TRIG_PREOP_F64  : VOP3_Real_gfx6_gfx7_gfx10<0x174>;
 defm V_DIV_SCALE_F32   : VOP3be_Real_gfx6_gfx7_gfx10<0x16d>;
 defm V_DIV_SCALE_F64   : VOP3be_Real_gfx6_gfx7_gfx10<0x16e>;
 
+// NB: Same opcode as v_mad_legacy_f32
+let DecoderNamespace = "GFX10_B" in
+defm V_FMA_LEGACY_F32  : VOP3_Real_gfx10<0x140>;
+
 //===----------------------------------------------------------------------===//
 // GFX8, GFX9 (VI).
 //===----------------------------------------------------------------------===//
@@ -1167,8 +1201,8 @@ defm V_FMA_F16_gfx9         : VOP3OpSel_F16_Real_gfx9 <0x206, "v_fma_f16">;
 defm V_DIV_FIXUP_F16_gfx9   : VOP3OpSel_F16_Real_gfx9 <0x207, "v_div_fixup_f16">;
 defm V_INTERP_P2_F16_gfx9   : VOP3Interp_F16_Real_gfx9 <0x277, "V_INTERP_P2_F16_gfx9", "v_interp_p2_f16">;
 
-defm V_ADD_I32_gfx9         : VOP3_Real_gfx9 <0x29c, "v_add_i32">;
-defm V_SUB_I32_gfx9         : VOP3_Real_gfx9 <0x29d, "v_sub_i32">;
+defm V_ADD_I32         : VOP3_Real_vi <0x29c>;
+defm V_SUB_I32         : VOP3_Real_vi <0x29d>;
 
 defm V_INTERP_P1_F32_e64  : VOP3Interp_Real_vi <0x270>;
 defm V_INTERP_P2_F32_e64  : VOP3Interp_Real_vi <0x271>;

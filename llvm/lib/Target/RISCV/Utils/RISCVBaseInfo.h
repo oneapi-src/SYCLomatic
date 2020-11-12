@@ -45,7 +45,7 @@ enum {
   InstFormatCJ = 16,
   InstFormatOther = 17,
 
-  InstFormatMask = 31
+  InstFormatMask = 31,
 };
 
 // RISC-V Specific Machine Operand Flags
@@ -207,6 +207,9 @@ ABI getTargetABI(StringRef ABIName);
 
 // Returns the register used to hold the stack pointer after realignment.
 Register getBPReg();
+
+// Returns the register holding shadow call stack pointer.
+Register getSCSPReg();
 
 } // namespace RISCVABI
 

@@ -21,8 +21,14 @@
     __cpp_lib_array_constexpr                      201603L [C++17]
                                                    201811L [C++2a]
     __cpp_lib_as_const                             201510L [C++17]
+    __cpp_lib_atomic_flag_test                     201907L [C++2a]
+    __cpp_lib_atomic_float                         201711L [C++2a]
     __cpp_lib_atomic_is_always_lock_free           201603L [C++17]
+    __cpp_lib_atomic_lock_free_type_aliases        201907L [C++2a]
     __cpp_lib_atomic_ref                           201806L [C++2a]
+    __cpp_lib_atomic_shared_ptr                    201711L [C++2a]
+    __cpp_lib_atomic_value_initialization          201911L [C++2a]
+    __cpp_lib_atomic_wait                          201907L [C++2a]
     __cpp_lib_bind_front                           201811L [C++2a]
     __cpp_lib_bit_cast                             201806L [C++2a]
     __cpp_lib_bool_constant                        201505L [C++17]
@@ -34,8 +40,10 @@
     __cpp_lib_clamp                                201603L [C++17]
     __cpp_lib_complex_udls                         201309L [C++14]
     __cpp_lib_concepts                             201806L [C++2a]
+    __cpp_lib_constexpr_dynamic_alloc              201907L [C++2a]
     __cpp_lib_constexpr_misc                       201811L [C++2a]
     __cpp_lib_constexpr_swap_algorithms            201806L [C++2a]
+    __cpp_lib_constexpr_utility                    201811L [C++2a]
     __cpp_lib_destroying_delete                    201806L [C++2a]
     __cpp_lib_enable_shared_from_this              201603L [C++17]
     __cpp_lib_endian                               201907L [C++2a]
@@ -67,6 +75,7 @@
     __cpp_lib_make_reverse_iterator                201402L [C++14]
     __cpp_lib_make_unique                          201304L [C++14]
     __cpp_lib_map_try_emplace                      201411L [C++17]
+    __cpp_lib_math_constants                       201907L [C++2a]
     __cpp_lib_math_special_functions               201603L [C++17]
     __cpp_lib_memory_resource                      201603L [C++17]
     __cpp_lib_node_extract                         201606L [C++17]
@@ -133,12 +142,36 @@
 #   error "__cpp_lib_as_const should not be defined before c++17"
 # endif
 
+# ifdef __cpp_lib_atomic_flag_test
+#   error "__cpp_lib_atomic_flag_test should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_float
+#   error "__cpp_lib_atomic_float should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_atomic_is_always_lock_free
 #   error "__cpp_lib_atomic_is_always_lock_free should not be defined before c++17"
 # endif
 
+# ifdef __cpp_lib_atomic_lock_free_type_aliases
+#   error "__cpp_lib_atomic_lock_free_type_aliases should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_atomic_ref
 #   error "__cpp_lib_atomic_ref should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_shared_ptr
+#   error "__cpp_lib_atomic_shared_ptr should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_value_initialization
+#   error "__cpp_lib_atomic_value_initialization should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_wait
+#   error "__cpp_lib_atomic_wait should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_bind_front
@@ -185,12 +218,20 @@
 #   error "__cpp_lib_concepts should not be defined before c++2a"
 # endif
 
+# ifdef __cpp_lib_constexpr_dynamic_alloc
+#   error "__cpp_lib_constexpr_dynamic_alloc should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_constexpr_misc
 #   error "__cpp_lib_constexpr_misc should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_constexpr_swap_algorithms
 #   error "__cpp_lib_constexpr_swap_algorithms should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_constexpr_utility
+#   error "__cpp_lib_constexpr_utility should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_destroying_delete
@@ -315,6 +356,10 @@
 
 # ifdef __cpp_lib_map_try_emplace
 #   error "__cpp_lib_map_try_emplace should not be defined before c++17"
+# endif
+
+# ifdef __cpp_lib_math_constants
+#   error "__cpp_lib_math_constants should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_math_special_functions
@@ -479,12 +524,36 @@
 #   error "__cpp_lib_as_const should not be defined before c++17"
 # endif
 
+# ifdef __cpp_lib_atomic_flag_test
+#   error "__cpp_lib_atomic_flag_test should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_float
+#   error "__cpp_lib_atomic_float should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_atomic_is_always_lock_free
 #   error "__cpp_lib_atomic_is_always_lock_free should not be defined before c++17"
 # endif
 
+# ifdef __cpp_lib_atomic_lock_free_type_aliases
+#   error "__cpp_lib_atomic_lock_free_type_aliases should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_atomic_ref
 #   error "__cpp_lib_atomic_ref should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_shared_ptr
+#   error "__cpp_lib_atomic_shared_ptr should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_value_initialization
+#   error "__cpp_lib_atomic_value_initialization should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_wait
+#   error "__cpp_lib_atomic_wait should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_bind_front
@@ -537,12 +606,20 @@
 #   error "__cpp_lib_concepts should not be defined before c++2a"
 # endif
 
+# ifdef __cpp_lib_constexpr_dynamic_alloc
+#   error "__cpp_lib_constexpr_dynamic_alloc should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_constexpr_misc
 #   error "__cpp_lib_constexpr_misc should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_constexpr_swap_algorithms
 #   error "__cpp_lib_constexpr_swap_algorithms should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_constexpr_utility
+#   error "__cpp_lib_constexpr_utility should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_destroying_delete
@@ -691,6 +768,10 @@
 
 # ifdef __cpp_lib_map_try_emplace
 #   error "__cpp_lib_map_try_emplace should not be defined before c++17"
+# endif
+
+# ifdef __cpp_lib_math_constants
+#   error "__cpp_lib_math_constants should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_math_special_functions
@@ -915,6 +996,14 @@
 #   error "__cpp_lib_as_const should have the value 201510L in c++17"
 # endif
 
+# ifdef __cpp_lib_atomic_flag_test
+#   error "__cpp_lib_atomic_flag_test should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_float
+#   error "__cpp_lib_atomic_float should not be defined before c++2a"
+# endif
+
 # if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_atomic_is_always_lock_free
 #     error "__cpp_lib_atomic_is_always_lock_free should be defined in c++17"
@@ -928,8 +1017,24 @@
 #   endif
 # endif
 
+# ifdef __cpp_lib_atomic_lock_free_type_aliases
+#   error "__cpp_lib_atomic_lock_free_type_aliases should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_atomic_ref
 #   error "__cpp_lib_atomic_ref should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_shared_ptr
+#   error "__cpp_lib_atomic_shared_ptr should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_value_initialization
+#   error "__cpp_lib_atomic_value_initialization should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_atomic_wait
+#   error "__cpp_lib_atomic_wait should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_bind_front
@@ -1003,12 +1108,20 @@
 #   error "__cpp_lib_concepts should not be defined before c++2a"
 # endif
 
+# ifdef __cpp_lib_constexpr_dynamic_alloc
+#   error "__cpp_lib_constexpr_dynamic_alloc should not be defined before c++2a"
+# endif
+
 # ifdef __cpp_lib_constexpr_misc
 #   error "__cpp_lib_constexpr_misc should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_constexpr_swap_algorithms
 #   error "__cpp_lib_constexpr_swap_algorithms should not be defined before c++2a"
+# endif
+
+# ifdef __cpp_lib_constexpr_utility
+#   error "__cpp_lib_constexpr_utility should not be defined before c++2a"
 # endif
 
 # ifdef __cpp_lib_destroying_delete
@@ -1229,6 +1342,10 @@
 # endif
 # if __cpp_lib_map_try_emplace != 201411L
 #   error "__cpp_lib_map_try_emplace should have the value 201411L in c++17"
+# endif
+
+# ifdef __cpp_lib_math_constants
+#   error "__cpp_lib_math_constants should not be defined before c++2a"
 # endif
 
 # if !defined(_LIBCPP_VERSION)
@@ -1550,6 +1667,32 @@
 # endif
 
 # if !defined(_LIBCPP_HAS_NO_THREADS)
+#   ifndef __cpp_lib_atomic_flag_test
+#     error "__cpp_lib_atomic_flag_test should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_flag_test != 201907L
+#     error "__cpp_lib_atomic_flag_test should have the value 201907L in c++2a"
+#   endif
+# else
+#   ifdef __cpp_lib_atomic_flag_test
+#     error "__cpp_lib_atomic_flag_test should not be defined when !defined(_LIBCPP_HAS_NO_THREADS) is not defined!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_VERSION)
+#   ifndef __cpp_lib_atomic_float
+#     error "__cpp_lib_atomic_float should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_float != 201711L
+#     error "__cpp_lib_atomic_float should have the value 201711L in c++2a"
+#   endif
+# else // _LIBCPP_VERSION
+#   ifdef __cpp_lib_atomic_float
+#     error "__cpp_lib_atomic_float should not be defined because it is unimplemented in libc++!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_HAS_NO_THREADS)
 #   ifndef __cpp_lib_atomic_is_always_lock_free
 #     error "__cpp_lib_atomic_is_always_lock_free should be defined in c++2a"
 #   endif
@@ -1559,6 +1702,19 @@
 # else
 #   ifdef __cpp_lib_atomic_is_always_lock_free
 #     error "__cpp_lib_atomic_is_always_lock_free should not be defined when !defined(_LIBCPP_HAS_NO_THREADS) is not defined!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_HAS_NO_THREADS)
+#   ifndef __cpp_lib_atomic_lock_free_type_aliases
+#     error "__cpp_lib_atomic_lock_free_type_aliases should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_lock_free_type_aliases != 201907L
+#     error "__cpp_lib_atomic_lock_free_type_aliases should have the value 201907L in c++2a"
+#   endif
+# else
+#   ifdef __cpp_lib_atomic_lock_free_type_aliases
+#     error "__cpp_lib_atomic_lock_free_type_aliases should not be defined when !defined(_LIBCPP_HAS_NO_THREADS) is not defined!"
 #   endif
 # endif
 
@@ -1572,6 +1728,45 @@
 # else // _LIBCPP_VERSION
 #   ifdef __cpp_lib_atomic_ref
 #     error "__cpp_lib_atomic_ref should not be defined because it is unimplemented in libc++!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_VERSION)
+#   ifndef __cpp_lib_atomic_shared_ptr
+#     error "__cpp_lib_atomic_shared_ptr should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_shared_ptr != 201711L
+#     error "__cpp_lib_atomic_shared_ptr should have the value 201711L in c++2a"
+#   endif
+# else // _LIBCPP_VERSION
+#   ifdef __cpp_lib_atomic_shared_ptr
+#     error "__cpp_lib_atomic_shared_ptr should not be defined because it is unimplemented in libc++!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_VERSION)
+#   ifndef __cpp_lib_atomic_value_initialization
+#     error "__cpp_lib_atomic_value_initialization should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_value_initialization != 201911L
+#     error "__cpp_lib_atomic_value_initialization should have the value 201911L in c++2a"
+#   endif
+# else // _LIBCPP_VERSION
+#   ifdef __cpp_lib_atomic_value_initialization
+#     error "__cpp_lib_atomic_value_initialization should not be defined because it is unimplemented in libc++!"
+#   endif
+# endif
+
+# if !defined(_LIBCPP_HAS_NO_THREADS)
+#   ifndef __cpp_lib_atomic_wait
+#     error "__cpp_lib_atomic_wait should be defined in c++2a"
+#   endif
+#   if __cpp_lib_atomic_wait != 201907L
+#     error "__cpp_lib_atomic_wait should have the value 201907L in c++2a"
+#   endif
+# else
+#   ifdef __cpp_lib_atomic_wait
+#     error "__cpp_lib_atomic_wait should not be defined when !defined(_LIBCPP_HAS_NO_THREADS) is not defined!"
 #   endif
 # endif
 
@@ -1682,6 +1877,13 @@
 #   endif
 # endif
 
+# ifndef __cpp_lib_constexpr_dynamic_alloc
+#   error "__cpp_lib_constexpr_dynamic_alloc should be defined in c++2a"
+# endif
+# if __cpp_lib_constexpr_dynamic_alloc != 201907L
+#   error "__cpp_lib_constexpr_dynamic_alloc should have the value 201907L in c++2a"
+# endif
+
 # if !defined(_LIBCPP_VERSION)
 #   ifndef __cpp_lib_constexpr_misc
 #     error "__cpp_lib_constexpr_misc should be defined in c++2a"
@@ -1706,6 +1908,13 @@
 #   ifdef __cpp_lib_constexpr_swap_algorithms
 #     error "__cpp_lib_constexpr_swap_algorithms should not be defined because it is unimplemented in libc++!"
 #   endif
+# endif
+
+# ifndef __cpp_lib_constexpr_utility
+#   error "__cpp_lib_constexpr_utility should be defined in c++2a"
+# endif
+# if __cpp_lib_constexpr_utility != 201811L
+#   error "__cpp_lib_constexpr_utility should have the value 201811L in c++2a"
 # endif
 
 # if TEST_STD_VER > 17 && defined(__cpp_impl_destroying_delete) && __cpp_impl_destroying_delete >= 201806L
@@ -1965,6 +2174,19 @@
 # endif
 # if __cpp_lib_map_try_emplace != 201411L
 #   error "__cpp_lib_map_try_emplace should have the value 201411L in c++2a"
+# endif
+
+# if defined(__cpp_concepts) && __cpp_concepts >= 201811L
+#   ifndef __cpp_lib_math_constants
+#     error "__cpp_lib_math_constants should be defined in c++2a"
+#   endif
+#   if __cpp_lib_math_constants != 201907L
+#     error "__cpp_lib_math_constants should have the value 201907L in c++2a"
+#   endif
+# else
+#   ifdef __cpp_lib_math_constants
+#     error "__cpp_lib_math_constants should not be defined when defined(__cpp_concepts) && __cpp_concepts >= 201811L is not defined!"
+#   endif
 # endif
 
 # if !defined(_LIBCPP_VERSION)

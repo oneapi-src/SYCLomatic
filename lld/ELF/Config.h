@@ -10,7 +10,9 @@
 #define LLD_ELF_CONFIG_H
 
 #include "lld/Common/ErrorHandler.h"
+#include "llvm/ADT/CachedHashString.h"
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/BinaryFormat/ELF.h"
@@ -90,11 +92,13 @@ struct Configuration {
   uint8_t osabi = 0;
   uint32_t andFeatures = 0;
   llvm::CachePruningPolicy thinLTOCachePolicy;
+  llvm::SetVector<llvm::CachedHashString> dependencyFiles; // for --dependency-file
   llvm::StringMap<uint64_t> sectionStartMap;
   llvm::StringRef bfdname;
   llvm::StringRef chroot;
-  llvm::StringRef dynamicLinker;
+  llvm::StringRef dependencyFile;
   llvm::StringRef dwoDir;
+  llvm::StringRef dynamicLinker;
   llvm::StringRef entry;
   llvm::StringRef emulation;
   llvm::StringRef fini;
@@ -125,6 +129,7 @@ struct Configuration {
   std::vector<llvm::StringRef> filterList;
   std::vector<llvm::StringRef> searchPaths;
   std::vector<llvm::StringRef> symbolOrderingFile;
+  std::vector<llvm::StringRef> thinLTOModulesToCompile;
   std::vector<llvm::StringRef> undefined;
   std::vector<SymbolVersion> dynamicList;
   std::vector<uint8_t> buildIdVector;
@@ -144,6 +149,7 @@ struct Configuration {
   bool checkSections;
   bool compressDebugSections;
   bool cref;
+  std::vector<std::pair<llvm::GlobPattern, uint64_t>> deadRelocInNonAlloc;
   bool defineCommon;
   bool demangle = true;
   bool dependentLibraries;
@@ -161,7 +167,6 @@ struct Configuration {
   bool gdbIndex;
   bool gnuHash = false;
   bool gnuUnique;
-  bool hasDynamicList = false;
   bool hasDynSymTab;
   bool ignoreDataAddressEquality;
   bool ignoreFunctionAddressEquality;
@@ -169,7 +174,7 @@ struct Configuration {
   bool ltoDebugPassManager;
   bool ltoEmitAsm;
   bool ltoNewPassManager;
-  bool ltoUniqueBBSectionNames;
+  bool ltoUniqueBasicBlockSectionNames;
   bool ltoWholeProgramVisibility;
   bool mergeArmExidx;
   bool mipsN32Abi = false;
@@ -192,6 +197,7 @@ struct Configuration {
   llvm::Optional<uint32_t> shuffleSectionSeed;
   bool singleRoRx;
   bool shared;
+  bool symbolic;
   bool isStatic = false;
   bool sysvHash = false;
   bool target1Rel;
@@ -200,6 +206,7 @@ struct Configuration {
   bool thinLTOIndexOnly;
   bool timeTraceEnabled;
   bool tocOptimize;
+  bool pcRelOptimize;
   bool undefinedVersion;
   bool unique;
   bool useAndroidRelrTags = false;
@@ -229,6 +236,7 @@ struct Configuration {
   bool zRelro;
   bool zRodynamic;
   bool zShstk;
+  uint8_t zStartStopVisibility;
   bool zText;
   bool zRetpolineplt;
   bool zWxneeded;

@@ -723,6 +723,42 @@ define i1 @urem7(i32 %X) {
   ret i1 %B
 }
 
+define i1 @urem8(i8 %X, i8 %Y) {
+; CHECK-LABEL: @urem8(
+; CHECK-NEXT:    ret i1 true
+;
+  %A = urem i8 %X, %Y
+  %B = icmp ule i8 %A, %X
+  ret i1 %B
+}
+
+define i1 @urem9(i8 %X, i8 %Y) {
+; CHECK-LABEL: @urem9(
+; CHECK-NEXT:    ret i1 false
+;
+  %A = urem i8 %X, %Y
+  %B = icmp ugt i8 %A, %X
+  ret i1 %B
+}
+
+define i1 @urem10(i8 %X, i8 %Y) {
+; CHECK-LABEL: @urem10(
+; CHECK-NEXT:    ret i1 true
+;
+  %A = urem i8 %X, %Y
+  %B = icmp uge i8 %X, %A
+  ret i1 %B
+}
+
+define i1 @urem11(i8 %X, i8 %Y) {
+; CHECK-LABEL: @urem11(
+; CHECK-NEXT:    ret i1 false
+;
+  %A = urem i8 %X, %Y
+  %B = icmp ult i8 %X, %A
+  ret i1 %B
+}
+
 ; PR9343 #15
 define i1 @srem2(i16 %X, i32 %Y) {
 ; CHECK-LABEL: @srem2(
@@ -961,7 +997,7 @@ define i1 @alloca_compare(i64 %idx) {
 
 define i1 @alloca_compare_no_null_opt(i64 %idx) #0 {
 ; CHECK-LABEL: @alloca_compare_no_null_opt(
-; CHECK-NEXT:    [[SV:%.*]] = alloca { i32, i32, [124 x i32] }
+; CHECK-NEXT:    [[SV:%.*]] = alloca { i32, i32, [124 x i32] }, align 8
 ; CHECK-NEXT:    [[CMP:%.*]] = getelementptr inbounds { i32, i32, [124 x i32] }, { i32, i32, [124 x i32] }* [[SV]], i32 0, i32 2, i64 [[IDX:%.*]]
 ; CHECK-NEXT:    [[X:%.*]] = icmp eq i32* [[CMP]], null
 ; CHECK-NEXT:    ret i1 [[X]]
@@ -995,7 +1031,7 @@ unreachableblock:
 
 define i1 @alloca_argument_compare(i64* %arg) {
 ; CHECK-LABEL: @alloca_argument_compare(
-; CHECK-NEXT:    [[ALLOC:%.*]] = alloca i64
+; CHECK-NEXT:    [[ALLOC:%.*]] = alloca i64, align 8
 ; CHECK-NEXT:    [[CMP:%.*]] = icmp eq i64* [[ARG:%.*]], [[ALLOC]]
 ; CHECK-NEXT:    ret i1 [[CMP]]
 ;
@@ -1008,7 +1044,7 @@ define i1 @alloca_argument_compare(i64* %arg) {
 
 define i1 @alloca_argument_compare_swapped(i64* %arg) {
 ; CHECK-LABEL: @alloca_argument_compare_swapped(
-; CHECK-NEXT:    [[ALLOC:%.*]] = alloca i64
+; CHECK-NEXT:    [[ALLOC:%.*]] = alloca i64, align 8
 ; CHECK-NEXT:    [[CMP:%.*]] = icmp eq i64* [[ALLOC]], [[ARG:%.*]]
 ; CHECK-NEXT:    ret i1 [[CMP]]
 ;
@@ -1085,66 +1121,120 @@ define i1 @compare_always_true_slt(i16 %a) {
 ; CHECK-LABEL: @compare_always_true_slt(
 ; CHECK-NEXT:    ret i1 true
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp slt i32 %2, 1
-  ret i1 %3
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp slt i32 %t2, 1
+  ret i1 %t3
+}
 
+define <2 x i1> @compare_always_true_slt_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_true_slt_splat(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp slt <2 x i32> %t2, <i32 1, i32 1>
+  ret <2 x i1> %t3
 }
 
 define i1 @compare_always_true_sle(i16 %a) {
 ; CHECK-LABEL: @compare_always_true_sle(
 ; CHECK-NEXT:    ret i1 true
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp sle i32 %2, 0
-  ret i1 %3
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp sle i32 %t2, 0
+  ret i1 %t3
+}
 
+define <2 x i1> @compare_always_true_sle_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_true_sle_splat(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp sle <2 x i32> %t2, zeroinitializer
+  ret <2 x i1> %t3
 }
 
 define i1 @compare_always_false_sgt(i16 %a) {
 ; CHECK-LABEL: @compare_always_false_sgt(
 ; CHECK-NEXT:    ret i1 false
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp sgt i32 %2, 0
-  ret i1 %3
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp sgt i32 %t2, 0
+  ret i1 %t3
+}
 
+define <2 x i1> @compare_always_false_sgt_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_false_sgt_splat(
+; CHECK-NEXT:    ret <2 x i1> zeroinitializer
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp sgt <2 x i32> %t2, zeroinitializer
+  ret <2 x i1> %t3
 }
 
 define i1 @compare_always_false_sge(i16 %a) {
 ; CHECK-LABEL: @compare_always_false_sge(
 ; CHECK-NEXT:    ret i1 false
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp sge i32 %2, 1
-  ret i1 %3
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp sge i32 %t2, 1
+  ret i1 %t3
+}
 
+define <2 x i1> @compare_always_false_sge_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_false_sge_splat(
+; CHECK-NEXT:    ret <2 x i1> zeroinitializer
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp sge <2 x i32> %t2, <i32 1, i32 1>
+  ret <2 x i1> %t3
 }
 
 define i1 @compare_always_false_eq(i16 %a) {
 ; CHECK-LABEL: @compare_always_false_eq(
 ; CHECK-NEXT:    ret i1 false
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp eq i32 %2, 1
-  ret i1 %3
-
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp eq i32 %t2, 1
+  ret i1 %t3
 }
 
-define i1 @compare_always_false_ne(i16 %a) {
-; CHECK-LABEL: @compare_always_false_ne(
+define <2 x i1> @compare_always_false_eq_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_false_eq_splat(
+; CHECK-NEXT:    ret <2 x i1> zeroinitializer
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp eq <2 x i32> %t2, <i32 1, i32 1>
+  ret <2 x i1> %t3
+}
+
+define i1 @compare_always_true_ne(i16 %a) {
+; CHECK-LABEL: @compare_always_true_ne(
 ; CHECK-NEXT:    ret i1 true
 ;
-  %1 = zext i16 %a to i32
-  %2 = sub nsw i32 0, %1
-  %3 = icmp ne i32 %2, 1
-  ret i1 %3
+  %t1 = zext i16 %a to i32
+  %t2 = sub i32 0, %t1
+  %t3 = icmp ne i32 %t2, 1
+  ret i1 %t3
+}
 
+define <2 x i1> @compare_always_true_ne_splat(<2 x i16> %a) {
+; CHECK-LABEL: @compare_always_true_ne_splat(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %t1 = zext <2 x i16> %a to <2 x i32>
+  %t2 = sub <2 x i32> zeroinitializer, %t1
+  %t3 = icmp ne <2 x i32> %t2, <i32 1, i32 1>
+  ret <2 x i1> %t3
 }
 
 define i1 @lshr_ugt_false(i32 %a) {
@@ -1670,6 +1760,131 @@ define i1 @cmp_through_addrspacecast(i32 addrspace(1)* %p1) {
   %p0 = addrspacecast i32 addrspace(1)* %p1 to i32*
   %p0.1 = getelementptr inbounds i32, i32* %p0, i64 1
   %cmp = icmp ne i32* %p0, %p0.1
+  ret i1 %cmp
+}
+
+; Test simplifications for: icmp (X+Y), (X+Z) -> icmp Y,Z
+; Test the overflow check when the RHS has NSW set and constant Z is greater
+; or equal than Y, then we know X+Y also can't overflow.
+
+define i1 @icmp_nsw_1(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_1(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD6:%.*]] = add nsw i32 [[V]], 6
+; CHECK-NEXT:    [[S1:%.*]] = sext i32 [[ADD5]] to i64
+; CHECK-NEXT:    [[S2:%.*]] = sext i32 [[ADD6]] to i64
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i64 [[S1]], [[S2]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %add6 = add nsw i32 %V, 6
+  %s1 = sext i32 %add5 to i64
+  %s2 = sext i32 %add6 to i64
+  %cmp = icmp slt i64 %s1, %s2
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_2(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_2(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD6:%.*]] = add nsw i32 [[V]], 6
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD5]], [[ADD6]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %add6 = add nsw i32 %V, 6
+  %cmp = icmp slt i32 %add5, %add6
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_3(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_3(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD5_2:%.*]] = add nsw i32 [[V]], 5
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD5]], [[ADD5_2]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %add5_2 = add nsw i32 %V, 5
+  %cmp = icmp slt i32 %add5, %add5_2
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_4(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_4(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD4:%.*]] = add nsw i32 [[V]], 4
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD5]], [[ADD4]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %add4 = add nsw i32 %V, 4
+  %cmp = icmp slt i32 %add5, %add4
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_5(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_5(
+; CHECK-NEXT:    [[ADD5:%.*]] = add nsw i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD6:%.*]] = add i32 [[V]], 6
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD5]], [[ADD6]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add nsw i32 %V, 5
+  %add6 = add i32 %V, 6
+  %cmp = icmp slt i32 %add5, %add6
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_7(i32 %V, i32 %arg) {
+; CHECK-LABEL: @icmp_nsw_7(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADDARG:%.*]] = add nsw i32 [[V]], [[ARG:%.*]]
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD5]], [[ADDARG]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %addarg = add nsw i32 %V, %arg
+  %cmp = icmp slt i32 %add5, %addarg
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_8(i32 %V, i32 %arg) {
+; CHECK-LABEL: @icmp_nsw_8(
+; CHECK-NEXT:    [[ADDARG:%.*]] = add i32 [[V:%.*]], [[ARG:%.*]]
+; CHECK-NEXT:    [[ADD6:%.*]] = add nsw i32 [[V]], 5
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADDARG]], [[ADD6]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %addarg = add i32 %V, %arg
+  %add6 = add nsw i32 %V, 5
+  %cmp = icmp slt i32 %addarg, %add6
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_9(i32 %V1, i32 %V2) {
+; CHECK-LABEL: @icmp_nsw_9(
+; CHECK-NEXT:    [[ADD_V1:%.*]] = add i32 [[V1:%.*]], 5
+; CHECK-NEXT:    [[ADD_V2:%.*]] = add nsw i32 [[V2:%.*]], 6
+; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD_V1]], [[ADD_V2]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add_V1 = add i32 %V1, 5
+  %add_V2 = add nsw i32 %V2, 6
+  %cmp = icmp slt i32 %add_V1, %add_V2
+  ret i1 %cmp
+}
+
+define i1 @icmp_nsw_10(i32 %V) {
+; CHECK-LABEL: @icmp_nsw_10(
+; CHECK-NEXT:    [[ADD5:%.*]] = add i32 [[V:%.*]], 5
+; CHECK-NEXT:    [[ADD6:%.*]] = add nsw i32 [[V]], 5
+; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt i32 [[ADD6]], [[ADD5]]
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %add5 = add i32 %V, 5
+  %add6 = add nsw i32 %V, 5
+  %cmp = icmp sgt i32 %add6, %add5
   ret i1 %cmp
 }
 

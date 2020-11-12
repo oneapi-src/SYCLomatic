@@ -38,15 +38,19 @@ entry:
 ; GCN-LABEL: {{^}}int4_inselt:
 ; GCN-NOT: v_movrel
 ; GCN-NOT: buffer_
-; GCN-DAG: v_cmp_ne_u32_e64 [[CC1:[^,]+]], [[IDX:s[0-9]+]], 3
-; GCN-DAG: v_cndmask_b32_e32 v[[ELT_LAST:[0-9]+]], 1, v{{[0-9]+}}, [[CC1]]
-; GCN-DAG: v_cmp_ne_u32_e64 [[CC2:[^,]+]], [[IDX]], 2
-; GCN-DAG: v_cndmask_b32_e32 v{{[0-9]+}}, 1, v{{[0-9]+}}, [[CC2]]
-; GCN-DAG: v_cmp_ne_u32_e64 [[CC3:[^,]+]], [[IDX]], 1
-; GCN-DAG: v_cndmask_b32_e32 v{{[0-9]+}}, 1, v{{[0-9]+}}, [[CC3]]
-; GCN-DAG: v_cmp_ne_u32_e64 [[CC4:[^,]+]], [[IDX]], 0
-; GCN-DAG: v_cndmask_b32_e32 v[[ELT_FIRST:[0-9]+]], 1, v{{[0-9]+}}, [[CC4]]
-; GCN:     flat_store_dwordx4 v[{{[0-9:]+}}], v{{\[}}[[ELT_FIRST]]:[[ELT_LAST]]]
+; GCN-DAG: s_cmp_lg_u32 [[IDX:s[0-9]+]], 3
+; GCN-DAG: s_cselect_b32 s[[ELT_3:[0-9]+]], s{{[0-9]+}}, 1
+; GCN-DAG: s_cmp_lg_u32 [[IDX]], 2
+; GCN-DAG: s_cselect_b32 s[[ELT_2:[0-9]+]], s{{[0-9]+}}, 1
+; GCN-DAG: s_cmp_lg_u32 [[IDX]], 1
+; GCN-DAG: s_cselect_b32 s[[ELT_1:[0-9]+]], s{{[0-9]+}}, 1
+; GCN-DAG: s_cmp_lg_u32 [[IDX]], 0
+; GCN-DAG: s_cselect_b32 s[[ELT_0:[0-9]+]], s{{[0-9]+}}, 1
+; GCN-DAG: v_mov_b32_e32 v[[VELT_0:[0-9]+]], s[[ELT_0]]
+; GCN-DAG: v_mov_b32_e32 v[[VELT_1:[0-9]+]], s[[ELT_1]]
+; GCN-DAG: v_mov_b32_e32 v[[VELT_2:[0-9]+]], s[[ELT_2]]
+; GCN-DAG: v_mov_b32_e32 v[[VELT_3:[0-9]+]], s[[ELT_3]]
+; GCN:     flat_store_dwordx4 v[{{[0-9:]+}}], v{{\[}}[[VELT_0]]:[[VELT_3]]]
 define amdgpu_kernel void @int4_inselt(<4 x i32> addrspace(1)* %out, <4 x i32> %vec, i32 %sel) {
 entry:
   %v = insertelement <4 x i32> %vec, i32 1, i32 %sel
@@ -121,10 +125,11 @@ entry:
 ; GCN-NOT: buffer_
 ; GCN:     s_lshl_b32 [[SEL:s[0-9]+]], s{{[0-9]+}}, 4
 ; GCN:     s_lshl_b64 s[{{[0-9:]+}}], s[{{[0-9:]+}}], [[SEL]]
-; GCN:     s_mov_b32 [[K:s[0-9]+]], 0x3c003c00
-; GCN:     v_mov_b32_e32 [[V:v[0-9]+]], [[K]]
-; GCN:     v_bfi_b32 v{{[0-9]+}}, s{{[0-9]+}}, [[V]], v{{[0-9]+}}
-; GCN:     v_bfi_b32 v{{[0-9]+}}, s{{[0-9]+}}, [[V]], v{{[0-9]+}}
+; GCN:     s_andn2_b64
+; GCN:     s_mov_b32 s[[KLO:[0-9]+]], 0x3c003c00
+; GCN:     s_mov_b32 s[[KHI:[0-9]+]], s[[KLO]]
+; GCN:     s_and_b64 s[{{[0-9:]+}}], s[{{[0-9:]+}}], s{{\[}}[[KLO]]:[[KHI]]]
+; GCN:     s_or_b64
 define amdgpu_kernel void @half4_inselt(<4 x half> addrspace(1)* %out, <4 x half> %vec, i32 %sel) {
 entry:
   %v = insertelement <4 x half> %vec, half 1.000000e+00, i32 %sel
@@ -138,7 +143,9 @@ entry:
 ; GCN-NOT: buffer_
 ; GCN:     s_lshl_b32 [[SEL:s[0-9]+]], s{{[0-9]+}}, 4
 ; GCN:     s_lshl_b32 [[V:s[0-9]+]], 0xffff, [[SEL]]
-; GCN:     v_bfi_b32 v{{[0-9]+}}, [[V]], v{{[0-9]+}}, v{{[0-9]+}}
+; GCN:     s_andn2_b32
+; GCN:     s_and_b32 s{{[0-9]+}}, s{{[0-9]+}}, 0x3c003c00
+; GCN:     s_or_b32
 define amdgpu_kernel void @half2_inselt(<2 x half> addrspace(1)* %out, <2 x half> %vec, i32 %sel) {
 entry:
   %v = insertelement <2 x half> %vec, half 1.000000e+00, i32 %sel
@@ -180,10 +187,11 @@ entry:
 ; GCN-NOT: v_cndmask_b32
 ; GCN-NOT: v_movrel
 ; GCN-NOT: buffer_
-; GCN:     v_mov_b32_e32 [[K:v[0-9]+]], 0x10001
 ; GCN:     s_lshl_b32 [[SEL:s[0-9]+]], s{{[0-9]+}}, 4
 ; GCN:     s_lshl_b32 [[V:s[0-9]+]], 0xffff, [[SEL]]
-; GCN:     v_bfi_b32 v{{[0-9]+}}, [[V]], [[K]], v{{[0-9]+}}
+; GCN:     s_andn2_b32
+; GCN:     s_and_b32 s{{[0-9]+}}, s{{[0-9]+}}, 0x10001
+; GCN:     s_or_b32
 define amdgpu_kernel void @short2_inselt(<2 x i16> addrspace(1)* %out, <2 x i16> %vec, i32 %sel) {
 entry:
   %v = insertelement <2 x i16> %vec, i16 1, i32 %sel
@@ -197,10 +205,11 @@ entry:
 ; GCN-NOT: buffer_
 ; GCN:     s_lshl_b32 [[SEL:s[0-9]+]], s{{[0-9]+}}, 4
 ; GCN:     s_lshl_b64 s[{{[0-9:]+}}], s[{{[0-9:]+}}], [[SEL]]
-; GCN:     s_mov_b32 [[K:s[0-9]+]], 0x10001
-; GCN:     v_mov_b32_e32 [[V:v[0-9]+]], [[K]]
-; GCN:     v_bfi_b32 v{{[0-9]+}}, s{{[0-9]+}}, [[V]], v{{[0-9]+}}
-; GCN:     v_bfi_b32 v{{[0-9]+}}, s{{[0-9]+}}, [[V]], v{{[0-9]+}}
+; GCN:     s_andn2_b64
+; GCN:     s_mov_b32 s[[KLO:[0-9]+]], 0x10001
+; GCN:     s_mov_b32 s[[KHI:[0-9]+]], s[[KLO]]
+; GCN:     s_and_b64 s[{{[0-9:]+}}], s[{{[0-9:]+}}], s{{\[}}[[KLO]]:[[KHI]]]
+; GCN:     s_or_b64
 define amdgpu_kernel void @short4_inselt(<4 x i16> addrspace(1)* %out, <4 x i16> %vec, i32 %sel) {
 entry:
   %v = insertelement <4 x i16> %vec, i16 1, i32 %sel

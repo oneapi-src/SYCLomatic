@@ -1356,7 +1356,7 @@ struct PragmaWarningHandler : public PragmaHandler {
         while (Tok.is(tok::numeric_constant)) {
           uint64_t Value;
           if (!PP.parseSimpleIntegerLiteral(Tok, Value) || Value == 0 ||
-              Value > std::numeric_limits<int>::max()) {
+              Value > INT_MAX) {
             PP.Diag(Tok, diag::warn_pragma_warning_expected_number);
             return;
           }
@@ -1907,10 +1907,9 @@ void Preprocessor::RegisterBuiltinPragmas() {
   }
 
   // Pragmas added by plugins
-  for (PragmaHandlerRegistry::iterator it = PragmaHandlerRegistry::begin(),
-                                       ie = PragmaHandlerRegistry::end();
-       it != ie; ++it) {
-    AddPragmaHandler(it->instantiate().release());
+  for (const PragmaHandlerRegistry::entry &handler :
+       PragmaHandlerRegistry::entries()) {
+    AddPragmaHandler(handler.instantiate().release());
   }
 }
 

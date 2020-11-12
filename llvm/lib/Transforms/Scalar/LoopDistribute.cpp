@@ -664,7 +664,7 @@ public:
 
   /// Try to distribute an inner-most loop.
   bool processLoop(std::function<const LoopAccessInfo &(Loop &)> &GetLAA) {
-    assert(L->empty() && "Only process inner loops.");
+    assert(L->isInnermost() && "Only process inner loops.");
 
     LLVM_DEBUG(dbgs() << "\nLDist: In \""
                       << L->getHeader()->getParent()->getName()
@@ -789,12 +789,6 @@ public:
     // instructions to partitions.
     Partitions.setupPartitionIdOnInstructions();
 
-    // To keep things simple have an empty preheader before we version or clone
-    // the loop.  (Also split if this has no predecessor, i.e. entry, because we
-    // rely on PH having a predecessor.)
-    if (!PH->getSinglePredecessor() || &*PH->begin() != PH->getTerminator())
-      SplitBlock(PH, PH->getTerminator(), DT, LI);
-
     // If we need run-time checks, version the loop now.
     auto PtrToPartition = Partitions.computePartitionSetForPointers(*LAI);
     const auto *RtPtrChecking = LAI->getRuntimePointerChecking();
@@ -807,6 +801,12 @@ public:
                   "may not insert runtime check with convergent operation");
     }
 
+    // To keep things simple have an empty preheader before we version or clone
+    // the loop.  (Also split if this has no predecessor, i.e. entry, because we
+    // rely on PH having a predecessor.)
+    if (!PH->getSinglePredecessor() || &*PH->begin() != PH->getTerminator())
+      SplitBlock(PH, PH->getTerminator(), DT, LI);
+
     if (!Pred.isAlwaysTrue() || !Checks.empty()) {
       assert(!LAI->hasConvergentOp() && "inserting illegal loop versioning");
 
@@ -814,9 +814,7 @@ public:
 
       LLVM_DEBUG(dbgs() << "\nPointers:\n");
       LLVM_DEBUG(LAI->getRuntimePointerChecking()->printChecks(dbgs(), Checks));
-      LoopVersioning LVer(*LAI, L, LI, DT, SE, false);
-      LVer.setAliasChecks(std::move(Checks));
-      LVer.setSCEVChecks(LAI->getPSE().getUnionPredicate());
+      LoopVersioning LVer(*LAI, Checks, L, LI, DT, SE);
       LVer.versionLoop(DefsUsedOutside);
       LVer.annotateLoopWithNoAlias();
 
@@ -982,7 +980,7 @@ static bool runImpl(Function &F, LoopInfo *LI, DominatorTree *DT,
   for (Loop *TopLevelLoop : *LI)
     for (Loop *L : depth_first(TopLevelLoop))
       // We only handle inner-most loops.
-      if (L->empty())
+      if (L->isInnermost())
         Worklist.push_back(L);
 
   // Now walk the identified inner loops.
@@ -1058,7 +1056,8 @@ PreservedAnalyses LoopDistributePass::run(Function &F,
   auto &LAM = AM.getResult<LoopAnalysisManagerFunctionProxy>(F).getManager();
   std::function<const LoopAccessInfo &(Loop &)> GetLAA =
       [&](Loop &L) -> const LoopAccessInfo & {
-    LoopStandardAnalysisResults AR = {AA, AC, DT, LI, SE, TLI, TTI, nullptr};
+    LoopStandardAnalysisResults AR = {AA,  AC,  DT,      LI,     SE,
+                                      TLI, TTI, nullptr, nullptr};
     return LAM.getResult<LoopAccessAnalysis>(L, AR);
   };
 

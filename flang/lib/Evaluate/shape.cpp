@@ -205,7 +205,7 @@ auto GetLowerBoundHelper::operator()(const Symbol &symbol0) -> Result {
       if (j++ == dimension_) {
         if (const auto &bound{shapeSpec.lbound().GetExplicit()}) {
           return Fold(context_, common::Clone(*bound));
-        } else if (semantics::IsDescriptor(symbol)) {
+        } else if (IsDescriptor(symbol)) {
           return ExtentExpr{DescriptorInquiry{NamedEntity{symbol0},
               DescriptorInquiry::Field::LowerBound, dimension_}};
         } else {
@@ -230,7 +230,7 @@ auto GetLowerBoundHelper::operator()(const Component &component) -> Result {
         if (j++ == dimension_) {
           if (const auto &bound{shapeSpec.lbound().GetExplicit()}) {
             return Fold(context_, common::Clone(*bound));
-          } else if (semantics::IsDescriptor(symbol)) {
+          } else if (IsDescriptor(symbol)) {
             return ExtentExpr{
                 DescriptorInquiry{NamedEntity{common::Clone(component)},
                     DescriptorInquiry::Field::LowerBound, dimension_}};
@@ -439,6 +439,7 @@ auto GetShapeHelper::operator()(const Symbol &symbol) const -> Result {
           [&](const semantics::HostAssocDetails &assoc) {
             return (*this)(assoc.symbol());
           },
+          [](const semantics::TypeParamDetails &) { return Scalar(); },
           [](const auto &) { return Result{}; },
       },
       symbol.details());
@@ -544,6 +545,23 @@ auto GetShapeHelper::operator()(const ProcedureRef &call) const -> Result {
       if (!call.arguments().empty()) {
         return (*this)(call.arguments()[0]);
       }
+    } else if (intrinsic->name == "matmul") {
+      if (call.arguments().size() == 2) {
+        if (auto ashape{(*this)(call.arguments()[0])}) {
+          if (auto bshape{(*this)(call.arguments()[1])}) {
+            if (ashape->size() == 1 && bshape->size() == 2) {
+              bshape->erase(bshape->begin());
+              return std::move(*bshape); // matmul(vector, matrix)
+            } else if (ashape->size() == 2 && bshape->size() == 1) {
+              ashape->pop_back();
+              return std::move(*ashape); // matmul(matrix, vector)
+            } else if (ashape->size() == 2 && bshape->size() == 2) {
+              (*ashape)[1] = std::move((*bshape)[1]);
+              return std::move(*ashape); // matmul(matrix, matrix)
+            }
+          }
+        }
+      }
     } else if (intrinsic->name == "reshape") {
       if (call.arguments().size() >= 2 && call.arguments().at(1)) {
         // SHAPE(RESHAPE(array,shape)) -> shape
@@ -608,6 +626,43 @@ auto GetShapeHelper::operator()(const ProcedureRef &call) const -> Result {
           }
         }
       }
+    } else if (intrinsic->name == "transfer") {
+      if (call.arguments().size() == 3 && call.arguments().at(2)) {
+        // SIZE= is present; shape is vector [SIZE=]
+        if (const auto *size{
+                UnwrapExpr<Expr<SomeInteger>>(call.arguments().at(2))}) {
+          return Shape{
+              MaybeExtentExpr{ConvertToType<ExtentType>(common::Clone(*size))}};
+        }
+      } else if (auto moldTypeAndShape{
+                     characteristics::TypeAndShape::Characterize(
+                         call.arguments().at(1), context_)}) {
+        if (GetRank(moldTypeAndShape->shape()) == 0) {
+          // SIZE= is absent and MOLD= is scalar: result is scalar
+          return Scalar();
+        } else {
+          // SIZE= is absent and MOLD= is array: result is vector whose
+          // length is determined by sizes of types.  See 16.9.193p4 case(ii).
+          if (auto sourceTypeAndShape{
+                  characteristics::TypeAndShape::Characterize(
+                      call.arguments().at(0), context_)}) {
+            auto sourceElements{
+                GetSize(common::Clone(sourceTypeAndShape->shape()))};
+            auto sourceElementBytes{
+                sourceTypeAndShape->MeasureSizeInBytes(&context_)};
+            auto moldElementBytes{
+                moldTypeAndShape->MeasureSizeInBytes(&context_)};
+            if (sourceElements && sourceElementBytes && moldElementBytes) {
+              ExtentExpr extent{Fold(context_,
+                  ((std::move(*sourceElements) *
+                       std::move(*sourceElementBytes)) +
+                      common::Clone(*moldElementBytes) - ExtentExpr{1}) /
+                      common::Clone(*moldElementBytes))};
+              return Shape{MaybeExtentExpr{std::move(extent)}};
+            }
+          }
+        }
+      }
     } else if (intrinsic->name == "transpose") {
       if (call.arguments().size() >= 1) {
         if (auto shape{(*this)(call.arguments().at(0))}) {
@@ -629,9 +684,9 @@ auto GetShapeHelper::operator()(const ProcedureRef &call) const -> Result {
 
 bool CheckConformance(parser::ContextualMessages &messages, const Shape &left,
     const Shape &right, const char *leftIs, const char *rightIs) {
-  if (!left.empty() && !right.empty()) {
-    int n{GetRank(left)};
-    int rn{GetRank(right)};
+  int n{GetRank(left)};
+  int rn{GetRank(right)};
+  if (n != 0 && rn != 0) {
     if (n != rn) {
       messages.Say("Rank of %1$s is %2$d, but %3$s has rank %4$d"_err_en_US,
           leftIs, n, rightIs, rn);
@@ -652,5 +707,23 @@ bool CheckConformance(parser::ContextualMessages &messages, const Shape &left,
     }
   }
   return true;
+}
+
+bool IncrementSubscripts(
+    ConstantSubscripts &indices, const ConstantSubscripts &extents) {
+  std::size_t rank(indices.size());
+  CHECK(rank <= extents.size());
+  for (std::size_t j{0}; j < rank; ++j) {
+    if (extents[j] < 1) {
+      return false;
+    }
+  }
+  for (std::size_t j{0}; j < rank; ++j) {
+    if (indices[j]++ < extents[j]) {
+      return true;
+    }
+    indices[j] = 1;
+  }
+  return false;
 }
 } // namespace Fortran::evaluate

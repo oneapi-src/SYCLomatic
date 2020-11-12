@@ -1186,8 +1186,10 @@ bool AArch64LoadStoreOpt::findMatchingStore(
     // store instruction writes and the stored value is not modified, we can
     // promote the load. Since we do not handle stores with pre-/post-index,
     // it's unnecessary to check if BaseReg is modified by the store itself.
+    // Also we can't handle stores without an immediate offset operand,
+    // while the operand might be the address for a global variable.
     if (MI.mayStore() && isMatchingStore(LoadMI, MI) &&
-        BaseReg == getLdStBaseOp(MI).getReg() &&
+        BaseReg == getLdStBaseOp(MI).getReg() && getLdStOffsetOp(MI).isImm() &&
         isLdOffsetInRangeOfSt(LoadMI, MI, TII) &&
         ModifiedRegUnits.available(getLdStRegOp(MI).getReg())) {
       StoreI = MBBI;
@@ -1287,7 +1289,23 @@ canRenameUpToDef(MachineInstr &FirstMI, LiveRegUnits &UsedInBetween,
     LLVM_DEBUG(dbgs() << "  Operand not killed at " << FirstMI << "\n");
     return false;
   }
-  auto canRenameMOP = [](const MachineOperand &MOP) {
+  auto canRenameMOP = [TRI](const MachineOperand &MOP) {
+    if (MOP.isReg()) {
+      auto *RegClass = TRI->getMinimalPhysRegClass(MOP.getReg());
+      // Renaming registers with multiple disjunct sub-registers (e.g. the
+      // result of a LD3) means that all sub-registers are renamed, potentially
+      // impacting other instructions we did not check. Bail out.
+      // Note that this relies on the structure of the AArch64 register file. In
+      // particular, a subregister cannot be written without overwriting the
+      // whole register.
+      if (RegClass->HasDisjunctSubRegs) {
+        LLVM_DEBUG(
+            dbgs()
+            << "  Cannot rename operands with multiple disjunct subregisters ("
+            << MOP << ")\n");
+        return false;
+      }
+    }
     return MOP.isImplicit() ||
            (MOP.isRenamable() && !MOP.isEarlyClobber() && !MOP.isTied());
   };
@@ -1534,15 +1552,26 @@ AArch64LoadStoreOpt::findMatchingInsn(MachineBasicBlock::iterator I,
             continue;
           }
         }
-        // If the destination register of the loads is the same register, bail
-        // and keep looking. A load-pair instruction with both destination
-        // registers the same is UNPREDICTABLE and will result in an exception.
-        if (MayLoad && Reg == getLdStRegOp(MI).getReg()) {
+        // If the destination register of one load is the same register or a
+        // sub/super register of the other load, bail and keep looking. A
+        // load-pair instruction with both destination registers the same is
+        // UNPREDICTABLE and will result in an exception.
+        if (MayLoad &&
+            TRI->isSuperOrSubRegisterEq(Reg, getLdStRegOp(MI).getReg())) {
           LiveRegUnits::accumulateUsedDefed(MI, ModifiedRegUnits, UsedRegUnits,
                                             TRI);
           MemInsns.push_back(&MI);
           continue;
         }
+
+        // If the BaseReg has been modified, then we cannot do the optimization.
+        // For example, in the following pattern
+        //   ldr x1 [x2]
+        //   ldr x2 [x3]
+        //   ldr x4 [x2, #8],
+        // the first and third ldr cannot be converted to ldp x1, x4, [x2]
+        if (!ModifiedRegUnits.available(BaseReg))
+          return E;
 
         // If the Rt of the second instruction was not modified or used between
         // the two instructions and none of the instructions between the second
@@ -1734,6 +1763,11 @@ bool AArch64LoadStoreOpt::isMatchingUpdateInsn(MachineInstr &MemMI,
   return false;
 }
 
+static bool needsWinCFI(const MachineFunction *MF) {
+  return MF->getTarget().getMCAsmInfo()->usesWindowsCFI() &&
+         MF->getFunction().needsUnwindTableEntry();
+}
+
 MachineBasicBlock::iterator AArch64LoadStoreOpt::findMatchingUpdateInsnForward(
     MachineBasicBlock::iterator I, int UnscaledOffset, unsigned Limit) {
   MachineBasicBlock::iterator E = I->getParent()->end();
@@ -1774,14 +1808,11 @@ MachineBasicBlock::iterator AArch64LoadStoreOpt::findMatchingUpdateInsnForward(
   // the memory access (I) and the increment (MBBI) can access the memory
   // region defined by [SP, MBBI].
   const bool BaseRegSP = BaseReg == AArch64::SP;
-  if (BaseRegSP) {
+  if (BaseRegSP && needsWinCFI(I->getMF())) {
     // FIXME: For now, we always block the optimization over SP in windows
     // targets as it requires to adjust the unwind/debug info, messing up
     // the unwind info can actually cause a miscompile.
-    const MCAsmInfo *MAI = I->getMF()->getTarget().getMCAsmInfo();
-    if (MAI->usesWindowsCFI() &&
-        I->getMF()->getFunction().needsUnwindTableEntry())
-      return E;
+    return E;
   }
 
   for (unsigned Count = 0; MBBI != E && Count < Limit;
@@ -1835,6 +1866,14 @@ MachineBasicBlock::iterator AArch64LoadStoreOpt::findMatchingUpdateInsnBackward(
       if (DestReg == BaseReg || TRI->isSubRegister(BaseReg, DestReg))
         return E;
     }
+  }
+
+  const bool BaseRegSP = BaseReg == AArch64::SP;
+  if (BaseRegSP && needsWinCFI(I->getMF())) {
+    // FIXME: For now, we always block the optimization over SP in windows
+    // targets as it requires to adjust the unwind/debug info, messing up
+    // the unwind info can actually cause a miscompile.
+    return E;
   }
 
   // Track which register units have been modified and used between the first

@@ -26,6 +26,7 @@
 #include "clang/AST/NestedNameSpecifier.h"
 #include "clang/AST/OperationKinds.h"
 #include "clang/AST/Stmt.h"
+#include "clang/AST/StmtCXX.h"
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/Type.h"
 #include "clang/AST/UnresolvedSet.h"
@@ -91,20 +92,21 @@ class CXXOperatorCallExpr final : public CallExpr {
 
   CXXOperatorCallExpr(OverloadedOperatorKind OpKind, Expr *Fn,
                       ArrayRef<Expr *> Args, QualType Ty, ExprValueKind VK,
-                      SourceLocation OperatorLoc, FPOptions FPFeatures,
+                      SourceLocation OperatorLoc, FPOptionsOverride FPFeatures,
                       ADLCallKind UsesADL);
 
-  CXXOperatorCallExpr(unsigned NumArgs, EmptyShell Empty);
+  CXXOperatorCallExpr(unsigned NumArgs, bool HasFPFeatures, EmptyShell Empty);
 
 public:
   static CXXOperatorCallExpr *
   Create(const ASTContext &Ctx, OverloadedOperatorKind OpKind, Expr *Fn,
          ArrayRef<Expr *> Args, QualType Ty, ExprValueKind VK,
-         SourceLocation OperatorLoc, FPOptions FPFeatures,
+         SourceLocation OperatorLoc, FPOptionsOverride FPFeatures,
          ADLCallKind UsesADL = NotADL);
 
   static CXXOperatorCallExpr *CreateEmpty(const ASTContext &Ctx,
-                                          unsigned NumArgs, EmptyShell Empty);
+                                          unsigned NumArgs, bool HasFPFeatures,
+                                          EmptyShell Empty);
 
   /// Returns the kind of overloaded operator that this expression refers to.
   OverloadedOperatorKind getOperator() const {
@@ -162,21 +164,6 @@ public:
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == CXXOperatorCallExprClass;
   }
-
-  // Set the FP contractability status of this operator. Only meaningful for
-  // operations on floating point types.
-  void setFPFeatures(FPOptions F) {
-    CXXOperatorCallExprBits.FPFeatures = F.getAsOpaqueInt();
-  }
-  FPOptions getFPFeatures() const {
-    return FPOptions(CXXOperatorCallExprBits.FPFeatures);
-  }
-
-  // Get the FP contractability status of this operator. Only meaningful for
-  // operations on floating point types.
-  bool isFPContractableWithinStatement() const {
-    return getFPFeatures().allowFPContractWithinStatement();
-  }
 };
 
 /// Represents a call to a member function that
@@ -192,18 +179,20 @@ class CXXMemberCallExpr final : public CallExpr {
   // to CallExpr. See CallExpr for the details.
 
   CXXMemberCallExpr(Expr *Fn, ArrayRef<Expr *> Args, QualType Ty,
-                    ExprValueKind VK, SourceLocation RP, unsigned MinNumArgs);
+                    ExprValueKind VK, SourceLocation RP,
+                    FPOptionsOverride FPOptions, unsigned MinNumArgs);
 
-  CXXMemberCallExpr(unsigned NumArgs, EmptyShell Empty);
+  CXXMemberCallExpr(unsigned NumArgs, bool HasFPFeatures, EmptyShell Empty);
 
 public:
   static CXXMemberCallExpr *Create(const ASTContext &Ctx, Expr *Fn,
                                    ArrayRef<Expr *> Args, QualType Ty,
                                    ExprValueKind VK, SourceLocation RP,
+                                   FPOptionsOverride FPFeatures,
                                    unsigned MinNumArgs = 0);
 
   static CXXMemberCallExpr *CreateEmpty(const ASTContext &Ctx, unsigned NumArgs,
-                                        EmptyShell Empty);
+                                        bool HasFPFeatures, EmptyShell Empty);
 
   /// Retrieve the implicit object argument for the member call.
   ///
@@ -250,18 +239,21 @@ class CUDAKernelCallExpr final : public CallExpr {
 
   CUDAKernelCallExpr(Expr *Fn, CallExpr *Config, ArrayRef<Expr *> Args,
                      QualType Ty, ExprValueKind VK, SourceLocation RP,
-                     unsigned MinNumArgs);
+                     FPOptionsOverride FPFeatures, unsigned MinNumArgs);
 
-  CUDAKernelCallExpr(unsigned NumArgs, EmptyShell Empty);
+  CUDAKernelCallExpr(unsigned NumArgs, bool HasFPFeatures, EmptyShell Empty);
 
 public:
   static CUDAKernelCallExpr *Create(const ASTContext &Ctx, Expr *Fn,
                                     CallExpr *Config, ArrayRef<Expr *> Args,
                                     QualType Ty, ExprValueKind VK,
-                                    SourceLocation RP, unsigned MinNumArgs = 0);
+                                    SourceLocation RP,
+                                    FPOptionsOverride FPFeatures,
+                                    unsigned MinNumArgs = 0);
 
   static CUDAKernelCallExpr *CreateEmpty(const ASTContext &Ctx,
-                                         unsigned NumArgs, EmptyShell Empty);
+                                         unsigned NumArgs, bool HasFPFeatures,
+                                         EmptyShell Empty);
 
   const CallExpr *getConfig() const {
     return cast_or_null<CallExpr>(getPreArg(CONFIG));
@@ -382,16 +374,17 @@ private:
 protected:
   friend class ASTStmtReader;
 
-  CXXNamedCastExpr(StmtClass SC, QualType ty, ExprValueKind VK,
-                   CastKind kind, Expr *op, unsigned PathSize,
+  CXXNamedCastExpr(StmtClass SC, QualType ty, ExprValueKind VK, CastKind kind,
+                   Expr *op, unsigned PathSize, bool HasFPFeatures,
                    TypeSourceInfo *writtenTy, SourceLocation l,
-                   SourceLocation RParenLoc,
-                   SourceRange AngleBrackets)
-      : ExplicitCastExpr(SC, ty, VK, kind, op, PathSize, writtenTy), Loc(l),
-        RParenLoc(RParenLoc), AngleBrackets(AngleBrackets) {}
+                   SourceLocation RParenLoc, SourceRange AngleBrackets)
+      : ExplicitCastExpr(SC, ty, VK, kind, op, PathSize, HasFPFeatures,
+                         writtenTy),
+        Loc(l), RParenLoc(RParenLoc), AngleBrackets(AngleBrackets) {}
 
-  explicit CXXNamedCastExpr(StmtClass SC, EmptyShell Shell, unsigned PathSize)
-      : ExplicitCastExpr(SC, Shell, PathSize) {}
+  explicit CXXNamedCastExpr(StmtClass SC, EmptyShell Shell, unsigned PathSize,
+                            bool HasFPFeatures)
+      : ExplicitCastExpr(SC, Shell, PathSize, HasFPFeatures) {}
 
 public:
   const char *getCastName() const;
@@ -427,29 +420,39 @@ public:
 /// \c static_cast<int>(1.0).
 class CXXStaticCastExpr final
     : public CXXNamedCastExpr,
-      private llvm::TrailingObjects<CXXStaticCastExpr, CXXBaseSpecifier *> {
+      private llvm::TrailingObjects<CXXStaticCastExpr, CXXBaseSpecifier *,
+                                    FPOptionsOverride> {
   CXXStaticCastExpr(QualType ty, ExprValueKind vk, CastKind kind, Expr *op,
                     unsigned pathSize, TypeSourceInfo *writtenTy,
-                    SourceLocation l, SourceLocation RParenLoc,
-                    SourceRange AngleBrackets)
+                    FPOptionsOverride FPO, SourceLocation l,
+                    SourceLocation RParenLoc, SourceRange AngleBrackets)
       : CXXNamedCastExpr(CXXStaticCastExprClass, ty, vk, kind, op, pathSize,
-                         writtenTy, l, RParenLoc, AngleBrackets) {}
+                         FPO.requiresTrailingStorage(), writtenTy, l, RParenLoc,
+                         AngleBrackets) {
+    if (hasStoredFPFeatures())
+      *getTrailingFPFeatures() = FPO;
+  }
 
-  explicit CXXStaticCastExpr(EmptyShell Empty, unsigned PathSize)
-      : CXXNamedCastExpr(CXXStaticCastExprClass, Empty, PathSize) {}
+  explicit CXXStaticCastExpr(EmptyShell Empty, unsigned PathSize,
+                             bool HasFPFeatures)
+      : CXXNamedCastExpr(CXXStaticCastExprClass, Empty, PathSize,
+                         HasFPFeatures) {}
+
+  unsigned numTrailingObjects(OverloadToken<CXXBaseSpecifier *>) const {
+    return path_size();
+  }
 
 public:
   friend class CastExpr;
   friend TrailingObjects;
 
-  static CXXStaticCastExpr *Create(const ASTContext &Context, QualType T,
-                                   ExprValueKind VK, CastKind K, Expr *Op,
-                                   const CXXCastPath *Path,
-                                   TypeSourceInfo *Written, SourceLocation L,
-                                   SourceLocation RParenLoc,
-                                   SourceRange AngleBrackets);
+  static CXXStaticCastExpr *
+  Create(const ASTContext &Context, QualType T, ExprValueKind VK, CastKind K,
+         Expr *Op, const CXXCastPath *Path, TypeSourceInfo *Written,
+         FPOptionsOverride FPO, SourceLocation L, SourceLocation RParenLoc,
+         SourceRange AngleBrackets);
   static CXXStaticCastExpr *CreateEmpty(const ASTContext &Context,
-                                        unsigned PathSize);
+                                        unsigned PathSize, bool hasFPFeatures);
 
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == CXXStaticCastExprClass;
@@ -464,15 +467,17 @@ public:
 class CXXDynamicCastExpr final
     : public CXXNamedCastExpr,
       private llvm::TrailingObjects<CXXDynamicCastExpr, CXXBaseSpecifier *> {
-  CXXDynamicCastExpr(QualType ty, ExprValueKind VK, CastKind kind,
-                     Expr *op, unsigned pathSize, TypeSourceInfo *writtenTy,
+  CXXDynamicCastExpr(QualType ty, ExprValueKind VK, CastKind kind, Expr *op,
+                     unsigned pathSize, TypeSourceInfo *writtenTy,
                      SourceLocation l, SourceLocation RParenLoc,
                      SourceRange AngleBrackets)
       : CXXNamedCastExpr(CXXDynamicCastExprClass, ty, VK, kind, op, pathSize,
-                         writtenTy, l, RParenLoc, AngleBrackets) {}
+                         /*HasFPFeatures*/ false, writtenTy, l, RParenLoc,
+                         AngleBrackets) {}
 
   explicit CXXDynamicCastExpr(EmptyShell Empty, unsigned pathSize)
-      : CXXNamedCastExpr(CXXDynamicCastExprClass, Empty, pathSize) {}
+      : CXXNamedCastExpr(CXXDynamicCastExprClass, Empty, pathSize,
+                         /*HasFPFeatures*/ false) {}
 
 public:
   friend class CastExpr;
@@ -507,16 +512,17 @@ class CXXReinterpretCastExpr final
     : public CXXNamedCastExpr,
       private llvm::TrailingObjects<CXXReinterpretCastExpr,
                                     CXXBaseSpecifier *> {
-  CXXReinterpretCastExpr(QualType ty, ExprValueKind vk, CastKind kind,
-                         Expr *op, unsigned pathSize,
-                         TypeSourceInfo *writtenTy, SourceLocation l,
-                         SourceLocation RParenLoc,
+  CXXReinterpretCastExpr(QualType ty, ExprValueKind vk, CastKind kind, Expr *op,
+                         unsigned pathSize, TypeSourceInfo *writtenTy,
+                         SourceLocation l, SourceLocation RParenLoc,
                          SourceRange AngleBrackets)
       : CXXNamedCastExpr(CXXReinterpretCastExprClass, ty, vk, kind, op,
-                         pathSize, writtenTy, l, RParenLoc, AngleBrackets) {}
+                         pathSize, /*HasFPFeatures*/ false, writtenTy, l,
+                         RParenLoc, AngleBrackets) {}
 
   CXXReinterpretCastExpr(EmptyShell Empty, unsigned pathSize)
-      : CXXNamedCastExpr(CXXReinterpretCastExprClass, Empty, pathSize) {}
+      : CXXNamedCastExpr(CXXReinterpretCastExprClass, Empty, pathSize,
+                         /*HasFPFeatures*/ false) {}
 
 public:
   friend class CastExpr;
@@ -549,11 +555,13 @@ class CXXConstCastExpr final
   CXXConstCastExpr(QualType ty, ExprValueKind VK, Expr *op,
                    TypeSourceInfo *writtenTy, SourceLocation l,
                    SourceLocation RParenLoc, SourceRange AngleBrackets)
-      : CXXNamedCastExpr(CXXConstCastExprClass, ty, VK, CK_NoOp, op,
-                         0, writtenTy, l, RParenLoc, AngleBrackets) {}
+      : CXXNamedCastExpr(CXXConstCastExprClass, ty, VK, CK_NoOp, op, 0,
+                         /*HasFPFeatures*/ false, writtenTy, l, RParenLoc,
+                         AngleBrackets) {}
 
   explicit CXXConstCastExpr(EmptyShell Empty)
-      : CXXNamedCastExpr(CXXConstCastExprClass, Empty, 0) {}
+      : CXXNamedCastExpr(CXXConstCastExprClass, Empty, 0,
+                         /*HasFPFeatures*/ false) {}
 
 public:
   friend class CastExpr;
@@ -586,10 +594,12 @@ class CXXAddrspaceCastExpr final
                        TypeSourceInfo *writtenTy, SourceLocation l,
                        SourceLocation RParenLoc, SourceRange AngleBrackets)
       : CXXNamedCastExpr(CXXAddrspaceCastExprClass, ty, VK, Kind, op, 0,
-                         writtenTy, l, RParenLoc, AngleBrackets) {}
+                         /*HasFPFeatures*/ false, writtenTy, l, RParenLoc,
+                         AngleBrackets) {}
 
   explicit CXXAddrspaceCastExpr(EmptyShell Empty)
-      : CXXNamedCastExpr(CXXAddrspaceCastExprClass, Empty, 0) {}
+      : CXXNamedCastExpr(CXXAddrspaceCastExprClass, Empty, 0,
+                         /*HasFPFeatures*/ false) {}
 
 public:
   friend class CastExpr;
@@ -627,18 +637,20 @@ class UserDefinedLiteral final : public CallExpr {
 
   UserDefinedLiteral(Expr *Fn, ArrayRef<Expr *> Args, QualType Ty,
                      ExprValueKind VK, SourceLocation LitEndLoc,
-                     SourceLocation SuffixLoc);
+                     SourceLocation SuffixLoc, FPOptionsOverride FPFeatures);
 
-  UserDefinedLiteral(unsigned NumArgs, EmptyShell Empty);
+  UserDefinedLiteral(unsigned NumArgs, bool HasFPFeatures, EmptyShell Empty);
 
 public:
   static UserDefinedLiteral *Create(const ASTContext &Ctx, Expr *Fn,
                                     ArrayRef<Expr *> Args, QualType Ty,
                                     ExprValueKind VK, SourceLocation LitEndLoc,
-                                    SourceLocation SuffixLoc);
+                                    SourceLocation SuffixLoc,
+                                    FPOptionsOverride FPFeatures);
 
   static UserDefinedLiteral *CreateEmpty(const ASTContext &Ctx,
-                                         unsigned NumArgs, EmptyShell Empty);
+                                         unsigned NumArgs, bool HasFPOptions,
+                                         EmptyShell Empty);
 
   /// The kind of literal operator which is invoked.
   enum LiteralOperatorKind {
@@ -845,6 +857,10 @@ public:
   /// Determine whether this typeid has a type operand which is potentially
   /// evaluated, per C++11 [expr.typeid]p3.
   bool isPotentiallyEvaluated() const;
+
+  /// Best-effort check if the expression operand refers to a most derived
+  /// object. This is not a strong guarantee.
+  bool isMostDerived(ASTContext &Context) const;
 
   bool isTypeOperand() const { return Operand.is<TypeSourceInfo *>(); }
 
@@ -1699,34 +1715,43 @@ public:
 /// \endcode
 class CXXFunctionalCastExpr final
     : public ExplicitCastExpr,
-      private llvm::TrailingObjects<CXXFunctionalCastExpr, CXXBaseSpecifier *> {
+      private llvm::TrailingObjects<CXXFunctionalCastExpr, CXXBaseSpecifier *,
+                                    FPOptionsOverride> {
   SourceLocation LParenLoc;
   SourceLocation RParenLoc;
 
   CXXFunctionalCastExpr(QualType ty, ExprValueKind VK,
-                        TypeSourceInfo *writtenTy,
-                        CastKind kind, Expr *castExpr, unsigned pathSize,
-                        SourceLocation lParenLoc, SourceLocation rParenLoc)
-      : ExplicitCastExpr(CXXFunctionalCastExprClass, ty, VK, kind,
-                         castExpr, pathSize, writtenTy),
-        LParenLoc(lParenLoc), RParenLoc(rParenLoc) {}
+                        TypeSourceInfo *writtenTy, CastKind kind,
+                        Expr *castExpr, unsigned pathSize,
+                        FPOptionsOverride FPO, SourceLocation lParenLoc,
+                        SourceLocation rParenLoc)
+      : ExplicitCastExpr(CXXFunctionalCastExprClass, ty, VK, kind, castExpr,
+                         pathSize, FPO.requiresTrailingStorage(), writtenTy),
+        LParenLoc(lParenLoc), RParenLoc(rParenLoc) {
+    if (hasStoredFPFeatures())
+      *getTrailingFPFeatures() = FPO;
+  }
 
-  explicit CXXFunctionalCastExpr(EmptyShell Shell, unsigned PathSize)
-      : ExplicitCastExpr(CXXFunctionalCastExprClass, Shell, PathSize) {}
+  explicit CXXFunctionalCastExpr(EmptyShell Shell, unsigned PathSize,
+                                 bool HasFPFeatures)
+      : ExplicitCastExpr(CXXFunctionalCastExprClass, Shell, PathSize,
+                         HasFPFeatures) {}
+
+  unsigned numTrailingObjects(OverloadToken<CXXBaseSpecifier *>) const {
+    return path_size();
+  }
 
 public:
   friend class CastExpr;
   friend TrailingObjects;
 
-  static CXXFunctionalCastExpr *Create(const ASTContext &Context, QualType T,
-                                       ExprValueKind VK,
-                                       TypeSourceInfo *Written,
-                                       CastKind Kind, Expr *Op,
-                                       const CXXCastPath *Path,
-                                       SourceLocation LPLoc,
-                                       SourceLocation RPLoc);
-  static CXXFunctionalCastExpr *CreateEmpty(const ASTContext &Context,
-                                            unsigned PathSize);
+  static CXXFunctionalCastExpr *
+  Create(const ASTContext &Context, QualType T, ExprValueKind VK,
+         TypeSourceInfo *Written, CastKind Kind, Expr *Op,
+         const CXXCastPath *Path, FPOptionsOverride FPO, SourceLocation LPLoc,
+         SourceLocation RPLoc);
+  static CXXFunctionalCastExpr *
+  CreateEmpty(const ASTContext &Context, unsigned PathSize, bool HasFPFeatures);
 
   SourceLocation getLParenLoc() const { return LParenLoc; }
   void setLParenLoc(SourceLocation L) { LParenLoc = L; }
@@ -1829,25 +1854,13 @@ Stmt **CXXConstructExpr::getTrailingArgs() {
 /// and which can never occur implicitly.
 class LambdaExpr final : public Expr,
                          private llvm::TrailingObjects<LambdaExpr, Stmt *> {
+  // LambdaExpr has some data stored in LambdaExprBits.
+
   /// The source range that covers the lambda introducer ([...]).
   SourceRange IntroducerRange;
 
   /// The source location of this lambda's capture-default ('=' or '&').
   SourceLocation CaptureDefaultLoc;
-
-  /// The number of captures.
-  unsigned NumCaptures : 16;
-
-  /// The default capture kind, which is a value of type
-  /// LambdaCaptureDefault.
-  unsigned CaptureDefault : 2;
-
-  /// Whether this lambda had an explicit parameter list vs. an
-  /// implicit (and empty) parameter list.
-  unsigned ExplicitParams : 1;
-
-  /// Whether this lambda had the result type explicitly specified.
-  unsigned ExplicitResultType : 1;
 
   /// The location of the closing brace ('}') that completes
   /// the lambda.
@@ -1862,22 +1875,17 @@ class LambdaExpr final : public Expr,
   /// Construct a lambda expression.
   LambdaExpr(QualType T, SourceRange IntroducerRange,
              LambdaCaptureDefault CaptureDefault,
-             SourceLocation CaptureDefaultLoc, ArrayRef<LambdaCapture> Captures,
-             bool ExplicitParams, bool ExplicitResultType,
-             ArrayRef<Expr *> CaptureInits, SourceLocation ClosingBrace,
-             bool ContainsUnexpandedParameterPack);
+             SourceLocation CaptureDefaultLoc, bool ExplicitParams,
+             bool ExplicitResultType, ArrayRef<Expr *> CaptureInits,
+             SourceLocation ClosingBrace, bool ContainsUnexpandedParameterPack);
 
   /// Construct an empty lambda expression.
-  LambdaExpr(EmptyShell Empty, unsigned NumCaptures)
-      : Expr(LambdaExprClass, Empty), NumCaptures(NumCaptures),
-        CaptureDefault(LCD_None), ExplicitParams(false),
-        ExplicitResultType(false) {
-    getStoredStmts()[NumCaptures] = nullptr;
-  }
+  LambdaExpr(EmptyShell Empty, unsigned NumCaptures);
 
   Stmt **getStoredStmts() { return getTrailingObjects<Stmt *>(); }
-
   Stmt *const *getStoredStmts() const { return getTrailingObjects<Stmt *>(); }
+
+  void initBodyIfNeeded() const;
 
 public:
   friend class ASTStmtReader;
@@ -1888,9 +1896,9 @@ public:
   static LambdaExpr *
   Create(const ASTContext &C, CXXRecordDecl *Class, SourceRange IntroducerRange,
          LambdaCaptureDefault CaptureDefault, SourceLocation CaptureDefaultLoc,
-         ArrayRef<LambdaCapture> Captures, bool ExplicitParams,
-         bool ExplicitResultType, ArrayRef<Expr *> CaptureInits,
-         SourceLocation ClosingBrace, bool ContainsUnexpandedParameterPack);
+         bool ExplicitParams, bool ExplicitResultType,
+         ArrayRef<Expr *> CaptureInits, SourceLocation ClosingBrace,
+         bool ContainsUnexpandedParameterPack);
 
   /// Construct a new lambda expression that will be deserialized from
   /// an external source.
@@ -1899,13 +1907,11 @@ public:
 
   /// Determine the default capture kind for this lambda.
   LambdaCaptureDefault getCaptureDefault() const {
-    return static_cast<LambdaCaptureDefault>(CaptureDefault);
+    return static_cast<LambdaCaptureDefault>(LambdaExprBits.CaptureDefault);
   }
 
   /// Retrieve the location of this lambda's capture-default, if any.
-  SourceLocation getCaptureDefaultLoc() const {
-    return CaptureDefaultLoc;
-  }
+  SourceLocation getCaptureDefaultLoc() const { return CaptureDefaultLoc; }
 
   /// Determine whether one of this lambda's captures is an init-capture.
   bool isInitCapture(const LambdaCapture *Capture) const;
@@ -1928,7 +1934,7 @@ public:
   capture_iterator capture_end() const;
 
   /// Determine the number of captures in this lambda.
-  unsigned capture_size() const { return NumCaptures; }
+  unsigned capture_size() const { return LambdaExprBits.NumCaptures; }
 
   /// Retrieve this lambda's explicit captures.
   capture_range explicit_captures() const;
@@ -1958,6 +1964,7 @@ public:
 
   /// Const iterator that walks over the capture initialization
   /// arguments.
+  /// FIXME: This interface is prone to being used incorrectly.
   using const_capture_init_iterator = Expr *const *;
 
   /// Retrieve the initialization expressions for this lambda's captures.
@@ -1985,13 +1992,13 @@ public:
   /// Retrieve the iterator pointing one past the last
   /// initialization argument for this lambda expression.
   capture_init_iterator capture_init_end() {
-    return capture_init_begin() + NumCaptures;
+    return capture_init_begin() + capture_size();
   }
 
   /// Retrieve the iterator pointing one past the last
   /// initialization argument for this lambda expression.
   const_capture_init_iterator capture_init_end() const {
-    return capture_init_begin() + NumCaptures;
+    return capture_init_begin() + capture_size();
   }
 
   /// Retrieve the source range covering the lambda introducer,
@@ -2025,8 +2032,20 @@ public:
   /// Whether this is a generic lambda.
   bool isGenericLambda() const { return getTemplateParameterList(); }
 
-  /// Retrieve the body of the lambda.
-  CompoundStmt *getBody() const;
+  /// Retrieve the body of the lambda. This will be most of the time
+  /// a \p CompoundStmt, but can also be \p CoroutineBodyStmt wrapping
+  /// a \p CompoundStmt. Note that unlike functions, lambda-expressions
+  /// cannot have a function-try-block.
+  Stmt *getBody() const;
+
+  /// Retrieve the \p CompoundStmt representing the body of the lambda.
+  /// This is a convenience function for callers who do not need
+  /// to handle node(s) which may wrap a \p CompoundStmt.
+  const CompoundStmt *getCompoundStmtBody() const;
+  CompoundStmt *getCompoundStmtBody() {
+    const auto *ConstThis = this;
+    return const_cast<CompoundStmt *>(ConstThis->getCompoundStmtBody());
+  }
 
   /// Determine whether the lambda is mutable, meaning that any
   /// captures values can be modified.
@@ -2034,10 +2053,12 @@ public:
 
   /// Determine whether this lambda has an explicit parameter
   /// list vs. an implicit (empty) parameter list.
-  bool hasExplicitParameters() const { return ExplicitParams; }
+  bool hasExplicitParameters() const { return LambdaExprBits.ExplicitParams; }
 
   /// Whether this lambda had its result type explicitly specified.
-  bool hasExplicitResultType() const { return ExplicitResultType; }
+  bool hasExplicitResultType() const {
+    return LambdaExprBits.ExplicitResultType;
+  }
 
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == LambdaExprClass;
@@ -2049,15 +2070,9 @@ public:
 
   SourceLocation getEndLoc() const LLVM_READONLY { return ClosingBrace; }
 
-  child_range children() {
-    // Includes initialization exprs plus body stmt
-    return child_range(getStoredStmts(), getStoredStmts() + NumCaptures + 1);
-  }
-
-  const_child_range children() const {
-    return const_child_range(getStoredStmts(),
-                             getStoredStmts() + NumCaptures + 1);
-  }
+  /// Includes the captures and the body of the lambda.
+  child_range children();
+  const_child_range children() const;
 };
 
 /// An expression "T()" which creates a value-initialized rvalue of type
@@ -2750,6 +2765,8 @@ public:
       : Expr(ArrayTypeTraitExprClass, ty, VK_RValue, OK_Ordinary), ATT(att),
         Value(value), Dimension(dimension), Loc(loc), RParen(rparen),
         QueriedType(queried) {
+    assert(att <= ATT_Last && "invalid enum value!");
+    assert(static_cast<unsigned>(att) == ATT && "ATT overflow!");
     setDependence(computeDependence(this));
   }
 
@@ -2814,6 +2831,8 @@ public:
       : Expr(ExpressionTraitExprClass, resultType, VK_RValue, OK_Ordinary),
         ET(et), Value(value), Loc(loc), RParen(rparen),
         QueriedExpression(queried) {
+    assert(et <= ET_Last && "invalid enum value!");
+    assert(static_cast<unsigned>(et) == ET && "ET overflow!");
     setDependence(computeDependence(this));
   }
 
@@ -3408,17 +3427,18 @@ class CXXUnresolvedConstructExpr final
   /// The location of the right parentheses (')').
   SourceLocation RParenLoc;
 
-  CXXUnresolvedConstructExpr(TypeSourceInfo *TSI, SourceLocation LParenLoc,
-                             ArrayRef<Expr *> Args, SourceLocation RParenLoc);
+  CXXUnresolvedConstructExpr(QualType T, TypeSourceInfo *TSI,
+                             SourceLocation LParenLoc, ArrayRef<Expr *> Args,
+                             SourceLocation RParenLoc);
 
   CXXUnresolvedConstructExpr(EmptyShell Empty, unsigned NumArgs)
-      : Expr(CXXUnresolvedConstructExprClass, Empty) {
+      : Expr(CXXUnresolvedConstructExprClass, Empty), TSI(nullptr) {
     CXXUnresolvedConstructExprBits.NumArgs = NumArgs;
   }
 
 public:
   static CXXUnresolvedConstructExpr *Create(const ASTContext &Context,
-                                            TypeSourceInfo *Type,
+                                            QualType T, TypeSourceInfo *TSI,
                                             SourceLocation LParenLoc,
                                             ArrayRef<Expr *> Args,
                                             SourceLocation RParenLoc);
@@ -4531,31 +4551,38 @@ class CXXFoldExpr : public Expr {
   friend class ASTStmtReader;
   friend class ASTStmtWriter;
 
+  enum SubExpr { Callee, LHS, RHS, Count };
+
   SourceLocation LParenLoc;
   SourceLocation EllipsisLoc;
   SourceLocation RParenLoc;
   // When 0, the number of expansions is not known. Otherwise, this is one more
   // than the number of expansions.
   unsigned NumExpansions;
-  Stmt *SubExprs[2];
+  Stmt *SubExprs[SubExpr::Count];
   BinaryOperatorKind Opcode;
 
 public:
-  CXXFoldExpr(QualType T, SourceLocation LParenLoc, Expr *LHS,
-              BinaryOperatorKind Opcode, SourceLocation EllipsisLoc, Expr *RHS,
-              SourceLocation RParenLoc, Optional<unsigned> NumExpansions)
+  CXXFoldExpr(QualType T, UnresolvedLookupExpr *Callee,
+              SourceLocation LParenLoc, Expr *LHS, BinaryOperatorKind Opcode,
+              SourceLocation EllipsisLoc, Expr *RHS, SourceLocation RParenLoc,
+              Optional<unsigned> NumExpansions)
       : Expr(CXXFoldExprClass, T, VK_RValue, OK_Ordinary), LParenLoc(LParenLoc),
         EllipsisLoc(EllipsisLoc), RParenLoc(RParenLoc),
         NumExpansions(NumExpansions ? *NumExpansions + 1 : 0), Opcode(Opcode) {
-    SubExprs[0] = LHS;
-    SubExprs[1] = RHS;
+    SubExprs[SubExpr::Callee] = Callee;
+    SubExprs[SubExpr::LHS] = LHS;
+    SubExprs[SubExpr::RHS] = RHS;
     setDependence(computeDependence(this));
   }
 
   CXXFoldExpr(EmptyShell Empty) : Expr(CXXFoldExprClass, Empty) {}
 
-  Expr *getLHS() const { return static_cast<Expr*>(SubExprs[0]); }
-  Expr *getRHS() const { return static_cast<Expr*>(SubExprs[1]); }
+  UnresolvedLookupExpr *getCallee() const {
+    return static_cast<UnresolvedLookupExpr *>(SubExprs[SubExpr::Callee]);
+  }
+  Expr *getLHS() const { return static_cast<Expr*>(SubExprs[SubExpr::LHS]); }
+  Expr *getRHS() const { return static_cast<Expr*>(SubExprs[SubExpr::RHS]); }
 
   /// Does this produce a right-associated sequence of operators?
   bool isRightFold() const {
@@ -4580,19 +4607,33 @@ public:
     return None;
   }
 
-  SourceLocation getBeginLoc() const LLVM_READONLY { return LParenLoc; }
+  SourceLocation getBeginLoc() const LLVM_READONLY {
+    if (LParenLoc.isValid())
+      return LParenLoc;
+    if (isLeftFold())
+      return getEllipsisLoc();
+    return getLHS()->getBeginLoc();
+  }
 
-  SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }
+  SourceLocation getEndLoc() const LLVM_READONLY {
+    if (RParenLoc.isValid())
+      return RParenLoc;
+    if (isRightFold())
+      return getEllipsisLoc();
+    return getRHS()->getEndLoc();
+  }
 
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == CXXFoldExprClass;
   }
 
   // Iterators
-  child_range children() { return child_range(SubExprs, SubExprs + 2); }
+  child_range children() {
+    return child_range(SubExprs, SubExprs + SubExpr::Count);
+  }
 
   const_child_range children() const {
-    return const_child_range(SubExprs, SubExprs + 2);
+    return const_child_range(SubExprs, SubExprs + SubExpr::Count);
   }
 };
 
@@ -4819,9 +4860,11 @@ public:
   BuiltinBitCastExpr(QualType T, ExprValueKind VK, CastKind CK, Expr *SrcExpr,
                      TypeSourceInfo *DstType, SourceLocation KWLoc,
                      SourceLocation RParenLoc)
-      : ExplicitCastExpr(BuiltinBitCastExprClass, T, VK, CK, SrcExpr, 0,
+      : ExplicitCastExpr(BuiltinBitCastExprClass, T, VK, CK, SrcExpr, 0, false,
                          DstType),
         KWLoc(KWLoc), RParenLoc(RParenLoc) {}
+  BuiltinBitCastExpr(EmptyShell Empty)
+      : ExplicitCastExpr(BuiltinBitCastExprClass, Empty, 0, false) {}
 
   SourceLocation getBeginLoc() const LLVM_READONLY { return KWLoc; }
   SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }

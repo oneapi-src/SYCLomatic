@@ -22,8 +22,6 @@ class PlatformRemoteAppleWatch : public PlatformRemoteDarwinDevice {
 public:
   PlatformRemoteAppleWatch();
 
-  ~PlatformRemoteAppleWatch() override = default;
-
   // Class Functions
   static lldb::PlatformSP CreateInstance(bool force,
                                          const lldb_private::ArchSpec *arch);
@@ -59,9 +57,6 @@ protected:
   void GetDeviceSupportDirectoryNames (std::vector<std::string> &dirnames) override;
 
   std::string GetPlatformName () override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(PlatformRemoteAppleWatch);
 };
 
 #endif // LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMREMOTEAPPLEWATCH_H

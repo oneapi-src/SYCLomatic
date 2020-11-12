@@ -30,18 +30,28 @@ template <int dimensions> class range;
 ///
 /// \ingroup sycl_api
 template <int dimensions = 1, bool with_offset = true> class item {
+#ifndef __SYCL_DISABLE_ITEM_TO_INT_CONV__
+  /* Helper class for conversion operator. Void type is not suitable. User
+   * cannot even try to get address of the operator __private_class(). User
+   * may try to get an address of operator void() and will get the
+   * compile-time error */
+  class __private_class;
+
+  template <bool B, typename T>
+  using EnableIfT = detail::conditional_t<B, T, __private_class>;
+#endif // __SYCL_DISABLE_ITEM_TO_INT_CONV__
 public:
   item() = delete;
 
   id<dimensions> get_id() const { return MImpl.MIndex; }
 
-  size_t ALWAYS_INLINE get_id(int dimension) const {
+  size_t __SYCL_ALWAYS_INLINE get_id(int dimension) const {
     size_t Id = MImpl.MIndex[dimension];
     __SYCL_ASSUME_INT(Id);
     return Id;
   }
 
-  size_t ALWAYS_INLINE operator[](int dimension) const {
+  size_t __SYCL_ALWAYS_INLINE operator[](int dimension) const {
     size_t Id = MImpl.MIndex[dimension];
     __SYCL_ASSUME_INT(Id);
     return Id;
@@ -49,12 +59,14 @@ public:
 
   range<dimensions> get_range() const { return MImpl.MExtent; }
 
-  size_t ALWAYS_INLINE get_range(int dimension) const {
+  size_t __SYCL_ALWAYS_INLINE get_range(int dimension) const {
     size_t Id = MImpl.MExtent[dimension];
     __SYCL_ASSUME_INT(Id);
     return Id;
   }
-
+#ifndef __SYCL_DISABLE_ITEM_TO_INT_CONV__
+  operator EnableIfT<dimensions == 1, std::size_t>() const { return get_id(0); }
+#endif // __SYCL_DISABLE_ITEM_TO_INT_CONV__
   template <bool has_offset = with_offset>
   detail::enable_if_t<has_offset, id<dimensions>> get_offset() const {
     return MImpl.MOffset;
@@ -62,7 +74,7 @@ public:
 
   template <bool has_offset = with_offset>
   detail::enable_if_t<has_offset, size_t>
-      ALWAYS_INLINE get_offset(int dimension) const {
+      __SYCL_ALWAYS_INLINE get_offset(int dimension) const {
     size_t Id = MImpl.MOffset[dimension];
     __SYCL_ASSUME_INT(Id);
     return Id;
@@ -74,7 +86,7 @@ public:
         MImpl.MExtent, MImpl.MIndex, /*Offset*/ {});
   }
 
-  size_t ALWAYS_INLINE get_linear_id() const {
+  size_t __SYCL_ALWAYS_INLINE get_linear_id() const {
     size_t Id = MImpl.get_linear_id();
     __SYCL_ASSUME_INT(Id);
     return Id;
@@ -108,6 +120,20 @@ protected:
 private:
   detail::ItemBase<dimensions, with_offset> MImpl;
 };
+
+namespace detail {
+template <int Dims> item<Dims> store_item(const item<Dims> *i) {
+  return get_or_store(i);
+}
+} // namespace detail
+
+template <int Dims> item<Dims> this_item() {
+#ifdef __SYCL_DEVICE_ONLY__
+  return detail::Builder::getElement(detail::declptr<item<Dims>>());
+#else
+  return detail::store_item<Dims>(nullptr);
+#endif
+}
 
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

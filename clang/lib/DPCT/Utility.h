@@ -46,6 +46,7 @@ class CompoundStmt;
 class ASTContext;
 class ValueDecl;
 class DeclRefExpr;
+class Decl;
 class Expr;
 class MemberExpr;
 class FunctionDecl;
@@ -442,4 +443,6 @@ bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile);
 clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
+
+bool isLexicallyInLocalScope(const clang::Decl*);
 #endif // DPCT_UTILITY_H

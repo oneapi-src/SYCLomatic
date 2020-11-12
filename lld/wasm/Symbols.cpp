@@ -66,6 +66,7 @@ std::string toString(wasm::Symbol::Kind kind) {
 
 namespace wasm {
 DefinedFunction *WasmSym::callCtors;
+DefinedFunction *WasmSym::callDtors;
 DefinedFunction *WasmSym::initMemory;
 DefinedFunction *WasmSym::applyRelocs;
 DefinedFunction *WasmSym::initTLS;
@@ -131,6 +132,8 @@ bool Symbol::isLive() const {
 
 void Symbol::markLive() {
   assert(!isDiscarded());
+  if (file != NULL)
+    file->markLive();
   if (auto *g = dyn_cast<DefinedGlobal>(this))
     g->global->live = true;
   if (auto *e = dyn_cast<DefinedEvent>(this))
@@ -252,7 +255,7 @@ DefinedFunction::DefinedFunction(StringRef name, uint32_t flags, InputFile *f,
                      function ? &function->signature : nullptr),
       function(function) {}
 
-uint32_t DefinedData::getVirtualAddress() const {
+uint64_t DefinedData::getVirtualAddress() const {
   LLVM_DEBUG(dbgs() << "getVirtualAddress: " << getName() << "\n");
   if (segment) {
     // For thread local data, the symbol location is relative to the start of
@@ -265,18 +268,18 @@ uint32_t DefinedData::getVirtualAddress() const {
   return offset;
 }
 
-void DefinedData::setVirtualAddress(uint32_t value) {
+void DefinedData::setVirtualAddress(uint64_t value) {
   LLVM_DEBUG(dbgs() << "setVirtualAddress " << name << " -> " << value << "\n");
   assert(!segment);
   offset = value;
 }
 
-uint32_t DefinedData::getOutputSegmentOffset() const {
+uint64_t DefinedData::getOutputSegmentOffset() const {
   LLVM_DEBUG(dbgs() << "getOutputSegmentOffset: " << getName() << "\n");
   return segment->outputSegmentOffset + offset;
 }
 
-uint32_t DefinedData::getOutputSegmentIndex() const {
+uint64_t DefinedData::getOutputSegmentIndex() const {
   LLVM_DEBUG(dbgs() << "getOutputSegmentIndex: " << getName() << "\n");
   return segment->outputSeg->index;
 }
@@ -338,6 +341,10 @@ const OutputSectionSymbol *SectionSymbol::getOutputSectionSymbol() const {
 }
 
 void LazySymbol::fetch() { cast<ArchiveFile>(file)->addMember(&archiveSymbol); }
+
+void LazySymbol::setWeak() {
+  flags |= (flags & ~WASM_SYMBOL_BINDING_MASK) | WASM_SYMBOL_BINDING_WEAK;
+}
 
 MemoryBufferRef LazySymbol::getMemberBuffer() {
   Archive::Child c =

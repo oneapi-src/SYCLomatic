@@ -20,6 +20,3 @@ int main() {
   });
   return 0;
 }
-
-// TODO: Address a Windows-specific issue with integration header filenames
-// XFAIL: system-windows

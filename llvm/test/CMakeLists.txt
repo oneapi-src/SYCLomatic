@@ -1,20 +1,23 @@
 llvm_canonicalize_cmake_booleans(
   BUILD_SHARED_LIBS
   HAVE_LIBXAR
-  HAVE_LIBZ
   HAVE_OCAMLOPT
   HAVE_OCAML_OUNIT
   LLVM_ENABLE_DIA_SDK
   LLVM_ENABLE_FFI
   LLVM_ENABLE_THREADS
+  LLVM_ENABLE_ZLIB
+  LLVM_ENABLE_LIBXML2
   LLVM_INCLUDE_GO_TESTS
-  LLVM_LIBXML2_ENABLED
   LLVM_LINK_LLVM_DYLIB
   LLVM_TOOL_LTO_BUILD
   LLVM_USE_INTEL_JITEVENTS
   LLVM_BUILD_EXAMPLES
   LLVM_ENABLE_PLUGINS
   LLVM_BYE_LINK_INTO_TOOLS
+  LLVM_HAVE_TF_AOT
+  LLVM_HAVE_TF_API
+  LLVM_ENABLE_EXPENSIVE_CHECKS
   )
 
 configure_lit_site_cfg(
@@ -58,6 +61,7 @@ set(LLVM_TEST_DEPENDS
           llvm-ar
           llvm-as
           llvm-bcanalyzer
+          llvm-bitcode-strip
           llvm-c-test
           llvm-cat
           llvm-cfi-verify
@@ -83,6 +87,7 @@ set(LLVM_TEST_DEPENDS
           llvm-install-name-tool
           llvm-jitlink
           llvm-lib
+          llvm-libtool-darwin
           llvm-link
           llvm-lipo
           llvm-locstats
@@ -120,6 +125,7 @@ set(LLVM_TEST_DEPENDS
           sancov
           sanstats
           sycl-post-link
+          split-file
           verify-uselistorder
           yaml-bench
           yaml2obj
@@ -153,6 +159,7 @@ if(LLVM_BUILD_EXAMPLES)
     Kaleidoscope-Ch5
     Kaleidoscope-Ch6
     Kaleidoscope-Ch7
+    LLJITWithThinLTOSummaries
     )
   if (NOT WIN32)
     list(APPEND LLVM_TEST_DEPENDS

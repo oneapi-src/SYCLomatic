@@ -31,6 +31,12 @@ to format C/C++/Java/JavaScript/Objective-C/Protobuf/C# code.
   Clang-format options:
 
     --Werror                   - If set, changes formatting warnings to errors
+    --Wno-error=unknown        - If set, unknown format options are only warned about.
+                                 This can be used to enable formatting, even if the
+                                 configuration contains unknown (newer) options.
+                                 Use with caution, as this might lead to dramatically
+                                 differing format depending on an option being
+                                 supported or not.
     --assume-filename=<string> - Override filename used to determine the language.
                                  When reading from stdin, clang-format assumes this
                                  filename to determine the language.
@@ -176,13 +182,14 @@ CLion Integration
 =================
 
 :program:`clang-format` is integrated into `CLion <https://www.jetbrains
-.com/clion/>`_ as an alternative code formatter. It is disabled by default and
-can be turned on in Settings/Preferences | Editor | Code Style.
+.com/clion/>`_ as an alternative code formatter. CLion turns it on
+automatically when there is a ``.clang-format`` file under the project root.
+Code style rules are applied as you type, including indentation,
+auto-completion, code generation, and refactorings.
 
-If :program:`clang-format` support is enabled, CLion detects config files when
-opening a project and suggests overriding the current IDE settings. Code style
-rules from the ``.clang-format`` files are then applied automatically to all
-editor actions, including auto-completion, code generation, and refactorings.
+:program:`clang-format` can also be enabled without a ``.clang-format`` file.
+In this case, CLion prompts you to create one based on the current IDE settings
+or the default LLVM style.
 
 
 Visual Studio Integration
