@@ -1597,8 +1597,36 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
   static const MapNames::MapTy TextureMemberNames;
+
 private:
   bool processTexVarDeclInDevice(const VarDecl *VD);
+
+  bool tryMerge(const MemberExpr *ME, const Expr *BO);
+
+  class SettersMerger {
+    TextureRule *Rule;
+    const std::vector<std::string> &MethodNames;
+    std::map<const Stmt *, bool> &ProcessedBO;
+
+    const Stmt *Target = nullptr;
+    bool Stop = false;
+    ValueDecl *D = nullptr;
+    bool IsArrow = false;
+    std::vector<std::pair<unsigned, const Stmt *>> Result;
+
+    void traverse(const Stmt *);
+    void traverseBinaryOperator(const Stmt *);
+    bool applyResult();
+
+  public:
+    SettersMerger(const std::vector<std::string> &Methods, TextureRule *TexRule)
+        : Rule(TexRule), MethodNames(Methods),
+          ProcessedBO(TexRule->ProcessedBO) {}
+
+    bool tryMerge(const Stmt *S);
+  };
+
+  std::map<const Stmt *, bool> ProcessedBO;
 };
 
 template <typename T> class RuleRegister {

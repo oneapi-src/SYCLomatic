@@ -46,8 +46,6 @@ void gather_force(const cudaTextureObject_t gridTexObj, cudaStream_t stream) {
 // CHECK-NEXT:   dpct::sampling_info texDesc42;
 // CHECK:   res42.set_data(data);
 // CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
-// CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
-// CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
 // CHECK-NEXT:   texDesc42.set(sycl::filtering_mode::nearest);
 // CHECK-NEXT:   data = (dpct::image_matrix_p)res42.get_data_ptr();
 // CHECK-NEXT:   tex = dpct::create_image_wrapper(res42, texDesc42);
@@ -99,11 +97,7 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc42;
   // CHECK: res42.set_data(d_data42, sizeof(sycl::float4) * 32, 32, sizeof(sycl::float4) * 32, desc42);
   // CHECK: res42.set_data(a42);
-  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: texDesc42.set(sycl::filtering_mode::nearest);
-  // CHECK-NEXT: texDesc42.set(sycl::coordinate_normalization_mode::normalized);
+  // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
   // CHECK-NEXT: tex42 = dpct::create_image_wrapper(res42, texDesc42);
   float4 *d_data42;
   cudaArray_t a42;
@@ -144,8 +138,6 @@ int main() {
   // CHECK-NEXT: res21.set_x(32*sizeof(sycl::uint2));
   // CHECK-NEXT: unsigned chnX = res21.get_channel_size();
   // CHECK-NEXT: dpct::image_channel_data_type formatKind = res21.get_channel_data_type();
-  // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
@@ -255,4 +247,39 @@ void foo(){
   res42.res.linear.devPtr = d_data21;
   res42.res.linear.sizeInBytes = sizeof(float4) * 32;
   res42.res.linear.desc = desc42;
+
+  // CHECK:  dpct::sampling_info tex_tmp;
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::unnormalized);
+  // CHECK-NEXT:   sycl::addressing_mode addr = tex_tmp.get_addressing_mode();
+  // CHECK-NEXT:   sycl::filtering_mode filter = tex_tmp.get_filtering_mode();
+  // CHECK-NEXT:   int normalized = tex_tmp.is_coordinate_normalized();
+  cudaTextureDesc tex_tmp;
+  tex_tmp.normalizedCoords = false;
+  tex_tmp.addressMode[0] = cudaAddressModeClamp;
+  tex_tmp.filterMode = cudaFilterModePoint;
+  cudaTextureAddressMode addr = tex_tmp.addressMode[0];
+  cudaTextureFilterMode filter = tex_tmp.filterMode;
+  int normalized = tex_tmp.normalizedCoords;
+
+  // CHECK:   tex_tmp.set_coordinate_normalization_mode(normalized);
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT:   if (true) {
+  // CHECK-NEXT:     tex_tmp.set(sycl::addressing_mode::repeat, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
+  // CHECK-NEXT:   }
+  // CHECK-NEXT:   tex_tmp.set(sycl::filtering_mode::linear);
+  // CHECK-NEXT:   addr = tex_tmp.get_addressing_mode();
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
+  tex_tmp.normalizedCoords = normalized;
+  tex_tmp.addressMode[0] = cudaAddressModeClamp;
+  if (true) {
+    tex_tmp.filterMode = cudaFilterModePoint;
+    tex_tmp.addressMode[1] = cudaAddressModeWrap;
+    tex_tmp.addressMode[2] = cudaAddressModeWrap;
+    tex_tmp.normalizedCoords = 1;
+  }
+  tex_tmp.filterMode = cudaFilterModeLinear;
+  addr = tex_tmp.addressMode[0];
+  tex_tmp.filterMode = cudaFilterModePoint;
+  tex_tmp.addressMode[2] = cudaAddressModeClamp;
+  tex_tmp.normalizedCoords = 1;
 }

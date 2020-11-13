@@ -11,6 +11,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CallExprRewriter.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
 #include "GAnalytics.h"
@@ -11765,8 +11766,26 @@ void TextureRule::replaceNormalizedCoord(const MemberExpr *ME,
       ReplaceMemberAssignAsSetMethod(AssignedBO, ME, "", ReplArg));
 }
 
+bool TextureRule::tryMerge(const MemberExpr *ME, const Expr *BO) {
+  static std::unordered_map<std::string, std::vector<std::string>> MergeMap = {
+      {"textureReference", {"addressMode", "filterMode", "normalized"}},
+      {"cudaTextureDesc", {"addressMode", "filterMode", "normalizedCoords"}}};
+
+  auto Iter = MergeMap.find(
+      DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType()));
+  if (Iter == MergeMap.end())
+    return false;
+
+  SettersMerger Merger(Iter->second, this);
+  return Merger.tryMerge(BO);
+}
+
 void TextureRule::replaceTextureMember(const MemberExpr *ME,
   ASTContext &Context, SourceManager &SM) {
+  auto AssignedBO = getParentAsAssignedBO(ME, Context);
+  if (tryMerge(ME, AssignedBO))
+    return;
+
   auto Field = ME->getMemberNameInfo().getAsString();
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty()) {
@@ -11774,7 +11793,6 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     return;
   }
 
-  auto AssignedBO = getParentAsAssignedBO(ME, Context);
   if (ReplField == "channel") {
     if (removeExtraMemberAccess(ME))
       return;
@@ -12050,6 +12068,214 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
     emplaceTransformation(
         new RenameFieldInMemberExpr(TopMember, buildString("get_", FieldName, "()")));
   }
+}
+
+bool isAssignOperator(const Stmt *S) {
+  if (auto BO = dyn_cast<BinaryOperator>(S)) {
+    return BO->getOpcode() == BO_Assign;
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S)) {
+    return COCE->getOperator() == OO_Equal;
+  }
+  return false;
+}
+
+const Expr *getLhs(const Stmt *S) {
+  if (auto BO = dyn_cast<BinaryOperator>(S)) {
+    return BO->getLHS();
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S)) {
+    return COCE->getArg(0);
+  }
+  return nullptr;
+}
+
+const Expr *getRhs(const Stmt *S) {
+  if (auto BO = dyn_cast<BinaryOperator>(S)) {
+    return BO->getRHS();
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S)) {
+    return COCE->getArg(1);
+  }
+  return nullptr;
+}
+
+void TextureRule::SettersMerger::traverseBinaryOperator(const Stmt *S) {
+  do {
+    if (S != Target && Result.empty())
+      return;
+
+    if (!isAssignOperator(S))
+      break;
+
+    const Expr*LHS = getLhs(S);
+    if (!LHS)
+      break;
+    if (auto ASE = dyn_cast<ArraySubscriptExpr>(LHS)) {
+      LHS = ASE->getBase()->IgnoreImpCasts();
+    }
+    if (const MemberExpr *ME = dyn_cast<MemberExpr>(LHS)) {
+      auto Method = ME->getMemberDecl()->getName();
+      if (auto DRE = dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImpCasts())) {
+        if (Result.empty()) {
+          D = DRE->getDecl();
+          IsArrow = ME->isArrow();
+        } else if (DRE->getDecl() != D) {
+          break;
+        }
+        unsigned i = 0;
+        for (const auto &Name : MethodNames) {
+          if (Method == Name) {
+            Result.emplace_back(i, S);
+            return;
+          }
+          ++i;
+        }
+      }
+    }
+  } while (false);
+  traverse(getLhs(S));
+  traverse(getRhs(S));
+}
+
+void TextureRule::SettersMerger::traverse(const Stmt *S) {
+  if (Stop || !S)
+    return;
+
+  switch (S->getStmtClass()) {
+  case Stmt::BinaryOperatorClass:
+  case Stmt::CXXOperatorCallExprClass:
+    traverseBinaryOperator(S);
+    break;
+  case Stmt::DeclRefExprClass:
+    if (static_cast<const DeclRefExpr *>(S)->getDecl() != D) {
+      break;
+    }
+    LLVM_FALLTHROUGH
+  case Stmt::IfStmtClass:
+  case Stmt::WhileStmtClass:
+  case Stmt::DoStmtClass:
+  case Stmt::SwitchStmtClass:
+  case Stmt::ForStmtClass:
+  case Stmt::CaseStmtClass:
+    if (!Result.empty()) {
+      Stop = true;
+    }
+    break;
+  default:
+    for (auto Child : S->children()) {
+      traverse(Child);
+    }
+  }
+}
+
+StringRef getCoordinateNormalizationStr(bool IsNormalized) {
+  if (IsNormalized) {
+    static std::string NormalizedName =
+        MapNames::getClNamespace() +
+        "::coordinate_normalization_mode::normalized";
+    return NormalizedName;
+  } else {
+    static std::string UnnormalizedName =
+        MapNames::getClNamespace() +
+        "::coordinate_normalization_mode::unnormalized";
+    return UnnormalizedName;
+  }
+}
+
+std::string getAssignValue(const Stmt *S, StringRef MethodName) {
+  if (auto RHS = getRhs(S)->IgnoreImpCasts()) {
+    if (MethodName == "normalizedCoords" || MethodName == "normalized") {
+      if (auto IL = dyn_cast<IntegerLiteral>(RHS)) {
+        return getCoordinateNormalizationStr(IL->getValue().getZExtValue())
+            .str();
+      } else if (auto BL = dyn_cast<CXXBoolLiteralExpr>(RHS)) {
+        return getCoordinateNormalizationStr(BL->getValue()).str();
+      }
+    }
+    return ExprAnalysis::ref(RHS);
+  } else {
+    return std::string();
+  }
+}
+
+bool TextureRule::SettersMerger::applyResult() {
+  class ResultMapInserter {
+    std::vector<const Stmt *> LatestStmts;
+    std::vector<const Stmt *> DuplicatedStmts;
+    TextureRule *Rule;
+    std::map<const Stmt *, bool> &ResultMap;
+
+  public:
+    ResultMapInserter(size_t MethodNum, TextureRule *TexRule)
+        : LatestStmts(MethodNum, nullptr), Rule(TexRule),
+          ResultMap(TexRule->ProcessedBO) {}
+    ~ResultMapInserter() {
+      for (auto S : DuplicatedStmts) {
+        Rule->emplaceTransformation(new ReplaceStmt(S, ""));
+        ResultMap[S] = true;
+      }
+      for (auto S : LatestStmts) {
+        ResultMap[S] = false;
+      }
+    }
+    void update(size_t Index, const Stmt *S) {
+      auto &Latest = LatestStmts[Index];
+      if (Latest)
+        DuplicatedStmts.push_back(Latest);
+      Latest = S;
+    }
+    void success(std::string &Replaced) {
+      Rule->emplaceTransformation(
+          new ReplaceStmt(LatestStmts[0], std::move(Replaced)));
+      DuplicatedStmts.insert(DuplicatedStmts.end(), ++LatestStmts.begin(),
+                             LatestStmts.end());
+      LatestStmts.clear();
+    }
+  };
+
+  ResultMapInserter Inserter(MethodNames.size(), Rule);
+  std::vector<std::string> ArgsList(MethodNames.size());
+  unsigned ActualArgs = 0;
+  for (auto R : Result) {
+    if (ArgsList[R.first].empty())
+      ++ActualArgs;
+    Inserter.update(R.first, R.second);
+    ArgsList[R.first] = getAssignValue(R.second, MethodNames[R.first]);
+  }
+  if (ActualArgs != ArgsList.size()) {
+    return false;
+  }
+
+  std::string ReplacedText;
+  llvm::raw_string_ostream OS(ReplacedText);
+  MemberCallPrinter<StringRef, std::vector<std::string>> Printer(
+      D->getName(), IsArrow, "set", std::move(ArgsList));
+  Printer.print(OS);
+
+  Inserter.success(OS.str());
+  return true;
+}
+
+bool TextureRule::SettersMerger::tryMerge(const Stmt *BO) {
+  auto Iter = ProcessedBO.find(BO);
+  if (Iter != ProcessedBO.end())
+    return Iter->second;
+
+  Target = BO;
+  auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(
+    BO, [&](const ast_type_traits::DynTypedNode &Node) -> bool {
+    if (Node.get<IfStmt>() || Node.get<WhileStmt>() ||
+      Node.get<ForStmt>() || Node.get<DoStmt>() || Node.get<CaseStmt>() ||
+      Node.get<SwitchStmt>()||Node.get<CompoundStmt>()) {
+      return true;
+    }
+    return false;
+  });
+
+  if (!CS) {
+    return ProcessedBO[BO] = false;
+  }
+
+  traverse(CS);
+  return applyResult();
 }
 
 REGISTER_RULE(TextureRule)

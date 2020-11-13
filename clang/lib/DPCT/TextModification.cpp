@@ -157,7 +157,9 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     // When replacing a CallExpr with an empty string, also remove semicolons
     // and redundant spaces
     if (IsCleanup &&
-        TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
+        (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass ||
+         TheStmt->getStmtClass() == Stmt::BinaryOperatorClass ||
+         TheStmt->getStmtClass() == Stmt::CXXOperatorCallExprClass) &&
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }

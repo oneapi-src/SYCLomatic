@@ -408,6 +408,20 @@ public:
         is_normalized ? cl::sycl::coordinate_normalization_mode::normalized
                       : cl::sycl::coordinate_normalization_mode::unnormalized;
   }
+  void
+  set(cl::sycl::addressing_mode addressing_mode,
+      cl::sycl::filtering_mode filtering_mode,
+      cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    set(addressing_mode);
+    set(filtering_mode);
+    set(coordinate_normalization_mode);
+  }
+  void set(cl::sycl::addressing_mode addressing_mode,
+           cl::sycl::filtering_mode filtering_mode, int is_normalized) {
+    set(addressing_mode);
+    set(filtering_mode);
+    set_coordinate_normalization_mode(is_normalized);
+  }
 
   cl::sycl::sampler get_sampler() {
     return cl::sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
@@ -473,6 +487,20 @@ public:
   }
   void set_coordinate_normalization_mode(int is_normalized) {
     _sampling_info.set_coordinate_normalization_mode(is_normalized);
+  }
+  void
+  set(cl::sycl::addressing_mode addressing_mode,
+      cl::sycl::filtering_mode filtering_mode,
+      cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+    set(addressing_mode);
+    set(filtering_mode);
+    set(coordinate_normalization_mode);
+  }
+  void set(cl::sycl::addressing_mode addressing_mode,
+           cl::sycl::filtering_mode filtering_mode, int is_normalized) {
+    set(addressing_mode);
+    set(filtering_mode);
+    set_coordinate_normalization_mode(is_normalized);
   }
 
   cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }

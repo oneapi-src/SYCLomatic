@@ -84,8 +84,6 @@ int main() {
   // CHECK-NEXT: a42 = new dpct::image_matrix(tex42.get_channel(), sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: tex42.set(sycl::filtering_mode::nearest);
   // CHECK-NEXT: tex42_ptr->attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), tex42.get_channel());
   // CHECK-NEXT: tex42.attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4));
@@ -119,8 +117,6 @@ int main() {
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::image_channel desc21 = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::unsigned_int);
-  // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: tex21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: tex21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: tex21.attach(d_data21, 32 * sizeof(sycl::uint2), desc21);
@@ -170,9 +166,7 @@ int main() {
   cudaFree(d_data21);
 
   // CHECK:  dpct::image_wrapper<unsigned int, 1> tex_tmp;
-  // CHECK-NEXT:   tex_tmp.set(sycl::coordinate_normalization_mode::unnormalized);
-  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT:   tex_tmp.set(sycl::filtering_mode::nearest);
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::unnormalized);
   // CHECK-NEXT:   sycl::addressing_mode addr = tex_tmp.get_addressing_mode();
   // CHECK-NEXT:   sycl::filtering_mode filter = tex_tmp.get_filtering_mode();
   // CHECK-NEXT:   int normalized = tex_tmp.is_coordinate_normalized();
@@ -181,7 +175,6 @@ int main() {
   // CHECK-NEXT:   dpct::image_channel chn = tex_tmp.get_channel();
   // CHECK-NEXT:   tex_tmp.set_channel_size(3, chn_x);
   // CHECK-NEXT:   tex_tmp.set_channel_data_type(dpct::image_channel_data_type::fp);
-  // CHECK-NEXT:   tex_tmp.set_coordinate_normalization_mode(normalized);
   texture<unsigned int, 1, cudaReadModeElementType> tex_tmp;
   tex_tmp.normalized = false;
   tex_tmp.addressMode[0] = cudaAddressModeClamp;
@@ -194,7 +187,29 @@ int main() {
   cudaChannelFormatDesc chn = tex_tmp.channelDesc;
   tex_tmp.channelDesc.z = chn_x;
   tex_tmp.channelDesc.f = cudaChannelFormatKindFloat;
+
+  // CHECK:   tex_tmp.set_coordinate_normalization_mode(normalized);
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge);
+  // CHECK-NEXT:   if (true) {
+  // CHECK-NEXT:     tex_tmp.set(sycl::addressing_mode::repeat, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
+  // CHECK-NEXT:   }
+  // CHECK-NEXT:   tex_tmp.set(sycl::filtering_mode::linear);
+  // CHECK-NEXT:   addr = tex_tmp.get_addressing_mode();
+  // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
   tex_tmp.normalized = normalized;
+  tex_tmp.addressMode[0] = cudaAddressModeClamp;
+  if (true) {
+    tex_tmp.filterMode = cudaFilterModePoint;
+    tex_tmp.addressMode[1] = cudaAddressModeWrap;
+    tex_tmp.addressMode[2] = cudaAddressModeWrap;
+    tex_tmp.normalized = 1;
+  }
+  tex_tmp.filterMode = cudaFilterModeLinear;
+  addr = tex_tmp.addressMode[0];
+  tex_tmp.filterMode = cudaFilterModePoint;
+  tex_tmp.addressMode[2] = cudaAddressModeClamp;
+  tex_tmp.normalized = 1;
+
 
   // Test IsAssigned
   {
