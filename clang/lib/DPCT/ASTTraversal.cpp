@@ -1412,14 +1412,25 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   if (!CE)
     return;
 
+  // Don't migrate user defined function
+  if (auto *CalleeDecl = CE->getDirectCallee()) {
+    std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
+                             .getFilename(CalleeDecl->getLocation())
+                             .str();
+    bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+    bool InCudaPath = DpctGlobalInfo::isInCudaPath(CalleeDecl->getLocation());
+    if (!(InInstallPath || InCudaPath))
+      return;
+  } else {
+    return;
+  };
+
   // TODO: 1. Investigate are there usages of atomic functions on local address
   //          space
   //       2. If item 1. shows atomic functions on local address space is
   //          significant, detect whether this atomic operation operates in
   //          global space or local space (currently, all in global space,
   //          see dpct_atomic.hpp for more details)
-  if (!CE->getDirectCallee())
-    return;
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
   if (MapNames::AtomicFuncNamesMap.find(AtomicFuncName) ==
       MapNames::AtomicFuncNamesMap.end())
