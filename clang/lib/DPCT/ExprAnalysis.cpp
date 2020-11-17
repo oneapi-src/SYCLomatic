@@ -201,6 +201,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
   // if the parent expr is inside macro and current expr is macro arg expansion,
   // use the expansion location of the macro arg in the macro definition.
+
   if (IsInMacroDefine) {
     if (SM.isMacroArgExpansion(E->getBeginLoc())) {
       BeginLoc = SM.getSpellingLoc(

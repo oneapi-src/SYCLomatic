@@ -84,12 +84,15 @@ void foo() {
   //CHECK-NEXT: migration result may be incorrect. You need to verify the definition of the
   //CHECK-NEXT: macro.
   //CHECK-NEXT: */
-  //CHECK-NEXT: CALL((q_ct1.submit([&](sycl::handler &cgh) {
-  //CHECK:   cgh.parallel_for(sycl::nd_range<3>(x * x, x),
-  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         foo_kernel();
-  //CHECK-NEXT:       });
-  //CHECK-NEXT: });))
+  //CHECK-NEXT: CALL(([&]() {
+  //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
+  //CHECK-NEXT:     cgh.parallel_for(
+  //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
+  //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:           foo_kernel();
+  //CHECK-NEXT:         });
+  //CHECK-NEXT:   });
+  //CHECK-NEXT: }()))
   CALL( (foo_kernel<<<1, 2, 0>>>()) )
 
   //CHECK: #define AA 3

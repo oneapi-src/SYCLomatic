@@ -2871,6 +2871,7 @@ private:
 class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
+  bool NeedLambda = false;
 private:
 
   struct ArgInfo {
@@ -3056,6 +3057,7 @@ public:
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
     setIsInMacroDefine(KernelCall);
+    setNeedAddLambda(KernelCall);
     buildCallExprInfo(KernelCall);
     buildArgsInfo(KernelCall);
     buildKernelInfo(KernelCall);
@@ -3115,6 +3117,7 @@ private:
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
+  void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr*KernelCall);
   template <class ArgsRange>

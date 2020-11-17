@@ -511,6 +511,9 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
     for (auto &S : OuterStmts)
       Printer.line(S.StmtStr);
   }
+  if (NeedLambda) {
+    Block = std::move(Printer.block(true));
+  }
   printSubmit(Printer);
   Block.reset();
   if (!getEvent().empty() && isSync())
@@ -608,7 +611,11 @@ std::string KernelCallExpr::getReplacement() {
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
   print(Printer);
-  return Printer.str();
+  auto ResultStr = Printer.str();
+  if (NeedLambda) {
+    ResultStr = "[&]()" + Printer.str() + "()";
+  }
+  return ResultStr;
 }
 
 inline std::string CallFunctionExpr::getExtraArguments() {
@@ -705,15 +712,44 @@ void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
 
 void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto calleeSpelling = KernelCall->getCallee()->getBeginLoc();
-  if (SM.isMacroArgExpansion(calleeSpelling)) {
-    calleeSpelling = SM.getImmediateExpansionRange(calleeSpelling).getBegin();
+  // Check if the whole kernel call is in macro arg
+  auto CallBegin = KernelCall->getBeginLoc();
+  auto CallEnd = KernelCall->getEndLoc();
+  if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd)) {
+    // Just check if begin/end are the same macro arg, so use getBegin() for both loc
+    CallBegin = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallBegin).getBegin());
+    CallEnd = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallEnd).getBegin());
+    auto ItMatchBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(CallBegin));
+    auto ItMatchEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(CallEnd));
+    if (ItMatchBegin != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
+      && ItMatchEnd != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
+      && ItMatchBegin == ItMatchEnd) {
+      // The whole kernel call is in a single macro arg
+      IsInMacroDefine = false;
+      return;
+    }
   }
-  calleeSpelling = SM.getSpellingLoc(calleeSpelling);
+
+  auto CalleeSpelling = KernelCall->getCallee()->getBeginLoc();
+  if (SM.isMacroArgExpansion(CalleeSpelling)) {
+    CalleeSpelling = SM.getImmediateExpansionRange(CalleeSpelling).getBegin();
+  }
+  CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
+
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(calleeSpelling));
+    getCombinedStrFromLoc(CalleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
+  }
+}
+
+// If the kernel call is in a ParenExpr
+void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (auto P = dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
+    NeedLambda = true;
   }
 }
 
