@@ -297,20 +297,20 @@ private:
     // b. <major.minor>
     std::string ver;
     ver = get_info<cl::sycl::info::device::version>();
-    int i=0;
-    while(i<ver.size()) {
-      if(isdigit(ver[i]))
+    std::string::size_type i = 0;
+    while (i < ver.size()) {
+      if (isdigit(ver[i]))
         break;
       i++;
     }
-    major=std::stoi(&(ver[i]));
-    while(i<ver.size()) {
-      if(ver[i]=='.')
+    major = std::stoi(&(ver[i]));
+    while (i < ver.size()) {
+      if (ver[i] == '.')
         break;
       i++;
     }
     i++;
-    minor=std::stoi(&(ver[i]));
+    minor = std::stoi(&(ver[i]));
   }
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;

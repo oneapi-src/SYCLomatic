@@ -10994,6 +10994,7 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads" || FuncName == "sync") {
+    report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
     std::string Replacement = getItemName() + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
@@ -11043,6 +11044,7 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
     ReplStr += ")";
     if (IsAssigned)
       ReplStr += ")";
+    report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   }
 }

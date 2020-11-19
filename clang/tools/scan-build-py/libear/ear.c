@@ -19,7 +19,7 @@
  */
 
 #include "config.h"
-
+#include <limits.h> /* PATH_MAX */
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -917,21 +917,32 @@ const char *find_nvcc(const char *str) {
 /// \returns no return value.
 char * replace_binary_name(const char *src, const char *pos){
     FILE *fp;
-    char replacement[2048];
+    char replacement[PATH_MAX];
+    char file_path[PATH_MAX];
+
     fp = popen("which dpct", "r");
     if (fp == NULL) {
         perror("bear: failed to run command 'which dpct'\n" );
         exit(EXIT_FAILURE);
     }
 
-    if(fgets(replacement, sizeof(replacement), fp) == NULL) {
+    if(fgets(replacement, PATH_MAX, fp) == NULL) {
         perror("bear: fgets\n" );
         exit(EXIT_FAILURE);
     }
     pclose(fp);
-    strcpy(replacement + strlen(replacement) - strlen("bin/dpct") - 1, "libear/intercept-stub");
+    replacement[strlen(replacement)-1] = '\0'; // to remove extra '\n' added by "which dpct"
 
-    char *buffer = (char *)malloc(strlen(src) + strlen(replacement) - strlen("nvcc"));
+    char *res = realpath(replacement, file_path); // to get the canonicalized absolute pathname in file_path
+
+    if (!res) {
+        perror("bear: realpath\n" );
+        exit(EXIT_FAILURE);
+    }
+
+    strcpy(file_path + strlen(file_path) - strlen("bin/dpct"), "libear/intercept-stub");
+
+    char *buffer = (char *)malloc(strlen(src) + strlen(file_path) - strlen("nvcc"));
     char *insert_point = buffer;
 
     // To handle the situation that \psrc is
@@ -947,8 +958,8 @@ char * replace_binary_name(const char *src, const char *pos){
     int len = pos_prefix - src;
     memcpy(insert_point, src, len);
     insert_point += len;
-    memcpy(insert_point, replacement, strlen(replacement));
-    insert_point += strlen(replacement);
+    memcpy(insert_point, file_path, strlen(file_path));
+    insert_point += strlen(file_path);
     src = pos;
     strcpy(insert_point, src);
     return buffer;

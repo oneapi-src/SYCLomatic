@@ -2214,11 +2214,14 @@ bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile) {
   auto CurrentFileInfo = dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
   auto CheckingFileInfo =
-      dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
+    dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
 
   std::deque<std::shared_ptr<dpct::DpctFileInfo>> Q(
-      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
-      CurrentFileInfo->getIncludedFilesInfoSet().end());
+    CurrentFileInfo->getIncludedFilesInfoSet().begin(),
+    CurrentFileInfo->getIncludedFilesInfoSet().end());
+
+  std::unordered_set<std::shared_ptr<dpct::DpctFileInfo>> InsertedFile;
+  InsertedFile = CurrentFileInfo->getIncludedFilesInfoSet();
 
   while (!Q.empty()) {
     if (Q.front() == nullptr) {
@@ -2226,8 +2229,12 @@ bool isIncludedFile(const std::string &CurrentFile,
     } else if (Q.front() == CheckingFileInfo) {
       return true;
     } else {
-      Q.insert(Q.end(), Q.front()->getIncludedFilesInfoSet().begin(),
-               Q.front()->getIncludedFilesInfoSet().end());
+      for(auto IncludeFile : Q.front()->getIncludedFilesInfoSet()){
+        if(InsertedFile.find(IncludeFile) == InsertedFile.end()){
+          Q.insert(Q.end(), IncludeFile);
+          InsertedFile.insert(IncludeFile);
+        }
+      }
       Q.pop_front();
     }
   }

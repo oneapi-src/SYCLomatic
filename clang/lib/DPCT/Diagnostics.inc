@@ -146,3 +146,5 @@ DEF_WARNING(DEFAULT_MEM_ADVICE, 1063, "Advice parameter is device-defined%0. You
 DEF_COMMENT(DEFAULT_MEM_ADVICE, 1063, "Advice parameter is device-defined{0}. You may need to adjust it.")
 DEF_WARNING(CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR, 1064, "Migrated %0 call is used in a macro definition and is not valid for all macro uses. Adjust the code.")
 DEF_COMMENT(CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR, 1064, "Migrated {0} call is used in a macro definition and is not valid for all macro uses. Adjust the code.")
+DEF_WARNING(BARRIER_PERFORMANCE_TUNNING, 1065, "Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if it is safe.")
+DEF_COMMENT(BARRIER_PERFORMANCE_TUNNING, 1065, "Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if it is safe.")
