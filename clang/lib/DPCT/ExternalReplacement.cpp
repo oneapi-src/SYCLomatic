@@ -37,7 +37,8 @@ namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
 int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
-              const std::vector<clang::tooling::Replacement> &Replaces) {
+              const std::vector<clang::tooling::Replacement> &Replaces,
+              const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
@@ -47,6 +48,11 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
   TUR.MainSourceFile = SrcFileName.str();
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
+
+  TUR.MainSourceFilesDigest.insert(TUR.MainSourceFilesDigest.end(),
+                                   MainSrcFilesDigest.begin(),
+                                   MainSrcFilesDigest.end());
+
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
@@ -124,6 +130,8 @@ int mergeExternalReps(std::string InRootSrcFilePath,
   llvm::errs() << "Saved new version of " << YamlFile << " file\n";
 
   std::vector<clang::tooling::Replacement> Repls(Replaces.begin(), Replaces.end());
-  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls);
+
+  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
+  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls, MainSrcFilesDigest);
   return 0;
 }

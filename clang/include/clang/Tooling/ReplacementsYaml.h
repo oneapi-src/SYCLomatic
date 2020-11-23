@@ -117,6 +117,36 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
   }
 };
 
+#if INTEL_CUSTOMIZATION
+template <> struct MappingTraits<std::pair<std::string, std::string>> {
+  struct NormalizedMainSourceFilesDigest {
+
+    NormalizedMainSourceFilesDigest(const IO &)
+        : MainSourceFile(""), Digest("") {}
+
+    NormalizedMainSourceFilesDigest(const IO &,
+                                    std::pair<std::string, std::string> &R)
+        : MainSourceFile(R.first), Digest(R.second) {}
+
+    std::pair<std::string, std::string> denormalize(const IO &) {
+      return std::pair<std::string, std::string>(MainSourceFile, Digest);
+    }
+
+    std::string MainSourceFile = "";
+    std::string Digest = "";
+  };
+
+  static void mapping(IO &Io, std::pair<std::string, std::string> &R) {
+    MappingNormalization<NormalizedMainSourceFilesDigest,
+                         std::pair<std::string, std::string>>
+        Keys(Io, R);
+    Io.mapRequired("MainSourceFile", Keys->MainSourceFile);
+    Io.mapRequired("Digest", Keys->Digest);
+  }
+};
+#endif
+
+
 /// Specialized MappingTraits to describe how a
 /// TranslationUnitReplacements is (de)serialized.
 template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
@@ -124,6 +154,9 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
                       clang::tooling::TranslationUnitReplacements &Doc) {
     Io.mapRequired("MainSourceFile", Doc.MainSourceFile);
     Io.mapRequired("Replacements", Doc.Replacements);
+#ifdef INTEL_CUSTOMIZATION
+    Io.mapRequired("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
+#endif
   }
 };
 } // end namespace yaml

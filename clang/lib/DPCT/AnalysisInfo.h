@@ -1357,6 +1357,7 @@ public:
   getFileRelpsMap() {
   return FileRelpsMap;
   }
+  static std::unordered_map<std::string, std::string> &getDigestMap() { return DigestMap; }
   static std::string getYamlFileName() { return YamlFileName; }
   static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
   static void removeVarNameInGlobalVarNameSet(const std::string& VarName) {
@@ -1530,6 +1531,7 @@ private:
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
+  static std::unordered_map<std::string, std::string> DigestMap;
   static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;

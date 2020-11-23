@@ -58,6 +58,7 @@ std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
+std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
 const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
 std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";

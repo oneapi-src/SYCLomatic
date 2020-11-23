@@ -209,11 +209,16 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
         FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
       }
+      for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
+        auto &DigestMap = DpctGlobalInfo::getDigestMap();
+        DigestMap[FileDigest.first] = FileDigest.second;
+      }
     }
   }
 
   bool AppliedAll = true;
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
+  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
 
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
@@ -282,9 +287,24 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
       } else {
 
+        auto Hash = llvm::sys::fs::md5_contents(Entry.first);
+        MainSrcFilesDigest.push_back(
+        std::make_pair(Entry.first, Hash->digest().c_str()));
+
+        bool IsMainSrcFileChanged = false;
+        std::string FilePath = Entry.first;
+
+        auto &DigestMap = DpctGlobalInfo::getDigestMap();
+        auto DigestIter = DigestMap.find(Entry.first);
+        if (DigestIter != DigestMap.end()) {
+          auto Digest = llvm::sys::fs::md5_contents(Entry.first);
+          if (DigestIter->second != Digest->digest().c_str())
+            IsMainSrcFileChanged = true;
+        }
+
         auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
         auto Iter = FileRelpsMap.find(Entry.first);
-        if (Iter != FileRelpsMap.end()) {
+        if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged ) {
           const auto &PreRepls = Iter->second;
           mergeAndUniqueReps(Entry.second, PreRepls);
         }
@@ -313,7 +333,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           .write(Stream);
     }
 
-    save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls);
+    save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest);
 
     extern bool ProcessAllFlag;
     // Print the in-root path and the number of processed files

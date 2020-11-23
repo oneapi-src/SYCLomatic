@@ -375,7 +375,9 @@ llvm::Expected<std::string> applyAllReplacements(StringRef Code,
 struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
-
+#ifdef INTEL_CUSTOMIZATION
+  std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
+#endif
   std::vector<Replacement> Replacements;
 };
 
