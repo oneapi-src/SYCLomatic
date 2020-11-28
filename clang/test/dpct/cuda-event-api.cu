@@ -59,14 +59,14 @@ int main(int argc, char* argv[]) {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: printf"<<<\n");
+  // CHECK: printf("<<<\n");
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1061:{{[0-9]+}}: Call to CudaEvent macro was removed, because it only contains code, which is unnecessary in DPC++.
   // CHECK-NEXT: */
-  // CHECK-NEXT: printf">>>\n");
-  printf"<<<\n");
+  // CHECK-NEXT: printf(">>>\n");
+  printf("<<<\n");
   CudaEvent(start);
-  printf">>>\n");
+  printf(">>>\n");
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
@@ -228,10 +228,7 @@ int main(int argc, char* argv[]) {
 
   cudaEventSynchronize(stop);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((stop.wait_and_throw(), 0));
+  // CHECK: checkCudaErrors(0);
   checkCudaErrors(cudaEventSynchronize(stop));
 
   // kernel call without sync

@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/time-measure-complex.dp.cpp --match-full-lines %s
+// RUN: dpct -out-root %T/time-measure-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/time-measure-complex/time-measure-complex.dp.cpp --match-full-lines %s
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
@@ -209,25 +209,420 @@ int main(int argc, char **argv)
     return 0;
 }
 
-#define CHECK(ARG) ARG
+#define CHECK_FOO(ARG) ARG
 
-void foo() {
+template <typename T>
+// CHECK: void check(T result, char const *const func) {
+void check(T result, char const *const func) {
+}
+#define checkCudaErrors(val) check((val), #val)
+
+#define cudaCheck(stmt) do {                         \
+  cudaError_t err = stmt;                            \
+  if (err != cudaSuccess) {                          \
+    char msg[256];                                   \
+    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
+  }                                                  \
+} while(0)
+
+
+void foo_test_1() {
   float et;
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
-  CHECK(cudaEventRecord(start));
-  // 1CHECK: stop = dpct::get_default_queue().submit(
-  // 1CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // 1CHECK-NEXT:         cgh.parallel_for(
-  // 1CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-  // 1CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
-  // 1CHECK-NEXT:                 kernel_1();
-  // 1CHECK-NEXT:             });
-  // 1CHECK-NEXT:     });
-  // 1CHECK-NEXT: stop.wait();
+  CHECK_FOO(cudaEventRecord(start));
+// CHECK:    stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                    kernel_1();
+// CHECK-NEXT:                });
+// CHECK-NEXT:        });
+// CHECK-NEXT:    stop.wait();
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  CHECK_FOO(stop_ct1 = std::chrono::steady_clock::now());
+// CHECK-NEXT:  checkCudaErrors(0);
+// CHECK-NEXT:  cudaCheck(0);
+// CHECK-NEXT:  et = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   kernel_1<<<1, 1>>>();
-  CHECK(cudaEventRecord(stop));
+  CHECK_FOO(cudaEventRecord(stop));
   cudaEventSynchronize(stop);
+  checkCudaErrors(cudaEventSynchronize(stop));
+  cudaCheck(cudaEventSynchronize(stop));
   cudaEventElapsedTime(&et, start, stop);
+}
+
+#define CHECK(call)                                                            \
+{                                                                              \
+    const cudaError_t error = call;                                            \
+    if (error != cudaSuccess)                                                  \
+    {                                                                          \
+        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
+        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
+                cudaGetErrorString(error));                                    \
+    }                                                                          \
+}
+
+__global__ void foo_kernel_1(){}
+
+__global__ void foo_kernel_2(){}
+
+__global__ void foo_kernel_3(){}
+
+__global__ void foo_kernel_4(){}
+
+int foo_test_2()
+{
+    int n_streams = NSTREAM;
+    int isize = 1;
+    int iblock = 1;
+    float elapsed_time;
+
+// CHECK:    sycl::queue **streams = (sycl::queue **)malloc(n_streams * sizeof(
+// CHECK-NEXT:                                                                   sycl::queue *));
+    cudaStream_t *streams = (cudaStream_t *) malloc(n_streams * sizeof(
+                                cudaStream_t));
+
+    dim3 block (iblock);
+    dim3 grid  (isize / iblock);
+
+    // creat events
+// CHECK:    sycl::event start, stop;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK(0);
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK(0);
+    cudaEvent_t start, stop;
+    CHECK(cudaEventCreate(&start));
+    CHECK(cudaEventCreate(&stop));
+
+// CHECK:    sycl::event *kernelEvent;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> kernelEvent_ct1_i;
+// CHECK-NEXT:    kernelEvent = (sycl::event *)malloc(n_streams * sizeof(sycl::event));
+    cudaEvent_t *kernelEvent;
+    kernelEvent = (cudaEvent_t *) malloc(n_streams * sizeof(cudaEvent_t));
+
+    // record start event
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    CHECK(0);
+    CHECK(cudaEventRecord(start, 0));
+
+    // dispatch job with depth first ordering
+    for (int i = 0; i < n_streams; i++)
+    {
+// CHECK:        /*
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        foo_kernel_1();
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        kernelEvent[i].wait();
+        foo_kernel_1<<<grid, block, 0, streams[i]>>>();
+
+// CHECK:        /*
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        foo_kernel_2();
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        kernelEvent[i].wait();
+
+        foo_kernel_2<<<grid, block, 0, streams[i]>>>();
+// CHECK:        /*
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        foo_kernel_3();
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        kernelEvent[i].wait();
+
+        foo_kernel_3<<<grid, block, 0, streams[i]>>>();
+// CHECK:        /*
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_4_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        foo_kernel_4();
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        kernelEvent[i].wait();
+
+        foo_kernel_4<<<grid, block, 0, streams[i]>>>();
+
+// CHECK:        /*
+// CHECK-NEXT:        DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        /*
+// CHECK-NEXT:        DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+// CHECK-NEXT:        */
+// CHECK-NEXT:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
+// CHECK-NEXT:        CHECK(0);
+// CHECK-NEXT:        kernelEvent[i].wait();
+        CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
+        cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
+    }
+
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    CHECK(0);
+// CHECK-NEXT:    CHECK(0);
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
+    CHECK(cudaEventRecord(stop, 0));
+    CHECK(cudaEventSynchronize(stop));
+    CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+    return 0;
+}
+
+__global__ void kernel(float *g_data, float value){}
+
+void foo_test_3()
+{
+
+    int num = 128;
+    int nbytes = num * sizeof(int);
+    float value = 10.0f;
+
+    float *h_a = 0;
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((h_a = (float *)sycl::malloc_host(nbytes, dpct::get_default_queue()), 0));
+    CHECK(cudaMallocHost((void **)&h_a, nbytes));
+
+    float *d_a = 0;
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((d_a = (float *)sycl::malloc_device(nbytes, dpct::get_default_queue()), 0));
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((dpct::get_default_queue().memset(d_a, 255, nbytes).wait(), 0));
+    CHECK(cudaMalloc((void **)&d_a, nbytes));
+    CHECK(cudaMemset(d_a, 255, nbytes));
+
+    // set kernel launch configuration
+    dim3 block;
+    dim3 grid;
+
+    // create cuda event handles
+// CHECK:    sycl::event stop;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK(0);
+    cudaEvent_t stop;
+    CHECK(cudaEventCreate(&stop));
+
+    // asynchronously issue work to the GPU (all to stream 0)
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    sycl::event stop_q_ct1_1;
+// CHECK-NEXT:    CHECK((stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                sycl::nd_range<3>(grid * block, block),
+// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                    kernel(d_a, value);
+// CHECK-NEXT:                });
+// CHECK-NEXT:        });
+// CHECK-NEXT:    stop.wait();
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    sycl::event stop_q_ct1_2;
+// CHECK-NEXT:    CHECK((stop_q_ct1_2 = dpct::get_default_queue().memcpy(h_a, d_a, nbytes), 0));
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop_q_ct1_1.wait();
+// CHECK-NEXT:    stop_q_ct1_2.wait();
+// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    CHECK(0);
+    CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
+    kernel<<<grid, block>>>(d_a, value);
+    CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
+    CHECK(cudaEventRecord(stop));
+
+    unsigned long int counter = 0;
+// CHECK:    while ((int)stop.get_info<sycl::info::event::command_execution_status>() != 0) {
+// CHECK-NEXT:        counter++;
+// CHECK-NEXT:    }
+    while (cudaEventQuery(stop) == cudaErrorNotReady) {
+        counter++;
+    }
+
+    // release resources
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0, because this call is redundant in DPC++.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK(0);
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((sycl::free(h_a, dpct::get_default_queue()), 0));
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK((sycl::free(d_a, dpct::get_default_queue()), 0));
+    CHECK(cudaEventDestroy(stop));
+    CHECK(cudaFreeHost(h_a));
+    CHECK(cudaFree(d_a));
+}
+
+#define N 64000000
+#define NTIMES 5000
+const double dbl_eps = 2.2204460492503131e-16;
+
+__global__ void set_array(double *a, double value, size_t len) {}
+__global__ void STREAM_Copy(double *a, double *b, size_t len) {}
+__global__ void STREAM_Copy_Optimized(double *a, double *b, size_t len) {}
+
+void foo_test_4() {
+  double *d_a, *d_b, *d_c;
+
+  int k;
+  float times[8][NTIMES];
+  double scalar;
+
+  dim3 dimBlock;
+  dim3 dimGrid;
+
+// CHECK:  /*
+// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:  */
+// CHECK-NEXT:    dpct::get_default_queue().submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                    set_array(d_a, 2., N);
+// CHECK-NEXT:                });
+// CHECK-NEXT:        });
+  set_array<<<dimGrid, dimBlock>>>(d_a, 2., N);
+
+// CHECK:  sycl::event start, stop;
+// CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;
+// CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
+// CHECK-NEXT:  */
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
+  for (k = 0; k < NTIMES; k++) {
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop_q_ct1_1.wait();
+// CHECK-NEXT:    stop_q_ct1_2.wait();
+// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    */
+// CHECK-NEXT:        stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        stop.wait();
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop_q_ct1_1.wait();
+// CHECK-NEXT:    stop_q_ct1_2.wait();
+// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    cudaEventRecord(start, 0);
+    STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&times[0][k], start, stop);
+
+// CHECK:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    */
+// CHECK-NEXT:        stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
+// CHECK-NEXT:                    });
+// CHECK-NEXT:            });
+// CHECK-NEXT:        stop.wait();
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    cudaEventRecord(start, 0);
+    STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&times[1][k], start, stop);
+  }
 }

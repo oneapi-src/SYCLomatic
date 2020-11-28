@@ -225,6 +225,10 @@ void DpctFileInfo::buildReplacements() {
   for (auto &DescInfo : FFTDescriptorTypeMap) {
     DescInfo.second.buildInfo(FilePath, DescInfo.first);
   }
+
+  for (auto &DescInfo : EventSyncTypeMap) {
+    DescInfo.second.buildInfo(FilePath, DescInfo.first);
+  }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
@@ -2421,6 +2425,18 @@ void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
                 DistrArg + ");" + getNL() + IndentStr;
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, 0, InsertStr, nullptr));
+}
+
+void EventSyncTypeInfo::buildInfo(std::string FilePath,
+                                          unsigned int Offset) {
+    if(NeedReport)
+      DiagnosticsUtils::report(FilePath, Offset, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            FilePath, Offset, Length,
+            ReplText,
+            nullptr));
 }
 
 bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }

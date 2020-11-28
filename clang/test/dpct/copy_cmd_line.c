@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T %s %s.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/copy_cmd_line.c --match-full-lines %s
+// RUN: dpct -out-root %T/copy_cmd_line_c %s %s.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/copy_cmd_line_c/copy_cmd_line.c --match-full-lines %s
 
 // CHECK: #include <stdio.h>
 // CHECK-EMPTY:

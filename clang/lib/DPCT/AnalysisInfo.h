@@ -108,6 +108,16 @@ struct FFTDescriptorTypeInfo {
   bool IsValid = true;
 };
 
+struct EventSyncTypeInfo {
+  EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport)
+      : Length(Length), ReplText(ReplText), NeedReport(NeedReport) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string ReplText;
+  bool NeedReport = false;
+};
+
 // Below four structs are all used for device RNG library API migration.
 // In the origin code, the returned random number vector size is decided when
 // the generate API is called.
@@ -543,6 +553,10 @@ public:
     return FFTDescriptorTypeMap;
   }
 
+  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
+    return EventSyncTypeMap;
+  }
+
   // The key of below three maps are the offset of the replacement.
   std::map<unsigned int, DeviceRandomStateTypeInfo> &
   getDeviceRandomStateTypeMap() {
@@ -634,6 +648,7 @@ private:
            HostRandomDistrInfo>
       HostRandomDistrMap;
   std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
+  std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
@@ -1262,6 +1277,40 @@ public:
       Name = Iter->second.DistrName;
     }
     return Name;
+  }
+
+  void insertEventSyncTypeInfo(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+                               bool NeedReport = false) {
+    std::string FilePath = Repl->getFilePath().str();
+    unsigned int Offset = Repl->getOffset();
+    unsigned int Length =  Repl->getLength();
+    const std::string ReplText = Repl->getReplacementText().str();
+
+    auto FileInfo = insertFile(FilePath);
+    auto &M = FileInfo->getEventSyncTypeMap();
+    auto Iter = M.find(Offset);
+    if (Iter == M.end()) {
+      M.insert(std::make_pair(Offset,
+                              EventSyncTypeInfo(Length, ReplText, NeedReport)));
+    }
+  }
+
+  void updateEventSyncTypeInfo(const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
+    std::string FilePath = Repl->getFilePath().str();
+    unsigned int Offset = Repl->getOffset();
+    unsigned int Length =  Repl->getLength();
+    const std::string ReplText = Repl->getReplacementText().str();
+
+    auto FileInfo = insertFile(FilePath);
+    auto &M = FileInfo->getEventSyncTypeMap();
+    auto Iter = M.find(Offset);
+    if (Iter != M.end()) {
+      Iter->second.ReplText = ReplText;
+      Iter->second.NeedReport = false;
+    } else {
+      M.insert(
+          std::make_pair(Offset, EventSyncTypeInfo(Length, ReplText, false)));
+    }
   }
 
   void insertRandomEngine(const Expr *E);
