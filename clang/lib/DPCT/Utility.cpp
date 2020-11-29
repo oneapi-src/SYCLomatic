@@ -409,12 +409,22 @@ const clang::CompoundStmt *findImmediateBlock(const ValueDecl *D) {
   if (D->getDeclContext()->getDeclKind() == Decl::Kind::Block) {
     auto BD = static_cast<const BlockDecl *>(D->getDeclContext());
     CS = BD->getCompoundBody();
+  } else if (D->getDeclContext()->getDeclKind() == Decl::Kind::CXXMethod) {
+    auto BD = static_cast<const CXXMethodDecl *>(D->getDeclContext());
+    CS = dyn_cast<CompoundStmt>(BD->getBody());
+  } else if (D->getDeclContext()->getDeclKind() == Decl::Kind::CXXConstructor) {
+    auto BD = static_cast<const CXXConstructorDecl *>(D->getDeclContext());
+    CS = dyn_cast<CompoundStmt>(BD->getBody());
+  } else if (D->getDeclContext()->getDeclKind() == Decl::Kind::CXXDestructor) {
+    auto BD = static_cast<const CXXDestructorDecl *>(D->getDeclContext());
+    CS = dyn_cast<CompoundStmt>(BD->getBody());
   } else if (D->getLexicalDeclContext()->getDeclKind() ==
              Decl::Kind::Function) {
     auto BD = static_cast<const FunctionDecl *>(D->getDeclContext());
     CS = dyn_cast<CompoundStmt>(BD->getBody());
   }
-
+  if(!CS)
+    return nullptr;
   // Worklist
   std::deque<const CompoundStmt *> WL;
   WL.push_back(CS);
@@ -2262,6 +2272,32 @@ bool isIncludedFile(const std::string &CurrentFile,
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
   auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
   return LocInfo.first + ":" + std::to_string(LocInfo.second);
+}
+
+std::string getFinalCastTypeNameStr(std::string CastTypeName){
+  // Since curandState and other state types have same prefix (e.g.,
+  // curandStateXORWOW_t), we need choose a result which matches longest.
+  std::map<size_t /*replaced length*/,
+           std::pair<std::string::size_type /*BeginLoc*/,
+                     std::string /*replacing text*/>,
+           std::greater<size_t>>
+      ReplaceLengthStringMap;
+
+  for (auto &Pair : MapNames::DeviceRandomGeneratorTypeMap) {
+    std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
+    if (BeginLoc != std::string::npos) {
+      ReplaceLengthStringMap.insert(std::make_pair(
+          Pair.first.size(),
+          std::make_pair(BeginLoc, Pair.second + "<{{NEEDREPLACEV1}}>")));
+    }
+  }
+
+  if (!ReplaceLengthStringMap.empty()) {
+    const auto BeginIter = ReplaceLengthStringMap.begin();
+    CastTypeName.replace(BeginIter->second.first, BeginIter->first,
+                         BeginIter->second.second);
+  }
+  return CastTypeName;
 }
 
 bool isLexicallyInLocalScope(const clang::Decl *D) {

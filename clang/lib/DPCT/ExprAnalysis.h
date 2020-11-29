@@ -566,6 +566,51 @@ private:
   std::string RewritePostfix;
 };
 
+// Analyze pointer allocated by cudaMallocManaged.
+class ManagedPointerAnalysis : public ExprAnalysis {
+  enum UseKind { NoUse = 0, Reference, Literal, Address };
+  const CallExpr *Call;
+  const Expr *FirstArg;
+  const Expr *SecondArg;
+  const VarDecl *Pointer;
+  // class member pointer
+  const FieldDecl *CPointer;
+  const CompoundStmt *PointerScope;
+  const CXXRecordDecl *CPointerScope;
+  bool Assigned = false;
+  bool Transfered = false;
+  bool ReAssigned = false;
+  bool Trackable = false;
+  bool NeedDerefOp = true;
+  std::vector<std::pair<std::pair<SourceLocation, SourceLocation>, std::string>>
+      Repl;
+  UseKind UK;
+  std::string PointerTempType;
+  std::string PointerCastType;
+  std::string PointerName;
+
+  void initAnalysisScope();
+  void buildCallExprRepl();
+  void dispatch(const Stmt *Expression);
+  void dispatch(const Decl *Decleration);
+  void addRepl();
+  bool isInCudaPath(const Decl *Decleration);
+  void analyzeExpr(const DeclRefExpr *DRE);
+  void analyzeExpr(const MemberExpr *ME);
+  void analyzeExpr(const CXXMemberCallExpr *CCE);
+  void analyzeExpr(const CallExpr *CE);
+  void analyzeExpr(const UnaryOperator *UO);
+  void analyzeExpr(const BinaryOperator *BO);
+  void analyzeExpr(const ArraySubscriptExpr *ASE);
+  void analyzeExpr(const CXXRecordDecl *CRD);
+  void analyzeExpr(const DeclStmt *DS);
+  void analyzeExpr(const Stmt *S);
+
+public:
+  ManagedPointerAnalysis(const CallExpr *C, bool IsAssigned);
+  ~ManagedPointerAnalysis() {}
+  void RecursiveAnalyze();
+};
 /// Analyze expression used as argument.
 class ArgumentAnalysis : public ExprAnalysis {
 public:

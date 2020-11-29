@@ -156,3 +156,5 @@ DEF_WARNING(UNDEDUCED_PARAM, 1068, "The argument of the %0 could not be deduced.
 DEF_COMMENT(UNDEDUCED_PARAM, 1068, "The argument of the {0} could not be deduced. You need to update this code.")
 DEF_WARNING(VIRTUAL_POINTER, 1069, "The argument %0 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with \"usm-level=restricted\".")
 DEF_COMMENT(VIRTUAL_POINTER, 1069, "The argument {0} of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with \"usm-level=restricted\".")
+DEF_WARNING(VIRTUAL_POINTER_HOST_ACCESS, 1070, "Pointer '%0' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<%1>(%0) to access it from the host code.")
+DEF_COMMENT(VIRTUAL_POINTER_HOST_ACCESS, 1070, "Pointer '{0}' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<{1}>({0}) to access it from the host code.")

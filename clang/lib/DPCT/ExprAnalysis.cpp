@@ -23,7 +23,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-
+extern std::string DpctInstallPath;
 namespace clang {
 namespace dpct {
 
@@ -587,7 +587,6 @@ void ExprAnalysis::applyAllSubExprRepl() {
   }
 }
 
-
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   auto &Str = DefaultArgMap[E];
   if (Str.empty())
@@ -595,6 +594,338 @@ const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   return Str;
 }
 
+ManagedPointerAnalysis::ManagedPointerAnalysis(const CallExpr *C,
+                                               bool IsAssigned) {
+  Call = C;
+  Assigned = IsAssigned;
+  FirstArg = Call->getArg(0);
+  SecondArg = Call->getArg(1);
+  Pointer = nullptr;
+  CPointer = nullptr;
+  PointerScope = nullptr;
+  CPointerScope = nullptr;
+  UK = NoUse;
+}
+void ManagedPointerAnalysis::initAnalysisScope() {
+
+  FirstArg = FirstArg->IgnoreParens()->IgnoreCasts()->IgnoreImplicitAsWritten();
+  const clang::Expr *P = nullptr;
+  if (auto UO = dyn_cast<UnaryOperator>(FirstArg)) {
+    if (UO->getOpcode() == clang::UO_AddrOf) {
+      P = UO->getSubExpr()->IgnoreImplicitAsWritten();
+      FirstArg = P;
+      NeedDerefOp = false;
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(FirstArg)) {
+    if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
+      P = COCE->getArg(0)->IgnoreImplicitAsWritten();
+      FirstArg = P;
+      NeedDerefOp = false;
+    }
+  }
+  // find managed pointer and pointer scope
+  if (P) {
+    if (auto PointerRef = dyn_cast<MemberExpr>(P)) {
+      bool isInMethod = false;
+      // ensure this pointer is class member
+      for (auto C : PointerRef->children()) {
+        if (C->getStmtClass() == Stmt::CXXThisExprClass)
+          isInMethod = true;
+      }
+      if (isInMethod) {
+        if (CPointer = dyn_cast<FieldDecl>(PointerRef->getMemberDecl())) {
+          QualType QT = CPointer->getType();
+          if (QT->isPointerType()) {
+            QT = QT->getPointeeType();
+            if (!QT->isPointerType() && !QT->isArrayType() &&
+                !QT->isStructureOrClassType()) {
+              if(CPointerScope = dyn_cast<CXXRecordDecl>(CPointer->getParent()))
+                Trackable = true;
+            }
+          }
+        }
+      }
+    } else if (auto PointerRef = dyn_cast<DeclRefExpr>(P)) {
+      if (Pointer = dyn_cast<VarDecl>(PointerRef->getDecl())) {
+        QualType QT = Pointer->getType();
+        if (QT->isPointerType()) {
+          QT = QT->getPointeeType();
+          if (!QT->isPointerType() && !QT->isArrayType() &&
+              !QT->isStructureOrClassType()) {
+            if(PointerScope = findImmediateBlock(Pointer))
+              Trackable = true;
+          }
+        }
+      }
+    }
+  }
+}
+void ManagedPointerAnalysis::RecursiveAnalyze() {
+  initAnalysisScope();
+  buildCallExprRepl();
+  auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
+  if (Trackable) {
+    if (PointerScope)
+      dispatch(PointerScope);
+    else if (CPointerScope)
+      dispatch(CPointerScope);
+    else{
+      return;
+    }
+    if (ReAssigned) {
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               PointerName, PointerTempType);
+    } else if (Transfered) {
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               PointerName, PointerTempType);
+      addRepl();
+    } else {
+      addRepl();
+    }
+  } else {
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                             PointerName, PointerTempType);
+  }
+}
+void ManagedPointerAnalysis::buildCallExprRepl() {
+  std::ostringstream OS;
+  if (Assigned)
+    OS << "(";
+  auto E = FirstArg;
+  bool NeedParen = false;
+  if (NeedDerefOp) {
+    OS << "*";
+    Stmt::StmtClass SC = E->getStmtClass();
+    if (!(SC == Stmt::DeclRefExprClass || SC == Stmt::MemberExprClass ||
+          SC == Stmt::ParenExprClass || SC == Stmt::CallExprClass ||
+          SC == Stmt::IntegerLiteralClass)) {
+      NeedParen = true;
+    }
+  }
+  QualType DerefQT = E->getType();
+  if (NeedDerefOp)
+    DerefQT = DerefQT->getPointeeType();
+
+  ExprAnalysis EA(E);
+  EA.analyze();
+  if (NeedParen)
+    OS << "(" << EA.getReplacedString() << ")";
+  else
+    OS << EA.getReplacedString();
+
+  PointerName = OS.str();
+  PointerCastType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+  PointerTempType =
+      DpctGlobalInfo::getReplacedTypeName(DerefQT->getPointeeType());
+  PointerCastType = getFinalCastTypeNameStr(PointerCastType);
+  PointerTempType = getFinalCastTypeNameStr(PointerTempType);
+  if (PointerCastType != "NULL TYPE" && PointerCastType != "void *") {
+    OS << " = (" << PointerCastType << ")";
+  } else {
+    OS << " = ";
+  }
+  OS << "dpct::dpct_malloc(";
+  ExprAnalysis ArgEA(SecondArg);
+  ArgEA.analyze();
+  OS << ArgEA.getReplacedString() << ")";
+  if (Assigned) {
+    OS << ", 0)";
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
+    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                             Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+  }
+  addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
+}
+void ManagedPointerAnalysis::dispatch(const Decl *Decleration) {
+  if (Decleration) {
+    std::string DKind(Decleration->getDeclKindName());
+    if (DKind == "CXXRecord") {
+      analyzeExpr(dyn_cast<CXXRecordDecl>(Decleration));
+    }
+  }
+}
+void ManagedPointerAnalysis::dispatch(const Stmt *Expression) {
+  if (!Expression)
+    return;
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(MemberExpr)
+    ANALYZE_EXPR(CallExpr)
+    ANALYZE_EXPR(ArraySubscriptExpr)
+    ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
+    ANALYZE_EXPR(DeclStmt)
+  default:
+    return analyzeExpr(Expression);
+  }
+}
+bool ManagedPointerAnalysis::isInCudaPath(const Decl *Decleration) {
+  bool Result = false;
+  std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
+                           .getFilename(Decleration->getLocation())
+                           .str();
+  bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+  bool InCudaPath = DpctGlobalInfo::isInCudaPath(Decleration->getLocation());
+  if (InInstallPath || InCudaPath) {
+    Result = true;
+  }
+  return Result;
+}
+void ManagedPointerAnalysis::addRepl() {
+  if (!Repl.empty()) {
+    for (auto R : Repl) {
+      addReplacement(R.first.first, R.first.second, R.second);
+    }
+  }
+}
+void ManagedPointerAnalysis::analyzeExpr(const Stmt *S) {
+  UseKind UK_TEMP = NoUse;
+  for (auto SubS : S->children()) {
+    if (SubS && dyn_cast<Stmt>(SubS)) {
+      UK = NoUse;
+      dispatch(SubS);
+      UK_TEMP = UK > UK_TEMP ? UK : UK_TEMP;
+    }
+  }
+  UK = UK_TEMP;
+}
+void ManagedPointerAnalysis::analyzeExpr(const CXXRecordDecl *CRD) {
+  auto CXXDecl = dyn_cast<CXXRecordDecl>(CRD);
+  for (auto *MT : CXXDecl->methods()) {
+    if (MT->hasBody()) {
+      UK = NoUse;
+      dispatch(MT->getBody());
+    }
+  }
+}
+void ManagedPointerAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (DRE->getDecl() != Pointer)
+    return;
+  UK = Literal;
+}
+void ManagedPointerAnalysis::analyzeExpr(const MemberExpr *ME) {
+  if (ME->getMemberDecl() != CPointer)
+    return;
+  UK = Literal;
+}
+void ManagedPointerAnalysis::analyzeExpr(const DeclStmt *DS) {
+  UseKind UK_TEMP = NoUse;
+  for (auto CH : DS->decls()) {
+    UK = NoUse;
+    if (auto Var = dyn_cast<VarDecl>(CH)) {
+      if (Var->hasInit()) {
+        dispatch(Var->getInit());
+        UK_TEMP = UK > UK_TEMP ? UK : UK_TEMP;
+      }
+    }
+  }
+  UK = UK_TEMP;
+}
+void ManagedPointerAnalysis::analyzeExpr(const CallExpr *CE) {
+  UseKind UKCALL = NoUse;
+  if (CE == Call)
+    return;
+  bool InCuda = true;
+  std::string APIName;
+  const FunctionDecl *CalleeDecl = CE->getDirectCallee();
+  if (CalleeDecl) {
+    InCuda = isInCudaPath(CalleeDecl);
+    APIName = CalleeDecl->getNameAsString();
+  } else {
+    if (auto ULExpr = dyn_cast<UnresolvedLookupExpr>(*CE->child_begin())) {
+      for(auto D = ULExpr->decls_begin(); D != ULExpr->decls_end(); D++){
+        auto Decl = D.getDecl();
+        InCuda = InCuda & isInCudaPath(Decl);
+        APIName = Decl->getNameAsString();
+      }
+    } else {
+      return;
+    }
+  };
+  for (auto Arg : CE->arguments()) {
+    UK = NoUse;
+    dispatch(Arg);
+    UKCALL = UK > UKCALL ? UK : UKCALL;
+  }
+  UK = UKCALL;
+  if (InCuda) {
+    if (UK == Address) {
+      if (APIName == "cudaMalloc" || APIName == "cudaMallocManaged" ||
+          APIName == "cudaMallocHost") {
+        ReAssigned = true;
+      }
+    } else {
+      UK = NoUse;
+    }
+  } else {
+    if (UK == Literal || UK == Address) {
+      Transfered = true;
+    }
+  }
+}
+void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  UK = NoUse;
+  if (UO->getOpcode() == UnaryOperatorKind::UO_Deref) {
+    auto SubE = UO->getSubExpr();
+    dispatch(SubE);
+    if (UK == Literal) {
+      UK = Reference;
+      ExprAnalysis EA(SubE);
+      EA.analyze();
+      std::string Rep = EA.getReplacedString();
+      if (SubE->IgnoreImplicitAsWritten()->getStmtClass() ==
+          Stmt::ParenExprClass) {
+        Repl.push_back(
+            {{SubE->getBeginLoc(), SubE->getEndLoc()},
+             std::string("dpct::get_host_ptr<" + PointerTempType + ">" + Rep)});
+      } else {
+        Repl.push_back({{SubE->getBeginLoc(), SubE->getEndLoc()},
+                        std::string("dpct::get_host_ptr<" + PointerTempType +
+                                    ">(" + Rep + ")")});
+      }
+    }
+  } else if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+    dispatch(UO->getSubExpr());
+    if (UK == Literal)
+      UK = Address;
+  } else {
+    dispatch(UO->getSubExpr());
+  };
+}
+void ManagedPointerAnalysis::analyzeExpr(const BinaryOperator *BO) {
+
+  UK = NoUse;
+  dispatch(BO->getLHS());
+  UseKind UKLHS = UK;
+
+  UK = NoUse;
+  dispatch(BO->getRHS());
+  UseKind UKRHS = UK;
+
+  UK = UKLHS > UKRHS ? UKLHS : UKRHS;
+  if (BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
+    if (UKRHS == Literal) {
+      Transfered = true;
+    }
+    if (UKLHS == Literal || UKRHS == Address) {
+      ReAssigned = true;
+    }
+  }
+}
+void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
+  UK = NoUse;
+  auto Base = ASE->getBase();
+  dispatch(Base);
+  if (UK == Literal) {
+    UK = Reference;
+    Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
+                    std::string("dpct::get_host_ptr<" + PointerTempType + ">(" +
+                                PointerName + ")")});
+  }
+}
 void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(DeclRefExpr)

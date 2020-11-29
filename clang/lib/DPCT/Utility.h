@@ -445,6 +445,11 @@ bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile);
 clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
+
+/// For types like curandState, the template argument of the migrated type cannot be
+/// decided at this time. It is known after AST traversal. So here we need use
+/// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
+std::string getFinalCastTypeNameStr(std::string CastTypeName);
 bool isLexicallyInLocalScope(const clang::Decl*);
 const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);

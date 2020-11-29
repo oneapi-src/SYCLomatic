@@ -78,9 +78,7 @@ void foo() {
   cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
   // CHECK: h_A = (float *)malloc(size);
   cudaMallocHost((void **)&h_A, size);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size);
   cudaMallocManaged((void **)&d_A, size);
 
   // CHECK: free(h_A);

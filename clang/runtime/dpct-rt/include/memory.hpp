@@ -537,6 +537,17 @@ static inline void *dpct_malloc(T num_bytes) {
   return detail::dpct_malloc(static_cast<size_t>(num_bytes));
 }
 
+/// Get the host pointer from a buffer that is mapped to virtual pointer ptr.
+/// \param ptr Virtual Pointer mapped to device buffer
+/// \returns A host pointer
+template <typename T> static inline T *get_host_ptr(const void *ptr) {
+  auto BufferOffset = get_buffer_and_offset(ptr);
+  auto host_ptr =
+      BufferOffset.first.get_access<cl::sycl::access::mode::read_write>()
+          .get_pointer();
+  return (T *)(host_ptr + BufferOffset.second);
+}
+
 /// Allocate memory block for 3D array on the device.
 /// \param size Size of of the memory block, in bytes.
 /// \returns A pitched_data object which stores the memory info.

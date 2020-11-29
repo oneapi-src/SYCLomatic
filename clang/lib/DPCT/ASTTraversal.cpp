@@ -9865,36 +9865,6 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
   }
 }
 
-/// For types like curandState, the template argument of the migrated type cannot be
-/// decided at this time. It is known after AST traversal. So here we need use
-/// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
-std::string
-MemoryMigrationRule::getFinalCastTypeNameStr(std::string CastTypeName) {
-  // Since curandState and other state types have same prefix (e.g.,
-  // curandStateXORWOW_t), we need choose a result which matches longest.
-  std::map<size_t /*replaced length*/,
-           std::pair<std::string::size_type /*BeginLoc*/,
-                     std::string /*replacing text*/>,
-           std::greater<size_t>>
-      ReplaceLengthStringMap;
-
-  for (auto &Pair : MapNames::DeviceRandomGeneratorTypeMap) {
-    std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
-    if (BeginLoc != std::string::npos) {
-      ReplaceLengthStringMap.insert(std::make_pair(
-          Pair.first.size(),
-          std::make_pair(BeginLoc, Pair.second + "<{{NEEDREPLACEV1}}>")));
-    }
-  }
-
-  if (!ReplaceLengthStringMap.empty()) {
-    const auto BeginIter = ReplaceLengthStringMap.begin();
-    CastTypeName.replace(BeginIter->second.first, BeginIter->first,
-                         BeginIter->second.second);
-  }
-  return CastTypeName;
-}
-
 /// e.g., for int *a and cudaMalloc(&a, size), return "a = (int *)".
 /// If \p NeedTypeCast is false, return "a = ";
 /// If \p TemplateStyle is true, \p NeedTypeCast will be specified as false always
@@ -10004,9 +9974,9 @@ void MemoryMigrationRule::mallocMigration(
           "{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
       emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
     } else {
-      // Report unsupported warnings
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
-             MapNames::ITFName.at(Name));
+      ManagedPointerAnalysis MPA(C, IsAssigned);
+      MPA.RecursiveAnalyze();
+      MPA.applyAllSubExprRepl();
     }
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
