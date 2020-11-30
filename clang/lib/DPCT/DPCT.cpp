@@ -12,6 +12,7 @@
 #include "clang/DPCT/DPCT.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CallExprRewriter.h"
 #include "Checkpoint.h"
 #include "Config.h"
 #include "Debug.h"
@@ -1090,6 +1091,8 @@ int runDPCT(int argc, const char **argv) {
   InRootTooling = InRoot;
 
   MapNames::setClNamespace(ExplicitClNamespace);
+  CallExprRewriterFactoryBase::initRewriterMap();
+
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }

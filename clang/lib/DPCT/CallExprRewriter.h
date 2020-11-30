@@ -39,9 +39,10 @@ public:
   virtual std::shared_ptr<CallExprRewriter> create(const CallExpr *) = 0;
   virtual ~CallExprRewriterFactoryBase() {}
 
-  static const std::unordered_map<std::string,
-                                  std::shared_ptr<CallExprRewriterFactoryBase>>
+  static std::unique_ptr<const std::unordered_map<std::string,
+                                  std::shared_ptr<CallExprRewriterFactoryBase>>>
       RewriterMap;
+  static void initRewriterMap();
 };
 
 /// Abstract factory for all rewriter factories

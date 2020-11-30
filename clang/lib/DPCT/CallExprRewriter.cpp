@@ -1470,9 +1470,15 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
 
-const std::unordered_map<std::string,
-	std::shared_ptr<CallExprRewriterFactoryBase>>
-	CallExprRewriterFactoryBase::RewriterMap = {
+std::unique_ptr<const std::unordered_map<
+    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    CallExprRewriterFactoryBase::RewriterMap;
+
+void CallExprRewriterFactoryBase::initRewriterMap() {
+  RewriterMap = std::make_unique<std::unordered_map<
+      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
@@ -1500,11 +1506,11 @@ const std::unordered_map<std::string,
 
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, ...)                            \
+#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, ...)                             \
   TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, __VA_ARGS__)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
-#define ENTRY_BIND(SOURCEAPINAME, ...)            \
+#define ENTRY_BIND(SOURCEAPINAME, ...)                                         \
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
@@ -1516,15 +1522,16 @@ const std::unordered_map<std::string,
 #undef UNSUPPORTED_FACTORY_ENTRY
 
 #define ENTRY_HOST(from, to, policy)
-#define ENTRY_DEVICE(SOURCEAPINAME, TARGETAPINAME, EXTR) FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_BOTH(SOURCEAPINAME, TARGETAPINAME, EXTR)  FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_DEVICE(SOURCEAPINAME, TARGETAPINAME, EXTR)                       \
+  FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_BOTH(SOURCEAPINAME, TARGETAPINAME, EXTR)                         \
+  FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #include "APINamesMapThrust.inc"
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
-
+      }));
 };
-
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)

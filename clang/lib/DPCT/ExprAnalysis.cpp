@@ -474,8 +474,10 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
-  auto Itr = CallExprRewriterFactoryBase::RewriterMap.find(RefString);
-  if (Itr != CallExprRewriterFactoryBase::RewriterMap.end()) {
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
     if (Result.hasValue()) {
