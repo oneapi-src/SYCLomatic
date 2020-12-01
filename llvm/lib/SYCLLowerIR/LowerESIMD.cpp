@@ -144,7 +144,7 @@ struct ESIMDIntrinDesc {
 
   std::string GenXSpelling;
   SmallVector<ArgRule, 16> ArgRules;
-  NameRule SuffixRule = {NO_RULE, 0};
+  NameRule SuffixRule = {NO_RULE, {0}};
 
   int getNumGenXArgs() const {
     auto NRules = ArgRules.size();
