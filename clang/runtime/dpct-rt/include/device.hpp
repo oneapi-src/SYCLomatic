@@ -10,6 +10,7 @@
 #define __DPCT_DEVICE_HPP__
 
 #include <CL/sycl.hpp>
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <mutex>
@@ -120,19 +121,17 @@ public:
   device_ext() : cl::sycl::device() {}
   ~device_ext() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    for (auto q : _queues) {
-      delete q;
-    }
+    _queues.clear();
   }
   device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
 #ifdef DPCT_USM_LEVEL_NONE
-    _default_queue = new cl::sycl::queue(base, exception_handler);
+    _queues.push_back(
+        std::make_shared<cl::sycl::queue>(base, exception_handler));
 #else
-    _default_queue = new cl::sycl::queue(base, exception_handler,
-                                         cl::sycl::property::queue::in_order());
+    _queues.push_back(std::make_shared<cl::sycl::queue>(
+        base, exception_handler, cl::sycl::property::queue::in_order()));
 #endif
-    _queues.insert(_default_queue);
-    _saved_queue = _default_queue;
+    _saved_queue = _default_queue = _queues[0].get();
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -229,56 +228,58 @@ public:
 
   void reset() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    for (auto q : _queues) {
-      // The destructor waits for all commands executing on the queue to
-      // complete. It isn't possible to destroy a queue immediately. This is a
-      // synchronization point in SYCL.
-      delete q;
-    }
+    // The queues are shared_ptrs and the ref counts of the shared_ptrs increase
+    // only in wait_and_throw(). If there is no other thread calling
+    // wait_and_throw(), the queues will be destructed. The destructor waits for
+    // all commands executing on the queue to complete. It isn't possible to
+    // destroy a queue immediately. This is a synchronization point in SYCL.
     _queues.clear();
     // create new default queue.
 #ifdef DPCT_USM_LEVEL_NONE
-    _default_queue = new cl::sycl::queue(*this, exception_handler);
+    _queues.push_back(
+        std::make_shared<cl::sycl::queue>(*this, exception_handler));
 #else
-    _default_queue = new cl::sycl::queue(*this, exception_handler,
-                                         cl::sycl::property::queue::in_order());
+    _queues.push_back(std::make_shared<cl::sycl::queue>(
+        *this, exception_handler, cl::sycl::property::queue::in_order()));
 #endif
-    _queues.insert(_default_queue);
+    _saved_queue = _default_queue = _queues[0].get();
   }
 
   cl::sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
     std::unique_lock<std::mutex> lock(m_mutex);
-    std::set<cl::sycl::queue *> current_queues;
-    std::copy(_queues.begin(), _queues.end(),
-      std::inserter(current_queues, current_queues.begin()));
+    std::vector<std::shared_ptr<cl::sycl::queue>> current_queues(
+        _queues);
     lock.unlock();
-    for (auto q : current_queues) {
+    for (const auto &q : current_queues) {
       q->wait_and_throw();
     }
+    // Guard the destruct of current_queues to make sure the ref count is safe.
+    lock.lock();
   }
   cl::sycl::queue *create_queue(bool enable_exception_handler = false) {
     std::lock_guard<std::mutex> lock(m_mutex);
     cl::sycl::async_handler eh = {};
-    if(enable_exception_handler) {
-        eh = exception_handler;
+    if (enable_exception_handler) {
+      eh = exception_handler;
     }
 #ifdef DPCT_USM_LEVEL_NONE
-    cl::sycl::queue *queue =
-        new cl::sycl::queue(_default_queue->get_context(), *this, eh);
+    _queues.push_back(std::make_shared<cl::sycl::queue>(
+        _default_queue->get_context(), *this, eh));
 #else
-    cl::sycl::queue *queue =
-        new cl::sycl::queue(_default_queue->get_context(), *this, eh,
-                            cl::sycl::property::queue::in_order());
+    _queues.push_back(std::make_shared<cl::sycl::queue>(
+        _default_queue->get_context(), *this, eh,
+        cl::sycl::property::queue::in_order()));
 #endif
-    _queues.insert(queue);
-    return queue;
+    return _queues[_queues.size() - 1].get();
   }
   void destroy_queue(cl::sycl::queue *&queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    _queues.erase(queue);
-    delete queue;
+    std::remove_if(_queues.begin(), _queues.end(),
+                   [=](const std::shared_ptr<cl::sycl::queue> &q) -> bool {
+                     return q.get() == queue;
+                   });
     queue = NULL;
   }
   void set_saved_queue(cl::sycl::queue* q) {
@@ -314,7 +315,7 @@ private:
   }
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;
-  std::set<cl::sycl::queue *> _queues;
+  std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
   mutable std::mutex m_mutex;
 };
 
