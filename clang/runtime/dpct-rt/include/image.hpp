@@ -525,6 +525,8 @@ public:
   ~image_wrapper() { detach(); }
   /// Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
+    if(!_image)
+      throw std::runtime_error("NULL pointer argument in get_access function is invalid");
     return accessor_t(*_image, cgh);
   }
   /// Set data info, attach the data to this class.
