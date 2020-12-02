@@ -939,7 +939,10 @@ char * replace_binary_name(const char *src, const char *pos){
         perror("bear: realpath\n" );
         exit(EXIT_FAILURE);
     }
-
+    if((strlen(file_path) + strlen("libear/intercept-stub") - strlen("bin/dpct")) >= PATH_MAX) {
+        perror("bear: strcpy overflow, path to dpct is too long.\n" );
+        exit(EXIT_FAILURE);
+    }
     strcpy(file_path + strlen(file_path) - strlen("bin/dpct"), "libear/intercept-stub");
 
     char *buffer = (char *)malloc(strlen(src) + strlen(file_path) - strlen("nvcc"));

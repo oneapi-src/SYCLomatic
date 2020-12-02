@@ -8224,6 +8224,8 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 void EventAPICallRule::handleTimeMeasurement() {
   auto CELoc = TimeElapsedCE->getBeginLoc().getRawEncoding();
   auto FD = getImmediateOuterFuncDecl(TimeElapsedCE);
+  if (!FD)
+    return;
   auto FuncBody = FD->getBody();
   if (!FuncBody)
     return;
@@ -8272,14 +8274,14 @@ void EventAPICallRule::handleTimeMeasurement() {
   handleTargetCalls(FuncBody);
 
   auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto NewEventName : Events2Wait) {
+  for (auto &NewEventName : Events2Wait) {
     std::ostringstream SyncStmt;
     SyncStmt
         << NewEventName << ".wait();" << getNL()
         << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
     emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
   }
-  for (auto T : Queues2Wait) {
+  for (auto &T : Queues2Wait) {
     std::ostringstream SyncStmt;
     SyncStmt
         << std::get<0>(T) << "->wait();" << getNL()
