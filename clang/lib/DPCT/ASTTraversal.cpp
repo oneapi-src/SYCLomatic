@@ -1952,7 +1952,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "permutation_iterator", "iterator_difference",
                   "cusolverDnHandle_t", "device_malloc_allocator", "divides",
                   "tuple", "maximum", "multiplies", "plus", "cudaDataType_t",
-                  "cudaError_t", "CUresult", "cudaEvent_t", "cublasStatus_t",
+                  "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t", "cublasStatus_t",
                   "cuComplex", "cuDoubleComplex", "cublasFillMode_t",
                   "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
                   "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
@@ -13006,6 +13006,154 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(FFTFunctionCallRule)
+
+void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+
+  auto DriverDeviceAPI = [&]() {
+    return hasAnyName(
+        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
+        "cuDeviceGetCount", "cuDeviceGetAttribute");
+  };
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(DriverDeviceAPI())), parentStmt()))
+                    .bind("call"),
+                this);
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(DriverDeviceAPI())), unless(parentStmt())))
+          .bind("callUsed"),
+      this);
+}
+
+void DriverDeviceAPIRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  bool IsAssigned = false;
+  std::string APIName;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed"))) {
+      return;
+    }
+    IsAssigned = true;
+  }
+  if(auto DC = CE->getDirectCallee()) {
+    APIName = DC->getNameAsString();
+  }else{
+    return;
+  }
+  std::ostringstream OS;
+
+  if(APIName == "cuDeviceGet"){
+    if(IsAssigned)
+      OS << "(";
+    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
+
+    ExprAnalysis SecEA(SecArg);
+    SecEA.analyze();
+    std::string Rep;
+    printDerefOp(OS, FirArg);
+    OS << " = " << SecEA.getReplacedString();
+    if(IsAssigned){
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if(APIName == "cuDeviceComputeCapability"){
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Indent = getIndent(SM.getExpansionLoc(CE->getBeginLoc()),
+                                   SM).str();
+    if(IsAssigned)
+      OS << "[&](){" << getNL();
+    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
+    auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
+    std::string ThrRep;
+    ExprAnalysis EA(ThrArg);
+    EA.analyze();
+    ThrRep = EA.getReplacedString();
+    std::string common_str = " = dpct::dev_mgr::instance().get_device(";
+    std::string major_api = ").get_major_version()";
+    std::string minor_api = ").get_minor_version()";
+    if(IsAssigned) {
+      OS << Indent << "  ";
+      printDerefOp(OS, FirArg);
+      OS << common_str << ThrRep << major_api << ";" << getNL();
+      OS << Indent << "  ";
+      printDerefOp(OS, SecArg);
+      OS << common_str << ThrRep << minor_api << ";" << getNL();
+      OS << Indent << "  " << "return 0;" << getNL();
+    }else{
+      printDerefOp(OS, FirArg);
+      OS << common_str << ThrRep << major_api << ";" << getNL() << Indent;
+      printDerefOp(OS, SecArg);
+      OS << common_str << ThrRep << minor_api;
+    }
+    if(IsAssigned) {
+      OS << Indent << "}()";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_LAMBDA, false);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if(APIName == "cuDriverGetVersion"){
+    if(IsAssigned)
+      OS << "(";
+    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    printDerefOp(OS, FirArg);
+    OS << " = dpct::get_current_device()"
+                 ".get_info<sycl::info::device::version>()";
+    if(IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    report(CE->getBeginLoc(), Diagnostics::TYPE_MISMATCH, false);
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if(APIName == "cuDeviceGetCount"){
+    if(IsAssigned)
+      OS << "(";
+    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    printDerefOp(OS, Arg);
+    OS << " = " << "dpct::dev_mgr::instance().device_count()";
+    if(IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if(APIName == "cuDeviceGetAttribute"){
+    if(IsAssigned)
+      OS << "(";
+    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
+    auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
+
+    std::string AttributeName;
+    std::string DevStr;
+    std::string SYCLCallName;
+    if(auto DRE = dyn_cast<DeclRefExpr>(SecArg)){
+      AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search == EnumConstantRule::EnumNamesMap.end()) {
+        report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+        return;
+      }
+      SYCLCallName = Search->second;
+    }else{
+      return;
+    }
+    printDerefOp(OS, FirArg);
+    ExprAnalysis EA(ThrArg);
+    EA.analyze();
+    DevStr = EA.getReplacedString();
+    OS << " = dpct::dev_mgr::instance().get_device("
+       << DevStr << ")." << SYCLCallName << "()";
+    if(IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  }
+}
+
+REGISTER_RULE(DriverDeviceAPIRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

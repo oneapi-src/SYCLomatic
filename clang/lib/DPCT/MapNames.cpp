@@ -170,6 +170,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cufftResult", "int"},
       {"cufftType_t", "int"},
       {"cufftType", "int"},
+      {"CUdevice", "int"}
       // ...
 
   };
@@ -214,6 +215,13 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaMemAdviseUnsetPreferredLocation", "0"},
     {"cudaMemAdviseSetAccessedBy", "0"},
     {"cudaMemAdviseUnsetAccessedBy", "0"},
+    // enum Driver Device Attribute
+    {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR", "get_major_version"},
+    {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR", "get_minor_version"},
+    {"CU_DEVICE_ATTRIBUTE_INTEGRATED", "get_integrated"},
+    {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE", "get_max_clock_frequency"},
+    {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT", "get_max_compute_units"},
+    {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED", "is_native_atomic_supported"}
     // ...
   };
 
