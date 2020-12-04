@@ -136,8 +136,8 @@ int main(int argc, char **argv) {
   a = sizeof(res);
   a = sizeof res;
 
-  //CHECK:void *context;
-  //CHECK-NEXT:a = sizeof(void *);
+  //CHECK:int context;
+  //CHECK-NEXT:a = sizeof(int);
   //CHECK-NEXT:a = sizeof(context);
   //CHECK-NEXT:a = sizeof context;
   CUcontext context;

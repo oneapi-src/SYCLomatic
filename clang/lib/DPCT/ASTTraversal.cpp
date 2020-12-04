@@ -13222,6 +13222,112 @@ void DriverDeviceAPIRule::run(const ast_matchers::MatchFinder::MatchResult &Resu
 
 REGISTER_RULE(DriverDeviceAPIRule)
 
+void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto contextAPI = [&]() {
+    return hasAnyName("cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent",
+                      "cuCtxGetCurrent", "cuCtxSynchronize");
+  };
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(contextAPI())), parentStmt()))
+          .bind("call"),
+      this);
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(contextAPI())), unless(parentStmt())))
+          .bind("callUsed"),
+      this);
+};
+void DriverContextAPIRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  bool IsAssigned = false;
+  std::string APIName;
+  std::ostringstream OS;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed")))
+      return;
+    IsAssigned = true;
+  }
+
+  if (auto DC = CE->getDirectCallee()) {
+    APIName = CE->getDirectCallee()->getNameAsString();
+  } else {
+    return;
+  }
+  if (IsAssigned) {
+    OS << "(";
+  }
+  if (APIName == "cuInit") {
+    std::string Msg = "the function call is redundant in DPC++.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+             APIName, Msg);
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, APIName,
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, ""));
+    }
+    return;
+  } else if (APIName == "cuCtxCreate_v2") {
+    auto CtxArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto DevArg = CE->getArg(2)->IgnoreImplicitAsWritten();
+    ExprAnalysis EA(DevArg);
+    EA.analyze();
+    printDerefOp(OS, CtxArg);
+    OS << " = " << EA.getReplacedString();
+    if (IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    SourceLocation CallBegin(CE->getBeginLoc());
+    SourceLocation CallEnd(CE->getEndLoc());
+
+    bool IsMacroArg =
+        SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
+
+    if (CallBegin.isMacroID() && IsMacroArg) {
+      CallBegin = SM.getImmediateSpellingLoc(CallBegin);
+      CallBegin = SM.getExpansionLoc(CallBegin);
+    } else if (CallBegin.isMacroID()) {
+      CallBegin = SM.getExpansionLoc(CallBegin);
+    }
+
+    if (CallEnd.isMacroID() && IsMacroArg) {
+      CallEnd = SM.getImmediateSpellingLoc(CallEnd);
+      CallEnd = SM.getExpansionLoc(CallEnd);
+    } else if (CallEnd.isMacroID()) {
+      CallEnd = SM.getExpansionLoc(CallEnd);
+    }
+    CallEnd = CallEnd.getLocWithOffset(1);
+    emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
+    return;
+  } else if (APIName == "cuCtxSetCurrent") {
+    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    ExprAnalysis EA(Arg);
+    EA.analyze();
+    OS << "dpct::dev_mgr::instance().select_device(" << EA.getReplacedString()
+       << ")";
+  } else if (APIName == "cuCtxGetCurrent") {
+    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    printDerefOp(OS, Arg);
+    OS << " = "
+       << "dpct::dev_mgr::instance().current_device_id()";
+  } else if (APIName == "cuCtxSynchronize") {
+    OS << "dpct::dev_mgr::instance().current_device().queues_wait_and_throw()";
+  }
+  if (IsAssigned) {
+    OS << ", 0)";
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+  }
+  emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+};
+
+REGISTER_RULE(DriverContextAPIRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;

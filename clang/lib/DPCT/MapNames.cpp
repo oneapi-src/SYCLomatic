@@ -35,7 +35,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaError_t", "int"},
       {"cudaError", "int"},
       {"CUresult", "int"},
-      {"CUcontext", "void*"},
+      {"CUcontext", "int"},
       {"dim3", ClNamespace + "::range<3>"},
       {"int2", ClNamespace + "::int2"},
       {"struct int2", ClNamespace + "::int2"},
