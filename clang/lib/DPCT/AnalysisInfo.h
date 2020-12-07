@@ -63,6 +63,90 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
+struct FFTPlanAPIInfo;
+
+enum class FFTDirectionType : int {
+  uninitialized = 0,
+  unknown = 1,
+  forward = 2,
+  backward = 3
+};
+enum class FFTPlacementType : int {
+  uninitialized = 0,
+  unknown = 1,
+  inplace = 2,
+  outofplace = 3
+};
+enum class FFTTypeEnum : int {
+  C2R = 0,
+  R2C = 1,
+  C2C = 2,
+  Z2D = 3,
+  D2Z = 4,
+  Z2Z = 5,
+  Unknown = 6
+};
+
+struct FFTExecAPIInfo {
+  FFTDirectionType Direction = FFTDirectionType::uninitialized;
+  FFTPlacementType Placement = FFTPlacementType::uninitialized;
+
+  void updateDirectionFromExec(FFTDirectionType NewDirection) {
+    if (Direction == FFTDirectionType::uninitialized) {
+      Direction = NewDirection;
+      return;
+    }
+    if (Direction == NewDirection) {
+      return;
+    }
+
+    // different directions and Direction is initialized
+    Direction = FFTDirectionType::unknown;
+    return;
+  }
+  void updatePlacementFromExec(FFTPlacementType NewPlacement) {
+    if (Placement == FFTPlacementType::uninitialized) {
+      Placement = NewPlacement;
+      return;
+    }
+    if (Placement == NewPlacement) {
+      return;
+    }
+
+    // different placements and Placement is initialized
+    Placement = FFTPlacementType::unknown;
+    return;
+  }
+};
+
+struct LibraryMigrationFlags {
+  bool NeedUseLambda = false;
+  bool CanAvoidUsingLambda = false;
+  bool IsMacroArg = false;
+  bool CanAvoidBrace = false;
+  bool IsAssigned = false;
+  bool MoveOutOfMacro = false;
+  std::string OriginStmtType;
+  bool IsPrefixEmpty = false;
+  bool IsSuffixEmpty = false;
+  bool IsPrePrefixEmpty = false;
+};
+struct LibraryMigrationLocations {
+  SourceLocation PrefixInsertLoc;
+  SourceLocation SuffixInsertLoc;
+  SourceLocation OuterInsertLoc;
+  SourceLocation FuncNameBegin;
+  SourceLocation FuncCallEnd;
+  SourceLocation OutOfMacroInsertLoc;
+  unsigned int Len = 0;
+};
+struct LibraryMigrationStrings {
+  std::string PrePrefixInsertStr;
+  std::string PrefixInsertStr;
+  std::string Repl;
+  std::string SuffixInsertStr;
+  std::string IndentStr;
+};
 
 // This struct saves the engine's type.
 // These rules determine the engine's type:
@@ -481,7 +565,7 @@ public:
                           "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
     case MKL_FFT:
       return insertHeader(HeaderType::MKL_FFT, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<array>");
+                          "<oneapi/mkl.hpp>");
     case Numeric:
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
         "<numeric>");
@@ -554,6 +638,9 @@ public:
 
   std::map<unsigned int, FFTDescriptorTypeInfo> &getFFTDescriptorTypeMap() {
     return FFTDescriptorTypeMap;
+  }
+  std::map<unsigned int, FFTPlanAPIInfo> &getFFTPlanAPIInfoMap() {
+    return FFTPlanAPIInfoMap;
   }
 
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
@@ -652,6 +739,7 @@ private:
       HostRandomDistrMap;
   std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
+  std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
@@ -966,6 +1054,11 @@ public:
     CurrentIndexInRule++;
     return Res;
   }
+  inline static int getSuffixIndexGlobalThenInc() {
+    int Res = CurrentMaxIndex;
+    CurrentMaxIndex++;
+    return Res;
+  }
 
   inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
     CodeFormatStyle = Style;
@@ -1202,6 +1295,8 @@ public:
       M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
     }
   }
+
+  void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
 
   void insertDeviceRandomStateTypeInfo(SourceLocation SL, unsigned int Length,
                                        std::string GeneratorType) {
@@ -1493,6 +1588,25 @@ public:
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
   }
 
+  static void insertOrUpdateFFTExecAPIInfo(const std::string &FileAndOffset,
+                                           const FFTDirectionType Direction,
+                                           const FFTPlacementType Placement) {
+    auto I = FFTExecAPIInfoMap.find(FileAndOffset);
+    if (I == FFTExecAPIInfoMap.end()) {
+      FFTExecAPIInfo Info;
+      Info.Direction = Direction;
+      Info.Placement = Placement;
+      FFTExecAPIInfoMap.insert(std::make_pair(FileAndOffset, Info));
+    } else {
+      I->second.updateDirectionFromExec(Direction);
+      I->second.updatePlacementFromExec(Placement);
+    }
+  }
+  static std::unordered_map<std::string, FFTExecAPIInfo> &
+  getFFTExecAPIInfoMap() {
+    return FFTExecAPIInfoMap;
+  }
+
 private:
   DpctGlobalInfo();
 
@@ -1637,6 +1751,9 @@ private:
   static std::unordered_set<std::string> TempVariableHandledSet;
   static bool UsingDRYPattern;
   static bool SpBLASUnsupportedMatrixTypeFlag;
+  // Key: the fft handle declaration "FilePath:Offset"
+  // Value: a struct incluing placement and direction
+  static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
 };
 
 class TemplateArgumentInfo;
@@ -3458,6 +3575,83 @@ private:
   std::string GeneratorName;
   bool IsAssigned = false;
   unsigned int CreateAPINum = 0;
+};
+
+struct FFTPlanAPIInfo {
+  FFTPlanAPIInfo() {}
+  void buildInfo();
+
+  // Input info by Plan API
+  std::string PrecAndDomainStr;
+  FFTTypeEnum FFTType; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
+  int QueueIndex = -1;
+  std::vector<std::string> ArgsList;
+  std::string IndentStr;
+  std::string FuncName;
+  LibraryMigrationFlags Flags;
+  std::int64_t Rank = -1;
+  std::string DescrMemberCallPrefix;
+  std::string DescStr;
+  bool NeedBatchFor1D = true;
+  std::string HandleDeclFileAndOffset;
+
+  // Input info by Exec API
+  FFTPlacementType PlacementFromExec = FFTPlacementType::uninitialized;
+  FFTDirectionType DirectionFromExec = FFTDirectionType::uninitialized;
+
+  // Generated info
+  std::string PrePrefixStmt;
+  std::vector<std::string> PrefixStmts;
+  std::vector<std::string> SuffixStmts;
+  std::string CallExprRepl;
+  std::string FilePath;
+  std::pair<unsigned int, unsigned int> InsertOffsets;
+  unsigned int ReplaceOffset;
+  unsigned int ReplaceLen;
+  std::string UnsupportedArg;
+
+  void updateManyCommitCallExpr();
+  void update1D2D3DCommitCallExpr(std::vector<int> DimIdxs);
+  void updateCommitCallExpr(std::vector<std::string> Dims);
+  void addInfo(std::string PrecAndDomainStr, FFTTypeEnum FFTType,
+               int QueueIndex, std::vector<std::string> ArgsList,
+               std::string IndentStr, std::string FuncName,
+               LibraryMigrationFlags Flags, std::int64_t Rank,
+               std::string DescrMemberCallPrefix, std::string DescStr);
+  void setValueFor1DBatched();
+  void linkInfo();
+  void replaceText();
+  void replacementLocation(LibraryMigrationLocations Locations);
+
+  struct Stmts {
+    Stmts() {}
+
+    Stmts &operator<<(const Stmts &InputStmts) {
+      S.insert(S.end(), InputStmts.S.begin(), InputStmts.S.end());
+      return *this;
+    }
+    Stmts &operator<<(const std::vector<std::string> &InputStmts) {
+      S.insert(S.end(), InputStmts.begin(), InputStmts.end());
+      return *this;
+    }
+    Stmts &operator<<(const std::string &InputStmt) {
+      S.push_back(InputStmt);
+      return *this;
+    }
+
+    std::string getAsString(std::string IndentStr, bool IsNLAtBegin) {
+      std::ostringstream OS;
+      for (const auto &Stmt : S) {
+        if (IsNLAtBegin)
+          OS << getNL() << IndentStr << Stmt; // For suffix string
+        else
+          OS << Stmt << getNL() << IndentStr; // For prefix string
+      }
+      return OS.str();
+    }
+
+    std::vector<std::string> S;
+  };
 };
 
 template <class... T>

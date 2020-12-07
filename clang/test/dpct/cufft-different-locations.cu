@@ -4,7 +4,6 @@
 #include <cufft.h>
 #include <cuda_runtime.h>
 
-cufftHandle plan;
 size_t* work_size;
 int odist;
 int ostride;
@@ -25,157 +24,169 @@ static void CufftHandleError( cufftResult err, const char *file, int line ) {
 }
 
 int main() {
+  cufftHandle plan1;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int res1 = (plan->commit(q_ct1), 0);
-  cufftResult res1 = cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:int res1 = (plan1->commit(q_ct1), 0);
+  cufftResult res1 = cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:int res2 = 0;
   //CHECK-NEXT:{
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan1, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:res2 = (oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:res2 = (oneapi::mkl::dft::compute_backward(*plan1, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   //CHECK-NEXT:}
-  cufftResult res2 = cufftExecZ2D(plan, idata, odata);
+  cufftResult res2 = cufftExecZ2D(plan1, idata, odata);
 
+  cufftHandle plan2;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:res1 = (plan->commit(q_ct1), 0);
-  res1 = cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:res1 = (plan2->commit(q_ct1), 0);
+  res1 = cufftMakePlanMany(plan2, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:{
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan2, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:res2 = (oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}}), 0);
+  //CHECK-NEXT:res2 = (oneapi::mkl::dft::compute_backward(*plan2, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   //CHECK-NEXT:}
-  res2 = cufftExecZ2D(plan, idata, odata);
+  res2 = cufftExecZ2D(plan2, idata, odata);
 
+  cufftHandle plan3;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
-  HANDLE_CUFFT_ERROR(cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
-  //CHECK:/*
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in function-like macro statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan3 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan3->commit(q_ct1);
   //CHECK-NEXT:HANDLE_CUFFT_ERROR(0);
+  HANDLE_CUFFT_ERROR(cufftMakePlanMany(plan3, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:HANDLE_CUFFT_ERROR([&](){
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan3, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan3, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}());
-  HANDLE_CUFFT_ERROR(cufftExecZ2D(plan, idata, odata));
+  HANDLE_CUFFT_ERROR(cufftExecZ2D(plan3, idata, odata));
 
+  cufftHandle plan4;
+  cufftHandle plan5;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan4 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan4->commit(q_ct1);
   //CHECK-NEXT:if(0) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:} else if ([&](){
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan5 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan5->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan5->commit(q_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}()) {
   //CHECK-NEXT:}
-  if(cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
-  } else if (cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
+  if(cufftMakePlanMany(plan4, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
+  } else if (cufftMakePlanMany(plan5, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   }
   //CHECK:{
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan4, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan4, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -188,88 +199,90 @@ int main() {
   //CHECK-NEXT:} else if([&](){
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan5, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan5, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}()) {
   //CHECK-NEXT:}
-  if (cufftExecZ2D(plan, idata, odata)) {
-  } else if(cufftExecZ2D(plan, idata, odata)) {
+  if (cufftExecZ2D(plan4, idata, odata)) {
+  } else if(cufftExecZ2D(plan5, idata, odata)) {
   }
 
+  cufftHandle plan6;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan6 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan6->commit(q_ct1);
+  if(int res = 0) {
+  }
+  if(cufftResult res = cufftMakePlanMany(plan6, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
+  }
+  //CHECK:{
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:if ((void *)idata == (void *)odata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan6, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan6, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:}
+  //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:if(int res = 0) {
   //CHECK-NEXT:}
-  if(cufftResult res = cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
-  }
-  //CHECK:{
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
-  //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
-  //CHECK-NEXT:}
-  //CHECK-NEXT:}
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:if(int res = 0) {
-  //CHECK-NEXT:}
-  if(cufftResult res = cufftExecZ2D(plan, idata, odata)) {
+  if(cufftResult res = cufftExecZ2D(plan6, idata, odata)) {
   }
 
+  cufftHandle plan7;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:for (0;;) {
-  //CHECK-NEXT:}
-  for (cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);;) {
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan7 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan7->commit(q_ct1);
+  for (0;;) {
+  }
+  for (cufftMakePlanMany(plan7, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);;) {
   }
   //CHECK:{
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan7, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan7, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -277,31 +290,34 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:for (0;;) {
   //CHECK-NEXT:}
-  for (cufftExecZ2D(plan, idata, odata);;) {
+  for (cufftExecZ2D(plan7, idata, odata);;) {
   }
 
-
+  cufftHandle plan8;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:for (;[&](){
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan8 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan8->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan8->commit(q_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();) {
   //CHECK-NEXT:}
-  for (;cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);) {
+  for (;cufftMakePlanMany(plan8, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);) {
   }
   //CHECK:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -309,40 +325,42 @@ int main() {
   //CHECK-NEXT:for (;[&](){
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan8, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan8, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}();) {
   //CHECK-NEXT:}
-  for (;cufftExecZ2D(plan, idata, odata);) {
+  for (;cufftExecZ2D(plan8, idata, odata);) {
   }
 
+  cufftHandle plan9;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:while ([&](){
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan9 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan9->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan9->commit(q_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}() != 0) {
   //CHECK-NEXT:}
-  while (cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size) != 0) {
+  while (cufftMakePlanMany(plan9, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size) != 0) {
   }
   //CHECK:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -350,42 +368,43 @@ int main() {
   //CHECK-NEXT:while ([&](){
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan9, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan9, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}() != 0) {
   //CHECK-NEXT:}
-  while (cufftExecZ2D(plan, idata, odata) != 0) {
+  while (cufftExecZ2D(plan9, idata, odata) != 0) {
   }
 
-
+  cufftHandle plan10;
   //CHECK:do {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:} while ([&](){
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan10 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan10->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan10->commit(q_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}());
   do {
-  } while (cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
+  } while (cufftMakePlanMany(plan10, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:do {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -393,48 +412,47 @@ int main() {
   //CHECK-NEXT:} while ([&](){
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan10, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan10, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}());
   do {
-  } while (cufftExecZ2D(plan, idata, odata));
+  } while (cufftExecZ2D(plan10, idata, odata));
 
-
+  cufftHandle plan11;
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan11 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan11->commit(q_ct1);
   //CHECK-NEXT:switch (int stat = 0){
   //CHECK-NEXT:}
-  switch (int stat = cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)){
+  switch (int stat = cufftMakePlanMany(plan11, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)){
   }
   //CHECK:{
   //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan11, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(q_ct1);
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
-  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan11, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -442,39 +460,40 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:switch (int stat = 0){
   //CHECK-NEXT:}
-  switch (int stat = cufftExecZ2D(plan, idata, odata)){
+  switch (int stat = cufftExecZ2D(plan11, idata, odata)){
   }
   return 0;
 }
 
-cufftResult foo1() {
+cufftResult foo1(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
+  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   //CHECK-NEXT:return 0;
   return cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
-cufftResult foo2() {
+cufftResult foo2(cufftHandle plan) {
   //CHECK:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
@@ -485,30 +504,31 @@ cufftResult foo2() {
   return cufftExecZ2D(plan, idata, odata);
 }
 
-cufftResult foo3() {
+cufftResult foo3(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Migration is supported only if the input distance is the same as the output distance. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, inembed[2] * inembed[1] * istride, inembed[2] * istride, istride};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, onembed[2] * onembed[1] * ostride, onembed[2] * ostride, ostride};
   //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, std::array<std::int64_t, 4>{0, istride, inembed[2] * istride, inembed[2] * inembed[1] * istride});
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, std::array<std::int64_t, 4>{0, ostride, onembed[2] * ostride, onembed[2] * onembed[1] * ostride});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
   //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
-cufftResult foo4() {
+cufftResult foo4(cufftHandle plan) {
   //CHECK:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}

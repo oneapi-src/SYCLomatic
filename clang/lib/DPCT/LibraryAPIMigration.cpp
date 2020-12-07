@@ -22,9 +22,9 @@ namespace dpct {
 /// Set the prec and domain in the FFTDescriptorTypeInfo of the declaration of
 /// \p DescIdx
 void FFTFunctionCallBuilder::addDescriptorTypeInfo(
-    unsigned int DescIdx, std::string PrecAndDomainStr) {
+    std::string PrecAndDomainStr) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  const DeclaratorDecl *HandleVar = getHandleVar(TheCallExpr->getArg(DescIdx));
+  const DeclaratorDecl *HandleVar = getHandleVar(TheCallExpr->getArg(0));
   if (!HandleVar)
     return;
 
@@ -38,8 +38,8 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
       TypeBeginLoc = SpellingLocation;
     }
   }
-  unsigned int TypeLength = Lexer::MeasureTokenLength(TypeBeginLoc, SM,
-                                    DpctGlobalInfo::getContext().getLangOpts());
+  unsigned int TypeLength = Lexer::MeasureTokenLength(
+      TypeBeginLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
 
   auto LocInfo = DpctGlobalInfo::getLocInfo(TypeBeginLoc);
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(LocInfo.first);
@@ -86,174 +86,30 @@ FFTFunctionCallBuilder::getPrecAndDomainStr(unsigned int PrecDomainIdx) {
   return PrecAndDomain;
 }
 
-/// Add the set_value call for 1d plan
-void FFTFunctionCallBuilder::setValueFor1DBatched(unsigned int DescIdx,
-                                                  unsigned int SizeIdx,
-                                                  unsigned int BatchIdx) {
+FFTTypeEnum FFTFunctionCallBuilder::getFFTType(unsigned int PrecDomainIdx) {
   Expr::EvalResult ER;
-  if (!TheCallExpr->getArg(BatchIdx)->isValueDependent() &&
-      TheCallExpr->getArg(BatchIdx)
+  if (!TheCallExpr->getArg(PrecDomainIdx)->isValueDependent() &&
+      TheCallExpr->getArg(PrecDomainIdx)
           ->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
-    if (Value == 1) {
-      return;
+    switch (Value) {
+    case 0x2a:
+      return FFTTypeEnum::R2C;
+    case 0x2c:
+      return FFTTypeEnum::C2R;
+    case 0x29:
+      return FFTTypeEnum::C2C;
+    case 0x6a:
+      return FFTTypeEnum::D2Z;
+    case 0x6c:
+      return FFTTypeEnum::Z2D;
+    case 0x69:
+      return FFTTypeEnum::Z2Z;
+    default:
+      return FFTTypeEnum::Unknown;
     }
   }
-
-  std::string SetStr = getDescrMemberCallPrefix() + "set_value";
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
-                           ArgsList[SizeIdx] + ");");
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
-                           ArgsList[SizeIdx] + ");");
-  PrefixStmts.emplace_back(
-      SetStr + "(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, " +
-      ArgsList[BatchIdx] + ");");
-}
-
-/// Add set_value call for many plan, collect dim info and then call
-/// updateCommitCallExpr
-void FFTFunctionCallBuilder::updateManyCommitCallExpr(int QueueIndex) {
-  // TODO: Add if-stmt to check whether inembed and onembed are NULL.
-  // TODO: It will be submitted in another patch.
-  Expr::EvalResult ER;
-  std::vector<std::string> Dims;
-  std::string InStridesStr;
-  std::string OutStridesStr;
-  int64_t Value = -1;
-  if (!TheCallExpr->getArg(1)->isValueDependent() &&
-      TheCallExpr->getArg(1)->EvaluateAsInt(
-          ER, DpctGlobalInfo::getContext())) {
-    Value = ER.Val.getInt().getExtValue();
-    // dim = 3:
-    // ios[3]=istride*inembed[2]*inembed[1]
-    // ios[2]=istride*inembed[2]
-    // ios[1]=istride
-    // ios[0]=0
-    //
-    // dim = 2:
-    // ios[2]=istride*inembed[1]
-    // ios[1]=istride
-    // ios[0]=0
-    //
-    // dim = 1:
-    // ios[1]=istride
-    // ios[0]=0
-    std::vector<std::string> InStrides;
-    std::vector<std::string> OutStrides;
-    InStrides.emplace_back("0");
-    OutStrides.emplace_back("0");
-    InStrides.emplace_back(ArgsList[4]);
-    OutStrides.emplace_back(ArgsList[7]);
-    if (Value == 2) {
-      InStrides.emplace_back(ArgsList[3] + "[1] * " + ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[1] * " + ArgsList[7]);
-    } else if (Value == 3) {
-      InStrides.emplace_back(ArgsList[3] + "[2] * " + ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[2] * " + ArgsList[7]);
-      InStrides.emplace_back(ArgsList[3] + "[2] * " + ArgsList[3] + "[1] * " +
-                             ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[2] * " + ArgsList[6] + "[1] * " +
-                              ArgsList[7]);
-    }
-    for (int64_t i = 0; i < Value; ++i)
-      Dims.emplace_back(ArgsList[2] + "[" + std::to_string(i) + "]");
-    for (size_t i = 0; i < InStrides.size(); ++i) {
-      InStridesStr = InStridesStr + InStrides[i] + ", ";
-      OutStridesStr = OutStridesStr + OutStrides[i] + ", ";
-    }
-    InStridesStr = InStridesStr.substr(0, InStridesStr.size() - 2);
-    OutStridesStr = OutStridesStr.substr(0, OutStridesStr.size() - 2);
-    InStridesStr = "std::array<std::int64_t, " + std::to_string(Value + 1) +
-                   ">{" + InStridesStr + "}";
-    OutStridesStr = "std::array<std::int64_t, " + std::to_string(Value + 1) +
-                    ">{" + OutStridesStr + "}";
-  } else {
-    report(Locations.PrefixInsertLoc, Diagnostics::UNDEDUCED_PARAM, false,
-           "dimensions and strides");
-    Dims.emplace_back("dpct_placeholder/*Fix the dimensions manually*/");
-    InStridesStr = "dpct_placeholder/*Fix the stride manually*/";
-    OutStridesStr = "dpct_placeholder/*Fix the stride manually*/";
-  }
-
-  updateCommitCallExpr(0, Dims, 9, QueueIndex);
-
-  std::string SetStr = getDescrMemberCallPrefix() + "set_value";
-
-  report(Locations.PrefixInsertLoc, Diagnostics::ONLY_SUPPORT_SAME_DISTANCE, false);
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
-                           ArgsList[5] + ");");
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
-                           ArgsList[5] + ");");
-  PrefixStmts.emplace_back(
-      SetStr + "(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, " +
-      ArgsList[10] + ");");
-
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::INPUT_STRIDES, " +
-                           InStridesStr + ");");
-  PrefixStmts.emplace_back(SetStr +
-                           "(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, " +
-                           OutStridesStr + ");");
-
-}
-
-/// collect dim info then call updateCommitCallExpr
-void FFTFunctionCallBuilder::update1D2D3DCommitCallExpr(
-    unsigned int DescIdx, std::vector<int> DimIdxs, unsigned int PrecDomainIdx,
-    int QueueIndex) {
-  std::vector<std::string> Dims;
-  for (const auto &Idx : DimIdxs)
-    Dims.emplace_back(ArgsList[Idx]);
-  updateCommitCallExpr(DescIdx, Dims, PrecDomainIdx, QueueIndex);
-}
-
-/// generates  stmts: construct a descriptor and commit method
-void FFTFunctionCallBuilder::updateCommitCallExpr(unsigned int DescIdx,
-                                                  std::vector<std::string> Dims,
-                                                  unsigned int PrecDomainIdx,
-                                                  int QueueIndex) {
-  if (FuncName.startswith("cufftMake")) {
-    report(Locations.PrefixInsertLoc, Diagnostics::UNSUPPORTED_PARAM, false,
-        ExprAnalysis::ref(TheCallExpr->getArg(TheCallExpr->getNumArgs() - 1)));
-  }
-
-  std::string PrecAndDomainStr = getPrecAndDomainStr(PrecDomainIdx);
-  addDescriptorTypeInfo(DescIdx, PrecAndDomainStr);
-  if (PrecAndDomainStr.empty()) {
-    report(Locations.PrefixInsertLoc, Diagnostics::UNDEDUCED_TYPE, false,
-           FuncName, "FFT precision and domain type");
-    PrecAndDomainStr =
-        "dpct_placeholder/*Fix the precision and domain type manually*/";
-  } else {
-    DpctGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
-  }
-
-  std::string DescStr = getDescr();
-  std::string DescMethod = getDescrMemberCallPrefix();
-
-  CallExprRepl = CallExprRepl + DescMethod + "commit({{NEEDREPLACEQ" +
-                 std::to_string(QueueIndex) + "}})";
-
-  std::string DescCtor = DescStr + " = ";
-  DescCtor = DescCtor + "std::make_shared<oneapi::mkl::dft::descriptor<" +
-             PrecAndDomainStr + ">>(";
-  if (Dims.size() == 1) {
-    DescCtor = DescCtor + Dims[0];
-  } else {
-    std::string DimStr;
-    for (const auto &Dim : Dims) {
-      DimStr = DimStr + Dim + ", ";
-    }
-    DimStr = DimStr.substr(0, DimStr.size() - 2);
-    DescCtor = DescCtor + "std::vector<std::int64_t>{" + DimStr + "}";
-  }
-
-  DescCtor = DescCtor + ");";
-  PrefixStmts.emplace_back(DescCtor);
+  return FFTTypeEnum::Unknown;
 }
 
 /// Add buffer decl
@@ -269,27 +125,18 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
     BufferDecl = ExtraIndent + "auto " + ArgsList[Idx] +
                  " = dpct::get_buffer<" + TypeStr + ">(" + PointerName + ");";
     PrefixStmts.emplace_back(BufferDecl);
-  }
-}
-
-/// build C2C, Z2Z exec API info
-void FFTFunctionCallBuilder::assembleExecCallExpr(const Expr *DirExpr,
-                                                  int Index) {
-  Expr::EvalResult ER;
-  if (!DirExpr->isValueDependent() &&
-      DirExpr->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
-    int64_t Dir = ER.Val.getInt().getExtValue();
-    assembleExecCallExpr(Dir, Index);
   } else {
-    // TODO: handle this case. It will be submitted in another patch.
+    QualType QT = TheCallExpr->getArg(Idx)->getType();
+    if (QT->isPointerType() &&
+        (QT->getPointeeType().getAsString() == TypeStr)) {
+      return;
+    }
+    ArgsList[Idx] = "(" + TypeStr + "*)" + ArgsList[Idx];
   }
 }
 
-/// build CRC, R2C,D2Z, Z2D exec API info
-void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir, int Index) {
-  // For USM-none, the size of the data need copy is known (from virutal ptr
-  // info) For USM, the size maybe unknown. If info can be linked with
-  // descriptor, it is known.
+/// build exec API info
+void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir) {
   auto getType = [=](const char C) -> std::string {
     if (C == 'Z' || C == 'D')
       return "double";
@@ -302,9 +149,11 @@ void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir, int Index) {
     ComputeAPI = "oneapi::mkl::dft::compute_forward";
   } else if (Dir == 1) {
     ComputeAPI = "oneapi::mkl::dft::compute_backward";
+  } else {
+    ComputeAPI = "oneapi::mkl::dft::dpct_placeholder/*fix the computational "
+                 "function manaully*/";
   }
 
-  std::string DescMethod = getDescrMemberCallPrefix();
   std::string OriginalInputPtr = ArgsList[1];
   std::string OriginalOutputPtr = ArgsList[2];
   updateBufferArgs(1, getType(FuncName[9]));
@@ -315,14 +164,9 @@ void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir, int Index) {
                            getDrefName(TheCallExpr->getArg(0)) + ", " +
                            ArgsList[1] + ");");
   PrefixStmts.emplace_back("} else {");
-  PrefixStmts.emplace_back(DescMethod +
-                           "set_value(oneapi::mkl::dft::config_param::"
-                           "PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);");
-  PrefixStmts.emplace_back(DescMethod + "commit({{NEEDREPLACEQ" +
-                           std::to_string(Index) + "}});");
-  updateBufferArgs(2, getType(FuncName[11]), "  ");
-  CallExprRepl = ComputeAPI + "(" + getDrefName(TheCallExpr->getArg(0)) +
-                 ", " + ArgsList[1] + ", " + ArgsList[2] + ")";
+  updateBufferArgs(2, getType(FuncName[11]));
+  CallExprRepl = ComputeAPI + "(" + getDrefName(TheCallExpr->getArg(0)) + ", " +
+                 ArgsList[1] + ", " + ArgsList[2] + ")";
   SuffixStmts.emplace_back("}");
 }
 
@@ -373,7 +217,8 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   if (VD->getInitStyle() != VarDecl::InitializationStyle::CInit)
     return false;
 
-  auto NeedMove = [&]() -> bool { const Stmt *S = getParentStmt(VD);
+  auto NeedMove = [&]() -> bool {
+    const Stmt *S = getParentStmt(VD);
     if (!S)
       return false;
     const DeclStmt *DS = dyn_cast<DeclStmt>(S);
@@ -393,17 +238,15 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
     return false;
 
   // get type location
-  TypeBegin =
-      VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-  SourceLocation TypeEnd =
-      VD->getTypeSourceInfo()->getTypeLoc().getEndLoc();
+  TypeBegin = VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
+  SourceLocation TypeEnd = VD->getTypeSourceInfo()->getTypeLoc().getEndLoc();
   TypeEnd = TypeEnd.getLocWithOffset(
       Lexer::MeasureTokenLength(SM.getExpansionLoc(TypeEnd), SM,
                                 DpctGlobalInfo::getContext().getLangOpts()));
 
   auto C = SM.getCharacterData(TypeEnd);
   int Offset = 0;
-  while (C && isblank (*C)) {
+  while (C && isblank(*C)) {
     C++;
     Offset++;
   }
@@ -476,6 +319,139 @@ void initVars(const CallExpr *CE, LibraryMigrationFlags &Flags,
   // statement.
   Locations.Len = SM.getDecomposedLoc(Locations.SuffixInsertLoc).second -
                   SM.getDecomposedLoc(Locations.PrefixInsertLoc).second;
+}
+
+void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
+    FFTPlanAPIInfo &FPAInfo, LibraryMigrationFlags &Flags, int Index) {
+  std::string PrecAndDomainStr;
+  FFTTypeEnum FFTType;
+  std::int64_t Rank = -1;
+  StringRef FuncNameRef(FuncName);
+
+  if (FuncNameRef.endswith("1d")) {
+    PrecAndDomainStr = getPrecAndDomainStr(2);
+    FFTType = getFFTType(2);
+    Rank = 1;
+
+    Expr::EvalResult ER;
+    if (!TheCallExpr->getArg(3)->isValueDependent() &&
+        TheCallExpr->getArg(3)->EvaluateAsInt(ER,
+                                              DpctGlobalInfo::getContext())) {
+      int64_t Value = ER.Val.getInt().getExtValue();
+      if (Value == 1) {
+        FPAInfo.NeedBatchFor1D = false;
+      }
+    }
+  } else if (FuncNameRef.endswith("2d")) {
+    PrecAndDomainStr = getPrecAndDomainStr(3);
+    FFTType = getFFTType(3);
+    Rank = 2;
+  } else if (FuncNameRef.endswith("3d")) {
+    PrecAndDomainStr = getPrecAndDomainStr(4);
+    FFTType = getFFTType(4);
+    Rank = 3;
+  } else {
+    // cufftPlanMany/cufftMakePlanMany/cufftMakePlanMany64
+    PrecAndDomainStr = getPrecAndDomainStr(9);
+    FFTType = getFFTType(9);
+    Expr::EvalResult ER;
+    if (!TheCallExpr->getArg(1)->isValueDependent() &&
+        TheCallExpr->getArg(1)->EvaluateAsInt(ER,
+                                              DpctGlobalInfo::getContext())) {
+      Rank = ER.Val.getInt().getExtValue();
+    }
+  }
+
+  Flags.CanAvoidBrace = true;
+  Flags.MoveOutOfMacro = true;
+  addDescriptorTypeInfo(PrecAndDomainStr);
+  if (!PrecAndDomainStr.empty())
+    DpctGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
+
+  FPAInfo.addInfo(PrecAndDomainStr, FFTType, Index, ArgsList,
+                  IndentStr, FuncName, Flags, Rank,
+                  getDescrMemberCallPrefix(), getDescr());
+}
+
+void FFTFunctionCallBuilder::updateFFTExecAPIInfo(
+    std::string FFTExecAPIInfoKey) {
+  StringRef FuncNameRef(FuncName);
+  FFTPlacementType Placement;
+  if (isInplace(TheCallExpr->getArg(1), TheCallExpr->getArg(2))) {
+    Placement = FFTPlacementType::inplace;
+  } else {
+    Placement = FFTPlacementType::outofplace;
+  }
+
+  if (FuncNameRef.endswith("C2C") || FuncNameRef.endswith("Z2Z")) {
+    Expr::EvalResult ER;
+    if (!TheCallExpr->getArg(3)->isValueDependent() &&
+        TheCallExpr->getArg(3)->EvaluateAsInt(ER,
+                                              DpctGlobalInfo::getContext())) {
+      int64_t Dir = ER.Val.getInt().getExtValue();
+      assembleExecCallExpr(Dir);
+      if (Dir == -1) {
+        DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
+            FFTExecAPIInfoKey, FFTDirectionType::forward, Placement);
+      } else {
+        DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
+            FFTExecAPIInfoKey, FFTDirectionType::backward, Placement);
+      }
+    } else {
+      assembleExecCallExpr(int64_t(0));
+      DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
+          FFTExecAPIInfoKey, FFTDirectionType::unknown, Placement);
+    }
+  } else if (FuncNameRef.endswith("R2C") || FuncNameRef.endswith("D2Z")) {
+    assembleExecCallExpr(-1);
+    DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
+        FFTExecAPIInfoKey, FFTDirectionType::forward, Placement);
+  } else {
+    assembleExecCallExpr(1);
+    DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
+        FFTExecAPIInfoKey, FFTDirectionType::backward, Placement);
+  }
+}
+
+// return true means in-place, return false means cannot deduce.
+bool FFTFunctionCallBuilder::isInplace(const Expr *Ptr1, const Expr *Ptr2) {
+  auto RemoveCStyleCast = [](const Expr *E) -> const Expr * {
+    if (const CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(E)) {
+      return CSCE->getSubExpr();
+    } else {
+      return E;
+    }
+  };
+
+  const Expr *CleanPtr1 = RemoveCStyleCast(Ptr1);
+  const Expr *CleanPtr2 = RemoveCStyleCast(Ptr2);
+  if (ExprAnalysis::ref(CleanPtr1) == ExprAnalysis::ref(CleanPtr2))
+    return true;
+  else
+    return false;
+}
+
+// Prefix has included the array since all Descr are migrated to shared_ptr
+std::string FFTFunctionCallBuilder::getDescrMemberCallPrefix() {
+  std::string MemberCallPrefix;
+  std::string Descr = getDescr();
+  if ('*' == *Descr.begin()) {
+    MemberCallPrefix = "(" + Descr + ")->";
+  } else {
+    MemberCallPrefix = Descr + "->";
+  }
+  return MemberCallPrefix;
+}
+
+std::string FFTFunctionCallBuilder::getDescr() {
+  StringRef FuncNameRef(FuncName);
+  std::string Descr;
+  if (FuncNameRef.startswith("cufftMake") ||
+      FuncNameRef.startswith("cufftExec"))
+    Descr = ArgsList[0];
+  else
+    Descr = getDrefName(TheCallExpr->getArg(0));
+  return Descr;
 }
 
 } // namespace dpct

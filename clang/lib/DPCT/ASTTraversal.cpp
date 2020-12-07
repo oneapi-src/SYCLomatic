@@ -12838,13 +12838,12 @@ REGISTER_RULE(AsmRule)
 // Rule for FFT function calls.
 void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cufftPlan1d", "cufftPlan2d", "cufftPlan3d",
-                      "cufftPlanMany", "cufftMakePlan1d", "cufftMakePlan2d",
-                      "cufftMakePlan3d", "cufftMakePlanMany", "cufftExecC2C",
-                      "cufftExecR2C", "cufftExecC2R", "cufftExecZ2Z",
-                      "cufftExecZ2D", "cufftExecD2Z", "cufftCreate",
-                      "cufftDestroy", "cufftSetStream", "cufftPlanMany",
-                      "cufftMakePlanMany", "cufftMakePlanMany64");
+    return hasAnyName(
+        "cufftPlan1d", "cufftPlan2d", "cufftPlan3d", "cufftPlanMany",
+        "cufftMakePlan1d", "cufftMakePlan2d", "cufftMakePlan3d",
+        "cufftMakePlanMany", "cufftMakePlanMany64", "cufftExecC2C",
+        "cufftExecR2C", "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
+        "cufftExecD2Z", "cufftCreate", "cufftDestroy", "cufftSetStream");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -12886,14 +12885,12 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   initVars(CE, Flags, ReplaceStrs, Locations);
   Flags.IsAssigned = IsAssigned;
 
-  dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName,
-                                    Locations, Flags);
+  dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName);
   if (FuncName == "cufftCreate" || FuncName == "cufftDestroy" ||
       FuncName == "cufftSetStream") {
     if (FuncName == "cufftSetStream") {
       // TODO: emit warning to tell user check related commit() API
     }
-
     if (IsAssigned) {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
              FuncName,
@@ -12916,37 +12913,39 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
 
-    if (FuncNameRef.endswith("1d")) {
-      FFCB.update1D2D3DCommitCallExpr(0, {1}, 2, Index);
-      FFCB.setValueFor1DBatched(0, 1 ,3);
-    } else if (FuncNameRef.endswith("2d")) {
-      FFCB.update1D2D3DCommitCallExpr(0, {1, 2}, 3, Index);
-    } else if (FuncNameRef.endswith("3d")) {
-      FFCB.update1D2D3DCommitCallExpr(0, {1, 2, 3}, 4, Index);
-    } else {
-      // cufftPlanMany/cufftMakePlanMany/cufftMakePlanMany64
-      FFCB.updateManyCommitCallExpr(Index);
+    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
+    if (!DD)
+      return;
+    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
+    std::string HandleDeclFileAndOffset =
+        DpctGlobalInfo::getLocInfo(SL).first + ":" +
+        std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
+
+    FFTPlanAPIInfo FPAInfo;
+    FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags, Index);
+    FPAInfo.replacementLocation(Locations);
+    FPAInfo.HandleDeclFileAndOffset = HandleDeclFileAndOffset;
+    if (FuncNameRef.startswith("cufftMake")) {
+      FPAInfo.UnsupportedArg =
+          ExprAnalysis::ref(CE->getArg(CE->getNumArgs() - 1));
     }
 
-    ReplaceStrs.PrefixInsertStr = FFCB.getPrefixString();
-    ReplaceStrs.Repl = FFCB.getCallExprReplString();
-    Flags.CanAvoidBrace = true;
-    Flags.MoveOutOfMacro = true;
+    DpctGlobalInfo::getInstance().insertFFTPlanAPIInfo(
+        SM.getExpansionLoc(CE->getBeginLoc()), FPAInfo);
+    return;
   } else if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
-    if (checkWhetherIsDuplicate(CE, false))
+    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
+    if (!DD)
       return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
 
-    if (FuncNameRef.endswith("C2C") || FuncNameRef.endswith("Z2Z")) {
-      FFCB.assembleExecCallExpr(CE->getArg(3), Index);
-    } else if (FuncNameRef.endswith("R2C") || FuncNameRef.endswith("D2Z")) {
-      FFCB.assembleExecCallExpr(-1, Index);
-    } else {
-      FFCB.assembleExecCallExpr(1, Index);
-    }
+    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
+    std::string FFTExecAPIInfoKey =
+        DpctGlobalInfo::getLocInfo(SL).first + ":" +
+        std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
+
+    FFCB.updateFFTExecAPIInfo(FFTExecAPIInfoKey);
 
     SourceLocation TypeBegin;
     int TypeLength = 0;
