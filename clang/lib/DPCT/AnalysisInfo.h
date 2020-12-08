@@ -961,7 +961,8 @@ public:
   }
   inline static int getSuffixIndexInRuleThenInc() {
     int Res = CurrentIndexInRule;
-    CurrentMaxIndex = Res;
+    if (CurrentMaxIndex < Res)
+      CurrentMaxIndex = Res;
     CurrentIndexInRule++;
     return Res;
   }
