@@ -8338,6 +8338,22 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node) {
   }
 }
 
+void EventAPICallRule::findThreadSyncLocation(const Stmt *Node) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const CallExpr *Call = nullptr;
+  findEventAPI(Node, Call, "cudaThreadSynchronize");
+  if (!Call)
+    Call = dyn_cast<CallExpr>(Node);
+
+  if (Call) {
+    if (auto Callee = Call->getDirectCallee())
+      if (Callee->getName() == "cudaThreadSynchronize") {
+        ThreadSyncLoc =
+            SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding();
+      }
+  }
+}
+
 //  The following is a typical code piece, in which three
 //  locations are used to help migrate:
 //
@@ -8388,6 +8404,10 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
     RecordBegin = *FuncBody->child_begin();
     for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
          ++Iter) {
+
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+        findThreadSyncLocation(*Iter);
+
       const CallExpr *Call = nullptr;
       findEventAPI(*Iter, Call, "cudaEventCreate");
       if (!Call)
@@ -8426,6 +8446,10 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
     // Find the last Event record call on start and stop
     for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
          ++Iter) {
+
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+          findThreadSyncLocation(*Iter);
+
       if (SM.getExpansionLoc(Iter->getBeginLoc()).getRawEncoding() > CELoc) {
         break;
       }
@@ -8614,7 +8638,14 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
   if (!EventExpr && TimeElapsedCE->getNumArgs()==3)
     EventExpr = TimeElapsedCE->getArg(2);
 
-  if(KCallLoc > RecordBeginLoc) {
+  bool NeedWait = false;
+  // In usmnone mode, if cudaThreadSynchronize apears after kernel call,
+  // kernel wait is not needed.
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    NeedWait = ThreadSyncLoc > KCallLoc;
+  }
+
+  if (KCallLoc > RecordBeginLoc && !NeedWait) {
     K->setEvent(ExprAnalysis::ref(EventExpr));
     K->setSync();
   }
