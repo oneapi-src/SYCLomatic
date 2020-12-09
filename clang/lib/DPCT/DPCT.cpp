@@ -759,7 +759,7 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\nIntel(R) DPC++ Compatibility Tool version " << DPCT_VERSION_MAJOR
-     << "." << DPCT_VERSION_MINOR << "."
+     << "." << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
      << " Codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.
