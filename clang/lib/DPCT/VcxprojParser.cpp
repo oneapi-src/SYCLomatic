@@ -17,7 +17,11 @@ std::map<std::string, std::vector<std::string>> OptionsMap;
 std::map<std::string, std::string> VariablesMap;
 
 std::set<std::string> MacroDefinedSet;
-std::set<std::string> DirIncludedSet;
+std::map<std::string/*Compiler+":"+FilePath*/, std::set<std::string/*macro defined*/>> MacroDefinedSetMap;
+
+std::set<std::string /*include dir path*/> DirIncludedSet;
+std::map<std::string/*Compiler+":"+FilePath*/, std::set<std::string/*include dir path*/>> DirIncludedSetMap;
+
 std::map<std::string /*compiler*/, std::vector<std::string> /*source file*/>
     FilesSet;
 
@@ -194,15 +198,25 @@ const std::unordered_map<std::string /*option*/, bool /*has value*/>
         {"-optf", 0},
 };
 
-void addDiretoryToDirIncludedSet(const std::string &Directory) {
-  if (DirIncludedSet.find(Directory) == end(DirIncludedSet)) {
-    DirIncludedSet.insert(Directory);
+void addDiretoryToDirIncludedSet(const std::string &Directory,
+                                 const std::string &Private) {
+  if (Private.empty()) {
+    if (DirIncludedSet.find(Directory) == end(DirIncludedSet)) {
+      DirIncludedSet.insert(Directory);
+    }
+  } else {
+    DirIncludedSetMap[Private].insert(Directory);
   }
 }
 
-void addMacroDefinedSet(const std::string &MacroDefined) {
-  if (MacroDefinedSet.find(MacroDefined) == end(MacroDefinedSet)) {
-    MacroDefinedSet.insert(MacroDefined);
+void addMacroDefinedSet(const std::string &MacroDefined,
+                        const std::string &Private) {
+  if (Private.empty()) {
+    if (MacroDefinedSet.find(MacroDefined) == end(MacroDefinedSet)) {
+      MacroDefinedSet.insert(MacroDefined);
+    }
+  } else {
+    MacroDefinedSetMap[Private].insert(MacroDefined);
   }
 }
 
@@ -264,7 +278,8 @@ void processOptions(std::string &Output) {
   }
 }
 
-void ProcessMacrosDefined(std::string &Output) {
+void ProcessMacrosDefined(const std::set<std::string> &MacroDefinedSet,
+                          std::string &Output) {
   for (auto const &Macro : MacroDefinedSet) {
     if (Macro.find("%") != std::string::npos) {
       // Skip variables such as %(PreprocessorDefinitions)
@@ -275,7 +290,16 @@ void ProcessMacrosDefined(std::string &Output) {
   }
 }
 
-void ProcessDirectoriesIncluded(std::string &Output) {
+void ProcessMacrosDefinedPrivate(std::string &Output,
+                                 const std::string &Private) {
+  auto Iter = MacroDefinedSetMap.find(Private);
+  if (Iter != MacroDefinedSetMap.end()) {
+    ProcessMacrosDefined(Iter->second, Output);
+  }
+}
+
+void ProcessDirectoriesIncluded(const std::set<std::string> &DirIncludedSet,
+                                std::string &Output) {
   for (auto const &Dir : DirIncludedSet) {
     std::string DirectoryInclude = Dir;
     replaceVar(DirectoryInclude);
@@ -294,15 +318,23 @@ void ProcessDirectoriesIncluded(std::string &Output) {
   }
 }
 
+void ProcessDirectoriesIncludedPrivate(std::string &Output,
+                                       const std::string &Private) {
+  auto Iter = DirIncludedSetMap.find(Private);
+  if (Iter != DirIncludedSetMap.end()) {
+    ProcessDirectoriesIncluded(Iter->second, Output);
+  }
+}
+
 void generateCompilationDatabase(const std::string &BuildDir) {
   std::string Options;
   processOptions(Options);
 
   std::string MacrosDefined;
-  ProcessMacrosDefined(MacrosDefined);
+  ProcessMacrosDefined(MacroDefinedSet, MacrosDefined);
 
   std::string DirectoriesIncluded;
-  ProcessDirectoriesIncluded(DirectoriesIncluded);
+  ProcessDirectoriesIncluded(DirIncludedSet, DirectoriesIncluded);
 
   size_t EntryCount = 0;
   size_t TotalCount = 0;
@@ -325,10 +357,21 @@ void generateCompilationDatabase(const std::string &BuildDir) {
     auto FilesSet = Entry.second;
     for (auto const &File : FilesSet) {
       EntryCount++;
+
+      // To get private inc dirs for per file.
+      std::string Private = Entry.first + ":" + File;
+      std::string PrivateDirs;
+      ProcessDirectoriesIncludedPrivate(PrivateDirs, Private);
+
+      // To get private macros for per file.
+      std::string PrivateMacros;
+      ProcessMacrosDefinedPrivate(PrivateMacros, Private);
+
       std::string FileName = "\"file\":\"" + File + "\",";
       std::string Command = "\"command\":\"" + Compiler + Options +
-                            MacrosDefined + DirectoriesIncluded + "\\\"" +
-                            File + "\\\"\",";
+                            MacrosDefined + PrivateMacros +
+                            DirectoriesIncluded + PrivateDirs + "\\\"" + File +
+                            "\\\"\",";
       std::string Directory = "\"directory\":\"" + BuildDir + "\"";
       OutFile << "    {\n";
       OutFile << "        " << FileName << "\n";
@@ -344,7 +387,8 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   OutFile << "]\n";
 }
 
-void collectFiles(const std::string &Compiler, const std::string &Line) {
+void collectFiles(const std::string &Compiler, const std::string &Line,
+                  std::string &CurrentFile) {
   size_t Pos = Line.find("Include=");
   if (Pos != std::string::npos) {
     size_t Start = Line.find("Include=") + sizeof("Include=\"") - 1;
@@ -355,6 +399,7 @@ void collectFiles(const std::string &Compiler, const std::string &Line) {
     // Exclude *.rule files, i.e. <CustomBuild
     // Include="/path/to/name_intermediate_link.obj.rule">
     if (!endsWith(SubStr, ".txt") && !endsWith(SubStr, ".rule")) {
+      CurrentFile = SubStr;
       addFilesSet(Compiler, SubStr);
     }
   }
@@ -387,11 +432,40 @@ void collectOtions(const std::string &Line) {
   }
 }
 
-using FunProcessBaseNode = void (*)(const std::string &Str);
-void collectMacrosAndIncludingDIr(const std::string &&Node,
+std::string findStartNode(const std::string &Node, const std::string &Line) {
+
+  std::string StartNode = "<" + Node + ">";
+  size_t Pos = Line.find(StartNode);
+
+  if (Pos == std::string::npos) {
+    size_t NewPos = std::string::npos;
+    if (Node == "Include") {
+      // To cover node like:
+      // <Include Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.
+      NewPos = Line.find("Include Condition=");
+    } else if (Node == "Defines") {
+      // To cover node like:
+      // <Defines Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.
+      NewPos = Line.find("Defines Condition=");
+    }
+
+    if (NewPos != std::string::npos) {
+      size_t End = Line.find(">");
+      auto NewNode = Line.substr(NewPos, End - NewPos);
+      StartNode = "<" + NewNode + ">";
+    }
+  }
+
+  return StartNode;
+}
+
+using FunProcessBaseNode = void (*)(const std::string &Str,
+                                    const std::string &Private);
+void collectMacrosAndIncludingDir(const std::string &&Node,
                                   const std::string &Line,
-                                  FunProcessBaseNode FunPtr) {
-  const std::string StartNode = "<" + Node + ">";
+                                  const FunProcessBaseNode FunPtr,
+                                  const std::string &Private) {
+  const std::string StartNode = findStartNode(Node, Line);
   const std::string EndNode = "</" + Node + ">";
   size_t Pos = Line.find(StartNode);
 
@@ -404,12 +478,29 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
       // Skip CMAKE_INTDIR="Debug", CMAKE_INTDIR="MinSizeRel",
       // CMAKE_INTDIR="RelWithDebInfo", CMAKE_INTDIR="Release",
       // and skip the Entry that has the same name with Node, such as
-      // "<AdditionalIncludeDirectories>/path/to/dir/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>"
-      if (Entry.find("Debug") != std::string::npos ||
-          Entry.find("Release") != std::string::npos ||
-          Entry.find("MinSizeRel") != std::string::npos ||
-          Entry.find("RelWithDebInfo") != std::string::npos ||
-          Entry.find(Node) != std::string::npos) {
+      // "<AdditionalIncludeDirectories>/path/to/dir/;%(AdditionalIncludeDirectories)
+      // </AdditionalIncludeDirectories>"
+      const std::string NodeRef = "%(" + Node + ")";
+
+      // To check whether "CMAKE_INTDIR =" or "CMAKE_INTDIR \tab=" appears in
+      // Entry.
+      bool Find = false;
+      size_t Begin = Entry.find("CMAKE_INTDIR");
+      if (Begin != std::string::npos) {
+        Begin += strlen("CMAKE_INTDIR");
+        for (size_t i = Begin; i < Entry.length(); i++) {
+          if (isspace(Entry[i])) {
+            continue;
+          } else if (Entry[i] == '=') {
+            Find = true;
+            break;
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (Find || Entry.find(NodeRef) != std::string::npos) {
         continue;
       }
       // Remove quotes if they exist.
@@ -418,28 +509,39 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
       // code in function ProcessDirectoriesIncluded() and
       // generateCompilationDatabase().
       Entry.erase(std::remove(Entry.begin(), Entry.end(), '\"'), Entry.end());
-      FunPtr(Entry);
+      FunPtr(Entry, Private);
     }
   }
 }
 
 void collectCompileNodeInfo(const std::string &Compiler,
                             const std::vector<std::string> &CompileNode) {
+  // To store the source file for node with "CudaCompile", "ClCompile",
+  // "CustomBuild" and "None".
+  std::string CurrentFile;
+  std::string Private;
   for (auto const &Line : CompileNode) {
+
+    collectFiles(Compiler, Line, CurrentFile);
+    if (!CurrentFile.empty()) {
+      Private = Compiler + ":" + CurrentFile;
+    }
+
     collectOtions(Line);
-    collectFiles(Compiler, Line);
 
     // Collect Macros defined.
-    collectMacrosAndIncludingDIr("Defines", Line, addMacroDefinedSet);
+    collectMacrosAndIncludingDir("Defines", Line, addMacroDefinedSet, Private);
 
     // Collect including directory
-    collectMacrosAndIncludingDIr("Include", Line, addDiretoryToDirIncludedSet);
-    collectMacrosAndIncludingDIr("AdditionalIncludeDirectories", Line,
-                                 addDiretoryToDirIncludedSet);
+    collectMacrosAndIncludingDir("Include", Line, addDiretoryToDirIncludedSet,
+                                 Private);
+
+    collectMacrosAndIncludingDir("AdditionalIncludeDirectories", Line,
+                                 addDiretoryToDirIncludedSet, Private);
 
     // Collect Macros defined
-    collectMacrosAndIncludingDIr("PreprocessorDefinitions", Line,
-                                 addMacroDefinedSet);
+    collectMacrosAndIncludingDir("PreprocessorDefinitions", Line,
+                                 addMacroDefinedSet, Private);
     // TODO:
     // Process AdditionalOptions node.
     // Need to support the case that "<>" and </>"" in multi lines.
@@ -488,6 +590,7 @@ void processCompileNode(const std::string &&CompileNodeName,
   const std::string StartCompileNode = "<" + CompileNodeName + ">";
   const std::string EndCompileNode = "</" + CompileNodeName + ">";
   const std::string WholeCompileNode = "<" + CompileNodeName + " ";
+  const std::string WholeCompileNodeEnd = "/>";
   // For empty node like "<CudaCompile></CudaCompile>", no need to process, just
   // return.
   if (Line.find(StartCompileNode) != std::string::npos &&
@@ -504,10 +607,30 @@ void processCompileNode(const std::string &&CompileNodeName,
         break;
       }
     }
+
     collectCompileNodeInfo(CompileNodeName, CompileNode);
-  } else if (Line.find(WholeCompileNode) != std::string::npos) {
+  } else if (Line.find(WholeCompileNode) != std::string::npos &&
+             Line.find(WholeCompileNodeEnd) != std::string::npos) {
+    // To handle node in one line like "<CudaCompile Include="c_kernel.cu" />""
     std::vector<std::string> CompileNode;
     CompileNode.push_back(Line);
+    collectCompileNodeInfo(CompileNodeName, CompileNode);
+  } else if (Line.find(WholeCompileNode) != std::string::npos &&
+             Line.find(WholeCompileNodeEnd) == std::string::npos) {
+    // To handle node in multible lines like
+    // <CudaCompile Include="kernel.cu">
+    //  <Include
+    //  Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path/to/header;%(Include)</Include>
+    // </CudaCompile>
+    std::vector<std::string> CompileNode;
+    CompileNode.push_back(Line);
+    while (std::getline(Infile, Line)) {
+      size_t pos = Line.find(EndCompileNode);
+      CompileNode.push_back(Line);
+      if (pos != std::string::npos) {
+        break;
+      }
+    }
     collectCompileNodeInfo(CompileNodeName, CompileNode);
   }
 }

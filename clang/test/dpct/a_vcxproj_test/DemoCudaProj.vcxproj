@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -55,6 +55,8 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>path\to\includepath\MapIncludePath\header;%(Include)</Include>
+      <Include Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path\to\MapHeaderFilePath\FilePath\header1;.\header2;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -78,6 +80,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="a_kernel.cu" />
+    <CudaCompile Include="b_kernel.cu">
+      <Include Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path\to\b_kernel\header1;.\b_kernel\header2;%(Include)</Include>
+      <Defines Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_MACRO</Defines>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
