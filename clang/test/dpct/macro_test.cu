@@ -699,3 +699,49 @@ void foo13(){
   int *a;
   CALL(cudaMalloc(&a, SIZE * 10 * sizeof(int)));
 }
+
+//CHECK: #define CONST const
+//CHECK-NEXT: #define INT2 sycl::int2
+//CHECK-NEXT: #define PTR *
+//CHECK-NEXT: #define PTR2 PTR
+//CHECK-NEXT: #define ALL const sycl::int2 *
+//CHECK-NEXT: #define TYPE_PTR(T) T *
+//CHECK-NEXT: #define ALL2(C, T, P) C T P
+//CHECK-NEXT: #define ALL3(X) X
+#define CONST const
+#define INT2 int2
+#define PTR *
+#define PTR2 PTR
+#define ALL const int2 *
+#define TYPE_PTR(T) T *
+#define ALL2(C, T, P) C T P
+#define ALL3(X) X
+
+//CHECK: int foo14(){
+//CHECK-NEXT:   const sycl::int2 *aaa;
+//CHECK-NEXT:   CONST sycl::int3 *bbb;
+//CHECK-NEXT:   ALL3(const sycl::int2 *) ccc;
+//CHECK-NEXT:   ALL2(const, sycl::int2, *) ddd;
+//CHECK-NEXT:   ALL3(const) ALL3(sycl::int2) ALL3(*) eee;
+//CHECK-NEXT:   ALL fff;
+//CHECK-NEXT:   CONST INT2 PTR ggg;
+//CHECK-NEXT:   CONST INT2 PTR2 hhh;
+//CHECK-NEXT:   CONST sycl::int3 PTR2 iii;
+//CHECK-NEXT:   TYPE_PTR(sycl::int2) jjj;
+//CHECK-NEXT:   ALL3(ALL3(const sycl::int2 *)) kkk;
+//CHECK-NEXT:   ALL2(const, ALL3(sycl::int2), *) lll;
+//CHECK-NEXT: }
+int foo14(){
+  const int2 *aaa;
+  CONST int3 *bbb;
+  ALL3(const int2 *) ccc;
+  ALL2(const, int2, *) ddd;
+  ALL3(const) ALL3(int2) ALL3(*) eee;
+  ALL fff;
+  CONST INT2 PTR ggg;
+  CONST INT2 PTR2 hhh;
+  CONST int3 PTR2 iii;
+  TYPE_PTR(int2) jjj;
+  ALL3(ALL3(const int2 *)) kkk;
+  ALL2(const, ALL3(int2), *) lll;
+}

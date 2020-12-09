@@ -159,8 +159,79 @@ std::pair<size_t, size_t>
 ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
                                  SourceLocation EndLoc) {
   if (EndLoc.isValid()) {
+    if (BeginLoc.isFileID() || EndLoc.isFileID()) {
+      // No Macro or only one of begin/end is macro
+      BeginLoc = SM.getExpansionLoc(BeginLoc);
+      EndLoc = SM.getExpansionLoc(EndLoc);
+    } else if (SM.isMacroArgExpansion(BeginLoc) &&
+               SM.isMacroArgExpansion(EndLoc)) {
+      bool IsSameFuncLikeMacro = false;
+      bool IsSameMacroArgExpansion = false;
+      auto BeginImmSpelling = getImmSpellingLocRecursive(BeginLoc);
+      auto EndImmSpelling = getImmSpellingLocRecursive(EndLoc);
+      if (isSameLocation(SM.getExpansionLoc(BeginImmSpelling), SM.getExpansionLoc(EndImmSpelling))) {
+        IsSameFuncLikeMacro = true;
+        if (isSameLocation(SM.getImmediateExpansionRange(BeginLoc).getBegin(),
+                           SM.getImmediateExpansionRange(EndLoc).getBegin())) {
+          IsSameMacroArgExpansion = true;
+        }
+      }
+
+      if (IsSameMacroArgExpansion) {
+        // #define ALL3(X) X
+        // ALL3(const int2 *)
+        BeginLoc = SM.getSpellingLoc(BeginLoc);
+        EndLoc = SM.getSpellingLoc(EndLoc);
+      } else if (IsSameFuncLikeMacro) {
+        // #define ALL2(C, T, P) C T P
+        // ALL2(const, int2, *)
+        BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
+        EndLoc = SM.getImmediateExpansionRange(EndLoc).getBegin();
+      } else {
+        // ALL3(const) ALL3(int2) ALL3(*)
+        BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+        EndLoc = SM.getExpansionRange(EndLoc).getBegin();
+      }
+    } else {
+      if (SM.isMacroArgExpansion(BeginLoc)) {
+        BeginLoc = getImmSpellingLocRecursive(BeginLoc);
+      } else {
+        EndLoc = getImmSpellingLocRecursive(EndLoc);
+      }
+      auto ItBegin =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          getCombinedStrFromLoc(SM.getSpellingLoc(BeginLoc)));
+      auto ItEnd =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          getCombinedStrFromLoc(SM.getSpellingLoc(EndLoc)));
+      if (isSameLocation(SM.getExpansionLoc(BeginLoc),
+                         SM.getExpansionLoc(EndLoc)) &&
+          ItBegin !=
+              dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+          ItEnd !=
+              dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+          ItBegin->second->TokenIndex == 0 &&
+          ItEnd->second->TokenIndex == ItEnd->second->NumTokens - 1) {
+        // Begin/end contain the whole Macro def
+        // ex: #define TYPE const int2*
+        BeginLoc = SM.getExpansionLoc(BeginLoc);
+        EndLoc = SM.getExpansionLoc(EndLoc);
+      } else {
+        // 1. only one of Begin/End is MacroArgExpansion and the other one is Body MacroID
+        // ex: #define TYPE_PTR(T) T*
+        // 2. Both Begin/End are body MacroID and Begin/end are not in the same Macro def
+        // ex: #define TYPE int2
+        //     #define PTR *
+        //     #define TYPE_PTR TYPE PTR
+        std::tie(BeginLoc, EndLoc) =
+          getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
+      }
+    }
+
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
+
+    // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
     }

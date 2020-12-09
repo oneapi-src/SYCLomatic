@@ -222,6 +222,8 @@ llvm::StringRef getIndent(clang::SourceLocation Loc,
 
 clang::SourceRange getStmtExpansionSourceRange(const clang::Stmt *S);
 clang::SourceRange getStmtSpellingSourceRange(const clang::Stmt *S);
+clang::SourceRange getSpellingSourceRange(clang::SourceLocation L1,
+                                          clang::SourceLocation L2);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);
@@ -393,6 +395,8 @@ std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
                                bool IsInMacroDefine = false);
 bool isOuterMostMacro(const clang::Stmt *E);
+bool isSameLocation(const clang::SourceLocation L1,
+                    const clang::SourceLocation L2);
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
     const std::shared_ptr<clang::DynTypedNode> Parent);
@@ -453,4 +457,6 @@ std::string getFinalCastTypeNameStr(std::string CastTypeName);
 bool isLexicallyInLocalScope(const clang::Decl*);
 const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
+clang::SourceLocation
+getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 #endif // DPCT_UTILITY_H

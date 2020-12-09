@@ -182,20 +182,22 @@ SourceRange getStmtSpellingSourceRange(const Stmt *S) {
   // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
   // Remove outer function-like macro
   auto Range = getRangeInsideFuncLikeMacro(S);
-  auto BeginLoc = Range.getBegin();
-  auto EndLoc = Range.getEnd();
+  return getSpellingSourceRange(Range.getBegin(), Range.getEnd());
+}
+
+SourceRange getSpellingSourceRange(SourceLocation L1, SourceLocation L2) {
   // For multi level macro, e.g.
   // #define AAA a
   // #define BBB AAA
   // Keep finding the immediate expansion location
-  std::tie(BeginLoc, EndLoc) =
-      getTheOneBeforeLastImmediateExapansion(BeginLoc, EndLoc);
+  std::tie(L1, L2) =
+    getTheOneBeforeLastImmediateExapansion(L1, L2);
   // For straddle expr, e.g.
   // #define AAA a
   // #define BBB 3 + AAA
-  std::tie(BeginLoc, EndLoc) =
-      getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
-  return SourceRange(BeginLoc, EndLoc);
+  std::tie(L1, L2) =
+    getTheLastCompleteImmediateRange(L1, L2);
+  return SourceRange(L1, L2);
 }
 
 size_t calculateExpansionLevel(const SourceLocation Loc) {
@@ -2380,3 +2382,13 @@ bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
   }
   return false;
 }
+
+SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  if (SM.isMacroArgExpansion(Loc) &&
+      SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(Loc))) {
+    return getImmSpellingLocRecursive(SM.getImmediateSpellingLoc(Loc));
+  }
+  return Loc;
+}
+
