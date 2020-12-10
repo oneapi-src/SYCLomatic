@@ -109,13 +109,16 @@ struct FFTDescriptorTypeInfo {
 };
 
 struct EventSyncTypeInfo {
-  EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport)
-      : Length(Length), ReplText(ReplText), NeedReport(NeedReport) {}
+  EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport,
+                    bool IsAssigned)
+      : Length(Length), ReplText(ReplText), NeedReport(NeedReport),
+        IsAssigned(IsAssigned) {}
   void buildInfo(std::string FilePath, unsigned int Offset);
 
   unsigned int Length;
   std::string ReplText;
   bool NeedReport = false;
+  bool IsAssigned = false;
 };
 
 // Below four structs are all used for device RNG library API migration.
@@ -1279,26 +1282,30 @@ public:
     return Name;
   }
 
-  void insertEventSyncTypeInfo(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-                               bool NeedReport = false) {
+  void insertEventSyncTypeInfo(
+      const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+      bool NeedReport = false, bool IsAssigned = false) {
     std::string FilePath = Repl->getFilePath().str();
     unsigned int Offset = Repl->getOffset();
-    unsigned int Length =  Repl->getLength();
+    unsigned int Length = Repl->getLength();
     const std::string ReplText = Repl->getReplacementText().str();
 
     auto FileInfo = insertFile(FilePath);
     auto &M = FileInfo->getEventSyncTypeMap();
     auto Iter = M.find(Offset);
     if (Iter == M.end()) {
-      M.insert(std::make_pair(Offset,
-                              EventSyncTypeInfo(Length, ReplText, NeedReport)));
+      M.insert(std::make_pair(
+          Offset, EventSyncTypeInfo(Length, ReplText, NeedReport, IsAssigned)));
+    } else {
+      Iter->second.IsAssigned = IsAssigned;
     }
   }
 
-  void updateEventSyncTypeInfo(const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
+  void updateEventSyncTypeInfo(
+      const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
     std::string FilePath = Repl->getFilePath().str();
     unsigned int Offset = Repl->getOffset();
-    unsigned int Length =  Repl->getLength();
+    unsigned int Length = Repl->getLength();
     const std::string ReplText = Repl->getReplacementText().str();
 
     auto FileInfo = insertFile(FilePath);
@@ -1308,8 +1315,8 @@ public:
       Iter->second.ReplText = ReplText;
       Iter->second.NeedReport = false;
     } else {
-      M.insert(
-          std::make_pair(Offset, EventSyncTypeInfo(Length, ReplText, false)));
+      M.insert(std::make_pair(
+          Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
     }
   }
 

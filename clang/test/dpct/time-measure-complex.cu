@@ -247,12 +247,14 @@ void foo_test_1() {
 // CHECK-NEXT:  CHECK_FOO(stop_ct1 = std::chrono::steady_clock::now());
 // CHECK-NEXT:  checkCudaErrors(0);
 // CHECK-NEXT:  cudaCheck(0);
+// CHECK-NEXT:  (0);
 // CHECK-NEXT:  et = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
   cudaEventSynchronize(stop);
   checkCudaErrors(cudaEventSynchronize(stop));
   cudaCheck(cudaEventSynchronize(stop));
+  (cudaEventSynchronize(stop));
   cudaEventElapsedTime(&et, start, stop);
 }
 

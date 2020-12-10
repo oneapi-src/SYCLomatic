@@ -8024,7 +8024,8 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
     auto &Context = dpct::DpctGlobalInfo::getContext();
     const auto &TM = ReplaceStmt(CE, false, FuncName, ReplStr);
     const auto R = TM.getReplacement(Context);
-    DpctGlobalInfo::getInstance().insertEventSyncTypeInfo(R, NeedReport);
+    DpctGlobalInfo::getInstance().insertEventSyncTypeInfo(R, NeedReport,
+                                                          IsAssigned);
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -8583,8 +8584,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
 
       if (Callee->getName() == "cudaEventSynchronize") {
         const auto &TM =
-            ReplaceStmt(Call, false, std::string("cudaEventSynchronize"),
-                        Call->getBeginLoc().isMacroID() ? "0" : "");
+            ReplaceStmt(Call, false, std::string("cudaEventSynchronize"), "");
         auto &Context = dpct::DpctGlobalInfo::getContext();
         auto R = TM.getReplacement(Context);
         DpctGlobalInfo::getInstance().updateEventSyncTypeInfo(R);

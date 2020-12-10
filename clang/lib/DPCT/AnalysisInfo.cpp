@@ -2442,6 +2442,10 @@ void EventSyncTypeInfo::buildInfo(std::string FilePath,
     if(NeedReport)
       DiagnosticsUtils::report(FilePath, Offset, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
 
+    if (IsAssigned && ReplText.empty()) {
+      ReplText = "0";
+    }
+
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
