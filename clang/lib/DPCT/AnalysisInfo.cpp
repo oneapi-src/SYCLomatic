@@ -1759,6 +1759,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
     InsertLocation = Lexer::getLocForEndOfToken(InsertLocation, 0, SM, LO);
     FormatInformation = buildFormatInfo(FTL, InsertLocation, Attrs, SM, LO);
   }
+  FormatInformation.IsFirstArg = (NonDefaultParamNum == 0);
 
   // Keep skiping #ifdef #endif pair
   Token TokOfHash;

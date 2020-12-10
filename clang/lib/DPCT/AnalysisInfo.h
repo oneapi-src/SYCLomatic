@@ -288,6 +288,7 @@ struct FormatInfo {
   int CurrentLength;
   int NewLineIndentLength;
   std::string NewLineIndentStr;
+  bool IsFirstArg = false;
 };
 
 class ParameterStream {
@@ -2720,7 +2721,7 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
 
   // Remove pre spiliter
   unsigned int RemoveLength = 0;
-  if (PreParams == 0) {
+  if (FormatInformation.IsFirstArg) {
     if (FormatInformation.IsAllParamsOneLine) {
       // comma and space
       RemoveLength = 2;

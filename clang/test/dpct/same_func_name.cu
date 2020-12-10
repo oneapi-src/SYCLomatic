@@ -77,3 +77,26 @@ void kernel(int i, int j)
     kernel<double><<<16, 16>>>();
 }
 
+
+// CHECK:template <typename ValueType>
+// CHECK-NEXT:void kernel_2(sycl::nd_item<3> item_ct1)
+{
+    auto tidx = item_ct1.get_local_id(2);
+}
+template <typename ValueType>
+__global__ void kernel_2()
+{
+    auto tidx = threadIdx.x;
+}
+
+// CHECK:template <typename ValueType>
+// CHECK-NEXT:void kernel_2(int a,
+// CHECK-NEXT:              sycl::nd_item<3> item_ct1)
+{
+    auto tidx = item_ct1.get_local_id(2);
+}
+template <typename ValueType>
+__global__ void kernel_2(int a)
+{
+    auto tidx = threadIdx.x;
+}
