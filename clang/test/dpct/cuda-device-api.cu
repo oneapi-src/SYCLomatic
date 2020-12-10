@@ -85,4 +85,18 @@ void foo() {
   // CHECK-NEXT: (IPC) operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(devPtr);
+
+
+  cudaFuncCache fconfig;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetSharedMemConfig was removed, because DPC++
+  // CHECK-NEXT: currently does not support configuring shared memory on devices.
+  cudaFuncSetSharedMemConfig(NULL, config );
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetCacheConfig was removed, because DPC++
+  // CHECK-NEXT: currently does not support configuring shared memory on devices.
+  cudaFuncSetCacheConfig(NULL, fconfig);
+
 }

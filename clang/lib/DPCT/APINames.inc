@@ -117,7 +117,7 @@ ENTRY(cudaWaitExternalSemaphoresAsync, cudaWaitExternalSemaphoresAsync, false, N
 ENTRY(cudaFuncGetAttributes, cudaFuncGetAttributes, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaFuncSetAttribute, cudaFuncSetAttribute, false, NO_FLAG, P0, "comment")
 ENTRY(cudaFuncSetCacheConfig, cudaFuncSetCacheConfig, true, API_CALL_UNSUPPORTED, P0, "Successful: DPCT1004, no alternatives in DPC++ for cache config")
-ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, false, NO_FLAG, P0, "comment")
+ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, true, NO_FLAG, P0, "comment")
 ENTRY(cudaLaunchCooperativeKernel, cudaLaunchCooperativeKernel, true, NO_FLAG, P4, "Successful")
 ENTRY(cudaLaunchCooperativeKernelMultiDevice, cudaLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchHostFunc, cudaLaunchHostFunc, false, NO_FLAG, P4, "comment")

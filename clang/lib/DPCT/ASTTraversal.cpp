@@ -7673,7 +7673,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
-        "cudaRuntimeGetVersion", "clock64", "__ldg");
+        "cudaRuntimeGetVersion", "clock64", "__ldg",
+        "cudaFuncSetSharedMemConfig");
   };
 
   MF.addMatcher(
@@ -7848,9 +7849,6 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
-  } else if (FuncName == "cudaFuncSetCacheConfig") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
-           MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
            MapNames::ITFName.at(FuncName));
@@ -7867,7 +7865,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     report(CE->getBeginLoc(), Diagnostics::DEVICE_LIMIT_NOT_SUPPORTED, false);
-  } else if (FuncName == "cudaDeviceSetSharedMemConfig") {
+  } else if (FuncName == "cudaDeviceSetSharedMemConfig" ||
+       FuncName == "cudaFuncSetSharedMemConfig" ||
+       FuncName == "cudaFuncSetCacheConfig") {
     std::string Msg = "DPC++ currently does not support configuring shared "
                       "memory on devices.";
     if (IsAssigned) {
