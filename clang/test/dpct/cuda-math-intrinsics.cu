@@ -2365,9 +2365,7 @@ __global__ void testUnsupported() {
   // CHECK: d = dpct::cast_ints_to_double(i, i);
   d = __hiloint2double(i, i);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
-  // CHECK-NEXT: */
+  // CHECK: u = dpct::reverse_bits<unsigned int>(u);
   u = __brev(u);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.

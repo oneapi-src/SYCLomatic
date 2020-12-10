@@ -11,6 +11,8 @@
 
 #include <CL/sycl.hpp>
 #include <complex>
+#include <type_traits>
+#include <cassert>
 
 namespace dpct {
 
@@ -190,6 +192,25 @@ vectorized_isgreater<cl::sycl::ushort2, unsigned>(unsigned a, unsigned b) {
   v4[1] = v2[1] > v3[1];
   v0 = v4.template as<cl::sycl::vec<unsigned, 1>>();
   return v0;
+}
+
+/// Reverse the bit order of an unsigned integer
+/// \param [in] a Input unsigned integer value
+/// \returns Value of a with the bit order reversed
+template <typename T> inline T reverse_bits(T a) {
+  static_assert(std::is_unsigned<T>::value && std::is_integral<T>::value,
+                "unsigned integer required");
+  if (!a)
+    return 0;
+  T mask = 0;
+  size_t count = 4 * sizeof(T);
+  mask = ~mask >> count;
+  while (count) {
+    a = ((a & mask) << count) | ((a & ~mask) >> count);
+    count = count >> 1;
+    mask = mask ^ (mask << count);
+  }
+  return a;
 }
 
 } // namespace dpct
