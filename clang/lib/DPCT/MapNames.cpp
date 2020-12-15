@@ -149,8 +149,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaTextureDesc", "dpct::sampling_info"},
       {"cudaResourceDesc", "dpct::image_data"},
       {"cudaTextureObject_t", "dpct::image_wrapper_base_p"},
-      {"cudaTextureAddressMode", getClNamespace() + "::addressing_mode"},
-      {"cudaTextureFilterMode", getClNamespace() + "::filtering_mode"},
+      {"cudaTextureAddressMode", ClNamespace + "::addressing_mode"},
+      {"cudaTextureFilterMode", ClNamespace + "::filtering_mode"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
       {"cusparseStatus_t", "int"},
@@ -171,7 +171,10 @@ void MapNames::setClNamespace(bool Enable) {
       {"cufftResult", "int"},
       {"cufftType_t", "int"},
       {"cufftType", "int"},
-      {"CUdevice", "int"}
+      {"CUdevice", "int"},
+      {"CUarray_st", "dpct::image_matrix"},
+      {"CUarray", "dpct::image_matrix_p"},
+      {"CUarray_format", ClNamespace + "::image_channel_type"},
       // ...
 
   };
@@ -222,7 +225,18 @@ void MapNames::setClNamespace(bool Enable) {
     {"CU_DEVICE_ATTRIBUTE_INTEGRATED", "get_integrated"},
     {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE", "get_max_clock_frequency"},
     {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT", "get_max_compute_units"},
-    {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED", "is_native_atomic_supported"}
+    {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED", "is_native_atomic_supported"},
+    // enum CUarray_format
+    {"CU_AD_FORMAT_UNSIGNED_INT8", ClNamespace + "::image_channel_type::unsigned_int8"},
+    {"CU_AD_FORMAT_UNSIGNED_INT16", ClNamespace + "::image_channel_type::unsigned_int16"},
+    {"CU_AD_FORMAT_UNSIGNED_INT32", ClNamespace + "::image_channel_type::unsigned_int32"},
+    {"CU_AD_FORMAT_SIGNED_INT8", ClNamespace + "::image_channel_type::signed_int8"},
+    {"CU_AD_FORMAT_SIGNED_INT16",
+     ClNamespace + "::image_channel_type::unsigned_int16"},
+    {"CU_AD_FORMAT_SIGNED_INT32",
+     ClNamespace + "::image_channel_type::unsigned_int32"},
+    {"CU_AD_FORMAT_HALF", ClNamespace + "::image_channel_type::fp16"},
+    {"CU_AD_FORMAT_FLOAT", ClNamespace + "::image_channel_type::fp32"},
     // ...
   };
 
@@ -3039,7 +3053,11 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"filterMode", "filtering_mode"},
     {"normalized", "coordinate_normalization_mode"},
     {"normalizedCoords", "coordinate_normalization_mode"},
-    {"channelDesc", "channel"}};
+    {"channelDesc", "channel"},
+    {"Format", "channel_type"},
+    {"NumChannels", "channel_num"},
+    {"Width", "x"},
+    {"Height", "y"}};
 
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
@@ -3142,8 +3160,8 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
 }
 
 MapNames::MapTy TextureRule::ResourceTypeNames{
-    {"devPtr", "data_ptr"},  {"desc", "channel"}, {"array", "data_ptr"},
-    {"width", "x"},      {"height", "y"}, {"pitchInBytes", "pitch"},
+    {"devPtr", "data_ptr"}, {"desc", "channel"}, {"array", "data_ptr"},
+    {"width", "x"},         {"height", "y"},     {"pitchInBytes", "pitch"},
     {"sizeInBytes", "x"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
@@ -3151,10 +3169,20 @@ const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
 const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
     {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
 
-const MapNames::MapTy MemoryDataTypeRule::Parms3DMemberNames{
-    {"srcArray", "from_data"}, {"srcPtr", "from_data"}, {"srcPos", "from_pos"},
-    {"dstArray", "to_data"},   {"dstPtr", "to_data"},   {"dstPos", "to_pos"},
-    {"extent", "size"},        {"kind", "direction"}};
+const MapNames::MapTy MemoryDataTypeRule::MemberNames{
+    {"srcArray", "from_data"},
+    {"srcPtr", "from_data"},
+    {"srcPos", "from_pos"},
+    {"dstArray", "to_data"},
+    {"dstPtr", "to_data"},
+    {"dstPos", "to_pos"},
+    {"extent", "size"},
+    {"kind", "direction"},
+    {"Width", "x"},
+    {"Height", "y"},
+    {"Format", "channel_type"},
+    {"NumChannels", "channel_num"},
+};
 
 const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},

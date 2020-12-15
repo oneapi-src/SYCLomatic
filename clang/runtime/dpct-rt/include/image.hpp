@@ -145,6 +145,8 @@ class image_channel {
   unsigned _channel_num = 0;
   /// Total size of all channels in bytes.
   unsigned _total_size = 0;
+  /// Size of each channel in bytes.
+  unsigned _channel_size = 0;
 
 public:
   /// Create image channel info according to template argument \p T.
@@ -163,7 +165,12 @@ public:
   void set_channel_data_type(image_channel_data_type type) { _type = type; }
 
   unsigned get_total_size() { return _total_size; }
+
   unsigned get_channel_num() { return _channel_num; }
+  void set_channel_num(unsigned channel_num) {
+    _channel_num = channel_num;
+    _total_size = _channel_size * _channel_num;
+  }
 
   /// image_channel constructor.
   /// \param r Channel r width in bits.
@@ -191,15 +198,14 @@ public:
   }
 
   cl::sycl::image_channel_type get_channel_type() const {
-    auto channel_size = _total_size / _channel_num;
-    if (channel_size == 4) {
+    if (_channel_size == 4) {
       if (_type == image_channel_data_type::signed_int)
         return cl::sycl::image_channel_type::signed_int32;
       else if (_type == image_channel_data_type::unsigned_int)
         return cl::sycl::image_channel_type::unsigned_int32;
       else if (_type == image_channel_data_type::fp)
         return cl::sycl::image_channel_type::fp32;
-    } else if (channel_size == 2) {
+    } else if (_channel_size == 2) {
       if (_type == image_channel_data_type::signed_int)
         return cl::sycl::image_channel_type::signed_int16;
       else if (_type == image_channel_data_type::unsigned_int)
@@ -214,6 +220,45 @@ public:
     }
     assert(false && "unexpected channel data kind and channel size");
     return cl::sycl::image_channel_type::signed_int32;
+  }
+  void set_channel_type(cl::sycl::image_channel_type type) {
+    switch (type) {
+    case cl::sycl::image_channel_type::unsigned_int8:
+      _type = image_channel_data_type::unsigned_int;
+      _channel_size = 1;
+      break;
+    case cl::sycl::image_channel_type::unsigned_int16:
+      _type = image_channel_data_type::unsigned_int;
+      _channel_size = 2;
+      break;
+    case cl::sycl::image_channel_type::unsigned_int32:
+      _type = image_channel_data_type::unsigned_int;
+      _channel_size = 4;
+      break;
+    case cl::sycl::image_channel_type::signed_int8:
+      _type = image_channel_data_type::signed_int;
+      _channel_size = 1;
+      break;
+    case cl::sycl::image_channel_type::signed_int16:
+      _type = image_channel_data_type::signed_int;
+      _channel_size = 2;
+      break;
+    case cl::sycl::image_channel_type::signed_int32:
+      _type = image_channel_data_type::signed_int;
+      _channel_size = 4;
+      break;
+    case cl::sycl::image_channel_type::fp16:
+      _type = image_channel_data_type::fp;
+      _channel_size = 2;
+      break;
+    case cl::sycl::image_channel_type::fp32:
+      _type = image_channel_data_type::fp;
+      _channel_size = 4;
+      break;
+    default:
+      break;
+    }
+    _total_size = _channel_size * _channel_num;
   }
 
   cl::sycl::image_channel_order get_channel_order() const {
@@ -231,7 +276,7 @@ public:
     }
   }
   /// Get the size for each channel in bits.
-  unsigned get_channel_size() const { return _total_size * 8 / _channel_num; }
+  unsigned get_channel_size() const { return _channel_size * 8; }
 
   /// Set channel size.
   /// \param in_channel_num Channels number to set.
@@ -241,7 +286,8 @@ public:
     if (in_channel_num < _channel_num)
       return;
     _channel_num = in_channel_num;
-    _total_size = channel_size * _channel_num / 8;
+    _channel_size = channel_size / 8;
+    _total_size = _channel_size * _channel_num;
   }
 };
 
@@ -271,6 +317,18 @@ public:
     set_range(range);
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
+  image_matrix(cl::sycl::image_channel_type channel_type, unsigned channel_num,
+               size_t x, size_t y) {
+    _channel.set_channel_type(channel_type);
+    _channel.set_channel_num(channel_num);
+    _dims = 1;
+    _range[0] = x;
+    if (y) {
+      _dims = 2;
+      _range[1] = y;
+    }
+  }
+
   /// Construct a new image class with the matrix data.
   template <int dimensions> cl::sycl::image<dimensions> *create_image() {
     return create_image<dimensions>(_channel);

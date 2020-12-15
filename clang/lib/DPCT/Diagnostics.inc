@@ -162,3 +162,5 @@ DEF_WARNING(OUT_OF_PLACE_FFT_EXEC, 1071, "The placement of the FFT computational
 DEF_COMMENT(OUT_OF_PLACE_FFT_EXEC, 1071, "The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.")
 DEF_WARNING(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free device memory size. You may need to adjust the code.")
 DEF_COMMENT(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free device memory size. You may need to adjust the code.")
+DEF_WARNING(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '%0' could not be deduced, so the call was not migrated. You need to update this code manually.")
+DEF_COMMENT(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '{0}' could not be deduced, so the call was not migrated. You need to update this code manually.")

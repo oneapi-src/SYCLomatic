@@ -1077,22 +1077,30 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
-DerefExpr DerefExpr::create(const Expr *E) {
-  DerefExpr D;
+const Expr*getDereferencedExpr(const Expr*E) {
   E = E->IgnoreImplicitAsWritten();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == clang::UO_AddrOf) {
-      E = UO->getSubExpr()->IgnoreImplicitAsWritten();
-      D.AddrOfRemoved = true;
-    }
-  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-    if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
-      E = COCE->getArg(0)->IgnoreImplicitAsWritten();
-      D.AddrOfRemoved = true;
+      return UO->getSubExpr()->IgnoreImplicitAsWritten();
     }
   }
+  else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
+      return COCE->getArg(0)->IgnoreImplicitAsWritten();
+    }
+  }
+  return nullptr;
+}
 
-  D.E = E;
+DerefExpr DerefExpr::create(const Expr *E) {
+  DerefExpr D;
+  D.E = getDereferencedExpr(E);
+  if (D.E) {
+    D.AddrOfRemoved = true;
+  } else {
+    D.E = E;
+  }
+
   D.NeedParens = needExtraParens(E);
   return D;
 }
@@ -1105,6 +1113,23 @@ std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
 
 std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
+}
+
+std::function<std::vector<RenameWithSuffix>(const CallExpr *)>
+makeStructDismantler(unsigned Idx, const std::vector<std::string> &Suffixes) {
+  return [=](const CallExpr *C) -> std::vector<RenameWithSuffix> {
+    std::vector<RenameWithSuffix> Ret;
+    if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
+            getDereferencedExpr(C->getArg(Idx)))) {
+      Ret.reserve(Suffixes.size());
+      auto Origin = DRE->getDecl()->getName();
+      std::transform(Suffixes.begin(), Suffixes.end(), std::back_inserter(Ret),
+                     [&](StringRef Suffix) -> RenameWithSuffix {
+                       return RenameWithSuffix(Origin, Suffix);
+                     });
+    }
+    return Ret;
+  };
 }
 
 template <class Printer, class... Ts> class PrinterCreator {
@@ -1176,6 +1201,15 @@ makeCallExprCreator(std::string Callee,
   return PrinterCreator<CallExprPrinter<StringRef, CallArgsT...>, std::string,
                         std::function<CallArgsT(const CallExpr *)>...>(Callee,
                                                                        Args...);
+}
+
+template <class... ArgsT>
+std::function<NewExprPrinter<ArgsT...>(const CallExpr *)>
+makeNewExprCreator(std::string TypeName,
+                   std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
+                        std::function<ArgsT(const CallExpr *)>...>(TypeName,
+                                                                   Args...);
 }
 
 /// Create AssignExprRewriterFactory with given argumens.
@@ -1407,11 +1441,32 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
                                           "read", makeCallArgCreator(Idx)...));
 }
 
+template <class... MsgArgs>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
+                               MsgArgs &&... Args) {
+  return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
+      Source, MsgID, std::forward<MsgArgs>(Args)...);
+}
+
+class CheckWarning1073 {
+  unsigned Idx;
+
+public:
+  CheckWarning1073(unsigned I) : Idx(I) {}
+  bool operator()(const CallExpr *C) {
+    auto DerefE = getDereferencedExpr(C->getArg(Idx));
+    return DerefE && isa<DeclRefExpr>(DerefE);
+  }
+};
+
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define DEREF(x) makeDerefExprCreator(x)
+#define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
+#define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
@@ -1425,6 +1480,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
   {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
+#define UNSUPPORT_FACTORY_ENTRY(FuncName, MsgID, ...)                          \
+  {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
 
 ///***************************************************************
 /// Examples:
@@ -1470,7 +1527,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 #define WARP_FUNC_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
-  REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
+  REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory<>, MsgID)
 
 std::unique_ptr<const std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>

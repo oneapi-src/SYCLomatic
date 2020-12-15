@@ -49,3 +49,14 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::NOTSUPPORTED)
+
+CONDITIONAL_FACTORY_ENTRY(
+    CheckWarning1073(1),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuArrayCreate_v2", DEREF(0),
+        NEW("dpct::image_matrix",
+            STRUCT_DISMANTLE(1, "channel_type_ct1", "channel_num_ct1", "x_ct1",
+                             "y_ct1")))),
+    UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
+                            Diagnostics::CANNOT_CAPUTURE_AGUMENTS, ARG(1)))
+ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))

@@ -67,7 +67,8 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   const SourceManager &SM = Context.getSourceManager();
-  SourceLocation Begin(TheStmt->getBeginLoc()), End(TheStmt->getEndLoc());
+  auto Range = getStmtExpansionSourceRange(TheStmt);
+  SourceLocation Begin(Range.getBegin()), End(Range.getEnd());
 
   // If ReplaceStmt replaces calls to compatibility APIs, record the
   // OrigAPIName (not macro case)
@@ -80,37 +81,6 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   }
 
   if (IsProcessMacro) {
-    if (Begin.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      if (SM.isMacroArgExpansion(Begin) && !SM.isMacroArgExpansion(TheStmt->getEndLoc())) {
-        Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-      }
-      else {
-        Begin = SM.getSpellingLoc(Begin);
-      }
-    }
-    else {
-      Begin = SM.getExpansionLoc(Begin);
-    }
-    // If ReplaceStmt replaces calls to compatibility APIs, record the
-    // OrigAPIName (macro case)
-    if (IsReplaceCompatibilityAPI) {
-      recordMigrationInfo(Context, Begin, true, OrigAPIName);
-    } else {
-      recordMigrationInfo(Context, Begin);
-    }
-
-    if (End.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      if (SM.isMacroArgExpansion(TheStmt->getEndLoc()) &&
-        !SM.isMacroArgExpansion(TheStmt->getBeginLoc())) {
-        End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
-      }
-      else {
-        End = SM.getSpellingLoc(End);
-      }
-    }
-    else {
-      End = SM.getExpansionLoc(End);
-    }
     if (Begin == End) {
       End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
       End = End.getLocWithOffset(-1);

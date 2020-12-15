@@ -1585,18 +1585,19 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
     return OS;
   }
 
-  const static MapNames::MapTy Parms3DMemberNames;
+  const static MapNames::MapTy MemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
 
 public:
+  void emplaceCuArrayDescDeclarations(const VarDecl *VD);
   void emplaceMemcpy3DDeclarations(const VarDecl *VD);
   static std::string getMemcpy3DArguments(StringRef BaseName);
 
-  static std::string getMemcpy3DMemberName(StringRef BaseName,
-                                           const std::string &Member) {
-    auto Itr = Parms3DMemberNames.find(Member);
-    if (Itr != Parms3DMemberNames.end()) {
+  static std::string getMemberName(StringRef BaseName,
+                                   const std::string &Member) {
+    auto Itr = MemberNames.find(Member);
+    if (Itr != MemberNames.end()) {
       std::string ReplacedName;
       llvm::raw_string_ostream OS(ReplacedName);
       printParamName(OS, BaseName, Itr->second);
@@ -1747,9 +1748,8 @@ private:
     bool applyResult();
 
   public:
-    SettersMerger(const std::vector<std::string> &Methods, TextureRule *TexRule)
-        : Rule(TexRule), MethodNames(Methods),
-          ProcessedBO(TexRule->ProcessedBO) {}
+    SettersMerger(const std::vector<std::string> &Names, TextureRule *TexRule)
+        : Rule(TexRule), MethodNames(Names), ProcessedBO(TexRule->ProcessedBO) {}
 
     bool tryMerge(const Stmt *S);
   };

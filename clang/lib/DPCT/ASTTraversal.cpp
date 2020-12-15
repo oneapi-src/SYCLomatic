@@ -11169,6 +11169,17 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                         ReplacedArg, ExtraArg);
 }
 
+void MemoryDataTypeRule::emplaceCuArrayDescDeclarations(const VarDecl *VD) {
+  if (DpctGlobalInfo::isCommentsEnabled()) {
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
+      VD, "// These variables are defined for info of image_matrix."));
+  }
+  emplaceParamDecl(VD, "size_t", false, "x", "y");
+  emplaceParamDecl(VD, "unsigned", false, "channel_num");
+  emplaceParamDecl(VD, MapNames::getClNamespace() + "::image_channel_type",
+                   false, "channel_type");
+}
+
 void MemoryDataTypeRule::emplaceMemcpy3DDeclarations(const VarDecl *VD) {
   if (DpctGlobalInfo::isCommentsEnabled()) {
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
@@ -11193,13 +11204,15 @@ std::string MemoryDataTypeRule::getMemcpy3DArguments(StringRef BaseName) {
 }
 
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      varDecl(hasType(recordDecl(hasName("cudaMemcpy3DParms")))).bind("decl"),
-      this);
-  MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(
-                               recordDecl(hasName("cudaMemcpy3DParms"))))))
-                    .bind("parmsMember"),
+  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName(
+                            "cudaMemcpy3DParms", "CUDA_ARRAY_DESCRIPTOR"))))
+                    .bind("decl"),
                 this);
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
+        hasAnyName("cudaMemcpy3DParms", "CUDA_ARRAY_DESCRIPTOR"))))))
+          .bind("parmsMember"),
+      this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(recordDecl(hasAnyName(
                                "cudaExtent", "cudaPos", "cudaPitchedPtr")))))
                     .bind("otherMember"),
@@ -11214,7 +11227,13 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   if (auto VD = getNodeAsType<VarDecl>(Result, "decl")) {
-    emplaceMemcpy3DDeclarations(VD);
+    if (isa<ParmVarDecl>(VD))
+      return;
+    auto TypeName = DpctGlobalInfo::getUnqualifiedTypeName(VD->getType());
+    if (TypeName == "cudaMemcpy3DParms")
+      emplaceMemcpy3DDeclarations(VD);
+    else if (TypeName == "CUDA_ARRAY_DESCRIPTOR")
+      emplaceCuArrayDescDeclarations(VD);
   } else if (auto ME = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
     if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
       if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
@@ -11229,8 +11248,8 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
     if (auto DRE =
             dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
       emplaceTransformation(new ReplaceStmt(
-          ME, getMemcpy3DMemberName(DRE->getDecl()->getName(),
-                                    ME->getMemberDecl()->getName().str())));
+          ME, getMemberName(DRE->getDecl()->getName(),
+                            ME->getMemberDecl()->getName().str())));
     }
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
@@ -12178,14 +12197,16 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                             "cudaChannelFormatDesc", "cudaChannelFormatKind",
                             "cudaTextureDesc", "cudaResourceDesc",
                             "cudaTextureAddressMode", "cudaTextureFilterMode",
-                            "cudaArray", "cudaArray_t"))))))
+                            "cudaArray", "cudaArray_t", "CUarray_st", "CUarray",
+                            "CUarray_format"))))))
                     .bind("texType"),
                 this);
 
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
                       "cudaTextureAddressMode", "cudaTextureFilterMode",
-                      "cudaChannelFormatKind", "cudaResourceType"))))))
+                      "cudaChannelFormatKind", "cudaResourceType",
+                      "CUarray_format", "CUarray_format_enum"))))))
           .bind("texEnum"),
       this);
 
@@ -12206,7 +12227,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaDestroyTextureObject",
       "cudaGetTextureObjectResourceDesc",
       "cudaGetTextureObjectTextureDesc",
-      "cudaGetTextureObjectResourceViewDesc"};
+      "cudaGetTextureObjectResourceViewDesc",
+      "cuArrayCreate_v2",
+      "cuArrayDestroy"};
 
   auto hasAnyFuncName = [&]() {
     return internal::Matcher<NamedDecl>(
@@ -12279,7 +12302,8 @@ void TextureRule::replaceNormalizedCoord(const MemberExpr *ME,
 bool TextureRule::tryMerge(const MemberExpr *ME, const Expr *BO) {
   static std::unordered_map<std::string, std::vector<std::string>> MergeMap = {
       {"textureReference", {"addressMode", "filterMode", "normalized"}},
-      {"cudaTextureDesc", {"addressMode", "filterMode", "normalizedCoords"}}};
+      {"cudaTextureDesc", {"addressMode", "filterMode", "normalizedCoords"}},
+  };
 
   auto Iter = MergeMap.find(
       DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType()));
@@ -12520,6 +12544,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
     emplaceTransformation(A.getReplacement());
+    A.applyAllSubExprRepl();
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
     if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
       std::string EnumName = ECD->getName().str();
@@ -12658,7 +12683,7 @@ void TextureRule::SettersMerger::traverse(const Stmt *S) {
     if (static_cast<const DeclRefExpr *>(S)->getDecl() != D) {
       break;
     }
-    LLVM_FALLTHROUGH
+    LLVM_FALLTHROUGH;
   case Stmt::IfStmtClass:
   case Stmt::WhileStmtClass:
   case Stmt::DoStmtClass:

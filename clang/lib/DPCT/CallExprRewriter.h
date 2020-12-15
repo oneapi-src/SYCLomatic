@@ -26,7 +26,7 @@ class MathTypeCastRewriter;
 class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
-class UnsupportFunctionRewriter;
+template <class... MsgArgs> class UnsupportFunctionRewriter;
 
 /*
 Factory usage example:
@@ -84,8 +84,10 @@ using MathBinaryOperatorRewriterFactory =
     CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
 using WarpFunctionRewriterFactory =
     CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
+template <class... MsgArgs>
 using UnsupportFunctionRewriterFactory =
-    CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
+    CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>, Diagnostics,
+                            MsgArgs...>;
 
 /// Base class for rewriting call expressions
 class CallExprRewriter {
@@ -417,6 +419,17 @@ public:
   static DerefExpr create(const Expr *E);
 };
 
+class RenameWithSuffix {
+  StringRef OriginalName, SuffixStr;
+
+public:
+  RenameWithSuffix(StringRef Original, StringRef Suffix)
+      : OriginalName(Original), SuffixStr(Suffix) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << OriginalName << "_" << SuffixStr;
+  }
+};
+
 template <bool HasPrefixArg, class... ArgsT> class ArgsPrinter;
 template <bool HasPrefixArg> class ArgsPrinter<HasPrefixArg> {
   mutable ArgumentAnalysis A;
@@ -556,7 +569,7 @@ template <class LValueT, class RValueT> class AssignExprPrinter {
 public:
   AssignExprPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
-  template <class StreamT> void print(StreamT &Stream) {
+  template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, LVal);
     Stream << " = ";
     dpct::print(Stream, RVal);
@@ -576,6 +589,19 @@ public:
     OS << "delete ";
     printWithParens(OS, Arg);
     return Result;
+  }
+};
+
+template <class... ArgsT>
+class NewExprPrinter : CallExprPrinter<StringRef, ArgsT...> {
+  using Base = CallExprPrinter<StringRef, ArgsT...>;
+
+public:
+  NewExprPrinter(StringRef TypeName, ArgsT &&... Args)
+      : Base(TypeName, std::forward<ArgsT>(Args)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << "new ";
+    Base::print(Stream);
   }
 };
 
@@ -628,20 +654,31 @@ public:
             C, Source, LCreator(C), RCreator(C)) {}
 };
 
+template <class... MsgArgs>
 class UnsupportFunctionRewriter : public CallExprRewriter {
-  Diagnostics ID;
+  template <class T>
+  std::string getMsgArg(const std::function<T(const CallExpr *)> &Func,
+                        const CallExpr *C) {
+    return getMsgArg(Func(C), C);
+  }
+  template <class T>
+  static std::string getMsgArg(const T &InputArg, const CallExpr *) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    print(OS, InputArg);
+    return OS.str();
+  }
 
 public:
   UnsupportFunctionRewriter(const CallExpr *CE, StringRef CalleeName,
-                            Diagnostics MsgID)
-      : CallExprRewriter(CE, CalleeName), ID(MsgID) {}
-
-  Optional<std::string> rewrite() override {
-    report(ID, false, getSourceCalleeName());
-    return Optional<std::string>();
+                            Diagnostics MsgID, const MsgArgs &... Args)
+      : CallExprRewriter(CE, CalleeName) {
+    report(MsgID, false, getMsgArg(Args, CE)...);
   }
 
-  friend UnsupportFunctionRewriterFactory;
+  Optional<std::string> rewrite() override { return Optional<std::string>(); }
+
+  friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
 
 } // namespace dpct
