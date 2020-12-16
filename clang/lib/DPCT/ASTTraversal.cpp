@@ -7990,21 +7990,22 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
                           /*IsProcessMacro*/ true, ""));
     }
   } else if (FuncName == "cudaEventQuery") {
+
+    if (auto FD = getImmediateOuterFuncDecl(CE)) {
+      reset();
+      TimeElapsedCE = CE;
+      updateAsyncRange(CE, "cudaEventCreate");
+      if (RecordBegin && RecordEnd) {
+        processAsyncJob(FD->getAsFunction()->getBody(), false);
+      }
+    }
+
     ExprAnalysis EA(CE->getArg(0));
     std::string ReplStr = "(int)" + EA.getReplacedString() + ".get_info<" +
                           MapNames::getClNamespace() +
                           "::info::event::command_execution_status>()";
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else if (FuncName == "cudaEventRecord") {
-
-    if (auto FD = getImmediateOuterFuncDecl(CE)) {
-      TimeElapsedCE = CE;
-      updateAsyncRange(CE, "cudaEventCreate");
-      if (RecordBegin && RecordEnd) {
-        processAsyncJob(FD->getAsFunction()->getBody());
-      }
-    }
-
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {
     // Reset from last migration on time measurement.
@@ -8132,6 +8133,8 @@ void EventAPICallRule::findEventAPI(const Stmt *Node, const CallExpr *&Call,
       Node->getStmtClass() == Stmt::IfStmtClass ||
       Node->getStmtClass() == Stmt::DoStmtClass ||
       Node->getStmtClass() == Stmt::ImplicitCastExprClass ||
+      Node->getStmtClass() == Stmt::BinaryOperatorClass ||
+      Node->getStmtClass() == Stmt::DeclStmtClass ||
       Node->getStmtClass() == Stmt::ParenExprClass)
     for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
       switch (It->getStmtClass()) {
@@ -8167,6 +8170,7 @@ void EventAPICallRule::findEventAPI(const Stmt *Node, const CallExpr *&Call,
       case Stmt::CompoundStmtClass:
       case Stmt::IfStmtClass:
       case Stmt::DoStmtClass:
+      case Stmt::BinaryOperatorClass:
       case Stmt::ImplicitCastExprClass: {
         findEventAPI(*It, Call, EventAPIName);
         break;
@@ -8307,10 +8311,14 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 //  kernel_calls
 //  async_mem_calls
 //  ...
-//  cudaEventRecord(stop);    // <<== RecordEndLoc/TimeElapsedLoc
+//  cudaEventRecord(stop);
+//    while (cudaEventQuery(stop) == cudaErrorNotReady) { // <<== RecordEndLoc
+//                                                             /TimeElapsedLoc
+//        ...
+//    }
 //  processAsyncJob is used to process all sync calls between
 //  RecordEndLoc and RecordEndLoc, and RecordEndLoc and TimeElapsedLoc.
-void EventAPICallRule::processAsyncJob(const Stmt *Node) {
+void EventAPICallRule::processAsyncJob(const Stmt *Node, bool NeedWait) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   RecordBeginLoc = SM.getExpansionLoc(RecordBegin->getBeginLoc()).getRawEncoding();
   RecordEndLoc = SM.getExpansionLoc(RecordEnd->getBeginLoc()).getRawEncoding();
@@ -8318,7 +8326,8 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node) {
 
   // Handle the kernel calls and async memory operations between start and stop
   handleTargetCalls(Node);
-
+  if(!NeedWait)
+    return;
   for (const auto &NewEventName : Events2Wait) {
     std::ostringstream SyncStmt;
     SyncStmt
@@ -8378,7 +8387,11 @@ void EventAPICallRule::findThreadSyncLocation(const Stmt *Node) {
 //  kernel_calls
 //  async_mem_calls
 //  ...
-//  cudaEventRecord(stop);    // <<== RecordEndLoc/TimeElapsedLoc
+//  cudaEventRecord(stop);
+//    while (cudaEventQuery(stop) == cudaErrorNotReady) { // <<== RecordEndLoc
+//                                                             /TimeElapsedLoc
+//        ...
+//    }
 // \p AsyncCE is call expr to help to locate RecordEndLoc.
 // \p EventAPIName is the EventAPI name (.i.e cudaEventRecord or
 // cudaEventCreate) to help to locate RecordEndLoc.
@@ -8547,6 +8560,31 @@ void EventAPICallRule::handleTimeMeasurement() {
   processAsyncJob(FuncBody);
 }
 
+// To get the redundant parent ParenExpr for \p Call to handle case like
+// "(cudaEventSynchronize(stop))".
+const clang::Stmt * EventAPICallRule::getRedundantParenExpr(const CallExpr *Call) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*Call);
+  if (Parents.size()) {
+    auto &Parent = Parents[0];
+    if (auto PE = Parent.get<ParenExpr>()) {
+      if (auto ParentStmt = getParentStmt(PE)) {
+        auto ParentStmtClass = ParentStmt->getStmtClass();
+        bool Ret = ParentStmtClass == Stmt::StmtClass::IfStmtClass ||
+                   ParentStmtClass == Stmt::StmtClass::WhileStmtClass ||
+                   ParentStmtClass == Stmt::StmtClass::DoStmtClass ||
+                   ParentStmtClass == Stmt::StmtClass::CallExprClass ||
+                   ParentStmtClass == Stmt::StmtClass::ImplicitCastExprClass ||
+                   ParentStmtClass == Stmt::StmtClass::BinaryOperatorClass ||
+                   ParentStmtClass == Stmt::StmtClass::ForStmtClass;
+        if (!Ret) {
+          return PE;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
 
 //  cudaEventRecord(start);                 // <<== RecordBeginLoc
 //  ...
@@ -8583,6 +8621,12 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
         continue;
 
       if (Callee->getName() == "cudaEventSynchronize") {
+        if (const clang::Stmt *S = getRedundantParenExpr(Call)) {
+          // To remove statement like "(cudaEventSynchronize(stop));"
+          emplaceTransformation(new ReplaceStmt(
+              S, false, std::string("cudaEventSynchronize"), false, true, ""));
+        }
+
         const auto &TM =
             ReplaceStmt(Call, false, std::string("cudaEventSynchronize"), "");
         auto &Context = dpct::DpctGlobalInfo::getContext();

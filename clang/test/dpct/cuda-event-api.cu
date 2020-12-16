@@ -262,6 +262,10 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
+  // CHECK:/*
+  // CHECK-NEXT:  DPCT1026:{{[0-9a-z]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
+  // CHECK-NEXT:  */
+  cudaEventCreate(&stop);
 
   // CHECK: int e = (int)stop.get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT: checkCudaErrors((int)stop.get_info<sycl::info::event::command_execution_status>());

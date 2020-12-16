@@ -159,7 +159,8 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     if (IsCleanup &&
         (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass ||
          TheStmt->getStmtClass() == Stmt::BinaryOperatorClass ||
-         TheStmt->getStmtClass() == Stmt::CXXOperatorCallExprClass) &&
+         TheStmt->getStmtClass() == Stmt::CXXOperatorCallExprClass ||
+         TheStmt->getStmtClass() == Stmt::StmtClass::ParenExprClass) &&
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }

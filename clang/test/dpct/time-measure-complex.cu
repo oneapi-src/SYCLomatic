@@ -247,7 +247,9 @@ void foo_test_1() {
 // CHECK-NEXT:  CHECK_FOO(stop_ct1 = std::chrono::steady_clock::now());
 // CHECK-NEXT:  checkCudaErrors(0);
 // CHECK-NEXT:  cudaCheck(0);
-// CHECK-NEXT:  (0);
+// CHECK-NEXT:  int ret;
+// CHECK-NEXT:  ret = (0);
+// CHECK-NEXT:  int a = (0);
 // CHECK-NEXT:  et = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
@@ -255,6 +257,9 @@ void foo_test_1() {
   checkCudaErrors(cudaEventSynchronize(stop));
   cudaCheck(cudaEventSynchronize(stop));
   (cudaEventSynchronize(stop));
+  int ret;
+  ret = (cudaEventSynchronize(stop));
+  int a = (cudaEventSynchronize(stop));
   cudaEventElapsedTime(&et, start, stop);
 }
 
@@ -489,8 +494,6 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    stop_q_ct1_1.wait();
-// CHECK-NEXT:    stop_q_ct1_2.wait();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK(0);
     CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
@@ -572,8 +575,6 @@ void foo_test_4() {
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    stop_q_ct1_1.wait();
-// CHECK-NEXT:    stop_q_ct1_2.wait();
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
@@ -590,8 +591,6 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    stop_q_ct1_1.wait();
-// CHECK-NEXT:    stop_q_ct1_2.wait();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);

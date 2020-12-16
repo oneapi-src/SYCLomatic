@@ -1334,9 +1334,10 @@ public:
 private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                        const std::string EventAPIName);
-  void processAsyncJob(const Stmt *Node);
+  void processAsyncJob(const Stmt *Node, bool NeedWait = true);
   void updateAsyncRange(const CallExpr *AsyncCE, const std::string EventAPIName);
   void findThreadSyncLocation(const Stmt *Node);
+  const clang::Stmt * getRedundantParenExpr(const CallExpr *Call);
   // Since the state of a rule is shared between multiple matches, it iss
   // necessary to clear the previous migration status.
   // The call is supposed to be called whenever a migrtion on time measurement
