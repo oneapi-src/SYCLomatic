@@ -836,6 +836,7 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
 
   Repl->setConstantFlag(this->getConstantFlag());
   Repl->setConstantOffset(this->getConstantOffset());
+  Repl->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   return Repl;
 }
 

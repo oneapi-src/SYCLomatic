@@ -2974,6 +2974,18 @@ const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
          {"double", "oneapi::mkl::rng::uniform", "double"}},
     };
 
+const std::map<std::string, std::vector<unsigned int>>
+    MapNames::FFTPlanAPINeedParenIdxMap{
+        {"cufftPlan1d", {1}},
+        {"cufftPlan2d", {1, 2}},
+        {"cufftPlan3d", {1, 2, 3}},
+        {"cufftPlanMany", {2, 3, 4, 6, 7}},
+        {"cufftMakePlan1d", {1}},
+        {"cufftMakePlan2d", {1, 2}},
+        {"cufftMakePlan3d", {1, 2, 3}},
+        {"cufftMakePlanMany", {2, 3, 4, 6, 7}},
+        {"cufftMakePlanMany64", {2, 3, 4, 6, 7}}};
+
 // Atomic function names mapping
 const std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap{
         {"atomicAdd", "dpct::atomic_fetch_add"},

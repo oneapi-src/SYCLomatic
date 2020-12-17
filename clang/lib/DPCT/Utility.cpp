@@ -2392,3 +2392,61 @@ SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
   return Loc;
 }
 
+clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value) {
+  switch (Value) {
+  case 0x2a:
+    return clang::dpct::FFTTypeEnum::R2C;
+  case 0x2c:
+    return clang::dpct::FFTTypeEnum::C2R;
+  case 0x29:
+    return clang::dpct::FFTTypeEnum::C2C;
+  case 0x6a:
+    return clang::dpct::FFTTypeEnum::D2Z;
+  case 0x6c:
+    return clang::dpct::FFTTypeEnum::Z2D;
+  case 0x69:
+    return clang::dpct::FFTTypeEnum::Z2Z;
+  default:
+    return clang::dpct::FFTTypeEnum::Unknown;
+  }
+}
+
+std::string getPrecAndDomainStrFromValue(std::int64_t Value) {
+  std::string PrecAndDomain;
+  std::string Prec, Domain;
+  if (Value == 0x2a || Value == 0x2c) {
+    Prec = "oneapi::mkl::dft::precision::SINGLE";
+    Domain = "oneapi::mkl::dft::domain::REAL";
+  } else if (Value == 0x29) {
+    Prec = "oneapi::mkl::dft::precision::SINGLE";
+    Domain = "oneapi::mkl::dft::domain::COMPLEX";
+  } else if (Value == 0x6a || Value == 0x6c) {
+    Prec = "oneapi::mkl::dft::precision::DOUBLE";
+    Domain = "oneapi::mkl::dft::domain::REAL";
+  } else {
+    Prec = "oneapi::mkl::dft::precision::DOUBLE";
+    Domain = "oneapi::mkl::dft::domain::COMPLEX";
+  }
+  PrecAndDomain = Prec + ", " + Domain;
+  return PrecAndDomain;
+}
+
+std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName) {
+  std::string PrecAndDomain;
+  std::string Prec, Domain;
+  if (ExecFuncName == "cufftExecR2C" || ExecFuncName == "cufftExecC2R") {
+    Prec = "oneapi::mkl::dft::precision::SINGLE";
+    Domain = "oneapi::mkl::dft::domain::REAL";
+  } else if (ExecFuncName == "cufftExecC2C") {
+    Prec = "oneapi::mkl::dft::precision::SINGLE";
+    Domain = "oneapi::mkl::dft::domain::COMPLEX";
+  } else if (ExecFuncName == "cufftExecD2Z" || ExecFuncName == "cufftExecZ2D") {
+    Prec = "oneapi::mkl::dft::precision::DOUBLE";
+    Domain = "oneapi::mkl::dft::domain::REAL";
+  } else {
+    Prec = "oneapi::mkl::dft::precision::DOUBLE";
+    Domain = "oneapi::mkl::dft::domain::COMPLEX";
+  }
+  PrecAndDomain = Prec + ", " + Domain;
+  return PrecAndDomain;
+}

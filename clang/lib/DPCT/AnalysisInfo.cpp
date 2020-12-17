@@ -33,6 +33,7 @@ std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
+std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
@@ -2325,6 +2326,11 @@ void FFTPlanAPIInfo::linkInfo() {
     PlacementFromExec = I->second.Placement;
   }
 
+  if (FFTType == FFTTypeEnum::Unknown &&
+      DpctGlobalInfo::getFFTTypeSet().size() == 1) {
+    FFTType = *(DpctGlobalInfo::getFFTTypeSet().begin());
+  }
+
   StringRef FuncNameRef(FuncName);
 
   if (FuncNameRef.endswith("1d")) {
@@ -2342,6 +2348,7 @@ void FFTPlanAPIInfo::linkInfo() {
 void FFTPlanAPIInfo::addInfo(
     std::string PrecAndDomainStrInput, FFTTypeEnum FFTTypeInput,
     int QueueIndexInput, std::vector<std::string> ArgsListInput,
+    std::vector<std::string> ArgsListAddRequiredParenInput,
     std::string IndentStrInput, std::string FuncNameInput,
     LibraryMigrationFlags FlagsInput, std::int64_t RankInput,
     std::string DescrMemberCallPrefixInput, std::string DescStrInput) {
@@ -2349,6 +2356,7 @@ void FFTPlanAPIInfo::addInfo(
   FFTType = FFTTypeInput;
   QueueIndex = QueueIndexInput;
   ArgsList = ArgsListInput;
+  ArgsListAddRequiredParen = ArgsListAddRequiredParenInput;
   IndentStr = IndentStrInput;
   FuncName = FuncNameInput;
   Flags = FlagsInput;
@@ -2380,11 +2388,11 @@ void FFTPlanAPIInfo::setValueFor1DBatched() {
       // in-place
       PrefixStmts.emplace_back(
           SetStr + "(oneapi::mkl::dft::config_param::FWD_DISTANCE, (" +
-          ArgsList[1] + "/2+1)*2);");
+          ArgsListAddRequiredParen[1] + "/2+1)*2);");
     }
     PrefixStmts.emplace_back(SetStr +
                              "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
-                             ArgsList[1] + "/2+1);");
+                             ArgsListAddRequiredParen[1] + "/2+1);");
   } else if (FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) {
     PrefixStmts.emplace_back(SetStr +
                              "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
@@ -2403,9 +2411,103 @@ void FFTPlanAPIInfo::setValueFor1DBatched() {
       ArgsList[3] + ");");
 }
 
+std::vector<std::string> FFTPlanAPIInfo::setValueForBasicManyBatched(
+    std::vector<std::string> Dims, std::vector<std::string> DimsWithoutParen) {
+  // Dims[rank-1] is innermost, Dims[0] is outermost
+
+  // Below "n" is the innermost dim, and then all distance need multiply the rest dims value.
+  // in-place:
+  // C2R,R2C,D2Z,Z2D: real-distance: (n/2+1)*2, complex-distance: n/2+1
+  // C2C,Z2Z: distance: n
+  // out-of-place:
+  // C2R,R2C,D2Z,Z2D: real-distance: n, complex-distance: n/2+1
+  // C2C,Z2Z: distance: n
+
+  std::vector<std::string> Res;
+  std::string SetStr = DescrMemberCallPrefix + "set_value";
+
+  if (Dims.size() == 1) {
+    if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z ||
+        FFTType == FFTTypeEnum::C2R || FFTType == FFTTypeEnum::Z2D) {
+      if (PlacementFromExec != FFTPlacementType::inplace) {
+        // out-of-place
+        Res.emplace_back(SetStr +
+                         "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                         DimsWithoutParen[0] + ");");
+      } else {
+        // in-place
+        Res.emplace_back(SetStr +
+                         "(oneapi::mkl::dft::config_param::FWD_DISTANCE, (" +
+                         Dims[0] + "/2+1)*2);");
+      }
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       Dims[0] + "/2+1);");
+    } else if (FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) {
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                       DimsWithoutParen[0] + ");");
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       DimsWithoutParen[0] + ");");
+    }
+  } else if (Dims.size() == 2) {
+    if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z ||
+        FFTType == FFTTypeEnum::C2R || FFTType == FFTTypeEnum::Z2D) {
+      if (PlacementFromExec != FFTPlacementType::inplace) {
+        // out-of-place
+        Res.emplace_back(SetStr +
+                         "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                         Dims[1] + "*" + Dims[0] + ");");
+      } else {
+        // in-place
+        Res.emplace_back(SetStr +
+                         "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                         Dims[1] + "*(" + Dims[0] + "/2+1)*2);");
+      }
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       Dims[1] + "*(" + Dims[0] + "/2+1));");
+    } else if (FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) {
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                       Dims[1] + "*" + Dims[0] + ");");
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       Dims[1] + "*" + Dims[0] + ");");
+    }
+  } else {
+    if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z ||
+        FFTType == FFTTypeEnum::C2R || FFTType == FFTTypeEnum::Z2D) {
+      if (PlacementFromExec != FFTPlacementType::inplace) {
+        // out-of-place
+        Res.emplace_back(SetStr +
+                         "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                         Dims[2] + "*" + Dims[1] + "*" + Dims[0] + ");");
+      } else {
+        // in-place
+        Res.emplace_back(
+            SetStr + "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+            Dims[2] + "*" + Dims[1] + "*(" + Dims[0] + "/2+1)*2);");
+      }
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       Dims[2] + "*" + Dims[1] + "*(" + Dims[0] + "/2+1));");
+    } else if (FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) {
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::FWD_DISTANCE, " +
+                       Dims[2] + "*" + Dims[1] + "*" + Dims[0] + ");");
+      Res.emplace_back(SetStr +
+                       "(oneapi::mkl::dft::config_param::BWD_DISTANCE, " +
+                       Dims[2] + "*" + Dims[1] + "*" + Dims[0] + ");");
+    }
+  }
+  return Res;
+}
+
 void FFTPlanAPIInfo::updateManyCommitCallExpr() {
   Expr::EvalResult ER;
-  std::vector<std::string> Dims;
+  std::vector<std::string> Dims; // Dims[rank-1] is innermost, Dims[0] is outermost
   std::string InStridesStr;
   std::string OutStridesStr;
 
@@ -2442,22 +2544,29 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
       InStrides.emplace_back(ArgsList[4]);
       OutStrides.emplace_back(ArgsList[7]);
     } else if (Rank == 2) {
-      InStrides.emplace_back(ArgsList[3] + "[1] * " + ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[1] * " + ArgsList[7]);
+      InStrides.emplace_back(ArgsListAddRequiredParen[3] + "[1] * " +
+                             ArgsListAddRequiredParen[4]);
+      OutStrides.emplace_back(ArgsListAddRequiredParen[6] + "[1] * " +
+                              ArgsListAddRequiredParen[7]);
       InStrides.emplace_back(ArgsList[4]);
       OutStrides.emplace_back(ArgsList[7]);
     } else if (Rank == 3) {
-      InStrides.emplace_back(ArgsList[3] + "[2] * " + ArgsList[3] + "[1] * " +
-                             ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[2] * " + ArgsList[6] + "[1] * " +
-                              ArgsList[7]);
-      InStrides.emplace_back(ArgsList[3] + "[2] * " + ArgsList[4]);
-      OutStrides.emplace_back(ArgsList[6] + "[2] * " + ArgsList[7]);
+      InStrides.emplace_back(ArgsListAddRequiredParen[3] + "[2] * " +
+                             ArgsListAddRequiredParen[3] + "[1] * " +
+                             ArgsListAddRequiredParen[4]);
+      OutStrides.emplace_back(ArgsListAddRequiredParen[6] + "[2] * " +
+                              ArgsListAddRequiredParen[6] + "[1] * " +
+                              ArgsListAddRequiredParen[7]);
+      InStrides.emplace_back(ArgsListAddRequiredParen[3] + "[2] * " +
+                             ArgsListAddRequiredParen[4]);
+      OutStrides.emplace_back(ArgsListAddRequiredParen[6] + "[2] * " +
+                              ArgsListAddRequiredParen[7]);
       InStrides.emplace_back(ArgsList[4]);
       OutStrides.emplace_back(ArgsList[7]);
     }
     for (int64_t i = 0; i < Rank; ++i)
-      Dims.emplace_back(ArgsList[2] + "[" + std::to_string(i) + "]");
+      Dims.emplace_back(ArgsListAddRequiredParen[2] + "[" + std::to_string(i) +
+                        "]");
     for (size_t i = 0; i < InStrides.size(); ++i) {
       InStridesStr = InStridesStr + InStrides[i] + ", ";
       OutStridesStr = OutStridesStr + OutStrides[i] + ", ";
@@ -2482,10 +2591,19 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
                     "dimensions manually*/] = {dpct_placeholder/*Fix the "
                     "stride manually*/};";
   }
-  PrefixStmts.emplace_back(InStridesStr);
-  PrefixStmts.emplace_back(OutStridesStr);
 
   updateCommitCallExpr(Dims);
+
+  PrefixStmts.emplace_back(
+      SetStr + "(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, " +
+      ArgsList[10] + ");");
+
+  PrefixStmts.emplace_back("if (" + ArgsListAddRequiredParen[3] +
+                           " != nullptr && " + ArgsListAddRequiredParen[6] +
+                           " != nullptr) {");
+
+  PrefixStmts.emplace_back(InStridesStr);
+  PrefixStmts.emplace_back(OutStridesStr);
 
   if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z ||
       ((FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) &&
@@ -2522,20 +2640,40 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
                              "the FWD_DISTANCE and the BWD_DISTANCE");
   }
 
-  PrefixStmts.emplace_back(
-      SetStr + "(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, " +
-      ArgsList[10] + ");");
-
   PrefixStmts.emplace_back(SetStr +
                            "(oneapi::mkl::dft::config_param::INPUT_STRIDES, " +
                            InputStrideName + ");");
   PrefixStmts.emplace_back(SetStr +
                            "(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, " +
                            OutputStrideName + ");");
+
+  std::vector<std::string> Res;
+  if (Rank != -1) {
+    std::vector<std::string> DimsWithoutParen;
+    for (int64_t i = 0; i < Rank; ++i)
+      DimsWithoutParen.emplace_back(ArgsList[2] + "[" + std::to_string(i) +
+                                    "]");
+
+    Res = update1D2D3DCommitPrefix(Dims);
+    std::vector<std::string> BasicManyBatchedRes =
+        setValueForBasicManyBatched(Dims, DimsWithoutParen);
+    Res.insert(Res.end(), BasicManyBatchedRes.begin(),
+               BasicManyBatchedRes.end());
+  }
+
+  if (Res.empty()) {
+    PrefixStmts.emplace_back("}");
+  } else {
+    PrefixStmts.emplace_back("} else {");
+    PrefixStmts.insert(PrefixStmts.end(), Res.begin(), Res.end());
+    PrefixStmts.emplace_back("}");
+  }
 }
 
-void FFTPlanAPIInfo::update1D2D3DCommitCallExpr(std::vector<int> DimIdxs) {
-  StringRef FuncNameRef(FuncName);
+std::vector<std::string>
+FFTPlanAPIInfo::update1D2D3DCommitPrefix(std::vector<std::string> Dims) {
+  // Dims[rank-1] is innermost, Dims[0] is outermost
+  std::vector<std::string> ResultStmts;
   std::string SetStr = DescrMemberCallPrefix + "set_value";
 
   std::string InputStrideName =
@@ -2545,78 +2683,72 @@ void FFTPlanAPIInfo::update1D2D3DCommitCallExpr(std::vector<int> DimIdxs) {
       "output_stride_ct" +
       std::to_string(DpctGlobalInfo::getSuffixIndexGlobalThenInc());
 
-  std::vector<std::string> Dims;
-  for (const auto &Idx : DimIdxs)
-    Dims.emplace_back(ArgsList[Idx]);
-
-  updateCommitCallExpr(Dims);
-
   if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z) {
-    if (FuncNameRef.endswith("1d")) {
+    if (Dims.size() == 1) {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                  "[2] = {0, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                "[2] = {0, 1};");
-    } else if (FuncNameRef.endswith("2d")) {
+    } else if (Dims.size() == 2) {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                  "[3] = {0, (" + Dims[1] + "/2+1)*2, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                "[3] = {0, (" + Dims[1] + "/2+1), 1};");
     } else {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                  "[4] = {0, " + Dims[1] + "*(" + Dims[2] +
                                  "/2+1)*2, (" + Dims[2] + "/2+1)*2, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                "[4] = {0, " + Dims[1] + "*(" + Dims[2] +
                                "/2+1), (" + Dims[2] + "/2+1), 1};");
     }
 
     if (PlacementFromExec == FFTPlacementType::inplace) {
-      PrefixStmts.emplace_back(
+      ResultStmts.emplace_back(
           SetStr + "(oneapi::mkl::dft::config_param::INPUT_STRIDES, " +
           InputStrideName + ");");
     }
-    PrefixStmts.emplace_back(
+    ResultStmts.emplace_back(
         SetStr + "(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, " +
         OutputStrideName + ");");
   } else if (FFTType == FFTTypeEnum::C2R || FFTType == FFTTypeEnum::Z2D) {
-    if (FuncNameRef.endswith("1d")) {
+    if (Dims.size() == 1) {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                  "[2] = {0, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                "[2] = {0, 1};");
-    } else if (FuncNameRef.endswith("2d")) {
+    } else if (Dims.size() == 2) {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                  "[3] = {0, (" + Dims[1] + "/2+1)*2, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                "[3] = {0, (" + Dims[1] + "/2+1), 1};");
     } else {
       if (PlacementFromExec == FFTPlacementType::inplace) {
-        PrefixStmts.emplace_back("std::int64_t " + OutputStrideName +
+        ResultStmts.emplace_back("std::int64_t " + OutputStrideName +
                                  "[4] = {0, " + Dims[1] + "*(" + Dims[2] +
                                  "/2+1)*2, (" + Dims[2] + "/2+1)*2, 1};");
       }
-      PrefixStmts.emplace_back("std::int64_t " + InputStrideName +
+      ResultStmts.emplace_back("std::int64_t " + InputStrideName +
                                "[4] = {0, " + Dims[1] + "*(" + Dims[2] +
                                "/2+1), (" + Dims[2] + "/2+1), 1};");
     }
 
     if (PlacementFromExec == FFTPlacementType::inplace) {
-      PrefixStmts.emplace_back(
+      ResultStmts.emplace_back(
           SetStr + "(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, " +
           OutputStrideName + ");");
     }
-    PrefixStmts.emplace_back(
+    ResultStmts.emplace_back(
         SetStr + "(oneapi::mkl::dft::config_param::INPUT_STRIDES, " +
         InputStrideName + ");");
   } else if (FFTType == FFTTypeEnum::Unknown) {
@@ -2624,7 +2756,24 @@ void FFTPlanAPIInfo::update1D2D3DCommitCallExpr(std::vector<int> DimIdxs) {
                              Diagnostics::UNDEDUCED_PARAM, true, "FFT type",
                              "the INPUT_STRIDES and the OUTPUT_STRIDES");
   }
+  return ResultStmts;
 }
+
+void FFTPlanAPIInfo::update1D2D3DCommitCallExpr(std::vector<int> DimIdxs) {
+  std::vector<std::string> Dims;
+  for (const auto &Idx : DimIdxs)
+    Dims.emplace_back(ArgsList[Idx]);
+
+  updateCommitCallExpr(Dims);
+
+  Dims.clear();
+  for (const auto &Idx : DimIdxs)
+    Dims.emplace_back(ArgsList[Idx]);
+
+  std::vector<std::string> Res = update1D2D3DCommitPrefix(Dims);
+  PrefixStmts.insert(PrefixStmts.end(), Res.begin(), Res.end());
+}
+
 void FFTPlanAPIInfo::updateCommitCallExpr(std::vector<std::string> Dims) {
   if (FuncName.substr(0, 9) == "cufftMake") {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
@@ -2633,11 +2782,15 @@ void FFTPlanAPIInfo::updateCommitCallExpr(std::vector<std::string> Dims) {
   }
 
   if (PrecAndDomainStr.empty()) {
-    DiagnosticsUtils::report(FilePath, InsertOffsets.first,
-                             Diagnostics::UNDEDUCED_TYPE, true,
-                             "FFT precision and domain type");
-    PrecAndDomainStr =
-        "dpct_placeholder/*Fix the precision and domain type manually*/";
+    if (DpctGlobalInfo::getPrecAndDomPairSet().size() == 1) {
+      PrecAndDomainStr = *(DpctGlobalInfo::getPrecAndDomPairSet().begin());
+    } else {
+      DiagnosticsUtils::report(FilePath, InsertOffsets.first,
+                               Diagnostics::UNDEDUCED_TYPE, true,
+                               "FFT precision and domain type");
+      PrecAndDomainStr =
+          "dpct_placeholder/*Fix the precision and domain type manually*/";
+    }
   }
 
   CallExprRepl = CallExprRepl + DescrMemberCallPrefix +
@@ -2745,28 +2898,34 @@ void FFTPlanAPIInfo::replaceText() {
   }
 
   if (InsertOffsets.first == InsertOffsets.second) {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, InsertOffsets.first, 0,
-            OutPrefixStmts.getAsString(IndentStr, false) + CallExprRepl +
-                OutSuffixStmts.getAsString(IndentStr, true) + getNL() +
-                IndentStr,
-            nullptr));
+    auto InsertRepl = std::make_shared<ExtReplacement>(
+        FilePath, InsertOffsets.first, 0,
+        OutPrefixStmts.getAsString(IndentStr, false) + CallExprRepl +
+            OutSuffixStmts.getAsString(IndentStr, true) + getNL() + IndentStr,
+        nullptr);
+    InsertRepl->setBlockLevelFormatFlag(true);
+    DpctGlobalInfo::getInstance().addReplacement(InsertRepl);
+
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLen,
                                          OutRepl, nullptr));
   } else {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, InsertOffsets.first, 0,
-            OutPrefixStmts.getAsString(IndentStr, false), nullptr));
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLen,
-                                         OutRepl, nullptr));
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, InsertOffsets.second, 0,
-            OutSuffixStmts.getAsString(IndentStr, true), nullptr));
+    auto InsertBeforeRepl = std::make_shared<ExtReplacement>(
+        FilePath, InsertOffsets.first, 0,
+        OutPrefixStmts.getAsString(IndentStr, false), nullptr);
+    auto ReplaceRepl = std::make_shared<ExtReplacement>(
+        FilePath, ReplaceOffset, ReplaceLen, OutRepl, nullptr);
+    auto InsertAfterRepl = std::make_shared<ExtReplacement>(
+        FilePath, InsertOffsets.second, 0,
+        OutSuffixStmts.getAsString(IndentStr, true), nullptr);
+
+    InsertBeforeRepl->setBlockLevelFormatFlag(true);
+    ReplaceRepl->setBlockLevelFormatFlag(true);
+    InsertAfterRepl->setBlockLevelFormatFlag(true);
+
+    DpctGlobalInfo::getInstance().addReplacement(InsertBeforeRepl);
+    DpctGlobalInfo::getInstance().addReplacement(ReplaceRepl);
+    DpctGlobalInfo::getInstance().addReplacement(InsertAfterRepl);
   }
 }
 
@@ -2812,6 +2971,9 @@ void FFTPlanAPIInfo::replacementLocation(LibraryMigrationLocations Locations) {
 
 void FFTDescriptorTypeInfo::buildInfo(std::string FilePath,
                                           unsigned int Offset) {
+  if (SkipGeneration)
+    return;
+
   if (!PrecAndDom.empty() && IsValid) {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(

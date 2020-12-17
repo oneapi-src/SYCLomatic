@@ -424,6 +424,16 @@ protected:
                                    LibraryMigrationStrings Strings,
                                    LibraryMigrationLocations Locations,
                                    std::string FuncName, const CallExpr *CE) {
+    if (Flags.IsFunctionPointer) {
+      std::string R = Strings.PrefixInsertStr + Strings.Repl + ";" +
+                      Strings.SuffixInsertStr;
+      auto RT = new ReplaceText(Locations.FuncPtrDeclBegin,
+                                Locations.FuncPtrDeclLen, std::move(R));
+      RT->setBlockLevelFormatFlag();
+      emplaceTransformation(std::move(RT));
+      return;
+    }
+
     if (Flags.NeedUseLambda) {
       if (Strings.PrefixInsertStr.empty() && Strings.SuffixInsertStr.empty()) {
         // If there is one API call in the migrted code, it is unnecessary to
@@ -447,13 +457,17 @@ protected:
                          Strings.SuffixInsertStr + getNL() + Strings.IndentStr;
 
         if (Flags.MoveOutOfMacro && Flags.IsMacroArg) {
-          emplaceTransformation(new InsertText(Locations.OutOfMacroInsertLoc,
-                                               std::move(InsertString)));
+          auto IT = new InsertText(Locations.OutOfMacroInsertLoc,
+                                   std::move(InsertString));
+          IT->setBlockLevelFormatFlag();
+          emplaceTransformation(std::move(IT));
           report(Locations.OutOfMacroInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
                  true, "function-like macro");
         } else {
-          emplaceTransformation(new InsertText(Locations.OuterInsertLoc,
-                                               std::move(InsertString)));
+          auto IT =
+              new InsertText(Locations.OuterInsertLoc, std::move(InsertString));
+          IT->setBlockLevelFormatFlag();
+          emplaceTransformation(std::move(IT));
           report(Locations.OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
                  true,
                  Flags.OriginStmtType == "if" ? "an " + Flags.OriginStmtType
@@ -471,14 +485,14 @@ protected:
                   Strings.PrefixInsertStr,
               std::string(";") + Strings.SuffixInsertStr + getNL() +
                   Strings.IndentStr + "return 0;" + getNL() +
-                  Strings.IndentStr + std::string("}()"));
+                  Strings.IndentStr + std::string("}()"), true);
         } else {
           insertAroundRange(
               Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
               std::string("[&](){") + getNL() + Strings.IndentStr +
                   Strings.PrefixInsertStr,
               std::string(";") + Strings.SuffixInsertStr + getNL() +
-                  Strings.IndentStr + std::string("}()"));
+                  Strings.IndentStr + std::string("}()"), true);
         }
         emplaceTransformation(
             new ReplaceText(Locations.PrefixInsertLoc, Locations.Len,
@@ -494,12 +508,12 @@ protected:
               Strings.PrePrefixInsertStr + std::string("{") + getNL() +
                   Strings.IndentStr + Strings.PrefixInsertStr,
               Strings.SuffixInsertStr + getNL() + Strings.IndentStr +
-                  std::string("}"));
+                  std::string("}"), true);
         }
       } else {
         insertAroundRange(Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
                           Strings.PrePrefixInsertStr + Strings.PrefixInsertStr,
-                          std::move(Strings.SuffixInsertStr));
+                          std::move(Strings.SuffixInsertStr), true);
       }
       if (Flags.IsAssigned) {
         insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "(",

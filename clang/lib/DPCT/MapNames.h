@@ -351,6 +351,9 @@ public:
 
   static const MapTy DeviceRandomGeneratorTypeMap;
 
+  static const std::map<std::string, std::vector<unsigned int>>
+      FFTPlanAPINeedParenIdxMap;
+
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
     static const std::string EmptyString;

@@ -55,6 +55,10 @@ class Token;
 class LangOptions;
 class DynTypedNode;
 
+namespace dpct{
+enum class FFTTypeEnum;
+} // namespace dpct
+
 namespace tooling {
 class Range;
 class Replacements;
@@ -459,4 +463,7 @@ const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
+clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
+std::string getPrecAndDomainStrFromValue(std::int64_t Value);
+std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName);
 #endif // DPCT_UTILITY_H

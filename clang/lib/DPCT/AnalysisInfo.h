@@ -17,6 +17,7 @@
 #include "ExtReplacements.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
+#include "LibraryAPIMigration.h"
 #include <bitset>
 #include <unordered_set>
 #include <vector>
@@ -63,90 +64,6 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
-struct FFTPlanAPIInfo;
-
-enum class FFTDirectionType : int {
-  uninitialized = 0,
-  unknown = 1,
-  forward = 2,
-  backward = 3
-};
-enum class FFTPlacementType : int {
-  uninitialized = 0,
-  unknown = 1,
-  inplace = 2,
-  outofplace = 3
-};
-enum class FFTTypeEnum : int {
-  C2R = 0,
-  R2C = 1,
-  C2C = 2,
-  Z2D = 3,
-  D2Z = 4,
-  Z2Z = 5,
-  Unknown = 6
-};
-
-struct FFTExecAPIInfo {
-  FFTDirectionType Direction = FFTDirectionType::uninitialized;
-  FFTPlacementType Placement = FFTPlacementType::uninitialized;
-
-  void updateDirectionFromExec(FFTDirectionType NewDirection) {
-    if (Direction == FFTDirectionType::uninitialized) {
-      Direction = NewDirection;
-      return;
-    }
-    if (Direction == NewDirection) {
-      return;
-    }
-
-    // different directions and Direction is initialized
-    Direction = FFTDirectionType::unknown;
-    return;
-  }
-  void updatePlacementFromExec(FFTPlacementType NewPlacement) {
-    if (Placement == FFTPlacementType::uninitialized) {
-      Placement = NewPlacement;
-      return;
-    }
-    if (Placement == NewPlacement) {
-      return;
-    }
-
-    // different placements and Placement is initialized
-    Placement = FFTPlacementType::unknown;
-    return;
-  }
-};
-
-struct LibraryMigrationFlags {
-  bool NeedUseLambda = false;
-  bool CanAvoidUsingLambda = false;
-  bool IsMacroArg = false;
-  bool CanAvoidBrace = false;
-  bool IsAssigned = false;
-  bool MoveOutOfMacro = false;
-  std::string OriginStmtType;
-  bool IsPrefixEmpty = false;
-  bool IsSuffixEmpty = false;
-  bool IsPrePrefixEmpty = false;
-};
-struct LibraryMigrationLocations {
-  SourceLocation PrefixInsertLoc;
-  SourceLocation SuffixInsertLoc;
-  SourceLocation OuterInsertLoc;
-  SourceLocation FuncNameBegin;
-  SourceLocation FuncCallEnd;
-  SourceLocation OutOfMacroInsertLoc;
-  unsigned int Len = 0;
-};
-struct LibraryMigrationStrings {
-  std::string PrePrefixInsertStr;
-  std::string PrefixInsertStr;
-  std::string Repl;
-  std::string SuffixInsertStr;
-  std::string IndentStr;
-};
 
 // This struct saves the engine's type.
 // These rules determine the engine's type:
@@ -190,6 +107,10 @@ struct FFTDescriptorTypeInfo {
   unsigned int Length;
   std::string PrecAndDom;
   bool IsValid = true;
+  // E.g., if cufftExec API is declared as a function pointer, then all
+  // declaration will be rewrite to a lambda, the paramter type can be deduced
+  // from function name. So this type replacement and warning can be skipped.
+  bool SkipGeneration = false;
 };
 
 struct EventSyncTypeInfo {
@@ -1019,6 +940,9 @@ public:
   inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
     return PrecAndDomPairSet;
   }
+  inline static std::unordered_set<FFTTypeEnum> &getFFTTypeSet() {
+    return FFTTypeSet;
+  }
 
   // This set collects all the different vector size of the return value of the
   // generate API. If the size of this set is 1, then we can use this vec_size
@@ -1700,6 +1624,7 @@ private:
   static std::string CudaPath;
   static UsmLevel UsmLvl;
   static std::unordered_set<std::string> PrecAndDomPairSet;
+  static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<int> DeviceRNGReturnNumSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
@@ -3587,6 +3512,7 @@ struct FFTPlanAPIInfo {
   FFTTypeEnum FFTType; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
   int QueueIndex = -1;
   std::vector<std::string> ArgsList;
+  std::vector<std::string> ArgsListAddRequiredParen;
   std::string IndentStr;
   std::string FuncName;
   LibraryMigrationFlags Flags;
@@ -3613,13 +3539,19 @@ struct FFTPlanAPIInfo {
 
   void updateManyCommitCallExpr();
   void update1D2D3DCommitCallExpr(std::vector<int> DimIdxs);
+  std::vector<std::string>
+  update1D2D3DCommitPrefix(std::vector<std::string> Dims);
   void updateCommitCallExpr(std::vector<std::string> Dims);
   void addInfo(std::string PrecAndDomainStr, FFTTypeEnum FFTType,
                int QueueIndex, std::vector<std::string> ArgsList,
+               std::vector<std::string> ArgsListAddRequiredParen,
                std::string IndentStr, std::string FuncName,
                LibraryMigrationFlags Flags, std::int64_t Rank,
                std::string DescrMemberCallPrefix, std::string DescStr);
   void setValueFor1DBatched();
+  std::vector<std::string>
+  setValueForBasicManyBatched(std::vector<std::string> Dims,
+                              std::vector<std::string> DimsWithoutParen);
   void linkInfo();
   void replaceText();
   void replacementLocation(LibraryMigrationLocations Locations);

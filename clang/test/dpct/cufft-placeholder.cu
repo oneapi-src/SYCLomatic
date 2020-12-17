@@ -72,13 +72,15 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the FFT type could not be deduced. You need to update the FWD_DISTANCE and the BWD_DISTANCE.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
-  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
   //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>(dpct_placeholder/*Fix the dimensions manually*/);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 11);
+  //CHECK-NEXT:if (inembed != nullptr && onembed != nullptr) {
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:}
   //CHECK-NEXT:plan1->commit(q_ct1);
   cufftHandle plan1;
   cufftType_t type1 = CUFFT_Z2D;
@@ -104,13 +106,15 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the FFT type could not be deduced. You need to update the FWD_DISTANCE and the BWD_DISTANCE.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
-  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
   //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>(dpct_placeholder/*Fix the dimensions manually*/);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
+  //CHECK-NEXT:if (inembed != nullptr && onembed != nullptr) {
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[dpct_placeholder/*Fix the dimensions manually*/] = {dpct_placeholder/*Fix the stride manually*/};
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:}
   //CHECK-NEXT:plan2->commit(q_ct1);
   cufftHandle plan2;
   cufftType_t type2 = CUFFT_C2R;

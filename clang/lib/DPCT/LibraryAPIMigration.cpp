@@ -19,6 +19,7 @@
 
 namespace clang {
 namespace dpct {
+
 /// Set the prec and domain in the FFTDescriptorTypeInfo of the declaration of
 /// \p DescIdx
 void FFTFunctionCallBuilder::addDescriptorTypeInfo(
@@ -67,21 +68,7 @@ FFTFunctionCallBuilder::getPrecAndDomainStr(unsigned int PrecDomainIdx) {
       TheCallExpr->getArg(PrecDomainIdx)
           ->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
-    std::string Prec, Domain;
-    if (Value == 0x2a || Value == 0x2c) {
-      Prec = "oneapi::mkl::dft::precision::SINGLE";
-      Domain = "oneapi::mkl::dft::domain::REAL";
-    } else if (Value == 0x29) {
-      Prec = "oneapi::mkl::dft::precision::SINGLE";
-      Domain = "oneapi::mkl::dft::domain::COMPLEX";
-    } else if (Value == 0x6a || Value == 0x6c) {
-      Prec = "oneapi::mkl::dft::precision::DOUBLE";
-      Domain = "oneapi::mkl::dft::domain::REAL";
-    } else {
-      Prec = "oneapi::mkl::dft::precision::DOUBLE";
-      Domain = "oneapi::mkl::dft::domain::COMPLEX";
-    }
-    PrecAndDomain = Prec + ", " + Domain;
+    PrecAndDomain = getPrecAndDomainStrFromValue(Value);
   }
   return PrecAndDomain;
 }
@@ -92,53 +79,53 @@ FFTTypeEnum FFTFunctionCallBuilder::getFFTType(unsigned int PrecDomainIdx) {
       TheCallExpr->getArg(PrecDomainIdx)
           ->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
-    switch (Value) {
-    case 0x2a:
-      return FFTTypeEnum::R2C;
-    case 0x2c:
-      return FFTTypeEnum::C2R;
-    case 0x29:
-      return FFTTypeEnum::C2C;
-    case 0x6a:
-      return FFTTypeEnum::D2Z;
-    case 0x6c:
-      return FFTTypeEnum::Z2D;
-    case 0x69:
-      return FFTTypeEnum::Z2Z;
-    default:
-      return FFTTypeEnum::Unknown;
-    }
+    return getFFTTypeFromValue(Value);
   }
   return FFTTypeEnum::Unknown;
 }
 
-/// Add buffer decl
+/// Add buffer decl.
 void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
                                               const std::string &TypeStr,
-                                              std::string ExtraIndent) {
+                                              std::string PointerName) {
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
     std::string BufferDecl;
-    std::string PointerName = dpct::ExprAnalysis::ref(TheCallExpr->getArg(Idx));
-    ArgsList[Idx] =
-        getTempNameForExpr(TheCallExpr->getArg(Idx), true, true) + "buf_ct" +
-        std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    BufferDecl = ExtraIndent + "auto " + ArgsList[Idx] +
-                 " = dpct::get_buffer<" + TypeStr + ">(" + PointerName + ");";
+    if (PointerName.empty()) {
+      PointerName = dpct::ExprAnalysis::ref(TheCallExpr->getArg(Idx));
+      ArgsList[Idx] =
+          getTempNameForExpr(TheCallExpr->getArg(Idx), true, true) + "buf_ct" +
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+    } else {
+      ArgsList[Idx] =
+          PointerName + "_buf_ct" +
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
+    }
+
+    BufferDecl = "auto " + ArgsList[Idx] + " = dpct::get_buffer<" + TypeStr +
+                 ">(" + PointerName + ");";
     PrefixStmts.emplace_back(BufferDecl);
   } else {
-    QualType QT = TheCallExpr->getArg(Idx)->getType();
-    if (QT->isPointerType() &&
-        (QT->getPointeeType().getAsString() == TypeStr)) {
-      return;
-    }
-    ArgsList[Idx] = "(" + TypeStr + "*)" + ArgsList[Idx];
+    if ((Idx == 1 && (FuncName[9] == 'C' || FuncName[9] == 'Z')) ||
+        (Idx == 2 && (FuncName[11] == 'C' || FuncName[11] == 'Z')))
+      ArgsList[Idx] = "(" + TypeStr + "*)" + ArgsList[Idx];
   }
 }
 
 /// build exec API info
 void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir) {
-  auto getType = [=](const char C) -> std::string {
+  auto getRealDomainType = [=](const char C) -> std::string {
     if (C == 'Z' || C == 'D')
+      return "double";
+    else
+      return "float";
+  };
+
+  auto getType = [=](const char C) -> std::string {
+    if (C == 'Z')
+      return MapNames::getClNamespace() + "::double2";
+    else if (C == 'C')
+      return MapNames::getClNamespace() + "::float2";
+    else if (C == 'D')
       return "double";
     else
       return "float";
@@ -156,18 +143,63 @@ void FFTFunctionCallBuilder::assembleExecCallExpr(int64_t Dir) {
 
   std::string OriginalInputPtr = ArgsList[1];
   std::string OriginalOutputPtr = ArgsList[2];
-  updateBufferArgs(1, getType(FuncName[9]));
+
+  if (Flags.IsFunctionPointer) {
+    auto LocInfo =
+        DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclHandleTypeBegin);
+    auto FileInfo = DpctGlobalInfo::getInstance().insertFile(LocInfo.first);
+    auto &M = FileInfo->getFFTDescriptorTypeMap();
+    auto Iter = M.find(LocInfo.second);
+    if (Iter == M.end()) {
+      FFTDescriptorTypeInfo FDTI(0);
+      FDTI.SkipGeneration = true;
+      M.insert(std::make_pair(LocInfo.second, FDTI));
+    } else {
+      Iter->second.SkipGeneration = true;
+    }
+
+    std::string WrapperBegin =
+        "auto " + FuncPtrName +
+        " = [](std::shared_ptr<oneapi::mkl::dft::descriptor<" +
+        getPrecAndDomainStrFromExecFuncName(FuncName) + ">> desc, " +
+        getType(FuncName[9]) + " *in_data, " + getType(FuncName[11]) +
+        " *out_data";
+    if (FuncName[9] == FuncName[11])
+      WrapperBegin = WrapperBegin + ", int dir";
+    WrapperBegin = WrapperBegin + "){";
+    PrefixStmts.emplace_back(std::move(WrapperBegin));
+
+    updateBufferArgs(1, getRealDomainType(FuncName[9]), OriginalInputPtr);
+  } else {
+    updateBufferArgs(1, getRealDomainType(FuncName[9]));
+  }
 
   PrefixStmts.emplace_back("if ((void *)" + OriginalInputPtr + " == (void *)" +
                            OriginalOutputPtr + ") {");
-  PrefixStmts.emplace_back(ComputeAPI + "(" +
-                           getDrefName(TheCallExpr->getArg(0)) + ", " +
-                           ArgsList[1] + ");");
+  if (Flags.IsFunctionPointer) {
+    PrefixStmts.emplace_back(ComputeAPI + "(*" + ArgsList[0] + ", " +
+                             ArgsList[1] + ");");
+  } else {
+    PrefixStmts.emplace_back(ComputeAPI + "(" +
+                             getDrefName(TheCallExpr->getArg(0)) + ", " +
+                             ArgsList[1] + ");");
+  }
+
   PrefixStmts.emplace_back("} else {");
-  updateBufferArgs(2, getType(FuncName[11]));
-  CallExprRepl = ComputeAPI + "(" + getDrefName(TheCallExpr->getArg(0)) + ", " +
-                 ArgsList[1] + ", " + ArgsList[2] + ")";
+
+  if (Flags.IsFunctionPointer) {
+    updateBufferArgs(2, getRealDomainType(FuncName[11]), OriginalOutputPtr);
+    CallExprRepl = ComputeAPI + "(*" + ArgsList[0] + ", " + ArgsList[1] + ", " +
+                   ArgsList[2] + ")";
+  } else {
+    updateBufferArgs(2, getRealDomainType(FuncName[11]));
+    CallExprRepl = ComputeAPI + "(" + getDrefName(TheCallExpr->getArg(0)) +
+                   ", " + ArgsList[1] + ", " + ArgsList[2] + ")";
+  }
   SuffixStmts.emplace_back("}");
+  if (Flags.IsFunctionPointer) {
+    SuffixStmts.emplace_back("}");
+  }
 }
 
 std::string FFTFunctionCallBuilder::getPrePrefixString() {
@@ -202,6 +234,9 @@ std::string FFTFunctionCallBuilder::getCallExprReplString() {
 bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
     const LibraryMigrationFlags Flags, SourceLocation &TypeBegin,
     int &TypeLength) {
+  if (Flags.IsFunctionPointer)
+    return false;
+
   auto &SM = DpctGlobalInfo::getSourceManager();
   // Now this function only covers this pattern:
   // cufftResult R = cufftAPI();
@@ -260,10 +295,53 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   return true;
 }
 
-void initVars(const CallExpr *CE, LibraryMigrationFlags &Flags,
+void initVars(const CallExpr *CE, const VarDecl *VD,
+              LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations) {
   auto &SM = DpctGlobalInfo::getSourceManager();
+
+  if (Flags.IsFunctionPointer) {
+    Locations.FuncPtrDeclBegin = SM.getExpansionLoc(VD->getBeginLoc());
+    SourceLocation FuncPtrDeclEnd = SM.getExpansionLoc(VD->getEndLoc());
+    FuncPtrDeclEnd = FuncPtrDeclEnd.getLocWithOffset(Lexer::MeasureTokenLength(
+        FuncPtrDeclEnd, SM, DpctGlobalInfo::getContext().getLangOpts()));
+    Locations.FuncPtrDeclLen =
+        SM.getDecomposedLoc(FuncPtrDeclEnd).second -
+        SM.getDecomposedLoc(Locations.FuncPtrDeclBegin).second;
+    ReplaceStrs.IndentStr = getIndent(Locations.FuncPtrDeclBegin, SM).str();
+
+    TypeLoc TL = VD->getTypeSourceInfo()->getTypeLoc();
+    QualType QT = VD->getType();
+    if (QT->isPointerType()) {
+      QT = QT->getPointeeType();
+      TL = TL.getAs<PointerTypeLoc>().getPointeeLoc();
+    } else {
+      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
+      return;
+    }
+
+    if (QT->getAs<ParenType>()) {
+      QT = QT->getAs<ParenType>()->getInnerType();
+      TL = TL.getAs<ParenTypeLoc>().getInnerLoc();
+    } else {
+      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
+      return;
+    }
+
+    if (QT->getAs<FunctionProtoType>()) {
+      TL = TL.getAs<FunctionProtoTypeLoc>()
+               .getParam(0)
+               ->getTypeSourceInfo()
+               ->getTypeLoc();
+      Locations.FuncPtrDeclHandleTypeBegin =
+          SM.getExpansionLoc(TL.getBeginLoc());
+    } else {
+      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
+      return;
+    }
+    return;
+  }
 
   Locations.FuncNameBegin = CE->getBeginLoc();
   Locations.FuncCallEnd = CE->getEndLoc();
@@ -369,7 +447,7 @@ void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
     DpctGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
 
   FPAInfo.addInfo(PrecAndDomainStr, FFTType, Index, ArgsList,
-                  IndentStr, FuncName, Flags, Rank,
+                  ArgsListAddRequiredParen, IndentStr, FuncName, Flags, Rank,
                   getDescrMemberCallPrefix(), getDescr());
 }
 
@@ -410,6 +488,17 @@ void FFTFunctionCallBuilder::updateFFTExecAPIInfo(
     assembleExecCallExpr(1);
     DpctGlobalInfo::insertOrUpdateFFTExecAPIInfo(
         FFTExecAPIInfoKey, FFTDirectionType::backward, Placement);
+  }
+}
+
+void FFTFunctionCallBuilder::updateFFTExecAPIInfo() {
+  StringRef FuncNameRef(FuncName);
+  if (FuncNameRef.endswith("C2C") || FuncNameRef.endswith("Z2Z")) {
+    assembleExecCallExpr(int64_t(0));
+  } else if (FuncNameRef.endswith("R2C") || FuncNameRef.endswith("D2Z")) {
+    assembleExecCallExpr(-1);
+  } else {
+    assembleExecCallExpr(1);
   }
 }
 
