@@ -1,2 +1,22 @@
-curl-7.72.0 
+====================================================================================================================
+*current used  version: curl-7.74.0
+====================================================================================================================
+*steps to update libcurl into dpct project***
+********************************************************************************************************************
+1. Download the target version of the libcurl from  https://curl.se/download.html
+2  Linux build.
+   $./configure --prefix=/home/zwang36/libcurl/curl-7.74/linux-install --without-ssl --without-ca-fallback --without-libidn2 --without-nghttp2 --without-libidn2 --without-mbedtls --without-zlib --disable-ldap --disable-ldaps
+   $ make -j
+   $ make install
+3  Windows build.
+   a. start Visual Studio X64 command line
+   b. cd z:\libcurl\curl-7.74\windows-build\curl-7.74.0\winbuild
+   c. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
+   d. check the result in z:\libcurl\curl-7.74\windows-build\curl-7.74.0\builds folder
 
+4. Update header file into dpct project
+   a. Copy header files from z:\libcurl\curl-7.74\windows-build\curl-7.74.0\builds\libcurl-vc-x64-release-static\include to dpd_icl-syclct/clang/lib/DPCT/libcurl/include folder
+5. Update static library into dpct project
+   a. Copy libcurl.a to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/linux
+   b. Copy libcurl_a.lib to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/win
+=====================================================================================================================
