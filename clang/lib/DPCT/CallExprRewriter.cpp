@@ -106,6 +106,8 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
 
 // Judge if a function is declared in user code or not
 bool isTargetMathFunction(const FunctionDecl *FD) {
+  if (!FD)
+    return false;
   auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
   if (isChildOrSamePath(DpctGlobalInfo::getInRoot(), FilePath))
     return false;
