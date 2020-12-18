@@ -47,7 +47,7 @@ void recoverCheckpoint(int Signo){
   if( EnableErrorRecover && Signo == SIGSEGV) {
       if(CheckPointStage==CHECKPOINT_PROCESSING_FILE) {
         std::string FaultMsg = "dpct error: segmentation fault."
-                             " Intel(R) DPC++ Compatibility Tool trys to recover by"
+                             " Intel(R) DPC++ Compatibility Tool tries to recover by"
                              "skipping current file.\n";
         PrintReportOnFault(FaultMsg);
         if(!CurFileMeetErr) {
@@ -136,7 +136,7 @@ static void SetHandler(){
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
   recoverCheckpoint(Signo);
   std::string FaultMsg = "\ndpct error: meet signal:" + SigDescription(Signo) +
-                         " Intel(R) DPC++ Compatibility Tool trys to write "
+                         " Intel(R) DPC++ Compatibility Tool tries to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   dpctExit(MigrationError);
