@@ -383,6 +383,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         FormatResult =
             formatFile(Iter.first, Iter.second, FormatChanges) && FormatResult;
 
+        // If range is "all", one file only need to be formated once.
+        if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all)
+          continue;
+
         auto BlockLevelFormatIter =
             FileBlockLevelFormatRangesMap.find(Iter.first);
         if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {

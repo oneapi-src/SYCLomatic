@@ -1209,20 +1209,20 @@ void UnwrappedLineParser::parseStructuralElement() {
       nextToken();
       if (FormatTok->Tok.is(tok::l_brace)) {
 #ifdef INTEL_CUSTOMIZATION
-        if (!Style.IndentExternBlock) {
-          if ((formatRangeGetter() == FormatRange::all &&
-               Style.BraceWrapping.AfterExternBlock) ||
-              (formatRangeGetter() == FormatRange::migrated &&
-               isAllSpaceUntilNL(FormatTok, SourceMgr)))
-            addUnwrappedLine();
-          parseBlock(/*MustBeDeclaration=*/true,
-                     /*AddLevel=*/Style.BraceWrapping.AfterExternBlock);
+        if (formatRangeGetter() == FormatRange::migrated) {
+          if (!Style.IndentExternBlock) {
+            if (isAllSpaceUntilNL(FormatTok, SourceMgr)){
+              addUnwrappedLine();
+            }
+            parseBlock(/*MustBeDeclaration=*/true,
+                       /*AddLevel=*/Style.BraceWrapping.AfterExternBlock);
+          } else {
+            parseBlock(/*MustBeDeclaration=*/true,
+                       /*AddLevel=*/Style.IndentExternBlock ==
+                           FormatStyle::IEBS_Indent);
+          }
         } else {
-          parseBlock(/*MustBeDeclaration=*/true,
-                     /*AddLevel=*/Style.IndentExternBlock ==
-                         FormatStyle::IEBS_Indent);
-        }
-#else
+#endif
         if (!Style.IndentExternBlock) {
           if (Style.BraceWrapping.AfterExternBlock) {
             addUnwrappedLine();
@@ -1233,6 +1233,8 @@ void UnwrappedLineParser::parseStructuralElement() {
           parseBlock(/*MustBeDeclaration=*/true,
                      /*AddLevel=*/Style.IndentExternBlock ==
                          FormatStyle::IEBS_Indent);
+        }
+#ifdef INTEL_CUSTOMIZATION
         }
 #endif
         addUnwrappedLine();
@@ -1457,15 +1459,15 @@ void UnwrappedLineParser::parseStructuralElement() {
         // FIXME: Figure out cases where this is not true, and add projections
         // for them (the one we know is missing are lambdas).
 #ifdef INTEL_CUSTOMIZATION
-        if ((Style.BraceWrapping.AfterFunction &&
-             formatRangeGetter() == FormatRange::all) ||
-            (formatRangeGetter() == FormatRange::migrated &&
-             isAllSpaceUntilNL(FormatTok, SourceMgr))) {
-          addUnwrappedLine();
-        }
-#else
+        if (formatRangeGetter() == FormatRange::migrated) {
+          if (isAllSpaceUntilNL(FormatTok, SourceMgr))
+            addUnwrappedLine();
+        } else {
+#endif
         if (Style.BraceWrapping.AfterFunction)
           addUnwrappedLine();
+#ifdef INTEL_CUSTOMIZATION
+        }
 #endif
         FormatTok->setType(TT_FunctionLBrace);
         parseBlock(/*MustBeDeclaration=*/false);
@@ -2106,18 +2108,22 @@ void UnwrappedLineParser::parseIfThenElse() {
       NeedsUnwrappedLine = true;
   } else {
 #ifdef INTEL_CUSTOMIZATION
-    if (addUnwrappedLine()) {
+    if (formatRangeGetter() == FormatRange::migrated) {
+      if (addUnwrappedLine()) {
+        ++Line->Level;
+        parseStructuralElement();
+        --Line->Level;
+      } else {
+        parseStructuralElement();
+      }
+    } else {
+#endif
+      addUnwrappedLine();
       ++Line->Level;
       parseStructuralElement();
       --Line->Level;
-    } else {
-      parseStructuralElement();
+#ifdef INTEL_CUSTOMIZATION
     }
-#else
-    addUnwrappedLine();
-    ++Line->Level;
-    parseStructuralElement();
-    --Line->Level;
 #endif
   }
   if (FormatTok->Tok.is(tok::kw_else)) {
@@ -2176,19 +2182,20 @@ void UnwrappedLineParser::parseTryCatch() {
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
 #ifdef INTEL_CUSTOMIZATION
-    if ((formatRangeGetter() == FormatRange::all &&
-         Style.BraceWrapping.BeforeCatch) ||
-        (formatRangeGetter() == FormatRange::migrated &&
-         isAllSpaceUntilNL(FormatTok, SourceMgr))) {
-      addUnwrappedLine();
+    if (formatRangeGetter() == FormatRange::migrated) {
+      if (isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+        addUnwrappedLine();
+      } else {
+        NeedsUnwrappedLine = true;
+      }
     } else {
-      NeedsUnwrappedLine = true;
-    }
-#else
+#endif
     if (Style.BraceWrapping.BeforeCatch) {
       addUnwrappedLine();
     } else {
       NeedsUnwrappedLine = true;
+    }
+#ifdef INTEL_CUSTOMIZATION
     }
 #endif
   } else if (!FormatTok->is(tok::kw_catch)) {
@@ -2252,15 +2259,16 @@ void UnwrappedLineParser::parseNamespace() {
   }
   if (FormatTok->Tok.is(tok::l_brace)) {
 #ifdef INTEL_CUSTOMIZATION
-    if ((formatRangeGetter() == FormatRange::all &&
-         ShouldBreakBeforeBrace(Style, InitialToken)) ||
-        (formatRangeGetter() == FormatRange::migrated &&
-         isAllSpaceUntilNL(FormatTok, SourceMgr))) {
-      addUnwrappedLine();
-    }
-#else
+    if (formatRangeGetter() == FormatRange::migrated) {
+      if (isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+        addUnwrappedLine();
+      }
+    } else {
+#endif
     if (ShouldBreakBeforeBrace(Style, InitialToken))
       addUnwrappedLine();
+#ifdef INTEL_CUSTOMIZATION
+    }
 #endif
 
     bool AddLevel = Style.NamespaceIndentation == FormatStyle::NI_All ||
@@ -2710,15 +2718,16 @@ void UnwrappedLineParser::parseRecord(bool ParseAsExpr) {
       parseChildBlock();
     } else {
 #ifdef INTEL_CUSTOMIZATION
-      if ((formatRangeGetter() == FormatRange::all &&
-           ShouldBreakBeforeBrace(Style, InitialToken)) ||
-          (formatRangeGetter() == FormatRange::migrated &&
-           isAllSpaceUntilNL(FormatTok, SourceMgr))) {
-        addUnwrappedLine();
-      }
-#else
+      if (formatRangeGetter() == FormatRange::migrated) {
+        if (isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+          addUnwrappedLine();
+        }
+      } else {
+#endif
       if (ShouldBreakBeforeBrace(Style, InitialToken))
         addUnwrappedLine();
+#ifdef INTEL_CUSTOMIZATION
+      }
 #endif
 
       parseBlock(/*MustBeDeclaration=*/true, /*AddLevel=*/true,
@@ -2978,7 +2987,8 @@ void UnwrappedLineParser::addUnwrappedLine() {
       printDebugInfo(*Line);
   });
 #ifdef INTEL_CUSTOMIZATION
-  if (!MustAdd && FormatTok->Previous &&
+  if ((formatRangeGetter() == FormatRange::migrated) && !MustAdd &&
+      FormatTok->Previous &&
       isInSameLine(FormatTok->Previous, FormatTok, SourceMgr))
     return false;
 #endif

@@ -144,25 +144,21 @@ bool AffectedRangeManager::nonPPLineAffected(
       Lines[Line->MatchingOpeningBlockLineIndex]->Affected;
 
 #ifdef INTEL_CUSTOMIZATION
-  if (formatRangeGetter() == FormatRange::all) {
-    // format all lines
-    if (SomeTokenAffected || SomeFirstChildAffected || LineMoved ||
-        IsContinuedComment || IsAffectedClosingBrace) {
-      Line->Affected = true;
-      SomeLineAffected = true;
-    }
-  } else {
+  if (formatRangeGetter() == FormatRange::migrated) {
     // only format migrated lines
     if (SomeTokenAffected) {
       Line->Affected = true;
       SomeLineAffected = true;
     }
-  }
-#else
+  } else {
+    // format all lines
+#endif
   if (SomeTokenAffected || SomeFirstChildAffected || LineMoved ||
       IsContinuedComment || IsAffectedClosingBrace) {
     Line->Affected = true;
     SomeLineAffected = true;
+  }
+#ifdef INTEL_CUSTOMIZATION
   }
 #endif
   return SomeLineAffected;

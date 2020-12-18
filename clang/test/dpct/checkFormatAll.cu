@@ -100,7 +100,8 @@ void foo7() { cublasOperation_t a = macro_a; }
 
      //CHECK:void foo8(float *Result) {
 //CHECK-NEXT:  for (int i = 0; i < 16; i++) {
-//CHECK-NEXT:    if (i % 4 == 0) Result[i] = log(Result[i]);
+//CHECK-NEXT:    if (i % 4 == 0)
+//CHECK-NEXT:      Result[i] = log(Result[i]);
 //CHECK-NEXT:    if (i % 16 == 0) {
 //CHECK-NEXT:      printf("\n");
 //CHECK-NEXT:    }
@@ -117,3 +118,11 @@ void foo8(float *Result) {
   }
 }
 
+     //CHECK:void foo9(sycl::float2 *Result) {
+//CHECK-NEXT:  int a;
+//CHECK-NEXT:  int b;
+//CHECK-NEXT:}
+void foo9(float2 *Result) {
+   int a;
+ int b;
+}
