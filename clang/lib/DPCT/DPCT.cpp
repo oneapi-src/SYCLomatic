@@ -137,7 +137,7 @@ static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
                                 llvm::cl::Optional, llvm::cl::Hidden);
 
 static opt<std::string>
-    SDKIncludePath("cuda-include-path",
+    CudaIncludePath("cuda-include-path",
                    desc("The directory path of the CUDA header files."),
                    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
@@ -542,13 +542,24 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // Create minimalist CudaInstallationDetector and return the InstallPath.
   DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
   driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(), E);
-  driver::CudaInstallationDetector SDKDetector(
+  driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = SDKDetector.getInstallPath().str();
-  if (!SDKDetector.isValid()) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    dpctExit(MigrationErrorInvalidSDKPath);
+  std::string Path = CudaIncludeDetector.getInstallPath().str();
+
+  if(!CudaIncludePath.empty()) {
+    if (!CudaIncludeDetector.isIncludePathValid()) {
+      DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+      dpctExit(MigrationErrorInvalidCudaIncludePath);
+    }
+
+    if (!CudaIncludeDetector.isVersionSupported()) {
+      DebugInfo::ShowStatus(MigrationErrorCudaVersionUnsupported);
+      dpctExit(MigrationErrorCudaVersionUnsupported);
+    }
+  } else if(!CudaIncludeDetector.isSupportedVersionAvailable()) {
+    DebugInfo::ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
+    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
 
   makeCanonical(Path);
@@ -556,8 +567,8 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   SmallString<512> CudaPathAbs;
   std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
   if ((bool)EC) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    dpctExit(MigrationErrorInvalidSDKPath);
+    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    dpctExit(MigrationErrorInvalidCudaIncludePath);
   }
   return CudaPathAbs.str().str();
 }
@@ -922,8 +933,8 @@ int runDPCT(int argc, const char **argv) {
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (SDKIncludePath.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --cuda-include-path '" << SDKIncludePath
+  if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
               << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
@@ -975,18 +986,18 @@ int runDPCT(int argc, const char **argv) {
   }
 
   int SDKIncPathRes =
-      checkSDKPathOrIncludePath(SDKIncludePath, RealSDKIncludePath);
+      checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
   if (SDKIncPathRes == -1) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    dpctExit(MigrationErrorInvalidSDKPath);
+    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKIncPathRes == 0) {
     HasSDKIncludeOption = true;
   }
 
   int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
   if (SDKPathRes == -1) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
-    dpctExit(MigrationErrorInvalidSDKPath);
+    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKPathRes == 0) {
     HasSDKPathOption = true;
   }

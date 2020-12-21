@@ -40,7 +40,7 @@ enum ProcessStatus {
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
   MigrationErrorInRootContainCTTool = -4,
-  MigrationErrorInvalidSDKPath = -5,
+  MigrationErrorInvalidCudaIncludePath = -5,
   MigrationErrorInvalidInRootOrOutRoot = -6,
   MigrationErrorInvalidInRootPath = -7,
   MigrationErrorInvalidFilePath = -8,
@@ -63,6 +63,8 @@ enum ProcessStatus {
   MigrationErrorInRootContainSDKFolder = -28,
   MigrationErrorCannotAccessDirInDatabase = -29,
   MigrationErrorInconsistentFileInDatabase = -30,
+  MigrationErrorCudaVersionUnsupported = -31,
+  MigrationErrorSupportedCudaVersionNotAvailable = -32,
 };
 
 /// Apply all generated replacements, and immediately save the results to

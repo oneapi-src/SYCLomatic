@@ -45,7 +45,7 @@ std::string RealSDKPath = "";
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
-static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
+bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
   CV = CudaVersion::UNKNOWN;
   std::ifstream CudaFile(FilePath, std::ios::in);
   if (!CudaFile.is_open()) {
@@ -75,27 +75,35 @@ static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
 
   if (Major == 8 && Minor == 0) {
     CV = CudaVersion::CUDA_80;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 9 && Minor == 0) {
     CV = CudaVersion::CUDA_90;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 9 && Minor == 1){
     CV = CudaVersion::CUDA_91;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 9 && Minor == 2) {
     CV = CudaVersion::CUDA_92;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 10 && Minor == 0) {
     CV = CudaVersion::CUDA_100;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 10 && Minor == 1) {
     CV = CudaVersion::CUDA_101;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 10 && Minor == 2) {
     CV = CudaVersion::CUDA_102;
+    IsVersionSupported = true;
     return true;
   } else if (Major == 11 && Minor == 0 || Major == 11 && Minor == 1) {
     CV = CudaVersion::CUDA_110;
+    IsVersionSupported = true;
     return true;
   }
   return false;
@@ -227,11 +235,18 @@ CudaInstallationDetector::CudaInstallationDetector(
       return;
     InstallPath = RealSDKIncludePath;
     IncludePath = RealSDKIncludePath;
+
+    // To certain include path specified by --cuda-include-path is valid
+    IsIncludePathValid = true;
+
     bool IsFound =
-        ParseSDKVersionFile(RealSDKIncludePath + "/cuda.h", Version);
+        ParseCudaVersionFile(RealSDKIncludePath + "/cuda.h", Version);
     if (!IsFound)
       return;
     IsValid = true;
+
+    // To certain CUDA version specified by --cuda-include-path is supported
+    IsVersionSupported = true;
   } else {
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
@@ -241,22 +256,31 @@ CudaInstallationDetector::CudaInstallationDetector(
       bool IsFound = false;
       if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
           FS.exists(InstallPath + "/include/cuda.h")) {
-        IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
+        IsFound = ParseCudaVersionFile(InstallPath + "/include/cuda.h", Version);
         if (!IsFound)
           continue;
         InstallPath = InstallPath + "/include/";
         IncludePath = InstallPath;
+
+        // To certain include path detected is valid
+        IsIncludePathValid = true;
       } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
                  FS.exists(InstallPath + "/cuda.h")) {
-        IsFound = ParseSDKVersionFile(InstallPath + "/cuda.h", Version);
+        IsFound = ParseCudaVersionFile(InstallPath + "/cuda.h", Version);
         if (!IsFound)
           continue;
         IncludePath = InstallPath;
+
+        // To certain include path detected is valid
+        IsIncludePathValid = true;
       } else {
         continue;
       }
 
       IsValid = true;
+
+      // To certain CUDA version that dpct supports is available
+      IsSupportedVersionAvailable = true;
       break;
     }
   }

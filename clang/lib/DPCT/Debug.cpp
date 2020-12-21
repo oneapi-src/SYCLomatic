@@ -174,10 +174,19 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
   case MigrationSaveOutFail:
     StatusString = "Error: Unable to save the output to the specified directory";
     break;
-  case MigrationErrorInvalidSDKPath:
-    StatusString = "Error: Path for CUDA header files is invalid or "
-                   "not available. Use --cuda-include-path to specify the "
-                   "correct path to the header files";
+  case MigrationErrorInvalidCudaIncludePath:
+    StatusString = "Error: Path for CUDA header files specified by "
+                   "--cuda-include-path is invalid.";
+    break;
+  case MigrationErrorCudaVersionUnsupported:
+    StatusString = "Error: The version of CUDA header files specified by "
+                   "--cuda-include-path is not supported. See Release Notes "
+                   "for supported versions.";
+    break;
+  case MigrationErrorSupportedCudaVersionNotAvailable:
+    StatusString = "Error: Intel(R) DPC++ Compatibility Tool was not able to "
+                   "detect path for CUDA header files. Use --cuda-include-path "
+                   "to specify the correct path to the header files.";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:
     StatusString = "Error: The path for --in-root or --out-root is not valid";
