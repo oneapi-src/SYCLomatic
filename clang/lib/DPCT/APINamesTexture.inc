@@ -13,21 +13,29 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::image_channel"),
     ENTRY_TEMPLATED("cudaCreateChannelDesc",
                     TEMPLATED_CALLEE("dpct::image_channel::create", {0})))
-ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::image_channel::create<" + MapNames::getClNamespace() + "::cl_half>")
+ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::image_channel::create<" +
+                                               MapNames::getClNamespace() +
+                                               "::cl_half>")
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-	POINTER_CHECKER(0),
+    POINTER_CHECKER(0),
     MEMBER_CALL_FACTORY_ENTRY("cudaUnbindTexture", DEREF(0), true, "detach"),
     MEMBER_CALL_FACTORY_ENTRY("cudaUnbindTexture", ARG(0), false, "detach")))
 
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaDestroyTextureObject", ARG(0)))
+ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuTexObjectDestroy", ARG(0)))
 
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectResourceDesc", DEREF(0),
-                         MEMBER_CALL(ARG(1), true, "get_data")))
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc",
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectResourceDesc",
                                         DEREF(0),
-                                        MEMBER_CALL(ARG(1), true, "get_sampling_info")))
+                                        MEMBER_CALL(ARG(1), true, "get_data")))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cudaGetTextureObjectTextureDesc", DEREF(0),
+                         MEMBER_CALL(ARG(1), true, "get_sampling_info")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectGetResourceDesc", DEREF(0),
+                                        MEMBER_CALL(ARG(1), true, "get_data")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectGetTextureDesc", DEREF(0),
+                                        MEMBER_CALL(ARG(1), true,
+                                                    "get_sampling_info")))
 
 ENTRY_TEXTURE("tex1D", 0x01, 1)
 ENTRY_TEXTURE("tex2D", 0x02, 1, 2)
@@ -44,8 +52,11 @@ ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
 ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray", 0 /*start arg idx*/))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
-                                        CALL("dpct::create_image_wrapper", DEREF(1),
-                                             DEREF(2))))
+                                        CALL("dpct::create_image_wrapper",
+                                             DEREF(1), DEREF(2))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),
+                                        CALL("dpct::create_image_wrapper",
+                                             DEREF(1), DEREF(2))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::NOTSUPPORTED)
@@ -60,3 +71,4 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
                             Diagnostics::CANNOT_CAPUTURE_AGUMENTS, ARG(1)))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
+ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::NOTSUPPORTED)

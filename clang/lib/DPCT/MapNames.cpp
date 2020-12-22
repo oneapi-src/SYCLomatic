@@ -143,7 +143,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cusolverEigMode_t", "oneapi::mkl::job"},
       {"cusolverStatus_t", "int"},
       {"cudaChannelFormatDesc", "dpct::image_channel"},
-      {"cudaChannelFormatKind", "dpct::image_channel_data_type" },
+      {"cudaChannelFormatKind", "dpct::image_channel_data_type"},
       {"cudaArray", "dpct::image_matrix"},
       {"cudaArray_t", "dpct::image_matrix_p"},
       {"cudaTextureDesc", "dpct::sampling_info"},
@@ -175,6 +175,18 @@ void MapNames::setClNamespace(bool Enable) {
       {"CUarray_st", "dpct::image_matrix"},
       {"CUarray", "dpct::image_matrix_p"},
       {"CUarray_format", ClNamespace + "::image_channel_type"},
+      {"CUarray_format_enum", ClNamespace + "::image_channel_type" },
+      {"CUtexObject", "dpct::image_wrapper_base_p"},
+      {"CUDA_RESOURCE_DESC", "dpct::image_data"},
+      {"CUDA_TEXTURE_DESC", "dpct::sampling_info"},
+      {"CUaddress_mode", ClNamespace + "::addressing_mode"},
+      {"CUaddress_mode_enum", ClNamespace + "::addressing_mode"},
+      {"CUfilter_mode", ClNamespace + "::filtering_mode"},
+      {"CUfilter_mode_enum", ClNamespace + "::filtering_mode"},
+      {"CUdeviceptr", "void *"},
+      {"CUresourcetype_enum", "dpct::image_data_type"},
+      {"CUresourcetype", "dpct::image_data_type" },
+      {"cudaResourceType", "dpct::image_data_type" },
       // ...
 
   };
@@ -237,6 +249,18 @@ void MapNames::setClNamespace(bool Enable) {
      ClNamespace + "::image_channel_type::unsigned_int32"},
     {"CU_AD_FORMAT_HALF", ClNamespace + "::image_channel_type::fp16"},
     {"CU_AD_FORMAT_FLOAT", ClNamespace + "::image_channel_type::fp32"},
+    // enum CUaddress_mode_enum
+    {"CU_TR_ADDRESS_MODE_WRAP", ClNamespace + "::addressing_mode::repeat"},
+    {"CU_TR_ADDRESS_MODE_CLAMP", ClNamespace + "::addressing_mode::clamp_to_edge"},
+    {"CU_TR_ADDRESS_MODE_MIRROR", ClNamespace + "::addressing_mode::mirrored_repeat"},
+    {"CU_TR_ADDRESS_MODE_BORDER", ClNamespace + "::addressing_mode::clamp"},
+    // enum CUfilter_mode_enum
+    {"CU_TR_FILTER_MODE_POINT", ClNamespace + "::filtering_mode::nearest"},
+    {"CU_TR_FILTER_MODE_LINEAR", ClNamespace + "::filtering_mode::linear"},
+    // enum CUresourcetype_enum
+    {"CU_RESOURCE_TYPE_ARRAY", "dpct::image_data_type::matrix"},
+    {"CU_RESOURCE_TYPE_LINEAR", "dpct::image_data_type::linear"},
+    {"CU_RESOURCE_TYPE_PITCH2D", "dpct::image_data_type::pitch"},
     // ...
   };
 
@@ -3057,7 +3081,9 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"Format", "channel_type"},
     {"NumChannels", "channel_num"},
     {"Width", "x"},
-    {"Height", "y"}};
+    {"Height", "y"},
+    {"flags", "coordinate_normalization_mode"},
+  };
 
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
@@ -3159,10 +3185,16 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   return AllAPINames;
 }
 
-MapNames::MapTy TextureRule::ResourceTypeNames{
-    {"devPtr", "data_ptr"}, {"desc", "channel"}, {"array", "data_ptr"},
-    {"width", "x"},         {"height", "y"},     {"pitchInBytes", "pitch"},
-    {"sizeInBytes", "x"}};
+MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
+                                               {"desc", "channel"},
+                                               {"array", "data_ptr"},
+                                               {"width", "x"},
+                                               {"height", "y"},
+                                               {"pitchInBytes", "pitch"},
+                                               {"sizeInBytes", "x"},
+                                               {"hArray", "data_ptr"},
+                                               {"format", "channel_type"},
+                                               {"numChannels", "channel_num"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

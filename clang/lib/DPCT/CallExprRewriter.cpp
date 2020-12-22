@@ -1590,7 +1590,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
       }));
-};
+}
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)

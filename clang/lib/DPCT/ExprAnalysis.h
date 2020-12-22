@@ -530,9 +530,8 @@ protected:
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
-  void analyzeExpr(const CStyleCastExpr *Cast);
+  void analyzeExpr(const ExplicitCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
-  void analyzeExpr(const CXXNamedCastExpr *NCE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {

@@ -26,7 +26,7 @@ int main(){
   // CHECK: *pdevice = 0;
   cuDeviceGet(pdevice, 0);
 
-  // CHECK: *((CUdevice *)pdevice) = 0;
+  // CHECK: *((int *)pdevice) = 0;
   cuDeviceGet((CUdevice *)pdevice, 0);
 
   // CHECK: CUDA_SAFE_CALL((device = 0, 0));

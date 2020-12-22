@@ -1711,13 +1711,15 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
   const Expr *getParentAsAssignedBO(const Expr *E,
                                               ASTContext &Context);
   bool removeExtraMemberAccess(const MemberExpr *ME);
-  void replaceNormalizedCoord(const MemberExpr *, const Expr *);
   void replaceTextureMember(const MemberExpr *ME, ASTContext &Context,
                             SourceManager &SM);
   void replaceResourceDataExpr(const MemberExpr *ME, ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
     return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
+  std::string getMemberAssignedValue(const Stmt *AssignStmt,
+                                     StringRef MemberName,
+                                     StringRef &SetMethodName);
   static MapNames::MapTy ResourceTypeNames;
 
 public:

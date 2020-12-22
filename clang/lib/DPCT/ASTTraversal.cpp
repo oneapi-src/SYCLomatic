@@ -11138,6 +11138,7 @@ MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
 
 REGISTER_RULE(MemoryMigrationRule)
 
+const Expr *getRhs(const Stmt *);
 TextModification *ReplaceMemberAssignAsSetMethod(SourceLocation EndLoc,
                                                  const MemberExpr *ME,
                                                  StringRef MethodName,
@@ -11155,18 +11156,14 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                                  StringRef ReplacedArg = "",
                                                  StringRef ExtraArg = "") {
   if (ReplacedArg.empty()) {
-    if (auto BO = dyn_cast<BinaryOperator>(E)) {
-      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                            ExprAnalysis::ref(BO->getRHS()),
-                                            ExtraArg);
-    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-      return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                            ExprAnalysis::ref(COCE->getArg(1)),
-                                            ExtraArg);
+    if (auto RHS = getRhs(E)) {
+      return ReplaceMemberAssignAsSetMethod(
+          getStmtExpansionSourceRange(E).getEnd(), ME, MethodName,
+          ExprAnalysis::ref(RHS), ExtraArg);
     }
   }
-  return ReplaceMemberAssignAsSetMethod(E->getEndLoc(), ME, MethodName,
-                                        ReplacedArg, ExtraArg);
+  return ReplaceMemberAssignAsSetMethod(getStmtExpansionSourceRange(E).getEnd(),
+                                        ME, MethodName, ReplacedArg, ExtraArg);
 }
 
 void MemoryDataTypeRule::emplaceCuArrayDescDeclarations(const VarDecl *VD) {
@@ -12184,29 +12181,35 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           )
           .bind("tex"),
       this);
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
-                            typedefDecl(hasName("cudaTextureObject_t"))))))
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasAnyName(
+                            "cudaTextureObject_t", "CUtexObject"))))))
                     .bind("texObj"),
                 this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(hasAnyName(
                                "cudaChannelFormatDesc", "cudaTextureDesc",
-                               "cudaResourceDesc", "textureReference")))))
+                               "cudaResourceDesc", "textureReference",
+                               "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC")))))
                     .bind("texMember"),
                 this);
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                            "cudaChannelFormatDesc", "cudaChannelFormatKind",
-                            "cudaTextureDesc", "cudaResourceDesc",
-                            "cudaTextureAddressMode", "cudaTextureFilterMode",
-                            "cudaArray", "cudaArray_t", "CUarray_st", "CUarray",
-                            "CUarray_format"))))))
-                    .bind("texType"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                  "cudaChannelFormatDesc", "cudaChannelFormatKind",
+                  "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
+                  "cudaTextureAddressMode", "cudaTextureFilterMode",
+                  "cudaArray", "cudaArray_t", "CUarray_st", "CUarray",
+                  "CUarray_format", "CUarray_format_enum", "CUdeviceptr",
+                  "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
+                  "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
+                  "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC"))))))
+          .bind("texType"),
+      this);
 
   MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                      "cudaTextureAddressMode", "cudaTextureFilterMode",
-                      "cudaChannelFormatKind", "cudaResourceType",
-                      "CUarray_format", "CUarray_format_enum"))))))
+      declRefExpr(
+          to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+              "cudaTextureAddressMode", "cudaTextureFilterMode",
+              "cudaChannelFormatKind", "cudaResourceType",
+              "CUarray_format_enum", "CUaddress_mode", "CUfilter_mode"))))))
           .bind("texEnum"),
       this);
 
@@ -12229,7 +12232,12 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaGetTextureObjectTextureDesc",
       "cudaGetTextureObjectResourceViewDesc",
       "cuArrayCreate_v2",
-      "cuArrayDestroy"};
+      "cuArrayDestroy",
+      "cuTexObjectCreate",
+      "cuTexObjectDestroy",
+      "cuTexObjectGetTextureDesc",
+      "cuTexObjectGetResourceDesc",
+  };
 
   auto hasAnyFuncName = [&]() {
     return internal::Matcher<NamedDecl>(
@@ -12256,53 +12264,11 @@ bool TextureRule::removeExtraMemberAccess(const MemberExpr *ME) {
   return false;
 }
 
-void TextureRule::replaceNormalizedCoord(const MemberExpr *ME,
-                                         const Expr *AssignedBO) {
-  if (!AssignedBO) {
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, "is_coordinate_normalized()"));
-    return;
-  }
-
-  StringRef ReplArg, MethodName;
-  bool IsNormalized;
-  const Expr *RHS;
-  if (auto BO = dyn_cast<BinaryOperator>(AssignedBO)) {
-    RHS = BO->getRHS()->IgnoreImpCasts();
-  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(AssignedBO)) {
-    RHS = COCE->getArg(1)->IgnoreImpCasts();
-  } else {
-    return;
-  }
-  if (auto IL = dyn_cast<IntegerLiteral>(RHS)) {
-    IsNormalized = IL->getValue().getSExtValue();
-  } else if (auto BLE = dyn_cast<CXXBoolLiteralExpr>(RHS)) {
-    IsNormalized = BLE->getValue();
-  } else {
-    // If is not literal, migrate to set_coordinate_normalization_mode(RHS).
-    emplaceTransformation(ReplaceMemberAssignAsSetMethod(
-        AssignedBO, ME, "coordinate_normalization_mode"));
-    return;
-  }
-  if (IsNormalized) {
-    static std::string NormalizedName =
-        MapNames::getClNamespace() +
-        "::coordinate_normalization_mode::normalized";
-    ReplArg = NormalizedName;
-  } else {
-    static std::string UnnormalizedName =
-        MapNames::getClNamespace() +
-        "::coordinate_normalization_mode::unnormalized";
-    ReplArg = UnnormalizedName;
-  }
-  emplaceTransformation(
-      ReplaceMemberAssignAsSetMethod(AssignedBO, ME, "", ReplArg));
-}
-
 bool TextureRule::tryMerge(const MemberExpr *ME, const Expr *BO) {
   static std::unordered_map<std::string, std::vector<std::string>> MergeMap = {
       {"textureReference", {"addressMode", "filterMode", "normalized"}},
       {"cudaTextureDesc", {"addressMode", "filterMode", "normalizedCoords"}},
+      {"CUDA_TEXTURE_DESC", {"addressMode", "filterMode", "flags"}},
   };
 
   auto Iter = MergeMap.find(
@@ -12321,28 +12287,29 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     return;
 
   auto Field = ME->getMemberNameInfo().getAsString();
+  if (Field == "channelDesc") {
+    if (removeExtraMemberAccess(ME))
+      return;
+  }
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty()) {
     report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, Field);
     return;
   }
 
-  if (ReplField == "channel") {
-    if (removeExtraMemberAccess(ME))
-      return;
-  } else if (ReplField == "coordinate_normalization_mode") {
-    replaceNormalizedCoord(ME, AssignedBO);
-    return;
-  } else if (AssignedBO) {
-    ReplField.clear();
-  }
-
   if (AssignedBO) {
-    emplaceTransformation(
-        ReplaceMemberAssignAsSetMethod(AssignedBO, ME, ReplField));
+    StringRef MethodName;
+    auto AssignedValue = getMemberAssignedValue(AssignedBO, Field, MethodName);
+    emplaceTransformation(ReplaceMemberAssignAsSetMethod(
+        AssignedBO, ME, MethodName, AssignedValue));
   } else {
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, buildString("get_", ReplField, "()")));
+    if (ReplField == "coordinate_normalization_mode") {
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "is_coordinate_normalized()"));
+    } else {
+      emplaceTransformation(new RenameFieldInMemberExpr(
+          ME, buildString("get_", ReplField, "()")));
+    }
   }
 }
 
@@ -12477,9 +12444,10 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
     auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType().getUnqualifiedType(), *Result.Context);
+        ME->getBase()->getType(), *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
-    if (BaseTy == "cudaResourceDesc") {
+    if (BaseTy == "cudaResourceDesc" || BaseTy == "CUDA_RESOURCE_DESC_st" ||
+        BaseTy == "CUDA_RESOURCE_DESC") {
       if (MemberName == "res") {
         removeExtraMemberAccess(ME);
         replaceResourceDataExpr(getParentMemberExpr(ME), *Result.Context);
@@ -12596,7 +12564,8 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
     emplaceTransformation(
         ReplaceMemberAssignAsSetMethod(AssignedBO, TopMember, FieldName));
   } else {
-    if (TopMember->getMemberNameInfo().getAsString() == "array") {
+    auto MemberName = TopMember->getMemberDecl()->getName();
+    if (MemberName == "array" || MemberName == "hArray") {
       emplaceTransformation(
           new InsertBeforeStmt(TopMember, "(dpct::image_matrix_p)"));
     }
@@ -12715,15 +12684,42 @@ StringRef getCoordinateNormalizationStr(bool IsNormalized) {
   }
 }
 
-std::string getAssignValue(const Stmt *S, StringRef MethodName) {
-  if (auto RHS = getRhs(S)->IgnoreImpCasts()) {
-    if (MethodName == "normalizedCoords" || MethodName == "normalized") {
+std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
+                                                StringRef MemberName,
+                                                StringRef &SetMethodName) {
+  SetMethodName = "";
+  if (auto RHS = getRhs(AssignStmt)) {
+    RHS = RHS->IgnoreImpCasts();
+    if (MemberName == "normalizedCoords" || MemberName == "normalized") {
       if (auto IL = dyn_cast<IntegerLiteral>(RHS)) {
         return getCoordinateNormalizationStr(IL->getValue().getZExtValue())
             .str();
       } else if (auto BL = dyn_cast<CXXBoolLiteralExpr>(RHS)) {
         return getCoordinateNormalizationStr(BL->getValue()).str();
       }
+      SetMethodName = "coordinate_normalization_mode";
+    } else if (MemberName == "flags") {
+      if (!RHS->isValueDependent()) {
+        Expr::EvalResult Result;
+        if (RHS->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+          auto Val = Result.Val.getInt().getZExtValue();
+          if (Val != 1 && Val != 3) {
+            report(AssignStmt, Diagnostics::TEX_FLAG_UNSUPPORT, true,
+                   ExprAnalysis::ref(RHS));
+          }
+          return getCoordinateNormalizationStr(Val & 0x02).str();
+        }
+      }
+      SetMethodName = "coordinate_normalization_mode";
+      report(AssignStmt, Diagnostics::TEX_FLAG_UNSUPPORT, true,
+             ExprAnalysis::ref(RHS));
+      std::string Result;
+      llvm::raw_string_ostream OS(Result);
+      printWithParens(OS, RHS);
+      OS << " & 0x02";
+      return OS.str();
+    } else if (MemberName == "channelDesc") {
+      SetMethodName = "channel";
     }
     return ExprAnalysis::ref(RHS);
   } else {
@@ -12733,6 +12729,7 @@ std::string getAssignValue(const Stmt *S, StringRef MethodName) {
 
 bool TextureRule::SettersMerger::applyResult() {
   class ResultMapInserter {
+    unsigned LastIndex;
     std::vector<const Stmt *> LatestStmts;
     std::vector<const Stmt *> DuplicatedStmts;
     TextureRule *Rule;
@@ -12756,11 +12753,16 @@ bool TextureRule::SettersMerger::applyResult() {
       if (Latest)
         DuplicatedStmts.push_back(Latest);
       Latest = S;
+      LastIndex = Index;
     }
     void success(std::string &Replaced) {
-      Rule->emplaceTransformation(
-          new ReplaceStmt(LatestStmts[0], std::move(Replaced)));
-      DuplicatedStmts.insert(DuplicatedStmts.end(), ++LatestStmts.begin(),
+      Rule->emplaceTransformation(new ReplaceStmt(LatestStmts[LastIndex], false,
+                                                  std::string(), true,
+                                                  std::move(Replaced)));
+      DuplicatedStmts.insert(DuplicatedStmts.end(), LatestStmts.begin(),
+                             LatestStmts.begin() + LastIndex);
+      DuplicatedStmts.insert(DuplicatedStmts.end(),
+                             LatestStmts.begin() + LastIndex + 1,
                              LatestStmts.end());
       LatestStmts.clear();
     }
@@ -12773,7 +12775,9 @@ bool TextureRule::SettersMerger::applyResult() {
     if (ArgsList[R.first].empty())
       ++ActualArgs;
     Inserter.update(R.first, R.second);
-    ArgsList[R.first] = getAssignValue(R.second, MethodNames[R.first]);
+    static StringRef Dummy;
+    ArgsList[R.first] =
+        Rule->getMemberAssignedValue(R.second, MethodNames[R.first], Dummy);
   }
   if (ActualArgs != ArgsList.size()) {
     return false;

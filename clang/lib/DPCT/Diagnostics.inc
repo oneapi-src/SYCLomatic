@@ -164,3 +164,5 @@ DEF_WARNING(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free d
 DEF_COMMENT(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free device memory size. You may need to adjust the code.")
 DEF_WARNING(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '%0' could not be deduced, so the call was not migrated. You need to update this code manually.")
 DEF_COMMENT(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '{0}' could not be deduced, so the call was not migrated. You need to update this code manually.")
+DEF_WARNING(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.")
+DEF_COMMENT(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.")

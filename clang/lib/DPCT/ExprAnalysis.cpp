@@ -527,12 +527,13 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
   }
 }
 
-void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
-  if (Cast->getCastKind() == CastKind::CK_BitCast ||
-      Cast->getCastKind() == CastKind::CK_IntegralCast) {
-    analyzeType(Cast->getTypeInfoAsWritten(), Cast);
+void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
+  if (Cast->getCastKind() == CastKind::CK_ConstructorConversion) {
+    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) == "dim3")
+      return dispatch(Cast->getSubExpr());
   }
-  dispatch(Cast->getSubExpr());
+  analyzeType(Cast->getTypeInfoAsWritten(), Cast);
+  dispatch(Cast->getSubExprAsWritten());
 }
 
 // Precondition: CE != nullptr
@@ -566,11 +567,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
 
-}
-
-void ExprAnalysis::analyzeExpr(const CXXNamedCastExpr *NCE) {
-  analyzeType(NCE->getTypeInfoAsWritten(), NCE);
-  dispatch(NCE->getSubExprAsWritten());
 }
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
