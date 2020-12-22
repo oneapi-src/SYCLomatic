@@ -209,6 +209,20 @@ void foo() {
   bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
 
  }
+
+{
+  struct my_math
+  {
+  //CHECK: int operator()(const int &r) const{ return r+1;}
+  __host__ __device__ int operator()(const int &r) const{ return r+1;}
+  };
+
+  int *dev_a = NULL, *dev_b = NULL;
+  cudaStream_t stream;
+  my_math c;
+  //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(stream),dev_a,dev_a + 10,dev_b,c);
+  thrust::transform(thrust::cuda::par.on(stream),dev_a,dev_a + 10,dev_b,c);
+}
 }
 
 // CHECK: const std::vector<float> transform(

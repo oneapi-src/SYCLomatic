@@ -1681,6 +1681,34 @@ void ThrustFunctionRule::thrustFuncMigration(
       (ArgT == "ExecutionPolicy") ||
       (ArgT.find("execution_policy_base") != std::string::npos);
 
+  // To migrate "thrust::cuda::par.on" that appears in CE' first arg to
+  // "oneapi::dpl::execution::make_device_policy".
+  const auto *ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(0));
+  if (hasExecutionPolicy && ICE) {
+    if (const auto *MT =
+            dyn_cast<MaterializeTemporaryExpr>(ICE->getSubExpr())) {
+      if (auto SubICE = dyn_cast<ImplicitCastExpr>(MT->getSubExpr())) {
+        if (const auto *MCE =
+                dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr())) {
+          if (const auto *ME = dyn_cast<MemberExpr>(MCE->getCallee())) {
+            auto End = ME->getEndLoc();
+            auto Begin = ME->getBeginLoc();
+            auto BaseName = DpctGlobalInfo::getUnqualifiedTypeName(
+                ME->getBase()->getType());
+            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+                End, *Result.SourceManager,
+                dpct::DpctGlobalInfo::getContext().getLangOpts()));
+            auto SM = Result.SourceManager;
+            auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+            if (BaseName == "thrust::cuda_cub::par_t")
+              emplaceTransformation(new ReplaceText(
+                  Begin, Length, "oneapi::dpl::execution::make_device_policy"));
+          }
+        }
+      }
+    }
+  }
+
   // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the DPC++ side
