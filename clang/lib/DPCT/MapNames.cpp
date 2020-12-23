@@ -131,6 +131,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"thrust::logical_or", "std::logical_or"},
       {"thrust::divides", "std::divides"},
       {"thrust::tuple", "std::tuple"},
+      {"thrust::pair", "std::pair"},
       {"thrust::host_vector", "std::vector"},
       {"thrust::complex", "std::complex"},
       {"thrust::counting_iterator", "oneapi::dpl::counting_iterator"},

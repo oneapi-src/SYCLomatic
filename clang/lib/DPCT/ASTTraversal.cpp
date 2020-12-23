@@ -1969,7 +1969,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "identity", "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
                   "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
-                  "cufftType_t", "cufftType"),
+                  "cufftType_t", "cufftType", "pair"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);

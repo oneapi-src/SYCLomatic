@@ -274,3 +274,16 @@ void test(){
     const thrust::device_vector<float> d_actual2;
 }
 
+struct make_pair_functor
+{
+  template<typename T1, typename T2>
+  __host__ __device__ thrust::pair<T1,T2> operator()(const T1 &x, const T2 &y)
+  {
+    return thrust::make_pair(x,y);
+  } // end operator()()
+}; // end make_pair_functor
+
+// CHECK: typedef std::pair<int,int> P;
+// CHECK-NEXT: std::pair<int,int> P1;
+typedef thrust::pair<int,int> P;
+thrust::pair<int,int> P1;
