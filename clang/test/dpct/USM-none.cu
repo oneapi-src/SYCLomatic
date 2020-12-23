@@ -404,3 +404,15 @@ void foo3() {
   CUDA_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread));
 }
 
+/// cuda driver memory api
+void foo4(){
+  size_t size = 1234567 * sizeof(float);
+  float *h_A = (float *)malloc(size);
+  int errorCode;
+  // CHECK: h_A = (float *)malloc(size);
+  cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE);
+  // CHECK: errorCode = (h_A = (float *)malloc(size), 0);
+  errorCode = cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE);
+  // CHECK: CUDA_SAFE_CALL((h_A = (float *)malloc(size), 0));
+  CUDA_SAFE_CALL(cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE));
+}

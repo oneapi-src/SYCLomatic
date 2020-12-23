@@ -10007,7 +10007,8 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     }
-  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
+  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
+             Name == "cuMemHostAlloc") {
     std::string ReplaceName;
     if (USMLevel == UsmLevel::restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
@@ -10625,6 +10626,42 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     printDerefOp(OS, C->getArg(0));
     OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
+  } else if (Name == "cuMemGetInfo_v2") {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::ostringstream OS;
+    if(IsAssigned)
+      OS << "(";
+    auto SecArg = C->getArg(1);
+    printDerefOp(OS, SecArg);
+    OS << " = dpct::get_current_device().get_device_info()"
+          ".get_global_mem_size()";
+    if(IsAssigned) {
+      OS << ", 0)";
+      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    SourceLocation CallBegin(C->getBeginLoc());
+    SourceLocation CallEnd(C->getEndLoc());
+
+    bool IsMacroArg =
+        SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
+
+    if (CallBegin.isMacroID() && IsMacroArg) {
+      CallBegin = SM.getImmediateSpellingLoc(CallBegin);
+      CallBegin = SM.getExpansionLoc(CallBegin);
+    } else if (CallBegin.isMacroID()) {
+      CallBegin = SM.getExpansionLoc(CallBegin);
+    }
+
+    if (CallEnd.isMacroID() && IsMacroArg) {
+      CallEnd = SM.getImmediateSpellingLoc(CallEnd);
+      CallEnd = SM.getExpansionLoc(CallEnd);
+    } else if (CallEnd.isMacroID()) {
+      CallEnd = SM.getExpansionLoc(CallEnd);
+    }
+    CallEnd = CallEnd.getLocWithOffset(1);
+
+    emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
+    report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
   }
 }
 
@@ -10726,7 +10763,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
         "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
         "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise", "cudaGetChannelDesc");
+        "cudaMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
+        "cuMemGetInfo_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -10796,7 +10834,7 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise") &&
         Name.compare("cudaArrayGetInfo") && Name.compare("cudaMalloc") &&
         Name.compare("cudaMallocPitch") && Name.compare("cudaMalloc3D") &&
-        Name.compare("cublasAlloc")) {
+        Name.compare("cublasAlloc") && Name.compare("cuMemGetInfo_v2")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -10907,7 +10945,9 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaArrayGetInfo", &MemoryMigrationRule::cudaArrayGetInfo},
           {"cudaHostGetFlags", &MemoryMigrationRule::cudaHostGetFlags},
           {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
-          {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration}};
+          {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration},
+          {"cuMemHostAlloc", &MemoryMigrationRule::mallocMigration},
+          {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =

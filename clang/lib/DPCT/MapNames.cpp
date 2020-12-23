@@ -3070,6 +3070,9 @@ const MapNames::SetTy MapNames::HostAllocSet {
     "cudaHostAllocMapped",
     "cudaHostAllocPortable",
     "cudaHostAllocWriteCombined",
+    "CU_MEMHOSTALLOC_PORTABLE",
+    "CU_MEMHOSTALLOC_DEVICEMAP",
+    "CU_MEMHOSTALLOC_WRITECOMBINED"
 };
 
 const MapNames::MapTy MapNames::MathRewriterMap{

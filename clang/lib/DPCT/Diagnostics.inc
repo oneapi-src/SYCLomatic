@@ -160,3 +160,5 @@ DEF_WARNING(VIRTUAL_POINTER_HOST_ACCESS, 1070, "Pointer '%0' is allocated by dpc
 DEF_COMMENT(VIRTUAL_POINTER_HOST_ACCESS, 1070, "Pointer '{0}' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<{1}>({0}) to access it from the host code.")
 DEF_WARNING(OUT_OF_PLACE_FFT_EXEC, 1071, "The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.")
 DEF_COMMENT(OUT_OF_PLACE_FFT_EXEC, 1071, "The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.")
+DEF_WARNING(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free device memory size. You may need to adjust the code.")
+DEF_COMMENT(UNSUPPORT_FREE_MEMORY_SIZE, 1072, "DPC++ does not support get free device memory size. You may need to adjust the code.")

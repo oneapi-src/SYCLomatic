@@ -1,5 +1,5 @@
 // CHECK: API name				Frequency
-// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1
+// CHECK: CUresult cuMemGetAddressRange_v2(CUdeviceptr * pbase,size_t * psize,CUdeviceptr dptr)               1
 // CHECK: cudaDeviceProp                               1
 // CHECK: cudaError_t                                  3
 // CHECK: cudaError_t cudaDeviceSynchronize()               4

@@ -127,8 +127,9 @@ namespace libsvm {
 extern "C"
 void SVMTrain(void){
     float* d_value_inter;
-    size_t free_mem, total;
-    cuMemGetInfo_v2(&free_mem, &total);
+    CUdeviceptr base, dptr;
+    size_t size_range;
+    cuMemGetAddressRange_v2(&base, &size_range, dptr);
     int a = max(1, 3);
 }
 }

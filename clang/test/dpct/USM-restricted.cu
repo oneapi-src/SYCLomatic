@@ -763,3 +763,35 @@ void foo3() {
   CUDA_SAFE_CALL(cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread));
 }
 
+/// cuda driver memory api
+void foo4(){
+  size_t size = 1234567 * sizeof(float);
+  float *h_A = (float *)malloc(size);
+
+  int errorCode;
+  // CHECK: /*
+  // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  // CHECK: */
+  // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
+  cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE);
+  // CHECK: /*
+  // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  // CHECK: */
+  // CHECK: errorCode = (h_A = (float *)sycl::malloc_host(size, q_ct1), 0);
+  errorCode = cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE);
+  // CHECK: /*
+  // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  // CHECK: */
+  // CHECK: CUDA_SAFE_CALL((h_A = (float *)sycl::malloc_host(size, q_ct1), 0));
+  CUDA_SAFE_CALL(cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE));
+  // CHECK: /*
+  // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  // CHECK: */
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) - size, q_ct1);
+  cuMemHostAlloc((void **)&h_A, sizeof(double2) - size, CU_MEMHOSTALLOC_PORTABLE);
+  // CHECK: /*
+  // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  // CHECK: */
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
+  cuMemHostAlloc((void **)&h_A, sizeof(uchar4) - size, CU_MEMHOSTALLOC_PORTABLE);
+}
