@@ -1689,66 +1689,11 @@ bool isExprStraddle(const Stmt *S) {
   return isLocationStraddle(Range.getBegin(), Range.getEnd());
 }
 
-/// Check the expression \p E is an address-of expression like "&aaa".
-bool isSimpleAddrOf(const Expr *E) {
-  if (auto UO = dyn_cast<UnaryOperator>(E)) {
-    if (UO->getOpcode() == UO_AddrOf) {
-      return true;
-    }
-  }
-  return false;
-}
-/// Check the expression \p E is an address-of expression like "&aaa".
-/// On Windows, the AST node is OverloadedOperatorKind instead of UnaryOperator.
-bool isCOCESimpleAddrOf(const Expr *E) {
-  if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-    if (COCE->getOperator() == clang::OverloadedOperatorKind::OO_Amp &&
-        COCE->getNumArgs() == 1) {
-      return true;
-    }
-  }
-  return false;
-}
-/// Remove the address-of operator in the expression \p E.
-/// \param E An expression has checked by isSimpleAddrOf() or
-/// isCOCESimpleAddrOf().
-/// \param isCOCE If the expression is checked by isCOCESimpleAddrOf(), it need
-/// be true.
-/// \return The expression string without the address-of operator.
-std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
-  if (isCOCE) {
-    auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
-    if (!COCE) {
-      return "";
-    }
-    dpct::ExprAnalysis SEA;
-    SEA.analyze(COCE->getArg(0));
-    return SEA.getReplacedString();
-  } else {
-    auto UO = dyn_cast<UnaryOperator>(E);
-    if (!UO) {
-      return "";
-    }
-    dpct::ExprAnalysis SEA;
-    SEA.analyze(UO->getSubExpr());
-    return SEA.getReplacedString();
-  }
-}
-
 /// Get the dereference name of the expression \p E.
 std::string getDrefName(const Expr *E) {
-  if (isSimpleAddrOf(E)) {
-    return getNameStrRemovedAddrOf(E, false);
-  } else if (isCOCESimpleAddrOf(E)) {
-    return getNameStrRemovedAddrOf(E, true);
-  } else {
-    dpct::ExprAnalysis EA(E);
-    if (isAnIdentifierOrLiteral(E)) {
-      return "*" + EA.getReplacedString();
-    } else {
-      return "*(" + EA.getReplacedString() + ")";
-    }
-  }
+  std::ostringstream OS;
+  printDerefOp(OS, E, nullptr);
+  return OS.str();
 }
 
 const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
@@ -1922,18 +1867,6 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
     return true;
   } else {
     return false;
-  }
-}
-
-std::string addIndirectionIfNecessary(const Expr *E) {
-  if (isSimpleAddrOf(E->IgnoreImplicit())) {
-    return getNameStrRemovedAddrOf(E->IgnoreImplicit());
-  } else if (isCOCESimpleAddrOf(E)) {
-    return getNameStrRemovedAddrOf(E->IgnoreImplicit(), true);
-  } else {
-    dpct::ExprAnalysis EA;
-    EA.analyze(E);
-    return "*(" + EA.getReplacedString() + ")";
   }
 }
 

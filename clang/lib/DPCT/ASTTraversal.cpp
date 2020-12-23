@@ -4037,14 +4037,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
     Flags.NeedUseLambda = false;
     if (FuncName == "cusparseCreate") {
-      std::string LHS;
-      if (isSimpleAddrOf(CE->getArg(0))) {
-        LHS = getNameStrRemovedAddrOf(CE->getArg(0));
-      } else {
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(0));
-        LHS = "*(" + EA.getReplacedString() + ")";
-      }
+      std::string LHS = getDrefName(CE->getArg(0));
       if (checkWhetherIsDuplicate(CE, false))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -4059,26 +4052,12 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.Repl = EA0.getReplacedString() + " = " + EA1.getReplacedString();
     } else if (FuncName == "cusparseGetStream") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
-      std::string LHS;
-      if (isSimpleAddrOf(CE->getArg(1))) {
-        LHS = getNameStrRemovedAddrOf(CE->getArg(1));
-      } else {
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(1));
-        LHS = "*(" + EA.getReplacedString() + ")";
-      }
+      std::string LHS = getDrefName(CE->getArg(1));
       ReplaceStrs.Repl = LHS + " = " + EA0.getReplacedString();
     }
   } else if (FuncName == "cusparseCreateMatDescr") {
     Flags.NeedUseLambda = false;
-    std::string LHS;
-    if (isSimpleAddrOf(CE->getArg(0))) {
-      LHS = getNameStrRemovedAddrOf(CE->getArg(0));
-    } else {
-      dpct::ExprAnalysis EA;
-      EA.analyze(CE->getArg(0));
-      LHS = "*(" + EA.getReplacedString() + ")";
-    }
+    std::string LHS = getDrefName(CE->getArg(0));
     ReplaceStrs.Repl = LHS + " = oneapi::mkl::index_base::zero";
   } else if (FuncName == "cusparseDestroyMatDescr" ||
              FuncName == "cusparseGetPointerMode" ||
@@ -6260,17 +6239,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         if (ReplInfo.PointerTypeInfo[IndexTemp] == "float" ||
             ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
           // This code path is only for legacy cublasSrotmg and cublasDrotmg
-          if (isSimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CallExprReplStr =
-                CallExprReplStr + ", " +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit());
-          } else if (isCOCESimpleAddrOf(CE->getArg(i)->IgnoreImplicit())) {
-            CallExprReplStr =
-                CallExprReplStr + ", " +
-                getNameStrRemovedAddrOf(CE->getArg(i)->IgnoreImplicit(), true);
-          } else {
-            CallExprReplStr = CallExprReplStr + ", *(" + ParamsStrsVec[i] + ")";
-          }
+          CallExprReplStr = CallExprReplStr + ", " +
+                            getDrefName(CE->getArg(i)->IgnoreImplicit());
         } else {
           if (isAnIdentifierOrLiteral(CE->getArg(i)))
             CallExprReplStr =
@@ -6620,14 +6590,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string Repl;
 
     if (FuncName == "cublasCreate_v2") {
-      std::string LHS;
-      if (isSimpleAddrOf(CE->getArg(0))) {
-        LHS = getNameStrRemovedAddrOf(CE->getArg(0));
-      } else {
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(0));
-        LHS = "*(" + EA.getReplacedString() + ")";
-      }
+      std::string LHS = getDrefName(CE->getArg(0));
       if (checkWhetherIsDuplicate(CE, false))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -6642,14 +6605,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       Repl = EA0.getReplacedString() + " = " + EA1.getReplacedString();
     } else if (FuncName == "cublasGetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
-      std::string LHS;
-      if (isSimpleAddrOf(CE->getArg(1))) {
-        LHS = getNameStrRemovedAddrOf(CE->getArg(1));
-      } else {
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(1));
-        LHS = "*(" + EA.getReplacedString() + ")";
-      }
+      std::string LHS = getDrefName(CE->getArg(1));
       Repl = LHS + " = " + EA0.getReplacedString();
     } else if (FuncName == "cublasSetKernelStream") {
       dpct::ExprAnalysis EA(CE->getArg(0));
@@ -7617,17 +7573,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cusolverDnDestroy") {
     std::string Repl;
     if (FuncName == "cusolverDnCreate") {
-      std::string LHS;
-      if (isSimpleAddrOf(CE->getArg(0))) {
-        LHS = getNameStrRemovedAddrOf(CE->getArg(0));
-      } else {
-        dpct::ExprAnalysis EA;
-        EA.analyze(CE->getArg(0));
-        if (isAnIdentifierOrLiteral(CE->getArg(0)))
-          LHS = "*" + EA.getReplacedString();
-        else
-          LHS = "*(" + EA.getReplacedString() + ")";
-      }
+      std::string LHS = getDrefName(CE->getArg(0));
       if (checkWhetherIsDuplicate(CE, false))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -7763,7 +7709,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
@@ -7772,7 +7718,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), Prefix + "dpct::dev_mgr::instance().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
@@ -7783,7 +7729,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
 
@@ -7815,7 +7761,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
 
   } else if (FuncName == "cudaDeviceGetAttribute") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
                                     ->getNameInfo()
                                     .getName()
@@ -7843,13 +7789,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr = "(" + ReplStr + ", 0)";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
     report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access", false);
   } else if (FuncName == "cudaDeviceGetPCIBusId") {
     report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "Get PCI BusId", false);
   } else if (FuncName == "cudaGetDevice") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
+    std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
         new ReplaceStmt(CE, "dpct::dev_mgr::instance().current_device_id()"));
@@ -9673,18 +9619,10 @@ std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
 std::string MemoryMigrationRule::getAssignedStr(const Expr *E,
                                                 const std::string &Arg0Str) {
   std::ostringstream Repl;
-  if (isSimpleAddrOf(E)) {
-    Repl << getNameStrRemovedAddrOf(E);
-    Repl << " = (" << getTypeStrRemovedAddrOf(E) << ")";
-  } else if (isCOCESimpleAddrOf(E)) {
-    Repl << getNameStrRemovedAddrOf(E, true);
-    Repl << " = (" << getTypeStrRemovedAddrOf(E, true) << ")";
-  } else {
-    Repl << "*" << Arg0Str;
-    auto QT = E->getType().getTypePtr()->getPointeeType();
-    std::string ReplType = DpctGlobalInfo::getReplacedTypeName(QT);
-    Repl << " = (" << ReplType << ")";
-  }
+  std::string Type;
+  printDerefOp(Repl, E, &Type);
+  Repl << " = (" << Type << ")";
+
   return Repl.str();
 }
 
@@ -10588,13 +10526,8 @@ void MemoryMigrationRule::getSymbolSizeMigration(
   auto StmtStrArg0 = EA.getReplacedString();
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
-  if (isSimpleAddrOf(C->getArg(0))) {
-    Replacement = getNameStrRemovedAddrOf(C->getArg(0)) + " = " + StmtStrArg1 +
-                  ".get_size()";
-  } else {
-    Replacement =
-        "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_size()";
-  }
+
+  Replacement = getDrefName(C->getArg(0)) + " = " + StmtStrArg1 + ".get_size()";
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
 

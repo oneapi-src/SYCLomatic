@@ -411,9 +411,6 @@ enum ExprSpellingStatus {
 };
 bool isLocationStraddle(clang::SourceLocation Begin, clang::SourceLocation End);
 bool isExprStraddle(const clang::Stmt *S);
-bool isSimpleAddrOf(const clang::Expr *E);
-bool isCOCESimpleAddrOf(const clang::Expr *E);
-std::string getNameStrRemovedAddrOf(const clang::Expr *E, bool isCOCE = false);
 std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
 getSiblingDecls(const clang::DeclaratorDecl *DD);
@@ -422,7 +419,6 @@ std::string deducePointerType(const clang::DeclaratorDecl *DD,
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
 bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
                                  const std::string &TypeStr);
-std::string addIndirectionIfNecessary(const clang::Expr *E);
 bool isInReturnStmt(const clang::Expr *E,
                     clang::SourceLocation &OuterInsertLoc);
 std::string getHashStrFromLoc(clang::SourceLocation Loc);

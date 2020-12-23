@@ -223,7 +223,7 @@ int main() {
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: oneapi::mkl::blas::rotmg(*dpct::get_current_device().get_saved_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, *(x_S), y_f_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::rotmg(*dpct::get_current_device().get_saved_queue(), x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, *x_S, y_f_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   cublasSrotmg(x_f, y_f, y_f, x_S, y_f);
 
@@ -232,7 +232,7 @@ int main() {
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: oneapi::mkl::blas::rotmg(*dpct::get_current_device().get_saved_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, *(x_D), y_d_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::rotmg(*dpct::get_current_device().get_saved_queue(), x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, *x_D, y_d_buf_ct{{[0-9]+}});
   // CHECK-NEXT: }
   cublasDrotmg(x_d, y_d, y_d, x_D, y_d);
 

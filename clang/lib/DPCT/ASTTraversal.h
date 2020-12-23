@@ -261,19 +261,6 @@ protected:
       std::forward<Ts>(Vals)...);
   }
 
-  /// Dereference.
-  /// returns "deviceProp" for exression `&deviceProp`
-  std::string DereferenceArg(const clang::Expr *E, const ASTContext &Context) {
-    if (auto arg = dyn_cast<clang::UnaryOperator>(E)) {
-      if (arg->getOpcode() == UO_AddrOf) {
-        return getStmtSpelling(arg->getSubExpr());
-      }
-    }
-    /// TODO implement dereference for the general case, not only for foo(&a).
-    /// TODO for now, report "can't compile".
-    return "";
-  }
-
   const std::string &getItemName() { return DpctGlobalInfo::getItemName(); }
 
   // Get node from match result map. And also check if the node's host file is
