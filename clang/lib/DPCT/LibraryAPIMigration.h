@@ -116,7 +116,89 @@ struct LibraryMigrationStrings {
   std::string IndentStr;
 };
 
-struct FFTPlanAPIInfo;
+struct FFTPlanAPIInfo {
+  FFTPlanAPIInfo() {}
+  void buildInfo();
+
+  // Input info by Plan API
+  std::string PrecAndDomainStr;
+  FFTTypeEnum FFTType = FFTTypeEnum::Unknown; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
+  int QueueIndex = -1;
+  std::vector<std::string> ArgsList;
+  std::vector<std::string> ArgsListAddRequiredParen;
+  std::string IndentStr;
+  std::string FuncName;
+  LibraryMigrationFlags Flags;
+  std::int64_t Rank = -1;
+  std::string DescrMemberCallPrefix;
+  std::string DescStr;
+  bool NeedBatchFor1D = true;
+  std::string HandleDeclFileAndOffset;
+
+  // Input info by Exec API
+  FFTPlacementType PlacementFromExec = FFTPlacementType::uninitialized;
+  FFTDirectionType DirectionFromExec = FFTDirectionType::uninitialized;
+
+  // Generated info
+  std::string PrePrefixStmt;
+  std::vector<std::string> PrefixStmts;
+  std::vector<std::string> SuffixStmts;
+  std::string CallExprRepl;
+  std::string FilePath;
+  std::pair<unsigned int, unsigned int> InsertOffsets;
+  unsigned int ReplaceOffset = 0;
+  unsigned int ReplaceLen = 0;
+  std::string UnsupportedArg;
+
+  void updateManyCommitCallExpr();
+  void update1D2D3DCommitCallExpr(std::vector<int> DimIdxs);
+  std::vector<std::string>
+  update1D2D3DCommitPrefix(std::vector<std::string> Dims);
+  void updateCommitCallExpr(std::vector<std::string> Dims);
+  void addInfo(std::string PrecAndDomainStr, FFTTypeEnum FFTType,
+               int QueueIndex, std::vector<std::string> ArgsList,
+               std::vector<std::string> ArgsListAddRequiredParen,
+               std::string IndentStr, std::string FuncName,
+               LibraryMigrationFlags Flags, std::int64_t Rank,
+               std::string DescrMemberCallPrefix, std::string DescStr);
+  void setValueFor1DBatched();
+  std::vector<std::string>
+  setValueForBasicManyBatched(std::vector<std::string> Dims,
+                              std::vector<std::string> DimsWithoutParen);
+  void linkInfo();
+  void replaceText();
+  void replacementLocation(LibraryMigrationLocations Locations);
+
+  struct Stmts {
+    Stmts() {}
+
+    Stmts &operator<<(const Stmts &InputStmts) {
+      S.insert(S.end(), InputStmts.S.begin(), InputStmts.S.end());
+      return *this;
+    }
+    Stmts &operator<<(const std::vector<std::string> &InputStmts) {
+      S.insert(S.end(), InputStmts.begin(), InputStmts.end());
+      return *this;
+    }
+    Stmts &operator<<(const std::string &InputStmt) {
+      S.push_back(InputStmt);
+      return *this;
+    }
+
+    std::string getAsString(std::string IndentStr, bool IsNLAtBegin) {
+      std::ostringstream OS;
+      for (const auto &Stmt : S) {
+        if (IsNLAtBegin)
+          OS << getNL() << IndentStr << Stmt; // For suffix string
+        else
+          OS << Stmt << getNL() << IndentStr; // For prefix string
+      }
+      return OS.str();
+    }
+
+    std::vector<std::string> S;
+  };
+};
 
 class FFTFunctionCallBuilder {
 public:
@@ -202,6 +284,19 @@ void initVars(const CallExpr *CE, const VarDecl *VD,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations);
+
+struct FFTDescriptorTypeInfo {
+  FFTDescriptorTypeInfo(unsigned int Length) : Length(Length) {}
+  void buildInfo(std::string FilePath, unsigned int Offset);
+
+  unsigned int Length;
+  std::string PrecAndDom;
+  bool IsValid = true;
+  // E.g., if cufftExec API is declared as a function pointer, then all
+  // declaration will be rewrite to a lambda, the paramter type can be deduced
+  // from function name. So this type replacement and warning can be skipped.
+  bool SkipGeneration = false;
+};
 
 } // namespace dpct
 } // namespace clang
