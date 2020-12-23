@@ -133,8 +133,8 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 /// Create image with channel info and specified dimensions.
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 
-/// Functor for attaching data to image class.
-template <class T, int dimensions, bool IsImageArray> struct attach_data;
+/// Functor to create sycl::image from image_data.
+template <int dimensions> struct image_creator;
 
 } // namespace detail
 
@@ -380,6 +380,7 @@ public:
   void set_data(image_matrix_p matrix_data) {
     _type = image_data_type::matrix;
     _data = matrix_data;
+    _channel = matrix_data->get_channel();
   }
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
     _type = image_data_type::linear;
@@ -506,7 +507,8 @@ class image_wrapper_base {
 
 public:
   virtual ~image_wrapper_base() = 0;
-  virtual void attach(image_data data) = 0;
+
+  void attach(image_data data) { set_data(data); }
 
   sampling_info get_sampling_info() { return _sampling_info; }
   void set_sampling_info(sampling_info info) {
@@ -592,7 +594,6 @@ using image_wrapper_base_p = image_wrapper_base *;
 
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 
-template <class T, int dimensions, bool IsImageArray> struct attach_data;
 /// Image class, wrapper of cl::sycl::image.
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   cl::sycl::image<dimensions> *_image = nullptr;
@@ -607,24 +608,19 @@ public:
   ~image_wrapper() { detach(); }
   /// Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    if(!_image)
-      throw std::runtime_error("NULL pointer argument in get_access function is invalid");
+    if (!_image)
+      _image = detail::image_creator<dimensions>()(get_data());
     return accessor_t(*_image, cgh);
-  }
-  /// Set data info, attach the data to this class.
-  void attach(image_data data) override {
-    image_wrapper_base::set_data(data);
-    detail::attach_data<T, dimensions, IsImageArray>()(*this, get_data());
   }
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix) {
     detach();
-    _image = matrix->create_image<dimensions>();
+    image_wrapper_base::set_data(image_data(matrix));
   }
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix, image_channel channel) {
-    detach();
-    _image = matrix->create_image<dimensions>(channel);
+    attach(matrix);
+    image_wrapper_base::set_channel(channel);
   }
   /// Attach linear data to this class.
   void attach(void *ptr, size_t count) {
@@ -637,9 +633,7 @@ public:
       ptr = get_buffer(ptr)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
-    _image = new cl::sycl::image<dimensions>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        cl::sycl::range<1>(count / channel.get_total_size()));
+    image_wrapper_base::set_data(image_data(ptr, count, channel));
   }
   /// Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch) {
@@ -652,10 +646,7 @@ public:
       data = get_buffer(data)
                 .get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
-    cl::sycl::range<1> pitch_range(pitch);
-    _image = new cl::sycl::image<dimensions>(
-        data, channel.get_channel_order(), channel.get_channel_type(),
-        cl::sycl::range<2>(x / channel.get_total_size(), y), pitch_range);
+    image_wrapper_base::set_data(image_data(data, x, y, pitch, channel));
   }
   /// Detach data.
   void detach() {
@@ -755,7 +746,7 @@ public:
   }
 };
 
-/// Create image according to image data and sampling info.
+/// Create image wrapper according to image data and sampling info.
 /// \return Pointer to image wrapper base class.
 /// \param data Image data used to create image wrapper.
 /// \param info Image sampling info used to create image wrapper.
@@ -774,39 +765,51 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 
   if (auto ret = detail::create_image_wrapper(channel, dims)) {
     ret->set_sampling_info(info);
-    ret->attach(data);
+    ret->set_data(data);
     return ret;
   }
   return nullptr;
 }
 
 namespace detail {
-/// Functor for attaching data to image class.
-template <class T, int dimensions, bool IsImageArray> struct attach_data {
-  void operator()(image_wrapper<T, dimensions, IsImageArray> &in_image,
-                  image_data data) {
+/// Functor to create sycl::image from image_data
+template <> struct image_creator<1> {
+  cl::sycl::image<1> *operator()(image_data data) {
+    assert(data.get_data_type() == image_data_type::linear ||
+           data.get_data_type() == image_data_type::matrix);
+    if (data.get_data_type() == image_data_type::matrix) {
+      return static_cast<image_matrix_p>(data.get_data_ptr())
+          ->create_image<1>(data.get_channel());
+    }
+    auto channel = data.get_channel();
+    return new cl::sycl::image<1>(
+        data.get_data_ptr(), channel.get_channel_order(),
+        channel.get_channel_type(),
+        cl::sycl::range<1>(data.get_x() / channel.get_total_size()));
+  }
+};
+template <> struct image_creator<2> {
+  cl::sycl::image<2> *operator()(image_data data) {
+    assert(data.get_data_type() == image_data_type::pitch ||
+           data.get_data_type() == image_data_type::matrix);
+    if (data.get_data_type() == image_data_type::matrix) {
+      return static_cast<image_matrix_p>(data.get_data_ptr())
+          ->create_image<2>(data.get_channel());
+    }
+    auto channel = data.get_channel();
+    return new cl::sycl::image<2>(
+        data.get_data_ptr(), channel.get_channel_order(),
+        channel.get_channel_type(),
+        cl::sycl::range<2>(data.get_x() / channel.get_total_size(),
+                           data.get_y()),
+        cl::sycl::range<1>(data.get_pitch()));
+  }
+};
+template <> struct image_creator<3> {
+  sycl::image<3> *operator()(image_data data) {
     assert(data.get_data_type() == image_data_type::matrix);
-    in_image.attach((image_matrix_p)data.get_data_ptr());
-  }
-};
-template <class T, bool IsImageArray> struct attach_data<T, 1, IsImageArray> {
-  void operator()(image_wrapper<T, 1, IsImageArray> &in_image,
-                  image_data data) {
-    if (data.get_data_type() == image_data_type::linear)
-      in_image.attach(data.get_data_ptr(), data.get_x(),
-                      data.get_channel());
-    else if (data.get_data_type() == image_data_type::matrix)
-      in_image.attach((image_matrix_p)data.get_data_ptr());
-  }
-};
-template <class T, bool IsImageArray> struct attach_data<T, 2, IsImageArray> {
-  void operator()(image_wrapper<T, 2, IsImageArray> &in_image,
-                  image_data data) {
-    if (data.get_data_type() == image_data_type::matrix)
-      in_image.attach((image_matrix_p)data.get_data_ptr());
-    else if (data.get_data_type() == image_data_type::pitch)
-      in_image.attach(data.get_data_ptr(), data.get_x(), data.get_y(),
-                      data.get_pitch(), data.get_channel());
+    return static_cast<image_matrix_p>(data.get_data_ptr())
+        ->create_image<3>(data.get_channel());
   }
 };
 
