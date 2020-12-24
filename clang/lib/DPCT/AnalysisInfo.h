@@ -3509,7 +3509,7 @@ struct FFTPlanAPIInfo {
 
   // Input info by Plan API
   std::string PrecAndDomainStr;
-  FFTTypeEnum FFTType; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
+  FFTTypeEnum FFTType = FFTTypeEnum::Unknown; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
   int QueueIndex = -1;
   std::vector<std::string> ArgsList;
   std::vector<std::string> ArgsListAddRequiredParen;
@@ -3533,8 +3533,8 @@ struct FFTPlanAPIInfo {
   std::string CallExprRepl;
   std::string FilePath;
   std::pair<unsigned int, unsigned int> InsertOffsets;
-  unsigned int ReplaceOffset;
-  unsigned int ReplaceLen;
+  unsigned int ReplaceOffset = 0;
+  unsigned int ReplaceLen = 0;
   std::string UnsupportedArg;
 
   void updateManyCommitCallExpr();

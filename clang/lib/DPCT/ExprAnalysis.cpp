@@ -847,7 +847,7 @@ bool ManagedPointerAnalysis::isInCudaPath(const Decl *Decleration) {
 }
 void ManagedPointerAnalysis::addRepl() {
   if (!Repl.empty()) {
-    for (auto R : Repl) {
+    for (const auto &R : Repl) {
       addReplacement(R.first.first, R.first.second, R.second);
     }
   }
@@ -864,11 +864,12 @@ void ManagedPointerAnalysis::analyzeExpr(const Stmt *S) {
   UK = UK_TEMP;
 }
 void ManagedPointerAnalysis::analyzeExpr(const CXXRecordDecl *CRD) {
-  auto CXXDecl = dyn_cast<CXXRecordDecl>(CRD);
-  for (auto *MT : CXXDecl->methods()) {
-    if (MT->hasBody()) {
-      UK = NoUse;
-      dispatch(MT->getBody());
+  if(auto CXXDecl = dyn_cast<CXXRecordDecl>(CRD)) {
+    for (auto *MT : CXXDecl->methods()) {
+      if (MT->hasBody()) {
+        UK = NoUse;
+        dispatch(MT->getBody());
+      }
     }
   }
 }
