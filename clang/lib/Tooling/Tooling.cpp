@@ -628,7 +628,13 @@ int ClangTool::run(ToolAction *Action) {
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
+#ifdef INTEL_CUSTOMIZATION
+      llvm::errs() << "Skipping " << File
+                   << ". Compile command for this file not found in "
+                      "compile_commands.json.\n";
+#else
       llvm::errs() << "Skipping " << File << ". Compile command not found.\n";
+#endif
       FileSkipped = true;
       continue;
     }
