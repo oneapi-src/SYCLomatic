@@ -118,18 +118,19 @@ private:
 /// dpct device extension
 class device_ext : public cl::sycl::device {
 public:
-  device_ext() : cl::sycl::device() {}
+  device_ext() : cl::sycl::device(), _ctx(*this) {}
   ~device_ext() {
     std::lock_guard<std::mutex> lock(m_mutex);
     _queues.clear();
   }
-  device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
+  device_ext(const cl::sycl::device &base)
+      : cl::sycl::device(base), _ctx(*this) {
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(
-        std::make_shared<cl::sycl::queue>(base, exception_handler));
+        std::make_shared<cl::sycl::queue>(_ctx, base, exception_handler));
 #else
     _queues.push_back(std::make_shared<cl::sycl::queue>(
-        base, exception_handler, cl::sycl::property::queue::in_order()));
+        _ctx, base, exception_handler, cl::sycl::property::queue::in_order()));
 #endif
     _saved_queue = _default_queue = _queues[0].get();
   }
@@ -237,12 +238,12 @@ public:
     // create new default queue.
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(
-        std::make_shared<cl::sycl::queue>(*this, exception_handler));
+        std::make_shared<cl::sycl::queue>(_ctx, *this, exception_handler));
 #else
     _queues.push_back(std::make_shared<cl::sycl::queue>(
-        *this, exception_handler, cl::sycl::property::queue::in_order()));
+        _ctx, *this, exception_handler, cl::sycl::property::queue::in_order()));
 #endif
-    _saved_queue = _default_queue = _queues[0].get();
+    _saved_queue = _default_queue = _queues.front().get();
   }
 
   cl::sycl::queue &default_queue() { return *_default_queue; }
@@ -266,13 +267,13 @@ public:
     }
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(std::make_shared<cl::sycl::queue>(
-        _default_queue->get_context(), *this, eh));
+        _ctx, *this, eh));
 #else
     _queues.push_back(std::make_shared<cl::sycl::queue>(
-        _default_queue->get_context(), *this, eh,
+        _ctx, *this, eh,
         cl::sycl::property::queue::in_order()));
 #endif
-    return _queues[_queues.size() - 1].get();
+    return _queues.back().get();
   }
   void destroy_queue(cl::sycl::queue *&queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -280,7 +281,7 @@ public:
                    [=](const std::shared_ptr<cl::sycl::queue> &q) -> bool {
                      return q.get() == queue;
                    });
-    queue = NULL;
+    queue = nullptr;
   }
   void set_saved_queue(cl::sycl::queue* q) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -290,6 +291,7 @@ public:
     std::lock_guard<std::mutex> lock(m_mutex);
     return _saved_queue;
   }
+  cl::sycl::context get_context() { return _ctx; }
 
 private:
   void get_version(int &major, int &minor) {
@@ -315,6 +317,7 @@ private:
   }
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;
+  cl::sycl::context _ctx;
   std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
   mutable std::mutex m_mutex;
 };
@@ -434,7 +437,7 @@ static inline device_ext &get_device(unsigned int id) {
 /// Util function to get the context of the default queue of current
 /// device in dpct device manager.
 static inline cl::sycl::context get_default_context() {
-  return dpct::get_default_queue().get_context();
+  return dpct::get_current_device().get_context();
 }
 
 /// Util function to get a cpu device.
