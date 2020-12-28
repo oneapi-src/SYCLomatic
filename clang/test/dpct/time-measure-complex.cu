@@ -495,6 +495,8 @@ void foo_test_3()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    stop_q_ct1_1.wait();
+// CHECK-NEXT:    stop_q_ct1_2.wait();
 // CHECK-NEXT:    CHECK(0);
     CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
     kernel<<<grid, block>>>(d_a, value);

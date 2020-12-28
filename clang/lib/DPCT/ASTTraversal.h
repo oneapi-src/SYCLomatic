@@ -1348,7 +1348,7 @@ public:
 private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                        const std::string EventAPIName);
-  void processAsyncJob(const Stmt *Node, bool NeedWait = true);
+  void processAsyncJob(const Stmt *Node);
   void updateAsyncRange(const CallExpr *AsyncCE, const std::string EventAPIName);
   void findThreadSyncLocation(const Stmt *Node);
   const clang::Stmt * getRedundantParenExpr(const CallExpr *Call);

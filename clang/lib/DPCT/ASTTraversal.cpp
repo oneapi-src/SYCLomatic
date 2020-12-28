@@ -8042,7 +8042,7 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
       TimeElapsedCE = CE;
       updateAsyncRange(CE, "cudaEventCreate");
       if (RecordBegin && RecordEnd) {
-        processAsyncJob(FD->getAsFunction()->getBody(), false);
+        processAsyncJob(FD->getAsFunction()->getBody());
       }
     }
 
@@ -8364,7 +8364,7 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 //    }
 //  processAsyncJob is used to process all sync calls between
 //  RecordEndLoc and RecordEndLoc, and RecordEndLoc and TimeElapsedLoc.
-void EventAPICallRule::processAsyncJob(const Stmt *Node, bool NeedWait) {
+void EventAPICallRule::processAsyncJob(const Stmt *Node) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   RecordBeginLoc = SM.getExpansionLoc(RecordBegin->getBeginLoc()).getRawEncoding();
   RecordEndLoc = SM.getExpansionLoc(RecordEnd->getBeginLoc()).getRawEncoding();
@@ -8372,8 +8372,7 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node, bool NeedWait) {
 
   // Handle the kernel calls and async memory operations between start and stop
   handleTargetCalls(Node);
-  if(!NeedWait)
-    return;
+
   for (const auto &NewEventName : Events2Wait) {
     std::ostringstream SyncStmt;
     SyncStmt
@@ -8473,26 +8472,26 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
       if (!Call)
         Call = dyn_cast<CallExpr>(*Iter);
 
-      if (const CallExpr *RecordCall = Call) {
-        if (!RecordCall->getDirectCallee())
+      if (Call) {
+        if (!Call->getDirectCallee())
           continue;
-        std::string RecordFuncName = RecordCall->getDirectCallee()
+        std::string RecordFuncName = Call->getDirectCallee()
                                          ->getNameInfo()
                                          .getName()
                                          .getAsString();
 
         if (RecordFuncName == "cudaEventCreate") {
           std::string Arg0;
-          if (auto UO = dyn_cast<UnaryOperator>(RecordCall->getArg(0))) {
+          if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
             if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
               Arg0 = getStmtSpelling(UO->getSubExpr());
             }
           }
           if (Arg0.empty())
-            Arg0 = getStmtSpelling(RecordCall->getArg(0));
+            Arg0 = getStmtSpelling(Call->getArg(0));
 
           if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-            RecordBegin = RecordCall;
+            RecordBegin = Call;
           }
         }
       }
@@ -8520,21 +8519,21 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
         if (!Call)
           Call = dyn_cast<CallExpr>(*Iter);
 
-        if (const CallExpr *RecordCall = Call) {
-          if (!RecordCall->getDirectCallee())
+        if (Call) {
+          if (!Call->getDirectCallee())
             continue;
-          std::string RecordFuncName = RecordCall->getDirectCallee()
+          std::string RecordFuncName = Call->getDirectCallee()
                                            ->getNameInfo()
                                            .getName()
                                            .getAsString();
           // Find the last call of Event Record on start and stop before
           // calculate the time elapsed
           if (RecordFuncName == EventAPIName) {
-            auto Arg0 = getStmtSpelling(RecordCall->getArg(0));
+            auto Arg0 = getStmtSpelling(Call->getArg(0));
             if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-              RecordBegin = RecordCall;
+              RecordBegin = Call;
             } else if (Arg0 == getStmtSpelling(AsyncCE->getArg(2))) {
-              RecordEnd = RecordCall;
+              RecordEnd = Call;
             }
           }
         }
@@ -8546,26 +8545,47 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
         if (!Call)
           Call = dyn_cast<CallExpr>(*Iter);
 
-        if (const CallExpr *RecordCall = Call) {
-          if (!RecordCall->getDirectCallee())
+        if (Call) {
+          if (!Call->getDirectCallee())
             continue;
-          std::string RecordFuncName = RecordCall->getDirectCallee()
+          std::string RecordFuncName = Call->getDirectCallee()
                                            ->getNameInfo()
                                            .getName()
                                            .getAsString();
 
           if (RecordFuncName == EventAPIName) {
             std::string Arg0;
-            if (auto UO = dyn_cast<UnaryOperator>(RecordCall->getArg(0))) {
+            if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
               if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
                 Arg0 = getStmtSpelling(UO->getSubExpr());
               }
             }
             if (Arg0.empty())
-              Arg0 = getStmtSpelling(RecordCall->getArg(0));
+              Arg0 = getStmtSpelling(Call->getArg(0));
 
             if (Arg0 == getStmtSpelling(AsyncCE->getArg(0)))
-              RecordBegin = RecordCall;
+              RecordBegin = Call;
+          }
+        }
+
+        // To update RecordEnd
+        Call = nullptr;
+        findEventAPI(*Iter, Call, "cudaEventRecord");
+        if (!Call)
+          Call = dyn_cast<CallExpr>(*Iter);
+
+        if (Call) {
+          if (!Call->getDirectCallee())
+            continue;
+          std::string RecordFuncName = Call->getDirectCallee()
+                                           ->getNameInfo()
+                                           .getName()
+                                           .getAsString();
+          if (RecordFuncName == "cudaEventRecord") {
+            auto Arg0 = getStmtSpelling(Call->getArg(0));
+            if (Arg0 == getStmtSpelling(AsyncCE->getArg(0))) {
+              RecordEnd = Call;
+            }
           }
         }
       }
