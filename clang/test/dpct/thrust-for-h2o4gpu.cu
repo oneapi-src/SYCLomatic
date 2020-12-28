@@ -301,3 +301,17 @@ struct make_pair_functor
 // CHECK-NEXT: std::pair<int,int> P1;
 typedef thrust::pair<int,int> P;
 thrust::pair<int,int> P1;
+
+class AbstractInput {
+public:
+  AbstractInput() {}
+  ~AbstractInput() {}
+
+  template <size_t index> int *&getOutputNode() {
+   // CHECK:    return *std::get<index>(m_pOutputNodes);
+    return *std::get<index>(m_pOutputNodes);
+  }
+
+private:
+  int *m_pOutputNodes;
+};

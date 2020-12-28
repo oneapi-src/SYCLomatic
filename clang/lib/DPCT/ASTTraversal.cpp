@@ -1661,7 +1661,14 @@ void ThrustFunctionRule::thrustFuncMigration(
   // handle the a regular call expr
   std::string ThrustFuncName;
   if (ULExpr) {
-    ThrustFuncName = ULExpr->getName().getAsString();
+    std::string Namespace;
+    if (auto NNS = ULExpr->getQualifier()) {
+      if (auto NS = NNS->getAsNamespace()) {
+        Namespace = NS->getNameAsString();
+      }
+    }
+    if (!Namespace.empty() && Namespace == "thrust")
+      ThrustFuncName = ULExpr->getName().getAsString();
   } else {
     ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
