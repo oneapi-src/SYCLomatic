@@ -276,12 +276,13 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     if (SM.isMacroArgExpansion(E->getBeginLoc())) {
       BeginLoc = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+        SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
       EndLoc = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-    } else {
+        SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+    }
+    else {
       BeginLoc =
-          SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
+        SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
       EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
       if (isExprStraddle(E)) {
         auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(), E->getEndLoc());
@@ -289,20 +290,14 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
         EndLoc = SM.getImmediateSpellingLoc(Range.second);
       }
     }
-  } else if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
-    // If E is not OuterMostMacro, use the spelling location
-    BeginLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getBeginLoc()));
-    EndLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getEndLoc()));
-    if (isExprStraddle(E)) {
-      auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(), E->getEndLoc());
-      BeginLoc = SM.getImmediateSpellingLoc(Range.first);
-      EndLoc = SM.getImmediateSpellingLoc(Range.second);
-    }
   } else {
-    // If E is the OuterMostMacro, use the expansion location
-    BeginLoc = SM.getExpansionRange(E->getBeginLoc()).getBegin();
-    EndLoc = SM.getExpansionRange(E->getEndLoc()).getEnd();
+    // If the Expr is FileID or is macro arg
+    // e.g. CALL(expr)
+    auto Range = getStmtExpansionSourceRange(E);
+    BeginLoc = Range.getBegin();
+    EndLoc = Range.getEnd();
   }
+
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
   auto LastTokenLength =

@@ -745,3 +745,17 @@ int foo14(){
   ALL3(ALL3(const int2 *)) kkk;
   ALL2(const, ALL3(int2), *) lll;
 }
+
+//CHECK: void foo15(){
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   dpct::image_wrapper<float, 1> aaa;
+//CHECK-NEXT:   float *f_a = NULL;
+//CHECK-NEXT:   CALL(aaa.attach(f_a, CUDA_NUM_THREADS * sizeof(int)))
+//CHECK-NEXT: }
+void foo15(){
+  texture<float, 1, cudaReadModeElementType> aaa;
+  float *f_a = NULL;
+  CALL(cudaBindTexture(0, aaa, f_a, CUDA_NUM_THREADS * sizeof(int)))
+}
