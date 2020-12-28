@@ -382,12 +382,8 @@ public:
   void emplaceReplacements(ReplTy &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-
-    if(Repl->getLength() == 0 && Repl->getReplacementText().empty())
+    if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
       return;
-
-    if(Repl->IsSYCLHeaderNeeded())
-      insertHeader(SYCL);
 
     Repls.addReplacement(Repl);
   }
@@ -395,6 +391,8 @@ public:
   ExtReplacements &getRepls() { return Repls; }
 
   size_t getFileSize() const { return FileSize; }
+
+  std::string &getFileContent() { return FileContentCache; }
 
   // Header inclusion directive insertion functions
   void setFileEnterOffset(unsigned Offset) {
@@ -674,6 +672,7 @@ private:
   std::vector<SourceLineInfo> Lines;
 
   std::string FilePath;
+  std::string FileContentCache;
 
   unsigned FirstIncludeOffset = 0;
   unsigned LastIncludeOffset = 0;

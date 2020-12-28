@@ -61,7 +61,8 @@ private:
 
 private:
   bool isInvalid(std::shared_ptr<ExtReplacement> Repl);
-
+  // Check if the Repl is same as source code
+  bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl);
   inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
     if (isAlive(Repl))
       // If a replacement in the same pair is alive, merge it anyway.

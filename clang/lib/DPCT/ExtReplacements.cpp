@@ -38,9 +38,19 @@ bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
 #endif
     return true;
   }
-  return false;
+  return isReplRedundant(Repl);
 }
-
+bool ExtReplacements::isReplRedundant(std::shared_ptr<ExtReplacement> Repl) {
+  std::string &FileContent = FileInfo->getFileContent();
+  if (FileContent.empty())
+    return true;
+  size_t Len = Repl->getLength();
+  size_t Offset = Repl->getOffset();
+  auto RepText = Repl->getReplacementText();
+  if (Len != RepText.size())
+    return false;
+  return FileContent.substr(Offset, Len) == RepText;
+}
 /// Do merge for Short replacement and Longer replacement.
 ///
 /// Return the merged replacement.
@@ -254,14 +264,19 @@ bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
 void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl))
     return;
-  if (Repl->getLength())
+  if (Repl->getLength()) {
+    if(Repl->IsSYCLHeaderNeeded())
+      FileInfo->insertHeader(SYCL);
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
-  // If Repl is insert replacement, check whether it is alive or dead.
-  else if (checkLiveness(Repl))
+    // If Repl is insert replacement, check whether it is alive or dead.
+  } else if (checkLiveness(Repl)) {
+    if(Repl->IsSYCLHeaderNeeded())
+      FileInfo->insertHeader(SYCL);
     markAsAlive(Repl);
-  else
+  } else {
     markAsDead(Repl);
+  }
 }
 
 bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,

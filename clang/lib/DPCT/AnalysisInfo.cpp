@@ -151,6 +151,8 @@ void DpctFileInfo::buildLinesInfo() {
   auto LineCache = Content->SourceLineCache;
   auto NumLines = Content->NumLines;
   FileSize = Content->getSize();
+  if(auto RawBuffer = Content->getRawBuffer())
+    FileContentCache = RawBuffer->getBuffer().str();
   const char *Buffer = nullptr;
   if (!LineCache) {
     return;
