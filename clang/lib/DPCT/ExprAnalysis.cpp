@@ -1001,6 +1001,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(CXXDependentScopeMemberExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1027,6 +1028,15 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
     }
   }
   return Size;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(
+    const CXXDependentScopeMemberExpr *Arg) {
+  if (Arg->isImplicitAccess()) {
+    IsRedeclareRequired = true;
+  } else {
+    KernelArgumentAnalysis::dispatch(Arg->getBase());
+  }
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {

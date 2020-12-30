@@ -333,11 +333,19 @@ void foo2(Image<T> &ptr, T value) {
 }
 
 template <typename T>
-__global__ void my_kernel2(T A) {}
+__global__ void my_kernel2(T A, int r) {}
+
+template <typename V>
+struct crs {
+  typedef V val_t;
+  crs();
+  int rows;
+};
 
 template <typename T> struct spmv_driver{
   typedef T val_t;
   val_t alpha;
+  crs<val_t> *crsmat;
 };
 
 namespace cuda {
@@ -349,6 +357,18 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
     val_t *dresult;
 // CHECK:dresult = (cuda::spmv_driver<V>::val_t *)dpct::dpct_malloc(sizeof(val_t));
     cudaMalloc((void **)&dresult, sizeof(val_t));
+// CHECK:dpct::get_default_queue().submit(
+// CHECK-NEXT:  [&](sycl::handler &cgh) {
+// CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
+// CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
+// CHECK-EMPTY:
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
+// CHECK-NEXT:      });
+// CHECK-NEXT:  });
+    my_kernel2<<<1,1>>>(base_t::alpha, base_t::crsmat->rows);
   }
 };
 }

@@ -696,6 +696,7 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+  inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
 
   bool isNullPtr(const Expr *);
 
