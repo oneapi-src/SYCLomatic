@@ -223,12 +223,20 @@ std::string getWarningText(IDTy MsgID, Ts &&... Vals) {
 
 template <typename IDTy, typename... Ts>
 std::string getCommentToInsert(SourceLocation StartLoc, SourceManager &SM,
-                               IDTy MsgID, Ts &&... Vals) {
+                               IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
   std::string OrigIndent = getIndent(StartLoc, SM).str();
-  std::string Comment =
-      (OrigIndent + llvm::Twine("/*") + getNL() + OrigIndent +
-       getWarningText(MsgID, Vals...) + getNL() + OrigIndent + "*/" + getNL())
-          .str();
+  std::string Comment;
+  if (UseTextBegin)
+    Comment = (llvm::Twine("/*") + getNL() + OrigIndent +
+               getWarningText(MsgID, Vals...) + getNL() + OrigIndent + "*/" +
+               getNL() + OrigIndent)
+                  .str();
+  else
+    Comment =
+        (OrigIndent + llvm::Twine("/*") + getNL() + OrigIndent +
+         getWarningText(MsgID, Vals...) + getNL() + OrigIndent + "*/" + getNL())
+            .str();
+
   return Comment;
 }
 
@@ -330,7 +338,7 @@ private:
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
 bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
-            bool IsInsertWarningIntoCode, Ts &&... Vals) {
+            bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&... Vals) {
   std::shared_ptr<DpctFileInfo> Fileinfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
 
@@ -365,12 +373,15 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
   }
 
   if (IsInsertWarningIntoCode) {
-    auto StartLoc = getStartOfLine(SL, SM, LangOptions());
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            NativeFormPath.str().str(), SM.getDecomposedLoc(StartLoc).second, 0,
-            getCommentToInsert(StartLoc, SM, MsgID, std::forward<Ts>(Vals)...),
-            nullptr));
+    auto StartLoc = getStartOfLine(SL, SM, LangOptions(), UseTextBegin);
+    std::shared_ptr<ExtReplacement> R = std::make_shared<ExtReplacement>(
+        NativeFormPath.str().str(), SM.getDecomposedLoc(StartLoc).second, 0,
+        getCommentToInsert(StartLoc, SM, MsgID, UseTextBegin,
+                           std::forward<Ts>(Vals)...),
+        nullptr);
+    if (UseTextBegin)
+      R->setInsertPosition(InsertPosition::InsertPositionRight);
+    DpctGlobalInfo::getInstance().addReplacement(R);
   }
 
   UniqueID++;

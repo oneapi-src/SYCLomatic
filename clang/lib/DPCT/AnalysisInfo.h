@@ -551,6 +551,9 @@ public:
   std::map<unsigned int, FFTPlanAPIInfo> &getFFTPlanAPIInfoMap() {
     return FFTPlanAPIInfoMap;
   }
+  std::map<unsigned int, FFTExecAPIInfo> &getFFTExecAPIInfoMap() {
+    return FFTExecAPIInfoMap;
+  }
 
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
     return EventSyncTypeMap;
@@ -649,6 +652,7 @@ private:
   std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
   std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
+  std::map<unsigned int, FFTExecAPIInfo> FFTExecAPIInfoMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
@@ -1209,6 +1213,7 @@ public:
   }
 
   void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
+  void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
   void insertDeviceRandomStateTypeInfo(SourceLocation SL, unsigned int Length,
                                        std::string GeneratorType) {
@@ -1500,23 +1505,42 @@ public:
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
   }
 
-  static void insertOrUpdateFFTExecAPIInfo(const std::string &FileAndOffset,
-                                           const FFTDirectionType Direction,
-                                           const FFTPlacementType Placement) {
-    auto I = FFTExecAPIInfoMap.find(FileAndOffset);
-    if (I == FFTExecAPIInfoMap.end()) {
-      FFTExecAPIInfo Info;
+static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
+                                          const FFTDirectionType Direction,
+                                          const FFTPlacementType Placement) {
+    auto I = FFTHandleInfoMap.find(FileAndOffset);
+    if (I == FFTHandleInfoMap.end()) {
+      FFTHandleInfo Info;
       Info.Direction = Direction;
       Info.Placement = Placement;
-      FFTExecAPIInfoMap.insert(std::make_pair(FileAndOffset, Info));
+      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
     } else {
       I->second.updateDirectionFromExec(Direction);
       I->second.updatePlacementFromExec(Placement);
     }
   }
-  static std::unordered_map<std::string, FFTExecAPIInfo> &
-  getFFTExecAPIInfoMap() {
-    return FFTExecAPIInfoMap;
+  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
+                                          bool MayNeedReset,
+                                          std::string InputDistance,
+                                          std::string OutputDistance,
+                                          std::string InembedStr,
+                                          std::string OnembedStr) {
+    auto I = FFTHandleInfoMap.find(FileAndOffset);
+    if (I == FFTHandleInfoMap.end()) {
+      FFTHandleInfo Info;
+      Info.MayNeedReset = MayNeedReset;
+      Info.InputDistance = InputDistance;
+      Info.OutputDistance = OutputDistance;
+      Info.InembedStr = InembedStr;
+      Info.OnembedStr = OnembedStr;
+      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
+    } else {
+      I->second.updateResetInfo(MayNeedReset, InputDistance, OutputDistance,
+                                InembedStr, OnembedStr);
+    }
+  }
+  static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
+    return FFTHandleInfoMap;
   }
 
 private:
@@ -1667,6 +1691,7 @@ private:
   // Key: the fft handle declaration "FilePath:Offset"
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
+  static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
 };
 
 class TemplateArgumentInfo;

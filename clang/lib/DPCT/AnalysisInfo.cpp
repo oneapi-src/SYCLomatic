@@ -82,8 +82,8 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo>
-    DpctGlobalInfo::FFTExecAPIInfoMap;
+std::unordered_map<std::string, FFTHandleInfo>
+    DpctGlobalInfo::FFTHandleInfoMap;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
@@ -113,6 +113,17 @@ void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
   auto LocInfo = getLocInfo(SL);
   auto FileInfo = insertFile(LocInfo.first);
   auto &M = FileInfo->getFFTPlanAPIInfoMap();
+  if (M.find(LocInfo.second) == M.end()) {
+    Info.FilePath = LocInfo.first;
+    M.insert(std::make_pair(LocInfo.second, Info));
+  }
+}
+
+void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
+                                          FFTExecAPIInfo Info) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  auto &M = FileInfo->getFFTExecAPIInfoMap();
   if (M.find(LocInfo.second) == M.end()) {
     Info.FilePath = LocInfo.first;
     M.insert(std::make_pair(LocInfo.second, Info));
@@ -225,7 +236,7 @@ void DpctFileInfo::buildReplacements() {
   if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
     for (auto &SpBLASWarningLocOffset : SpBLASSet) {
       DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
-                               Diagnostics::UNSUPPORT_MATRIX_TYPE, true);
+                               Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
     }
   }
 
@@ -233,7 +244,7 @@ void DpctFileInfo::buildReplacements() {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
                                Diagnostics::API_NOT_OCCURRED_IN_AST, true,
-                               std::get<1>(AtomicInfo.second));
+                               false, std::get<1>(AtomicInfo.second));
   }
 
   for (auto &DescInfo : FFTDescriptorTypeMap) {
@@ -246,6 +257,10 @@ void DpctFileInfo::buildReplacements() {
 
   for (auto &PlanInfo : FFTPlanAPIInfoMap) {
     PlanInfo.second.buildInfo();
+  }
+
+  for (auto &ExecInfo : FFTExecAPIInfoMap) {
+    ExecInfo.second.buildInfo();
   }
 }
 
@@ -317,7 +332,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true);
+                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true, false);
     }
     ++Idx;
   }
@@ -387,7 +402,7 @@ void KernelCallExpr::addAccessorDecl() {
         // Type dpct_placeholder
         Tex->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::UNDEDUCED_TYPE, true,
+                                 Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
@@ -427,7 +442,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                                   SubmitStmtsList.PtrList);
   if (VI->isTypeDeclaredLocal()) {
     if (DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::TYPE_IN_FUNCTION, false,
+                                 Diagnostics::TYPE_IN_FUNCTION, false, false,
                                  VI->getName(), VI->getLocalTypeName())) {
       if (!SubmitStmtsList.AccessorList.empty()) {
         SubmitStmtsList.AccessorList.back().Warning =
@@ -454,7 +469,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
 
     if (Arg.IsDoublePointer) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
-                               Diagnostics::VIRTUAL_POINTER, true,
+                               Diagnostics::VIRTUAL_POINTER, true, false,
                                Arg.getArgString());
     }
 
@@ -473,7 +488,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
                     "> *";
         } else {
           DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                   Diagnostics::UNDEDUCED_TYPE, true,
+                                   Diagnostics::UNDEDUCED_TYPE, true, false,
                                    "RNG engine");
           TypeStr =
               TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
@@ -720,7 +735,7 @@ void KernelCallExpr::buildInfo() {
   if (TotalArgsSize >
       MapNames::KernelArgTypeSizeMap.at(KernelArgType::MaxParameterSize))
     DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true);
+                             Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true, false);
   // TODO: Output debug info.
   auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
                                             getReplacement(), nullptr);
@@ -1508,7 +1523,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
         DiagnosticsUtils::report(Obj->getFilePath(), Obj->getOffset(),
-                                 Diagnostics::UNDEDUCED_TYPE, true,
+                                 Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
       Obj->addParamDeclReplacement();
@@ -2100,8 +2115,10 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     OS << "cgh);";
     StmtWithWarning AccDecl(OS.str());
     if(Dimension > 3) {
-      AccDecl.Warning = DiagnosticsUtils::getWarningText(Diagnostics::EXCEED_MAX_DIMENSION);
-      DiagnosticsUtils::report(getFilePath(), getOffset(), Diagnostics::EXCEED_MAX_DIMENSION, false);
+      AccDecl.Warning =
+          DiagnosticsUtils::getWarningText(Diagnostics::EXCEED_MAX_DIMENSION);
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::EXCEED_MAX_DIMENSION, false, false);
     }
     AccList.emplace_back(std::move(AccDecl));
   } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
@@ -2298,7 +2315,7 @@ void RandomEngineInfo::buildInfo() {
     TypeReplacement= "dpct_placeholder/*Fix the engine type manually*/";
     for (unsigned int i = 0; i < CreateAPINum; ++i)
       DiagnosticsUtils::report(CreateCallFilePath[i], CreateAPIBegin[i],
-                               Diagnostics::UNDEDUCED_TYPE, true, "RNG engine");
+                               Diagnostics::UNDEDUCED_TYPE, true, false, "RNG engine");
   }
 
   std::string Repl = GeneratorName + " = new " + TypeReplacement + "(" +
@@ -2328,7 +2345,7 @@ void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
             nullptr));
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, "RNG engine");
+                             true, false, "RNG engine");
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
@@ -2348,7 +2365,7 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
     VecSizeStr = std::to_string(VecSize);
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, "RNG engine");
+                             true, false, "RNG engine");
     VecSizeStr = "dpct_placeholder/*Fix the vec_size manually*/";
   }
 
@@ -2411,7 +2428,7 @@ void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
             FilePath, Offset, Length,
             "dpct_placeholder/*Fix the engine type manually*/*", nullptr));
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, "RNG engine");
+                             true, false, "RNG engine");
   }
 }
 
@@ -2430,20 +2447,17 @@ void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
       FilePath, Offset, 0, InsertStr, nullptr));
 }
 
-void EventSyncTypeInfo::buildInfo(std::string FilePath,
-                                          unsigned int Offset) {
-    if(NeedReport)
-      DiagnosticsUtils::report(FilePath, Offset, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
+  if (NeedReport)
+    DiagnosticsUtils::report(FilePath, Offset,
+                             Diagnostics::NOERROR_RETURN_COMMA_OP, true, false);
 
-    if (IsAssigned && ReplText.empty()) {
-      ReplText = "0";
-    }
+  if (IsAssigned && ReplText.empty()) {
+    ReplText = "0";
+  }
 
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, Offset, Length,
-            ReplText,
-            nullptr));
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, Length, ReplText, nullptr));
 }
 
 bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }

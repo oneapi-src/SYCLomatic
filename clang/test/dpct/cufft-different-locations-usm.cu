@@ -31,9 +31,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -50,6 +47,9 @@ int main() {
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n[2]*n[1]*n[0]);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:int res1 = (plan1->commit(q_ct1), 0);
   cufftResult res1 = cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:int res2 = 0;
@@ -70,9 +70,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -89,6 +86,9 @@ int main() {
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n[2]*n[1]*n[0]);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:res1 = (plan2->commit(q_ct1), 0);
   res1 = cufftMakePlanMany(plan2, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:if ((void *)idata == (void *)odata) {
@@ -108,9 +108,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in function-like macro statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan3 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -128,6 +125,9 @@ int main() {
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan3->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in function-like macro statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:HANDLE_CUFFT_ERROR(0);
   HANDLE_CUFFT_ERROR(cufftMakePlanMany(plan3, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:/*
@@ -151,9 +151,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan4 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -171,6 +168,9 @@ int main() {
   //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan4->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:if(0) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
@@ -237,9 +237,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan6 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -257,6 +254,9 @@ int main() {
   //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan6->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:if(int res = 0) {
   //CHECK-NEXT:}
   if(cufftResult res = cufftMakePlanMany(plan6, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
@@ -281,9 +281,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan7 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -301,6 +298,9 @@ int main() {
   //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan7->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:for (0;;) {
   //CHECK-NEXT:}
   for (cufftMakePlanMany(plan7, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);;) {
@@ -469,9 +469,6 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan11 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -489,6 +486,9 @@ int main() {
   //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan11->commit(q_ct1);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:switch (int stat = 0){
   //CHECK-NEXT:}
   switch (int stat = cufftMakePlanMany(plan11, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)){
@@ -516,9 +516,6 @@ cufftResult foo1(cufftHandle plan) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
-  //CHECK-NEXT:*/
   //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 12);
@@ -536,6 +533,9 @@ cufftResult foo1(cufftHandle plan) {
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
   //CHECK-NEXT:plan->commit(dpct::get_default_queue());
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:return 0;
   return cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }

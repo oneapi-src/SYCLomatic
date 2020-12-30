@@ -138,7 +138,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
           auto LocInfo = DpctGlobalInfo::getLocInfo(
               SM.getExpansionLoc(TheStmt->getBeginLoc()));
           DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                                   Diagnostics::MACRO_REMOVED, true, MacroName);
+                                   Diagnostics::MACRO_REMOVED, true, false, MacroName);
         }
       }
     }

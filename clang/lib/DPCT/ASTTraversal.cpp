@@ -13141,7 +13141,10 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     FFTPlanAPIInfo FPAInfo;
     FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags, Index);
-    FPAInfo.replacementLocation(Locations);
+    FFCB.updateFFTHandleInfoFromPlan(HandleDeclFileAndOffset);
+    replacementLocation(Locations, Flags, FPAInfo.ReplaceOffset,
+                        FPAInfo.ReplaceLen, FPAInfo.InsertOffsets,
+                        FPAInfo.FilePath);
     FPAInfo.HandleDeclFileAndOffset = HandleDeclFileAndOffset;
     if (FuncNameRef.startswith("cufftMake")) {
       FPAInfo.UnsupportedArg =
@@ -13154,19 +13157,19 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
+    std::string FFTHandleInfoKey;
     if (Flags.IsFunctionPointer) {
-      FFCB.updateFFTExecAPIInfo();
+      FFCB.updateExecCallExpr();
     } else {
       const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
       if (!DD)
         return;
 
       SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-      std::string FFTExecAPIInfoKey =
-          DpctGlobalInfo::getLocInfo(SL).first + ":" +
-          std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
+      FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
+                         std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
 
-      FFCB.updateFFTExecAPIInfo(FFTExecAPIInfoKey);
+      FFCB.updateExecCallExpr(FFTHandleInfoKey);
     }
 
     SourceLocation TypeBegin;
@@ -13175,12 +13178,18 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceText(TypeBegin, TypeLength, ""));
     }
 
-    ReplaceStrs.PrePrefixInsertStr = FFCB.getPrePrefixString();
-    ReplaceStrs.PrefixInsertStr = FFCB.getPrefixString();
-    ReplaceStrs.SuffixInsertStr = FFCB.getSuffixString();
-    ReplaceStrs.Repl = FFCB.getCallExprReplString();
+    FFTExecAPIInfo FEAInfo;
+    FFCB.updateFFTExecAPIInfo(FEAInfo);
+    FEAInfo.HandleDeclFileAndOffset = FFTHandleInfoKey;
+
+    if (Flags.IsFunctionPointer)
+      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
+          SM.getExpansionLoc(VD->getBeginLoc()), FEAInfo);
+    else
+      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
+          SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
+    return;
   }
-  addReplacementForLibraryAPI(Flags, ReplaceStrs, Locations, FuncName, CE);
 }
 
 REGISTER_RULE(FFTFunctionCallRule)

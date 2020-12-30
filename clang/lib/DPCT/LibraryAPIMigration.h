@@ -51,9 +51,54 @@ enum class FFTTypeEnum : int {
   Unknown = 6
 };
 
-struct FFTExecAPIInfo {
+struct FFTExecAPIInfo;
+
+struct LibraryAPIStmts {
+  LibraryAPIStmts() {}
+
+  LibraryAPIStmts &operator<<(const LibraryAPIStmts &InputStmts) {
+    S.insert(S.end(), InputStmts.S.begin(), InputStmts.S.end());
+    return *this;
+  }
+  LibraryAPIStmts &operator<<(const std::vector<std::string> &InputStmts) {
+    S.insert(S.end(), InputStmts.begin(), InputStmts.end());
+    return *this;
+  }
+  LibraryAPIStmts &operator<<(const std::string &InputStmt) {
+    if (InputStmt.empty())
+      return *this;
+
+    S.push_back(InputStmt);
+    return *this;
+  }
+
+  std::string getAsString(std::string IndentStr, bool IsNLAtBegin) {
+    std::ostringstream OS;
+    for (const auto &Stmt : S) {
+      if (IsNLAtBegin)
+        OS << getNL() << IndentStr << Stmt; // For suffix string
+      else
+        OS << Stmt << getNL() << IndentStr; // For prefix string
+    }
+    return OS.str();
+  }
+  std::vector<std::string> S;
+};
+
+struct FFTHandleInfo {
   FFTDirectionType Direction = FFTDirectionType::uninitialized;
   FFTPlacementType Placement = FFTPlacementType::uninitialized;
+  // Below 6 members do not cover the case that one handle is resued
+  // in different plan APIs. If the related plan API is "many", the flag
+  // will be true. The checking of C2C/Z2Z will be done in Exec API
+  // migration.
+  // Since handle resuing is not covered, these 5 members are just rewrited if
+  // they are updated multi times.
+  bool MayNeedReset = false;
+  std::string InputDistance;
+  std::string OutputDistance;
+  std::string InembedStr;
+  std::string OnembedStr;
 
   void updateDirectionFromExec(FFTDirectionType NewDirection) {
     if (Direction == FFTDirectionType::uninitialized) {
@@ -80,6 +125,14 @@ struct FFTExecAPIInfo {
     // different placements and Placement is initialized
     Placement = FFTPlacementType::unknown;
     return;
+  }
+  void updateResetInfo(bool F, std::string ID, std::string OD, std::string IE,
+                       std::string OE) {
+    MayNeedReset = F;
+    InputDistance = ID;
+    OutputDistance = OD;
+    InembedStr = IE;
+    OnembedStr = OE;
   }
 };
 
@@ -166,38 +219,6 @@ struct FFTPlanAPIInfo {
   setValueForBasicManyBatched(std::vector<std::string> Dims,
                               std::vector<std::string> DimsWithoutParen);
   void linkInfo();
-  void replaceText();
-  void replacementLocation(LibraryMigrationLocations Locations);
-
-  struct Stmts {
-    Stmts() {}
-
-    Stmts &operator<<(const Stmts &InputStmts) {
-      S.insert(S.end(), InputStmts.S.begin(), InputStmts.S.end());
-      return *this;
-    }
-    Stmts &operator<<(const std::vector<std::string> &InputStmts) {
-      S.insert(S.end(), InputStmts.begin(), InputStmts.end());
-      return *this;
-    }
-    Stmts &operator<<(const std::string &InputStmt) {
-      S.push_back(InputStmt);
-      return *this;
-    }
-
-    std::string getAsString(std::string IndentStr, bool IsNLAtBegin) {
-      std::ostringstream OS;
-      for (const auto &Stmt : S) {
-        if (IsNLAtBegin)
-          OS << getNL() << IndentStr << Stmt; // For suffix string
-        else
-          OS << Stmt << getNL() << IndentStr; // For prefix string
-      }
-      return OS.str();
-    }
-
-    std::vector<std::string> S;
-  };
 };
 
 class FFTFunctionCallBuilder {
@@ -238,7 +259,8 @@ public:
             !dyn_cast<IntegerLiteral>(E->IgnoreImplicit()) &&
             !dyn_cast<FloatingLiteral>(E->IgnoreImplicit()) &&
             !dyn_cast<FixedPointLiteral>(E->IgnoreImplicit())) {
-          ArgsListAddRequiredParen[Idx] = "(" + ArgsListAddRequiredParen[Idx] + ")";
+          ArgsListAddRequiredParen[Idx] =
+              "(" + ArgsListAddRequiredParen[Idx] + ")";
         }
       }
     }
@@ -252,8 +274,10 @@ public:
                                   SourceLocation &TypeBegin, int &TypeLength);
   void updateFFTPlanAPIInfo(FFTPlanAPIInfo &FPAInfo,
                             LibraryMigrationFlags &Flags, int Index);
-  void updateFFTExecAPIInfo(std::string FFTExecAPIInfoKey);
-  void updateFFTExecAPIInfo();
+  void updateExecCallExpr(std::string FFTHandleInfoKey);
+  void updateExecCallExpr();
+  void updateFFTExecAPIInfo(FFTExecAPIInfo &FEAInfo);
+  void updateFFTHandleInfoFromPlan(std::string FFTHandleInfoKey);
 
 private:
   void updateBufferArgs(unsigned int Idx, const std::string &TypeStr,
@@ -264,7 +288,7 @@ private:
   std::string getDescr();
   FFTTypeEnum getFFTType(unsigned int PrecDomainIdx);
   std::string getPrecAndDomainStr(unsigned int PrecDomainIdx);
-  void assembleExecCallExpr(int64_t Dir);
+  void assembleExecCallExpr();
 
   const clang::CallExpr *TheCallExpr;
   std::string PrePrefixStmt;
@@ -278,12 +302,25 @@ private:
   std::string CallExprRepl;
   LibraryMigrationLocations Locations;
   LibraryMigrationFlags Flags;
+  int64_t Dir = 0;
 };
 
 void initVars(const CallExpr *CE, const VarDecl *VD,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations);
+void replacementLocation(const LibraryMigrationLocations Locations,
+                         const LibraryMigrationFlags Flags,
+                         unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
+                         std::pair<unsigned int, unsigned int> &InsertOffsets,
+                         std::string &FilePath);
+void replacementText(LibraryMigrationFlags Flags, const std::string PrePrefixStmt,
+                 const std::vector<std::string> PrefixStmts,
+                 const std::vector<std::string> SuffixStmts,
+                 std::string CallExprRepl, const std::string IndentStr,
+                 const std::string FilePath, const unsigned int ReplaceOffset,
+                 const unsigned int ReplaceLen,
+                 const std::pair<unsigned int, unsigned int> InsertOffsets);
 
 struct FFTDescriptorTypeInfo {
   FFTDescriptorTypeInfo(unsigned int Length) : Length(Length) {}
@@ -296,6 +333,59 @@ struct FFTDescriptorTypeInfo {
   // declaration will be rewrite to a lambda, the paramter type can be deduced
   // from function name. So this type replacement and warning can be skipped.
   bool SkipGeneration = false;
+};
+
+
+struct FFTExecAPIInfo {
+
+  FFTExecAPIInfo() {}
+  void buildInfo();
+  void linkInfo();
+  void addInfo(std::string IndentStrInput, LibraryMigrationFlags FlagsInput,
+               std::string PrePrefixStmtInput,
+               std::vector<std::string> PrefixStmtsInput,
+               std::vector<std::string> SuffixStmtsInput,
+               std::string CallExprReplInput, bool IsComplexDomainInput,
+               std::string DescStrInput, std::int64_t DirInput);
+  void updateResetAndCommitStmts();
+
+  // Input info by Exec API
+  LibraryMigrationFlags Flags;
+  std::string PrePrefixStmt;
+  std::vector<std::string> PrefixStmts;
+  std::vector<std::string> SuffixStmts;
+  std::string CallExprRepl;
+  std::string IndentStr;
+  std::string FilePath;
+  std::pair<unsigned int, unsigned int> InsertOffsets;
+  unsigned int ReplaceOffset;
+  unsigned int ReplaceLen;
+  bool IsComplexDomain = false;
+  std::string DescStr;
+  std::int64_t Dir;
+  std::string HandleDeclFileAndOffset;
+
+  // Input info by Plan API (from handle info)
+  std::string InputDistance;
+  std::string OutputDistance;
+  std::string InembedStr;
+  std::string OnembedStr;
+
+  // generate info
+  // code is like:
+  // if (inembed != null && onembed != null) {
+  // desc->set_value(FWD_DISTANCE, ...);
+  // desc->set_value(BWD_DISTANCE, ...);
+  // desc->commit(q);
+  // }
+  // TODO: Here maybe need a warning like:
+  // inembed/onembed/input_dis/output_dis may be not accessable here, you may
+  // need manully fix the code.
+  std::vector<std::string> ResetAndCommitStmts; // These stmts should be added
+                             // at the begin of PrefixStmts
+  bool NeedReset = false; // MayNeedReset(from handle info) && IsComplexDomain
+                          // && !IsFunctionPointer
+                          // && (handle->dir == unknown || handle->dir == uninitialized)
 };
 
 } // namespace dpct

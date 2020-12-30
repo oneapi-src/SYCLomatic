@@ -740,11 +740,11 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
     }
     if (ReAssigned) {
       DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
                                PointerName, PointerTempType);
     } else if (Transfered) {
       DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
                                PointerName, PointerTempType);
       addRepl();
     } else {
@@ -752,7 +752,7 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
     }
   } else {
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                             Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                             Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
                              PointerName, PointerTempType);
   }
 }
@@ -801,7 +801,7 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
     OS << ", 0)";
     auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                             Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+                             Diagnostics::NOERROR_RETURN_COMMA_OP, false, false);
   }
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
