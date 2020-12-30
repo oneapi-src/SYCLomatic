@@ -1259,9 +1259,31 @@ void TypePrinter::AppendScope(DeclContext *DC, raw_ostream &OS) {
   } else if (const auto *Tag = dyn_cast<TagDecl>(DC)) {
     if (TypedefNameDecl *Typedef = Tag->getTypedefNameForAnonDecl())
       OS << Typedef->getIdentifier()->getName() << "::";
+#ifdef INTEL_CUSTOMIZATION
+    else if (Tag->getIdentifier()) {
+      OS << Tag->getIdentifier()->getName();
+      const TemplateDecl *TD = Tag->getDescribedTemplate();
+      if (TD) {
+        const TemplateParameterList *TPL = TD->getTemplateParameters();
+        if (TPL && !TPL->asArray().empty()) {
+          auto Array = TPL->asArray();
+          OS << "<";
+          std::string Params;
+          for (auto &ND : Array) {
+            Params = Params + ", " + ND->getName().str();
+          }
+          Params = Params.substr(2);
+          OS << Params << ">";
+        }
+      }
+
+      OS << "::";
+    } else
+#else
     else if (Tag->getIdentifier())
       OS << Tag->getIdentifier()->getName() << "::";
     else
+#endif
       return;
   }
 }

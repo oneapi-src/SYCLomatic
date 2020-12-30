@@ -332,3 +332,23 @@ void foo2(Image<T> &ptr, T value) {
   my_kernel<<<8, dim3(1, size, 2), 0, ptr.s>>>(ptr.dPtr);
 }
 
+template <typename T>
+__global__ void my_kernel2(T A) {}
+
+template <typename T> struct spmv_driver{
+  typedef T val_t;
+  val_t alpha;
+};
+
+namespace cuda {
+template <class V> struct spmv_driver : public ::spmv_driver<V> {
+  typedef ::spmv_driver<V> base_t;
+  typedef typename base_t::val_t val_t;
+
+  void run_naive() {
+    val_t *dresult;
+// CHECK:dresult = (cuda::spmv_driver<V>::val_t *)dpct::dpct_malloc(sizeof(val_t));
+    cudaMalloc((void **)&dresult, sizeof(val_t));
+  }
+};
+}
