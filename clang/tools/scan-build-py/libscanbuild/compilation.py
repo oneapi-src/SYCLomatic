@@ -186,7 +186,7 @@ IGNORED_FLAGS = {
     '-V' : 0,
     '--options-file' : 0,
     '-optf' : 0,
-    '-fopenmp': 0,
+    #'-fopenmp': 0,
     '-forward-unknown-to-host-compiler' : 0,
     '-Xllc' : 0,
     '--Xllc' : 0,
@@ -309,6 +309,9 @@ def parse_args(args):
                         if re.search(r'\s+', arg_next) or re.search(r',', arg_next):
                             xcompiler_flags = parse_args(iter(arg_split))
                             flags.extend(xcompiler_flags[0])
+                        # To handle -Xcompiler -fopenmp
+                        elif arg == '-Xcompiler':
+                            flags.extend([arg_next.strip('"')])
                 else:
                     next(args)
         elif arg in {'-lmpichcxx', '-lmpich', '-lmpi_cxx', '-lmpi'}:
