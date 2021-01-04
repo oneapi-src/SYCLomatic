@@ -372,3 +372,36 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
   }
 };
 }
+
+class IndexType {};
+
+// CHECK: void thread_id(sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:  auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:  auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
+// CHECK-NEXT: }
+__device__ void thread_id() {
+  auto tidx = threadIdx.x;
+  auto tidx_int = static_cast<int>(threadIdx.x);
+}
+
+// CHECK: template <typename IndexType = int> void thread_id(sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
+// CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
+// CHECK-NEXT: }
+template <typename IndexType = int> __device__ void thread_id() {
+  auto tidx = threadIdx.x;
+  auto tidx_template = static_cast<IndexType>(threadIdx.x);
+  auto tidx_int = static_cast<int>(threadIdx.x);
+}
+
+// CHECK: template <typename IndexType = int> void kernel(sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
+// CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
+// CHECK-NEXT: }
+template <typename IndexType = int> __global__ void kernel() {
+  auto tidx = threadIdx.x;
+  auto tidx_template = static_cast<IndexType>(threadIdx.x);
+  auto tidx_int = static_cast<int>(threadIdx.x);
+}

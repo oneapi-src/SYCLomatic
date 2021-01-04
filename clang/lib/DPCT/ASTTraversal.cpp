@@ -761,10 +761,104 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(varDecl(hasAnyName("warpSize")).bind("varDecl")))
                     .bind("declRefExpr"),
                 this);
+
+  MF.addMatcher(declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                  "blockIdx", "gridDim"))))
+                    .bind("declRefExprUnTempFunc"),
+                this);
+}
+
+bool IterationSpaceBuiltinRule::renameBuiltinName(StringRef BuiltinName,
+                                                  std::string &NewName) {
+  NewName = getItemName();
+  if (BuiltinName == "threadIdx")
+    NewName += ".get_local_id(";
+  else if (BuiltinName == "blockDim")
+    NewName += ".get_local_range().get(";
+  else if (BuiltinName == "blockIdx")
+    NewName += ".get_group(";
+  else if (BuiltinName == "gridDim")
+    NewName += ".get_group_range(";
+  else if (BuiltinName == "warpSize")
+    NewName += ".get_sub_group().get_local_range().get(0)";
+  else {
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected field name: " << BuiltinName;
+    return false;
+  }
+
+  return true;
 }
 
 void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+
+  if (const DeclRefExpr *DRE =
+          getNodeAsType<DeclRefExpr>(Result, "declRefExprUnTempFunc")) {
+    // Take the case of instantiated template function for example:
+    // template <typename IndexType = int> __device__ void thread_id() {
+    //  auto tidx_template = static_cast<IndexType>(threadIdx.x);
+    //}
+    // On Linux platform, .x(MemberExpr, __cuda_builtin_threadIdx_t) in
+    // static_cast statement is not available in AST, while 'threadIdx' is
+    // available,  so dpct migrates it by 'threadIdx' matcher to identify the
+    // SourceLocation of 'threadIdx', then look forward 2 tokens to check whether
+    // .x appears.
+
+    SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    const auto Begin = SM.getSpellingLoc(DRE->getBeginLoc());
+    auto End = SM.getSpellingLoc(DRE->getEndLoc());
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, *Result.SourceManager,
+        LangOptions()));
+
+    const auto Type = DRE->getDecl()
+                    ->getType()
+                    .getCanonicalType()
+                    .getUnqualifiedType()
+                    .getAsString();
+
+    if (Type.find("__cuda_builtin") == std::string::npos)
+      return;
+
+    const auto Tok2Ptr = Lexer::findNextToken(End, SM, LangOptions());
+    if (!Tok2Ptr.hasValue())
+      return;
+
+    const auto Tok2 = Tok2Ptr.getValue();
+    if (Tok2.getKind() == tok::raw_identifier) {
+      std::string TypeStr = Tok2.getRawIdentifier().str();
+      const char *StartPos = SM.getCharacterData(Begin);
+      const char *EndPos = SM.getCharacterData(Tok2.getEndLoc());
+      const auto TyLen = EndPos - StartPos;
+
+      if (TyLen <= 0)
+        return;
+
+      const auto BuiltinName = DRE->getDecl()->getName();
+      std::string Replacement;
+      if(!renameBuiltinName(BuiltinName, Replacement))
+        return;
+
+      const auto FieldName = Tok2.getRawIdentifier().str();
+      unsigned Dimension;
+      if (FieldName == "x")
+        Dimension = 2;
+      else if (FieldName == "y")
+        Dimension = 1;
+      else if (FieldName == "z")
+        Dimension = 0;
+      else
+        return;
+
+      Replacement += std::to_string(Dimension);
+      Replacement += ")";
+
+      emplaceTransformation(
+          new ReplaceText(Begin, TyLen, std::move(Replacement)));
+    }
+  }
+
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
   const VarDecl *VD = nullptr;
   const DeclRefExpr *DRE = nullptr;
@@ -792,24 +886,10 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  std::string Replacement = getItemName();
+  std::string Replacement;
   StringRef BuiltinName = VD->getName();
-
-  if (BuiltinName == "threadIdx")
-    Replacement += ".get_local_id(";
-  else if (BuiltinName == "blockDim")
-    Replacement += ".get_local_range().get(";
-  else if (BuiltinName == "blockIdx")
-    Replacement += ".get_group(";
-  else if (BuiltinName == "gridDim")
-    Replacement += ".get_group_range(";
-  else if (BuiltinName == "warpSize")
-    Replacement += ".get_sub_group().get_local_range().get(0)";
-  else {
-    llvm::dbgs() << "[" << getName()
-                 << "] Unexpected builtin variable: " << BuiltinName;
+  if(!renameBuiltinName(BuiltinName, Replacement))
     return;
-  }
 
   if (IsME) {
     ValueDecl *Field = ME->getMemberDecl();

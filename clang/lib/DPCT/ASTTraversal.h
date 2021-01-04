@@ -531,6 +531,8 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+private:
+  bool renameBuiltinName(StringRef BuiltinName, std::string &NewName);
 };
 
 /// Migration rule for class attributes.
