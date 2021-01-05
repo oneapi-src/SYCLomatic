@@ -13256,7 +13256,7 @@ REGISTER_RULE(DriverDeviceAPIRule)
 void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto contextAPI = [&]() {
     return hasAnyName("cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent",
-                      "cuCtxGetCurrent", "cuCtxSynchronize");
+                      "cuCtxGetCurrent", "cuCtxSynchronize", "cuCtxDestroy_v2");
   };
 
   MF.addMatcher(
@@ -13303,17 +13303,7 @@ void DriverContextAPIRule::run(
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
     return;
-  } else if (APIName == "cuCtxCreate_v2") {
-    auto CtxArg = CE->getArg(0)->IgnoreImplicitAsWritten();
-    auto DevArg = CE->getArg(2)->IgnoreImplicitAsWritten();
-    ExprAnalysis EA(DevArg);
-    EA.analyze();
-    printDerefOp(OS, CtxArg);
-    OS << " = " << EA.getReplacedString();
-    if (IsAssigned) {
-      OS << ", 0)";
-      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-    }
+  } else if (APIName == "cuCtxCreate_v2" || APIName == "cuCtxDestroy_v2") {
     SourceLocation CallBegin(CE->getBeginLoc());
     SourceLocation CallEnd(CE->getEndLoc());
 
@@ -13334,6 +13324,33 @@ void DriverContextAPIRule::run(
       CallEnd = SM.getExpansionLoc(CallEnd);
     }
     CallEnd = CallEnd.getLocWithOffset(1);
+
+    if(APIName == "cuCtxDestroy_v2"){
+      std::string Msg = "the function call is redundant in DPC++.";
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               APIName, Msg);
+        emplaceTransformation(replaceText(CallBegin, CallEnd, "0", SM));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, APIName,
+               Msg);
+        CallEnd = CallEnd.getLocWithOffset(1);
+        emplaceTransformation(replaceText(CallBegin, CallEnd, "", SM));
+      }
+      return;
+    }
+
+    auto CtxArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto DevArg = CE->getArg(2)->IgnoreImplicitAsWritten();
+    ExprAnalysis EA(DevArg);
+    EA.analyze();
+    printDerefOp(OS, CtxArg);
+    OS << " = " << EA.getReplacedString();
+    if (IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+
     emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
     return;
   } else if (APIName == "cuCtxSetCurrent") {

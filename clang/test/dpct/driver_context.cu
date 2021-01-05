@@ -53,5 +53,16 @@ int main(){
   // CHECK: CUDA_SAFE_CALL((dpct::dev_mgr::instance().current_device().queues_wait_and_throw(), 0));
   CUDA_SAFE_CALL(cuCtxSynchronize());
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxDestroy_v2 was removed, because the function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  cuCtxDestroy(ctx);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuCtxDestroy_v2 was replaced with 0, because the function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CUDA_SAFE_CALL(0);
+  CUDA_SAFE_CALL(cuCtxDestroy(ctx2));
+
   return 0;
 }
