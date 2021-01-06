@@ -1,6 +1,6 @@
 //==---- image.hpp --------------------------------*- C++ -*----------------==//
 //
-// Copyright (C) 2018 - 2020 Intel Corporation
+// Copyright (C) 2018 - 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // See https://llvm.org/LICENSE.txt for license information.
 //
