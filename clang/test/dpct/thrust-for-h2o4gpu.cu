@@ -220,7 +220,7 @@ void foo() {
   int *dev_a = NULL, *dev_b = NULL;
   cudaStream_t stream;
   my_math c;
-  //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(stream),dev_a,dev_a + 10,dev_b,c);
+  //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*stream),dev_a,dev_a + 10,dev_b,c);
   thrust::transform(thrust::cuda::par.on(stream),dev_a,dev_a + 10,dev_b,c);
 }
 }
@@ -315,3 +315,68 @@ public:
 private:
   int *m_pOutputNodes;
 };
+
+__global__ void kernel1(){
+  int a[10];
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT:  */
+  thrust::sort(thrust::device, a, a + 9);
+}
+template<typename Itr>
+void mysort(Itr Beg, Itr End){
+  cudaStream_t s1;
+  thrust::host_vector<int> h_vec(10);
+  thrust::device_vector<int> d_vec(10);
+
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), Beg, End);
+  thrust::sort(Beg, End);
+  thrust::sort(thrust::host, Beg, End);
+  thrust::sort(thrust::device, Beg, End);
+  thrust::sort(thrust::cuda::par.on(s1), Beg, End);
+
+  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
+  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
+  thrust::sort(h_vec.begin(), h_vec.end());
+
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
+  thrust::sort(d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
+}
+int main(void){
+  thrust::host_vector<int> h_vec(10);
+  thrust::device_vector<int> d_vec(10);
+  cudaStream_t s1;
+
+  mysort(h_vec.begin(), h_vec.end());
+  mysort(d_vec.begin(), d_vec.end());
+
+  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
+  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
+  thrust::sort(h_vec.begin(), h_vec.end());
+
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
+  thrust::sort(d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
+  thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
+
+  return 0;
+}

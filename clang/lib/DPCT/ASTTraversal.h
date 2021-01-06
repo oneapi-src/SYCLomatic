@@ -567,6 +567,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  std::set<SourceLocation> SortULExpr;
   void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                            const CallExpr *C,
                            const UnresolvedLookupExpr *ULExpr = NULL);

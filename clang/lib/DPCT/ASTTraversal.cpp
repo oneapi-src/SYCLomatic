@@ -1719,9 +1719,8 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       unresolvedLookupExpr(
           hasAnyDeclaration(namedDecl(hasAnyThrustFuncName())),
-          hasParent(callExpr(unless(parentStmt())).bind("thrustApiCallExpr"))
-          )
-          .bind("unresolvedThrustAPILookupExpr"),
+          hasParent(callExpr().bind("thrustApiCallExpr"))
+      ).bind("unresolvedThrustAPILookupExpr"),
       this);
 }
 
@@ -1732,6 +1731,7 @@ void ThrustFunctionRule::thrustFuncMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *CE,
     const UnresolvedLookupExpr *ULExpr) {
 
+  auto &SM = DpctGlobalInfo::getSourceManager();
   auto UniqueName = [](const Stmt *S) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Loc = S->getBeginLoc();
@@ -1767,31 +1767,51 @@ void ThrustFunctionRule::thrustFuncMigration(
   bool hasExecutionPolicy =
       (ArgT == "ExecutionPolicy") ||
       (ArgT.find("execution_policy_base") != std::string::npos);
-
+  bool PolicyProcessed = false;
+  if (ThrustFuncName == "sort"){
+    auto ExprLoc = SM.getSpellingLoc(CE->getBeginLoc());
+    if(SortULExpr.count(ExprLoc) != 0)
+      return;
+    else if(ULExpr){
+      SortULExpr.insert(ExprLoc);
+    }
+    if(NumArgs == 4){
+      hasExecutionPolicy = true;
+    } else if(NumArgs == 3){
+      std::string FirstArgType = CE->getArg(0)->getType().getAsString();
+      std::string SecondArgType = CE->getArg(1)->getType().getAsString();
+      if(FirstArgType != SecondArgType)
+        hasExecutionPolicy = true;
+    }
+  }
   // To migrate "thrust::cuda::par.on" that appears in CE' first arg to
   // "oneapi::dpl::execution::make_device_policy".
-  const auto *ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(0));
-  if (hasExecutionPolicy && ICE) {
-    if (const auto *MT =
-            dyn_cast<MaterializeTemporaryExpr>(ICE->getSubExpr())) {
-      if (auto SubICE = dyn_cast<ImplicitCastExpr>(MT->getSubExpr())) {
-        if (const auto *MCE =
-                dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr())) {
-          if (const auto *ME = dyn_cast<MemberExpr>(MCE->getCallee())) {
-            auto End = ME->getEndLoc();
-            auto Begin = ME->getBeginLoc();
-            auto BaseName = DpctGlobalInfo::getUnqualifiedTypeName(
-                ME->getBase()->getType());
-            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-                End, *Result.SourceManager,
-                dpct::DpctGlobalInfo::getContext().getLangOpts()));
-            auto SM = Result.SourceManager;
-            auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-            if (BaseName == "thrust::cuda_cub::par_t")
-              emplaceTransformation(new ReplaceText(
-                  Begin, Length, "oneapi::dpl::execution::make_device_policy"));
-          }
+  const CXXMemberCallExpr* MCE = nullptr;
+  if(hasExecutionPolicy){
+    if(const auto *ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(0))){
+      if (const auto *MT =
+          dyn_cast<MaterializeTemporaryExpr>(ICE->getSubExpr())) {
+        if (auto SubICE = dyn_cast<ImplicitCastExpr>(MT->getSubExpr())) {
+          MCE = dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr());
         }
+      }
+    }else{
+      MCE = dyn_cast<CXXMemberCallExpr>(CE->getArg(0));
+    }
+  }
+
+  if (MCE) {
+    auto StreamArg = MCE->getArg(0);
+    std::ostringstream OS;
+    if (const auto *ME = dyn_cast<MemberExpr>(MCE->getCallee())) {
+      auto BaseName = DpctGlobalInfo::getUnqualifiedTypeName(
+          ME->getBase()->getType());
+      if (BaseName == "thrust::cuda_cub::par_t") {
+        OS << "oneapi::dpl::execution::make_device_policy(";
+        printDerefOp(OS, StreamArg);
+        OS << ")";
+        emplaceTransformation(new ReplaceStmt(MCE, OS.str()));
+        PolicyProcessed = true;
       }
     }
   }
@@ -1800,9 +1820,13 @@ void ThrustFunctionRule::thrustFuncMigration(
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the DPC++ side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-    if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
-        ArgT.find("execution_policy_base") != std::string::npos) {
-      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+    if(FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()){
+      if(ThrustFuncName == "sort"){
+        report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+        return;
+      }else if(ArgT.find("execution_policy_base") != std::string::npos){
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      }
     }
   }
 
@@ -1894,6 +1918,52 @@ void ThrustFunctionRule::thrustFuncMigration(
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false);
     return;
 
+  } else if(ThrustFuncName == "sort") {
+    //Rule of thrust::sort migration
+    //#. thrust api
+    //   dpcpp api
+    //1. thurst::sort(policy, h_vec.begin(), h_vec.end())
+    //   std::sort(oneapi::dpl::exection::par_unseq, h_vec.begin(), h_vec.end())
+    //
+    //2. thrust::sort(h_vec.begin(), h_vec.end())
+    //   std::sort(h_vec.begin(), h_vec.end())
+    //
+    //3. thrust::sort(policy, d_vec.begin(), d_vec.end())
+    //   oneapi::dpl::sort(make_device_policy(queue), d_vec.begin(), d_vec.end())
+    //
+    //4. thrust::sort(d_vec.begin(), d_vec.end())
+    //   oneapi::dpl::sort(make_device_policy(queue), d_vec.begin(), d_vec.end())
+    //
+    //When thrust::sort inside template function and is a UnresolvedLookupExpr,
+    //we will map to oneapi::dpl::sort
+
+    auto IteratorArg = CE->getArg(1);
+    auto IteratorType = IteratorArg->getType().getAsString();
+    if (ULExpr) {
+      if (PolicyProcessed) {
+        emplaceTransformation(new ReplaceToken(
+            ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+        return;
+      } else if (hasExecutionPolicy) {
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      }
+    } else if (IteratorType.find("device_ptr") == std::string::npos) {
+      NewName = "std::sort";
+      if (hasExecutionPolicy) {
+        emplaceTransformation(new ReplaceStmt(
+            CE->getArg(0), "oneapi::dpl::execution::par_unseq"));
+      }
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+      return;
+    } else {
+      if (PolicyProcessed) {
+        emplaceTransformation(
+            new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+        return;
+      } else if (hasExecutionPolicy)
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+    }
   } else if (hasExecutionPolicy) {
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
@@ -13418,7 +13488,7 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       callExpr(allOf(callee(functionDecl(contextAPI())), unless(parentStmt())))
           .bind("callUsed"),
       this);
-};
+}
 void DriverContextAPIRule::run(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
@@ -13434,7 +13504,7 @@ void DriverContextAPIRule::run(
   }
 
   if (auto DC = CE->getDirectCallee()) {
-    APIName = CE->getDirectCallee()->getNameAsString();
+    APIName = DC->getNameAsString();
   } else {
     return;
   }
@@ -13522,7 +13592,7 @@ void DriverContextAPIRule::run(
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
   }
   emplaceTransformation(new ReplaceStmt(CE, OS.str()));
-};
+}
 
 REGISTER_RULE(DriverContextAPIRule)
 
