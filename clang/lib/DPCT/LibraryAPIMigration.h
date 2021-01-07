@@ -148,6 +148,7 @@ struct LibraryMigrationFlags {
   bool IsSuffixEmpty = false;
   bool IsPrePrefixEmpty = false;
   bool IsFunctionPointer = false;
+  bool IsFunctionPointerAssignment = false;
 };
 struct LibraryMigrationLocations {
   SourceLocation PrefixInsertLoc;
@@ -231,7 +232,7 @@ public:
       : TheCallExpr(TheCallExpr), IndentStr(IndentStr), FuncName(FuncName),
         FuncPtrName(FuncPtrName), Locations(Locations), Flags(Flags) {
 
-    if (Flags.IsFunctionPointer) {
+    if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       // Currently, only support function pointer of exec API
       ArgsList.emplace_back("desc");
       ArgsList.emplace_back("in_data");
@@ -305,7 +306,7 @@ private:
   int64_t Dir = 0;
 };
 
-void initVars(const CallExpr *CE, const VarDecl *VD,
+void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations);
@@ -384,7 +385,7 @@ struct FFTExecAPIInfo {
   std::vector<std::string> ResetAndCommitStmts; // These stmts should be added
                              // at the begin of PrefixStmts
   bool NeedReset = false; // MayNeedReset(from handle info) && IsComplexDomain
-                          // && !IsFunctionPointer
+                          // && !IsFunctionPointer && !IsFunctionPointerAssignment
                           // && (handle->dir == unknown || handle->dir == uninitialized)
 };
 

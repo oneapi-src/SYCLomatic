@@ -4109,7 +4109,7 @@ void SPBLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   LibraryMigrationFlags Flags;
   LibraryMigrationStrings ReplaceStrs;
   LibraryMigrationLocations Locations;
-  initVars(CE, nullptr, Flags, ReplaceStrs, Locations);
+  initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
   Flags.IsAssigned = IsAssigned;
 
   std::string Msg = "the function call is redundant in DPC++.";
@@ -13038,14 +13038,24 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                                 functionDecl(execFunctionName())))))))
                     .bind("FunctionPointerDecl"),
                 this);
+  MF.addMatcher(binaryOperator(hasOperatorName("="), hasLHS(declRefExpr()),
+                               hasRHS(unaryOperator(
+                                   hasOperatorName("&"),
+                                   hasUnaryOperand(declRefExpr(hasDeclaration(
+                                       functionDecl(execFunctionName())))))))
+                    .bind("FunctionPointerAssignment"),
+                this);
 }
 
 void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
   bool IsFunctionPointer = false;
+  bool IsFunctionPointerAssignment = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   const VarDecl *VD = getNodeAsType<VarDecl>(Result, "FunctionPointerDecl");
+  const BinaryOperator *BO =
+      getNodeAsType<BinaryOperator>(Result, "FunctionPointerAssignment");
 
   if (!CE) {
     CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed");
@@ -13053,6 +13063,8 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       IsAssigned = true;
     } else if (VD) {
       IsFunctionPointer = true;
+    } else if (BO) {
+      IsFunctionPointerAssignment = true;
     } else {
       return;
     }
@@ -13082,6 +13094,22 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FuncPtrName = VD->getNameAsString();
     if (VD->getStorageDuration() == SD_Static)
       FuncPtrName = "static " + FuncPtrName;
+  } else if (IsFunctionPointerAssignment) {
+    const UnaryOperator *UO = dyn_cast<UnaryOperator>(BO->getRHS());
+    if (!UO)
+      return;
+    const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+    if (!DRE)
+      return;
+    const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
+    if (!FD)
+      return;
+    FuncName = FD->getNameAsString();
+    auto SL = SM.getExpansionLoc(BO->getBeginLoc());
+    std::string Key = SM.getFilename(SL).str() +
+                      std::to_string(SM.getDecomposedLoc(SL).second);
+    DpctGlobalInfo::updateInitSuffixIndexInRule(
+        DpctGlobalInfo::getSuffixIndexInitValue(Key));
   } else {
     if (!CE->getDirectCallee())
       return;
@@ -13098,9 +13126,10 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   LibraryMigrationFlags Flags;
   Flags.IsAssigned = IsAssigned;
   Flags.IsFunctionPointer = IsFunctionPointer;
+  Flags.IsFunctionPointerAssignment = IsFunctionPointerAssignment;
   LibraryMigrationStrings ReplaceStrs;
   LibraryMigrationLocations Locations;
-  initVars(CE, VD, Flags, ReplaceStrs, Locations);
+  initVars(CE, VD, BO, Flags, ReplaceStrs, Locations);
 
   dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName,
                                     FuncPtrName, Locations, Flags);
@@ -13158,7 +13187,7 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
     std::string FFTHandleInfoKey;
-    if (Flags.IsFunctionPointer) {
+    if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       FFCB.updateExecCallExpr();
     } else {
       const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
@@ -13185,6 +13214,9 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (Flags.IsFunctionPointer)
       DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
           SM.getExpansionLoc(VD->getBeginLoc()), FEAInfo);
+    else if (Flags.IsFunctionPointerAssignment)
+      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
+          SM.getExpansionLoc(BO->getBeginLoc()), FEAInfo);
     else
       DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
           SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);

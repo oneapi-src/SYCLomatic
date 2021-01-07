@@ -146,7 +146,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
   std::string OriginalInputPtr = ArgsList[1];
   std::string OriginalOutputPtr = ArgsList[2];
 
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     auto LocInfo =
         DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclHandleTypeBegin);
     auto FileInfo = DpctGlobalInfo::getInstance().insertFile(LocInfo.first);
@@ -160,12 +160,19 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       Iter->second.SkipGeneration = true;
     }
 
-    std::string WrapperBegin =
-        "auto " + FuncPtrName +
-        " = [](std::shared_ptr<oneapi::mkl::dft::descriptor<" +
-        getPrecAndDomainStrFromExecFuncName(FuncName) + ">> desc, " +
-        getType(FuncName[9]) + " *in_data, " + getType(FuncName[11]) +
-        " *out_data";
+  std::string WrapperBegin;
+    if (Flags.IsFunctionPointer)
+      WrapperBegin = "auto " + FuncPtrName +
+                     " = [](std::shared_ptr<oneapi::mkl::dft::descriptor<" +
+                     getPrecAndDomainStrFromExecFuncName(FuncName) +
+                     ">> desc, " + getType(FuncName[9]) + " *in_data, " +
+                     getType(FuncName[11]) + " *out_data";
+    else if (Flags.IsFunctionPointerAssignment)
+      WrapperBegin = "[](std::shared_ptr<oneapi::mkl::dft::descriptor<" +
+                     getPrecAndDomainStrFromExecFuncName(FuncName) +
+                     ">> desc, " + getType(FuncName[9]) + " *in_data, " +
+                     getType(FuncName[11]) + " *out_data";
+
     if (FuncName[9] == FuncName[11])
       WrapperBegin = WrapperBegin + ", int dir";
     WrapperBegin = WrapperBegin + "){";
@@ -178,7 +185,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
 
   PrefixStmts.emplace_back("if ((void *)" + OriginalInputPtr + " == (void *)" +
                            OriginalOutputPtr + ") {");
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     PrefixStmts.emplace_back(ComputeAPI + "(*" + ArgsList[0] + ", " +
                              ArgsList[1] + ");");
   } else {
@@ -189,7 +196,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
 
   PrefixStmts.emplace_back("} else {");
 
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     updateBufferArgs(2, getRealDomainType(FuncName[11]), OriginalOutputPtr);
     CallExprRepl = ComputeAPI + "(*" + ArgsList[0] + ", " + ArgsList[1] + ", " +
                    ArgsList[2] + ")";
@@ -199,7 +206,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
                    ", " + ArgsList[1] + ", " + ArgsList[2] + ")";
   }
   SuffixStmts.emplace_back("}");
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     SuffixStmts.emplace_back("return 0;");
     SuffixStmts.emplace_back("}");
   }
@@ -237,7 +244,7 @@ std::string FFTFunctionCallBuilder::getCallExprReplString() {
 bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
     const LibraryMigrationFlags Flags, SourceLocation &TypeBegin,
     int &TypeLength) {
-  if (Flags.IsFunctionPointer)
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment)
     return false;
 
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -298,21 +305,30 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   return true;
 }
 
-void initVars(const CallExpr *CE, const VarDecl *VD,
+void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-
-  if (Flags.IsFunctionPointer) {
-    Locations.FuncPtrDeclBegin = SM.getExpansionLoc(VD->getBeginLoc());
-    SourceLocation FuncPtrDeclEnd = SM.getExpansionLoc(VD->getEndLoc());
+  SourceLocation FuncPtrDeclEnd;
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
+    if (Flags.IsFunctionPointer) {
+      Locations.FuncPtrDeclBegin = SM.getExpansionLoc(VD->getBeginLoc());
+      FuncPtrDeclEnd = SM.getExpansionLoc(VD->getEndLoc());
+    } else if (Flags.IsFunctionPointerAssignment) {
+      Locations.FuncPtrDeclBegin =
+          SM.getExpansionLoc(BO->getRHS()->getBeginLoc());
+      FuncPtrDeclEnd = SM.getExpansionLoc(BO->getRHS()->getEndLoc());
+    }
     FuncPtrDeclEnd = FuncPtrDeclEnd.getLocWithOffset(Lexer::MeasureTokenLength(
         FuncPtrDeclEnd, SM, DpctGlobalInfo::getContext().getLangOpts()));
     Locations.FuncPtrDeclLen =
         SM.getDecomposedLoc(FuncPtrDeclEnd).second -
         SM.getDecomposedLoc(Locations.FuncPtrDeclBegin).second;
     ReplaceStrs.IndentStr = getIndent(Locations.FuncPtrDeclBegin, SM).str();
+
+    if (Flags.IsFunctionPointerAssignment)
+      return;
 
     TypeLoc TL = VD->getTypeSourceInfo()->getTypeLoc();
     QualType QT = VD->getType();
@@ -893,7 +909,7 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
                              ArgsList[5] + ");");
   } else if (FFTType == FFTTypeEnum::C2C || FFTType == FFTTypeEnum::Z2Z) {
     // DirectionFromExec is "unknown" or "uninitialized"
-    if (Flags.IsFunctionPointer) {
+    if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                                Diagnostics::ONLY_SUPPORT_SAME_DISTANCE, true,
                                false, "the FWD_DISTANCE and the BWD_DISTANCE");
@@ -1150,7 +1166,7 @@ void replacementLocation(const LibraryMigrationLocations Locations,
                          unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
                          std::pair<unsigned int, unsigned int> &InsertOffsets,
                          std::string &FilePath) {
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     ReplaceOffset =
         DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclBegin).second;
     ReplaceLen = Locations.FuncPtrDeclLen;
@@ -1233,7 +1249,7 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
 }
 
 void FFTExecAPIInfo::linkInfo() {
-  if (!Flags.IsFunctionPointer) {
+  if (!Flags.IsFunctionPointer && !Flags.IsFunctionPointerAssignment) {
     auto &Map = DpctGlobalInfo::getFFTHandleInfoMap();
     auto I = Map.find(HandleDeclFileAndOffset);
     if (I != Map.end()) {
@@ -1273,7 +1289,7 @@ void replacementText(
   LibraryAPIStmts OutSuffixStmts;
   std::string OutRepl;
 
-  if (Flags.IsFunctionPointer) {
+  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     OutPrefixStmts << PrefixStmts;
     OutRepl = CallExprRepl + ";";
     OutSuffixStmts << SuffixStmts;

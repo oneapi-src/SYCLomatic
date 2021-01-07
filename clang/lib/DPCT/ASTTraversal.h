@@ -411,16 +411,6 @@ protected:
                                    LibraryMigrationStrings Strings,
                                    LibraryMigrationLocations Locations,
                                    std::string FuncName, const CallExpr *CE) {
-    if (Flags.IsFunctionPointer) {
-      std::string R = Strings.PrefixInsertStr + Strings.Repl + ";" +
-                      Strings.SuffixInsertStr;
-      auto RT = new ReplaceText(Locations.FuncPtrDeclBegin,
-                                Locations.FuncPtrDeclLen, std::move(R));
-      RT->setBlockLevelFormatFlag();
-      emplaceTransformation(std::move(RT));
-      return;
-    }
-
     if (Flags.NeedUseLambda) {
       if (Strings.PrefixInsertStr.empty() && Strings.SuffixInsertStr.empty()) {
         // If there is one API call in the migrted code, it is unnecessary to
