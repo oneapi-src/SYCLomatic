@@ -4,15 +4,18 @@
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-test/mf-kernel.dp.hpp
 // RUN: FileCheck %S/mf-extern.cuh --match-full-lines --input-file %T/mf-test/mf-extern.dp.hpp
 // RUN: FileCheck %S/mf-func-included.cu --match-full-lines --input-file %T/mf-test/mf-func-included.dp.cpp
+// RUN: FileCheck %S/mf-func-included-angled.cu --match-full-lines --input-file %T/mf-test/mf-func-included-angled.dp.cpp
 // RUN: FileCheck %S/mf-func-mid-included.cu --match-full-lines --input-file %T/mf-test/mf-func-mid-included.dp.cpp
 
 // CHECK: #include "mf-kernel.dp.hpp"
 // CHECK-NEXT#include "mf-extern.dp.hpp"
 // CHECK-NEXT#include "mf-func-included.dp.cpp"
+// CHECK-NEXT#include <mf-func-included-angled.dp.cpp>
 // CHECK-NEXT#include "mf-mid.dp.cpp"
 #include "mf-kernel.cuh"
 #include "mf-extern.cuh"
 #include "mf-func-included.cu"
+#include <mf-func-included-angled.cu>
 #include "mf-mid.cu"
 
 __global__ void cuda_hello(){

@@ -597,7 +597,7 @@ void IncludesCallbacks::InclusionDirective(
     }
 
     // Replace "#include "*.cu"" with "include "*.dp.cpp""
-    if (!IsAngled && FileName.endswith(".cu")) {
+    if (FileName.endswith(".cu")) {
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
       std::string NewFileName =
