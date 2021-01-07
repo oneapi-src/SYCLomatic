@@ -172,9 +172,22 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
 
 SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  SourceLocation BeginLoc, EndLoc;
   auto Range = getRangeInsideFuncLikeMacro(S);
-  auto BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
-  auto EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  if (Range.getBegin().isMacroID() && Range.getEnd().isMacroID() &&
+    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+      SM.getExpansionRange(Range.getBegin()).getEnd(),
+      SM.getSpellingLoc(Range.getBegin())) &&
+    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+      SM.getExpansionRange(Range.getBegin()).getEnd(),
+      SM.getSpellingLoc(Range.getEnd()))) {
+    // MACRO(callExpr())
+    BeginLoc = SM.getSpellingLoc(Range.getBegin());
+    EndLoc = SM.getSpellingLoc(Range.getEnd());
+  } else {
+    BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
+    EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  }
   return SourceRange(BeginLoc, EndLoc);
 }
 
@@ -2439,7 +2452,8 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
 
 llvm::StringRef getCalleeName(const CallExpr *CE) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  const char *Start = SM.getCharacterData(SM.getSpellingLoc(CE->getBeginLoc()));
+  const char *Start = SM.getCharacterData(
+      getStmtExpansionSourceRange(CE->getCallee()).getBegin());
   const char *End = Start;
   int StrSize = 0;
   while (((int)(*End) >= (int)'A' && (int)(*End) <= (int)'Z') ||

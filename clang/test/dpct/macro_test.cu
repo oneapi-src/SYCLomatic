@@ -779,3 +779,13 @@ __device__ Word mulhilo##W(Word a, Word b, Word* hip){ \
     return a*b;                                        \
 }
 _mulhilo_(64, uint64_t, __umul64hi)
+
+// Macro issue here will fix in issue jira
+void foo16(){
+    size_t result1, result2;
+    int size = 32;
+    float* f_A;
+    CALL(CUDA_MEMCPY3D cpy2);
+    CUdeviceptr f_D = 0;
+    CALL(cuMemAlloc(&f_D, size));
+}

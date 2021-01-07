@@ -274,10 +274,10 @@ std::shared_ptr<ExtReplacement>
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  const SourceManager &SM = Context.getSourceManager();
+
   recordMigrationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
   return std::make_shared<ExtReplacement>(
-      Context.getSourceManager(), SM.getSpellingLoc(C->getBeginLoc()),
+      Context.getSourceManager(), getStmtExpansionSourceRange(C).getBegin(),
       getCalleeName(C).size(), ReplStr, this);
 }
 
@@ -405,6 +405,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
   R->setPairID(PairID);
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+  R->setInsertPosition(InsertPos);
   return R;
 }
 
@@ -728,20 +729,9 @@ std::shared_ptr<ExtReplacement>
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  auto &SM = Context.getSourceManager();
-  SourceLocation Begin = S->getSourceRange().getBegin();
-  if (DoMacroExpansion) {
-    if (Begin.isMacroID()) {
-      if (!SM.isAtStartOfImmediateMacroExpansion(Begin)) {
-        // If current macro is inside another macro or is a macro arg
-        // we can only modify the spelling part
-        Begin = SM.getSpellingLoc(Begin);
-      }
-      else {
-        Begin = SM.getExpansionLoc(Begin);
-      }
-    }
-  }
+
+  SourceLocation Begin = getStmtExpansionSourceRange(S).getBegin();
+
   recordMigrationInfo(Context, Begin);
   auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),

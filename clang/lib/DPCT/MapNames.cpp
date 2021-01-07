@@ -48,6 +48,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaEvent_t", ClNamespace + "::event"},
       {"CUevent_st", ClNamespace + "::event"},
       {"cudaStream_t", ClNamespace + "::queue *"},
+      {"CUstream", ClNamespace + "::queue *"},
       {"CUstream_st", ClNamespace + "::queue"},
       {"char1", "char"},
       {"char2", ClNamespace + "::char2"},
@@ -189,7 +190,6 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaResourceType", "dpct::image_data_type" },
       {"CUtexref", "dpct::image_wrapper_base_p"},
       // ...
-
   };
 
   // Enum constants name mapping.
@@ -3218,7 +3218,25 @@ const MapNames::MapTy MemoryDataTypeRule::MemberNames{
     {"Height", "y"},
     {"Format", "channel_type"},
     {"NumChannels", "channel_num"},
+    {"dstPitch", "to_data"},    {"srcPitch", "from_data"},
+    {"dstDevice", "to_data"},   {"dstHost", "to_data"},
+    {"srcDevice", "from_data"}, {"srcHost", "from_data"},
+    {"dstHeight", "to_data"},   {"srcHeight", "from_data"}
 };
+
+const MapNames::MapTy MemoryDataTypeRule::PitchMemberToSetter{
+    {"dstPitch", "set_pitch"},   {"dstHeight", "set_y"},
+    {"dstHost", "set_data_ptr"}, {"dstDevice", "set_data_ptr"},
+    {"srcPitch", "set_pitch"},   {"srcHeight", "set_y"},
+    {"srcHost", "set_data_ptr"}, {"srcDevice", "set_data_ptr"}};
+
+const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
+    {"srcXInBytes", "[0]"},  {"srcY", "[1]"},   {"srcZ", "[2]"},
+    {"dstXInBytes", "[0]"},  {"dstY", "[1]"},   {"dstZ", "[2]"},
+    {"WidthInBytes", "[0]"}, {"Height", "[1]"}, {"Depth", "[2]"}};
+
+const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
+    "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
 
 const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},

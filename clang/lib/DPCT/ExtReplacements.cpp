@@ -199,24 +199,34 @@ void ExtReplacements::buildOriginCodeReplacements() {
 std::vector<std::shared_ptr<ExtReplacement>>
 ExtReplacements::mergeReplsAtSameOffset() {
   std::vector<std::shared_ptr<ExtReplacement>> ReplsList;
-  std::shared_ptr<ExtReplacement> Insert, Replace;
+  std::shared_ptr<ExtReplacement> Insert, InsertLeft, InsertRight, Replace;
   unsigned Offset = ReplMap.begin()->first;
   for (auto &R : ReplMap) {
     if (R.first != Offset) {
       Offset = R.first;
-      ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+      ReplsList.emplace_back(mergeAtSameOffset(
+          mergeAtSameOffset(InsertLeft, mergeAtSameOffset(Insert, InsertRight)),
+          Replace));
+      InsertLeft.reset();
+      InsertRight.reset();
       Insert.reset();
       Replace.reset();
     }
     auto &Repl = R.second;
     if (Repl->getLength()) {
       Replace = mergeAtSameOffset(Replace, Repl);
+    } else if (Repl->getInsertPosition()==InsertPosition::InsertPositionAlwaysLeft){
+      InsertLeft = mergeAtSameOffset(InsertLeft, Repl);
+    } else if (Repl->getInsertPosition() == InsertPosition::InsertPositionRight) {
+      InsertRight = mergeAtSameOffset(InsertRight, Repl);
     } else {
       Insert = mergeAtSameOffset(Insert, Repl);
     }
   }
   if (Insert || Replace) {
-    ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+    ReplsList.emplace_back(mergeAtSameOffset(
+        mergeAtSameOffset(InsertLeft, mergeAtSameOffset(Insert, InsertRight)),
+        Replace));
   }
   return ReplsList;
 }

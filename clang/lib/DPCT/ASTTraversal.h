@@ -26,6 +26,7 @@
 
 #include <sstream>
 #include <unordered_set>
+#include <algorithm>
 
 namespace clang {
 namespace dpct {
@@ -1610,14 +1611,14 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   }
   template <class... Args>
   void emplaceParamDecl(const VarDecl *VD, StringRef ParamType,
-                               bool HasInitialZeroCtor, Args &&... ParamNames) {
+                        bool HasInitialZeroCtor, std::string InitValue = "0", Args &&... ParamNames) {
     std::string ParamDecl;
     llvm::raw_string_ostream OS(ParamDecl);
     OS << ParamType << " ";
     unsigned Index = 0;
     std::initializer_list<int>{
         (printParamNameWithInitArgs(OS, VD->getName(), HasInitialZeroCtor,
-                                    ParamNames, Index),
+                                    ParamNames, Index, InitValue),
          0)...};
     OS << ";";
     emplaceTransformation(
@@ -1631,23 +1632,26 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   static inline llvm::raw_ostream &
   printParamNameWithInitArgs(llvm::raw_ostream &OS, StringRef BaseName,
                              bool HasInitialZeroCtor, StringRef ParamName,
-                             unsigned &Index) {
+                             unsigned &Index, std::string InitValue = "0") {
     if (Index++)
       OS << ", ";
     printParamName(OS, BaseName, ParamName);
     if (HasInitialZeroCtor)
-      OS << "(0, 0, 0)";
+      OS << "(" << InitValue << ", " << InitValue << ", " << InitValue << ")";
     return OS;
   }
 
   const static MapNames::MapTy MemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
+  const static MapNames::MapTy PitchMemberToSetter;
+  const static MapNames::MapTy SizeOrPosToMember;
+  const static std::vector<std::string> RemoveMember;
 
 public:
   void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-  void emplaceMemcpy3DDeclarations(const VarDecl *VD);
-  static std::string getMemcpy3DArguments(StringRef BaseName);
+  void emplaceMemcpy3DDeclarations(const VarDecl *VD, bool hasDirection);
+  static std::string getMemcpy3DArguments(StringRef BaseName, bool hasDirection);
 
   static std::string getMemberName(StringRef BaseName,
                                    const std::string &Member) {
@@ -1660,6 +1664,18 @@ public:
     }
     return Member;
   }
+
+  static std::string getPitchMemberSetter(StringRef BaseName,
+    const std::string &Member, const Expr *E);
+
+  static std::string getSizeOrPosMember(StringRef BaseName,
+    const std::string &Member);
+
+  static bool isRemove(std::string Name) {
+    return std::find(RemoveMember.begin(), RemoveMember.end(), Name) !=
+           RemoveMember.end();
+  }
+
   MemoryDataTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
