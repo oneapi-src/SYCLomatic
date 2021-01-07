@@ -610,6 +610,8 @@ void FFTPlanAPIInfo::linkInfo() {
   if (I != Map.end()) {
     DirectionFromExec = I->second.Direction;
     PlacementFromExec = I->second.Placement;
+    if (!I->second.UnknownStream)
+      StreamStr = I->second.StreamStr;
   }
 
   if (FFTType == FFTTypeEnum::Unknown &&
@@ -1079,8 +1081,12 @@ void FFTPlanAPIInfo::updateCommitCallExpr(std::vector<std::string> Dims) {
     }
   }
 
-  CallExprRepl = CallExprRepl + DescrMemberCallPrefix +
-                 "commit({{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}})";
+  if (StreamStr.empty())
+    CallExprRepl = CallExprRepl + DescrMemberCallPrefix +
+                   "commit({{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}})";
+  else
+    CallExprRepl =
+        CallExprRepl + DescrMemberCallPrefix + "commit(" + StreamStr + ")";
 
   std::string DescCtor = DescStr + " = ";
   DescCtor = DescCtor + "std::make_shared<oneapi::mkl::dft::descriptor<" +
@@ -1240,8 +1246,12 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
   // AST), but if here should using another stream, the counter of default queue
   // still counts it. So the count value may larger than the actual value. This
   // issue may also occur in Plan API and kernel migration.
-  ResetAndCommitStmts.emplace_back(DescStr +
-                                   "->commit(dpct::get_default_queue());");
+  if (StreamStr.empty())
+    ResetAndCommitStmts.emplace_back(DescStr +
+                                     "->commit(dpct::get_default_queue());");
+  else
+    ResetAndCommitStmts.emplace_back(DescStr + "->commit(" + StreamStr + ");");
+
   ResetAndCommitStmts.emplace_back("}");
 
   PrefixStmts.insert(PrefixStmts.begin(), ResetAndCommitStmts.begin(),
@@ -1260,6 +1270,8 @@ void FFTExecAPIInfo::linkInfo() {
       NeedReset = I->second.MayNeedReset && IsComplexDomain &&
                   (I->second.Direction == FFTDirectionType::uninitialized ||
                    I->second.Direction == FFTDirectionType::unknown);
+      if (!I->second.UnknownStream)
+        StreamStr = I->second.StreamStr;
     }
   } else {
     NeedReset = false;

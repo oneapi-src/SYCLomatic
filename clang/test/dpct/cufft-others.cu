@@ -99,3 +99,35 @@ int foo2() {
 
   return 0;
 }
+
+int foo3(cudaStream_t stream) {
+  //CHECK:std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>> plan;
+  //CHECK-NEXT:sycl::float2* iodata;
+  cufftHandle plan;
+  float2* iodata;
+
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: The queue(*stream) is used in oneapi::mkl::dft::descriptor::commit(), you may need to adjust the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(10 + 2);
+  //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[2] = {0, 1};
+  //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[2] = {0, 1};
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ((10 + 2)/2+1)*2);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, (10 + 2)/2+1);
+  //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
+  //CHECK-NEXT:plan->commit(*stream);
+  cufftSetStream(plan, stream);
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  //CHECK:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:}
+  cufftExecR2C(plan, (float*)iodata, iodata);
+
+  return 0;
+}

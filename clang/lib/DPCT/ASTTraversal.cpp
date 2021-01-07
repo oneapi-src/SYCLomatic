@@ -13259,20 +13259,35 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName,
                                     FuncPtrName, Locations, Flags);
-  if (FuncName == "cufftCreate" || FuncName == "cufftDestroy" ||
-      FuncName == "cufftSetStream") {
-    if (FuncName == "cufftSetStream") {
-      // TODO: emit warning to tell user check related commit() API
+  if (FuncName == "cufftSetStream") {
+    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
+    if (!DD)
+      return;
+
+    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
+    std::string HandleInfoKey =
+        DpctGlobalInfo::getLocInfo(SL).first + ":" +
+        std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
+
+    std::string StreamStr = getDrefName(CE->getArg(1));
+    DpctGlobalInfo::insertOrUpdateFFTHandleInfo(HandleInfoKey, StreamStr);
+    report(Locations.PrefixInsertLoc, Diagnostics::CHECK_RELATED_QUEUE, false,
+           StreamStr);
+
+    if (IsAssigned) {
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
+    } else {
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
+    return;
+  } else if (FuncName == "cufftCreate" || FuncName == "cufftDestroy") {
     if (IsAssigned) {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-             FuncName,
-             "the function call is redundant in DPC++.");
+             FuncName, "the function call is redundant in DPC++.");
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
     } else {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
-             FuncName,
-             "the function call is redundant in DPC++.");
+             FuncName, "the function call is redundant in DPC++.");
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
     return;

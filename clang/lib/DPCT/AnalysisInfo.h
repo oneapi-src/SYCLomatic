@@ -1539,6 +1539,17 @@ static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
                                 InembedStr, OnembedStr);
     }
   }
+  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
+                                          std::string StreamStr) {
+    auto I = FFTHandleInfoMap.find(FileAndOffset);
+    if (I == FFTHandleInfoMap.end()) {
+      FFTHandleInfo Info;
+      Info.StreamStr = StreamStr;
+      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
+    } else {
+      I->second.updateStream(StreamStr);
+    }
+  }
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
   }

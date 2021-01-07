@@ -166,3 +166,5 @@ DEF_WARNING(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '%0
 DEF_COMMENT(CANNOT_CAPUTURE_AGUMENTS, 1073, "The fields' values of parameter '{0}' could not be deduced, so the call was not migrated. You need to update this code manually.")
 DEF_WARNING(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.")
 DEF_COMMENT(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.")
+DEF_WARNING(CHECK_RELATED_QUEUE, 1075, "The queue(%0) is used in oneapi::mkl::dft::descriptor::commit(), you may need to adjust the code.")
+DEF_COMMENT(CHECK_RELATED_QUEUE, 1075, "The queue({0}) is used in oneapi::mkl::dft::descriptor::commit(), you may need to adjust the code.")

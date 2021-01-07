@@ -100,6 +100,21 @@ struct FFTHandleInfo {
   std::string InembedStr;
   std::string OnembedStr;
 
+  std::string StreamStr;
+  bool UnknownStream = false;
+  void updateStream(std::string Stream) {
+    if (StreamStr.empty()) {
+      StreamStr = Stream;
+      return;
+    }
+    if (StreamStr == Stream) {
+      return;
+    }
+
+    UnknownStream = true;
+    return;
+  }
+
   void updateDirectionFromExec(FFTDirectionType NewDirection) {
     if (Direction == FFTDirectionType::uninitialized) {
       Direction = NewDirection;
@@ -192,6 +207,9 @@ struct FFTPlanAPIInfo {
   // Input info by Exec API
   FFTPlacementType PlacementFromExec = FFTPlacementType::uninitialized;
   FFTDirectionType DirectionFromExec = FFTDirectionType::uninitialized;
+
+  // Input info by setstream API
+  std::string StreamStr;
 
   // Generated info
   std::string PrePrefixStmt;
@@ -371,6 +389,9 @@ struct FFTExecAPIInfo {
   std::string OutputDistance;
   std::string InembedStr;
   std::string OnembedStr;
+
+  // Input info by setstream API
+  std::string StreamStr;
 
   // generate info
   // code is like:
