@@ -461,6 +461,8 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
 // CHECK-NEXT:    */
+// CHECK-NEXT:    sycl::event stop_q_ct1_1;
+// CHECK-NEXT:    sycl::event stop_q_ct1_2;
 // CHECK-NEXT:    CHECK(0);
     cudaEvent_t stop;
     CHECK(cudaEventCreate(&stop));
@@ -469,7 +471,6 @@ void foo_test_3()
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    sycl::event stop_q_ct1_1;
 // CHECK-NEXT:    CHECK((stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
@@ -486,7 +487,6 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    sycl::event stop_q_ct1_2;
 // CHECK-NEXT:    CHECK((stop_q_ct1_2 = dpct::get_default_queue().memcpy(h_a, d_a, nbytes), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
@@ -494,9 +494,9 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    stop_q_ct1_1.wait();
 // CHECK-NEXT:    stop_q_ct1_2.wait();
+// CHECK-NEXT:    stop_q_ct1_1.wait();
+// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK(0);
     CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
     kernel<<<grid, block>>>(d_a, value);

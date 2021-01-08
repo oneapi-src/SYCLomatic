@@ -8437,12 +8437,15 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     if (IndentLoc.isMacroID())
       IndentLoc = SM.getExpansionLoc(IndentLoc);
     Repl << getNL() << getIndent(IndentLoc, SM).str();
-    emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(Repl.str()),
+    auto TM = new InsertBeforeStmt(OuterStmt, std::move(Repl.str()),
                                                /*PairID*/ 0,
-                                               /*DoMacroExpansion*/ true));
+                                               /*DoMacroExpansion*/ true);
+    TM->setInsertPosition(InsertPositionRight);
+    emplaceTransformation(TM);
   } else {
-    emplaceTransformation(
-        new ReplaceStmt(CE, false, Name, std::move(Repl.str())));
+    auto TM = new ReplaceStmt(CE, false, Name, std::move(Repl.str()));
+    TM->setInsertPosition(InsertPositionRight);
+    emplaceTransformation(TM);
   }
 }
 
@@ -8549,18 +8552,21 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node) {
     SyncStmt
         << NewEventName << ".wait();" << getNL()
         << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
-    if(RecordEnd->getBeginLoc().isMacroID())
-      emplaceTransformation(new InsertText(
-              SM.getExpansionLoc(RecordEnd->getBeginLoc()), SyncStmt.str()));
-    else
-      emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+
+    auto TM = new InsertBeforeStmt(
+        RecordEnd, SyncStmt.str(), 0 /*PairID*/, true /*DoMacroExpansion*/);
+    TM->setInsertPosition(InsertPositionAlwaysLeft);
+    emplaceTransformation(TM);
   }
   for (const auto &T : Queues2Wait) {
     std::ostringstream SyncStmt;
     SyncStmt
-        << std::get<0>(T) << "->wait();" << getNL()
+        << std::get<0>(T) << getNL()
         << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
-    emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+    auto TM = new InsertBeforeStmt(
+        RecordEnd, SyncStmt.str(), 0 /*PairID*/, true /*DoMacroExpansion*/);
+    TM->setInsertPosition(InsertPositionAlwaysLeft);
+    emplaceTransformation(TM);
   }
 }
 
@@ -8940,6 +8946,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
   if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
     auto StreamArg = Call->getArg(Call->getNumArgs() - 1)->IgnoreImpCasts();
     bool IsDefaultStream = false;
+    bool NeedStreamWait = false;
     // Need queue for default stream or stream 0, 1 and 2
     if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
       IsDefaultStream = true;
@@ -8948,7 +8955,10 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
       auto V = IL->getValue().getZExtValue();
       if (V <= 2) // V should be 0, 1 or 2
         IsDefaultStream = true;
+    } else if (StreamArg->getStmtClass() == Stmt::ArraySubscriptExprClass) {
+      NeedStreamWait = true;
     }
+
     if (USMLevel == UsmLevel::restricted) {
       // std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
       std::string EventName;
@@ -8963,20 +8973,14 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
           EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
       Events2Wait.push_back(NewEventName);
 
-      auto BeginLoc = Call->getBeginLoc();
-      if (BeginLoc.isMacroID()) {
-        auto &SM = DpctGlobalInfo::getSourceManager();
-        std::ostringstream SyncStmt;
-        SyncStmt
-            << "sycl::event " << NewEventName << ";" << getNL()
-            << getIndent(SM.getExpansionLoc(Call->getBeginLoc()), SM).str();
-        emplaceTransformation(
-            new InsertText(SM.getExpansionLoc(BeginLoc), SyncStmt.str()));
-        emplaceTransformation(new InsertBeforeStmt(Call, NewEventName + " = "));
-      } else {
-        emplaceTransformation(
-            new InsertBeforeStmt(Call, "sycl::event " + NewEventName + " = "));
-      }
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      std::ostringstream SyncStmt;
+      SyncStmt << "sycl::event " << NewEventName << ";" << getNL()
+               << getIndent(SM.getExpansionLoc(RecordBegin->getBeginLoc()), SM)
+                      .str();
+      emplaceTransformation(new InsertText(
+          SM.getExpansionLoc(RecordBegin->getBeginLoc()), SyncStmt.str()));
+      emplaceTransformation(new InsertBeforeStmt(Call, NewEventName + " = "));
     } else {
       std::tuple<bool, std::string, const CallExpr *> T;
       if (IsDefaultStream && !DefaultQueueAdded) {
@@ -8991,11 +8995,18 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
                  << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM)
                         .str();
         buildTempVariableMap(Index, Call, HelperFuncType::DefaultQueue);
-        emplaceTransformation(new InsertBeforeStmt(RecordEnd, SyncStmt.str()));
+
+        emplaceTransformation(new InsertText(
+            SM.getExpansionLoc(RecordEnd->getBeginLoc()), SyncStmt.str()));
       } else if (!IsDefaultStream) {
-        auto TempName = getTempNameForExpr(StreamArg);
-        Queues2Wait.emplace_back(TempName.substr(0, TempName.size() - 1),
-                                 nullptr);
+        if (NeedStreamWait) {
+          Queues2Wait.emplace_back("dpct::dev_mgr::instance().current_device()."
+                                   "queues_wait_and_throw();",
+                                   nullptr);
+        } else {
+          auto ArgName = getStmtSpelling(StreamArg);
+          Queues2Wait.emplace_back(ArgName + "->wait();", nullptr);
+        }
       }
     }
   }
@@ -10076,19 +10087,21 @@ void MemoryMigrationRule::mallocMigrationWithTransformation(
       canUseTemplateStyleMigration(C->getArg(AllocatedArgIndex),
                                    C->getArg(SizeArgIndex), ReplType,
                                    ReplSize)) {
-    emplaceTransformation(
-        new InsertBeforeStmt(C,
+    auto TM = new InsertBeforeStmt(C,
                              getTransformedMallocPrefixStr(
-                                 C->getArg(AllocatedArgIndex), NeedTypeCast, true),
-                             InsertPosition::InsertPositionRight));
+                                 C->getArg(AllocatedArgIndex), NeedTypeCast, true));
+    TM->setInsertPosition(InsertPositionRight);
+    emplaceTransformation(TM);
+
     emplaceTransformation(
         new ReplaceCalleeName(C, ReplaceName + "<" + ReplType + ">", CallName));
   } else {
-    emplaceTransformation(
-        new InsertBeforeStmt(C,
+    auto TM = new InsertBeforeStmt(C,
                              getTransformedMallocPrefixStr(
-                                 C->getArg(AllocatedArgIndex), NeedTypeCast),
-                             InsertPosition::InsertPositionRight));
+                                 C->getArg(AllocatedArgIndex), NeedTypeCast));
+    TM->setInsertPosition(InsertPositionRight);
+    emplaceTransformation(TM);
+
     emplaceTransformation(
         new ReplaceCalleeName(C, std::move(ReplaceName), CallName));
   }

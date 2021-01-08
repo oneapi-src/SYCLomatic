@@ -153,7 +153,7 @@ public:
   enum Group { Any = 0, G1 = 1, G2 = 2, G3 = 3 };
 
   static const std::unordered_map<int, std::string> TMNameMap;
-
+  InsertPosition InsertPos = InsertPosition::InsertPositionLeft;
 public:
   TextModification(TMID _TMID) : ID(_TMID), Key(Any), ParentRuleID(0) {}
   TextModification(TMID _TMID, Group _Key)
@@ -189,6 +189,7 @@ public:
   void setIgnoreTM(bool Flag = true) { IgnoreTM = Flag; }
   bool isIgnoreTM() const { return IgnoreTM; }
   bool getNotFormatFlag() const { return NotFormatFlag; }
+  void setInsertPosition(InsertPosition IP) { InsertPos = IP; }
 
   // BlockLevelFormatFlag is used to decide which replacement need to be format
   // second time.
@@ -579,17 +580,12 @@ class InsertBeforeStmt : public TextModification {
   std::string T;
   unsigned PairID;
   bool DoMacroExpansion;
-  InsertPosition InsertPos = InsertPosition::InsertPositionLeft;
 
 public:
   InsertBeforeStmt(const Stmt *S, std::string &&T, unsigned PairID = 0,
                    bool DoMacroExpansion = false)
       : TextModification(TMID::InsertBeforeStmt), S(S), T(T), PairID(PairID),
         DoMacroExpansion(DoMacroExpansion) {}
-  InsertBeforeStmt(const Stmt *S, std::string &&T, InsertPosition Pos)
-      : InsertBeforeStmt(S, std::move(T)) {
-    InsertPos = Pos;
-  }
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

@@ -96,9 +96,10 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         auto CallExprLength =
           SM.getCharacterData(EndDef) - SM.getCharacterData(BeginDef) +
           Lexer::MeasureTokenLength(EndDef, SM, Context.getLangOpts());
-        DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
-            ReplacementString, this));
+        auto R = std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
+            ReplacementString, this);
+        R->setInsertPosition(InsertPos);
+        DpctGlobalInfo::getInstance().addReplacement(R);
         // Emit warning message at the Exapnasion Location
         auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(BeginDef));
@@ -122,6 +123,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     auto R = std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
                                               ReplacementString, this);
     R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    R->setInsertPosition(InsertPos);
     return R;
   } else {
     // When replacing a CallExpr with an empty string, also remove semicolons
@@ -137,6 +139,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     auto R = std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
                                               this);
     R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+    R->setInsertPosition(InsertPos);
     return R;
   }
 }
