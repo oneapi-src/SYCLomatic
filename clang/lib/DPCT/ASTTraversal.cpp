@@ -879,6 +879,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
                              .getFilename(VD->getBeginLoc())
                              .str();
+
     if (!isChildOrSamePath(DpctInstallPath, InFile)) {
       return;
     }
@@ -912,7 +913,64 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   if (IsME) {
     emplaceTransformation(new ReplaceStmt(ME, std::move(Replacement)));
   } else {
-    emplaceTransformation(new ReplaceStmt(DRE, std::move(Replacement)));
+    auto isDefaultParmWarpSize = [=](const FunctionDecl *&FD,
+                                     const ParmVarDecl *&PVD) -> bool {
+      if (BuiltinName != "warpSize")
+        return false;
+      PVD = DpctGlobalInfo::findAncestor<ParmVarDecl>(DRE);
+      if (!PVD || !PVD->hasDefaultArg())
+        return false;
+      FD = dyn_cast_or_null<FunctionDecl>(PVD->getParentFunctionOrMethod());
+      if (!FD)
+        return false;
+      if (FD->hasAttr<CUDADeviceAttr>())
+        return true;
+      return false;
+    };
+
+    const ParmVarDecl *PVD = nullptr;
+    const FunctionDecl *FD = nullptr;
+    if (isDefaultParmWarpSize(FD, PVD)) {
+      SourceManager &SM = DpctGlobalInfo::getSourceManager();
+      bool IsConstQualified = PVD->getType().isConstQualified();
+      emplaceTransformation(new ReplaceStmt(DRE, "0"));
+      unsigned int Idx = PVD->getFunctionScopeIndex();
+
+      for (const auto FDIter : FD->redecls()) {
+        DeviceFunctionDecl::LinkRedecls(FDIter)->setItem();
+        if (IsConstQualified) {
+          SourceRange SR;
+          const ParmVarDecl *CurrentPVD = FDIter->getParamDecl(Idx);
+          if (getTypeRange(CurrentPVD, SR)) {
+            auto Length =
+                SM.getFileOffset(SR.getEnd()) - SM.getFileOffset(SR.getBegin());
+            QualType NewType = CurrentPVD->getType();
+            NewType.removeLocalConst();
+            std::string NewTypeStr =
+                DpctGlobalInfo::getReplacedTypeName(NewType);
+            emplaceTransformation(
+                new ReplaceText(SR.getBegin(), Length, std::move(NewTypeStr)));
+          }
+        }
+
+        const Stmt *Body = FD->getBody();
+        if (!Body)
+          continue;
+        if (const CompoundStmt *BodyCS = dyn_cast<CompoundStmt>(Body)) {
+          if (BodyCS->child_begin() != BodyCS->child_end()) {
+            SourceLocation InsertLoc =
+                SM.getExpansionLoc((*(BodyCS->child_begin()))->getBeginLoc());
+            std::string IndentStr = getIndent(InsertLoc, SM).str();
+            std::string Text = "if (!" + PVD->getName().str() + ") " +
+                               PVD->getName().str() + " = " + getItemName() +
+                               ".get_sub_group().get_local_range().get(0);" +
+                               getNL() + IndentStr;
+            emplaceTransformation(new InsertText(InsertLoc, std::move(Text)));
+          }
+        }
+      }
+    } else
+      emplaceTransformation(new ReplaceStmt(DRE, std::move(Replacement)));
   }
 }
 

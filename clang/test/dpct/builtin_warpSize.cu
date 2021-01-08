@@ -17,3 +17,39 @@ __global__ void foo(){
   int c= warpSize;
 }
 
+// CHECK: int tensorPos(const int ct, sycl::nd_item<3> item_ct1, int numLane = 0) {
+// CHECK-NEXT:   if (!numLane) numLane = item_ct1.get_sub_group().get_local_range().get(0);
+// CHECK-NEXT:   int r = ct * numLane;
+// CHECK-NEXT:   return r;
+// CHECK-NEXT: }
+__device__ int tensorPos(const int ct, const int numLane = warpSize) {
+  int r = ct * numLane;
+  return r;
+}
+
+// CHECK: int tensorPos(const int ct, sycl::nd_item<3> item_ct1, int numLane);
+__device__ int tensorPos(const int ct, const int numLane);
+
+
+
+
+
+// CHECK: int tensorPos2(const int ct, sycl::nd_item<3> item_ct1, int numLane);
+__device__ int tensorPos2(const int ct, const int numLane);
+
+// CHECK: int tensorPos2(const int ct, sycl::nd_item<3> item_ct1, int numLane) {
+// CHECK-NEXT:   if (!numLane) numLane = item_ct1.get_sub_group().get_local_range().get(0);
+// CHECK-NEXT:   int r = ct * numLane;
+// CHECK-NEXT:   return r;
+// CHECK-NEXT: }
+__device__ int tensorPos2(const int ct, const int numLane) {
+  int r = ct * numLane;
+  return r;
+}
+
+// CHECK: int tensorPos2(const int ct, sycl::nd_item<3> item_ct1, int numLane = 0);
+__device__ int tensorPos2(const int ct, const int numLane = warpSize);
+
+
+// CHECK: int tensorPos3(const int ct, sycl::nd_item<3> item_ct1, int numLane = 0) {}
+__device__ int tensorPos3(const int ct, const int numLane = warpSize) {}

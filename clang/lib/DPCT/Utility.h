@@ -464,4 +464,5 @@ getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName);
+bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR);
 #endif // DPCT_UTILITY_H

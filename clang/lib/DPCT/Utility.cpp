@@ -2407,3 +2407,29 @@ std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName) {
   PrecAndDomain = Prec + ", " + Domain;
   return PrecAndDomain;
 }
+
+bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto BeginLoc = SM.getExpansionLoc(PVD->getBeginLoc());
+  auto EndLoc = SM.getExpansionLoc(PVD->getEndLoc());
+  std::string IdentifyName = PVD->getName().str();
+
+  auto TokenBegin = BeginLoc;
+  Token Tok;
+  while (SM.getFileOffset(TokenBegin) <= SM.getFileOffset(EndLoc)) {
+    if (Lexer::getRawToken(TokenBegin, Tok, SM,
+                           dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                           true)) {
+      break;
+    }
+    if (Tok.isAnyIdentifier()) {
+      if (Tok.getRawIdentifier().str() == IdentifyName) {
+        SR = clang::SourceRange(BeginLoc, TokenBegin);
+        return true;
+      }
+    }
+    TokenBegin = Tok.getEndLoc();
+  }
+
+  return false;
+}
