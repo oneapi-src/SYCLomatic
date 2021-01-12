@@ -1739,7 +1739,7 @@ public:
   inline const std::string &getBaseName() { return BaseName; }
 
   inline size_t getDimension() { return Range.size(); }
-
+  inline std::vector<SizeInfo> &getRange() { return Range; }
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
   // false, otherwise "()" will be returned.
@@ -1970,6 +1970,10 @@ public:
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
+    } else if (AccMode == Accessor && isExtern() && isShared() &&
+               getType()->getDimension() > 1) {
+      PS << getAccessorDataType();
+      PS << " *";
     } else {
       PS << getDpctAccessorType() << " ";
     }

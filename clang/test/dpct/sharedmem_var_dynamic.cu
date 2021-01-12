@@ -117,4 +117,27 @@ int main(void) {
   templateReverse<int><<<1, n, 4>>>(d_d, n);
 }
 
+// CHECK: void foo_1(uint8_t *dpct_local) {
+// CHECK-NEXT:  auto shad_mem_1 = (int(*)[2])dpct_local;
+// CHECK-NEXT:  int p = shad_mem_1[0][0];
+// CHECK-NEXT:}
+__global__ void foo_1() {
+  extern __shared__ int shad_mem_1[][2];
+  int p = shad_mem_1[0][0];
+}
 
+// CHECK:void foo_2(uint8_t *dpct_local) {
+// CHECK-NEXT:  auto shad_mem_2 = (int(*)[2][3])dpct_local;
+// CHECK-NEXT:  int p = shad_mem_2[0][0][2];
+// CHECK-NEXT:}
+__global__ void foo_2() {
+  extern __shared__ int shad_mem_2[][2][3];
+  int p = shad_mem_2[0][0][2];
+}
+
+// CHECK:void foo_3(uint8_t *dpct_local) {
+// CHECK-NEXT:  auto shad_mem_3 = (int(*)[2][3])dpct_local;
+// CHECK-NEXT:}
+__global__ void foo_3() {
+  extern __shared__ int shad_mem_3[][2][3];
+}

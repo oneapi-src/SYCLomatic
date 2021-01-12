@@ -9739,6 +9739,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
+
     if (Info->isTypeDeclaredLocal()) {
       processTypeDeclaredLocal(MemVar, Info);
     } else {

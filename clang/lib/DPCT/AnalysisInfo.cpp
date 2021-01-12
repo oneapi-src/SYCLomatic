@@ -1995,7 +1995,7 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   if (auto Func =
-          dyn_cast_or_null<FunctionDecl>(Var->getParentFunctionOrMethod())) {
+          DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
     if (Func->getTemplateSpecializationKind() ==
             TSK_ExplicitInstantiationDefinition ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
@@ -2084,6 +2084,24 @@ std::string MemVarInfo::getDeclarationReplacement() {
   case clang::dpct::MemVarInfo::Local:
     return "";
   case clang::dpct::MemVarInfo::Extern:
+    if (isShared() && getType()->getDimension() > 1) {
+      // For case like:
+      // extern __shared__ int shad_mem[][2][3];
+      // int p = shad_mem[0][0][2];
+      // will be migrated to:
+      // auto shad_mem = (int(*)[2][3])dpct_local;
+      std::string Dimension;
+      size_t Index = 0;
+      for (auto &Entry : getType()->getRange()) {
+        Index++;
+        if (Index == 1)
+          continue;
+        Dimension = Dimension + "[" + Entry.getSize() + "]";
+      }
+      return buildString("auto ", getName(), " = (", getType()->getBaseName(),
+                         "(*)", Dimension, ")", ExternVariableName, ";");
+    }
+
     return buildString("auto ", getName(), " = (", getType()->getBaseName(),
                        " *)", ExternVariableName, ";");
   case clang::dpct::MemVarInfo::Global: {
