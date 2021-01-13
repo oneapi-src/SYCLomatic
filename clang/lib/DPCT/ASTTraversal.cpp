@@ -12270,7 +12270,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                   "CUarray_format", "CUarray_format_enum", "CUdeviceptr",
                   "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
                   "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
-                  "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC"))))))
+                  "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC", "CUtexref"))))))
           .bind("texType"),
       this);
 
@@ -12307,6 +12307,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexObjectDestroy",
       "cuTexObjectGetTextureDesc",
       "cuTexObjectGetResourceDesc",
+      "cuTexRefSetArray",
+      "cuTexRefSetFormat",
+      "cuTexRefSetAddressMode",
+      "cuTexRefSetFilterMode",
+      "cuTexRefSetFlags",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -12558,29 +12563,45 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
                                              std::string(ReplType)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
-    ExprAnalysis A;
-    A.analyze(CE);
     auto Name = CE->getDirectCallee()->getNameAsString();
+    if (Name == "cuTexRefSetFlags") {
+      StringRef MethodName;
+      auto Value = getTextureFlagsSetterInfo(CE->getArg(1), MethodName);
+      std::shared_ptr<CallExprRewriter> Rewriter =
+          std::make_shared<AssignableRewriter>(
+              CE, std::make_shared<PrinterRewriter<MemberCallPrinter<
+                      const Expr *, RenameWithSuffix, StringRef>>>(
+                      CE, Name, CE->getArg(0), true,
+                      RenameWithSuffix("set", MethodName), Value));
+      Optional<std::string> Result = Rewriter->rewrite();
+      if (Result.hasValue())
+        emplaceTransformation(new ReplaceStmt(CE, true, std::move(Name), true,
+                                              std::move(Result).getValue()));
+      return;
+    }
     if (Name == "cudaCreateChannelDesc") {
       auto Callee =
-          dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
+        dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImplicitAsWritten());
       if (Callee) {
         auto TemArg = Callee->template_arguments();
         if (TemArg.size() != 0) {
           auto ChnType = TemArg[0].getArgument().getAsType().getAsString();
           if (ChnType.back() != '4') {
             report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
-                   true);
+              true);
           }
-        } else if (getStmtSpelling(CE->getArg(0)) == "0" ||
-                   getStmtSpelling(CE->getArg(1)) == "0" ||
-                   getStmtSpelling(CE->getArg(2)) == "0" ||
-                   getStmtSpelling(CE->getArg(3)) == "0") {
+        }
+        else if (getStmtSpelling(CE->getArg(0)) == "0" ||
+          getStmtSpelling(CE->getArg(1)) == "0" ||
+          getStmtSpelling(CE->getArg(2)) == "0" ||
+          getStmtSpelling(CE->getArg(3)) == "0") {
           report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
-                 true);
+            true);
         }
       }
     }
+    ExprAnalysis A;
+    A.analyze(CE);
     emplaceTransformation(A.getReplacement());
     A.applyAllSubExprRepl();
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
@@ -12754,6 +12775,30 @@ StringRef getCoordinateNormalizationStr(bool IsNormalized) {
   }
 }
 
+std::string TextureRule::getTextureFlagsSetterInfo(const Expr *Flags,
+                                                   StringRef &SetterName) {
+  SetterName = "";
+  if (!Flags->isValueDependent()) {
+    Expr::EvalResult Result;
+    if (Flags->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+      auto Val = Result.Val.getInt().getZExtValue();
+      if (Val != 1 && Val != 3) {
+        report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false,
+               ExprAnalysis::ref(Flags));
+      }
+      return getCoordinateNormalizationStr(Val & 0x02).str();
+    }
+  }
+  SetterName = "coordinate_normalization_mode";
+  report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false,
+         ExprAnalysis::ref(Flags));
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  printWithParens(OS, Flags);
+  OS << " & 0x02";
+  return OS.str();
+}
+
 std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
                                                 StringRef MemberName,
                                                 StringRef &SetMethodName) {
@@ -12769,25 +12814,7 @@ std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
       }
       SetMethodName = "coordinate_normalization_mode";
     } else if (MemberName == "flags") {
-      if (!RHS->isValueDependent()) {
-        Expr::EvalResult Result;
-        if (RHS->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
-          auto Val = Result.Val.getInt().getZExtValue();
-          if (Val != 1 && Val != 3) {
-            report(AssignStmt, Diagnostics::TEX_FLAG_UNSUPPORT, true,
-                   ExprAnalysis::ref(RHS));
-          }
-          return getCoordinateNormalizationStr(Val & 0x02).str();
-        }
-      }
-      SetMethodName = "coordinate_normalization_mode";
-      report(AssignStmt, Diagnostics::TEX_FLAG_UNSUPPORT, true,
-             ExprAnalysis::ref(RHS));
-      std::string Result;
-      llvm::raw_string_ostream OS(Result);
-      printWithParens(OS, RHS);
-      OS << " & 0x02";
-      return OS.str();
+      return getTextureFlagsSetterInfo(RHS, SetMethodName);
     } else if (MemberName == "channelDesc") {
       SetMethodName = "channel";
     }
@@ -12855,7 +12882,7 @@ bool TextureRule::SettersMerger::applyResult() {
 
   std::string ReplacedText;
   llvm::raw_string_ostream OS(ReplacedText);
-  MemberCallPrinter<StringRef, std::vector<std::string>> Printer(
+  MemberCallPrinter<StringRef, StringRef, std::vector<std::string>> Printer(
       D->getName(), IsArrow, "set", std::move(ArgsList));
   Printer.print(OS);
 

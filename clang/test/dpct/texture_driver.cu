@@ -116,3 +116,81 @@ void create_array_fail() {
   cuArrayCreate(&a, p + i);
   cuArrayCreate(&a, &d[i]);
 }
+
+void test_texref() {
+  // CHECK: sycl::addressing_mode addr_mode;
+  // CHECK-NEXT: sycl::filtering_mode filter_mode;
+  // CHECK-NEXT: sycl::image_channel_type format;
+  // CHECK-NEXT: dpct::image_matrix_p arr;
+  // CHECK-NEXT: dpct::image_wrapper_base_p tex;
+  // CHECK-NEXT: int err_code;
+  CUaddress_mode addr_mode;
+  CUfilter_mode filter_mode;
+  CUarray_format format;
+  CUarray arr;
+  CUtexref tex;
+  CUresult err_code;
+  int flags, chn_num;
+
+  // CHECK: tex->set_channel_type(format);
+  // CHECK-NEXT: tex->set_channel_num(4);
+  // CHECK-NEXT: err_code = (tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num), 0);
+  // CHECK-NEXT: cudaCheck((tex->set_channel_type(format), tex->set_channel_num(4), 0));
+  // CHECK-NEXT: func((tex->set_channel_type(format), tex->set_channel_num(4), 0));
+  // CHECK-NEXT: funcT((tex->set_channel_type(format), tex->set_channel_num(4), 0));
+  cuTexRefSetFormat(tex, format, 4);
+  err_code = cuTexRefSetFormat(tex, CU_AD_FORMAT_FLOAT, chn_num);
+  cudaCheck(cuTexRefSetFormat(tex, format, 4));
+  func(cuTexRefSetFormat(tex,format,4));
+  funcT(cuTexRefSetFormat(tex,format,4));
+  
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1074:4: Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: tex->set_coordinate_normalization_mode(flags & 0x02);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1074:5: Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: err_code = (tex->set(sycl::coordinate_normalization_mode::normalized), 0);
+  // CHECK-NEXT: cudaCheck((tex->set(sycl::coordinate_normalization_mode::normalized), 0));
+  // CHECK-NEXT: func((tex->set(sycl::coordinate_normalization_mode::normalized), 0));
+  // CHECK-NEXT: funcT((tex->set(sycl::coordinate_normalization_mode::unnormalized), 0));
+  cuTexRefSetFlags(tex, flags);
+  err_code = cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
+  cudaCheck(cuTexRefSetFlags(tex,  CU_TRSF_NORMALIZED_COORDINATES | CU_TRSF_READ_AS_INTEGER));
+  func(cuTexRefSetFlags(tex,3));
+  funcT(cuTexRefSetFlags(tex,1));
+
+  // CHECK: tex->set(addr_mode);
+  // CHECK-NEXT: err_code = (tex->set(sycl::addressing_mode::clamp_to_edge), 0);
+  // CHECK-NEXT: cudaCheck((tex->set(addr_mode), 0));
+  // CHECK-NEXT: func((tex->set(addr_mode), 0));
+  // CHECK-NEXT: funcT((tex->set(addr_mode), 0));
+  cuTexRefSetAddressMode(tex, 0, addr_mode);
+  err_code = cuTexRefSetAddressMode(tex, 1, CU_TR_ADDRESS_MODE_CLAMP);
+  cudaCheck(cuTexRefSetAddressMode(tex, 2, addr_mode));
+  func(cuTexRefSetAddressMode(tex,0,addr_mode));
+  funcT(cuTexRefSetAddressMode(tex,0,addr_mode));
+
+  // CHECK: tex->set(filter_mode);
+  // CHECK-NEXT: err_code = (tex->set(sycl::filtering_mode::linear), 0);
+  // CHECK-NEXT: cudaCheck((tex->set(filter_mode), 0));
+  // CHECK-NEXT: func((tex->set(filter_mode), 0));
+  // CHECK-NEXT: funcT((tex->set(filter_mode), 0));
+  cuTexRefSetFilterMode(tex, filter_mode);
+  err_code = cuTexRefSetFilterMode(tex, CU_TR_FILTER_MODE_LINEAR);
+  cudaCheck(cuTexRefSetFilterMode(tex, filter_mode));
+  func(cuTexRefSetFilterMode(tex,filter_mode));
+  funcT(cuTexRefSetFilterMode(tex,filter_mode));
+
+  // CHECK: tex->attach(dpct::image_data(arr));
+  // CHECK-NEXT: err_code = (tex->attach(dpct::image_data(arr)), 0);
+  // CHECK-NEXT: cudaCheck((tex->attach(dpct::image_data(arr)), 0));
+  // CHECK-NEXT: func((tex->attach(dpct::image_data(arr)), 0));
+  // CHECK-NEXT: funcT((tex->attach(dpct::image_data(arr)), 0));
+  cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT);
+  err_code = cuTexRefSetArray(tex, arr, 0x01);
+  cudaCheck(cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT));
+  func(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
+  funcT(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
+}

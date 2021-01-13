@@ -187,6 +187,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"CUresourcetype_enum", "dpct::image_data_type"},
       {"CUresourcetype", "dpct::image_data_type" },
       {"cudaResourceType", "dpct::image_data_type" },
+      {"CUtexref", "dpct::image_wrapper_base_p"},
       // ...
 
   };

@@ -72,3 +72,13 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::CANNOT_CAPUTURE_AGUMENTS, ARG(1)))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::NOTSUPPORTED)
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetArray", ARG(0), true,
+                                             "attach",
+                                             CALL("dpct::image_data", ARG(1))))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetAddressMode", ARG(0),
+                                             true, "set", ARG(2)))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetFilterMode", ARG(0),
+                                             true, "set", ARG(1)))
+MULTI_STMTS_FACTORY_ENTRY("cuTexRefSetFormat",
+                          MEMBER_CALL(ARG(0), true, "set_channel_type", ARG(1)),
+                          MEMBER_CALL(ARG(0), true, "set_channel_num", ARG(2)))

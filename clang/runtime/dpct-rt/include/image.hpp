@@ -427,6 +427,18 @@ public:
     return _channel.set_channel_size(channel_num, channel_size);
   }
 
+  unsigned get_channel_num() { return _channel.get_channel_num(); }
+  void set_channel_num(unsigned num) {
+    return _channel.set_channel_num(num);
+  }
+
+  cl::sycl::image_channel_type get_channel_type() {
+    return _channel.get_channel_type();
+  }
+  void set_channel_type(cl::sycl::image_channel_type type) {
+    return _channel.set_channel_type(type);
+  }
+
 private:
   image_data_type _type;
   void *_data = nullptr;
@@ -559,6 +571,18 @@ public:
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
+  }  
+
+  unsigned get_channel_num() { return _data.get_channel_num(); }
+  void set_channel_num(unsigned num) {
+    return _data.set_channel_num(num);
+  }
+
+  cl::sycl::image_channel_type get_channel_type() {
+    return _data.get_channel_type();
+  }
+  void set_channel_type(cl::sycl::image_channel_type type) {
+    return _data.set_channel_type(type);
   }
 
   cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }

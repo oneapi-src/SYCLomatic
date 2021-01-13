@@ -1718,6 +1718,8 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
     return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
+  std::string getTextureFlagsSetterInfo(const Expr *Flags,
+                                        StringRef &SetterName);
   std::string getMemberAssignedValue(const Stmt *AssignStmt,
                                      StringRef MemberName,
                                      StringRef &SetMethodName);

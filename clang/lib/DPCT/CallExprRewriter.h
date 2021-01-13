@@ -36,7 +36,7 @@ using BinaryOperatorExprRewriterFactory =
 /// Base class in abstract factory pattern
 class CallExprRewriterFactoryBase {
 public:
-  virtual std::shared_ptr<CallExprRewriter> create(const CallExpr *) = 0;
+  virtual std::shared_ptr<CallExprRewriter> create(const CallExpr *) const = 0;
   virtual ~CallExprRewriterFactoryBase() {}
 
   static std::unique_ptr<const std::unordered_map<std::string,
@@ -53,7 +53,7 @@ class CallExprRewriterFactory : public CallExprRewriterFactoryBase {
 private:
   template <size_t... Idx>
   inline std::shared_ptr<CallExprRewriter>
-  createRewriter(const CallExpr *Call, std::index_sequence<Idx...>) {
+  createRewriter(const CallExpr *Call, std::index_sequence<Idx...>) const {
     return std::shared_ptr<RewriterTy>(
         new RewriterTy(Call, std::get<Idx>(Initializer)...));
   }
@@ -62,7 +62,8 @@ public:
   CallExprRewriterFactory(StringRef SourceCalleeName, Args... Arguments)
       : Initializer(SourceCalleeName.str(), std::forward<Args>(Arguments)...) {}
   // Create a meaningful rewriter only if the CallExpr is not nullptr
-  std::shared_ptr<CallExprRewriter> create(const CallExpr *Call) override {
+  std::shared_ptr<CallExprRewriter>
+  create(const CallExpr *Call) const override {
     if (!Call)
       return std::shared_ptr<CallExprRewriter>();
     return createRewriter(Call,
@@ -150,7 +151,7 @@ public:
       std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory)
       : Pred(std::forward<InputPred>(P)), First(FirstFactory),
         Second(SecondFactory) {}
-  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) override {
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (Pred(C))
       return First->create(C);
     else
@@ -163,7 +164,6 @@ class AssignableRewriter : public CallExprRewriter {
   bool IsAssigned;
 
 public:
-  template <class... InitArgs>
   AssignableRewriter(const CallExpr *C,
                      std::shared_ptr<CallExprRewriter> InnerRewriter)
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
@@ -184,7 +184,7 @@ public:
   AssignableRewriterFactory(
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory) {}
-  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) override {
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C));
   }
 };
@@ -426,7 +426,9 @@ public:
   RenameWithSuffix(StringRef Original, StringRef Suffix)
       : OriginalName(Original), SuffixStr(Suffix) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << OriginalName << "_" << SuffixStr;
+    Stream << OriginalName;
+    if (!SuffixStr.empty())
+      Stream << "_" << SuffixStr;
   }
 };
 
@@ -536,29 +538,30 @@ public:
   }
 };
 
-template <class BaseT> class MemberExprPrinter {
+template <class BaseT, class MemberT> class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
-  StringRef MemberName;
+  MemberT MemberName;
 
 public:
-  MemberExprPrinter(BaseT Base, bool IsArrow, StringRef MemberName)
+  MemberExprPrinter(BaseT Base, bool IsArrow, MemberT MemberName)
       : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     printBase(Stream, Base, IsArrow);
-    Stream << MemberName;
+    dpct::print(Stream, MemberName);
   }
 };
 
-template <class BaseT, class... CallArgsT>
+template <class BaseT, class MemberT, class... CallArgsT>
 class MemberCallPrinter
-    : public CallExprPrinter<MemberExprPrinter<BaseT>, CallArgsT...> {
+    : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
 public:
-  MemberCallPrinter(BaseT Base, bool IsArrow, StringRef MemberName,
+  MemberCallPrinter(BaseT Base, bool IsArrow, MemberT MemberName,
                     CallArgsT &&... Args)
-      : CallExprPrinter<MemberExprPrinter<BaseT>, CallArgsT...>(
-            MemberExprPrinter<BaseT>(Base, IsArrow, MemberName),
+      : CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
+            MemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
+                                              std::move(MemberName)),
             std::forward<CallArgsT>(Args)...) {}
 };
 
@@ -605,17 +608,106 @@ public:
   }
 };
 
+template <class FirstPrinter, class... RestPrinter>
+class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
+  using Base = MultiStmtsPrinter<RestPrinter...>;
+  FirstPrinter First;
+
+public:
+  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
+                    FirstPrinter &&First, RestPrinter &&... Rest)
+      : Base(BeginLoc, SM, std::move(Rest)...), First(std::move(First)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Base::printStmt(Stream, First);
+    Base::print(Stream);
+  }
+};
+
+template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
+  LastPrinter Last;
+  StringRef Indent;
+  StringRef NL;
+
+protected:
+  template <class StreamT, class PrinterT>
+  void printStmt(StreamT &Stream, const PrinterT &Printer) const {
+    dpct::print(Stream, Printer);
+    Stream << ";" << NL << Indent;
+  }
+
+public:
+  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
+                    LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
+        NL(getNL(BeginLoc, SM)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Last);
+  }
+};
+
+template <class FirstPrinter, class... RestPrinter>
+class CommaExprPrinter : CommaExprPrinter<RestPrinter...> {
+  using Base = CommaExprPrinter<RestPrinter...>;
+  FirstPrinter First;
+
+public:
+  CommaExprPrinter(FirstPrinter &&First, RestPrinter &&... Rest)
+      : Base(std::move(Rest)...), First(std::move(First)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, First);
+    Stream << ", ";
+    Base::print(Stream);
+  }
+};
+
+template <class LastPrinter> class CommaExprPrinter<LastPrinter> {
+  LastPrinter Last;
+
+public:
+  CommaExprPrinter(LastPrinter &&Last) : Last(std::move(Last)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Last);
+  }
+};
+
 template <class Printer>
 class PrinterRewriter : Printer, public CallExprRewriter {
 public:
   template <class... ArgsT>
   PrinterRewriter(const CallExpr *C, StringRef Source, ArgsT &&... Args)
       : Printer(std::forward<ArgsT>(Args)...), CallExprRewriter(C, Source) {}
+  template <class... ArgsT>
+  PrinterRewriter(const CallExpr *C, StringRef Source,
+                  const std::function<ArgsT(const CallExpr *)> &... ArgCreators)
+      : PrinterRewriter(C, Source, ArgCreators(C)...) {}
   Optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
-    return Result;
+    return OS.str();
+  }
+};
+
+template <class... StmtPrinters>
+class PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>
+    : MultiStmtsPrinter<StmtPrinters...>, public CallExprRewriter {
+  using Base = MultiStmtsPrinter<StmtPrinters...>;
+
+public:
+  PrinterRewriter(const CallExpr *C, StringRef Source,
+                  StmtPrinters &&... Printers)
+      : Base(C->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
+             std::move(Printers)...),
+        CallExprRewriter(C, Source) {}
+  PrinterRewriter(
+      const CallExpr *C, StringRef Source,
+      const std::function<StmtPrinters(const CallExpr *)> &... PrinterCreators)
+      : PrinterRewriter(C, Source, PrinterCreators(C)...) {}
+  Optional<std::string> rewrite() override {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    Base::print(OS);
+    return OS.str();
   }
 };
 
@@ -625,21 +717,22 @@ class TemplatedCallExprRewriter
 public:
   TemplatedCallExprRewriter(
       const CallExpr *C, StringRef Source,
-      std::function<TemplatedCallee(const CallExpr *)> &CalleeCreator,
-      std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
+      const std::function<TemplatedCallee(const CallExpr *)> &CalleeCreator,
+      const std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
       : PrinterRewriter<CallExprPrinter<TemplatedCallee, ArgsT...>>(
             C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
 };
 
 template <class BaseT, class... ArgsT>
 class MemberCallExprRewriter
-    : public PrinterRewriter<MemberCallPrinter<BaseT, ArgsT...>> {
+    : public PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>> {
 public:
   MemberCallExprRewriter(
       const CallExpr *C, StringRef Source,
-      std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
-      StringRef Member, std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, ArgsT...>>(
+      const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
+      StringRef Member,
+      const std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
+      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
 };
 
@@ -648,8 +741,8 @@ class AssignExprRewriter
     : public PrinterRewriter<AssignExprPrinter<LValueT, RValueT>> {
 public:
   AssignExprRewriter(const CallExpr *C, StringRef Source,
-                     std::function<LValueT(const CallExpr *)> &LCreator,
-                     std::function<RValueT(const CallExpr *)> &RCreator)
+                     const std::function<LValueT(const CallExpr *)> &LCreator,
+                     const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<AssignExprPrinter<LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
 };

@@ -1155,12 +1155,13 @@ public:
 
 template <class BaseT, class... CallArgsT>
 using MemberCallPrinterCreator =
-    PrinterCreator<MemberCallPrinter<BaseT, CallArgsT...>,
+    PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,
                    std::function<BaseT(const CallExpr *)>, bool, std::string,
                    std::function<CallArgsT(const CallExpr *)>...>;
 
 template <class BaseT, class... CallArgsT>
-std::function<MemberCallPrinter<BaseT, CallArgsT...>(const CallExpr *)>
+std::function<
+    MemberCallPrinter<BaseT, StringRef, CallArgsT...>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow, std::string Member,
                       std::function<CallArgsT(const CallExpr *)>... Args) {
@@ -1210,6 +1211,27 @@ makeNewExprCreator(std::string TypeName,
   return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
                         std::function<ArgsT(const CallExpr *)>...>(TypeName,
                                                                    Args...);
+}
+
+bool isCallAssigned(const CallExpr *C) {
+  return isAssigned(C);
+}
+
+template <class... StmtPrinters>
+std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
+    const std::string &SourceName,
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
+  return std::make_shared<ConditionalRewriterFactory>(
+      isCallAssigned,
+      std::make_shared<AssignableRewriterFactory>(
+          std::make_shared<CallExprRewriterFactory<
+              PrinterRewriter<CommaExprPrinter<StmtPrinters...>>,
+              std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
+                                                                 Creators...)),
+      std::make_shared<CallExprRewriterFactory<
+          PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
+          std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
+                                                             Creators...));
 }
 
 /// Create AssignExprRewriterFactory with given argumens.
@@ -1482,6 +1504,8 @@ public:
   {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
 #define UNSUPPORT_FACTORY_ENTRY(FuncName, MsgID, ...)                          \
   {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
+#define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
+  {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
 
 ///***************************************************************
 /// Examples:
