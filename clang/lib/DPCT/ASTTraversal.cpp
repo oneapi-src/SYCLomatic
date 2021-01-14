@@ -9242,6 +9242,155 @@ void DeviceFunctionCallRule::run(
 
 REGISTER_RULE(DeviceFunctionCallRule)
 
+void GlibcMemoryAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+
+  MF.addMatcher(callExpr(hasParent(cStyleCastExpr().bind("CStyleCastExpr")),
+                         callee(functionDecl(hasName("malloc"))))
+                    .bind("mallocCallExpr"),
+                this);
+
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasName("free")))).bind("FreeCallExpr"),
+      this);
+}
+
+template <typename T> const T *GlibcMemoryAPIRule::getAncestor(const Stmt *CE) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*CE);
+  while (Parents.size() == 1) {
+    auto *Parent = Parents[0].get<T>();
+    if (Parent) {
+      return Parent;
+    } else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+  return nullptr;
+}
+
+// This function is used to migrate malloc to new.
+// \p ReplStmt is the statement to be processed
+// \p DD is the variable assigned by \p CE,
+// Take a case for example:
+// "cudaEvent_t *kernelEvent = (cudaEvent_t *) malloc(*sizeof(cudaEvent_t));".
+// ReplStmt stands for "(cudaEvent_t *) malloc(*sizeof(cudaEvent_t))",
+// DD is variable "kernelEvent", and  CE is CallExpr "malloc".
+void GlibcMemoryAPIRule::processMalloc(const Stmt *ReplStmt,
+                                       const DeclaratorDecl *DD,
+                                       const CallExpr *CE) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string Repl;
+  if (auto BO = dyn_cast<BinaryOperator>(CE->getArg(0))) {
+    if (BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
+      if (isSameSizeofTypeWithTypeStr(BO->getLHS(), "sycl::event")) {
+        // case 1: sizeof(b) * a
+        ArgumentAnalysis AA;
+        AA.setCallSpelling(BO);
+        AA.analyze(BO->getRHS());
+        Repl = AA.getRewritePrefix() + AA.getRewriteString() +
+               AA.getRewritePostfix();
+      } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), "sycl::event")) {
+        // case 2: a * sizeof(b)
+        ArgumentAnalysis AA;
+        AA.setCallSpelling(BO);
+        AA.analyze(BO->getLHS());
+        Repl = AA.getRewritePrefix() + AA.getRewriteString() +
+               AA.getRewritePostfix();
+      }
+    }
+  }
+
+  if (Repl.empty()) {
+    dpct::ExprAnalysis EA(CE->getArg(0));
+    auto Str = EA.getReplacedString();
+    std::string Size = "sizeof(sycl::event)";
+    Str = "(" + Str + ")/";
+    Repl = Str + Size;
+  }
+  std::string ReplStr = "new sycl::event[" + Repl + "]";
+  auto R = ReplaceStmt(ReplStmt, ReplStr).getReplacement(Context);
+  DpctGlobalInfo::getInstance().insertReplMalloc(
+      R,
+      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc())).second);
+}
+
+void GlibcMemoryAPIRule::processFree(const CallExpr *CE) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string ReplStr = "delete [] " + getStmtSpelling(CE->getArg(0));
+
+  auto Arg = CE->getArg(0);
+  if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+    if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+      // To process free called in C ordinary function.
+      auto R = ReplaceStmt(CE, ReplStr).getReplacement(Context);
+      DpctGlobalInfo::getInstance().insertReplFree(
+          R, DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()))
+                 .second);
+    }
+  } else if (auto ME = dyn_cast<MemberExpr>(Arg->IgnoreImpCasts())) {
+    if (auto FD = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
+      // To process free called in member function.
+      auto R = ReplaceStmt(CE, ReplStr).getReplacement(Context);
+      DpctGlobalInfo::getInstance().insertReplFree(
+          R, DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
+                 .second);
+    }
+  }
+}
+
+void GlibcMemoryAPIRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+
+  if (auto CE = getAssistNodeAsType<CallExpr>(Result, "mallocCallExpr")) {
+    if (auto CSCE =
+            getAssistNodeAsType<CStyleCastExpr>(Result, "CStyleCastExpr")) {
+      auto Type = CSCE->getType().getAsString();
+      if (Type != "cudaEvent_t *")
+        return;
+
+      if (auto VD = getAncestor<VarDecl>(CE)) {
+        // To process case like:
+        // cudaEvent_t *kernelEvent = (cudaEvent_t *)
+        // malloc(sizeof(cudaEvent_t));
+        processMalloc(VD->getInit(), VD, CE);
+      } else {
+        // To process case like:
+        // cudaEvent_t *kernelEvent;
+        // kernelEvent = (cudaEvent_t *) malloc(sizeof(cudaEvent_t));
+        auto BO = getAncestor<BinaryOperator>(CE);
+        if (BO && BO->getOpcode() == BO_Assign) {
+          if (auto DRE = dyn_cast<DeclRefExpr>(BO->getLHS())) {
+            if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+              // To process malloc called in C ordinary function.
+              processMalloc(CSCE, VD, CE);
+            }
+          } else if (auto ME = dyn_cast<MemberExpr>(BO->getLHS())) {
+            if (auto FD = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
+              // To process malloc called in member function.
+              processMalloc(CSCE, FD, CE);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (auto CE = getAssistNodeAsType<CallExpr>(Result, "FreeCallExpr")) {
+
+    if (auto IIC = CE->getArg(0)->IgnoreImpCasts()) {
+      auto Type = IIC->getType().getAsString();
+      if (Type != "cudaEvent_t *")
+        return;
+    }
+    processFree(CE);
+  }
+}
+
+REGISTER_RULE(GlibcMemoryAPIRule)
+
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =

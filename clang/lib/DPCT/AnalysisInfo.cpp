@@ -265,6 +265,17 @@ void DpctFileInfo::buildReplacements() {
   for (auto &ExecInfo : FFTExecAPIInfoMap) {
     ExecInfo.second.buildInfo();
   }
+
+  const auto &EventMallocFreeMap = getEventMallocFreeMap();
+  for (const auto &Entry : EventMallocFreeMap) {
+      auto &Pair = Entry.second;
+      for (auto &R0 : Pair.first) {
+        addReplacement(R0);
+      }
+      for (auto &R1 : Pair.second) {
+        addReplacement(R1);
+      }
+    }
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {

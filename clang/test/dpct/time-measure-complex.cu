@@ -315,7 +315,7 @@ int foo_test_2()
 
 // CHECK:    sycl::event *kernelEvent;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> kernelEvent_ct1_i;
-// CHECK-NEXT:    kernelEvent = (sycl::event *)malloc(n_streams * sizeof(sycl::event));
+// CHECK-NEXT:    kernelEvent = new sycl::event[n_streams];
     cudaEvent_t *kernelEvent;
     kernelEvent = (cudaEvent_t *) malloc(n_streams * sizeof(cudaEvent_t));
 

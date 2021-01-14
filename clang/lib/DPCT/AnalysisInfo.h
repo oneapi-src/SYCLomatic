@@ -621,8 +621,21 @@ public:
     return AtomicMap;
   }
 
+  std::map<unsigned int,
+           std::pair<std::vector<std::shared_ptr<ExtReplacement>>,
+                     std::vector<std::shared_ptr<ExtReplacement>>>> &
+  getEventMallocFreeMap() {
+    return EventMallocFreeMap;
+  }
+
 private:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
+
+  std::map<
+      unsigned int /*Hash Value*/,
+      std::pair<std::vector<std::shared_ptr<ExtReplacement>> /*malloc repl*/,
+                std::vector<std::shared_ptr<ExtReplacement>> /*free repl*/>>
+      EventMallocFreeMap;
 
   template <class Obj> GlobalMap<Obj> &getMap() {
     llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
@@ -1330,6 +1343,22 @@ public:
       M.insert(std::make_pair(
           Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
     }
+  }
+
+  void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+                        unsigned int Offset) {
+    std::string FilePath = Repl->getFilePath().str();
+    auto FileInfo = insertFile(FilePath);
+    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
+    EventMallocFreeMap[Offset].first.push_back(Repl);
+  }
+
+  void insertReplFree(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+                      unsigned int Offset) {
+    std::string FilePath = Repl->getFilePath().str();
+    auto FileInfo = insertFile(FilePath);
+    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
+    EventMallocFreeMap[Offset].second.push_back(Repl);
   }
 
   void insertRandomEngine(const Expr *E);
