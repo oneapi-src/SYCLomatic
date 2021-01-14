@@ -759,3 +759,8 @@ void foo15(){
   float *f_a = NULL;
   CALL(cudaBindTexture(0, aaa, f_a, CUDA_NUM_THREADS * sizeof(int)))
 }
+
+//CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
+//CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
+#define FABS(a)       (fabs((a).x) + fabs((a).y))
+__host__ __device__ static inline double foo16(const float2 &x) { return FABS(x); }

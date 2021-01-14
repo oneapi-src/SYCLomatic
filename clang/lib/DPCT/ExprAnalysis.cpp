@@ -272,7 +272,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
   // if the parent expr is inside macro and current expr is macro arg expansion,
   // use the expansion location of the macro arg in the macro definition.
-
   if (IsInMacroDefine) {
     if (SM.isMacroArgExpansion(E->getBeginLoc())) {
       BeginLoc = SM.getSpellingLoc(
@@ -297,7 +296,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
     BeginLoc = Range.getBegin();
     EndLoc = Range.getEnd();
   }
-
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
   auto LastTokenLength =
@@ -510,7 +508,10 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
-        addReplacement(ME->getMemberLoc(), MemberName);
+        // Retrieve the correct location before addReplacement
+        auto Loc =
+            getLocInRange(ME->getMemberLoc(), getStmtExpansionSourceRange(ME));
+        addReplacement(Loc, MemberName);
       }
     }
   }

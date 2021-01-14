@@ -443,6 +443,8 @@ bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::SourceLocation Loc);
 bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::StringRef FilePath, size_t Offset);
+clang::SourceLocation getLocInRange(clang::SourceLocation Loc,
+                                    clang::SourceRange Range);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
 bool isIncludedFile(const std::string &CurrentFile,

@@ -2122,6 +2122,30 @@ bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
   return true;
 }
 
+SourceLocation getLocInRange(SourceLocation Loc, SourceRange Range) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto BeginCandidate = Loc;
+  if (Loc.isMacroID() &&
+      !isInRange(Range.getBegin(), Range.getEnd(), BeginCandidate)) {
+    // Try getImmediateSpellingLoc
+    // e.g. M1(call(M2))
+    BeginCandidate = SM.getImmediateSpellingLoc(Loc);
+    if (BeginCandidate.isMacroID()) {
+      BeginCandidate = SM.getExpansionLoc(BeginCandidate);
+    }
+    if (!isInRange(Range.getBegin(), Range.getEnd(), BeginCandidate)) {
+      // Try getImmediateExpansionRange
+      // e.g. #define M1(x) call(x)
+      BeginCandidate =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(Loc).getBegin());
+      if (!isInRange(Range.getBegin(), Range.getEnd(), BeginCandidate)) {
+        BeginCandidate = SM.getSpellingLoc(Loc);
+      }
+    }
+  }
+  return BeginCandidate;
+}
+
 unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag) {
   Flag = true;
