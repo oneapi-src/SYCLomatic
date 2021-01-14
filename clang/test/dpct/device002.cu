@@ -50,6 +50,9 @@ int val;
 // CHECK: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
+cudaDeviceAttr attr = cudaDevAttrComputeCapabilityMajor;
+cudaDeviceGetAttribute(&val, attr, dev_id);
+
 int computeMode = -1, minor = 0;
 // CHECK: /*
 // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.

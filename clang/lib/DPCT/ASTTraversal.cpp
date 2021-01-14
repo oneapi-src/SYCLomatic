@@ -7989,10 +7989,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
-                                    ->getNameInfo()
-                                    .getName()
-                                    .getAsString();
+    auto AttrArg = CE->getArg(1);
+    std::string AttributeName;
+    if(auto DRE = dyn_cast<DeclRefExpr>(AttrArg)){
+      AttributeName = DRE->getNameInfo().getName().getAsString();
+    } else {
+      return;
+    }
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
