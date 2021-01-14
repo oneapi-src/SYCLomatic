@@ -556,3 +556,14 @@ __shared__ unsigned int s_Hist[100];
   addByte(s_WarpHist, 1000);
 }
 
+//CHECK:dpct::global_memory<volatile int, 0> g_mutex(0);
+volatile __device__ int g_mutex = 0;
+
+//CHECK:void __gpu_sync(int blocks_to_synch, volatile int *g_mutex) {
+//CHECK-NEXT:  sycl::atomic<int>(sycl::global_ptr<int>((int *)g_mutex)).fetch_add(1);
+//CHECK-NEXT:  while(*g_mutex < blocks_to_synch);
+//CHECK-NEXT:}
+__device__ void __gpu_sync(int blocks_to_synch) {
+  atomicAdd((int *)&g_mutex, 1);
+  while(g_mutex < blocks_to_synch);
+}

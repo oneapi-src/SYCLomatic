@@ -1614,7 +1614,17 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     // Take care of __shared__ variables because their types are
     // changed to pointers
     bool Arg0NeedDeref = false;
-    auto *UO = dyn_cast<UnaryOperator>(CE->getArg(0));
+    const Expr *Arg0RemoveCStyleCast = CE->getArg(0);
+    if (const CStyleCastExpr* Arg0CSCE =
+            dyn_cast<CStyleCastExpr>(CE->getArg(0))) {
+      ReplStr += "(";
+      ReplStr +=
+          DpctGlobalInfo::getReplacedTypeName(Arg0CSCE->getTypeAsWritten());
+      ReplStr += ")";
+      Arg0RemoveCStyleCast = Arg0CSCE->getSubExpr();
+    }
+
+    auto *UO = dyn_cast<UnaryOperator>(Arg0RemoveCStyleCast);
     if (UO && UO->getOpcode() == clang::UO_AddrOf) {
       if (auto DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreImpCasts()))
         Arg0NeedDeref = IsTypeChangedToPointer(DRE);
@@ -1623,7 +1633,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     // variable
     if (Arg0NeedDeref) {
       std::ostringstream OS;
-      printDerefOp(OS, CE->getArg(0));
+      printDerefOp(OS, Arg0RemoveCStyleCast);
       ReplStr += OS.str();
     } else {
       ArgumentAnalysis A(CE->getArg(0), false);
