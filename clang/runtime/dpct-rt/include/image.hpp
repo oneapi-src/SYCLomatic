@@ -303,10 +303,10 @@ class image_matrix {
   void *_host_data = nullptr;
 
   /// Set range of each dimension.
-  template <int Dims> void set_range(cl::sycl::range<Dims> range) {
-    for (int i = 0; i < Dims; ++i)
+  template <int dimensions> void set_range(cl::sycl::range<dimensions> range) {
+    for (int i = 0; i < dimensions; ++i)
       _range[i] = range[i];
-    _dims = Dims;
+    _dims = dimensions;
   }
 
   template <int... DimIdx>
@@ -316,8 +316,9 @@ class image_matrix {
 
 public:
   /// Constructor with channel info and dimension size info.
-  template <int Dim>
-  image_matrix(image_channel channel, cl::sycl::range<Dim>range) : _channel(channel) {
+  template <int dimensions>
+  image_matrix(image_channel channel, cl::sycl::range<dimensions> range)
+      : _channel(channel) {
     set_range(range);
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
@@ -331,6 +332,7 @@ public:
       _dims = 2;
       _range[1] = y;
     }
+    _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
 
   /// Construct a new image class with the matrix data.
@@ -577,7 +579,7 @@ public:
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
-  }  
+  }
 
   unsigned get_channel_num() { return _data.get_channel_num(); }
   void set_channel_num(unsigned num) {
