@@ -715,6 +715,7 @@ private:
   bool NeedEmitWGSizeWarning = true;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
+  void analyzeExpr(const CXXDependentScopeMemberExpr *CDSME);
 
   std::vector<std::string> getCtorArgs(const CXXConstructExpr *Ctor);
   inline std::string getCtorArg(ArgumentAnalysis &KCA, const Expr *Arg) {

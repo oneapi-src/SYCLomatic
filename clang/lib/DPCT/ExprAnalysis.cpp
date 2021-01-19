@@ -1149,8 +1149,26 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(CXXConstructExpr)
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
+    ANALYZE_EXPR(CXXDependentScopeMemberExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
+  }
+}
+
+void KernelConfigAnalysis::analyzeExpr(
+    const CXXDependentScopeMemberExpr *CDSME) {
+  if (ArgIndex == 1) {
+    NeedEmitWGSizeWarning = true;
+  }
+
+  if (ArgIndex < 2) {
+    std::string CDSMEString;
+    llvm::raw_string_ostream OS(CDSMEString);
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+                                   3);
+    OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
+    OS.flush();
+    addReplacement(CDSME, CDSMEString);
   }
 }
 
@@ -1240,7 +1258,7 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                         DpctGlobalInfo::getContext())) {
       addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                      MapNames::getClNamespace() + "::range", 3),
-                                 "(0, 0, ", getReplacedString(), ")"));
+                                 "(1, 1, ", getReplacedString(), ")"));
       Reversed = true;
       return;
     }

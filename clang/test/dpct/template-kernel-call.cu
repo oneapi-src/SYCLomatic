@@ -283,7 +283,7 @@ __global__ void my_kernel(T *A) {}
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, block_size), sycl::range<3>(0, 0, block_size)), 
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)), 
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
 // CHECK-NEXT:        });
@@ -302,7 +302,7 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(0, 0, size), sycl::range<3>(0, 0, size)),
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, size), sycl::range<3>(1, 1, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
@@ -321,7 +321,7 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:  ptr.s->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(0, 0, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel(ptr.dPtr);
 // CHECK-NEXT:        });
@@ -357,7 +357,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
     val_t *dresult;
 // CHECK:dresult = (cuda::spmv_driver<V>::val_t *)dpct::dpct_malloc(sizeof(val_t));
     cudaMalloc((void **)&dresult, sizeof(val_t));
-// CHECK:dpct::get_default_queue().submit(
+// CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
@@ -369,6 +369,48 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:      });
 // CHECK-NEXT:  });
     my_kernel2<<<1,1>>>(base_t::alpha, base_t::crsmat->rows);
+// CHECK:q_ct1.submit(
+// CHECK-NEXT:  [&](sycl::handler &cgh) {
+// CHECK-NEXT:    auto dpct_group_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
+// CHECK-EMPTY:
+// CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
+// CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
+// CHECK-EMPTY:
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
+// CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
+// CHECK-NEXT:      });
+// CHECK-NEXT:  });
+    my_kernel2<<<base_t::crsmat->rows,2>>>(base_t::alpha, base_t::crsmat->rows);
+// CHECK:q_ct1.submit(
+// CHECK-NEXT:  [&](sycl::handler &cgh) {
+// CHECK-NEXT:    auto dpct_group_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
+// CHECK-EMPTY:
+// CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
+// CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
+// CHECK-EMPTY:
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
+// CHECK-NEXT:      });
+// CHECK-NEXT:  });
+    my_kernel2<<<base_t::crsmat->rows,1>>>(base_t::alpha, base_t::crsmat->rows);
+// CHECK:q_ct1.submit(
+// CHECK-NEXT:  [&](sycl::handler &cgh) {
+// CHECK-NEXT:    auto dpct_local_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
+// CHECK-EMPTY:
+// CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
+// CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
+// CHECK-EMPTY:
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, base_t::crsmat->rows)),
+// CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
+// CHECK-NEXT:      });
+// CHECK-NEXT:  });
+    my_kernel2<<<2,base_t::crsmat->rows>>>(base_t::alpha, base_t::crsmat->rows);
   }
 };
 }
