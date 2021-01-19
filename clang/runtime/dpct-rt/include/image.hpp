@@ -69,6 +69,10 @@ struct image_trait<cl::sycl::cl_short> : public image_trait<cl::sycl::cl_int> {
   using data_t = cl::sycl::cl_short;
   using elem_t = data_t;
 };
+template <>
+struct image_trait<char>
+    : public image_trait<typename std::conditional<
+          std::is_signed<char>::value, signed char, unsigned char>::type> {};
 
 template <class T>
 struct image_trait<cl::sycl::vec<T, 1>> : public image_trait<T> {};
