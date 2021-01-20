@@ -316,16 +316,13 @@ int KernelCallExpr::calculateOriginArgsSize() const {
 template <class ArgsRange>
 void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
   int Idx = 0;
-  bool LocalReversed = false, GroupReversed = false;
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
     A.analyze(Arg, Idx, Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
-      GroupReversed = A.reversed();
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
-      LocalReversed = A.reversed();
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
 
       // Using another analysis because previous analysis may return directly
@@ -339,10 +336,6 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
     }
     ++Idx;
   }
-  ExecutionConfig.DeclLocalRange =
-      !LocalReversed && !ExecutionConfig.LocalDirectRef;
-  ExecutionConfig.DeclGroupRange =
-      LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -655,7 +648,6 @@ std::string KernelCallExpr::getReplacement() {
   addAccessorDecl();
   addStreamDecl();
   buildKernelArgsStmt();
-  addNdRangeDecl();
 
   if (IsInMacroDefine) {
     LocInfo.NL = "\\" + LocInfo.NL;
@@ -800,8 +792,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
 
 // If the kernel call is in a ParenExpr
 void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (auto P = dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
+  if (dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
     NeedLambda = true;
   }
 }

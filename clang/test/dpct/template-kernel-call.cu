@@ -371,8 +371,6 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
     my_kernel2<<<1,1>>>(base_t::alpha, base_t::crsmat->rows);
 // CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
-// CHECK-NEXT:    auto dpct_group_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
-// CHECK-EMPTY:
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
@@ -385,8 +383,6 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
     my_kernel2<<<base_t::crsmat->rows,2>>>(base_t::alpha, base_t::crsmat->rows);
 // CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
-// CHECK-NEXT:    auto dpct_group_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
-// CHECK-EMPTY:
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
@@ -399,8 +395,6 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
     my_kernel2<<<base_t::crsmat->rows,1>>>(base_t::alpha, base_t::crsmat->rows);
 // CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
-// CHECK-NEXT:    auto dpct_local_range = sycl::range<3>(1, 1, base_t::crsmat->rows);
-// CHECK-EMPTY:
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:

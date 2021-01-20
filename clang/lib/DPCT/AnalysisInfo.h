@@ -3304,16 +3304,6 @@ private:
           MapNames::getClNamespace() + "::stream ",
           DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   }
-  void addNdRangeDecl() {
-    if (ExecutionConfig.DeclGroupRange) {
-      SubmitStmtsList.NdRangeList.emplace_back(buildString(
-          "auto dpct_group_range = ", ExecutionConfig.GroupSize, ";"));
-    }
-    if (ExecutionConfig.DeclLocalRange) {
-      SubmitStmtsList.NdRangeList.emplace_back(buildString(
-          "auto dpct_local_range = ", ExecutionConfig.LocalSize, ";"));
-    }
-  }
 
   void buildKernelArgsStmt();
 
@@ -3330,8 +3320,6 @@ private:
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
     std::string &Stream = Config[3];
-    bool DeclLocalRange = false,
-         DeclGroupRange = false;
     bool LocalDirectRef = false, GroupDirectRef = false;
   } ExecutionConfig;
 
