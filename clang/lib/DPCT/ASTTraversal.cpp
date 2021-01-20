@@ -9779,70 +9779,66 @@ llvm::raw_ostream &printMemcpy3DParmsName(llvm::raw_ostream &OS,
 void MemoryMigrationRule::replaceMemAPIArg(
     const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
     const std::string &StreamStr, std::string OffsetFromBaseStr) {
-  auto GetPtrString =
-      buildString(".get_ptr(", StreamStr.empty() ? "" : ("*" + StreamStr), ")");
-  auto ASE = getArraySubscriptExpr(E);
-  const clang::Expr *BASE = nullptr;
-  if (ASE) {
-    BASE = ASE->getBase();
+
+  StringRef VarName;
+  auto Sub = E->IgnoreImplicitAsWritten();
+  if (auto MTE = dyn_cast<MaterializeTemporaryExpr>(Sub)) {
+    Sub = MTE->getSubExpr()->IgnoreImplicitAsWritten();
   }
-
-  auto UO = getUnaryOperatorExpr(E);
-  std::shared_ptr<clang::dpct::MemVarInfo> VI = nullptr;
-  if (BASE &&
-      (VI = DpctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(BASE)))) {
-    // Migrate the expr such as "&const_angle[3]" to
-    // const_angle.get_ptr() + sizeof(TYPE) * (3)",
-    // and "&const_angle[3]" to "const_angle.get_ptr()".
-    std::string VarName = VI->getName();
-    VarName += GetPtrString;
-
-    bool IsOffsetNeeded = true;
+  if (auto UO = dyn_cast<UnaryOperator>(Sub)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      Sub = UO->getSubExpr()->IgnoreImplicitAsWritten();
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(Sub)) {
+    if (COCE->getOperator() == OO_Amp) {
+      Sub = COCE->getArg(0);
+    }
+  }
+  std::string ArrayOffset;
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(Sub)) {
+    Sub = ASE->getBase()->IgnoreImplicitAsWritten();
+    auto Idx = ASE->getIdx();
     Expr::EvalResult ER;
-
-    if (ASE->getIdx()->EvaluateAsInt(ER, *Result.Context)) {
-      auto ExprValue = ER.Val.getAsString(*Result.Context, ASE->getType());
-      if (ExprValue == "0") {
-        IsOffsetNeeded = false;
+    ArrayOffset = ExprAnalysis::ref(Idx);
+    if (!Idx->isValueDependent() && Idx->EvaluateAsInt(ER, *Result.Context)) {
+      if (ER.Val.getInt().getZExtValue() == 0) {
+        ArrayOffset.clear();
       }
     }
-
-    if (IsOffsetNeeded) {
-      std::string Type = ASE->getType().getAsString();
-      ExprAnalysis EA;
-      EA.analyze(ASE->getIdx());
-      auto StmtStrArg = EA.getReplacedString();
-      std::string Offset = " + sizeof(" + Type + ") * (" + StmtStrArg + ")";
-      VarName += Offset;
-    }
-
-    if (!OffsetFromBaseStr.empty()) {
-      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
-    }
-    emplaceTransformation(
-        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
-  } else if (UO && (VI = DpctGlobalInfo::getInstance().findMemVarInfo(
-                        getVarDecl(UO)))) {
-    // Migrate the expr such as "&const_one" to "const_one.get_ptr()".
-    std::string VarName = VI->getName();
-    VarName += GetPtrString;
-
-    if (!OffsetFromBaseStr.empty()) {
-      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
-    }
-    emplaceTransformation(
-        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
-  } else if (VI = DpctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(E))) {
-    // Migrate the expr such as "const_one" to "const_one.get_ptr()".
-    std::string VarName = VI->getName();
-    VarName += GetPtrString;
-
-    if (!OffsetFromBaseStr.empty()) {
-      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
-    }
-    emplaceTransformation(
-        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   }
+  if (auto DRE = dyn_cast<DeclRefExpr>(Sub)) {
+    if (auto VI = DpctGlobalInfo::getInstance().findMemVarInfo(
+            dyn_cast<VarDecl>(DRE->getDecl()))) {
+      VarName = VI->getName();
+    }
+  } else if (auto SL = dyn_cast<StringLiteral>(Sub)) {
+    VarName = SL->getString();
+  }
+
+  if (VarName.empty())
+    return;
+
+  std::string Replaced;
+  llvm::raw_string_ostream OS(Replaced);
+
+  auto PrintVarName = [&](llvm::raw_ostream &Out) {
+    Out << VarName << ".get_ptr(";
+    if (!StreamStr.empty())
+      Out << "*" << StreamStr;
+    Out << ")";
+    if (!ArrayOffset.empty())
+      Out << " + " << ArrayOffset;
+  };
+
+  if (OffsetFromBaseStr.empty()) {
+    PrintVarName(OS);
+  } else {
+    OS << "(char *)(";
+    PrintVarName(OS);
+    OS << ") + " << OffsetFromBaseStr;
+  }
+  emplaceTransformation(
+      new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(OS.str())));
 }
 
 TextModification *replaceText(SourceLocation Begin, SourceLocation End,

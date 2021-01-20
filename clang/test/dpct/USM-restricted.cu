@@ -202,6 +202,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   cudaMemcpyFromSymbol(h_A, constData, size, 1);
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
+  cudaMemcpyFromSymbol(h_A, "constData", size, 1);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0);
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0));
@@ -209,6 +211,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
+  cudaMemcpyFromSymbol(h_A, "constData", size, 1, cudaMemcpyDeviceToHost);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0);
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0));
@@ -218,6 +222,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
+  cudaMemcpyFromSymbolAsync(h_A, "constData", size, 1, cudaMemcpyDeviceToHost);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size), 0));
@@ -232,6 +238,8 @@ void foo() {
 
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
+  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
+  cudaMemcpyFromSymbolAsync(h_A, "constData", size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0));
@@ -240,6 +248,8 @@ void foo() {
   /// memcpy to symbol
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
   cudaMemcpyToSymbol(constData, h_A, size, 1);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
+  cudaMemcpyToSymbol("constData", h_A, size, 1);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0);
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0));
@@ -247,6 +257,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
   cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
+  cudaMemcpyToSymbol("constData", h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0);
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0));
@@ -256,6 +268,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size), 0));
@@ -263,6 +277,8 @@ void foo() {
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size, 2, cudaMemcpyHostToDevice, 0);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size), 0));
@@ -270,6 +286,8 @@ void foo() {
 
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
+  // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0));
@@ -368,6 +386,8 @@ int foo2() {
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   cudaMemcpyFromSymbol(h_A, constData, size, 1);
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
+  cudaMemcpyFromSymbol(h_A, "constData", size, 1);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0);
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait(), 0));
@@ -382,6 +402,8 @@ int foo2() {
 
   // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size).wait();
   cudaMemcpyFromSymbol(h_A, constData, size);
+  // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size).wait();
+  cudaMemcpyFromSymbol(h_A, "constData", size);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, constData.get_ptr(), size).wait(), 0);
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, constData.get_ptr(), size).wait(), 0));
@@ -391,6 +413,8 @@ int foo2() {
 
   // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size);
+  // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size);
+  cudaMemcpyFromSymbolAsync(h_A, "constData", size);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, constData.get_ptr(), size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, constData.get_ptr(), size), 0));
@@ -398,6 +422,8 @@ int foo2() {
   
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 1);
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
+  cudaMemcpyFromSymbolAsync(h_A, "constData", size, 1);
   // CHECK: errorCode = (q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size), 0));
@@ -419,6 +445,8 @@ int foo2() {
 
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
+  // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
+  cudaMemcpyFromSymbolAsync(h_A, "constData", size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: errorCode = (stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: CUDA_SAFE_CALL((stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size), 0));
@@ -427,6 +455,8 @@ int foo2() {
   /// memcpy to symbol
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
   cudaMemcpyToSymbol(constData, h_A, size, 1);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
+  cudaMemcpyToSymbol("constData", h_A, size, 1);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0);
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait(), 0));
@@ -441,6 +471,8 @@ int foo2() {
 
   // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size).wait();
   cudaMemcpyToSymbol(constData, h_A, size);
+  // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size).wait();
+  cudaMemcpyToSymbol("constData", h_A, size);
   // CHECK: errorCode = (q_ct1.memcpy(constData.get_ptr(), h_A, size).wait(), 0);
   errorCode = cudaMemcpyToSymbol(constData, h_A, size);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(constData.get_ptr(), h_A, size).wait(), 0));
@@ -449,6 +481,8 @@ int foo2() {
   /// memcpy to symbol async
   // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size);
+  // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size);
   // CHECK: errorCode = (q_ct1.memcpy(constData.get_ptr(), h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy(constData.get_ptr(), h_A, size), 0));
@@ -456,6 +490,8 @@ int foo2() {
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1);
+  // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size, 1);
   // CHECK: errorCode = (q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 1);
   // CHECK: CUDA_SAFE_CALL((q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size), 0));
@@ -477,6 +513,8 @@ int foo2() {
 
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
+  // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
+  cudaMemcpyToSymbolAsync("constData", h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: errorCode = (stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: CUDA_SAFE_CALL((stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size), 0));
