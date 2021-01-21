@@ -5,6 +5,46 @@
 
 void printf(const char *format, unsigned char data);
 
+__global__ void kernel(int a, int b){
+  return;
+}
+// CHECK: template<typename T>
+// CHECK-NEXT: class testClass{
+// CHECK-NEXT:   struct test {
+// CHECK-NEXT:     int data;
+// CHECK-NEXT:   };
+// CHECK-NEXT:   test* ptest;
+// CHECK-NEXT:   int a;
+// CHECK-NEXT: public:
+// CHECK-NEXT:   void run(){
+// CHECK-NEXT:     dpct::get_default_queue().submit(
+// CHECK-NEXT:       [&](sycl::handler &cgh) {
+// CHECK-NEXT:         auto this_a_ct0 = this->a;
+// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
+// CHECK-EMPTY:
+// CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:             kernel(this_a_ct0, ptest_data_ct1);
+// CHECK-NEXT:           });
+// CHECK-NEXT:       });
+// CHECK-NEXT:     return;
+// CHECK-NEXT:   }
+// CHECK-NEXT: };
+template<typename T>
+class testClass{
+  struct test {
+    int data;
+  };
+  test* ptest;
+  int a;
+public:
+  void run(){
+    kernel<<<1,1>>>(this->a, ptest->data);
+    return;
+  }
+};
+
 template<class T> void runTest();
 
 template <class TName, unsigned N, class TData>

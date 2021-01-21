@@ -1033,6 +1033,8 @@ void KernelArgumentAnalysis::analyzeExpr(
   if (Arg->isImplicitAccess()) {
     IsRedeclareRequired = true;
   } else {
+    if(Arg->isArrow())
+      IsRedeclareRequired = true;
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
 }
