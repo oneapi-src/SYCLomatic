@@ -685,6 +685,7 @@ InsertComment::getReplacement(const ASTContext &Context) const {
         this);
   ExtReplPtr->setConstantOffset(this->getConstantOffset());
   ExtReplPtr->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
+  ExtReplPtr->setSYCLHeaderNeeded(false);
   return ExtReplPtr;
 }
 

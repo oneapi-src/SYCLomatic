@@ -148,6 +148,15 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
           getHashStrFromLoc(MI->getReplacementToken(0).getLocation());
         DpctGlobalInfo::getInstance().insertAtomicInfo(
           HashStr, MacroNameTok.getLocation(), II->getName().str());
+    } else if (MacroNameTok.getLocation().isValid() &&
+               MacroNameTok.getIdentifierInfo() &&
+               MapNames::VectorTypeMigratedTypeSizeMap.find(
+                   MacroNameTok.getIdentifierInfo()->getName().str()) !=
+                   MapNames::VectorTypeMigratedTypeSizeMap.end()) {
+      DiagnosticsUtils::report(
+          MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
+          dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
+          MacroNameTok.getIdentifierInfo()->getName().str());
     }
   }
 }

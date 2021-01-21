@@ -168,3 +168,5 @@ DEF_WARNING(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate norma
 DEF_COMMENT(TEX_FLAG_UNSUPPORT, 1074, "Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.")
 DEF_WARNING(CHECK_RELATED_QUEUE, 1075, "Migration of cuFFT calls may be incorrect and requires review.")
 DEF_COMMENT(CHECK_RELATED_QUEUE, 1075, "Migration of cuFFT calls may be incorrect and requires review.")
+DEF_WARNING(MACRO_SAME_AS_SYCL_TYPE, 1077, "'%0' redefines standard SYCL type, which may cause conflicts.")
+DEF_COMMENT(MACRO_SAME_AS_SYCL_TYPE, 1077, "'{0}' redefines standard SYCL type, which may cause conflicts.")
