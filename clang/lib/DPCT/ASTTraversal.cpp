@@ -8345,57 +8345,17 @@ void EventAPICallRule::findEventAPI(const Stmt *Node, const CallExpr *&Call,
   if (!Node)
     return;
 
-  if (Node->getStmtClass() == Stmt::CompoundStmtClass ||
-      Node->getStmtClass() == Stmt::CallExprClass ||
-      Node->getStmtClass() == Stmt::IfStmtClass ||
-      Node->getStmtClass() == Stmt::DoStmtClass ||
-      Node->getStmtClass() == Stmt::ImplicitCastExprClass ||
-      Node->getStmtClass() == Stmt::BinaryOperatorClass ||
-      Node->getStmtClass() == Stmt::DeclStmtClass ||
-      Node->getStmtClass() == Stmt::ParenExprClass)
-    for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
-      switch (It->getStmtClass()) {
-      case Stmt::DeclStmtClass: {
-
-        auto DS = static_cast<const DeclStmt *>(*It);
-        for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
-          if (auto VD = dyn_cast<VarDecl>(*It))
-            if (auto CE = dyn_cast_or_null<CallExpr>(VD->getInit())) {
-              if (!CE->getDirectCallee())
-                return;
-              if (CE->getDirectCallee()->getNameAsString() == EventAPIName) {
-                Call = CE;
-                return;
-              }
-            }
-        }
-        break;
-      }
-      case Stmt::CallExprClass: {
-        if (auto CE = dyn_cast<CallExpr>(*It)) {
-          if (CE->getDirectCallee())
-            if (CE->getDirectCallee()->getNameAsString() == EventAPIName) {
-              Call = CE;
-              return;
-            } else {
-            }
-        }
-        findEventAPI(*It, Call, EventAPIName);
-        break;
-      }
-      case Stmt::ParenExprClass:
-      case Stmt::CompoundStmtClass:
-      case Stmt::IfStmtClass:
-      case Stmt::DoStmtClass:
-      case Stmt::BinaryOperatorClass:
-      case Stmt::ImplicitCastExprClass: {
-        findEventAPI(*It, Call, EventAPIName);
-        break;
-      }
-      default:
-        break;
+  if (auto CE = dyn_cast<CallExpr>(Node)) {
+    if (CE->getDirectCallee()) {
+      if (CE->getDirectCallee()->getNameAsString() == EventAPIName) {
+        Call = CE;
+        return;
       }
     }
+  }
+  for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
+    findEventAPI(*It, Call, EventAPIName);
+  }
 }
 
 void EventAPICallRule::handleEventRecord(const CallExpr *CE,
@@ -8493,15 +8453,8 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 
     const CallExpr *Call = nullptr;
     findEventAPI(*Iter, Call, "cudaEventRecord");
-    if (!Call)
-      Call = dyn_cast<CallExpr>(*Iter);
-
     if (Call) {
-      auto Callee = Call->getDirectCallee();
-      if (!Callee)
-        return nullptr;
-      if (SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding() > KCallLoc &&
-          Callee->getName() == "cudaEventRecord")
+      if (SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding() > KCallLoc)
         return Call->getArg(0);
     }
   }
@@ -8574,15 +8527,9 @@ void EventAPICallRule::findThreadSyncLocation(const Stmt *Node) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   const CallExpr *Call = nullptr;
   findEventAPI(Node, Call, "cudaThreadSynchronize");
-  if (!Call)
-    Call = dyn_cast<CallExpr>(Node);
 
   if (Call) {
-    if (auto Callee = Call->getDirectCallee())
-      if (Callee->getName() == "cudaThreadSynchronize") {
-        ThreadSyncLoc =
-            SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding();
-      }
+    ThreadSyncLoc = SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding();
   }
 }
 
@@ -8646,30 +8593,19 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
 
       const CallExpr *Call = nullptr;
       findEventAPI(*Iter, Call, "cudaEventCreate");
-      if (!Call)
-        Call = dyn_cast<CallExpr>(*Iter);
 
       if (Call) {
-        if (!Call->getDirectCallee())
-          continue;
-        std::string RecordFuncName = Call->getDirectCallee()
-                                         ->getNameInfo()
-                                         .getName()
-                                         .getAsString();
-
-        if (RecordFuncName == "cudaEventCreate") {
-          std::string Arg0;
-          if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
-            if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-              Arg0 = getStmtSpelling(UO->getSubExpr());
-            }
+        std::string Arg0;
+        if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
+          if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+            Arg0 = getStmtSpelling(UO->getSubExpr());
           }
-          if (Arg0.empty())
-            Arg0 = getStmtSpelling(Call->getArg(0));
+        }
+        if (Arg0.empty())
+          Arg0 = getStmtSpelling(Call->getArg(0));
 
-          if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-            RecordBegin = Call;
-          }
+        if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
+          RecordBegin = Call;
         }
       }
       RecordEnd = *Iter;
@@ -8684,7 +8620,7 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
          ++Iter) {
 
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-          findThreadSyncLocation(*Iter);
+        findThreadSyncLocation(*Iter);
 
       if (SM.getExpansionLoc(Iter->getBeginLoc()).getRawEncoding() > CELoc) {
         break;
@@ -8693,25 +8629,15 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
       if (EventAPIName == "cudaEventRecord") {
         const CallExpr *Call = nullptr;
         findEventAPI(*Iter, Call, EventAPIName);
-        if (!Call)
-          Call = dyn_cast<CallExpr>(*Iter);
 
         if (Call) {
-          if (!Call->getDirectCallee())
-            continue;
-          std::string RecordFuncName = Call->getDirectCallee()
-                                           ->getNameInfo()
-                                           .getName()
-                                           .getAsString();
           // Find the last call of Event Record on start and stop before
           // calculate the time elapsed
-          if (RecordFuncName == EventAPIName) {
-            auto Arg0 = getStmtSpelling(Call->getArg(0));
-            if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-              RecordBegin = Call;
-            } else if (Arg0 == getStmtSpelling(AsyncCE->getArg(2))) {
-              RecordEnd = Call;
-            }
+          auto Arg0 = getStmtSpelling(Call->getArg(0));
+          if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
+            RecordBegin = Call;
+          } else if (Arg0 == getStmtSpelling(AsyncCE->getArg(2))) {
+            RecordEnd = Call;
           }
         }
 
@@ -8719,50 +8645,29 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
 
         const CallExpr *Call = nullptr;
         findEventAPI(*Iter, Call, EventAPIName);
-        if (!Call)
-          Call = dyn_cast<CallExpr>(*Iter);
 
         if (Call) {
-          if (!Call->getDirectCallee())
-            continue;
-          std::string RecordFuncName = Call->getDirectCallee()
-                                           ->getNameInfo()
-                                           .getName()
-                                           .getAsString();
-
-          if (RecordFuncName == EventAPIName) {
-            std::string Arg0;
-            if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
-              if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-                Arg0 = getStmtSpelling(UO->getSubExpr());
-              }
+          std::string Arg0;
+          if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
+            if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+              Arg0 = getStmtSpelling(UO->getSubExpr());
             }
-            if (Arg0.empty())
-              Arg0 = getStmtSpelling(Call->getArg(0));
-
-            if (Arg0 == getStmtSpelling(AsyncCE->getArg(0)))
-              RecordBegin = Call;
           }
+          if (Arg0.empty())
+            Arg0 = getStmtSpelling(Call->getArg(0));
+
+          if (Arg0 == getStmtSpelling(AsyncCE->getArg(0)))
+            RecordBegin = Call;
         }
 
         // To update RecordEnd
         Call = nullptr;
         findEventAPI(*Iter, Call, "cudaEventRecord");
-        if (!Call)
-          Call = dyn_cast<CallExpr>(*Iter);
 
         if (Call) {
-          if (!Call->getDirectCallee())
-            continue;
-          std::string RecordFuncName = Call->getDirectCallee()
-                                           ->getNameInfo()
-                                           .getName()
-                                           .getAsString();
-          if (RecordFuncName == "cudaEventRecord") {
-            auto Arg0 = getStmtSpelling(Call->getArg(0));
-            if (Arg0 == getStmtSpelling(AsyncCE->getArg(0))) {
-              RecordEnd = Call;
-            }
+          auto Arg0 = getStmtSpelling(Call->getArg(0));
+          if (Arg0 == getStmtSpelling(AsyncCE->getArg(0))) {
+            RecordEnd = Call;
           }
         }
       }
@@ -8843,7 +8748,7 @@ const clang::Stmt * EventAPICallRule::getRedundantParenExpr(const CallExpr *Call
 void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
   if (!Node)
     return;
-   auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
     auto Loc = SM.getExpansionLoc(It->getBeginLoc()).getRawEncoding();
     // Skip statements before RecordBeginLoc or after TimeElapsedLoc
@@ -8854,16 +8759,8 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
 
       const CallExpr *Call = nullptr;
       findEventAPI(*It, Call, "cudaEventSynchronize");
-      if (!Call)
-        Call = dyn_cast<CallExpr>(*It);
 
-      if (!Call)
-        continue;
-      auto Callee = Call->getDirectCallee();
-      if (!Callee)
-        continue;
-
-      if (Callee->getName() == "cudaEventSynchronize") {
+      if (Call) {
         if (const clang::Stmt *S = getRedundantParenExpr(Call)) {
           // To remove statement like "(cudaEventSynchronize(stop));"
           emplaceTransformation(new ReplaceStmt(
@@ -8883,18 +8780,6 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
     case Stmt::CallExprClass:
       handleOrdinaryCalls(dyn_cast<CallExpr>(*It));
       break;
-    case Stmt::DeclStmtClass: {
-
-      auto DS = static_cast<const DeclStmt *>(*It);
-      for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
-        if (auto VD = dyn_cast<VarDecl>(*It))
-          if (auto CE = dyn_cast_or_null<CallExpr>(VD->getInit())) {
-            handleOrdinaryCalls(CE);
-            return;
-          }
-      }
-      break;
-    }
     case Stmt::CUDAKernelCallExprClass:
       handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
       break;
@@ -8905,9 +8790,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
         handleKernelCalls(Node, KCall);
       break;
     }
-    case Stmt::CompoundStmtClass:
-      handleTargetCalls(*It);
-      break;
+
     default:
       // Recursively handle target calls in deeper code structures
       for (auto It2 = It->child_begin(); It2 != It->child_end(); ++It2)
@@ -8980,7 +8863,10 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
                       .str();
       emplaceTransformation(new InsertText(
           SM.getExpansionLoc(RecordBegin->getBeginLoc()), SyncStmt.str()));
-      emplaceTransformation(new InsertBeforeStmt(Call, NewEventName + " = "));
+
+      auto TM = new InsertBeforeStmt(Call, NewEventName + " = ");
+       TM->setInsertPosition(InsertPositionRight);
+      emplaceTransformation(TM);
     } else {
       std::tuple<bool, std::string, const CallExpr *> T;
       if (IsDefaultStream && !DefaultQueueAdded) {

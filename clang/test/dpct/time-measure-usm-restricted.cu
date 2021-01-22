@@ -78,4 +78,32 @@ int main() {
     return 0;
 }
 
+#define SAFE_CALL(call)                                                   \
+  do {                                                                         \
+    int err = call;                                                            \
+  } while (0)
 
+void foo_usm() {
+  cudaStream_t s1, s2;
+  int *gpu_t, *host_t, n = 10;
+  cudaEvent_t start, stop;
+  SAFE_CALL(cudaEventRecord(start, 0));
+
+  // CHECK:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:SAFE_CALL((stop_s1_1 = s1->memcpy(gpu_t, host_t, n * sizeof(int)), 0));
+  SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
+
+  // CHECK:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  stop_s1_1.wait();
+  // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK-NEXT:  SAFE_CALL(0);
+  // CHECK-NEXT:  SAFE_CALL(0);
+  // CHECK-NEXT:  float Time = 0.0f;
+  // CHECK-NEXT:  Time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+  SAFE_CALL(cudaEventRecord(stop, 0));
+  SAFE_CALL(cudaEventSynchronize(stop));
+  float Time = 0.0f;
+  cudaEventElapsedTime(&Time, start, stop);
+}
