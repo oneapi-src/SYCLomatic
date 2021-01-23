@@ -9,15 +9,16 @@
 #ifndef __DPCT_VECTOR_H__
 #define __DPCT_VECTOR_H__
 
-#include <algorithm>
-#include <iterator>
-#include <vector>
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 
 #include <CL/sycl.hpp>
 
 #include "memory.h"
-#include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
+
+#include <algorithm>
+#include <iterator>
+#include <vector>
 
 #include <dpct/device.hpp>
 
@@ -108,8 +109,18 @@ public:
     _size = std::distance(first, last);
     _capacity = 2 * _size;
     _storage = _alloc.allocate(_capacity);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              first, last, begin());
+    auto ptr_type = sycl::get_pointer_type(first, get_default_context());
+    if (ptr_type != sycl::usm::alloc::host &&
+        ptr_type != sycl::usm::alloc::unknown) {
+      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                first, last, begin());
+    } else {
+      sycl::buffer<T, 1> buf(first, last);
+      auto buf_first = oneapi::dpl::begin(buf);
+      auto buf_last = oneapi::dpl::end(buf);
+      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                buf_first, buf_last, begin());
+    }
   }
 
   template <typename OtherAllocator>
@@ -311,6 +322,10 @@ public:
 
 template <typename T, typename Allocator = cl::sycl::buffer_allocator>
 class device_vector {
+  static_assert(
+      std::is_same<Allocator, cl::sycl::buffer_allocator>::value,
+      "device_vector doesn't support custom allocator when USM is not used.");
+
 public:
   using iterator = device_iterator<T>;
   using const_iterator = const iterator;
@@ -324,13 +339,17 @@ public:
   using size_type = std::size_t;
 
 private:
-  using Buffer = sycl::buffer<T, 1, Allocator>;
+  using Buffer = sycl::buffer<T, 1>;
   using Range = sycl::range<1>;
-  // Allocator stored in buffer
-  Buffer _buffer;
+  // Using mem_mgr to handle memory allocation
+  void *_storage;
   size_type _size;
 
   size_type _min_capacity() const { return size_type(1); }
+
+  void *alloc_store(size_type num_bytes) {
+    return detail::mem_mgr::instance().mem_alloc(num_bytes);
+  }
 
 public:
   template <typename OtherA> operator const std::vector<T, OtherA>() & {
@@ -339,81 +358,122 @@ public:
               __tmp.begin());
     return __tmp;
   }
-  device_vector() : _buffer(Range(_min_capacity())), _size(0) {}
+  device_vector()
+      : _storage(alloc_store(_min_capacity() * sizeof(T))), _size(0) {}
   ~device_vector() = default;
   explicit device_vector(size_type n)
-      : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {}
+      : _storage(alloc_store(std::max(n, _min_capacity()) * sizeof(T))),
+        _size(n) {}
   explicit device_vector(size_type n, const T &value)
-      : _buffer(Range(std::max(n, _min_capacity()))), _size(n) {
-    std::fill(oneapi::dpl::execution::dpcpp_default,
-              oneapi::dpl::begin(_buffer), oneapi::dpl::begin(_buffer) + n,
-              T(value));
+      : _storage(alloc_store(std::max(n, _min_capacity()) * sizeof(T))),
+        _size(n) {
+    auto buf = get_buffer();
+    std::fill(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(buf),
+              oneapi::dpl::begin(buf) + n, T(value));
   }
   device_vector(const device_vector &other)
-      : _buffer(other._buffer), _size(other.size()) {}
+      : _storage(other._storage), _size(other.size()) {}
   device_vector(device_vector &&other)
-      : _buffer(std::move(other._buffer)), _size(other.size()) {}
+      : _storage(std::move(other._storage)), _size(other.size()) {}
 
   template <typename InputIterator>
   device_vector(
       InputIterator first,
       typename std::enable_if<internal::is_iterator<InputIterator>::value,
                               InputIterator>::type last)
-      : _buffer(first, last), _size(std::distance(first, last)) {}
+      : _storage(alloc_store(std::distance(first, last) * sizeof(T))),
+        _size(std::distance(first, last)) {
+    auto buf = get_buffer();
+    auto dst = oneapi::dpl::begin(buf);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              first, last, dst);
+  }
 
   template <typename OtherAllocator>
   device_vector(const device_vector<T, OtherAllocator> &v)
-      : _buffer(v.real_begin(), v.real_begin() + v.size()), _size(v.size()) {}
+      : _storage(alloc_store(v.size() * sizeof(T))), _size(v.size()) {
+    auto buf = get_buffer();
+    auto dst = oneapi::dpl::begin(buf);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              v.real_begin(), v.real_begin() + v.size(), dst);
+  }
 
   template <typename OtherAllocator>
   device_vector(std::vector<T, OtherAllocator> &v)
-      : _buffer(v.begin(), v.end()), _size(v.size()) {}
+      : _storage(alloc_store(v.size() * sizeof(T))), _size(v.size()) {
+    std::copy(oneapi::dpl::execution::dpcpp_default, v.begin(), v.end(),
+              oneapi::dpl::begin(get_buffer()));
+  }
 
   device_vector &operator=(const device_vector &other) {
     // Copy assignment operator:
     _size = other.size();
-    Buffer tmp{Range(_size)};
+    void *tmp = alloc_store(_size * sizeof(T));
+    auto tmp_buf =
+        detail::mem_mgr::instance()
+            .translate_ptr(tmp)
+            .buffer.template reinterpret<T, 1>(sycl::range<1>(_size));
     std::copy(oneapi::dpl::execution::dpcpp_default,
               oneapi::dpl::begin(other.get_buffer()),
-              oneapi::dpl::end(other.get_buffer()), oneapi::dpl::begin(tmp));
-    _buffer = tmp;
+              oneapi::dpl::end(other.get_buffer()),
+              oneapi::dpl::begin(tmp_buf));
+    detail::mem_mgr::instance().mem_free(_storage);
+    _storage = tmp;
     return *this;
   }
   device_vector &operator=(device_vector &&other) {
     // Move assignment operator:
     _size = other.size();
-    this->_buffer = std::move(other._buffer);
+    this->_storage = std::move(other._storage);
     return *this;
   }
   template <typename OtherAllocator>
   device_vector &operator=(const std::vector<T, OtherAllocator> &v) {
-    this->_buffer = Buffer(v.begin(), v.end());
+    Buffer data(v.begin(), v.end());
     _size = v.size();
+    void *tmp = alloc_store(_size * sizeof(T));
+    auto tmp_buf =
+        detail::mem_mgr::instance()
+            .translate_ptr(tmp)
+            .buffer.template reinterpret<T, 1>(sycl::range<1>(_size));
+    std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(data),
+              oneapi::dpl::end(data), oneapi::dpl::begin(tmp_buf));
+    detail::mem_mgr::instance().mem_free(_storage);
+    _storage = tmp;
+
     return *this;
   }
-  Buffer get_buffer() const { return _buffer; }
+  Buffer get_buffer() const {
+    return detail::mem_mgr::instance()
+        .translate_ptr(_storage)
+        .buffer.template reinterpret<T, 1>(sycl::range<1>(capacity()));
+  }
   size_type size() const { return _size; }
-  iterator begin() noexcept { return device_iterator<T>(_buffer, 0); }
-  iterator end() { return device_iterator<T>(_buffer, size()); }
+  iterator begin() noexcept { return device_iterator<T>(get_buffer(), 0); }
+  iterator end() { return device_iterator<T>(get_buffer(), _size); }
   const_iterator begin() const noexcept {
-    return device_iterator<T>(_buffer, 0);
+    return device_iterator<T>(get_buffer(), 0);
   }
   const_iterator cbegin() const noexcept { return begin(); }
-  const_iterator end() const { return device_iterator<T>(_buffer, size()); }
+  const_iterator end() const { return device_iterator<T>(get_buffer(), _size); }
   const_iterator cend() const { return end(); }
   T *real_begin() {
-    return (_buffer.template get_access<sycl::access::mode::read_write>())
+    return (detail::mem_mgr::instance()
+                .translate_ptr(_storage)
+                .buffer.template get_access<sycl::access::mode::read_write>())
         .get_pointer();
   }
   const T *real_begin() const {
     return const_cast<device_vector *>(this)
-        ->_buffer.template get_access<sycl::access::mode::read_write>()
+        ->detail::mem_mgr::instance()
+        .translate_ptr(_storage)
+        .buffer.template get_access<sycl::access::mode::read_write>()
         .get_pointer();
   }
   void swap(device_vector &v) {
-    Buffer temp = std::move(v._buffer);
-    v._buffer = std::move(this->_buffer);
-    this->_buffer = std::move(temp);
+    void *temp = v._storage;
+    v._storage = this->_storage;
+    this->_storage = temp;
     std::swap(_size, v._size);
   }
   reference operator[](size_type n) { return *(begin() + n); }
@@ -421,13 +481,22 @@ public:
   void reserve(size_type n) {
     if (n > capacity()) {
       // create new buffer (allocate for new size)
-      Buffer tmp{Range(n)};
+      void *a = alloc_store(n * sizeof(T));
+
       // copy content (old buffer to new buffer)
-      std::copy(oneapi::dpl::execution::dpcpp_default,
-                oneapi::dpl::begin(_buffer), oneapi::dpl::end(_buffer),
-                oneapi::dpl::begin(tmp));
-      // deallocate old memory
-      _buffer = tmp;
+      if (_storage != nullptr) {
+        auto tmp = detail::mem_mgr::instance()
+                       .translate_ptr(a)
+                       .buffer.template reinterpret<T, 1>(sycl::range<1>(n));
+        auto src_buf = get_buffer();
+        std::copy(oneapi::dpl::execution::dpcpp_default,
+                  oneapi::dpl::begin(src_buf), oneapi::dpl::end(src_buf),
+                  oneapi::dpl::begin(tmp));
+
+        // deallocate old memory
+        detail::mem_mgr::instance().mem_free(_storage);
+      }
+      _storage = a;
     }
   }
   void resize(size_type new_size, const T &x = T()) {
@@ -437,27 +506,34 @@ public:
   size_type max_size(void) const {
     return std::numeric_limits<size_type>::max() / sizeof(T);
   }
-  size_type capacity() const { return _buffer.get_count(); }
+  size_type capacity() const {
+    return _storage != nullptr ? detail::mem_mgr::instance()
+                                         .translate_ptr(_storage)
+                                         .buffer.get_count() /
+                                     sizeof(T)
+                               : 0;
+  }
   const_reference front() const { return *begin(); }
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
   pointer data(void) {
-    return _buffer.template get_access<sycl::access::mode::read_write>()
-        .get_pointer();
+    return reinterpret_cast<pointer>(_storage);
   }
   const_pointer data(void) const {
-    return const_cast<Buffer>(_buffer)
-        .template get_access<sycl::access::mode::read_write>()
-        .get_pointer();
+    return reinterpret_cast<const_pointer>(_storage);
   }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
-      Buffer tmp{Range(_size)};
+      void *a = alloc_store(_size * sizeof(T));
+      auto tmp = detail::mem_mgr::instance()
+                     .translate_ptr(a)
+                     .buffer.template reinterpret<T, 1>(sycl::range<1>(_size));
       std::copy(oneapi::dpl::execution::dpcpp_default,
-                oneapi::dpl::begin(_buffer), oneapi::dpl::end(_buffer),
-                oneapi::dpl::begin(tmp));
-      _buffer = tmp;
+                oneapi::dpl::begin(get_buffer()),
+                oneapi::dpl::end(get_buffer()), oneapi::dpl::begin(tmp));
+      detail::mem_mgr::instance().mem_free(_storage);
+      _storage = a;
     }
   }
   void assign(size_type n, const T &x) {
@@ -471,9 +547,20 @@ public:
                                  InputIterator>::type last) {
     auto n = std::distance(first, last);
     resize(n);
-    std::copy(oneapi::dpl::execution::dpcpp_default, first, last, begin());
+    if (internal::is_iterator<InputIterator>::value &&
+        !std::is_pointer<InputIterator>::value)
+      std::copy(oneapi::dpl::execution::dpcpp_default, first, last, begin());
+    else {
+      Buffer tmp(first, last);
+      std::copy(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(tmp),
+                oneapi::dpl::end(tmp), begin());
+    }
   }
-  void clear(void) { _size = 0; }
+  void clear(void) {
+    _size = 0;
+    detail::mem_mgr::instance().mem_free(_storage);
+    _storage = nullptr;
+  }
   bool empty(void) const { return (size() == 0); }
   void push_back(const T &x) { insert(end(), size_type(1), x); }
   void pop_back(void) {
@@ -549,7 +636,6 @@ public:
                 oneapi::dpl::end(tmp), position + n);
     }
   }
-  Allocator get_allocator() const { return _buffer.get_allocator(); }
 };
 
 #endif
