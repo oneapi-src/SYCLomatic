@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     // dispatch job with depth first ordering
     for (int i = 0; i < n_streams; i++)
     {
-        // CHECK: kernelEvent[i] = streams[i]->submit(
+        // CHECK: streams[i]->submit(
         // CHECK-NEXT:     [&](sycl::handler &cgh) {
         // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
@@ -144,9 +144,8 @@ int main(int argc, char **argv)
         // CHECK-NEXT:                 kernel_1();
         // CHECK-NEXT:             });
         // CHECK-NEXT:     });
-        // CHECK-NEXT: kernelEvent[i].wait();
         kernel_1<<<grid, block, 0, streams[i]>>>();
-        // CHECK: kernelEvent[i] = streams[i]->submit(
+        // CHECK: streams[i]->submit(
         // CHECK-NEXT:     [&](sycl::handler &cgh) {
         // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_2_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
@@ -154,9 +153,8 @@ int main(int argc, char **argv)
         // CHECK-NEXT:                 kernel_2();
         // CHECK-NEXT:             });
         // CHECK-NEXT:     });
-        // CHECK-NEXT: kernelEvent[i].wait();
         kernel_2<<<grid, block, 0, streams[i]>>>();
-        // CHECK: kernelEvent[i] = streams[i]->submit(
+        // CHECK: streams[i]->submit(
         // CHECK-NEXT:     [&](sycl::handler &cgh) {
         // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_3_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
@@ -164,9 +162,8 @@ int main(int argc, char **argv)
         // CHECK-NEXT:                 kernel_3();
         // CHECK-NEXT:             });
         // CHECK-NEXT:     });
-        // CHECK-NEXT: kernelEvent[i].wait();
         kernel_3<<<grid, block, 0, streams[i]>>>();
-        // CHECK: kernelEvent[i] = streams[i]->submit(
+        // CHECK: streams[i]->submit(
         // CHECK-NEXT:     [&](sycl::handler &cgh) {
         // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_4_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
@@ -174,7 +171,6 @@ int main(int argc, char **argv)
         // CHECK-NEXT:                 kernel_4();
         // CHECK-NEXT:             });
         // CHECK-NEXT:     });
-        // CHECK-NEXT: kernelEvent[i].wait();
         kernel_4<<<grid, block, 0, streams[i]>>>();
 
         // CHECK: kernelEvent_ct1_i = std::chrono::steady_clock::now();
@@ -184,14 +180,13 @@ int main(int argc, char **argv)
     }
 
     // record stop event
-    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+    // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT:    elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
-
-    // calculate elapsed time
     cudaEventElapsedTime(&elapsed_time, start, stop);
-    printf("Measured time for parallel execution = %.3fs\n",
-           elapsed_time / 1000.0f);
+
 
     // release all stream
     for (int i = 0 ; i < n_streams ; i++)
@@ -240,10 +235,10 @@ void foo_test_1() {
 // CHECK-NEXT:                    kernel_1();
 // CHECK-NEXT:                });
 // CHECK-NEXT:        });
-// CHECK-NEXT:    stop.wait();
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:  */
+// CHECK-NEXT:  stop.wait();
 // CHECK-NEXT:  CHECK_FOO(stop_ct1 = std::chrono::steady_clock::now());
 // CHECK-NEXT:  checkCudaErrors(0);
 // CHECK-NEXT:  cudaCheck(0);
@@ -336,7 +331,7 @@ int foo_test_2()
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:        streams[i]->submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -344,13 +339,12 @@ int foo_test_2()
 // CHECK-NEXT:                        foo_kernel_1();
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        kernelEvent[i].wait();
         foo_kernel_1<<<grid, block, 0, streams[i]>>>();
 
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:        streams[i]->submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -358,13 +352,12 @@ int foo_test_2()
 // CHECK-NEXT:                        foo_kernel_2();
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        kernelEvent[i].wait();
 
         foo_kernel_2<<<grid, block, 0, streams[i]>>>();
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:        streams[i]->submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -372,13 +365,12 @@ int foo_test_2()
 // CHECK-NEXT:                        foo_kernel_3();
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        kernelEvent[i].wait();
 
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        kernelEvent[i] = streams[i]->submit(
+// CHECK-NEXT:        streams[i]->submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class foo_kernel_4_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -386,7 +378,6 @@ int foo_test_2()
 // CHECK-NEXT:                        foo_kernel_4();
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        kernelEvent[i].wait();
 
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
@@ -409,6 +400,7 @@ int foo_test_2()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
+// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    CHECK(0);
@@ -483,7 +475,6 @@ void foo_test_3()
 // CHECK-NEXT:                    kernel(d_a, value);
 // CHECK-NEXT:                });
 // CHECK-NEXT:        });
-// CHECK-NEXT:    stop.wait();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
@@ -495,6 +486,7 @@ void foo_test_3()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    stop_q_ct1_2.wait();
+// CHECK-NEXT:    stop.wait();
 // CHECK-NEXT:    stop_q_ct1_1.wait();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK(0);
@@ -581,7 +573,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:    */
-// CHECK-NEXT:        stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:        dpct::get_default_queue().submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
@@ -589,10 +581,10 @@ void foo_test_4() {
 // CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        stop.wait();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
+// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
@@ -608,7 +600,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:    */
-// CHECK-NEXT:        stop = dpct::get_default_queue().submit(
+// CHECK-NEXT:        dpct::get_default_queue().submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
@@ -616,10 +608,10 @@ void foo_test_4() {
 // CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
 // CHECK-NEXT:                    });
 // CHECK-NEXT:            });
-// CHECK-NEXT:        stop.wait();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
+// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);

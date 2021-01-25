@@ -660,7 +660,9 @@ const ast_type_traits::DynTypedNode
 findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode LastNode, ParentNode;
+  ast_type_traits::DynTypedNode LastNode =
+                                    ast_type_traits::DynTypedNode::create(*E),
+                                ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||

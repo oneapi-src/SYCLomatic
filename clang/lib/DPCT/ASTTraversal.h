@@ -1319,7 +1319,7 @@ public:
   void
   handleEventElapsedTime(bool IsAssigned);
   void handleTimeMeasurement();
-  void handleTargetCalls(const Stmt *Parent);
+  void handleTargetCalls(const Stmt *Parent, const Stmt *Last = nullptr);
   void handleKernelCalls(const Stmt *Parent, const CUDAKernelCallExpr *KCall);
   void handleOrdinaryCalls(const CallExpr *Call);
   bool IsEventArgArraySubscriptExpr(const Expr *E);
@@ -1327,11 +1327,15 @@ public:
 
 private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
-                       const std::string EventAPIName);
+                    const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);
-  void updateAsyncRange(const CallExpr *AsyncCE, const std::string EventAPIName);
+  void updateAsyncRange(const CallExpr *AsyncCE,
+                        const std::string EventAPIName);
+  void updateAsyncRangRecursive(const Stmt *Node, const CallExpr *AsyncCE,
+                                const std::string EventAPIName);
+
   void findThreadSyncLocation(const Stmt *Node);
-  const clang::Stmt * getRedundantParenExpr(const CallExpr *Call);
+  const clang::Stmt *getRedundantParenExpr(const CallExpr *Call);
   // Since the state of a rule is shared between multiple matches, it iss
   // necessary to clear the previous migration status.
   // The call is supposed to be called whenever a migrtion on time measurement
@@ -1348,17 +1352,29 @@ private:
     QueueCounter.clear();
     Queues2Wait.clear();
     DefaultQueueAdded = false;
+    IsKernelInLoopStmt = false;
+    IsKernelSync = false;
   }
   const Stmt *RecordBegin = nullptr, *RecordEnd = nullptr;
   const CallExpr *TimeElapsedCE = nullptr;
   unsigned RecordBeginLoc = 0;
   unsigned RecordEndLoc = 0;
   unsigned TimeElapsedLoc = 0;
-  unsigned ThreadSyncLoc = 0; // To store the location of "cudaThreadSynchronize"
+
+  // To store the location of "cudaThreadSynchronize"
+  unsigned ThreadSyncLoc = 0;
   std::vector<std::string> Events2Wait;
   std::map<std::string, int> QueueCounter;
   std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
   bool DefaultQueueAdded = false;
+
+  // To check whether kernel calll is in loop stmt between RecordBeginLoc and
+  // RecordEndLoc
+  bool IsKernelInLoopStmt = false;
+
+  // To check whether kernel calll needs wait between RecordBeginLoc and
+  // RecordEndLoc
+  bool IsKernelSync = false;
 };
 
 /// Migration rule for stream API calls

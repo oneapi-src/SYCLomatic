@@ -8513,33 +8513,38 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 //  RecordEndLoc and RecordEndLoc, and RecordEndLoc and TimeElapsedLoc.
 void EventAPICallRule::processAsyncJob(const Stmt *Node) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  RecordBeginLoc = SM.getExpansionLoc(RecordBegin->getBeginLoc()).getRawEncoding();
+  RecordBeginLoc =
+      SM.getExpansionLoc(RecordBegin->getBeginLoc()).getRawEncoding();
   RecordEndLoc = SM.getExpansionLoc(RecordEnd->getBeginLoc()).getRawEncoding();
-  TimeElapsedLoc = SM.getExpansionLoc(TimeElapsedCE->getBeginLoc()).getRawEncoding();
+  TimeElapsedLoc =
+      SM.getExpansionLoc(TimeElapsedCE->getBeginLoc()).getRawEncoding();
 
   // Handle the kernel calls and async memory operations between start and stop
   handleTargetCalls(Node);
 
-  for (const auto &NewEventName : Events2Wait) {
-    std::ostringstream SyncStmt;
-    SyncStmt
-        << NewEventName << ".wait();" << getNL()
-        << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+  if (USMLevel == UsmLevel::restricted) {
+    for (const auto &NewEventName : Events2Wait) {
+      std::ostringstream SyncStmt;
+      SyncStmt
+          << NewEventName << getNL()
+          << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
 
-    auto TM = new InsertBeforeStmt(
-        RecordEnd, SyncStmt.str(), 0 /*PairID*/, true /*DoMacroExpansion*/);
-    TM->setInsertPosition(InsertPositionAlwaysLeft);
-    emplaceTransformation(TM);
-  }
-  for (const auto &T : Queues2Wait) {
-    std::ostringstream SyncStmt;
-    SyncStmt
-        << std::get<0>(T) << getNL()
-        << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
-    auto TM = new InsertBeforeStmt(
-        RecordEnd, SyncStmt.str(), 0 /*PairID*/, true /*DoMacroExpansion*/);
-    TM->setInsertPosition(InsertPositionAlwaysLeft);
-    emplaceTransformation(TM);
+      auto TM = new InsertBeforeStmt(RecordEnd, SyncStmt.str(), 0 /*PairID*/,
+                                     true /*DoMacroExpansion*/);
+      TM->setInsertPosition(InsertPositionAlwaysLeft);
+      emplaceTransformation(TM);
+    }
+  } else {
+    for (const auto &T : Queues2Wait) {
+      std::ostringstream SyncStmt;
+      SyncStmt
+          << std::get<0>(T) << getNL()
+          << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
+      auto TM = new InsertBeforeStmt(RecordEnd, SyncStmt.str(), 0 /*PairID*/,
+                                     true /*DoMacroExpansion*/);
+      TM->setInsertPosition(InsertPositionAlwaysLeft);
+      emplaceTransformation(TM);
+    }
   }
 }
 
@@ -8550,6 +8555,73 @@ void EventAPICallRule::findThreadSyncLocation(const Stmt *Node) {
 
   if (Call) {
     ThreadSyncLoc = SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding();
+  }
+}
+
+void EventAPICallRule::updateAsyncRangRecursive(
+    const Stmt *Node, const CallExpr *AsyncCE, const std::string EventAPIName) {
+  if (!Node)
+    return;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto CELoc = SM.getExpansionLoc(AsyncCE->getBeginLoc()).getRawEncoding();
+  for (auto Iter = Node->child_begin(); Iter != Node->child_end(); ++Iter) {
+
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+      findThreadSyncLocation(*Iter);
+
+    if (SM.getExpansionLoc(Iter->getBeginLoc()).getRawEncoding() > CELoc) {
+      return;
+    }
+
+    if (EventAPIName == "cudaEventRecord") {
+      const CallExpr *Call = nullptr;
+      findEventAPI(*Iter, Call, EventAPIName);
+
+      if (Call) {
+        // Find the last call of Event Record on start and stop before
+        // calculate the time elapsed
+        auto Arg0 = getStmtSpelling(Call->getArg(0));
+        if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
+          RecordBegin = findNearestNonExprNonDeclAncestorStmt(Call);
+        } else if (Arg0 == getStmtSpelling(AsyncCE->getArg(2))) {
+          RecordEnd = findNearestNonExprNonDeclAncestorStmt(Call);
+        }
+      }
+
+    } else if (EventAPIName == "cudaEventCreate") {
+
+      const CallExpr *Call = nullptr;
+      findEventAPI(*Iter, Call, EventAPIName);
+
+      if (Call) {
+        std::string Arg0;
+        if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
+          if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+            Arg0 = getStmtSpelling(UO->getSubExpr());
+          }
+        }
+        if (Arg0.empty())
+          Arg0 = getStmtSpelling(Call->getArg(0));
+
+        if (Arg0 == getStmtSpelling(AsyncCE->getArg(0)))
+          RecordBegin = findNearestNonExprNonDeclAncestorStmt(Call);
+      }
+
+      // To update RecordEnd
+      Call = nullptr;
+      findEventAPI(*Iter, Call, "cudaEventRecord");
+
+      if (Call) {
+        auto Arg0 = getStmtSpelling(Call->getArg(0));
+        if (Arg0 == getStmtSpelling(AsyncCE->getArg(0))) {
+          RecordEnd = findNearestNonExprNonDeclAncestorStmt(Call);
+        }
+      }
+    }
+
+    // Recursively update range in deeper code structures
+    for (auto It2 = Iter->child_begin(); It2 != Iter->child_end(); ++It2)
+      updateAsyncRangRecursive(*It2, AsyncCE, EventAPIName);
   }
 }
 
@@ -8586,8 +8658,6 @@ void EventAPICallRule::findThreadSyncLocation(const Stmt *Node) {
 // cudaEventCreate) to help to locate RecordEndLoc.
 void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
                                         const std::string EventAPIName) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto CELoc = SM.getExpansionLoc(AsyncCE->getBeginLoc()).getRawEncoding();
   auto FD = getImmediateOuterFuncDecl(AsyncCE);
 
   if (!FD)
@@ -8599,101 +8669,19 @@ void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
 
   auto EventArg = AsyncCE->getArg(0);
   if (IsEventArgArraySubscriptExpr(EventArg)) {
-    // If the event arg is a ArraySubscriptExpr, if cudaEventCreate appears
-    // in current function, mark all kernels from the possiton of
-    // cudaEventCreate to the end of this function to wait.
-    // If cudaEventCreate does not appears in current function, mark all
-    // kernels in the current function to wait.
-    RecordBegin = *FuncBody->child_begin();
-    for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
-         ++Iter) {
-
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-        findThreadSyncLocation(*Iter);
-
-      const CallExpr *Call = nullptr;
-      findEventAPI(*Iter, Call, "cudaEventCreate");
-
-      if (Call) {
-        std::string Arg0;
-        if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
-          if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-            Arg0 = getStmtSpelling(UO->getSubExpr());
-          }
-        }
-        if (Arg0.empty())
-          Arg0 = getStmtSpelling(Call->getArg(0));
-
-        if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-          RecordBegin = Call;
-        }
-      }
-      RecordEnd = *Iter;
+    // If the event arg is a ArraySubscriptExpr, if not async range is not
+    // identified, mark all kernels in the current function to wait.
+    updateAsyncRangRecursive(FuncBody, AsyncCE, EventAPIName);
+    if (!RecordEnd) {
+      IsKernelSync = true;
+      RecordBegin = *FuncBody->child_begin();
+      RecordEnd = AsyncCE;
     }
-
   } else {
-
-    RecordEnd = AsyncCE;
-
-    // Find the last Event record call on start and stop
-    for (auto Iter = FuncBody->child_begin(); Iter != FuncBody->child_end();
-         ++Iter) {
-
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-        findThreadSyncLocation(*Iter);
-
-      if (SM.getExpansionLoc(Iter->getBeginLoc()).getRawEncoding() > CELoc) {
-        break;
-      }
-
-      if (EventAPIName == "cudaEventRecord") {
-        const CallExpr *Call = nullptr;
-        findEventAPI(*Iter, Call, EventAPIName);
-
-        if (Call) {
-          // Find the last call of Event Record on start and stop before
-          // calculate the time elapsed
-          auto Arg0 = getStmtSpelling(Call->getArg(0));
-          if (Arg0 == getStmtSpelling(AsyncCE->getArg(1))) {
-            RecordBegin = Call;
-          } else if (Arg0 == getStmtSpelling(AsyncCE->getArg(2))) {
-            RecordEnd = Call;
-          }
-        }
-
-      } else if (EventAPIName == "cudaEventCreate") {
-
-        const CallExpr *Call = nullptr;
-        findEventAPI(*Iter, Call, EventAPIName);
-
-        if (Call) {
-          std::string Arg0;
-          if (auto UO = dyn_cast<UnaryOperator>(Call->getArg(0))) {
-            if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-              Arg0 = getStmtSpelling(UO->getSubExpr());
-            }
-          }
-          if (Arg0.empty())
-            Arg0 = getStmtSpelling(Call->getArg(0));
-
-          if (Arg0 == getStmtSpelling(AsyncCE->getArg(0)))
-            RecordBegin = Call;
-        }
-
-        // To update RecordEnd
-        Call = nullptr;
-        findEventAPI(*Iter, Call, "cudaEventRecord");
-
-        if (Call) {
-          auto Arg0 = getStmtSpelling(Call->getArg(0));
-          if (Arg0 == getStmtSpelling(AsyncCE->getArg(0))) {
-            RecordEnd = Call;
-          }
-        }
-      }
-    }
+    updateAsyncRangRecursive(FuncBody, AsyncCE, EventAPIName);
   }
 }
+
 
 //  The following is a typical piece of time-measurement code, in which three
 //  locations are used to help migrate:
@@ -8765,56 +8753,78 @@ const clang::Stmt * EventAPICallRule::getRedundantParenExpr(const CallExpr *Call
 //  sync_calls();
 //  ...
 //  cudaEventElapsedTime(&et, start, stop); // <<== TimeElapsedLoc
-void EventAPICallRule::handleTargetCalls(const Stmt *Node) {
+void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
   if (!Node)
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
     auto Loc = SM.getExpansionLoc(It->getBeginLoc()).getRawEncoding();
+
     // Skip statements before RecordBeginLoc or after TimeElapsedLoc
-    if (Loc <= RecordBeginLoc || Loc >= TimeElapsedLoc)
-      continue;
-    // Handle cudaEventSynchronize between RecordEndLoc and TimeElapsedLoc
-    if (Loc > RecordEndLoc && Loc < TimeElapsedLoc) {
+    if (Loc > RecordBeginLoc && Loc <= TimeElapsedLoc) {
 
-      const CallExpr *Call = nullptr;
-      findEventAPI(*It, Call, "cudaEventSynchronize");
+      // Handle cudaEventSynchronize between RecordEndLoc and TimeElapsedLoc
+      if (Loc > RecordEndLoc && Loc < TimeElapsedLoc) {
 
-      if (Call) {
-        if (const clang::Stmt *S = getRedundantParenExpr(Call)) {
-          // To remove statement like "(cudaEventSynchronize(stop));"
-          emplaceTransformation(new ReplaceStmt(
-              S, false, std::string("cudaEventSynchronize"), false, true, ""));
+        const CallExpr *Call = nullptr;
+        findEventAPI(*It, Call, "cudaEventSynchronize");
+
+        if (Call) {
+          if (const clang::Stmt *S = getRedundantParenExpr(Call)) {
+            // To remove statement like "(cudaEventSynchronize(stop));"
+            emplaceTransformation(
+                new ReplaceStmt(S, false, std::string("cudaEventSynchronize"),
+                                false, true, ""));
+          }
+
+          const auto &TM =
+              ReplaceStmt(Call, false, std::string("cudaEventSynchronize"), "");
+          auto &Context = dpct::DpctGlobalInfo::getContext();
+          auto R = TM.getReplacement(Context);
+          DpctGlobalInfo::getInstance().updateEventSyncTypeInfo(R);
+        }
+      }
+
+      // Now handle all statements between RecordBeginLoc and RecordEndLoc
+      switch (It->getStmtClass()) {
+      case Stmt::CallExprClass: {
+        handleOrdinaryCalls(dyn_cast<CallExpr>(*It));
+        break;
+      }
+      case Stmt::CUDAKernelCallExprClass: {
+
+        if (Last && (Last->getStmtClass() == Stmt::DoStmtClass ||
+                     Last->getStmtClass() == Stmt::WhileStmtClass ||
+                     Last->getStmtClass() == Stmt::ForStmtClass)) {
+          IsKernelInLoopStmt = true;
         }
 
-        const auto &TM =
-            ReplaceStmt(Call, false, std::string("cudaEventSynchronize"), "");
-        auto &Context = dpct::DpctGlobalInfo::getContext();
-        auto R = TM.getReplacement(Context);
-        DpctGlobalInfo::getInstance().updateEventSyncTypeInfo(R);
+        handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
+        break;
+      }
+      case Stmt::ExprWithCleanupsClass: {
+        auto ExprS = dyn_cast<ExprWithCleanups>(*It);
+        auto *SubExpr = ExprS->getSubExpr();
+        if (auto *KCall = dyn_cast<CUDAKernelCallExpr>(SubExpr)) {
+
+          if (Last && (Last->getStmtClass() == Stmt::DoStmtClass ||
+                       Last->getStmtClass() == Stmt::WhileStmtClass ||
+                       Last->getStmtClass() == Stmt::ForStmtClass)) {
+            IsKernelInLoopStmt = true;
+          }
+
+          handleKernelCalls(Node, KCall);
+        }
+        break;
+      }
+
+      default:
+        break;
       }
     }
 
-    // Now handle all statements between RecordBeginLoc and RecordEndLoc
-    switch (It->getStmtClass()) {
-    case Stmt::CallExprClass:
-      handleOrdinaryCalls(dyn_cast<CallExpr>(*It));
-      break;
-    case Stmt::CUDAKernelCallExprClass:
-      handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
-      break;
-    case Stmt::ExprWithCleanupsClass: {
-      auto ExprS = dyn_cast<ExprWithCleanups>(*It);
-      auto *SubExpr = ExprS->getSubExpr();
-      if (auto *KCall = dyn_cast<CUDAKernelCallExpr>(SubExpr))
-        handleKernelCalls(Node, KCall);
-      break;
-    }
-
-    default:
-      // Recursively handle target calls in deeper code structures
-      for (auto It2 = It->child_begin(); It2 != It->child_end(); ++It2)
-        handleTargetCalls(*It2);
+    for (auto It2 = It->child_begin(); It2 != It->child_end(); ++It2) {
+      handleTargetCalls(*It2, *It);
     }
   }
 }
@@ -8825,19 +8835,41 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
   auto KCallLoc = SM.getExpansionLoc(KCall->getBeginLoc()).getRawEncoding();
   auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
   auto EventExpr = findNextRecordedEvent(Node, KCallLoc);
-  if (!EventExpr && TimeElapsedCE->getNumArgs()==3)
+  if (!EventExpr && TimeElapsedCE->getNumArgs() == 3)
     EventExpr = TimeElapsedCE->getArg(2);
 
-  bool NeedWait = false;
-  // In usmnone mode, if cudaThreadSynchronize apears after kernel call,
-  // kernel wait is not needed.
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    bool NeedWait = false;
+    // In usmnone mode, if cudaThreadSynchronize apears after kernel call,
+    // kernel wait is not needed.
     NeedWait = ThreadSyncLoc > KCallLoc;
+
+    if (KCallLoc > RecordBeginLoc && !NeedWait) {
+      if (IsKernelSync) {
+        K->setEvent(ExprAnalysis::ref(EventExpr));
+        K->setSync();
+      } else {
+        Queues2Wait.emplace_back("dpct::dev_mgr::instance().current_device()."
+                                 "queues_wait_and_throw();",
+                                 nullptr);
+      }
+    }
   }
 
-  if (KCallLoc > RecordBeginLoc && !NeedWait) {
-    K->setEvent(ExprAnalysis::ref(EventExpr));
-    K->setSync();
+  if (USMLevel == UsmLevel::restricted) {
+    if (KCallLoc > RecordBeginLoc) {
+      if (!IsKernelInLoopStmt && !IsKernelSync) {
+        K->setEvent(ExprAnalysis::ref(EventExpr));
+        Events2Wait.push_back(ExprAnalysis::ref(EventExpr) + ".wait();");
+      } else if (IsKernelSync) {
+        K->setEvent(ExprAnalysis::ref(EventExpr));
+        K->setSync();
+      } else {
+        std::string WaitQueue = "dpct::dev_mgr::instance().current_device()."
+                                "queues_wait_and_throw();";
+        Events2Wait.push_back(WaitQueue);
+      }
+    }
   }
 }
 
@@ -8874,7 +8906,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
           IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
       std::string NewEventName =
           EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
-      Events2Wait.push_back(NewEventName);
+      Events2Wait.push_back(NewEventName + ".wait();");
 
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::ostringstream SyncStmt;

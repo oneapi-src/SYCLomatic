@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(start, 0));
 
   // kernel call with sync
-  // CHECK:   stop = q_ct1.submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -145,9 +145,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
-  // CHECK:   stop = q_ct1.submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -155,7 +154,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -187,7 +185,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(stop, 0));
 
   // kernel call without sync
-  // CHECK:   stop = q_ct1.submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -195,7 +193,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -221,20 +218,18 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT:   checkCudaErrors(0);
   if (0)
-    checkCudaErrors(cudaEventRecord(stop, 0));
-
-  cudaEventSynchronize(stop);
+    checkCudaErrors(cudaEventRecord(start, 0));
 
   // CHECK:  checkCudaErrors(0);
-  checkCudaErrors(cudaEventSynchronize(stop));
+  checkCudaErrors(cudaEventRecord(start));
 
   // kernel call without sync
   // CHECK:  DPCT1049:{{[0-9a-f]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  stop = q_ct1.submit(
+  // CHECK-NEXT:  q_ct1.submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
   // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)), 
@@ -242,9 +237,13 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:          kernelFunc();
   // CHECK-NEXT:        });
   // CHECK-NEXT:    });
-  // CHECK-NEXT:  stop.wait();
   kernelFunc<<<blocks,threads>>>();
-  // CHECK:   elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+
+  // CHECK:  dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+  // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK-NEXT:  elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
   // CHECK: /*
@@ -364,7 +363,7 @@ void bar() {
   int blocks = 32, threads = 32;
 
   // CHECK: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK: fun(0);
+  // CHECK-NEXT: fun(0);
   fun(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
   // CHECK: stop_ct1 = std::chrono::steady_clock::now();
@@ -372,7 +371,6 @@ void bar() {
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
-
   // CHECK: fun((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
@@ -601,6 +599,9 @@ void barr(int maxCalls) {
   kernelFunc<<<1, 1>>>();
   // CHECK: evtEnd_ct1[2] = std::chrono::steady_clock::now();
   cudaEventRecord( evtEnd[2], 0 );
+
+  // CHECK: dev_ct1.queues_wait_and_throw();
+  cudaDeviceSynchronize();
 
   float total;
   int i=0;
