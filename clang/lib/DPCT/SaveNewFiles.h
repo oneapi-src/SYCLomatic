@@ -81,4 +81,14 @@ void loadYAMLIntoFileInfo(std::string Path);
 // bool: false: the source file has no replacement.
 //       true:  the source file has replacement.
 extern std::map<std::string, bool> IncludeFileMap;
+
+// This function is registered by SetFileProcessHandle() called by runDPCT() in
+// DPCT.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
+// the files in directory \pInRoot, collecting *.cu files not
+// processed by the the first loop of calling proccessFiles() in
+// Tooling.cpp::ClangTool::run()) into \pFilesNotProcessed, and copies the rest
+// files to the output directory.
+void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
+                     std::vector<std::string> &FilesNotProcessed);
+
 #endif // DPCT_SAVE_NEW_FILES_H

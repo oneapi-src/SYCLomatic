@@ -176,6 +176,93 @@ static void rewriteFileName(SmallString<512> &FilePath) {
   }
 }
 
+void processAllFiles(StringRef InRoot, StringRef OutRoot,
+                     std::vector<std::string> &FilesNotProcessed) {
+  std::error_code EC;
+  for (fs::recursive_directory_iterator Iter(Twine(InRoot), EC), End;
+       Iter != End; Iter.increment(EC)) {
+    if ((bool)EC) {
+      std::string ErrMsg =
+          "[ERROR] Access : " + std::string(InRoot.str()) +
+          " fail: " + EC.message() + "\n";
+      PrintMsg(ErrMsg);
+    }
+
+    auto FilePath = Iter->path();
+    bool IsHidden = false;
+    for (path::const_iterator PI = path::begin(FilePath),
+                              PE = path::end(FilePath);
+         PI != PE; ++PI) {
+      StringRef Comp = *PI;
+      if (Comp.startswith(".")) {
+        IsHidden = true;
+        break;
+      }
+    }
+
+    // Skip hiddlen folder or file whose name begins with ".".
+    if (IsHidden) {
+      continue;
+    }
+
+    if (Iter->type() == fs::file_type::regular_file) {
+      SmallString<512> OutputFile = llvm::StringRef(FilePath);
+      rewriteDir(OutputFile, InRoot, OutRoot);
+      if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
+        // Skip the files processed by the the first loop of
+        // calling proccessFiles() in Tooling.cpp::ClangTool::run().
+        continue;
+      } else {
+        if (GetSourceFileType(FilePath) & TypeCudaSource) {
+          // Only migrates isolated CUDA source files.
+          FilesNotProcessed.push_back(FilePath);
+        } else {
+          // Copy the rest files to the output directory.
+          std::ifstream In(FilePath);
+
+          auto Parent = path::parent_path(OutputFile);
+          std::error_code EC;
+          EC = fs::create_directories(Parent);
+          if ((bool)EC) {
+            std::string ErrMsg =
+                "[ERROR] Create Directory : " + std::string(Parent.str()) +
+                " fail: " + EC.message() + "\n";
+            PrintMsg(ErrMsg);
+          }
+
+          std::ofstream Out(OutputFile.c_str());
+          if (Out.fail()) {
+            std::string ErrMsg =
+                "[ERROR] Create file : " + std::string(OutputFile.c_str()) +
+                " failure!\n";
+            PrintMsg(ErrMsg);
+          }
+          Out << In.rdbuf();
+          Out.close();
+          In.close();
+        }
+      }
+
+    } else if (Iter->type() == fs::file_type::directory_file) {
+      const auto Path = Iter->path();
+      SmallString<512> OutDirectory = llvm::StringRef(Path);
+      rewriteDir(OutDirectory, InRoot, OutRoot);
+
+      if (fs::exists(OutDirectory))
+        continue;
+
+      std::error_code EC;
+      EC = fs::create_directories(OutDirectory);
+      if ((bool)EC) {
+        std::string ErrMsg =
+            "[ERROR] Create Directory : " + std::string(OutDirectory.str()) +
+            " fail: " + EC.message() + "\n";
+        PrintMsg(ErrMsg);
+      }
+    }
+  }
+}
+
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
 ///

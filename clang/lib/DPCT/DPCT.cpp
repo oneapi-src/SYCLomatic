@@ -881,10 +881,9 @@ int runDPCT(int argc, const char **argv) {
 #endif
 
   // Set hangle for libclangTooling to proccess message for dpct
-  clang::tooling::SetPrintHandler(PrintMsg);
+  clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompiationDB(
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
-
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
 #ifdef _WIN32
@@ -1112,6 +1111,11 @@ int runDPCT(int argc, const char **argv) {
   }
 
   DPCTActionFactory Factory(Tool.getReplacements());
+
+  if(ProcessAllFlag) {
+    clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
+  }
+
   int RunResult = Tool.run(&Factory);
   if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
     DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,

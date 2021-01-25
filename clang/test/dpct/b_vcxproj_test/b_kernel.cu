@@ -10,6 +10,16 @@
 // RUN: cat %T/b_kernel_outputfile_win.txt >>%T/check_b_kernel_outputfile_windows.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check_b_kernel_outputfile_windows.txt %T/check_b_kernel_outputfile_windows.txt
 
+// RUN: cat %S/readme_2_ref.txt  >%T/readme_2.txt
+// RUN: dpct --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T %s --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+
+// RUN: cat %S/readme_2.txt > %T/check_output-file.txt
+// RUN: cat %T/output-file.txt >>%T/check_output-file.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_output-file.txt %T/check_output-file.txt
+
+// RUN: FileCheck --input-file %T/b_kernel.dp.cpp --match-full-lines %S/b_kernel.cu
+// RUN: FileCheck --match-full-lines --input-file %S/readme_2_ref.txt %T/readme_2.txt
+
 #include "header.cuh"
 #include "cuda_runtime.h"
 #include <stdio.h>
@@ -17,7 +27,7 @@
 // CHECK: void addKernel(int *c, const int *a, const int *b, sycl::nd_item<3> item_ct1)
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
-    // CHECK: int i = item_ct1.get_local_id(0);
+    // CHECK: int i = item_ct1.get_local_id(2);
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
 }

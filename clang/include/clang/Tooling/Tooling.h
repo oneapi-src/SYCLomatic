@@ -52,11 +52,17 @@
 #include <set>
 namespace clang {
 namespace tooling {
-void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));
-void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal);
+using PrintType = void (*)(const std::string &, bool);
+using FileProcessType = void (*)(StringRef, StringRef,
+                                 std::vector<std::string> &);
+
+void SetPrintHandle(PrintType Handle);
+void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal);
 void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
+void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
+                          FileProcessType FileProcessHandle);
 } // namespace tooling
 } // namespace clang
 #endif
@@ -332,7 +338,10 @@ public:
             IntrusiveRefCntPtr<FileManager> Files = nullptr);
 
   ~ClangTool();
-
+#ifdef INTEL_CUSTOMIZATION
+  int proccessFiles(llvm::StringRef File, bool &ProcessingFailed,
+                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+#endif
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
     this->DiagConsumer = DiagConsumer;
