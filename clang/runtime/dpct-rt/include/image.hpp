@@ -635,10 +635,6 @@ public:
   /// Attach linear data to this class.
   void attach(void *ptr, size_t count, image_channel channel) {
     detach();
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
-                .get_access<cl::sycl::access::mode::read_write>()
-                .get_pointer();
     image_wrapper_base::set_data(image_data(ptr, count, channel));
   }
   /// Attach 2D data to this class.
@@ -648,10 +644,6 @@ public:
   /// Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
     detach();
-    if (detail::mem_mgr::instance().is_device_ptr(data))
-      data = get_buffer(data)
-                .get_access<cl::sycl::access::mode::read_write>()
-                .get_pointer();
     image_wrapper_base::set_data(image_data(data, x, y, pitch, channel));
   }
   /// Detach data.
@@ -796,10 +788,14 @@ template <> struct image_creator<1> {
       return static_cast<image_matrix_p>(data.get_data_ptr())
           ->create_image<1>(data.get_channel());
     }
+    auto ptr = data.get_data_ptr();
+    if (detail::mem_mgr::instance().is_device_ptr(ptr))
+      ptr = get_buffer(ptr)
+                .template get_access<cl::sycl::access::mode::read_write>()
+                .get_pointer();
     auto channel = data.get_channel();
     return new cl::sycl::image<1>(
-        data.get_data_ptr(), channel.get_channel_order(),
-        channel.get_channel_type(),
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<1>(data.get_x() / channel.get_total_size()));
   }
 };
@@ -811,10 +807,14 @@ template <> struct image_creator<2> {
       return static_cast<image_matrix_p>(data.get_data_ptr())
           ->create_image<2>(data.get_channel());
     }
+    auto ptr = data.get_data_ptr();
+    if (detail::mem_mgr::instance().is_device_ptr(ptr))
+      ptr = get_buffer(ptr)
+                .template get_access<cl::sycl::access::mode::read_write>()
+                .get_pointer();
     auto channel = data.get_channel();
     return new cl::sycl::image<2>(
-        data.get_data_ptr(), channel.get_channel_order(),
-        channel.get_channel_type(),
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
         cl::sycl::range<2>(data.get_x() / channel.get_total_size(),
                            data.get_y()),
         cl::sycl::range<1>(data.get_pitch()));
