@@ -632,7 +632,18 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
     }
 #endif
     if (I->isApplicable()) {
+#ifdef INTEL_CUSTOMIZATION
+      try {
+#endif
       Result = I->apply(Rewrite) && Result;
+#ifdef INTEL_CUSTOMIZATION
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "tries to recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
+#endif
     } else {
       Result = false;
     }

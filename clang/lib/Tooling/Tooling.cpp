@@ -636,6 +636,9 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     //
     // FIXME: Make the compilation database interface more explicit about the
     // requirements to the order of invocation of its members.
+#ifdef INTEL_CUSTOMIZATION
+    try {
+#endif
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
@@ -834,6 +837,14 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
+#ifdef INTEL_CUSTOMIZATION
+    } catch (std::exception &e) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "the current file and continues migration.\n";
+      llvm::errs() << FaultMsg;
+    }
+#endif
     return 0;
 }
 #endif

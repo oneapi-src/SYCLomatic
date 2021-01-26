@@ -471,41 +471,49 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     int RetJmp = 0;
     CHECKPOINT_FORMATTING_CODE_ENTRY(RetJmp);
     if (RetJmp == 0) {
-      if (DpctGlobalInfo::getFormatRange() !=
-          clang::format::FormatRange::none) {
-        clang::format::setFormatRangeGetterHandler(
-            clang::dpct::DpctGlobalInfo::getFormatRange);
-        bool FormatResult = true;
-        for (auto Iter : FileRangesMap) {
-          clang::tooling::Replacements FormatChanges;
-          FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
-                         FormatResult;
-
-          // If range is "all", one file only need to be formated once.
-          if (DpctGlobalInfo::getFormatRange() ==
-              clang::format::FormatRange::all)
-            continue;
-
-          auto BlockLevelFormatIter =
-              FileBlockLevelFormatRangesMap.find(Iter.first);
-          if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
-            clang::format::BlockLevelFormatFlag = true;
-
-            std::vector<clang::tooling::Range>
-                BlockLevelFormatRangeAfterFisrtFormat = calculateUpdatedRanges(
-                    FormatChanges, BlockLevelFormatIter->second);
-            FormatResult = formatFile(BlockLevelFormatIter->first,
-                                      BlockLevelFormatRangeAfterFisrtFormat,
-                                      FormatChanges) &&
+      try {
+        if (DpctGlobalInfo::getFormatRange() !=
+            clang::format::FormatRange::none) {
+          clang::format::setFormatRangeGetterHandler(
+              clang::dpct::DpctGlobalInfo::getFormatRange);
+          bool FormatResult = true;
+          for (auto Iter : FileRangesMap) {
+            clang::tooling::Replacements FormatChanges;
+            FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
                            FormatResult;
 
-            clang::format::BlockLevelFormatFlag = false;
+            // If range is "all", one file only need to be formated once.
+            if (DpctGlobalInfo::getFormatRange() ==
+                clang::format::FormatRange::all)
+              continue;
+
+            auto BlockLevelFormatIter =
+                FileBlockLevelFormatRangesMap.find(Iter.first);
+            if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
+              clang::format::BlockLevelFormatFlag = true;
+
+              std::vector<clang::tooling::Range>
+                  BlockLevelFormatRangeAfterFisrtFormat =
+                      calculateUpdatedRanges(FormatChanges,
+                                             BlockLevelFormatIter->second);
+              FormatResult = formatFile(BlockLevelFormatIter->first,
+                                        BlockLevelFormatRangeAfterFisrtFormat,
+                                        FormatChanges) &&
+                             FormatResult;
+
+              clang::format::BlockLevelFormatFlag = false;
+            }
+          }
+          if (!FormatResult) {
+            PrintMsg("[Warning] Error happened while formatting. Generating "
+                     "unformatted code.\n");
           }
         }
-        if (!FormatResult) {
-          PrintMsg("[Warning] Error happened while formatting. Generating "
-                   "unformatted code.\n");
-        }
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "skips formatting the code and continues migration.\n";
+        llvm::errs() << FaultMsg;
       }
     }
     CHECKPOINT_FORMATTING_CODE_EXIT();

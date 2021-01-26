@@ -1286,9 +1286,16 @@ int runDPCT(int argc, const char **argv) {
     int RetJmp = 0;
     CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
     if (RetJmp == 0) {
-      Global.buildReplacements();
-      Global.postProcess();
-      Global.emplaceReplacements(Tool.getReplacements());
+      try {
+        Global.buildReplacements();
+        Global.postProcess();
+        Global.emplaceReplacements(Tool.getReplacements());
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "tries to recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
     }
     CHECKPOINT_ReplacementPostProcess_EXIT();
   } while (DpctGlobalInfo::isNeedRunAgain());
