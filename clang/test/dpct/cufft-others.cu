@@ -19,13 +19,13 @@ int main() {
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ((10 + 2)/2+1)*2);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, (10 + 2)/2+1);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:/*
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan->commit(dpct::get_default_queue());
-  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
-  //CHECK:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
   //CHECK-NEXT:} else {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
@@ -67,10 +67,6 @@ int foo2() {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:/*
@@ -79,11 +75,11 @@ int foo2() {
   //CHECK-NEXT:if (inembed_mmany64_Z2Z != nullptr && onembed_mmany64_Z2Z != nullptr) {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist_mmany64_Z2Z);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, odist_mmany64_Z2Z);
+  //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
-  //CHECK-NEXT:}
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   //CHECK-NEXT:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany64_Z2Z, (double*)idata_mmany64_Z2Z);
   //CHECK-NEXT:} else {
@@ -97,11 +93,11 @@ int foo2() {
   //CHECK:if (inembed_mmany64_Z2Z != nullptr && onembed_mmany64_Z2Z != nullptr) {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist_mmany64_Z2Z);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist_mmany64_Z2Z);
+  //CHECK-NEXT:}
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
-  //CHECK-NEXT:}
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   //CHECK-NEXT:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2Z, (double*)idata_mmany64_Z2Z);
   //CHECK-NEXT:} else {
@@ -126,14 +122,14 @@ int foo3(cudaStream_t stream) {
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ((10 + 2)/2+1)*2);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, (10 + 2)/2+1);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*stream);
   cufftSetStream(plan, stream);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
-  //CHECK:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(*stream);
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
   //CHECK-NEXT:} else {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);

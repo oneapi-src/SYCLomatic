@@ -51,6 +51,24 @@ enum class FFTTypeEnum : int {
   Unknown = 6
 };
 
+struct FFTSetStreamAPIInfo {
+  std::vector<std::pair<unsigned int, std::string>> Streams;
+  std::string getLatestStream(unsigned int Offset) {
+    std::string Result = "";
+    std::sort(Streams.begin(), Streams.end(),
+              [](std::pair<unsigned int, std::string> LHS,
+                 std::pair<unsigned int, std::string> RHS) {
+                return LHS.first < RHS.first;
+              });
+    for (const auto &Item : Streams) {
+      if (Offset < Item.first)
+        break;
+      Result = Item.second;
+    }
+    return Result;
+  }
+};
+
 struct FFTExecAPIInfo;
 
 struct LibraryAPIStmts {
@@ -88,7 +106,7 @@ struct LibraryAPIStmts {
 struct FFTHandleInfo {
   FFTDirectionType Direction = FFTDirectionType::uninitialized;
   FFTPlacementType Placement = FFTPlacementType::uninitialized;
-  // Below 6 members do not cover the case that one handle is resued
+  // Below 5 members do not cover the case that one handle is resued
   // in different plan APIs. If the related plan API is "many", the flag
   // will be true. The checking of C2C/Z2Z will be done in Exec API
   // migration.
@@ -99,21 +117,6 @@ struct FFTHandleInfo {
   std::string OutputDistance;
   std::string InembedStr;
   std::string OnembedStr;
-
-  std::string StreamStr;
-  bool UnknownStream = false;
-  void updateStream(std::string Stream) {
-    if (StreamStr.empty()) {
-      StreamStr = Stream;
-      return;
-    }
-    if (StreamStr == Stream) {
-      return;
-    }
-
-    UnknownStream = true;
-    return;
-  }
 
   void updateDirectionFromExec(FFTDirectionType NewDirection) {
     if (Direction == FFTDirectionType::uninitialized) {
@@ -192,7 +195,6 @@ struct FFTPlanAPIInfo {
   // Input info by Plan API
   std::string PrecAndDomainStr;
   FFTTypeEnum FFTType = FFTTypeEnum::Unknown; // C2R,R2C,C2C,D2Z,Z2D,Z2Z
-  int QueueIndex = -1;
   std::vector<std::string> ArgsList;
   std::vector<std::string> ArgsListAddRequiredParen;
   std::string IndentStr;
@@ -228,7 +230,7 @@ struct FFTPlanAPIInfo {
   update1D2D3DCommitPrefix(std::vector<std::string> Dims);
   void updateCommitCallExpr(std::vector<std::string> Dims);
   void addInfo(std::string PrecAndDomainStr, FFTTypeEnum FFTType,
-               int QueueIndex, std::vector<std::string> ArgsList,
+               std::vector<std::string> ArgsList,
                std::vector<std::string> ArgsListAddRequiredParen,
                std::string IndentStr, std::string FuncName,
                LibraryMigrationFlags Flags, std::int64_t Rank,
@@ -292,7 +294,7 @@ public:
   bool moveDeclOutOfBracesIfNeeds(const LibraryMigrationFlags Flags,
                                   SourceLocation &TypeBegin, int &TypeLength);
   void updateFFTPlanAPIInfo(FFTPlanAPIInfo &FPAInfo,
-                            LibraryMigrationFlags &Flags, int Index);
+                            LibraryMigrationFlags &Flags);
   void updateExecCallExpr(std::string FFTHandleInfoKey);
   void updateExecCallExpr();
   void updateFFTExecAPIInfo(FFTExecAPIInfo &FEAInfo);
@@ -383,6 +385,10 @@ struct FFTExecAPIInfo {
   std::string DescStr;
   std::int64_t Dir;
   std::string HandleDeclFileAndOffset;
+  int QueueIndex = -1;
+  unsigned int CompoundStmtBeginOffset = 0;
+  unsigned int PlanHandleDeclBeginOffset = 0;
+  unsigned int ExecAPIBeginOffset = 0;
 
   // Input info by Plan API (from handle info)
   std::string InputDistance;

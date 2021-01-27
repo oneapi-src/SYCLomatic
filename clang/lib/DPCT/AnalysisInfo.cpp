@@ -84,7 +84,6 @@ bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 std::unordered_map<std::string, FFTHandleInfo>
     DpctGlobalInfo::FFTHandleInfoMap;
-bool DpctGlobalInfo::HasFFTSetStream = false;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;

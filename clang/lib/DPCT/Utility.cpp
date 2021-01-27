@@ -2531,3 +2531,48 @@ bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
   }
   return false;
 }
+const CompoundStmt *
+findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
+  const CompoundStmt *LatestCS = nullptr;
+  if (!CE)
+    return LatestCS;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*CE);
+  const Stmt *LastStmt = dyn_cast<Stmt>(CE);
+  while (Parents.size() > 0) {
+    auto *Parent = Parents[0].get<Stmt>();
+    if (Parent) {
+      if (Parent->getStmtClass() == Stmt::StmtClass::CompoundStmtClass) {
+        LatestCS = dyn_cast<CompoundStmt>(Parent);
+      } else if (Parent->getStmtClass() == Stmt::StmtClass::DoStmtClass) {
+        const DoStmt *DS = dyn_cast<DoStmt>(Parent);
+        const Expr *Cond = DS->getCond();
+        Expr::EvalResult ER;
+        if (!Cond->isTypeDependent() && !Cond->isValueDependent() &&
+            Cond->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
+          int64_t Value = ER.Val.getInt().getExtValue();
+          // If the Cond is 0, it means this Do-stmt just execute once
+          if (Value != 0) {
+            break;
+          }
+        }
+      } else if (Parent->getStmtClass() == Stmt::StmtClass::IfStmtClass) {
+        const IfStmt *IS = dyn_cast<IfStmt>(Parent);
+        // If the node is cond, it means node just execute once
+        if (IS->getCond() != LastStmt) {
+          break;
+        }
+      }
+
+      LastStmt = Parent;
+      Parents = Context.getParents(*Parent);
+    } else {
+      // It means Parent[0] is Decl
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+
+  return LatestCS;
+}
+

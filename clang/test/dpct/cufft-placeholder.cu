@@ -21,6 +21,10 @@ int rank;
 //CHECK-NEXT:void foo1(std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> plan) {
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2* idata;
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  plan->commit(dpct::get_default_queue());
 //CHECK-NEXT:  if ((void *)idata == (void *)odata) {
 //CHECK-NEXT:  oneapi::mkl::dft::compute_backward(*plan, (double*)idata);
 //CHECK-NEXT:  } else {
@@ -39,6 +43,10 @@ void foo1(cufftHandle plan) {
 //CHECK-NEXT:void foo2(std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> plan) {
 //CHECK-NEXT:  float* odata;
 //CHECK-NEXT:  sycl::float2* idata;
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  plan->commit(dpct::get_default_queue());
 //CHECK-NEXT:  if ((void *)idata == (void *)odata) {
 //CHECK-NEXT:  oneapi::mkl::dft::compute_backward(*plan, (float*)idata);
 //CHECK-NEXT:  } else {
@@ -81,7 +89,6 @@ int main() {
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan1->commit(q_ct1);
   cufftHandle plan1;
   cufftType_t type1 = CUFFT_Z2D;
   cufftMakePlanMany(plan1, rank, n, inembed, istride, idist, onembed, ostride, odist, type1, 11, work_size);
@@ -115,7 +122,6 @@ int main() {
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan2->commit(q_ct1);
   cufftHandle plan2;
   cufftType_t type2 = CUFFT_C2R;
   cufftMakePlanMany(plan2, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);

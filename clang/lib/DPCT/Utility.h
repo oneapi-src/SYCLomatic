@@ -470,4 +470,7 @@ clang::SourceRange getDefinitionRange(clang::SourceLocation Begin,
                                       clang::SourceLocation End);
 bool isLocInSameMacroArg(clang::SourceLocation Begin,
                          clang::SourceLocation End);
+const clang::CompoundStmt *
+findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(
+    const clang::CallExpr *CE);
 #endif // DPCT_UTILITY_H
