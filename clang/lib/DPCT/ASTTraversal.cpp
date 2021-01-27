@@ -13235,8 +13235,8 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     std::string StreamStr = getDrefName(CE->getArg(1));
     DpctGlobalInfo::insertOrUpdateFFTHandleInfo(HandleInfoKey, StreamStr);
-    report(Locations.PrefixInsertLoc, Diagnostics::CHECK_RELATED_QUEUE, false,
-           StreamStr);
+
+    DpctGlobalInfo::setFFTSetStreamFlag(true);
 
     if (IsAssigned) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));

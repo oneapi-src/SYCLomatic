@@ -631,6 +631,18 @@ void FFTPlanAPIInfo::linkInfo() {
   } else {
     updateManyCommitCallExpr();
   }
+
+  // TODO: This implementation need to be refined in the future.
+  if (DpctGlobalInfo::getFFTSetStreamFlag()) {
+    if (DiagnosticsUtils::report(FilePath, InsertOffsets.first,
+                                 Diagnostics::CHECK_RELATED_QUEUE, false,
+                                 false)) {
+      PrefixStmts.push_back("/*");
+      PrefixStmts.push_back(
+          DiagnosticsUtils::getWarningText(Diagnostics::CHECK_RELATED_QUEUE));
+      PrefixStmts.push_back("*/");
+    }
+  }
 }
 
 void FFTPlanAPIInfo::addInfo(
@@ -1246,11 +1258,20 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
   // AST), but if here should using another stream, the counter of default queue
   // still counts it. So the count value may larger than the actual value. This
   // issue may also occur in Plan API and kernel migration.
-  if (StreamStr.empty())
-    ResetAndCommitStmts.emplace_back(DescStr +
-                                     "->commit(dpct::get_default_queue());");
-  else
-    ResetAndCommitStmts.emplace_back(DescStr + "->commit(" + StreamStr + ");");
+  // TODO: This implementation need to be refined in the future.
+  std::string Stream =
+      StreamStr.empty() ? "dpct::get_default_queue()" : StreamStr;
+  if (DpctGlobalInfo::getFFTSetStreamFlag()) {
+    if (DiagnosticsUtils::report(FilePath, InsertOffsets.first,
+                                 Diagnostics::CHECK_RELATED_QUEUE, false,
+                                 false)) {
+      ResetAndCommitStmts.push_back("/*");
+      ResetAndCommitStmts.push_back(
+          DiagnosticsUtils::getWarningText(Diagnostics::CHECK_RELATED_QUEUE));
+      ResetAndCommitStmts.push_back("*/");
+    }
+  }
+  ResetAndCommitStmts.emplace_back(DescStr + "->commit(" + Stream + ");");
 
   ResetAndCommitStmts.emplace_back("}");
 

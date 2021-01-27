@@ -1552,6 +1552,8 @@ static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
   }
+  static void setFFTSetStreamFlag(bool Flag) { HasFFTSetStream = Flag; }
+  static bool getFFTSetStreamFlag() { return HasFFTSetStream; }
 
 private:
   DpctGlobalInfo();
@@ -1702,6 +1704,7 @@ private:
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
+  static bool HasFFTSetStream;
 };
 
 class TemplateArgumentInfo;
