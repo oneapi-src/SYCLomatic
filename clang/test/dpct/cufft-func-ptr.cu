@@ -9,6 +9,10 @@
 //CHECK-NEXT:           oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:           desc,
 //CHECK-NEXT:       sycl::double2 *in_data, double *out_data) {
+//CHECK-NEXT:      /*
+//CHECK-NEXT:      DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+//CHECK-NEXT:      */
+//CHECK-NEXT:      desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:      if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:        oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:      } else {
@@ -24,7 +28,7 @@ int main() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:0: The placement of the FFT computational function could not be
+//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be
 //CHECK-NEXT:  deduced, so it is assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
@@ -34,7 +38,6 @@ int main() {
 //CHECK-NEXT:  std::int64_t input_stride_ct0[2] = {0, 1};
 //CHECK-NEXT:  plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
 //CHECK-NEXT:                   input_stride_ct0);
-//CHECK-NEXT:  plan1->commit(dpct::get_default_queue());
   cufftHandle plan1;
   cufftPlan1d(&plan1, 10, CUFFT_Z2D, 1);
 
@@ -59,6 +62,11 @@ int foo1() {
 //CHECK-NEXT:                                          oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:             desc,
 //CHECK-NEXT:         sycl::double2 *in_data, double *out_data) {
+//CHECK-NEXT:        /*
+//CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
+//CHECK-NEXT:        review.
+//CHECK-NEXT:        */
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -83,7 +91,6 @@ int foo1() {
 //CHECK-NEXT:  std::int64_t input_stride_ct{{[0-9]+}}[2] = {0, 1};
 //CHECK-NEXT:  plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
 //CHECK-NEXT:                   input_stride_ct{{[0-9]+}});
-//CHECK-NEXT:  plan1->commit(dpct::get_default_queue());
   cufftHandle plan1;
   cufftPlan1d(&plan1, 10, CUFFT_Z2D, 1);
 
@@ -108,6 +115,11 @@ int foo2() {
 //CHECK-NEXT:                                          oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:             desc,
 //CHECK-NEXT:         sycl::double2 *in_data, double *out_data) {
+//CHECK-NEXT:        /*
+//CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
+//CHECK-NEXT:        review.
+//CHECK-NEXT:        */
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -132,7 +144,6 @@ int foo2() {
 //CHECK-NEXT:  std::int64_t input_stride_ct{{[0-9]+}}[2] = {0, 1};
 //CHECK-NEXT:  plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
 //CHECK-NEXT:                   input_stride_ct{{[0-9]+}});
-//CHECK-NEXT:  plan1->commit(dpct::get_default_queue());
   cufftHandle plan1;
   cufftPlan1d(&plan1, 10, CUFFT_Z2D, 1);
 
@@ -158,6 +169,11 @@ int foo3() {
 //CHECK-NEXT:                                          oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:             desc,
 //CHECK-NEXT:         sycl::double2 *in_data, double *out_data) {
+//CHECK-NEXT:        /*
+//CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
+//CHECK-NEXT:        review.
+//CHECK-NEXT:        */
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -183,7 +199,6 @@ int foo3() {
 //CHECK-NEXT:  std::int64_t input_stride_ct{{[0-9]+}}[2] = {0, 1};
 //CHECK-NEXT:  plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
 //CHECK-NEXT:                   input_stride_ct{{[0-9]+}});
-//CHECK-NEXT:  plan1->commit(dpct::get_default_queue());
   cufftHandle plan1;
   cufftPlan1d(&plan1, 10, CUFFT_Z2D, 1);
 
@@ -208,6 +223,11 @@ int foo4() {
 //CHECK-NEXT:                                          oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:             desc,
 //CHECK-NEXT:         sycl::double2 *in_data, double *out_data) {
+//CHECK-NEXT:        /*
+//CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
+//CHECK-NEXT:        review.
+//CHECK-NEXT:        */
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -232,7 +252,6 @@ int foo4() {
 //CHECK-NEXT:  std::int64_t input_stride_ct{{[0-9]+}}[2] = {0, 1};
 //CHECK-NEXT:  plan1->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
 //CHECK-NEXT:                   input_stride_ct{{[0-9]+}});
-//CHECK-NEXT:  plan1->commit(dpct::get_default_queue());
   cufftHandle plan1;
   cufftPlan1d(&plan1, 10, CUFFT_Z2D, 1);
 

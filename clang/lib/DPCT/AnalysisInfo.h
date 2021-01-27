@@ -558,6 +558,11 @@ public:
     return EventSyncTypeMap;
   }
 
+  std::unordered_map<std::string, FFTSetStreamAPIInfo> &
+  getFFTSetStreamAPIInfoMap() {
+    return FFTSetStreamAPIInfoMap;
+  }
+
   // The key of below three maps are the offset of the replacement.
   std::map<unsigned int, DeviceRandomStateTypeInfo> &
   getDeviceRandomStateTypeMap() {
@@ -684,6 +689,22 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
+
+  // Key is the begin location offset of the CompoundStmt and the begin location
+  // offset of the plan handle VarDecl/FieldDecl.
+  // Value is the stream name.
+  // Example:
+  // TranslationUnitDecl
+  // `-FunctionDecl
+  //   `-CompoundStmt #1
+  //     `-IfStmt
+  //       |-CXXBoolLiteralExpr
+  //       `-CompoundStmt #2 ==> node as key
+  //         `-CompoundStmt
+  //           `-CallExpr
+  // If we can evaluate the value of "CXXBoolLiteralExpr" is always true, then
+  // the #1 will be used as key.
+  std::unordered_map<std::string, FFTSetStreamAPIInfo> FFTSetStreamAPIInfoMap;
 
   ExtReplacements Repls;
   size_t FileSize = 0;
@@ -1419,6 +1440,45 @@ public:
     }
   }
 
+  void updateFFTSetStreamAPIInfoMap(SourceLocation CompoundStmtBeginSL,
+                                    SourceLocation PlanHandleDeclBeginSL,
+                                    SourceLocation SetStreamAPIBeginSL,
+                                    std::string StreamStr) {
+    auto LocInfo = getLocInfo(CompoundStmtBeginSL);
+    auto FileInfo = insertFile(LocInfo.first);
+    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
+
+    std::string Key = std::to_string(LocInfo.second) + ":" +
+                      std::to_string(getLocInfo(PlanHandleDeclBeginSL).second);
+    auto Iter = M.find(Key);
+    if (Iter == M.end()) {
+      FFTSetStreamAPIInfo Info;
+      Info.Streams.push_back(
+          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
+      M.insert(std::make_pair(Key, Info));
+    } else {
+      Iter->second.Streams.push_back(
+          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
+    }
+  }
+
+  std::string getRelatedFFTStream(std::string FilePath,
+                                  unsigned int CompoundStmtBeginOffset,
+                                  unsigned int PlanHandleDeclBeginOffset,
+                                  unsigned int ExecAPIBeginOffset) {
+    auto FileInfo = insertFile(FilePath);
+    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
+
+    std::string Key = std::to_string(CompoundStmtBeginOffset) + ":" +
+                      std::to_string(PlanHandleDeclBeginOffset);
+    auto Iter = M.find(Key);
+    if (Iter == M.end()) {
+      return "";
+    } else {
+      return Iter->second.getLatestStream(ExecAPIBeginOffset);
+    }
+  }
+
   void setFileEnterLocation(SourceLocation Loc) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
@@ -1573,22 +1633,9 @@ static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
                                 InembedStr, OnembedStr);
     }
   }
-  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
-                                          std::string StreamStr) {
-    auto I = FFTHandleInfoMap.find(FileAndOffset);
-    if (I == FFTHandleInfoMap.end()) {
-      FFTHandleInfo Info;
-      Info.StreamStr = StreamStr;
-      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
-    } else {
-      I->second.updateStream(StreamStr);
-    }
-  }
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
   }
-  static void setFFTSetStreamFlag(bool Flag) { HasFFTSetStream = Flag; }
-  static bool getFFTSetStreamFlag() { return HasFFTSetStream; }
 
 private:
   DpctGlobalInfo();
@@ -1739,7 +1786,6 @@ private:
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
-  static bool HasFFTSetStream;
 };
 
 class TemplateArgumentInfo;

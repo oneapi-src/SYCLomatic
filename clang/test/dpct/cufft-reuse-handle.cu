@@ -37,7 +37,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:/*
@@ -60,10 +59,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
-  //CHECK:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9+]}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
+  //CHECK-NEXT:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2Z, (double*)idata_mmany64_Z2Z);
   //CHECK-NEXT:} else {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2Z, (double*)idata_mmany64_Z2Z, (double*)odata_mmany64_Z2Z);

@@ -13594,15 +13594,24 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
 
     std::string StreamStr = getDrefName(CE->getArg(1));
-    DpctGlobalInfo::insertOrUpdateFFTHandleInfo(HandleInfoKey, StreamStr);
-
-    DpctGlobalInfo::setFFTSetStreamFlag(true);
 
     if (IsAssigned) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
     } else {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
+
+    const CompoundStmt *CS =
+        findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
+    if (!CS)
+      return;
+    SourceLocation CompoundStmtBeginSL = SM.getExpansionLoc(CS->getBeginLoc());
+    SourceLocation PlanHandleDeclBeginSL =
+        SM.getExpansionLoc(DD->getBeginLoc());
+    SourceLocation SetStreamAPIBeginSL = SM.getExpansionLoc(CE->getBeginLoc());
+    DpctGlobalInfo::getInstance().updateFFTSetStreamAPIInfoMap(
+        CompoundStmtBeginSL, PlanHandleDeclBeginSL, SetStreamAPIBeginSL,
+        StreamStr);
     return;
   } else if (FuncName == "cufftCreate" || FuncName == "cufftDestroy") {
     if (IsAssigned) {
@@ -13620,10 +13629,6 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cufftPlan3d" || FuncName == "cufftMakePlan3d" ||
              FuncName == "cufftPlanMany" || FuncName == "cufftMakePlanMany" ||
              FuncName == "cufftMakePlanMany64") {
-    if (checkWhetherIsDuplicate(CE, false))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
 
     const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
     if (!DD)
@@ -13634,7 +13639,7 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
 
     FFTPlanAPIInfo FPAInfo;
-    FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags, Index);
+    FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags);
     FFCB.updateFFTHandleInfoFromPlan(HandleDeclFileAndOffset);
     replacementLocation(Locations, Flags, FPAInfo.ReplaceOffset,
                         FPAInfo.ReplaceLen, FPAInfo.InsertOffsets,
@@ -13652,18 +13657,41 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
     std::string FFTHandleInfoKey;
+    int Index = -1;
+    unsigned int CompoundStmtBeginOffset = 0;
+    unsigned int PlanHandleDeclBeginOffset = 0;
+    unsigned int ExecAPIBeginOffset = 0;
     if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       FFCB.updateExecCallExpr();
     } else {
       const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
       if (!DD)
         return;
+      if (checkWhetherIsDuplicate(CE, false))
+        return;
+
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
 
       SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
       FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
                          std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
 
       FFCB.updateExecCallExpr(FFTHandleInfoKey);
+
+      const CompoundStmt *CS =
+          findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
+      if (CS) {
+        CompoundStmtBeginOffset =
+            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CS->getBeginLoc()))
+                .second;
+        PlanHandleDeclBeginOffset =
+            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc()))
+                .second;
+        ExecAPIBeginOffset =
+            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()))
+                .second;
+      }
     }
 
     SourceLocation TypeBegin;
@@ -13675,6 +13703,10 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FFTExecAPIInfo FEAInfo;
     FFCB.updateFFTExecAPIInfo(FEAInfo);
     FEAInfo.HandleDeclFileAndOffset = FFTHandleInfoKey;
+    FEAInfo.QueueIndex = Index;
+    FEAInfo.CompoundStmtBeginOffset = CompoundStmtBeginOffset;
+    FEAInfo.PlanHandleDeclBeginOffset = PlanHandleDeclBeginOffset;
+    FEAInfo.ExecAPIBeginOffset = ExecAPIBeginOffset;
 
     if (Flags.IsFunctionPointer)
       DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(

@@ -20,10 +20,13 @@ int main() {
   //CHECK-NEXT:plan_1d_C2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_C2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_C2C->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_C2C->commit(q_ct1);
   cufftPlan1d(&plan_1d_C2C, 10, CUFFT_C2C, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_1d_C2C);
   //CHECK-NEXT:if ((void *)idata_1d_C2C == (void *)odata_1d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_1d_C2C, idata_1d_C2C_buf_ct{{[0-9]+}});
@@ -51,10 +54,13 @@ int main() {
   //CHECK-NEXT:plan_1d_C2R->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_C2R->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_1d_C2R->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_C2R->commit(q_ct1);
   cufftPlan1d(&plan_1d_C2R, 10, CUFFT_C2R, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_1d_C2R);
   //CHECK-NEXT:if ((void *)idata_1d_C2R == (void *)odata_1d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_1d_C2R, idata_1d_C2R_buf_ct{{[0-9]+}});
@@ -82,10 +88,13 @@ int main() {
   //CHECK-NEXT:plan_1d_R2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_R2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_1d_R2C->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_R2C->commit(q_ct1);
   cufftPlan1d(&plan_1d_R2C, 10, CUFFT_R2C, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_1d_R2C);
   //CHECK-NEXT:if ((void *)idata_1d_R2C == (void *)odata_1d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_1d_R2C, idata_1d_R2C_buf_ct{{[0-9]+}});
@@ -111,10 +120,13 @@ int main() {
   //CHECK-NEXT:plan_1d_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_Z2Z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_Z2Z->commit(q_ct1);
   cufftPlan1d(&plan_1d_Z2Z, 10, CUFFT_Z2Z, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_1d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_1d_Z2Z == (void *)odata_1d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_1d_Z2Z, idata_1d_Z2Z_buf_ct{{[0-9]+}});
@@ -142,10 +154,13 @@ int main() {
   //CHECK-NEXT:plan_1d_Z2D->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_Z2D->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_1d_Z2D->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_Z2D->commit(q_ct1);
   cufftPlan1d(&plan_1d_Z2D, 10, CUFFT_Z2D, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_1d_Z2D);
   //CHECK-NEXT:if ((void *)idata_1d_Z2D == (void *)odata_1d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_1d_Z2D, idata_1d_Z2D_buf_ct{{[0-9]+}});
@@ -173,10 +188,13 @@ int main() {
   //CHECK-NEXT:plan_1d_D2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_1d_D2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_1d_D2Z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_1d_D2Z->commit(q_ct1);
   cufftPlan1d(&plan_1d_D2Z, 10, CUFFT_D2Z, 3);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_1d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_1d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_1d_D2Z);
   //CHECK-NEXT:if ((void *)idata_1d_D2Z == (void *)odata_1d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_1d_D2Z, idata_1d_D2Z_buf_ct{{[0-9]+}});
@@ -199,10 +217,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_2d_C2C->commit(q_ct1);
   cufftPlan2d(&plan_2d_C2C, 10, 20, CUFFT_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_2d_C2C);
   //CHECK-NEXT:if ((void *)idata_2d_C2C == (void *)odata_2d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_2d_C2C, idata_2d_C2C_buf_ct{{[0-9]+}});
@@ -227,10 +248,13 @@ int main() {
   //CHECK-NEXT:plan_2d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_2d_C2R->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_2d_C2R->commit(q_ct1);
   cufftPlan2d(&plan_2d_C2R, 10, 20, CUFFT_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_2d_C2R);
   //CHECK-NEXT:if ((void *)idata_2d_C2R == (void *)odata_2d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_2d_C2R, idata_2d_C2R_buf_ct{{[0-9]+}});
@@ -255,10 +279,13 @@ int main() {
   //CHECK-NEXT:plan_2d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_2d_R2C->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_2d_R2C->commit(q_ct1);
   cufftPlan2d(&plan_2d_R2C, 10, 20, CUFFT_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_2d_R2C);
   //CHECK-NEXT:if ((void *)idata_2d_R2C == (void *)odata_2d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_2d_R2C, idata_2d_R2C_buf_ct{{[0-9]+}});
@@ -281,10 +308,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_2d_Z2Z->commit(q_ct1);
   cufftPlan2d(&plan_2d_Z2Z, 10, 20, CUFFT_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_2d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_2d_Z2Z == (void *)odata_2d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_2d_Z2Z, idata_2d_Z2Z_buf_ct{{[0-9]+}});
@@ -309,10 +339,13 @@ int main() {
   //CHECK-NEXT:plan_2d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_2d_Z2D->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_2d_Z2D->commit(q_ct1);
   cufftPlan2d(&plan_2d_Z2D, 10, 20, CUFFT_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_2d_Z2D);
   //CHECK-NEXT:if ((void *)idata_2d_Z2D == (void *)odata_2d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_2d_Z2D, idata_2d_Z2D_buf_ct{{[0-9]+}});
@@ -337,10 +370,13 @@ int main() {
   //CHECK-NEXT:plan_2d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_2d_D2Z->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_2d_D2Z->commit(q_ct1);
   cufftPlan2d(&plan_2d_D2Z, 10, 20, CUFFT_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_2d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_2d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_2d_D2Z);
   //CHECK-NEXT:if ((void *)idata_2d_D2Z == (void *)odata_2d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_2d_D2Z, idata_2d_D2Z_buf_ct{{[0-9]+}});
@@ -363,10 +399,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_3d_C2C->commit(q_ct1);
   cufftPlan3d(&plan_3d_C2C, 10, 20, 30, CUFFT_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_3d_C2C);
   //CHECK-NEXT:if ((void *)idata_3d_C2C == (void *)odata_3d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_3d_C2C, idata_3d_C2C_buf_ct{{[0-9]+}});
@@ -391,10 +430,13 @@ int main() {
   //CHECK-NEXT:plan_3d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_3d_C2R->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_3d_C2R->commit(q_ct1);
   cufftPlan3d(&plan_3d_C2R, 10, 20, 30, CUFFT_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_3d_C2R);
   //CHECK-NEXT:if ((void *)idata_3d_C2R == (void *)odata_3d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_3d_C2R, idata_3d_C2R_buf_ct{{[0-9]+}});
@@ -419,10 +461,13 @@ int main() {
   //CHECK-NEXT:plan_3d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_3d_R2C->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_3d_R2C->commit(q_ct1);
   cufftPlan3d(&plan_3d_R2C, 10, 20, 30, CUFFT_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_3d_R2C);
   //CHECK-NEXT:if ((void *)idata_3d_R2C == (void *)odata_3d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_3d_R2C, idata_3d_R2C_buf_ct{{[0-9]+}});
@@ -445,10 +490,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_3d_Z2Z->commit(q_ct1);
   cufftPlan3d(&plan_3d_Z2Z, 10, 20, 30, CUFFT_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_3d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_3d_Z2Z == (void *)odata_3d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_3d_Z2Z, idata_3d_Z2Z_buf_ct{{[0-9]+}});
@@ -473,10 +521,13 @@ int main() {
   //CHECK-NEXT:plan_3d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_3d_Z2D->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_3d_Z2D->commit(q_ct1);
   cufftPlan3d(&plan_3d_Z2D, 10, 20, 30, CUFFT_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_3d_Z2D);
   //CHECK-NEXT:if ((void *)idata_3d_Z2D == (void *)odata_3d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_3d_Z2D, idata_3d_Z2D_buf_ct{{[0-9]+}});
@@ -501,10 +552,13 @@ int main() {
   //CHECK-NEXT:plan_3d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_3d_D2Z->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_3d_D2Z->commit(q_ct1);
   cufftPlan3d(&plan_3d_D2Z, 10, 20, 30, CUFFT_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_3d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_3d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_3d_D2Z);
   //CHECK-NEXT:if ((void *)idata_3d_D2Z == (void *)odata_3d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_3d_D2Z, idata_3d_D2Z_buf_ct{{[0-9]+}});
@@ -553,10 +607,13 @@ int main() {
   //CHECK-NEXT:plan_many_C2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_C2C[2]*n_many_C2C[1]*n_many_C2C[0]);
   //CHECK-NEXT:plan_many_C2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_C2C[2]*n_many_C2C[1]*n_many_C2C[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_C2C->commit(q_ct1);
   cufftPlanMany(&plan_many_C2C, 3, n_many_C2C, inembed_many_C2C, istride_many_C2C, idist_many_C2C, onembed_many_C2C, ostride_many_C2C, odist_many_C2C, CUFFT_C2C, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_many_C2C);
   //CHECK-NEXT:if ((void *)idata_many_C2C == (void *)odata_many_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_many_C2C, idata_many_C2C_buf_ct{{[0-9]+}});
@@ -607,10 +664,13 @@ int main() {
   //CHECK-NEXT:plan_many_C2R->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_C2R[2]*n_many_C2R[1]*n_many_C2R[0]);
   //CHECK-NEXT:plan_many_C2R->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_C2R[2]*n_many_C2R[1]*(n_many_C2R[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_C2R->commit(q_ct1);
   cufftPlanMany(&plan_many_C2R, 3, n_many_C2R, inembed_many_C2R, istride_many_C2R, idist_many_C2R, onembed_many_C2R, ostride_many_C2R, odist_many_C2R, CUFFT_C2R, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_many_C2R);
   //CHECK-NEXT:if ((void *)idata_many_C2R == (void *)odata_many_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_many_C2R, idata_many_C2R_buf_ct{{[0-9]+}});
@@ -661,10 +721,13 @@ int main() {
   //CHECK-NEXT:plan_many_R2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_R2C[2]*n_many_R2C[1]*n_many_R2C[0]);
   //CHECK-NEXT:plan_many_R2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_R2C[2]*n_many_R2C[1]*(n_many_R2C[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_R2C->commit(q_ct1);
   cufftPlanMany(&plan_many_R2C, 3, n_many_R2C, inembed_many_R2C, istride_many_R2C, idist_many_R2C, onembed_many_R2C, ostride_many_R2C, odist_many_R2C, CUFFT_R2C, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_many_R2C);
   //CHECK-NEXT:if ((void *)idata_many_R2C == (void *)odata_many_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_many_R2C, idata_many_R2C_buf_ct{{[0-9]+}});
@@ -713,10 +776,13 @@ int main() {
   //CHECK-NEXT:plan_many_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_Z2Z[2]*n_many_Z2Z[1]*n_many_Z2Z[0]);
   //CHECK-NEXT:plan_many_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_Z2Z[2]*n_many_Z2Z[1]*n_many_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_Z2Z->commit(q_ct1);
   cufftPlanMany(&plan_many_Z2Z, 3, n_many_Z2Z, inembed_many_Z2Z, istride_many_Z2Z, idist_many_Z2Z, onembed_many_Z2Z, ostride_many_Z2Z, odist_many_Z2Z, CUFFT_Z2Z, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_many_Z2Z);
   //CHECK-NEXT:if ((void *)idata_many_Z2Z == (void *)odata_many_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_many_Z2Z, idata_many_Z2Z_buf_ct{{[0-9]+}});
@@ -767,10 +833,13 @@ int main() {
   //CHECK-NEXT:plan_many_Z2D->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_Z2D[2]*n_many_Z2D[1]*n_many_Z2D[0]);
   //CHECK-NEXT:plan_many_Z2D->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_Z2D[2]*n_many_Z2D[1]*(n_many_Z2D[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_Z2D->commit(q_ct1);
   cufftPlanMany(&plan_many_Z2D, 3, n_many_Z2D, inembed_many_Z2D, istride_many_Z2D, idist_many_Z2D, onembed_many_Z2D, ostride_many_Z2D, odist_many_Z2D, CUFFT_Z2D, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_many_Z2D);
   //CHECK-NEXT:if ((void *)idata_many_Z2D == (void *)odata_many_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_many_Z2D, idata_many_Z2D_buf_ct{{[0-9]+}});
@@ -821,10 +890,13 @@ int main() {
   //CHECK-NEXT:plan_many_D2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_many_D2Z[2]*n_many_D2Z[1]*n_many_D2Z[0]);
   //CHECK-NEXT:plan_many_D2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_many_D2Z[2]*n_many_D2Z[1]*(n_many_D2Z[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_many_D2Z->commit(q_ct1);
   cufftPlanMany(&plan_many_D2Z, 3, n_many_D2Z, inembed_many_D2Z, istride_many_D2Z, idist_many_D2Z, onembed_many_D2Z, ostride_many_D2Z, odist_many_D2Z, CUFFT_D2Z, 12);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_many_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_many_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_many_D2Z);
   //CHECK-NEXT:if ((void *)idata_many_D2Z == (void *)odata_many_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_many_D2Z, idata_many_D2Z_buf_ct{{[0-9]+}});
@@ -855,10 +927,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_C2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_C2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_C2C->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_C2C->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_C2C, 10, CUFFT_C2C, 3, work_size_m1d_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m1d_C2C);
   //CHECK-NEXT:if ((void *)idata_m1d_C2C == (void *)odata_m1d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m1d_C2C, idata_m1d_C2C_buf_ct{{[0-9]+}});
@@ -891,10 +966,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_C2R->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_C2R->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_m1d_C2R->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_C2R->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_C2R, 10, CUFFT_C2R, 3, work_size_m1d_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m1d_C2R);
   //CHECK-NEXT:if ((void *)idata_m1d_C2R == (void *)odata_m1d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m1d_C2R, idata_m1d_C2R_buf_ct{{[0-9]+}});
@@ -927,10 +1005,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_R2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_R2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_m1d_R2C->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_R2C->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_R2C, 10, CUFFT_R2C, 3, work_size_m1d_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m1d_R2C);
   //CHECK-NEXT:if ((void *)idata_m1d_R2C == (void *)odata_m1d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m1d_R2C, idata_m1d_R2C_buf_ct{{[0-9]+}});
@@ -961,10 +1042,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_Z2Z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_Z2Z->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_Z2Z, 10, CUFFT_Z2Z, 3, work_size_m1d_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m1d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_m1d_Z2Z == (void *)odata_m1d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m1d_Z2Z, idata_m1d_Z2Z_buf_ct{{[0-9]+}});
@@ -997,10 +1081,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_Z2D->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_Z2D->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_m1d_Z2D->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_Z2D->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_Z2D, 10, CUFFT_Z2D, 3, work_size_m1d_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m1d_Z2D);
   //CHECK-NEXT:if ((void *)idata_m1d_Z2D == (void *)odata_m1d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m1d_Z2D, idata_m1d_Z2D_buf_ct{{[0-9]+}});
@@ -1033,10 +1120,13 @@ int main() {
   //CHECK-NEXT:plan_m1d_D2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, 10);
   //CHECK-NEXT:plan_m1d_D2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, 10/2+1);
   //CHECK-NEXT:plan_m1d_D2Z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
-  //CHECK-NEXT:plan_m1d_D2Z->commit(q_ct1);
   cufftMakePlan1d(plan_m1d_D2Z, 10, CUFFT_D2Z, 3, work_size_m1d_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m1d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m1d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m1d_D2Z);
   //CHECK-NEXT:if ((void *)idata_m1d_D2Z == (void *)odata_m1d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m1d_D2Z, idata_m1d_D2Z_buf_ct{{[0-9]+}});
@@ -1064,10 +1154,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_m2d_C2C->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_C2C, 10, 20, CUFFT_C2C, work_size_m2d_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m2d_C2C);
   //CHECK-NEXT:if ((void *)idata_m2d_C2C == (void *)odata_m2d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m2d_C2C, idata_m2d_C2C_buf_ct{{[0-9]+}});
@@ -1097,10 +1190,13 @@ int main() {
   //CHECK-NEXT:plan_m2d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_m2d_C2R->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m2d_C2R->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_C2R, 10, 20, CUFFT_C2R, work_size_m2d_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m2d_C2R);
   //CHECK-NEXT:if ((void *)idata_m2d_C2R == (void *)odata_m2d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m2d_C2R, idata_m2d_C2R_buf_ct{{[0-9]+}});
@@ -1130,10 +1226,13 @@ int main() {
   //CHECK-NEXT:plan_m2d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_m2d_R2C->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m2d_R2C->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_R2C, 10, 20, CUFFT_R2C, work_size_m2d_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m2d_R2C);
   //CHECK-NEXT:if ((void *)idata_m2d_R2C == (void *)odata_m2d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m2d_R2C, idata_m2d_R2C_buf_ct{{[0-9]+}});
@@ -1161,10 +1260,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_m2d_Z2Z->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_Z2Z, 10, 20, CUFFT_Z2Z, work_size_m2d_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m2d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_m2d_Z2Z == (void *)odata_m2d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m2d_Z2Z, idata_m2d_Z2Z_buf_ct{{[0-9]+}});
@@ -1194,10 +1296,13 @@ int main() {
   //CHECK-NEXT:plan_m2d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_m2d_Z2D->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m2d_Z2D->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_Z2D, 10, 20, CUFFT_Z2D, work_size_m2d_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m2d_Z2D);
   //CHECK-NEXT:if ((void *)idata_m2d_Z2D == (void *)odata_m2d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m2d_Z2D, idata_m2d_Z2D_buf_ct{{[0-9]+}});
@@ -1227,10 +1332,13 @@ int main() {
   //CHECK-NEXT:plan_m2d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[3] = {0, (20/2+1), 1};
   //CHECK-NEXT:plan_m2d_D2Z->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m2d_D2Z->commit(q_ct1);
   cufftMakePlan2d(plan_m2d_D2Z, 10, 20, CUFFT_D2Z, work_size_m2d_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m2d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m2d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m2d_D2Z);
   //CHECK-NEXT:if ((void *)idata_m2d_D2Z == (void *)odata_m2d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m2d_D2Z, idata_m2d_D2Z_buf_ct{{[0-9]+}});
@@ -1258,10 +1366,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_m3d_C2C->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_C2C, 10, 20, 30, CUFFT_C2C, work_size_m3d_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m3d_C2C);
   //CHECK-NEXT:if ((void *)idata_m3d_C2C == (void *)odata_m3d_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m3d_C2C, idata_m3d_C2C_buf_ct{{[0-9]+}});
@@ -1291,10 +1402,13 @@ int main() {
   //CHECK-NEXT:plan_m3d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_m3d_C2R->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m3d_C2R->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_C2R, 10, 20, 30, CUFFT_C2R, work_size_m3d_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m3d_C2R);
   //CHECK-NEXT:if ((void *)idata_m3d_C2R == (void *)odata_m3d_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m3d_C2R, idata_m3d_C2R_buf_ct{{[0-9]+}});
@@ -1324,10 +1438,13 @@ int main() {
   //CHECK-NEXT:plan_m3d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_m3d_R2C->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m3d_R2C->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_R2C, 10, 20, 30, CUFFT_R2C, work_size_m3d_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_m3d_R2C);
   //CHECK-NEXT:if ((void *)idata_m3d_R2C == (void *)odata_m3d_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m3d_R2C, idata_m3d_R2C_buf_ct{{[0-9]+}});
@@ -1355,10 +1472,13 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-  //CHECK-NEXT:plan_m3d_Z2Z->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_Z2Z, 10, 20, 30, CUFFT_Z2Z, work_size_m3d_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m3d_Z2Z);
   //CHECK-NEXT:if ((void *)idata_m3d_Z2Z == (void *)odata_m3d_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m3d_Z2Z, idata_m3d_Z2Z_buf_ct{{[0-9]+}});
@@ -1388,10 +1508,13 @@ int main() {
   //CHECK-NEXT:plan_m3d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t input_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_m3d_Z2D->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES, input_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m3d_Z2D->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_Z2D, 10, 20, 30, CUFFT_Z2D, work_size_m3d_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m3d_Z2D);
   //CHECK-NEXT:if ((void *)idata_m3d_Z2D == (void *)odata_m3d_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_m3d_Z2D, idata_m3d_Z2D_buf_ct{{[0-9]+}});
@@ -1421,10 +1544,13 @@ int main() {
   //CHECK-NEXT:plan_m3d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
   //CHECK-NEXT:std::int64_t output_stride_ct{{[0-9]+}}[4] = {0, 20*(30/2+1), (30/2+1), 1};
   //CHECK-NEXT:plan_m3d_D2Z->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES, output_stride_ct{{[0-9]+}});
-  //CHECK-NEXT:plan_m3d_D2Z->commit(q_ct1);
   cufftMakePlan3d(plan_m3d_D2Z, 10, 20, 30, CUFFT_D2Z, work_size_m3d_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_m3d_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_m3d_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_m3d_D2Z);
   //CHECK-NEXT:if ((void *)idata_m3d_D2Z == (void *)odata_m3d_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_m3d_D2Z, idata_m3d_D2Z_buf_ct{{[0-9]+}});
@@ -1478,10 +1604,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_C2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_C2C[2]*n_mmany_C2C[1]*n_mmany_C2C[0]);
   //CHECK-NEXT:plan_mmany_C2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_C2C[2]*n_mmany_C2C[1]*n_mmany_C2C[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_C2C->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_C2C, 3, n_mmany_C2C, inembed_mmany_C2C, istride_mmany_C2C, idist_mmany_C2C, onembed_mmany_C2C, ostride_mmany_C2C, odist_mmany_C2C, CUFFT_C2C, 12, work_size_mmany_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany_C2C);
   //CHECK-NEXT:if ((void *)idata_mmany_C2C == (void *)odata_mmany_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany_C2C, idata_mmany_C2C_buf_ct{{[0-9]+}});
@@ -1537,10 +1666,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_C2R->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_C2R[2]*n_mmany_C2R[1]*n_mmany_C2R[0]);
   //CHECK-NEXT:plan_mmany_C2R->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_C2R[2]*n_mmany_C2R[1]*(n_mmany_C2R[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_C2R->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_C2R, 3, n_mmany_C2R, inembed_mmany_C2R, istride_mmany_C2R, idist_mmany_C2R, onembed_mmany_C2R, ostride_mmany_C2R, odist_mmany_C2R, CUFFT_C2R, 12, work_size_mmany_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany_C2R);
   //CHECK-NEXT:if ((void *)idata_mmany_C2R == (void *)odata_mmany_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany_C2R, idata_mmany_C2R_buf_ct{{[0-9]+}});
@@ -1596,10 +1728,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_R2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_R2C[2]*n_mmany_R2C[1]*n_mmany_R2C[0]);
   //CHECK-NEXT:plan_mmany_R2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_R2C[2]*n_mmany_R2C[1]*(n_mmany_R2C[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_R2C->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_R2C, 3, n_mmany_R2C, inembed_mmany_R2C, istride_mmany_R2C, idist_mmany_R2C, onembed_mmany_R2C, ostride_mmany_R2C, odist_mmany_R2C, CUFFT_R2C, 12, work_size_mmany_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany_R2C);
   //CHECK-NEXT:if ((void *)idata_mmany_R2C == (void *)odata_mmany_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany_R2C, idata_mmany_R2C_buf_ct{{[0-9]+}});
@@ -1653,10 +1788,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_Z2Z[2]*n_mmany_Z2Z[1]*n_mmany_Z2Z[0]);
   //CHECK-NEXT:plan_mmany_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_Z2Z[2]*n_mmany_Z2Z[1]*n_mmany_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_Z2Z->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_Z2Z, 3, n_mmany_Z2Z, inembed_mmany_Z2Z, istride_mmany_Z2Z, idist_mmany_Z2Z, onembed_mmany_Z2Z, ostride_mmany_Z2Z, odist_mmany_Z2Z, CUFFT_Z2Z, 12, work_size_mmany_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany_Z2Z);
   //CHECK-NEXT:if ((void *)idata_mmany_Z2Z == (void *)odata_mmany_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany_Z2Z, idata_mmany_Z2Z_buf_ct{{[0-9]+}});
@@ -1712,10 +1850,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_Z2D->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_Z2D[2]*n_mmany_Z2D[1]*n_mmany_Z2D[0]);
   //CHECK-NEXT:plan_mmany_Z2D->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_Z2D[2]*n_mmany_Z2D[1]*(n_mmany_Z2D[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_Z2D->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_Z2D, 3, n_mmany_Z2D, inembed_mmany_Z2D, istride_mmany_Z2D, idist_mmany_Z2D, onembed_mmany_Z2D, ostride_mmany_Z2D, odist_mmany_Z2D, CUFFT_Z2D, 12, work_size_mmany_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany_Z2D);
   //CHECK-NEXT:if ((void *)idata_mmany_Z2D == (void *)odata_mmany_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany_Z2D, idata_mmany_Z2D_buf_ct{{[0-9]+}});
@@ -1771,10 +1912,13 @@ int main() {
   //CHECK-NEXT:plan_mmany_D2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany_D2Z[2]*n_mmany_D2Z[1]*n_mmany_D2Z[0]);
   //CHECK-NEXT:plan_mmany_D2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany_D2Z[2]*n_mmany_D2Z[1]*(n_mmany_D2Z[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany_D2Z->commit(q_ct1);
   cufftMakePlanMany(plan_mmany_D2Z, 3, n_mmany_D2Z, inembed_mmany_D2Z, istride_mmany_D2Z, idist_mmany_D2Z, onembed_mmany_D2Z, ostride_mmany_D2Z, odist_mmany_D2Z, CUFFT_D2Z, 12, work_size_mmany_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany_D2Z);
   //CHECK-NEXT:if ((void *)idata_mmany_D2Z == (void *)odata_mmany_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany_D2Z, idata_mmany_D2Z_buf_ct{{[0-9]+}});
@@ -1828,10 +1972,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_C2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_C2C[2]*n_mmany64_C2C[1]*n_mmany64_C2C[0]);
   //CHECK-NEXT:plan_mmany64_C2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_C2C[2]*n_mmany64_C2C[1]*n_mmany64_C2C[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_C2C->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_C2C, 3, n_mmany64_C2C, inembed_mmany64_C2C, istride_mmany64_C2C, idist_mmany64_C2C, onembed_mmany64_C2C, ostride_mmany64_C2C, odist_mmany64_C2C, CUFFT_C2C, 12, work_size_mmany64_C2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_C2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_C2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany64_C2C);
   //CHECK-NEXT:if ((void *)idata_mmany64_C2C == (void *)odata_mmany64_C2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany64_C2C, idata_mmany64_C2C_buf_ct{{[0-9]+}});
@@ -1887,10 +2034,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_C2R->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_C2R[2]*n_mmany64_C2R[1]*n_mmany64_C2R[0]);
   //CHECK-NEXT:plan_mmany64_C2R->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_C2R[2]*n_mmany64_C2R[1]*(n_mmany64_C2R[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_C2R->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_C2R, 3, n_mmany64_C2R, inembed_mmany64_C2R, istride_mmany64_C2R, idist_mmany64_C2R, onembed_mmany64_C2R, ostride_mmany64_C2R, odist_mmany64_C2R, CUFFT_C2R, 12, work_size_mmany64_C2R);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_C2R->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_C2R_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany64_C2R);
   //CHECK-NEXT:if ((void *)idata_mmany64_C2R == (void *)odata_mmany64_C2R) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_C2R, idata_mmany64_C2R_buf_ct{{[0-9]+}});
@@ -1946,10 +2096,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_R2C->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_R2C[2]*n_mmany64_R2C[1]*n_mmany64_R2C[0]);
   //CHECK-NEXT:plan_mmany64_R2C->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_R2C[2]*n_mmany64_R2C[1]*(n_mmany64_R2C[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_R2C->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_R2C, 3, n_mmany64_R2C, inembed_mmany64_R2C, istride_mmany64_R2C, idist_mmany64_R2C, onembed_mmany64_R2C, ostride_mmany64_R2C, odist_mmany64_R2C, CUFFT_R2C, 12, work_size_mmany64_R2C);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_R2C->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_R2C_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(idata_mmany64_R2C);
   //CHECK-NEXT:if ((void *)idata_mmany64_R2C == (void *)odata_mmany64_R2C) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany64_R2C, idata_mmany64_R2C_buf_ct{{[0-9]+}});
@@ -2003,10 +2156,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_Z2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany64_Z2Z);
   //CHECK-NEXT:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2Z, idata_mmany64_Z2Z_buf_ct{{[0-9]+}});
@@ -2062,10 +2218,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2D->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_Z2D[2]*n_mmany64_Z2D[1]*n_mmany64_Z2D[0]);
   //CHECK-NEXT:plan_mmany64_Z2D->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2D[2]*n_mmany64_Z2D[1]*(n_mmany64_Z2D[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_Z2D->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_Z2D, 3, n_mmany64_Z2D, inembed_mmany64_Z2D, istride_mmany64_Z2D, idist_mmany64_Z2D, onembed_mmany64_Z2D, ostride_mmany64_Z2D, odist_mmany64_Z2D, CUFFT_Z2D, 12, work_size_mmany64_Z2D);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_Z2D->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_Z2D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany64_Z2D);
   //CHECK-NEXT:if ((void *)idata_mmany64_Z2D == (void *)odata_mmany64_Z2D) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2D, idata_mmany64_Z2D_buf_ct{{[0-9]+}});
@@ -2121,10 +2280,13 @@ int main() {
   //CHECK-NEXT:plan_mmany64_D2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n_mmany64_D2Z[2]*n_mmany64_D2Z[1]*n_mmany64_D2Z[0]);
   //CHECK-NEXT:plan_mmany64_D2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_D2Z[2]*n_mmany64_D2Z[1]*(n_mmany64_D2Z[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan_mmany64_D2Z->commit(q_ct1);
   cufftMakePlanMany64(plan_mmany64_D2Z, 3, n_mmany64_D2Z, inembed_mmany64_D2Z, istride_mmany64_D2Z, idist_mmany64_D2Z, onembed_mmany64_D2Z, ostride_mmany64_D2Z, odist_mmany64_D2Z, CUFFT_D2Z, 12, work_size_mmany64_D2Z);
 
   //CHECK:{
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_D2Z->commit(q_ct1);
   //CHECK-NEXT:auto idata_mmany64_D2Z_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata_mmany64_D2Z);
   //CHECK-NEXT:if ((void *)idata_mmany64_D2Z == (void *)odata_mmany64_D2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan_mmany64_D2Z, idata_mmany64_D2Z_buf_ct{{[0-9]+}});

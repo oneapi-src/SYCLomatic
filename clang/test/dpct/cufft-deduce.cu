@@ -18,6 +18,10 @@ constexpr int rank = 3;
 //CHECK:void foo1(std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>> plan) {
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2* idata;
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  plan->commit(dpct::get_default_queue());
 //CHECK-NEXT:  if ((void *)idata == (void *)odata) {
 //CHECK-NEXT:  oneapi::mkl::dft::compute_backward(*plan, (double*)idata);
 //CHECK-NEXT:  } else {
@@ -33,6 +37,10 @@ void foo1(cufftHandle plan) {
 //CHECK:void foo2(std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>> plan) {
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2* idata;
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  plan->commit(dpct::get_default_queue());
 //CHECK-NEXT:  if ((void *)idata == (void *)odata) {
 //CHECK-NEXT:  oneapi::mkl::dft::compute_backward(*plan, (double*)idata);
 //CHECK-NEXT:  } else {
@@ -73,7 +81,6 @@ int main() {
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n[2]*n[1]*n[0]);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan1->commit(q_ct1);
   cufftHandle plan1;
   cufftMakePlanMany(plan1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
 
@@ -100,7 +107,6 @@ int main() {
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n[2]*n[1]*n[0]);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan2->commit(q_ct1);
   cufftHandle plan2;
   cufftMakePlanMany(plan2, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
 
@@ -128,7 +134,6 @@ int main() {
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, n[2]*n[1]*n[0]);
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n[2]*n[1]*(n[0]/2+1));
   //CHECK-NEXT:}
-  //CHECK-NEXT:plan3->commit(q_ct1);
   cufftHandle plan3;
   cufftMakePlanMany(plan3, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);
 
