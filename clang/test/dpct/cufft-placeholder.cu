@@ -58,19 +58,19 @@ int main() {
   //CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> plan1;
   //CHECK-NEXT:int type1 = 108;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the dimensions and strides could not be deduced. You need to update the dpct_placeholder.
+  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: Value of dimensions and strides could not be deduced. You need to update 'dpct_placeholder' manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the FFT type could not be deduced. You need to update the FWD_DISTANCE and the BWD_DISTANCE.
+  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: Value of FFT type could not be deduced. You need to update 'FWD_DISTANCE' and 'BWD_DISTANCE' manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>(dpct_placeholder/*Fix the dimensions manually*/);
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -92,19 +92,19 @@ int main() {
   //CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> plan2;
   //CHECK-NEXT:int type2 = 44;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the dimensions and strides could not be deduced. You need to update the dpct_placeholder.
+  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: Value of dimensions and strides could not be deduced. You need to update 'dpct_placeholder' manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: The argument of the FFT type could not be deduced. You need to update the FWD_DISTANCE and the BWD_DISTANCE.
+  //CHECK-NEXT:DPCT1068:{{[0-9]+}}: Value of FFT type could not be deduced. You need to update 'FWD_DISTANCE' and 'BWD_DISTANCE' manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>(dpct_placeholder/*Fix the dimensions manually*/);
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);

@@ -96,19 +96,19 @@ void create_array_fail() {
   p = &d[5];
 
   // CHECK: /*
-  // CHECK-NEXT:  DPCT1073:0: The fields' values of parameter 'd' could not be deduced, so the call was not migrated. You need to update this code manually.
+  // CHECK-NEXT:  DPCT1073:0: The field values of parameter 'd' could not be deduced, so the call was not migrated. You need to update this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuArrayCreate(&a, d);
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:1: The fields' values of parameter 'p' could not be deduced, so the call was not migrated. You need to update this code manually.
+  // CHECK-NEXT:  DPCT1073:1: The field values of parameter 'p' could not be deduced, so the call was not migrated. You need to update this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuArrayCreate(&a, p);
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:2: The fields' values of parameter 'p + i' could not be deduced, so the call was not migrated. You need to update this code manually.
+  // CHECK-NEXT:  DPCT1073:2: The field values of parameter 'p + i' could not be deduced, so the call was not migrated. You need to update this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuArrayCreate(&a, p + i);
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:3: The fields' values of parameter '&d[i]' could not be deduced, so the call was not migrated. You need to update this code manually.
+  // CHECK-NEXT:  DPCT1073:3: The field values of parameter '&d[i]' could not be deduced, so the call was not migrated. You need to update this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuArrayCreate(&a, &d[i]);
   cuArrayCreate(&a, d);
@@ -145,11 +145,11 @@ void test_texref() {
   funcT(cuTexRefSetFormat(tex,format,4));
   
   // CHECK: /*
-  // CHECK-NEXT: DPCT1074:4: Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.
+  // CHECK-NEXT: DPCT1074:4: SYCL Image doesn't support some of the flags used in the original code and unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex->set_coordinate_normalization_mode(flags & 0x02);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1074:5: Sycl::image only support coordinate normalization setting, other flag setting is ignored, and data read out from sycl::image can not be normalized.
+  // CHECK-NEXT: DPCT1074:5: SYCL Image doesn't support some of the flags used in the original code and unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set(sycl::coordinate_normalization_mode::normalized), 0);
   // CHECK-NEXT: cudaCheck((tex->set(sycl::coordinate_normalization_mode::normalized), 0));

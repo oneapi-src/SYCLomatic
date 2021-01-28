@@ -47,7 +47,7 @@ int main() {
   cudaMalloc(&b2, sizeof(AAA));
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument a of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
@@ -60,7 +60,7 @@ int main() {
   k1<<<1,1>>>(a);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument b1 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b1' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> b1_buf_ct0 = dpct::get_buffer_and_offset(b1);
@@ -80,7 +80,7 @@ int main() {
   k2<<<1,1>>>(b1);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument b2 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b2' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:  dpct::buffer_t b2_buf_ct0 = dpct::get_buffer(b2);
@@ -98,7 +98,7 @@ int main() {
   k2<<<1,1>>>(b2);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument a1 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a1' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> a1_buf_ct0 = dpct::get_buffer_and_offset(a1);
@@ -118,7 +118,7 @@ int main() {
   k3<<<1,1>>>(a1);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument a2 of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a2' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> a2_buf_ct0 = dpct::get_buffer_and_offset(a2);
@@ -139,7 +139,7 @@ int main() {
 
   BBB b;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument b of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
@@ -153,7 +153,7 @@ int main() {
 
   EEE e;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument e of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
+  //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'e' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
   //CHECK-NEXT:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {

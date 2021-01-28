@@ -14,7 +14,7 @@ int main() {
   float2* idata_1d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(10);
   //CHECK-NEXT:plan_1d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -39,7 +39,7 @@ int main() {
   float2* idata_1d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_1d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -66,7 +66,7 @@ int main() {
   float* idata_1d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_1d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -93,7 +93,7 @@ int main() {
   double2* idata_1d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(10);
   //CHECK-NEXT:plan_1d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -118,7 +118,7 @@ int main() {
   double2* idata_1d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_1d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -145,7 +145,7 @@ int main() {
   double* idata_1d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_1d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_1d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -172,7 +172,7 @@ int main() {
   float2* idata_2d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -194,7 +194,7 @@ int main() {
   float2* idata_2d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -218,7 +218,7 @@ int main() {
   float* idata_2d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -242,7 +242,7 @@ int main() {
   double2* idata_2d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -264,7 +264,7 @@ int main() {
   double2* idata_2d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -288,7 +288,7 @@ int main() {
   double* idata_2d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_2d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_2d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -312,7 +312,7 @@ int main() {
   float2* idata_3d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -334,7 +334,7 @@ int main() {
   float2* idata_3d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -358,7 +358,7 @@ int main() {
   float* idata_3d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -382,7 +382,7 @@ int main() {
   double2* idata_3d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -404,7 +404,7 @@ int main() {
   double2* idata_3d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -428,7 +428,7 @@ int main() {
   double* idata_3d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_3d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_3d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -466,7 +466,7 @@ int main() {
   float2* idata_many_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_many_C2C[0], n_many_C2C[1], n_many_C2C[2]});
   //CHECK-NEXT:plan_many_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -514,7 +514,7 @@ int main() {
   float2* idata_many_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_many_C2R[0], n_many_C2R[1], n_many_C2R[2]});
   //CHECK-NEXT:plan_many_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -564,7 +564,7 @@ int main() {
   float* idata_many_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_many_R2C[0], n_many_R2C[1], n_many_R2C[2]});
   //CHECK-NEXT:plan_many_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -614,7 +614,7 @@ int main() {
   double2* idata_many_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_many_Z2Z[0], n_many_Z2Z[1], n_many_Z2Z[2]});
   //CHECK-NEXT:plan_many_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -662,7 +662,7 @@ int main() {
   double2* idata_many_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_many_Z2D[0], n_many_Z2D[1], n_many_Z2D[2]});
   //CHECK-NEXT:plan_many_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -712,7 +712,7 @@ int main() {
   double* idata_many_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_many_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_many_D2Z[0], n_many_D2Z[1], n_many_D2Z[2]});
   //CHECK-NEXT:plan_many_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -750,10 +750,10 @@ int main() {
   float2* idata_m1d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_C2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_C2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(10);
   //CHECK-NEXT:plan_m1d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -780,10 +780,10 @@ int main() {
   float2* idata_m1d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_C2R is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_C2R' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_m1d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -812,10 +812,10 @@ int main() {
   float* idata_m1d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_R2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_R2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_m1d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -844,10 +844,10 @@ int main() {
   double2* idata_m1d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_Z2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_Z2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(10);
   //CHECK-NEXT:plan_m1d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -874,10 +874,10 @@ int main() {
   double2* idata_m1d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_Z2D is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_Z2D' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_m1d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -906,10 +906,10 @@ int main() {
   double* idata_m1d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m1d_D2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m1d_D2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
   //CHECK-NEXT:plan_m1d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -938,10 +938,10 @@ int main() {
   float2* idata_m2d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_C2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_C2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -965,10 +965,10 @@ int main() {
   float2* idata_m2d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_C2R is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_C2R' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -994,10 +994,10 @@ int main() {
   float* idata_m2d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_R2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_R2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1023,10 +1023,10 @@ int main() {
   double2* idata_m2d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_Z2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_Z2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1050,10 +1050,10 @@ int main() {
   double2* idata_m2d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_Z2D is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_Z2D' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1079,10 +1079,10 @@ int main() {
   double* idata_m2d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m2d_D2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m2d_D2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20});
   //CHECK-NEXT:plan_m2d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1108,10 +1108,10 @@ int main() {
   float2* idata_m3d_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_C2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_C2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1135,10 +1135,10 @@ int main() {
   float2* idata_m3d_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_C2R is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_C2R' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1164,10 +1164,10 @@ int main() {
   float* idata_m3d_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_R2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_R2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1193,10 +1193,10 @@ int main() {
   double2* idata_m3d_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_Z2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_Z2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1220,10 +1220,10 @@ int main() {
   double2* idata_m3d_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_Z2D is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_Z2D' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1249,10 +1249,10 @@ int main() {
   double* idata_m3d_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_m3d_D2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_m3d_D2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{10, 20, 30});
   //CHECK-NEXT:plan_m3d_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1292,10 +1292,10 @@ int main() {
   float2* idata_mmany_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_C2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_C2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_mmany_C2C[0], n_mmany_C2C[1], n_mmany_C2C[2]});
   //CHECK-NEXT:plan_mmany_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1345,10 +1345,10 @@ int main() {
   float2* idata_mmany_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_C2R is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_C2R' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany_C2R[0], n_mmany_C2R[1], n_mmany_C2R[2]});
   //CHECK-NEXT:plan_mmany_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1400,10 +1400,10 @@ int main() {
   float* idata_mmany_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_R2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_R2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany_R2C[0], n_mmany_R2C[1], n_mmany_R2C[2]});
   //CHECK-NEXT:plan_mmany_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1455,10 +1455,10 @@ int main() {
   double2* idata_mmany_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_Z2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_Z2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_mmany_Z2Z[0], n_mmany_Z2Z[1], n_mmany_Z2Z[2]});
   //CHECK-NEXT:plan_mmany_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1508,10 +1508,10 @@ int main() {
   double2* idata_mmany_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_Z2D is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_Z2D' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany_Z2D[0], n_mmany_Z2D[1], n_mmany_Z2D[2]});
   //CHECK-NEXT:plan_mmany_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1563,10 +1563,10 @@ int main() {
   double* idata_mmany_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany_D2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany_D2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany_D2Z[0], n_mmany_D2Z[1], n_mmany_D2Z[2]});
   //CHECK-NEXT:plan_mmany_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1618,10 +1618,10 @@ int main() {
   float2* idata_mmany64_C2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_C2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_C2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_C2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_mmany64_C2C[0], n_mmany64_C2C[1], n_mmany64_C2C[2]});
   //CHECK-NEXT:plan_mmany64_C2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1671,10 +1671,10 @@ int main() {
   float2* idata_mmany64_C2R;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_C2R is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_C2R' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_C2R = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany64_C2R[0], n_mmany64_C2R[1], n_mmany64_C2R[2]});
   //CHECK-NEXT:plan_mmany64_C2R->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1726,10 +1726,10 @@ int main() {
   float* idata_mmany64_R2C;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_R2C is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_R2C' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_R2C = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany64_R2C[0], n_mmany64_R2C[1], n_mmany64_R2C[2]});
   //CHECK-NEXT:plan_mmany64_R2C->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1781,10 +1781,10 @@ int main() {
   double2* idata_mmany64_Z2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_Z2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_Z2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_mmany64_Z2Z[0], n_mmany64_Z2Z[1], n_mmany64_Z2Z[2]});
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1834,10 +1834,10 @@ int main() {
   double2* idata_mmany64_Z2D;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_Z2D is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_Z2D' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2D = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany64_Z2D[0], n_mmany64_Z2D[1], n_mmany64_Z2D[2]});
   //CHECK-NEXT:plan_mmany64_Z2D->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -1889,10 +1889,10 @@ int main() {
   double* idata_mmany64_D2Z;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The argument work_size_mmany64_D2Z is not supported in the migrated API. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_D2Z' parameter could not be migrated. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced. It is migrated as out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_D2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n_mmany64_D2Z[0], n_mmany64_D2Z[1], n_mmany64_D2Z[2]});
   //CHECK-NEXT:plan_mmany64_D2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);

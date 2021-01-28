@@ -703,7 +703,7 @@ void FFTPlanAPIInfo::setValueFor1DBatched() {
   } else if (FFTType == FFTTypeEnum::Unknown) {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                              Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "the FWD_DISTANCE and the BWD_DISTANCE");
+                             "'FWD_DISTANCE' and 'BWD_DISTANCE'");
   }
 
   PrefixStmts.emplace_back(
@@ -878,7 +878,7 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
   } else {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                              Diagnostics::UNDEDUCED_PARAM, true, false,
-                             "dimensions and strides", "the dpct_placeholder");
+                             "dimensions and strides", "'dpct_placeholder'");
     Dims.emplace_back("dpct_placeholder/*Fix the dimensions manually*/");
     InStridesStr = "std::int64_t " + InputStrideName +
                    "[dpct_placeholder/*Fix the "
@@ -937,7 +937,7 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
   } else {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                              Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "the FWD_DISTANCE and the BWD_DISTANCE");
+                             "'FWD_DISTANCE' and 'BWD_DISTANCE'");
   }
 
   PrefixStmts.emplace_back(SetStr +
@@ -1054,7 +1054,7 @@ FFTPlanAPIInfo::update1D2D3DCommitPrefix(std::vector<std::string> Dims) {
   } else if (FFTType == FFTTypeEnum::Unknown) {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                              Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "the INPUT_STRIDES and the OUTPUT_STRIDES");
+                             "'INPUT_STRIDES' and 'OUTPUT_STRIDES'");
   }
   return ResultStmts;
 }

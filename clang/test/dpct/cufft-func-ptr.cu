@@ -24,8 +24,8 @@ int main() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:0: The placement of the FFT computational function cannot be deduced.
-//CHECK-NEXT:  It is migrated as out-of-place. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1071:0: The placement of the FFT computational function couldn't be
+//CHECK-NEXT:  deduced, assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
@@ -73,8 +73,8 @@ int foo1() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced.
-//CHECK-NEXT:  It is migrated as out-of-place. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be
+//CHECK-NEXT:  deduced, assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
@@ -122,8 +122,8 @@ int foo2() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced.
-//CHECK-NEXT:  It is migrated as out-of-place. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be
+//CHECK-NEXT:  deduced, assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
@@ -173,8 +173,8 @@ int foo3() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced.
-//CHECK-NEXT:  It is migrated as out-of-place. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be
+//CHECK-NEXT:  deduced, assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
@@ -222,8 +222,8 @@ int foo4() {
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>
 //CHECK-NEXT:      plan1;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function cannot be deduced.
-//CHECK-NEXT:  It is migrated as out-of-place. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be
+//CHECK-NEXT:  deduced, assumed out-of-place. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  plan1 = std::make_shared<oneapi::mkl::dft::descriptor<
 //CHECK-NEXT:      oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(10);
