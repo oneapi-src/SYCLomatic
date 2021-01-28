@@ -64,11 +64,11 @@ template<typename T>
 void temp2(){
   T* a, *b, *c;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<T>(a) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<T>(a) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: a = (T *)dpct::dpct_malloc(10 * sizeof(T));
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<T>(b) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<T>(b) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: b = (T *)dpct::dpct_malloc(10 * sizeof(T));
   // CHECK-NEXT: a = (T *)dpct::dpct_malloc(10 * sizeof(T));
@@ -90,7 +90,7 @@ template<typename T>
 void temp3(){
   A aa;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: aa.b.c.a = (int *)dpct::dpct_malloc(10 * sizeof(int));
   cudaMallocManaged(&aa.b.c.a, 10 * sizeof(int));
@@ -152,11 +152,11 @@ class A2{
 public:
   A2(){
     // CHECK: /*
-    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(a) to access it from the host code.
+    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(a) to access it from the host code.
     // CHECK-NEXT: */
     // CHECK-NEXT: a = (int *)dpct::dpct_malloc(10 * sizeof(int));
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(b) to access it from the host code.
+    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(b) to access it from the host code.
     // CHECK-NEXT: */
     // CHECK-NEXT: b = (int *)dpct::dpct_malloc(10 * sizeof(int));
     cudaMallocManaged(&a, 10 * sizeof(int));
@@ -186,7 +186,7 @@ public:
   A3(){
     A aa;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
+    // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
     // CHECK-NEXT: */
     // CHECK-NEXT: aa.b.c.a = (int *)dpct::dpct_malloc(10 * sizeof(int));
     cudaMallocManaged(&aa.b.c.a, 10 * sizeof(int));
@@ -241,11 +241,11 @@ void test1(){
 void test2(){
   float* a, *b, *c;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<float>(a) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<float>(a) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: a = (float *)dpct::dpct_malloc(10 * sizeof(float));
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<float>(b) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'b' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<float>(b) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: b = (float *)dpct::dpct_malloc(10 * sizeof(float));
   cudaMallocManaged(&a, 10 * sizeof(float));
@@ -266,7 +266,7 @@ void test2(){
 void test3(){
   A aa;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: Pointer 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
+  // CHECK-NEXT: DPCT1070:{{[0-9]+}}: 'aa.b.c.a' is allocated by dpct::dpct_malloc. Use dpct::get_host_ptr<int>(aa.b.c.a) to access it from the host code.
   // CHECK-NEXT: */
   // CHECK-NEXT: aa.b.c.a = (int *)dpct::dpct_malloc(10 * sizeof(int));
   cudaMallocManaged(&aa.b.c.a, 10 * sizeof(int));

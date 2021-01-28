@@ -825,19 +825,19 @@ void testCommas_in_global_memory() {
 
   size_t result1, result2;
   // CHECK: /*
-  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size. You may need to adjust the code.
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size currently. You may need to adjust the code.
   // CHECK: */
   // CHECK: result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
   cuMemGetInfo(&result1, &result2);
 
   // CHECK: /*
-  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size. You may need to adjust the code.
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size currently. You may need to adjust the code.
   // CHECK: */
   // CHECK: err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
   err = cuMemGetInfo(&result1, &result2);
 
   // CHECK: /*
-  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size. You may need to adjust the code.
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ does not support get free device memory size currently. You may need to adjust the code.
   // CHECK: */
   // CHECK: checkError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
   checkError(cuMemGetInfo(&result1, &result2));
