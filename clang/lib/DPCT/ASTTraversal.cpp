@@ -2066,16 +2066,24 @@ void ThrustFunctionRule::thrustFuncMigration(
     // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
     // without creating a unique one for every use
     if (ExtraParam == "oneapi::dpl::execution::sycl") {
-      std::string Name = UniqueName(CE);
-      if (checkWhetherIsDuplicate(CE, false))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
-      std::string TemplateArg = "";
-      if (DpctGlobalInfo::isSyclNamedLambda())
-        TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
-      ExtraParam = "oneapi::dpl::execution::make_device_policy" + TemplateArg +
-                   "({{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      // If no policy is specified and raw pointers are used
+      // a host execution policy must be specified to match the thrust
+      // behavior
+      if (CE->getArg(0)->getType()->isPointerType()) {
+        ExtraParam = "oneapi::dpl::execution::seq";
+      } else {
+        std::string Name = UniqueName(CE);
+        if (checkWhetherIsDuplicate(CE, false))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+        std::string TemplateArg = "";
+        if (DpctGlobalInfo::isSyclNamedLambda())
+          TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
+        ExtraParam = "oneapi::dpl::execution::make_device_policy" +
+                     TemplateArg + "({{NEEDREPLACEQ" + std::to_string(Index) +
+                     "}})";
+      }
     }
     emplaceTransformation(
         new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
