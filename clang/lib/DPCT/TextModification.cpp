@@ -278,7 +278,7 @@ ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   recordMigrationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), SM.getSpellingLoc(C->getBeginLoc()),
-      getCalleeName(Context).size(), ReplStr, this);
+      getCalleeName(C).size(), ReplStr, this);
 }
 
 std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
@@ -879,7 +879,7 @@ void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, C->getBeginLoc(), Context, PrintDetail);
-  OS << getCalleeName(Context);
+  OS << getCalleeName(C);
   printReplacement(OS, ReplStr);
 }
 

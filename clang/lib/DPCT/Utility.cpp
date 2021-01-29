@@ -2435,3 +2435,19 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
 
   return false;
 }
+
+
+llvm::StringRef getCalleeName(const CallExpr *CE) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  const char *Start = SM.getCharacterData(SM.getSpellingLoc(CE->getBeginLoc()));
+  const char *End = Start;
+  int StrSize = 0;
+  while (((int)(*End) >= (int)'A' && (int)(*End) <= (int)'Z') ||
+         ((int)(*End) >= (int)'a' && (int)(*End) <= (int)'z') ||
+         ((int)(*End) >= (int)'0' && (int)(*End) <= (int)':') ||
+         (int)(*End) == (int)'_') {
+    StrSize++;
+    End++;
+  }
+  return llvm::StringRef(Start, StrSize);
+}

@@ -548,19 +548,33 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
-    if (Result.hasValue()) {
-      auto ResultStr = Result.getValue();
-      auto LocStr = getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
-      auto &FCIMMR = dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
-      if (FCIMMR.find(LocStr) != FCIMMR.end() &&
+    if (Rewriter->isNoRewrite()) {
+      // if the function is NoRewrite
+      // Only change the function name in the spelling loc and
+      // applyAllSubExprRepl
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        addExtReplacement(std::make_shared<ExtReplacement>(
+            SM, SM.getSpellingLoc(CE->getBeginLoc()),
+            getCalleeName(CE).size(), ResultStr, nullptr));
+        applyAllSubExprRepl();
+      }
+    } else {
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        auto LocStr = getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+        auto &FCIMMR = dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+        if (FCIMMR.find(LocStr) != FCIMMR.end() &&
           FCIMMR.find(LocStr)->second.compare(ResultStr) &&
           !isExprStraddle(CE)) {
-        Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
-                         false, RefString);
-      } else {
-        FCIMMR[LocStr] = ResultStr;
-        addReplacement(CE, ResultStr);
-        return;
+          Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
+            false, RefString);
+        }
+        else {
+          FCIMMR[LocStr] = ResultStr;
+          addReplacement(CE, ResultStr);
+          return;
+        }
       }
     }
   }

@@ -7,6 +7,7 @@
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
+#include <iostream>
 #include "macro_test.h"
 
 #define CUDA_NUM_THREADS 1024+32
@@ -764,3 +765,17 @@ void foo15(){
 //CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
 __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x); }
+
+//CHECK: #define _mulhilo_(W, Word, NAME)                                               \
+//CHECK-NEXT: Word mulhilo##W(Word a, Word b, Word *hip) {                                 \
+//CHECK-NEXT:     *hip = NAME(a, b);                                                         \
+//CHECK-NEXT:     return a * b;                                                              \
+//CHECK-NEXT: }
+//CHECK-NEXT: _mulhilo_(64, uint64_t, sycl::mul_hi)
+#include "cuda_fp16.h"
+#define _mulhilo_(W, Word, NAME)                       \
+__device__ Word mulhilo##W(Word a, Word b, Word* hip){ \
+    *hip = NAME(a, b);                                 \
+    return a*b;                                        \
+}
+_mulhilo_(64, uint64_t, __umul64hi)

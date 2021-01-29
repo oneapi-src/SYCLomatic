@@ -26,6 +26,7 @@ class MathTypeCastRewriter;
 class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
+class NoRewriteFuncNameRewriter;
 template <class... MsgArgs> class UnsupportFunctionRewriter;
 
 /*
@@ -75,6 +76,8 @@ using FuncCallExprRewriterFactory =
     CallExprRewriterFactory<FuncCallExprRewriter, std::string>;
 using MathFuncNameRewriterFactory =
     CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
+using NoRewriteFuncNameRewriterFactory =
+    CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
 using MathUnsupportedRewriterFactory =
     CallExprRewriterFactory<MathUnsupportedRewriter, std::string>;
 using MathSimulatedRewriterFactory =
@@ -104,7 +107,7 @@ protected:
   // supposed to be protected instead of public.
   CallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName)
       : Call(Call), SourceCalleeName(SourceCalleeName) {}
-
+  bool NoRewrite = false;
 public:
   virtual ~CallExprRewriter() {}
 
@@ -132,6 +135,10 @@ public:
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
         T->getReplacement(DpctGlobalInfo::getContext()));
+  }
+
+  bool isNoRewrite() {
+    return NoRewrite;
   }
 protected:
   std::vector<std::string> getMigratedArgs();
@@ -232,24 +239,36 @@ protected:
   void reportUnsupportedRoundingMode();
 };
 
+
 /// The rewriter for renaming math function calls
 class MathFuncNameRewriter : public MathCallExprRewriter {
 protected:
   MathFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeName)
-      : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+    StringRef TargetCalleeName)
+    : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
 
 public:
   virtual Optional<std::string> rewrite() override;
 
 protected:
   std::string getNewFuncName();
-
-  friend MathFuncNameRewriterFactory;
-
-private:
   static const std::vector<std::string> SingleFuctions;
   static const std::vector<std::string> DoubleFuctions;
+  friend MathFuncNameRewriterFactory;
+};
+
+/// The rewriter for renaming math function calls
+class NoRewriteFuncNameRewriter : public MathFuncNameRewriter {
+protected:
+  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+    StringRef TargetCalleeName)
+    : MathFuncNameRewriter(Call, SourceCalleeName, TargetCalleeName) {
+    NoRewrite = true;
+  }
+
+public:
+  virtual Optional<std::string> rewrite() override;
+  friend NoRewriteFuncNameRewriterFactory;
 };
 
 /// The rewriter for warning on unsupported math functions

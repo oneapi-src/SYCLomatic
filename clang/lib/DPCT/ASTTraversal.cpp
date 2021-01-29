@@ -329,6 +329,14 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 }
 std::shared_ptr<TextModification>
 IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
+  const char * C = SM.getCharacterData(Range.getBegin());
+  int Offset = 0;
+  // Skip '\\', '\n' and '\r' when in macro define
+  while (*(C + Offset) == '\\' || *(C + Offset) == '\n' ||
+         *(C + Offset) == '\r') {
+    Offset += 1;
+  }
+  Range = SourceRange(Range.getBegin().getLocWithOffset(Offset), Range.getEnd());
   return std::make_shared<ReplaceText>(Range.getBegin(),
                          getLenIncludingTrailingSpaces(Range, SM), "", true);
 }
@@ -11661,6 +11669,7 @@ REGISTER_RULE(GuessIndentWidthRule)
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> MathFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -11669,6 +11678,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
 #undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED

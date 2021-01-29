@@ -465,4 +465,5 @@ clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName);
 bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR);
+llvm::StringRef getCalleeName(const clang::CallExpr *CE);
 #endif // DPCT_UTILITY_H
