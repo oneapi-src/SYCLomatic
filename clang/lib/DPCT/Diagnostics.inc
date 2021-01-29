@@ -168,5 +168,7 @@ DEF_WARNING(TEX_FLAG_UNSUPPORT, 1074, "SYCL Image doesn't support some of the fl
 DEF_COMMENT(TEX_FLAG_UNSUPPORT, 1074, "SYCL Image doesn't support some of the flags used in the original code and unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.")
 DEF_WARNING(CHECK_RELATED_QUEUE, 1075, "Migration of cuFFT calls may be incorrect and requires review.")
 DEF_COMMENT(CHECK_RELATED_QUEUE, 1075, "Migration of cuFFT calls may be incorrect and requires review.")
+DEF_WARNING(UNPROCESSED_DEVICE_ATTRIBUTE, 1076, "The device attribute is not %0. You may need to adjust the code.")
+DEF_COMMENT(UNPROCESSED_DEVICE_ATTRIBUTE, 1076, "The device attribute is not {0}. You may need to adjust the code.")
 DEF_WARNING(MACRO_SAME_AS_SYCL_TYPE, 1077, "'%0' redefines standard SYCL type, which may cause conflicts.")
 DEF_COMMENT(MACRO_SAME_AS_SYCL_TYPE, 1077, "'{0}' redefines standard SYCL type, which may cause conflicts.")

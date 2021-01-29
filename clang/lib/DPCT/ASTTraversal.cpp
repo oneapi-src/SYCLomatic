@@ -8002,6 +8002,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if(auto DRE = dyn_cast<DeclRefExpr>(AttrArg)){
       AttributeName = DRE->getNameInfo().getName().getAsString();
     } else {
+      report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+             false, "recognized by Intel(R) DPC++ Compatibility Tool");
       return;
     }
     std::string ReplStr{ResultVarName};
@@ -13647,7 +13649,7 @@ void DriverDeviceAPIRule::run(const ast_matchers::MatchFinder::MatchResult &Resu
     if(IsAssigned)
       OS << "(";
     auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
-    auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
+    auto SecArg = CE->getArg(1);
     auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
 
     std::string AttributeName;
@@ -13661,7 +13663,9 @@ void DriverDeviceAPIRule::run(const ast_matchers::MatchFinder::MatchResult &Resu
         return;
       }
       SYCLCallName = Search->second;
-    }else{
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+             false, "recognized by Intel(R) DPC++ Compatibility Tool");
       return;
     }
     printDerefOp(OS, FirArg);

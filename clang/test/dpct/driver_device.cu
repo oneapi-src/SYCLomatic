@@ -32,6 +32,13 @@ int main(){
   // CHECK: CUDA_SAFE_CALL((device = 0, 0));
   CUDA_SAFE_CALL(cuDeviceGet(&device, 0));
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute is not recognized by Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuDeviceGetAttribute(&result1, attr, device);
+  CUdevice_attribute attr = CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK;
+  cuDeviceGetAttribute(&result1, attr, device);
+
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
 
