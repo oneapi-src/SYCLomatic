@@ -216,7 +216,7 @@ void foo(){
   int flags = tex_tmp.flags;
   
   // CHECK: /*
-  // CHECK-NEXT: DPCT1074:0: SYCL Image doesn't support some of the flags used in the original code and unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
+  // CHECK-NEXT: DPCT1074:0: The SYCL image class doesn't support some of the flags used in the original code. Unsupported flags were ignored. Data read from the SYCL image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex_tmp.set_coordinate_normalization_mode(flags & 0x02);
   // CHECK-NEXT: tex_tmp.set(sycl::addressing_mode::clamp_to_edge);
@@ -226,7 +226,7 @@ void foo(){
   // CHECK-NEXT: tex_tmp.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: addr = tex_tmp.get_addressing_mode();
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1074:1: SYCL Image doesn't support some of the flags used in the original code and unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
+  // CHECK-NEXT: DPCT1074:1: The SYCL image class doesn't support some of the flags used in the original code. Unsupported flags were ignored. Data read from the SYCL image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
   tex_tmp.flags = flags;
