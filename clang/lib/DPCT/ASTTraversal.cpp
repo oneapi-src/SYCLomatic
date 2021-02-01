@@ -8809,7 +8809,9 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
           IsKernelInLoopStmt = true;
         }
 
-        handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
+        auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
+        if (FD && !FD->isTemplateInstantiation())
+          handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
         break;
       }
       case Stmt::ExprWithCleanupsClass: {
@@ -8823,7 +8825,9 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
             IsKernelInLoopStmt = true;
           }
 
-          handleKernelCalls(Node, KCall);
+          auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
+          if (FD && !FD->isTemplateInstantiation())
+            handleKernelCalls(Node, KCall);
         }
         break;
       }

@@ -312,3 +312,67 @@ void barr(int maxCalls) {
   }
   cudaEventElapsedTime( &total, evtStart[1], evtEnd[maxCalls-1]);
 }
+
+template <class T, int blockSize>
+__global__ void
+reduce(const T* __restrict__ g_idata, T* __restrict__ g_odata,
+       int n) {}
+
+template <class T, class vecT>
+void RunTest()
+{
+    int probSizes[4] = { 1, 8, 32, 64 };
+    int size;
+    // Convert to MiB
+    size = (size * 1024 * 1024) / sizeof(T);
+    // create input data on CPU
+    unsigned int bytes = size * sizeof(T);
+
+    // Allocate Host Memory
+    T* h_idata;
+    T* reference;
+    T* h_odata;
+
+    int num_blocks  = 64;
+    int num_threads = 256;
+    int smem_size = sizeof(T) * num_threads;
+
+    // Allocate device memory
+    T* d_idata, *d_odata, *d_block_sums;
+    cudaEvent_t start, stop;
+    int passes;
+    int iters;
+
+    for (int k = 0; k < passes; k++)
+    {
+        float totalScanTime = 0.0f;
+        SAFE_CALL(cudaEventRecord(start, 0));
+        for (int j = 0; j < iters; j++)
+        {
+// CHECK:            q_ct1.submit(
+// CHECK-NEXT:              [&](sycl::handler &cgh) {
+// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
+// CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
+// CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                    reduce<T, 256>(d_idata, d_block_sums, size);
+// CHECK-NEXT:                  });
+// CHECK-NEXT:              });
+            reduce<T, 256><<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
+        }
+        SAFE_CALL(cudaEventRecord(stop, 0));
+        SAFE_CALL(cudaEventSynchronize(stop));
+        cudaEventElapsedTime(&totalScanTime, start, stop);
+    }
+    SAFE_CALL(cudaFree(d_idata));
+    SAFE_CALL(cudaFree(d_odata));
+    SAFE_CALL(cudaFree(d_block_sums));
+    SAFE_CALL(cudaFreeHost(h_idata));
+    SAFE_CALL(cudaFreeHost(h_odata));
+    SAFE_CALL(cudaFreeHost(reference));
+    SAFE_CALL(cudaEventDestroy(start));
+    SAFE_CALL(cudaEventDestroy(stop));
+}
+
+int foo_test_5() {
+   RunTest<float, float4>();
+}

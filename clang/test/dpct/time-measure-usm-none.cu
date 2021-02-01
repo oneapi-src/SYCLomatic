@@ -428,7 +428,7 @@ __global__ void foo_kernel_2(){}
 __global__ void foo_kernel_3(){}
 __global__ void foo_kernel_4(){}
 
-int foo_test_2()
+int foo_test_4()
 {
     int n_streams = NSTREAM;
     int isize = 1;
@@ -509,4 +509,78 @@ int foo_test_2()
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     return 0;
+}
+
+template <class T, int blockSize>
+__global__ void
+reduce(const T* __restrict__ g_idata, T* __restrict__ g_odata,
+       int n) {}
+
+template <class T, class vecT>
+void RunTest()
+{
+    int probSizes[4] = { 1, 8, 32, 64 };
+    int size;
+    // Convert to MiB
+    size = (size * 1024 * 1024) / sizeof(T);
+    // create input data on CPU
+    unsigned int bytes = size * sizeof(T);
+
+    // Allocate Host Memory
+    T* h_idata;
+    T* reference;
+    T* h_odata;
+
+    int num_blocks  = 64;
+    int num_threads = 256;
+    int smem_size = sizeof(T) * num_threads;
+
+    // Allocate device memory
+    T* d_idata, *d_odata, *d_block_sums;
+
+    cudaEvent_t start, stop;
+    int passes;
+    int iters;
+
+    for (int k = 0; k < passes; k++)
+    {
+        float totalScanTime = 0.0f;
+        SAFE_CALL(cudaEventRecord(start, 0));
+        for (int j = 0; j < iters; j++)
+        {
+// CHECK:              std::pair<dpct::buffer_t, size_t> d_idata_buf_ct0 = dpct::get_buffer_and_offset(d_idata);
+// CHECK-NEXT:              size_t d_idata_offset_ct0 = d_idata_buf_ct0.second;
+// CHECK-NEXT:              std::pair<dpct::buffer_t, size_t> d_block_sums_buf_ct1 = dpct::get_buffer_and_offset(d_block_sums);
+// CHECK-NEXT:              size_t d_block_sums_offset_ct1 = d_block_sums_buf_ct1.second;
+// CHECK-NEXT:              dpct::get_default_queue().submit(
+// CHECK-NEXT:                [&](sycl::handler &cgh) {
+// CHECK-NEXT:                  auto d_idata_acc_ct0 = d_idata_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:                  auto d_block_sums_acc_ct1 = d_block_sums_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:                  cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
+// CHECK-NEXT:                    sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
+// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                      T *d_idata_ct0 = (T *)(&d_idata_acc_ct0[0] + d_idata_offset_ct0);
+// CHECK-NEXT:                      T *d_block_sums_ct1 = (T *)(&d_block_sums_acc_ct1[0] + d_block_sums_offset_ct1);
+// CHECK-NEXT:                      reduce<T, 256>(d_idata_ct0, d_block_sums_ct1, size);
+// CHECK-NEXT:                    });
+// CHECK-NEXT:                });
+            reduce<T, 256><<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
+        }
+        SAFE_CALL(cudaEventRecord(stop, 0));
+        SAFE_CALL(cudaEventSynchronize(stop));
+        cudaEventElapsedTime(&totalScanTime, start, stop);
+    }
+    SAFE_CALL(cudaFree(d_idata));
+    SAFE_CALL(cudaFree(d_odata));
+    SAFE_CALL(cudaFree(d_block_sums));
+    SAFE_CALL(cudaFreeHost(h_idata));
+    SAFE_CALL(cudaFreeHost(h_odata));
+    SAFE_CALL(cudaFreeHost(reference));
+    SAFE_CALL(cudaEventDestroy(start));
+    SAFE_CALL(cudaEventDestroy(stop));
+}
+
+int foo_test_5() {
+   RunTest<float, float4>();
 }
