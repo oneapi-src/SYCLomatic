@@ -584,3 +584,149 @@ void RunTest()
 int foo_test_5() {
    RunTest<float, float4>();
 }
+
+__global__ void foo_kernel_1(unsigned short* blk_sad, unsigned short* frame,
+                            int mb_width, int mb_height,
+                            unsigned short* img_ref) {}
+__global__ void foo_kernel_2(unsigned short* blk_sad, int mb_width,
+                                  int mb_height) {}
+
+__global__ void foo_kernel_3(unsigned short* blk_sad, int mb_width,
+                                   int mb_height) {}
+
+void ctst_1999(void* ref_image, void* cur_image,
+                    float* sad_calc_ms, float* sad_calc_8_ms,
+                    float* sad_calc_16_ms,
+                    unsigned short** h_sads) {
+    size_t image_width_macroblocks;
+    size_t image_height_macroblocks;
+    size_t image_size_macroblocks;
+    size_t nsads;
+    unsigned short* imgRef = NULL;
+    unsigned short* d_cur_image = NULL;
+    unsigned short* d_sads = NULL;
+
+// CHECK:     sycl::event sad_calc_start, sad_calc_stop;
+// CHECK-NEXT:     std::chrono::time_point<std::chrono::steady_clock> sad_calc_start_ct1;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_stop_ct1;
+    cudaEvent_t sad_calc_start, sad_calc_stop;
+    cudaEventCreate(&sad_calc_start);
+    cudaEventCreate(&sad_calc_stop);
+    cudaEventRecord(sad_calc_start);
+    dim3 foo_kernel_1_threads_in_block;
+    dim3 foo_kernel_1_blocks_in_grid;
+
+// CHECK:    {
+// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
+// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
+// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_cur_image_buf_ct1 = dpct::get_buffer_and_offset(d_cur_image);
+// CHECK-NEXT:      size_t d_cur_image_offset_ct1 = d_cur_image_buf_ct1.second;
+// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> imgRef_buf_ct4 = dpct::get_buffer_and_offset(imgRef);
+// CHECK-NEXT:      size_t imgRef_offset_ct4 = imgRef_buf_ct4.second;
+// CHECK-NEXT:      q_ct1.submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:          auto d_cur_image_acc_ct1 = d_cur_image_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:          auto imgRef_acc_ct4 = imgRef_buf_ct4.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block), 
+// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
+// CHECK-NEXT:              unsigned short *d_cur_image_ct1 = (unsigned short *)(&d_cur_image_acc_ct1[0] + d_cur_image_offset_ct1);
+// CHECK-NEXT:              unsigned short *imgRef_ct4 = (unsigned short *)(&imgRef_acc_ct4[0] + imgRef_offset_ct4);
+// CHECK-NEXT:              foo_kernel_1(d_sads_ct0, d_cur_image_ct1, image_width_macroblocks, image_height_macroblocks, imgRef_ct4);
+// CHECK-NEXT:            });
+// CHECK-NEXT:        });
+// CHECK-NEXT:    }
+    foo_kernel_1<<<foo_kernel_1_blocks_in_grid,
+                  foo_kernel_1_threads_in_block>>>(d_sads, d_cur_image,
+                                                  image_width_macroblocks,
+                                                  image_height_macroblocks,
+                                                  imgRef);
+
+// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    sad_calc_stop_ct1 = std::chrono::steady_clock::now();
+    cudaEventRecord(sad_calc_stop);
+
+// CHECK:    sycl::event sad_calc_8_start, sad_calc_8_stop;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_8_start_ct1;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_8_stop_ct1;
+    cudaEvent_t sad_calc_8_start, sad_calc_8_stop;
+
+    cudaEventCreate(&sad_calc_8_start);
+    cudaEventCreate(&sad_calc_8_stop);
+    cudaEventRecord(sad_calc_8_start);
+    dim3 foo_kernel_2_threads_in_block;
+    dim3 foo_kernel_2_blocks_in_grid;
+
+// CHECK:    {
+// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
+// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
+// CHECK-NEXT:      q_ct1.submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block), 
+// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
+// CHECK-NEXT:              foo_kernel_2(d_sads_ct0, image_width_macroblocks, image_height_macroblocks);
+// CHECK-NEXT:            });
+// CHECK-NEXT:        });
+// CHECK-NEXT:    }
+    foo_kernel_2<<<
+      foo_kernel_2_blocks_in_grid,
+      foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
+                                            image_height_macroblocks);
+// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    sad_calc_8_stop_ct1 = std::chrono::steady_clock::now();
+    cudaEventRecord(sad_calc_8_stop);
+
+
+// CHECK:    sycl::event sad_calc_16_start, sad_calc_16_stop;
+// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_16_start_ct1;
+    cudaEvent_t sad_calc_16_start, sad_calc_16_stop;
+
+    cudaEventCreate(&sad_calc_16_start);
+    cudaEventCreate(&sad_calc_16_stop);
+    cudaEventRecord(sad_calc_16_start);
+    dim3 foo_kernel_3_threads_in_block;
+    dim3 foo_kernel_3_blocks_in_grid;
+
+// CHECK:    {
+// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
+// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
+// CHECK-NEXT:      q_ct1.submit(
+// CHECK-NEXT:        [&](sycl::handler &cgh) {
+// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block), 
+// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
+// CHECK-NEXT:              foo_kernel_3(d_sads_ct0, image_width_macroblocks, image_height_macroblocks);
+// CHECK-NEXT:            });
+// CHECK-NEXT:        });
+// CHECK-NEXT:    }
+    foo_kernel_3<<<
+      foo_kernel_3_blocks_in_grid,
+      foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
+                                             image_height_macroblocks);
+// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    sad_calc_16_stop_ct1 = std::chrono::steady_clock::now();
+    cudaEventRecord(sad_calc_16_stop);
+
+    cudaMallocHost((void **)h_sads, nsads * sizeof(unsigned short));
+    cudaMemcpy(*h_sads, d_sads, nsads * sizeof(*d_sads), cudaMemcpyDeviceToHost);
+    cudaFree(d_sads);
+    cudaFree(d_cur_image);
+    cudaFree(imgRef);
+
+// CHECK:    *(sad_calc_ms) = std::chrono::duration<float, std::milli>(sad_calc_stop_ct1 - sad_calc_start_ct1).count();
+// CHECK-NEXT:    *(sad_calc_8_ms) = std::chrono::duration<float, std::milli>(sad_calc_8_stop_ct1 - sad_calc_8_start_ct1).count();
+// CHECK-NEXT:    *(sad_calc_16_ms) = std::chrono::duration<float, std::milli>(sad_calc_16_stop_ct1 - sad_calc_16_start_ct1).count();
+    cudaEventElapsedTime(sad_calc_ms, sad_calc_start, sad_calc_stop);
+    cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
+    cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
+}

@@ -8852,6 +8852,10 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
   if (!EventExpr && TimeElapsedCE->getNumArgs() == 3)
     EventExpr = TimeElapsedCE->getArg(2);
 
+  // Skip statements before RecordBeginLoc or after RecordEndLoc
+  if (KCallLoc < RecordBeginLoc || KCallLoc > RecordEndLoc)
+    return;
+
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
     bool NeedWait = false;
     // In usmnone mode, if cudaThreadSynchronize apears after kernel call,
