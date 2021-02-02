@@ -103,8 +103,21 @@ public:
   template <typename InputIterator>
   device_vector(
       InputIterator first,
-      typename std::enable_if<internal::is_iterator<InputIterator>::value,
+      typename std::enable_if<internal::is_iterator<InputIterator>::value &&
+                                  !std::is_pointer<InputIterator>::value,
                               InputIterator>::type last)
+      : _alloc(get_default_queue()) {
+    _size = std::distance(first, last);
+    _capacity = 2 * _size;
+    _storage = _alloc.allocate(_capacity);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              first, last, begin());
+  }
+
+  template <typename InputIterator>
+  device_vector(InputIterator first,
+                typename std::enable_if<std::is_pointer<InputIterator>::value,
+                                        InputIterator>::type last)
       : _alloc(get_default_queue()) {
     _size = std::distance(first, last);
     _capacity = 2 * _size;
