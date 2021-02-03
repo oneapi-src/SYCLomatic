@@ -1,7 +1,7 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__CUDA_ARCH__=200
-// RUN: FileCheck --input-file %T/user_defined_cuda_arch.dp.cpp --match-full-lines %s
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__CUDA_ARCH__
-// RUN: FileCheck --input-file %T/user_defined_cuda_arch.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/user_defined_cuda_arch %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__CUDA_ARCH__=200
+// RUN: FileCheck --input-file %T/user_defined_cuda_arch/user_defined_cuda_arch.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/user_defined_cuda_arch %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__CUDA_ARCH__
+// RUN: FileCheck --input-file %T/user_defined_cuda_arch/user_defined_cuda_arch.dp.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT: void hello(const sycl::stream &[[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }

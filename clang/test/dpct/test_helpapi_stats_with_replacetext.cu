@@ -1,9 +1,12 @@
 // UNSUPPORTED: -windows-
-// RUN: cd %T
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: File name, LOC migrated to DPC++, LOC migrated to helper functions, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext_ref.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: {{(.+)}}/test_helpapi_stats_with_replacetext.cu, 14, 16, 44, 0" >> %T/test_helpapi_stats_with_replacetext_ref.txt
-// RUN: FileCheck --match-full-lines --input-file %T/stats.txt %T/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: mkdir %T/test_helpapi_stats_with_replacetext
+// RUN: cd %T/test_helpapi_stats_with_replacetext
+// RUN: dpct --format-range=none -out-root %T/test_helpapi_stats_with_replacetext %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: File name, LOC migrated to DPC++, LOC migrated to helper functions, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: {{(.+)}}/test_helpapi_stats_with_replacetext.cu, 14, 16, 47, 0" >> %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: FileCheck --match-full-lines --input-file %T/test_helpapi_stats_with_replacetext/stats.txt %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: cd ..
+// RUN: rm -rf ./test_helpapi_stats_with_replacetext
 
 #include <cstdio>
 #include <cublas_v2.h>

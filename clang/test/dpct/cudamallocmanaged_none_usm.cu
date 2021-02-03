@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
-// RUN: FileCheck %s --match-full-lines --input-file %T/cudamallocmanaged_none_usm.dp.cpp
+// RUN: dpct --format-range=none -usm-level=none -out-root %T/cudamallocmanaged_none_usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: FileCheck %s --match-full-lines --input-file %T/cudamallocmanaged_none_usm/cudamallocmanaged_none_usm.dp.cpp
 
 #define VECTOR_SIZE 256
 #include<cuda_runtime.h>

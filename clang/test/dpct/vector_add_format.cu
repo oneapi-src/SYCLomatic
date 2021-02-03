@@ -1,7 +1,10 @@
-// RUN: cat %s > %T/vector_add_format.cu
-// RUN: cd %T
-// RUN: dpct -out-root %T vector_add_format.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace vector_add_format.cu --match-full-lines --input-file %T/vector_add_format.dp.cpp
+// RUN: mkdir %T/vector_add_format
+// RUN: cat %s > %T/vector_add_format/vector_add_format.cu
+// RUN: cd %T/vector_add_format
+// RUN: dpct -out-root %T/vector_add_format vector_add_format.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/vector_add_format/vector_add_format.dp.cpp
+// RUN: cd ..
+// RUN: rm -rf ./vector_add_format
 
 #include <cuda.h>
 #include <stdio.h>
