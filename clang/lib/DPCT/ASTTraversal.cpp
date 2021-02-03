@@ -8011,7 +8011,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       AttributeName = DRE->getNameInfo().getName().getAsString();
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-             false, "recognized by Intel(R) DPC++ Compatibility Tool");
+             false, "recognized by the Intel(R) DPC++ Compatibility Tool");
       return;
     }
     std::string ReplStr{ResultVarName};
@@ -13683,7 +13683,7 @@ void DriverDeviceAPIRule::run(const ast_matchers::MatchFinder::MatchResult &Resu
       SYCLCallName = Search->second;
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-             false, "recognized by Intel(R) DPC++ Compatibility Tool");
+             false, "recognized by the Intel(R) DPC++ Compatibility Tool");
       return;
     }
     printDerefOp(OS, FirArg);

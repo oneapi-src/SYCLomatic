@@ -52,10 +52,10 @@ int main() {
 
   //CHECK:std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>> plan1;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -79,10 +79,10 @@ int main() {
 
   //CHECK:std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>> plan2;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -107,10 +107,10 @@ int main() {
 
   //CHECK:std::shared_ptr<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>> plan3;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan3 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);

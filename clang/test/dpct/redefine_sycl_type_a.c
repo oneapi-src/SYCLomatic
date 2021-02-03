@@ -6,15 +6,15 @@
 #include <stdint.h>
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'int2' redefines standard SYCL type, which may cause conflicts.
+// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'int2' redefines a standard SYCL type, which may cause conflicts.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define int2 int32_t
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'ulong4' redefines standard SYCL type, which may cause conflicts.
+// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'ulong4' redefines a standard SYCL type, which may cause conflicts.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define ulong4 uint32_t
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'uint4' redefines standard SYCL type, which may cause conflicts.
+// CHECK-NEXT: DPCT1077:{{[0-9]+}}: 'uint4' redefines a standard SYCL type, which may cause conflicts.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define uint4 uint32_t
 #define int2 int32_t

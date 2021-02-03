@@ -26,10 +26,10 @@ static void CufftHandleError( cufftResult err, const char *file, int line ) {
 int main() {
   cufftHandle plan1;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan1 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan1->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -65,10 +65,10 @@ int main() {
 
   cufftHandle plan2;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan2 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan2->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -103,10 +103,10 @@ int main() {
 
   cufftHandle plan3;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan3 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan3->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -146,10 +146,10 @@ int main() {
   cufftHandle plan4;
   cufftHandle plan5;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan4 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan4->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -173,10 +173,10 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:if(0) {
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -232,10 +232,10 @@ int main() {
 
   cufftHandle plan6;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan6 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan6->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -276,10 +276,10 @@ int main() {
 
   cufftHandle plan7;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan7 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan7->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -320,10 +320,10 @@ int main() {
 
   cufftHandle plan8;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -368,10 +368,10 @@ int main() {
 
   cufftHandle plan9;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -417,10 +417,10 @@ int main() {
   cufftHandle plan10;
   //CHECK:do {
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
@@ -464,10 +464,10 @@ int main() {
 
   cufftHandle plan11;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan11 = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan11->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -511,10 +511,10 @@ int main() {
 
 cufftResult foo1(cufftHandle plan) {
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -555,10 +555,10 @@ cufftResult foo2(cufftHandle plan) {
 
 cufftResult foo3(cufftHandle plan) {
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::REAL>>(std::vector<std::int64_t>{n[0], n[1], n[2]});
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);

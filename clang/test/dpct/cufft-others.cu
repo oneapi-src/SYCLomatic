@@ -20,7 +20,7 @@ int main() {
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, (10 + 2)/2+1);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and requires review.
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -50,10 +50,10 @@ int foo2() {
 
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: 'work_size_mmany64_Z2Z' parameter could not be migrated. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1067:{{[0-9]+}}: The 'work_size_mmany64_Z2Z' parameter could not be migrated. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function couldn't be deduced, assumed out-of-place. You may need to adjust the code.
+  //CHECK-NEXT:DPCT1071:{{[0-9]+}}: The placement of the FFT computational function could not be deduced, so it is assumed out-of-place. You may need to adjust the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z = std::make_shared<oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>(std::vector<std::int64_t>{n_mmany64_Z2Z[0], n_mmany64_Z2Z[1], n_mmany64_Z2Z[2]});
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
@@ -68,19 +68,19 @@ int foo2() {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, n_mmany64_Z2Z[2]*n_mmany64_Z2Z[1]*n_mmany64_Z2Z[0]);
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and requires review.
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: The input/output distance are migrated to FWD/BWD_DISTANCE. You may need to adjust the code manually.
+  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Input/Output distance are migrated to FWD/BWD_DISTANCE. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK-NEXT:if (inembed_mmany64_Z2Z != nullptr && onembed_mmany64_Z2Z != nullptr) {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, idist_mmany64_Z2Z);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, odist_mmany64_Z2Z);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and requires review.
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
   //CHECK-NEXT:}
@@ -92,13 +92,13 @@ int foo2() {
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_FORWARD);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: The input/output distance are migrated to FWD/BWD_DISTANCE. You may need to adjust the code manually.
+  //CHECK-NEXT:DPCT1066:{{[0-9]+}}: Input/Output distance are migrated to FWD/BWD_DISTANCE. You may need to update the code manually.
   //CHECK-NEXT:*/
   //CHECK:if (inembed_mmany64_Z2Z != nullptr && onembed_mmany64_Z2Z != nullptr) {
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, idist_mmany64_Z2Z);
   //CHECK-NEXT:plan_mmany64_Z2Z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, odist_mmany64_Z2Z);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and requires review.
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
   //CHECK-NEXT:}
@@ -127,7 +127,7 @@ int foo3(cudaStream_t stream) {
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, (10 + 2)/2+1);
   //CHECK-NEXT:plan->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, 3);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and requires review.
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan->commit(*stream);
   cufftSetStream(plan, stream);

@@ -145,11 +145,11 @@ void test_texref() {
   funcT(cuTexRefSetFormat(tex,format,4));
   
   // CHECK: /*
-  // CHECK-NEXT: DPCT1074:4: The SYCL image class doesn't support some of the flags used in the original code. Unsupported flags were ignored. Data read from the SYCL image could not be normalized as specified in the original code.
+  // CHECK-NEXT: DPCT1074:4: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex->set_coordinate_normalization_mode(flags & 0x02);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1074:5: The SYCL image class doesn't support some of the flags used in the original code. Unsupported flags were ignored. Data read from the SYCL image could not be normalized as specified in the original code.
+  // CHECK-NEXT: DPCT1074:5: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set(sycl::coordinate_normalization_mode::normalized), 0);
   // CHECK-NEXT: cudaCheck((tex->set(sycl::coordinate_normalization_mode::normalized), 0));

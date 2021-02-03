@@ -51,7 +51,7 @@ int val;
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute is not recognized by Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK_NEXT: cudaDeviceGetAttribute(&result, attr, dev_id);
 cudaDeviceAttr attr = cudaDevAttrComputeCapabilityMajor;
