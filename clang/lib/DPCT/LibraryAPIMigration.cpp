@@ -251,12 +251,11 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   // Now this function only covers this pattern:
   // cufftResult R = cufftAPI();
 
-  std::shared_ptr<ast_type_traits::DynTypedNode> P =
-      std::make_shared<ast_type_traits::DynTypedNode>(
-          ast_type_traits::DynTypedNode::create(*TheCallExpr));
+  std::shared_ptr<DynTypedNode> P =
+      std::make_shared<DynTypedNode>(DynTypedNode::create(*TheCallExpr));
   const VarDecl *VD = getNonImplicitCastParentNode(P)
-                          ? getNonImplicitCastParentNode(P)
-                              ->get<VarDecl>() : NULL;
+                          ? getNonImplicitCastParentNode(P)->get<VarDecl>()
+                          : NULL;
   if (!VD)
     return false;
   if (VD->getInitStyle() != VarDecl::InitializationStyle::CInit)

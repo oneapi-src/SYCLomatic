@@ -477,6 +477,7 @@ private:
   SDValue LowerHvxMulh(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerHvxSetCC(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerHvxExtend(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerHvxSelect(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerHvxShift(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerHvxIntrinsic(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerHvxMaskedOp(SDValue Op, SelectionDAG &DAG) const;
@@ -485,6 +486,7 @@ private:
   SDValue SplitHvxMemOp(SDValue Op, SelectionDAG &DAG) const;
   SDValue WidenHvxLoad(SDValue Op, SelectionDAG &DAG) const;
   SDValue WidenHvxStore(SDValue Op, SelectionDAG &DAG) const;
+  SDValue WidenHvxSetCC(SDValue Op, SelectionDAG &DAG) const;
   SDValue WidenHvxExtend(SDValue Op, SelectionDAG &DAG) const;
   SDValue WidenHvxTruncate(SDValue Op, SelectionDAG &DAG) const;
 

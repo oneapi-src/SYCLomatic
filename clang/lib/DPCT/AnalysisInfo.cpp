@@ -146,25 +146,27 @@ void DpctFileInfo::buildLinesInfo() {
   if (std::error_code ec = FE.getError())
     return;
   auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-  auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
-  if (!Content->SourceLineCache)
-    SM.getLineNumber(FID, 0);
-  auto LineCache = Content->SourceLineCache;
-  auto NumLines = Content->NumLines;
-  FileSize = Content->getSize();
-  if(auto RawBuffer = Content->getRawBuffer())
-    FileContentCache = RawBuffer->getBuffer().str();
-  const char *Buffer = nullptr;
-  if (!LineCache) {
-    return;
+  auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
+  if (!Content.SourceLineCache) {
+    bool Invalid;
+    SM.getLineNumber(FID, 0, &Invalid);
+    if (Invalid)
+      return;
   }
-  if (DpctGlobalInfo::isKeepOriginCode())
-    Buffer = Content->getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
-                 .getValueOr(llvm::MemoryBufferRef())
-                 .getBufferStart();
-  for (unsigned L = 1; L < Content->NumLines; ++L)
-    Lines.emplace_back(L, LineCache, Buffer);
-  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, Buffer);
+  auto RawBuffer =
+      Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
+          .getValueOr(llvm::MemoryBufferRef())
+          .getBuffer();
+  if (RawBuffer.empty())
+    return;
+  FileContentCache = RawBuffer.str();
+  FileSize = RawBuffer.size();
+  auto LineCache = Content.SourceLineCache.getLines();
+  auto NumLines = Content.SourceLineCache.size();
+  StringRef CacheBuffer(FileContentCache);
+  for (unsigned L = 1; L < NumLines; ++L)
+    Lines.emplace_back(L, LineCache, CacheBuffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
 }
 
 void DpctFileInfo::buildReplacements() {
@@ -2015,7 +2017,7 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
   for (auto VarAttr : Attrs) {
     auto Kind = VarAttr->getKind();
-    if (Kind == attr::CUDAManaged)
+    if (Kind == attr::HIPManaged)
       return Managed;
   }
   for (auto VarAttr : Attrs) {

@@ -33,9 +33,10 @@
 
 // Static initialization of HIP context for device ordinal 0.
 static auto InitializeCtx = [] {
+  HIP_REPORT_IF_ERROR(hipInit(/*flags=*/0));
   hipDevice_t device;
   HIP_REPORT_IF_ERROR(hipDeviceGet(&device, /*ordinal=*/0));
-  hipContext_t context;
+  hipCtx_t context;
   HIP_REPORT_IF_ERROR(hipCtxCreate(&context, /*flags=*/0, device));
   return 0;
 }();
@@ -44,6 +45,10 @@ extern "C" hipModule_t mgpuModuleLoad(void *data) {
   hipModule_t module = nullptr;
   HIP_REPORT_IF_ERROR(hipModuleLoadData(&module, data));
   return module;
+}
+
+extern "C" void mgpuModuleUnload(hipModule_t module) {
+  HIP_REPORT_IF_ERROR(hipModuleUnload(module));
 }
 
 extern "C" hipFunction_t mgpuModuleGetFunction(hipModule_t module,
@@ -101,6 +106,22 @@ extern "C" void mgpuEventSynchronize(hipEvent_t event) {
 
 extern "C" void mgpuEventRecord(hipEvent_t event, hipStream_t stream) {
   HIP_REPORT_IF_ERROR(hipEventRecord(event, stream));
+}
+
+extern "C" void *mgpuMemAlloc(uint64_t sizeBytes, hipStream_t /*stream*/) {
+  void *ptr;
+  HIP_REPORT_IF_ERROR(hipMalloc(&ptr, sizeBytes));
+  return ptr;
+}
+
+extern "C" void mgpuMemFree(void *ptr, hipStream_t /*stream*/) {
+  HIP_REPORT_IF_ERROR(hipFree(ptr));
+}
+
+extern "C" void mgpuMemcpy(void *dst, void *src, uint64_t sizeBytes,
+                           hipStream_t stream) {
+  HIP_REPORT_IF_ERROR(
+      hipMemcpyAsync(dst, src, sizeBytes, hipMemcpyDefault, stream));
 }
 
 /// Helper functions for writing mlir example code

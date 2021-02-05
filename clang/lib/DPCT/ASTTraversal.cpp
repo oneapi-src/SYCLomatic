@@ -3975,7 +3975,7 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
       isConditionOfFlowControl(DE, true)) {
     auto &Context = dpct::DpctGlobalInfo::getContext();
     auto ParentNodes = Context.getParents(*DE);
-    ast_type_traits::DynTypedNode ParentNode;
+    DynTypedNode ParentNode;
     bool MatchFunction = false;
     SourceLocation OperatorLoc;
     const BinaryOperator *BO = nullptr;
@@ -9465,7 +9465,7 @@ REGISTER_RULE(GlibcMemoryAPIRule)
 void MemVarRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-                    hasAttr(attr::CUDAShared), hasAttr(attr::CUDAManaged)),
+                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
   MF.addMatcher(DeclMatcher.bind("var"), this);
@@ -9903,7 +9903,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
       }
     } else {
       if (Var && !VD->getType()->isArrayType() &&
-          VD->hasAttr<CUDAManagedAttr>()) {
+          VD->hasAttr<HIPManagedAttr>()) {
         emplaceTransformation(new InsertAfterStmt(MemVarRef, "[0]"));
       }
     }
@@ -9913,7 +9913,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
     auto VarName = VD->getNameAsString();
     bool IsHost =
         !(VD->hasAttr<CUDAConstantAttr>() || VD->hasAttr<CUDADeviceAttr>() ||
-          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<CUDAManagedAttr>());
+          VD->hasAttr<CUDASharedAttr>() || VD->hasAttr<HIPManagedAttr>());
     if (IsHost) {
       dpct::DpctGlobalInfo::getGlobalVarNameSet().insert(VarName);
 
@@ -13082,7 +13082,7 @@ bool TextureRule::SettersMerger::tryMerge(const Stmt *BO) {
 
   Target = BO;
   auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(
-    BO, [&](const ast_type_traits::DynTypedNode &Node) -> bool {
+    BO, [&](const DynTypedNode &Node) -> bool {
     if (Node.get<IfStmt>() || Node.get<WhileStmt>() ||
       Node.get<ForStmt>() || Node.get<DoStmt>() || Node.get<CaseStmt>() ||
       Node.get<SwitchStmt>()||Node.get<CompoundStmt>()) {

@@ -36,9 +36,9 @@ __device__ void test() {
   c[0] = b[0][0] + a;
 }
 
+__device__ uint2 d[16];
 __global__ void kernel2(int4 i4, int* ip) {
   test();
-  __device__ uint2 d[16];
   __shared__ int e[12][12];
   d[0] = tex1D(tex21, 1);
   int i = 0;

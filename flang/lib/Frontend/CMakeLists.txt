@@ -1,6 +1,8 @@
 add_flang_library(flangFrontend
   CompilerInstance.cpp
   CompilerInvocation.cpp
+  FrontendAction.cpp
+  FrontendActions.cpp
   FrontendOptions.cpp
   TextDiagnosticPrinter.cpp
   TextDiagnosticBuffer.cpp
@@ -10,6 +12,9 @@ add_flang_library(flangFrontend
   clangBasic
 
   LINK_LIBS
+  FortranParser
+  FortranSemantics
+  FortranCommon
   clangBasic
   clangDriver
 

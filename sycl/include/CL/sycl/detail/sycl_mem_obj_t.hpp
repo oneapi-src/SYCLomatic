@@ -20,6 +20,7 @@
 #include <CL/sycl/stl.hpp>
 
 #include <cstring>
+#include <memory>
 #include <type_traits>
 
 __SYCL_INLINE_NAMESPACE(cl) {
@@ -150,7 +151,7 @@ public:
 
   __SYCL_DLL_LOCAL void set_final_data_from_storage() {
     MUploadDataFunctor = [this]() {
-      if (!MSharedPtrStorage.unique()) {
+      if (MSharedPtrStorage.use_count() > 1) {
         void *FinalData = const_cast<void *>(MSharedPtrStorage.get());
         updateHostMemory(FinalData);
       }
@@ -177,9 +178,10 @@ public:
       // ContiguousStorage. updateHostMemory works only with pointer to
       // continuous data.
       const size_t Size = MSizeInBytes / sizeof(DestinationValueT);
-      vector_class<DestinationValueT> ContiguousStorage(Size);
-      updateHostMemory(ContiguousStorage.data());
-      std::copy(ContiguousStorage.cbegin(), ContiguousStorage.cend(),
+      std::unique_ptr<DestinationValueT[]> ContiguousStorage(
+          new DestinationValueT[Size]);
+      updateHostMemory(ContiguousStorage.get());
+      std::copy(ContiguousStorage.get(), ContiguousStorage.get() + Size,
                 FinalData);
     };
   }
@@ -294,7 +296,13 @@ public:
 
   ContextImplPtr getInteropContext() const override { return MInteropContext; }
 
+  bool hasUserDataPtr() const { return MUserPtr != nullptr; };
+
 protected:
+  // An allocateMem helper that determines which host ptr to use
+  void determineHostPtr(const ContextImplPtr &Context, bool InitFromUserData,
+                        void *&HostPtr, bool &HostPtrReadOnly);
+
   // Allocator used for allocation memory on host.
   unique_ptr_class<SYCLMemObjAllocator> MAllocator;
   // Properties passed by user.

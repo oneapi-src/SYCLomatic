@@ -10,7 +10,6 @@
 
 #include <CL/sycl/access/access.hpp>
 #include <CL/sycl/accessor.hpp>
-#include <CL/sycl/atomic.hpp>
 #include <CL/sycl/context.hpp>
 #include <CL/sycl/detail/cg.hpp>
 #include <CL/sycl/detail/cg_types.hpp>
@@ -65,6 +64,9 @@ template <typename T_Src, int Dims_Src, cl::sycl::access::mode AccessMode_Src,
           cl::sycl::access::placeholder IsPlaceholder_Dst>
 class __copyAcc2Acc;
 
+// For unit testing purposes
+class MockHandler;
+
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 
@@ -74,10 +76,6 @@ class handler;
 template <typename T, int Dimensions, typename AllocatorT, typename Enable>
 class buffer;
 namespace detail {
-
-/// This class is the default KernelName template parameter type for kernel
-/// invocation APIs such as single_task.
-class auto_name {};
 
 class kernel_impl;
 class queue_impl;
@@ -108,16 +106,12 @@ SuggestedArgType argument_helper(...);
 template <typename F, typename SuggestedArgType>
 using lambda_arg_type = decltype(argument_helper<F, SuggestedArgType>(0));
 
-/// Helper struct to get a kernel name type based on given \c Name and \c Type
-/// types: if \c Name is undefined (is a \c auto_name) then \c Type becomes
-/// the \c Name.
-template <typename Name, typename Type> struct get_kernel_name_t {
-  using name = Name;
-};
+// Used when parallel_for range is rounded-up.
+template <typename Type> class __pf_kernel_wrapper;
 
-/// Specialization for the case when \c Name is undefined.
-template <typename Type> struct get_kernel_name_t<detail::auto_name, Type> {
-  using name = Type;
+template <typename Type> struct get_kernel_wrapper_name_t {
+  using name = __pf_kernel_wrapper<
+      typename get_kernel_name_t<detail::auto_name, Type>::name>;
 };
 
 template <typename, typename T> struct check_fn_signature {
@@ -161,8 +155,8 @@ template <int Dims> struct NotIntMsg<id<Dims>> {
 
 #if __SYCL_ID_QUERIES_FIT_IN_INT__
 template <typename T, typename ValT>
-typename std::enable_if<std::is_same<ValT, size_t>::value ||
-                        std::is_same<ValT, unsigned long long>::value>::type
+typename detail::enable_if_t<std::is_same<ValT, size_t>::value ||
+                             std::is_same<ValT, unsigned long long>::value>
 checkValueRangeImpl(ValT V) {
   static constexpr size_t Limit =
       static_cast<size_t>((std::numeric_limits<int>::max)());
@@ -172,8 +166,8 @@ checkValueRangeImpl(ValT V) {
 #endif
 
 template <int Dims, typename T>
-typename std::enable_if<std::is_same<T, range<Dims>>::value ||
-                        std::is_same<T, id<Dims>>::value>::type
+typename detail::enable_if_t<std::is_same<T, range<Dims>>::value ||
+                             std::is_same<T, id<Dims>>::value>
 checkValueRange(const T &V) {
 #if __SYCL_ID_QUERIES_FIT_IN_INT__
   for (size_t Dim = 0; Dim < Dims; ++Dim)
@@ -210,7 +204,7 @@ void checkValueRange(const range<Dims> &R, const id<Dims> &O) {
 }
 
 template <int Dims, typename T>
-typename std::enable_if<std::is_same<T, nd_range<Dims>>::value>::type
+typename detail::enable_if_t<std::is_same<T, nd_range<Dims>>::value>
 checkValueRange(const T &V) {
 #if __SYCL_ID_QUERIES_FIT_IN_INT__
   checkValueRange<Dims>(V.get_global_range());
@@ -299,8 +293,8 @@ private:
       : MQueue(std::move(Queue)), MIsHost(IsHost) {}
 
   /// Stores copy of Arg passed to the MArgsStorage.
-  template <typename T, typename F = typename std::remove_const<
-                            typename std::remove_reference<T>::type>::type>
+  template <typename T, typename F = typename detail::remove_const_t<
+                            typename detail::remove_reference_t<T>>>
   F *storePlainArg(T &&Arg) {
     MArgsStorage.emplace_back(sizeof(T));
     auto Storage = reinterpret_cast<F *>(MArgsStorage.back().data());
@@ -318,16 +312,29 @@ private:
 
   /// Extracts and prepares kernel arguments from the lambda using integration
   /// header.
+  /// TODO replace with the version below once ABI breaking changes are allowed.
   void
   extractArgsAndReqsFromLambda(char *LambdaPtr, size_t KernelArgsNum,
                                const detail::kernel_param_desc_t *KernelArgs);
 
+  /// Extracts and prepares kernel arguments from the lambda using integration
+  /// header.
+  void
+  extractArgsAndReqsFromLambda(char *LambdaPtr, size_t KernelArgsNum,
+                               const detail::kernel_param_desc_t *KernelArgs,
+                               bool IsESIMD);
+
   /// Extracts and prepares kernel arguments set via set_arg(s).
   void extractArgsAndReqs();
 
+  /// TODO replace with the version below once ABI breaking changes are allowed.
   void processArg(void *Ptr, const detail::kernel_param_kind_t &Kind,
                   const int Size, const size_t Index, size_t &IndexShift,
                   bool IsKernelCreatedFromSource);
+
+  void processArg(void *Ptr, const detail::kernel_param_kind_t &Kind,
+                  const int Size, const size_t Index, size_t &IndexShift,
+                  bool IsKernelCreatedFromSource, bool IsESIMD);
 
   /// \return a string containing name of SYCL kernel.
   string_class getKernelName();
@@ -411,7 +418,7 @@ private:
   // setArgHelper for non local accessor argument.
   template <typename DataT, int Dims, access::mode AccessMode,
             access::target AccessTarget, access::placeholder IsPlaceholder>
-  typename std::enable_if<AccessTarget != access::target::local, void>::type
+  typename detail::enable_if_t<AccessTarget != access::target::local, void>
   setArgHelper(
       int ArgIndex,
       accessor<DataT, Dims, AccessMode, AccessTarget, IsPlaceholder> &&Arg) {
@@ -484,15 +491,17 @@ private:
             typename LambdaArgType>
   void StoreLambda(KernelType KernelFunc) {
     MHostKernel.reset(
-        new detail::HostKernel<KernelType, LambdaArgType, Dims>(KernelFunc));
+        new detail::HostKernel<KernelType, LambdaArgType, Dims, KernelName>(
+            KernelFunc));
 
     using KI = sycl::detail::KernelInfo<KernelName>;
     // Empty name indicates that the compilation happens without integration
     // header, so don't perform things that require it.
     if (KI::getName() != nullptr && KI::getName()[0] != '\0') {
+      // TODO support ESIMD in no-integration-header case too.
       MArgs.clear();
       extractArgsAndReqsFromLambda(MHostKernel->getPtr(), KI::getNumParams(),
-                                   &KI::getParamDesc(0));
+                                   &KI::getParamDesc(0), KI::isESIMD());
       MKernelName = KI::getName();
       MOSModuleHandle = detail::OSUtil::getOSModuleHandle(KI::getName());
     } else {
@@ -523,7 +532,6 @@ private:
   ///
   /// \param Src is a source SYCL accessor.
   /// \param Dst is a destination SYCL accessor.
-  // TODO: support atomic accessor in Src or/and Dst.
   template <typename TSrc, int DimSrc, access::mode ModeSrc,
             access::target TargetSrc, typename TDst, int DimDst,
             access::mode ModeDst, access::target TargetDst,
@@ -548,60 +556,6 @@ private:
     return true;
   }
 
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<Dim == 0 && Mode == access::mode::atomic, T>
-  readFromFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Src) {
-#ifdef __ENABLE_USM_ADDR_SPACE__
-    atomic<T, access::address_space::global_device_space> AtomicSrc = Src;
-#else
-    atomic<T, access::address_space::global_space> AtomicSrc = Src;
-#endif // __ENABLE_USM_ADDR_SPACE__
-    return AtomicSrc.load();
-  }
-
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<(Dim > 0) && Mode == access::mode::atomic, T>
-  readFromFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Src) {
-    id<Dim> Id = getDelinearizedIndex(Src.get_range(), 0);
-    return Src[Id].load();
-  }
-
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<Mode != access::mode::atomic, T>
-  readFromFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Src) {
-    return *(Src.get_pointer());
-  }
-
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<Dim == 0 && Mode == access::mode::atomic, void>
-  writeToFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Dst, T V) {
-#ifdef __ENABLE_USM_ADDR_SPACE__
-    atomic<T, access::address_space::global_device_space> AtomicDst = Dst;
-#else
-    atomic<T, access::address_space::global_space> AtomicDst = Dst;
-#endif // __ENABLE_USM_ADDR_SPACE__
-    AtomicDst.store(V);
-  }
-
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<(Dim > 0) && Mode == access::mode::atomic, void>
-  writeToFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Dst, T V) {
-    id<Dim> Id = getDelinearizedIndex(Dst.get_range(), 0);
-    Dst[Id].store(V);
-  }
-
-  template <typename T, int Dim, access::mode Mode, access::target Target,
-            access::placeholder IsPH>
-  static detail::enable_if_t<Mode != access::mode::atomic, void>
-  writeToFirstAccElement(accessor<T, Dim, Mode, Target, IsPH> Dst, T V) {
-    *(Dst.get_pointer()) = V;
-  }
-
   /// Handles some special cases of the copy operation from one accessor
   /// to another accessor. Returns true if the copy is handled here.
   ///
@@ -622,7 +576,7 @@ private:
     single_task<class __copyAcc2Acc<TSrc, DimSrc, ModeSrc, TargetSrc,
                                     TDst, DimDst, ModeDst, TargetDst,
                                     IsPHSrc, IsPHDst>> ([=]() {
-      writeToFirstAccElement(Dst, readFromFirstAccElement(Src));
+      *(Dst.get_pointer()) = *(Src.get_pointer());
     });
     return true;
   }
@@ -642,7 +596,7 @@ private:
     parallel_for<class __copyAcc2Ptr<TSrc, TDst, Dim, AccMode, AccTarget, IsPH>>
         (Range, [=](id<Dim> Index) {
       const size_t LinearIndex = detail::getLinearIndex(Index, Range);
-      using TSrcNonConst = typename std::remove_const<TSrc>::type;
+      using TSrcNonConst = typename detail::remove_const_t<TSrc>;
       (reinterpret_cast<TSrcNonConst *>(Dst))[LinearIndex] = Src[Index];
     });
   }
@@ -659,8 +613,8 @@ private:
                    TDst *Dst) {
     single_task<class __copyAcc2Ptr<TSrc, TDst, Dim, AccMode, AccTarget, IsPH>>
         ([=]() {
-      using TSrcNonConst = typename std::remove_const<TSrc>::type;
-      *(reinterpret_cast<TSrcNonConst *>(Dst)) = readFromFirstAccElement(Src);
+      using TSrcNonConst = typename detail::remove_const_t<TSrc>;
+      *(reinterpret_cast<TSrcNonConst *>(Dst)) = *(Src.get_pointer());
     });
   }
 
@@ -693,7 +647,7 @@ private:
                    accessor<TDst, Dim, AccMode, AccTarget, IsPH> Dst) {
     single_task<class __copyPtr2Acc<TSrc, TDst, Dim, AccMode, AccTarget, IsPH>>
         ([=]() {
-      writeToFirstAccElement(Dst, *(reinterpret_cast<const TDst *>(Src)));
+      *(Dst.get_pointer()) = *(reinterpret_cast<const TDst *>(Src));
     });
   }
 #endif // __SYCL_DEVICE_ONLY__
@@ -713,6 +667,19 @@ private:
     return isConstOrGlobal(AccessTarget) || isImageOrImageArray(AccessTarget);
   }
 
+  constexpr static bool isValidModeForSourceAccessor(access::mode AccessMode) {
+    return AccessMode == access::mode::read ||
+           AccessMode == access::mode::read_write;
+  }
+
+  constexpr static bool
+  isValidModeForDestinationAccessor(access::mode AccessMode) {
+    return AccessMode == access::mode::write ||
+           AccessMode == access::mode::read_write ||
+           AccessMode == access::mode::discard_write ||
+           AccessMode == access::mode::discard_read_write;
+  }
+
   /// Defines and invokes a SYCL kernel function for the specified range.
   ///
   /// The SYCL kernel function is defined as a lambda function or a named
@@ -728,23 +695,102 @@ private:
   void parallel_for_lambda_impl(range<Dims> NumWorkItems,
                                 KernelType KernelFunc) {
     throwIfActionIsCreated();
-    using NameT =
-        typename detail::get_kernel_name_t<KernelName, KernelType>::name;
     using LambdaArgType = sycl::detail::lambda_arg_type<KernelType, item<Dims>>;
+
+    // If 1D kernel argument is an integral type, convert it to sycl::item<1>
     using TransformedArgType =
         typename std::conditional<std::is_integral<LambdaArgType>::value &&
                                       Dims == 1,
                                   item<Dims>, LambdaArgType>::type;
+    using NameT =
+        typename detail::get_kernel_name_t<KernelName, KernelType>::name;
+
+    // FIXME Remove the ESIMD check once rounding of execution range works well
+    // with ESIMD compilation flow.
+    // Range rounding is supported only for newer SYCL standards.
+    // Range rounding can also be disabled by the user.
+#if !defined(__SYCL_EXPLICIT_SIMD__) &&                                        \
+    !defined(SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING) &&                      \
+    SYCL_LANGUAGE_VERSION >= 202001
+    // The work group size preferred by this device.
+    // A reasonable choice for rounding up the range is 32.
+    constexpr size_t GoodLocalSizeX = 32;
+
+    // Disable the rounding-up optimizations under these conditions:
+    // 1. The env var SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING is set.
+    // 2. The string SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING is in
+    //    the kernel name.
+    // 3. The kernel is provided via an interoperability method.
+    // 4. The API "this_item" is used inside the kernel.
+    // 5. The range is already a multiple of the rounding factor.
+    //
+    // Cases 3 and 4 could be supported with extra effort.
+    // As an optimization for the common case it is an
+    // implementation choice to not support those scenarios.
+    // Note that "this_item" is a free function, i.e. not tied to any
+    // specific id or item. When concurrent parallel_fors are executing
+    // on a device it is difficult to tell which parallel_for the call is
+    // being made from. One could replicate portions of the
+    // call-graph to make this_item calls kernel-specific but this is
+    // not considered worthwhile.
+
+    // Get the kernal name to check condition 3.
+    std::string KName = typeid(NameT *).name();
+    using KI = detail::KernelInfo<KernelName>;
+    bool DisableRounding =
+        (getenv("SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING") != nullptr) ||
+        (KName.find("SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING") !=
+         std::string::npos) ||
+        (KI::getName() == nullptr || KI::getName()[0] == '\0') ||
+        (KI::callsThisItem());
+
+    // Perform range rounding if rounding-up is enabled
+    // and the user-specified range is not a multiple of a "good" value.
+    if (!DisableRounding && NumWorkItems[0] % GoodLocalSizeX != 0) {
+      // It is sufficient to round up just the first dimension.
+      // Multiplying the rounded-up value of the first dimension
+      // by the values of the remaining dimensions (if any)
+      // will yield a rounded-up value for the total range.
+      size_t NewValX =
+          ((NumWorkItems[0] + GoodLocalSizeX - 1) / GoodLocalSizeX) *
+          GoodLocalSizeX;
+      using NameWT = typename detail::get_kernel_wrapper_name_t<NameT>::name;
+      if (getenv("SYCL_PARALLEL_FOR_RANGE_ROUNDING_TRACE") != nullptr)
+        std::cout << "parallel_for range adjusted from " << NumWorkItems[0]
+                  << " to " << NewValX << std::endl;
+      auto Wrapper = [=](TransformedArgType Arg) {
+        if (Arg[0] >= NumWorkItems[0])
+          return;
+        Arg.set_allowed_range(NumWorkItems);
+        KernelFunc(Arg);
+      };
+
+      range<Dims> AdjustedRange = NumWorkItems;
+      AdjustedRange.set_range_dim0(NewValX);
 #ifdef __SYCL_DEVICE_ONLY__
-    (void)NumWorkItems;
-    kernel_parallel_for<NameT, TransformedArgType>(KernelFunc);
+      kernel_parallel_for<NameWT, TransformedArgType>(Wrapper);
 #else
-    detail::checkValueRange<Dims>(NumWorkItems);
-    MNDRDesc.set(std::move(NumWorkItems));
-    StoreLambda<NameT, KernelType, Dims, TransformedArgType>(
-        std::move(KernelFunc));
-    MCGType = detail::CG::KERNEL;
+      detail::checkValueRange<Dims>(AdjustedRange);
+      MNDRDesc.set(std::move(AdjustedRange));
+      StoreLambda<NameWT, decltype(Wrapper), Dims, TransformedArgType>(
+          std::move(Wrapper));
+      MCGType = detail::CG::KERNEL;
 #endif
+    } else
+#endif // !__SYCL_EXPLICIT_SIMD__ && !SYCL_DISABLE_PARALLEL_FOR_RANGE_ROUNDING
+       // && SYCL_LANGUAGE_VERSION > 202001
+    {
+#ifdef __SYCL_DEVICE_ONLY__
+      (void)NumWorkItems;
+      kernel_parallel_for<NameT, TransformedArgType>(KernelFunc);
+#else
+      detail::checkValueRange<Dims>(NumWorkItems);
+      MNDRDesc.set(std::move(NumWorkItems));
+      StoreLambda<NameT, KernelType, Dims, TransformedArgType>(
+          std::move(KernelFunc));
+      MCGType = detail::CG::KERNEL;
+#endif
+    }
   }
 
   /// Defines and invokes a SYCL kernel function for the specified range.
@@ -849,7 +895,7 @@ public:
 
   template <typename T>
   using remove_cv_ref_t =
-      typename std::remove_cv<detail::remove_reference_t<T>>::type;
+      typename detail::remove_cv_t<detail::remove_reference_t<T>>;
 
   template <typename U, typename T>
   using is_same_type = std::is_same<remove_cv_ref_t<U>, remove_cv_ref_t<T>>;
@@ -873,7 +919,7 @@ public:
   /// \param ArgIndex is a positional number of argument to be set.
   /// \param Arg is an argument value to be set.
   template <typename T>
-  typename std::enable_if<ShouldEnableSetArg<T>::value, void>::type
+  typename detail::enable_if_t<ShouldEnableSetArg<T>::value, void>
   set_arg(int ArgIndex, T &&Arg) {
     setArgHelper(ArgIndex, std::move(Arg));
   }
@@ -961,7 +1007,8 @@ public:
     MNDRDesc.set(range<1>{1});
 
     MArgs = std::move(MAssociatedAccesors);
-    MHostKernel.reset(new detail::HostKernel<FuncT, void, 1>(std::move(Func)));
+    MHostKernel.reset(
+        new detail::HostKernel<FuncT, void, 1, void>(std::move(Func)));
     MCGType = detail::CG::RUN_ON_HOST_INTEL;
   }
 
@@ -1176,7 +1223,9 @@ public:
     size_t MaxWGSize = ONEAPI::detail::reduGetMaxWGSize(MQueue, OneElemSize);
     if (Range.get_local_range().size() > MaxWGSize)
       throw sycl::runtime_error("The implementation handling parallel_for with"
-                                " reduction requires smaller work group size.",
+                                " reduction requires work group size not bigger"
+                                " than " +
+                                    std::to_string(MaxWGSize),
                                 PI_INVALID_WORK_GROUP_SIZE);
 
     // 1. Call the kernel that includes user's lambda function.
@@ -1582,6 +1631,8 @@ public:
     throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
+    static_assert(isValidModeForSourceAccessor(AccessMode),
+                  "Invalid accessor mode for the copy method.");
     // Make sure data shared_ptr points to is not released until we finish
     // work with it.
     MSharedPtrStorage.push_back(Dst);
@@ -1605,6 +1656,8 @@ public:
     throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
+    static_assert(isValidModeForDestinationAccessor(AccessMode),
+                  "Invalid accessor mode for the copy method.");
     // Make sure data shared_ptr points to is not released until we finish
     // work with it.
     MSharedPtrStorage.push_back(Src);
@@ -1627,6 +1680,8 @@ public:
     throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
+    static_assert(isValidModeForSourceAccessor(AccessMode),
+                  "Invalid accessor mode for the copy method.");
 #ifndef __SYCL_DEVICE_ONLY__
     if (MIsHost) {
       // TODO: Temporary implementation for host. Should be handled by memory
@@ -1664,6 +1719,8 @@ public:
     throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
+    static_assert(isValidModeForDestinationAccessor(AccessMode),
+                  "Invalid accessor mode for the copy method.");
 #ifndef __SYCL_DEVICE_ONLY__
     if (MIsHost) {
       // TODO: Temporary implementation for host. Should be handled by memory
@@ -1709,6 +1766,10 @@ public:
                   "Invalid source accessor target for the copy method.");
     static_assert(isValidTargetForExplicitOp(AccessTarget_Dst),
                   "Invalid destination accessor target for the copy method.");
+    static_assert(isValidModeForSourceAccessor(AccessMode_Src),
+                  "Invalid source accessor mode for the copy method.");
+    static_assert(isValidModeForDestinationAccessor(AccessMode_Dst),
+                  "Invalid destination accessor mode for the copy method.");
     assert(Dst.get_size() >= Src.get_size() &&
            "The destination accessor does not fit the copied memory.");
     if (copyAccToAccHelper(Src, Dst))
@@ -1937,6 +1998,8 @@ private:
   friend void detail::associateWithHandler(handler &,
                                            detail::AccessorBaseHost *,
                                            access::target);
+
+  friend class ::MockHandler;
 };
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

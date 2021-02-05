@@ -526,7 +526,7 @@ bool endsWith(const std::string &Str, char C) {
   return Str.size() && Str[Str.size() - 1] == C;
 }
 
-const clang::Stmt *getParentStmt(ast_type_traits::DynTypedNode Node) {
+const clang::Stmt *getParentStmt(DynTypedNode Node) {
   if (auto S = Node.get<Stmt>()) {
     return getParentStmt(S);
   } else if (auto D = Node.get<Decl>()) {
@@ -590,11 +590,11 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
 
 // Find the ancestor DeclStmt node
 // Assumes: E != nullptr
-const ast_type_traits::DynTypedNode
+const DynTypedNode
 getAncestorDeclStmtNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
+  DynTypedNode ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     if (ParentNode.get<DeclStmt>())
@@ -610,22 +610,22 @@ const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E) {
   return getAncestorDeclStmtNode(E).get<DeclStmt>();
 }
 
-const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
-getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+const std::shared_ptr<clang::DynTypedNode>
+getParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*N);
   if (Parents.size() >= 1)
-    return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
+    return std::make_shared<clang::DynTypedNode>(Parents[0]);
 
   return nullptr;
 }
 
-const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
+const std::shared_ptr<clang::DynTypedNode>
 getNonImplicitCastParentNode(
-    const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+    const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
@@ -656,12 +656,12 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
 
 // Find the nearest non-Expr non-Decl ancestor node of Expr E
 // Assumes: E != nullptr
-const ast_type_traits::DynTypedNode
+const DynTypedNode
 findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode LastNode =
-                                    ast_type_traits::DynTypedNode::create(*E),
+  DynTypedNode LastNode =
+                                    DynTypedNode::create(*E),
                                 ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -694,7 +694,7 @@ SourceRange getScopeInsertRange(const Expr *E,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ParentNode = Context.getParents(*E);
-  ast_type_traits::DynTypedNode AncestorStmt;
+  DynTypedNode AncestorStmt;
   SourceLocation StmtEnd;
   if (ParentNode.empty()) {
     StmtBegin = FuncNameBegin;
@@ -1008,7 +1008,7 @@ unsigned int getLenIncludingTrailingSpaces(SourceRange Range,
 /// increment parts of the \p Node.
 /// \param Node The statement node which is if, for, do, while or switch.
 /// \return The result statement nodes vector.
-std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
+std::vector<const Stmt *> getConditionNode(DynTypedNode Node) {
   std::vector<const Stmt *> Res;
   if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
     Res.push_back(CondtionNode->getCond());
@@ -1033,7 +1033,7 @@ std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
 /// This function gets the expression nodes of the condition part of the \p Node
 /// \param Node The statement node which is if, for, do, while or switch.
 /// \return The result statement nodes vector.
-std::vector<const Stmt *> getConditionExpr(ast_type_traits::DynTypedNode Node) {
+std::vector<const Stmt *> getConditionExpr(DynTypedNode Node) {
   std::vector<const Stmt *> Res;
   if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
     Res.push_back(CondtionNode->getCond());
@@ -1069,8 +1069,8 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
   CanAvoidUsingLambda = false;
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*CE);
-  ast_type_traits::DynTypedNode ParentNode;
-  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  DynTypedNode ParentNode;
+  std::vector<DynTypedNode> AncestorNodes;
   bool FoundStmtHasCondition = false;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -1187,8 +1187,8 @@ bool isConditionOfFlowControl(const clang::Expr *E,
                               bool OnlyCheckConditionExpr) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
-  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  DynTypedNode ParentNode;
+  std::vector<DynTypedNode> AncestorNodes;
   bool FoundStmtHasCondition = false;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -1487,9 +1487,9 @@ bool isOuterMostMacro(const Stmt *E) {
   llvm::raw_string_ostream StreamE(ExpandedExpr);
   E->printPretty(StreamE, nullptr, CT.getPrintingPolicy());
   StreamE.flush();
-  std::shared_ptr<ast_type_traits::DynTypedNode> P =
-      std::make_shared<ast_type_traits::DynTypedNode>(
-          ast_type_traits::DynTypedNode::create(*E));
+  std::shared_ptr<DynTypedNode> P =
+      std::make_shared<DynTypedNode>(
+          DynTypedNode::create(*E));
   // Find a parent stmt whose preprocessing result is different from
   // ExpandedExpr Since some parent is not writable.(is not shown in the
   // preprocessing result), a while loop is required to find the first writable
@@ -1519,7 +1519,7 @@ bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
 
 bool isInsideFunctionLikeMacro(
     const SourceLocation BeginLoc, const SourceLocation EndLoc,
-    const std::shared_ptr<ast_type_traits::DynTypedNode> Parent) {
+    const std::shared_ptr<DynTypedNode> Parent) {
 
   if (!BeginLoc.isMacroID() || !EndLoc.isMacroID()) {
     return false;
@@ -1875,7 +1875,7 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
 bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
+  DynTypedNode ParentNode;
   const ReturnStmt *RS = nullptr;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];

@@ -243,9 +243,9 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 std::pair<size_t, size_t>
 ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
-  const std::shared_ptr<ast_type_traits::DynTypedNode> P =
-      std::make_shared<ast_type_traits::DynTypedNode>(
-          ast_type_traits::DynTypedNode::create(*Parent));
+  const std::shared_ptr<DynTypedNode> P =
+      std::make_shared<DynTypedNode>(
+          DynTypedNode::create(*Parent));
   if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));

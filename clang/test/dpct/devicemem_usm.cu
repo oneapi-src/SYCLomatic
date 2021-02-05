@@ -44,16 +44,19 @@ const int num_elements = 16;
 // CHECK: dpct::global_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
+// CHECK: dpct::global_memory<float, 1> tmp(size);
+const int size = 64;
+__device__ float tmp[size];
 // CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
 // CHECK:              dpct::accessor<float, dpct::device, 2> fy, float *tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
+// CHECK:   tmp[1] = 1.0f;
 // CHECK: }
 __global__ void kernel2(float *out) {
-  const int size = 64;
-  __device__ float tmp[size];
   out[threadIdx.x] += al;
   fx[threadIdx.x] = fy[threadIdx.x][threadIdx.x];
+  tmp[1] = 1.0f;
 }
 
 int main() {
@@ -107,16 +110,14 @@ int main() {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::global_memory<float, 1> tmp(64/*size*/);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:       tmp.init();
   // CHECK-NEXT:       al.init();
   // CHECK-NEXT:       fx.init();
   // CHECK-NEXT:       fy.init();
+  // CHECK-NEXT:       tmp.init();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       auto tmp_ptr_ct1 = tmp.get_ptr();
   // CHECK-NEXT:       auto al_ptr_ct1 = al.get_ptr();
   // CHECK-NEXT:       auto fx_ptr_ct1 = fx.get_ptr();
+  // CHECK-NEXT:       auto tmp_ptr_ct1 = tmp.get_ptr();
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-EMPTY:
