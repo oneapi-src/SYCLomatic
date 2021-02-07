@@ -387,10 +387,14 @@ private:
     std::vector<cl::sycl::device> sycl_all_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
     // Collect other devices except for the default device.
+    const bool default_is_host = default_device.is_host();
     if (default_device.is_cpu())
       _cpu_device = 0;
     for (auto &dev : sycl_all_devs) {
-      if (dev == default_device) {
+      const bool dev_is_host = dev.is_host();
+      if ((dev_is_host && default_is_host) ||
+          (!dev_is_host && !default_is_host &&
+           dev.get() == default_device.get())) {
         continue;
       }
       _devs.push_back(std::make_shared<device_ext>(dev));
