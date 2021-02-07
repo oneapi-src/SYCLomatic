@@ -456,9 +456,9 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                                  VI->getName(), VI->getLocalTypeName())) {
       if (!SubmitStmtsList.AccessorList.empty()) {
         SubmitStmtsList.AccessorList.back().Warning =
-            DiagnosticsUtils::getWarningText(Diagnostics::TYPE_IN_FUNCTION,
-                                             VI->getName(),
-                                             VI->getLocalTypeName());
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::TYPE_IN_FUNCTION, VI->getName(),
+                VI->getLocalTypeName());
       }
     }
   }
@@ -2130,11 +2130,13 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     }
     OS << "cgh);";
     StmtWithWarning AccDecl(OS.str());
-    if(Dimension > 3) {
-      AccDecl.Warning =
-          DiagnosticsUtils::getWarningText(Diagnostics::EXCEED_MAX_DIMENSION);
-      DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::EXCEED_MAX_DIMENSION, false, false);
+    if (Dimension > 3) {
+      if (DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                   Diagnostics::EXCEED_MAX_DIMENSION, false,
+                                   false)) {
+        AccDecl.Warning = DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+            Diagnostics::EXCEED_MAX_DIMENSION);
+      }
     }
     AccList.emplace_back(std::move(AccDecl));
   } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&

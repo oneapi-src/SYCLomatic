@@ -190,8 +190,8 @@ TextModification *insertCommentPrevLine(SourceLocation SL,
   return new InsertComment(StartLoc, OS.str(), UseTextBegin);
 }
 
-//This function is only used to get warning text for regular expression matching.
-//For normal warning emitting, please do not use this interface.
+// This function is only used to get warning text for regular expression
+// matching. For normal warning emitting, please do not use this interface.
 template <typename IDTy, typename... Ts>
 std::string getWarningTextWithOutPrefix(IDTy MsgID, Ts &&... Vals) {
   std::string Text;
@@ -218,6 +218,16 @@ std::string getWarningText(IDTy MsgID, Ts &&... Vals) {
     OS << Formatted;
     Text = OS.str();
   }
+  return Text;
+}
+
+/// If this function is used to get text to inline warning into replacement,
+/// then this function should only be called when the return value of report()
+/// is true.
+template <typename IDTy, typename... Ts>
+std::string getWarningTextAndUpdateUniqueID(IDTy MsgID, Ts &&... Vals) {
+  std::string Text = getWarningText(MsgID, std::forward<Ts>(Vals)...);
+  UniqueID++;
   return Text;
 }
 
@@ -382,9 +392,9 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
     if (UseTextBegin)
       R->setInsertPosition(InsertPosition::InsertPositionRight);
     DpctGlobalInfo::getInstance().addReplacement(R);
+    UniqueID++;
   }
 
-  UniqueID++;
   return true;
 }
 

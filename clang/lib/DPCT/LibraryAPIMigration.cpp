@@ -191,8 +191,8 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
                                  Diagnostics::CHECK_RELATED_QUEUE, false,
                                  false)) {
       PrefixStmts.push_back("/*");
-      PrefixStmts.push_back(DiagnosticsUtils::getWarningText(
-          Diagnostics::CHECK_RELATED_QUEUE, "dpct::get_default_queue()"));
+      PrefixStmts.push_back(DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+          Diagnostics::CHECK_RELATED_QUEUE));
       PrefixStmts.push_back("*/");
       PrefixStmts.push_back("desc->commit(dpct::get_default_queue());");
     }
@@ -1264,8 +1264,9 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
                                  Diagnostics::CHECK_RELATED_QUEUE, false, false,
                                  Stream)) {
       ResetAndCommitStmts.push_back("/*");
-      ResetAndCommitStmts.push_back(DiagnosticsUtils::getWarningText(
-          Diagnostics::CHECK_RELATED_QUEUE));
+      ResetAndCommitStmts.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::CHECK_RELATED_QUEUE));
       ResetAndCommitStmts.push_back("*/");
     }
     ResetAndCommitStmts.emplace_back(DescStr + "->commit(" + Stream + ");");
