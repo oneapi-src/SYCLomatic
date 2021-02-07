@@ -488,7 +488,7 @@ public:
     SourceLineInfo(unsigned LineNumber, unsigned Offset, unsigned End,
                    StringRef Buffer)
         : Number(LineNumber), Offset(Offset), Length(End - Offset),
-          Line(Buffer.empty() ? "" : Buffer.substr(Offset, Length)) {}
+          Line(Buffer.substr(Offset, Length)) {}
     SourceLineInfo(unsigned LineNumber, ArrayRef<unsigned> LineCache,
                    StringRef Buffer)
         : SourceLineInfo(LineNumber, LineCache[LineNumber - 1],
@@ -500,8 +500,8 @@ public:
     const unsigned Offset;
     // Length of the line.
     const unsigned Length;
-    // String of the line, only available when -keep-original-code is on.
-    const std::string Line;
+    // String of the line, ref to FileContentCache.
+    StringRef Line;
   };
 
   inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
@@ -513,7 +513,7 @@ public:
     }
     return Lines[--LineNumber];
   }
-  inline const std::string &getLineString(unsigned LineNumber) {
+  StringRef getLineString(unsigned LineNumber) {
     return getLineInfo(LineNumber).Line;
   }
 

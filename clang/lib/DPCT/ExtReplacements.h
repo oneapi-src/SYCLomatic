@@ -119,14 +119,14 @@ private:
   void buildOriginCodeReplacements();
 
   // Remove comments in the source code.
-  void removeCommentsInSrcCode(const std::string &SrcCode, std::string &Result,
+  void removeCommentsInSrcCode(StringRef SrcCode, std::string &Result,
                                bool &BlockComment);
 
   std::shared_ptr<ExtReplacement>
   buildOriginCodeReplacement(const SourceLineRange &LineRange);
 
   bool isEndWithSlash(unsigned LineNumber);
-  size_t findCR(const std::string &Line);
+  size_t findCR(StringRef Line);
 
   // Mark a replacement as dead.
   void markAsDead(std::shared_ptr<ExtReplacement> Repl) {
