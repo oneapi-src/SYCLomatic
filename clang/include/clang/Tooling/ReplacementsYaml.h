@@ -20,6 +20,9 @@
 #include <string>
 
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
+#ifdef INTEL_CUSTOMIZATION
+LLVM_YAML_IS_STRING_MAP(clang::tooling::HelperFuncForYaml)
+#endif
 
 namespace llvm {
 namespace yaml {
@@ -144,6 +147,35 @@ template <> struct MappingTraits<std::pair<std::string, std::string>> {
     Io.mapRequired("Digest", Keys->Digest);
   }
 };
+
+template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
+  struct NormalizedHelperFuncForYaml {
+    NormalizedHelperFuncForYaml(const IO &)
+        : IsCalled(false), CallerSrcFiles({}) {}
+
+    NormalizedHelperFuncForYaml(const IO &,
+                               const clang::tooling::HelperFuncForYaml &HFFY)
+        : IsCalled(HFFY.IsCalled), CallerSrcFiles(HFFY.CallerSrcFiles) {}
+
+    clang::tooling::HelperFuncForYaml denormalize(const IO &) {
+      clang::tooling::HelperFuncForYaml HHI;
+      HHI.IsCalled = IsCalled;
+      HHI.CallerSrcFiles = CallerSrcFiles;
+      return HHI;
+    }
+
+    bool IsCalled = false;
+    std::vector<std::string> CallerSrcFiles;
+  };
+
+  static void mapping(IO &Io, clang::tooling::HelperFuncForYaml &HFFY) {
+    MappingNormalization<NormalizedHelperFuncForYaml,
+                         clang::tooling::HelperFuncForYaml>
+        Keys(Io, HFFY);
+    Io.mapRequired("IsCalled", Keys->IsCalled);
+    Io.mapRequired("CallerSrcFiles", Keys->CallerSrcFiles);
+  }
+};
 #endif
 
 
@@ -156,6 +188,29 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapRequired("Replacements", Doc.Replacements);
 #ifdef INTEL_CUSTOMIZATION
     Io.mapRequired("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
+    Io.mapRequired("DpctVersion", Doc.DpctVersion);
+    Io.mapRequired("MainHelperFileName", Doc.MainHelperFileName);
+    Io.mapRequired("AtomicHelperFuncMap", Doc.AtomicHelperFuncMap);
+    Io.mapRequired("BlasUtilsHelperFuncMap", Doc.BlasUtilsHelperFuncMap);
+    Io.mapRequired("DeviceHelperFuncMap", Doc.DeviceHelperFuncMap);
+    Io.mapRequired("DpctHelperFuncMap", Doc.DpctHelperFuncMap);
+    Io.mapRequired("DplUtilsHelperFuncMap", Doc.DplUtilsHelperFuncMap);
+    Io.mapRequired("ImageHelperFuncMap", Doc.ImageHelperFuncMap);
+    Io.mapRequired("KernelHelperFuncMap", Doc.KernelHelperFuncMap);
+    Io.mapRequired("MemoryHelperFuncMap", Doc.MemoryHelperFuncMap);
+    Io.mapRequired("UtilHelperFuncMap", Doc.UtilHelperFuncMap);
+    Io.mapRequired("DplExtrasAlgorithmHelperFuncMap",
+                   Doc.DplExtrasAlgorithmHelperFuncMap);
+    Io.mapRequired("DplExtrasFunctionalHelperFuncMap",
+                   Doc.DplExtrasFunctionalHelperFuncMap);
+    Io.mapRequired("DplExtrasIteratorsHelperFuncMap",
+                   Doc.DplExtrasIteratorsHelperFuncMap);
+    Io.mapRequired("DplExtrasMemoryHelperFuncMap",
+                   Doc.DplExtrasMemoryHelperFuncMap);
+    Io.mapRequired("DplExtrasNumericHelperFuncMap",
+                   Doc.DplExtrasNumericHelperFuncMap);
+    Io.mapRequired("DplExtrasVectorHelperFuncMap",
+                   Doc.DplExtrasVectorHelperFuncMap);
 #endif
   }
 };

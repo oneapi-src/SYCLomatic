@@ -265,8 +265,9 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
 #else
-  // To avoid SIGABRT, ignore `Replaces`, just return `Rs`.
-  return Rs;
+  // `Rs` is from yaml file, `Replaces` is from current migration.
+  // To avoid SIGABRT, ignore `Rs`, just return `*Replaces.begin()`.
+  return *this;
 #endif
 #else
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,

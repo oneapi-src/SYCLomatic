@@ -9,10 +9,18 @@
 #ifndef __DPCT_HPP__
 #define __DPCT_HPP__
 
+// DPCT_LABEL_BEGIN|non_local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #include <CL/sycl.hpp>
 #include <iostream>
 #include <limits.h>
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 #include "atomic.hpp"
 #include "device.hpp"
 #include "image.hpp"
@@ -20,6 +28,9 @@
 #include "memory.hpp"
 #include "util.hpp"
 
+// DPCT_LABEL_BEGIN|dpct_align_and_inline|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #if defined(_MSC_VER)
 #define __dpct_align__(n) __declspec(align(n))
 #define __dpct_inline__ __forceinline
@@ -27,15 +38,36 @@
 #define __dpct_align__(n) __attribute__((aligned(n)))
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
 #endif
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dpct_named_lambda|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #ifdef DPCT_NAMED_LAMBDA
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 #endif
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dpct_compatibility_temp|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #define DPCT_COMPATIBILITY_TEMP (600)
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dpct_pi_f|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #define DPCT_PI_F (3.14159274101257f)
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dpct_pi|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #define DPCT_PI (3.141592653589793115998)
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dummy_function|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 #endif // __DPCT_HPP__

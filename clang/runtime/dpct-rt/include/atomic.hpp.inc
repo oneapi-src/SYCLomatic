@@ -9,10 +9,21 @@
 #ifndef __DPCT_ATOMIC_HPP__
 #define __DPCT_ATOMIC_HPP__
 
+// DPCT_LABEL_BEGIN|non_local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #include <CL/sycl.hpp>
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|atomic_fetch_add|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically add the value operand to the value at the addr and assign the
 /// result to the value at addr, Int version.
 /// \param [in, out] addr The pointer to the data.
@@ -94,7 +105,11 @@ inline double atomic_fetch_add(
 
   return old_double_value;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_sub|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically subtract the value operand from the value at the addr and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -110,7 +125,11 @@ inline T atomic_fetch_sub(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_sub(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_and|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically perform a bitwise AND between the value operand and the value at the addr
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -126,7 +145,11 @@ inline T atomic_fetch_and(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_and(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_or|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically or the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -142,7 +165,11 @@ inline T atomic_fetch_or(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_or(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_xor|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically xor the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -158,7 +185,11 @@ inline T atomic_fetch_xor(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_xor(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_min|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically calculate the minimum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -174,7 +205,11 @@ inline T atomic_fetch_min(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_min(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_max|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically calculate the maximum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -190,7 +225,11 @@ inline T atomic_fetch_max(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_fetch_max(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_compare_inc|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically increment the value stored in \p addr if old value stored in \p
 /// addr is less than \p operand, else set 0 to the value stored in \p addr.
 /// \param [in, out] addr The pointer to the data.
@@ -216,8 +255,12 @@ inline unsigned int atomic_fetch_compare_inc(
   }
   return old;
 }
+// DPCT_LABEL_END
 
 
+// DPCT_LABEL_BEGIN|atomic_exchange|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically exchange the value at the address addr with the value operand.
 /// \param [in, out] addr The pointer to the data.
 /// \param operand The value to be exchanged with the value pointed by \p addr.
@@ -232,7 +275,11 @@ inline T atomic_exchange(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
   return cl::sycl::atomic_exchange(obj, operand, memoryOrder);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_compare_exchange_strong|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 /// Atomically compare the value at \p addr to the value expected and exchange
 /// with the value desired if the value at \p addr is equal to the value expected.
 /// Returns the value at the \p addr before the call.
@@ -273,6 +320,7 @@ T atomic_compare_exchange_strong(
       cl::sycl::multi_ptr<T, addressSpace>(addr), expected, desired, success,
       fail);
 }
+// DPCT_LABEL_END
 
 } // namespace dpct
 #endif // __DPCT_ATOMIC_HPP__

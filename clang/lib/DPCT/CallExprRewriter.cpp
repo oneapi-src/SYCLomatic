@@ -809,10 +809,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << "*(" + MigratedArg1 + ")";
     OS << " = " + MapNames::getClNamespace() + "::sincos("
        << MigratedArg0;
-    if (FuncName == "sincospi")
+    if (FuncName == "sincospi") {
       OS << " * DPCT_PI";
-    else
+      requestFeature(HelperFileEnum::Dpct,
+                                     "dpct_pi", Call);
+    } else {
       OS << " * DPCT_PI_F";
+      requestFeature(HelperFileEnum::Dpct,
+                                     "dpct_pi_f", Call);
+    }
 
     if (FuncName == "sincospi")
       OS << ", " + MapNames::getClNamespace() + "::make_ptr<double, " +
@@ -976,10 +981,16 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
+    requestFeature(HelperFileEnum::Util, "cast_double_to_int",
+                                   Call);
     OS << "dpct::cast_double_to_int(" << MigratedArg0 << ")";
   } else if (FuncName == "__double2loint") {
+    requestFeature(HelperFileEnum::Util, "cast_double_to_int",
+                                   Call);
     OS << "dpct::cast_double_to_int(" << MigratedArg0 << ", false)";
   } else if (FuncName == "__hiloint2double") {
+    requestFeature(HelperFileEnum::Util, "cast_ints_to_double",
+                                   Call);
     OS << "dpct::cast_ints_to_double(" << MigratedArg0 << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
@@ -1024,10 +1035,13 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
            << MigratedArg1 << "[3]))";
         break;
       default:
+        requestFeature(HelperFileEnum::Util, "fast_length",
+                                       Call);
         OS << "dpct::fast_length(" << "(float *)" << getMigratedArg(1) << ", "
            << MigratedArg0 << ")";
       }
     } else {
+      requestFeature(HelperFileEnum::Util, "fast_length", Call);
       OS << "dpct::fast_length(" << "(float *)" << getMigratedArg(1) << ", "
          << MigratedArg0 << ")";
     }

@@ -9,29 +9,48 @@
 #ifndef __DPCT_BLAS_HPP__
 #define __DPCT_BLAS_HPP__
 
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
+// DPCT_LABEL_BEGIN|non_local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <utility>
 #include <vector>
 #include <thread>
+// DPCT_LABEL_END
 
 namespace dpct {
 
 namespace detail {
+// DPCT_LABEL_BEGIN|mem_free|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 inline void mem_free(cl::sycl::queue *exec_queue,
                      std::vector<void *> pointers_array, cl::sycl::event e) {
   e.wait();
   for (auto p : pointers_array)
     cl::sycl::free(p, *exec_queue);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|stride_for|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 inline int stride_for(int num_elems, int mem_align_in_elems) {
   return ((num_elems - 1) / mem_align_in_elems + 1) * mem_align_in_elems;
 }
+// DPCT_LABEL_END
 }
 
+// DPCT_LABEL_BEGIN|get_transpose|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 inline oneapi::mkl::transpose get_transpose(int t) {
   if (t == 0) {
     return oneapi::mkl::transpose::nontrans;
@@ -41,7 +60,14 @@ inline oneapi::mkl::transpose get_transpose(int t) {
     return oneapi::mkl::transpose::conjtrans;
   }
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_value|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_memcpy_detail
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.
@@ -53,7 +79,17 @@ inline typename DataType<T>::T2 get_value(const T *s, cl::sycl::queue &q){
   detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
   return s_h;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|getrf_batch_wrapper|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc
+// Memory|dpct_memcpy
+// Memory|dpct_memcpy_detail
+// BlasUtils|stride_for
+// BlasUtils|mem_free
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes the LU factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] n The order of the matrices.
@@ -157,7 +193,17 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   mem_free_thread.detach();
 #endif
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|getrs_batch_wrapper|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc
+// Memory|dpct_memcpy
+// Memory|dpct_memcpy_detail
+// BlasUtils|stride_for
+// BlasUtils|mem_free
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Solves a system of linear equations with a batch of LU-factored square
 /// coefficient matrices, with multiple right-hand sides.
 /// \param [in] exec_queue The queue where the routine should be executed.
@@ -279,7 +325,17 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   mem_free_thread.detach();
 #endif
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|getri_batch_wrapper|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc
+// Memory|dpct_memcpy
+// Memory|dpct_memcpy_detail
+// BlasUtils|stride_for
+// BlasUtils|mem_free
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes the inverses of a batch of LU-factored matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] n The order of the matrices.
@@ -397,7 +453,17 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   mem_free_thread.detach();
 #endif
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|geqrf_batch_wrapper|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc
+// Memory|dpct_memcpy
+// Memory|dpct_memcpy_detail
+// BlasUtils|stride_for
+// BlasUtils|mem_free
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes the QR factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] m The number of rows in the matrices.
@@ -494,6 +560,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   mem_free_thread.detach();
 #endif
 }
+// DPCT_LABEL_END
 
 } // namespace dpct
 #endif // __DPCT_BLAS_HPP__

@@ -1,48 +1,25 @@
 set(dpct_rt_files
-  include/dpct.hpp
-  include/atomic.hpp
-  include/device.hpp
-  include/memory.hpp
-  include/kernel.hpp
-  include/image.hpp
-  include/util.hpp
-  include/blas_utils.hpp
-  include/dpl_utils.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpct.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/atomic.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/device.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/memory.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/kernel.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/image.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/util.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/blas_utils.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_utils.hpp
 )
 
 set(dpct_rt_dpstd_files
-  include/dpl_extras/functional.h
-  include/dpl_extras/memory.h
-  include/dpl_extras/iterators.h
-  include/dpl_extras/algorithm.h
-  include/dpl_extras/numeric.h
-  include/dpl_extras/vector.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/functional.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/memory.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/iterators.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/algorithm.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/numeric.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/vector.h
 )
 
-set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)
-set(output_dpstd_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct/dpl_extras)
-
-set(out_files)
-foreach( f ${dpct_rt_files})
-  set( src ${CMAKE_CURRENT_SOURCE_DIR}/${f} )
-  set( dst ${output_dir}/${f} )
-  add_custom_command(OUTPUT ${dst}
-    DEPENDS ${src}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dst}
-    COMMENT "Copying clang's ${f}...")
-  list(APPEND out_files ${dst})
-endforeach( f )
-
-foreach( f ${dpct_rt_dpstd_files})
-  set( src ${CMAKE_CURRENT_SOURCE_DIR}/${f} )
-  set( dst ${output_dpstd_dir}/${f} )
-  add_custom_command(OUTPUT ${dst}
-    DEPENDS ${src}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dst}
-    COMMENT "Copying clang's ${f}...")
-  list(APPEND out_files ${dst})
-endforeach( f )
-add_custom_target(dpct-headers ALL DEPENDS ${out_files})
+add_custom_target(dpct-headers ALL DEPENDS dpct_helper_headers_and_inc)
 
 install(
   FILES ${dpct_rt_files}

@@ -38,7 +38,8 @@ using clang::tooling::Replacements;
 
 int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
               const std::vector<clang::tooling::Replacement> &Replaces,
-              const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
+              const std::vector<std::pair<std::string, std::string>>
+                  &MainSrcFilesDigest) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
@@ -53,6 +54,10 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
                                    MainSrcFilesDigest.begin(),
                                    MainSrcFilesDigest.end());
 
+  clang::dpct::DpctGlobalInfo::updateTUR(TUR);
+  TUR.DpctVersion = getDpctVersionStr();
+  TUR.MainHelperFileName =
+      clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
@@ -64,7 +69,8 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
 }
 
 int loadFromYaml(StringRef Input,
-                 clang::tooling::TranslationUnitReplacements &TU) {
+                 clang::tooling::TranslationUnitReplacements &TU,
+                 bool OverwriteHelperFilesInfo) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input);
   if (!Buffer) {
@@ -75,10 +81,22 @@ int loadFromYaml(StringRef Input,
 
   llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
   YAMLIn >> TU;
-  if (YAMLIn.error()) {
-    // File doesn't appear to be a header change description. Ignore it.
-    return -1;
+
+  // Do not return if YAMLIn.error(), we still need set other values.
+
+  if (OverwriteHelperFilesInfo) {
+    clang::dpct::DpctGlobalInfo::updateHelperNameContentMap(TU);
+    if (!TU.MainHelperFileName.empty() &&
+        TU.MainHelperFileName !=
+            clang::dpct::DpctGlobalInfo::getCustomHelperFileName()) {
+      clang::dpct::PrintMsg(
+          "[WARNING] The cunstom helper file name in current migration "
+          "is different from the name in previous migration, you need "
+          "update the previous migrated code.");
+    }
+    emitDpctVersionWarningIfNeed(TU.DpctVersion);
   }
+
   return 0;
 }
 

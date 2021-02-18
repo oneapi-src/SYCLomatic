@@ -296,7 +296,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
 
   if (llvm::sys::fs::exists(YamlFile)) {
-    if (loadFromYaml(YamlFile, *PreTU) == 0) {
+    if (loadFromYaml(YamlFile, *PreTU, true) == 0) {
       for (const auto &Repl : PreTU->Replacements) {
         auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
         FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
@@ -425,6 +425,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           .write(Stream);
     }
 
+    generateHelperFunctions();
     save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest);
 
     extern bool ProcessAllFlag;
@@ -581,7 +582,7 @@ void loadYAMLIntoFileInfo(std::string Path) {
   std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
-    if (loadFromYaml(std::move(YamlFilePath), *PreTU) == 0) {
+    if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
       DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(OriginPath,
                                                                      PreTU);
     }

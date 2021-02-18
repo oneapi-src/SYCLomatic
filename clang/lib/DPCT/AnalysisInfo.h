@@ -56,6 +56,36 @@ enum class KernelArgType : int {
   MaxParameterSize
 };
 
+enum class HelperFileEnum : unsigned int {
+  Dpct = 0,//0
+  Device,//1
+  Kernel,//2
+  Memory,//3
+  Util,//4
+  DplUtils,//5
+  BlasUtils,//6
+  Image,//7
+  Atomic,//8
+  DplExtrasAlgorithm,//9
+  DplExtrasFunctional,//10
+  DplExtrasIterators,//11
+  DplExtrasMemory,//12
+  DplExtrasNumeric,//13
+  DplExtrasVector,//14
+  HelperFileEnumTypeSize,//15
+};
+
+using HelperFeatureIDTy = std::pair<HelperFileEnum, std::string>;
+
+struct HelperFunc {
+  std::string Namespace; // the namespace of this helper function feature
+  int PositionIdx = -1; // the position of this helper function feature
+  bool IsCalled = false; // has this feature be called
+  std::set<std::string> CallerSrcFiles; // files have called this feature
+  std::vector<HelperFeatureIDTy> Dependency; // some features which this feature depends on
+  std::string Code; // the code of this feature
+};
+
 class CudaMallocInfo;
 class RandomEngineInfo;
 class TextureInfo;
@@ -385,8 +415,10 @@ enum HeaderType {
   Thread,
   Numeric,
   MKL_BLAS_Solver,
+  MKL_BLAS_Solver_Without_Util,
   MKL_RNG,
   MKL_SPBLAS,
+  MKL_SPBLAS_Without_Util,
   MKL_FFT,
   Chrono,
 };
@@ -518,7 +550,8 @@ public:
     switch (Type) {
     case SYCL:
       return insertHeader(HeaderType::SYCL, FirstIncludeOffset, "<CL/sycl.hpp>",
-                          "<dpct/dpct.hpp>");
+                          "<" + getCustomMainHelperFileName() + "/" +
+                              getCustomMainHelperFileName() + ".hpp>");
     case Math:
       return insertHeader(HeaderType::Math, LastIncludeOffset, "<cmath>");
     case Algorithm:
@@ -533,14 +566,20 @@ public:
     case Time:
       return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
     case MKL_BLAS_Solver:
-      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                            "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+    case MKL_BLAS_Solver_Without_Util:
+        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                            "<oneapi/mkl.hpp>");
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case MKL_SPBLAS:
-      return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                            "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+    case MKL_SPBLAS_Without_Util:
+        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                            "<oneapi/mkl.hpp>");
     case MKL_FFT:
       return insertHeader(HeaderType::MKL_FFT, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
@@ -1020,6 +1059,20 @@ public:
   }
   inline static void setAssumedNDRangeDim(unsigned int Dim) {
     AssumedNDRangeDim = Dim;
+  }
+  inline static HelperFilesCustomizationLevel
+  getHelperFilesCustomizationLevel() {
+    return HelperFilesCustomizationLvl;
+  }
+  inline static void
+  setHelperFilesCustomizationLevel(HelperFilesCustomizationLevel Lvl) {
+    HelperFilesCustomizationLvl = Lvl;
+  }
+  inline static std::string getCustomHelperFileName() {
+    return CustomHelperFileName;
+  }
+  inline static void setCustomHelperFileName(const std::string &Name) {
+    CustomHelperFileName = Name;
   }
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -1704,7 +1757,8 @@ public:
     return EndifLocationOfIfdef;
   }
 
-  static std::vector<std::pair<std::string, size_t>> &getConditionalCompilationLoc() {
+  static std::vector<std::pair<std::string, size_t>> &
+  getConditionalCompilationLoc() {
     return ConditionalCompilationLoc;
   }
 
@@ -1715,15 +1769,92 @@ public:
     return EndOfEmptyMacros;
   }
   static std::map<std::string, bool> &getMacroDefines() { return MacroDefines; }
-  static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
-  static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
-  static std::unordered_map<std::string,
-                          std::vector<clang::tooling::Replacement>> &
-  getFileRelpsMap() {
-  return FileRelpsMap;
+  static std::set<std::string> &getIncludingFileSet() {
+    return IncludingFileSet;
   }
-  static std::unordered_map<std::string, std::string> &getDigestMap() { return DigestMap; }
+  static std::set<std::string> &getFileSetInCompiationDB() {
+    return FileSetInCompiationDB;
+  }
+  static std::unordered_map<std::string,
+                            std::vector<clang::tooling::Replacement>> &
+  getFileRelpsMap() {
+    return FileRelpsMap;
+  }
+  static std::unordered_map<std::string, std::string> &getDigestMap() {
+    return DigestMap;
+  }
   static std::string getYamlFileName() { return YamlFileName; }
+
+
+  // update MapNames::HelperNameContentMap from TUR
+  static void updateHelperNameContentMap(
+      const clang::tooling::TranslationUnitReplacements &TUR) {
+#define UPDATE_MAP_INFO(FILEID)                                                \
+  for (auto &Entry : TUR.FILEID##HelperFuncMap) {                              \
+    std::pair<HelperFileEnum, std::string> Key(HelperFileEnum::FILEID,         \
+                                               Entry.first);                   \
+    MapNames::HelperNameContentMap[Key].IsCalled =                             \
+        MapNames::HelperNameContentMap[Key].IsCalled || Entry.second.IsCalled; \
+    for (auto &CallerFileName : Entry.second.CallerSrcFiles) {                 \
+      MapNames::HelperNameContentMap[Key].CallerSrcFiles.insert(               \
+          CallerFileName);                                                     \
+    }                                                                          \
+  }
+    UPDATE_MAP_INFO(Atomic)
+    UPDATE_MAP_INFO(BlasUtils)
+    UPDATE_MAP_INFO(Device)
+    UPDATE_MAP_INFO(Dpct)
+    UPDATE_MAP_INFO(DplUtils)
+    UPDATE_MAP_INFO(Image)
+    UPDATE_MAP_INFO(Kernel)
+    UPDATE_MAP_INFO(Memory)
+    UPDATE_MAP_INFO(Util)
+    UPDATE_MAP_INFO(DplExtrasAlgorithm)
+    UPDATE_MAP_INFO(DplExtrasFunctional)
+    UPDATE_MAP_INFO(DplExtrasIterators)
+    UPDATE_MAP_INFO(DplExtrasMemory)
+    UPDATE_MAP_INFO(DplExtrasNumeric)
+    UPDATE_MAP_INFO(DplExtrasVector)
+#undef UPDATE_MAP_INFO
+  }
+
+  // update TUR from MapNames::HelperNameContentMap
+  static void updateTUR(
+      clang::tooling::TranslationUnitReplacements &TUR) {
+#define UPDATE_TUR_INFO(FILEID)                                                \
+  case HelperFileEnum::FILEID:                                                 \
+    TUR.FILEID##HelperFuncMap[Entry.first.second].IsCalled =                   \
+        Entry.second.IsCalled;                                                 \
+    TUR.FILEID##HelperFuncMap[Entry.first.second].CallerSrcFiles.clear();      \
+    for (auto CallerFileName : Entry.second.CallerSrcFiles) {                  \
+      TUR.FILEID##HelperFuncMap[Entry.first.second].CallerSrcFiles.push_back(  \
+          CallerFileName);                                                     \
+    }                                                                          \
+    break;
+
+    for (auto Entry : MapNames::HelperNameContentMap) {
+      switch (Entry.first.first) {
+        UPDATE_TUR_INFO(Atomic)
+        UPDATE_TUR_INFO(BlasUtils)
+        UPDATE_TUR_INFO(Device)
+        UPDATE_TUR_INFO(Dpct)
+        UPDATE_TUR_INFO(DplUtils)
+        UPDATE_TUR_INFO(Image)
+        UPDATE_TUR_INFO(Kernel)
+        UPDATE_TUR_INFO(Memory)
+        UPDATE_TUR_INFO(Util)
+        UPDATE_TUR_INFO(DplExtrasAlgorithm)
+        UPDATE_TUR_INFO(DplExtrasFunctional)
+        UPDATE_TUR_INFO(DplExtrasIterators)
+        UPDATE_TUR_INFO(DplExtrasMemory)
+        UPDATE_TUR_INFO(DplExtrasNumeric)
+        UPDATE_TUR_INFO(DplExtrasVector)
+      default:
+        dpct_unreachable("unknown helper file ID");
+      }
+    }
+#undef UPDATE_TUR_INFO
+  }
   static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
   static void removeVarNameInGlobalVarNameSet(const std::string& VarName) {
     auto Iter = getGlobalVarNameSet().find(VarName);
@@ -1974,6 +2105,8 @@ private:
   static std::string CudaPath;
   static UsmLevel UsmLvl;
   static unsigned int AssumedNDRangeDim;
+  static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
+  static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<int> DeviceRNGReturnNumSet;
@@ -2435,6 +2568,8 @@ private:
   }
   const std::string &getMemoryAttr();
   std::string getDpctAccessorType() {
+    requestFeature(HelperFileEnum::Memory, "dpct_accessor",
+                                   getFilePath());
     auto Type = getType();
     return buildString("dpct::accessor<", getAccessorDataType(), ", ",
                        getMemoryAttr(), ", ", Type->getDimension(), ">");
@@ -2507,6 +2642,7 @@ public:
     DataType = std::move(Type);
     IsArray = TexType & 0xF0;
     Dimension = TexType & 0x0F;
+    // The DataType won't use dpct helper feature
     MapNames::replaceName(MapNames::TypeNamesMap, DataType);
   }
 
@@ -2614,6 +2750,8 @@ public:
   virtual std::string getHostDeclString() {
     ParameterStream PS;
     Type->prepareForImage();
+    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
+
     getDecl(PS, "image_wrapper") << ";";
     Type->endForImage();
     return PS.Str;
@@ -2629,12 +2767,17 @@ public:
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
+
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
+                                   FilePath);
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) {
     return PS << Name;
   }
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
+                                   FilePath);
     getType()->printType(OS, "dpct::image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
     return OS;
@@ -2675,6 +2818,8 @@ public:
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, "dpct::image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
+    requestFeature(HelperFileEnum::Image, "image_wrapper",
+                                   FilePath);
     return PS.Str;
   }
   std::string getSamplerDecl() override {
@@ -2684,6 +2829,8 @@ public:
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
+                                   FilePath);
     ParameterStream PS;
     Type->printType(PS, "dpct::image_accessor_ext");
     return PS.Str;
@@ -2712,6 +2859,8 @@ public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl() override {
+    requestFeature(HelperFileEnum::Image, "image_wrapper",
+                                   FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, "dpct::image_wrapper")
@@ -4110,8 +4259,8 @@ bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
   SourceLocation Loc = S->getBeginLoc();
   Loc = SM.getExpansionLoc(Loc);
 
-  std::string Key = SM.getFilename(Loc).str() + ":" +
-                    std::to_string(SM.getDecomposedLoc(Loc).second);
+  auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledSet().find(Key);
   if (Iter != DpctGlobalInfo::getTempVariableHandledSet().end()) {
     return true;
@@ -4181,28 +4330,40 @@ inline void buildTempVariableMap(int Index, const T *S,
       if (Iter->second.DefaultQueueCounter == 1) {
         if (Iter->second.CurrentDeviceCounter <= 1) {
           if (DpctGlobalInfo::getUsingDRYPattern() &&
-              !DpctGlobalInfo::getDeviceChangedFlag())
+              !DpctGlobalInfo::getDeviceChangedFlag()) {
             DpctGlobalInfo::getInstance().addReplacement(
                 std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                  HFInfo.DeclLocOffset, 0,
                                                  DevDecl, nullptr));
+            requestFeature(HelperFileEnum::Device,
+                                           "get_current_device",
+                                           HFInfo.DeclLocFile);
+          }
         }
         if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag())
+            !DpctGlobalInfo::getDeviceChangedFlag()) {
           DpctGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(
                   HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
+          requestFeature(
+              HelperFileEnum::Device, "get_current_device", HFInfo.DeclLocFile);
+          requestFeature(
+              HelperFileEnum::Device, "device_ext", HFInfo.DeclLocFile);
+        }
       }
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::CurrentDevice) {
       if (Iter->second.CurrentDeviceCounter == 1 &&
           Iter->second.DefaultQueueCounter <= 1) {
         if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag())
+            !DpctGlobalInfo::getDeviceChangedFlag()) {
           DpctGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                HFInfo.DeclLocOffset, 0, DevDecl,
                                                nullptr));
+          requestFeature(
+              HelperFileEnum::Device, "get_current_device", HFInfo.DeclLocFile);
+        }
       }
       Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
     }

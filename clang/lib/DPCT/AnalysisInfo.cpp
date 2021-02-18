@@ -19,6 +19,8 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Tooling/Tooling.h"
 #include <deque>
+#include <fstream>
+#include <algorithm>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
@@ -32,6 +34,9 @@ std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
+HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
+    HelperFilesCustomizationLevel::none;
+std::string DpctGlobalInfo::CustomHelperFileName = "dpct.hpp";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
@@ -669,6 +674,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
 
       if (Arg.IsUsedAsLvalueAfterMalloc) {
+        requestFeature(HelperFileEnum::Memory, "access_wrapper",
+                                       getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             "dpct::access_wrapper<", TypeStr, "> ",
             Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
@@ -676,6 +683,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs +=
             buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
       } else {
+        requestFeature(HelperFileEnum::Memory, "get_access",
+                                       getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(
             buildString("auto ", Arg.getIdStringWithSuffix("acc"),
                         " = dpct::get_access(", Arg.getArgString(),
@@ -768,6 +777,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
         LocInfo.LocHash,
         (hasTemplateArgs() ? (", " + getTemplateArguments(false, true)) : ""),
         ">>(");
+    requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda",
+                                   getFilePath());
   } else {
     Printer.line("cgh.parallel_for(");
   }
@@ -1612,8 +1623,11 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
   for (auto &TA : TemplateArgs) {
     if ((TA.isNull() || !TA.isWritten()) && WrittenArgsOnly)
       continue;
-    if (WithScalarWrapped && (!TA.isType() && !TA.isNull()))
+    if (WithScalarWrapped && (!TA.isType() && !TA.isNull())) {
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
+      requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda",
+                                     FilePath);
+    }
     else
       appendString(OS, TA.getString(), ", ");
   }
@@ -2342,10 +2356,14 @@ MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
+    requestFeature(HelperFileEnum::Memory,
+                                   "global_memory_alias", getFilePath());
     static std::string DeviceMemory = "dpct::global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
+    requestFeature(HelperFileEnum::Memory,
+                                   "constant_memory_alias", getFilePath());
     static std::string ConstantMemory = "dpct::constant_memory";
     return getMemoryType(ConstantMemory, getType());
   }
@@ -2357,6 +2375,8 @@ std::string MemVarInfo::getMemoryType() {
     return getMemoryType(SharedMemory, getType());
   }
   case clang::dpct::MemVarInfo::Managed: {
+    requestFeature(HelperFileEnum::Memory,
+                                   "shared_memory_alias", getFilePath());
     static std::string ManagedMemory = "dpct::shared_memory";
     return getMemoryType(ManagedMemory, getType());
   }
@@ -2367,6 +2387,8 @@ std::string MemVarInfo::getMemoryType() {
 }
 
 const std::string &MemVarInfo::getMemoryAttr() {
+  requestFeature(HelperFileEnum::Memory, "memory_region",
+                                 getFilePath());
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
     static std::string DeviceMemory = "dpct::device";

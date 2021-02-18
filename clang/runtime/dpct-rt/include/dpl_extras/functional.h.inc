@@ -9,6 +9,9 @@
 #ifndef __DPCT_FUNCTIONAL_H__
 #define __DPCT_FUNCTIONAL_H__
 
+// DPCT_LABEL_BEGIN|non_local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #include <functional>
 #include <oneapi/dpl/functional>
 #include <oneapi/dpl/iterator>
@@ -19,17 +22,29 @@
 
 #include <tuple>
 #include <utility>
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 
 namespace dpct {
 
 namespace internal {
 
+// DPCT_LABEL_BEGIN|enable_if_execution_policy|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <class _ExecPolicy, class _T>
 using enable_if_execution_policy =
     typename std::enable_if<oneapi::dpl::execution::is_execution_policy<
                                 typename std::decay<_ExecPolicy>::type>::value,
                             _T>::type;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|make_index_sequence|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #if _ONEDPL_CPP14_INTEGER_SEQUENCE_PRESENT
 
 template <std::size_t... _Sp>
@@ -52,7 +67,11 @@ template <std::size_t... _Sp> struct make_index_sequence_impl<0, _Sp...> {
 template <std::size_t _Np>
 using make_index_sequence = typename make_index_sequence_impl<_Np>::type;
 #endif
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|__buffer|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Minimal buffer implementations for temporary storage in mapping rules
 // Some of our algorithms need to start with raw memory buffer,
 // not an initialized array, because initialization/destruction
@@ -90,7 +109,11 @@ public:
   _Tp *get() const { return _M_ptr.get(); }
 };
 #endif
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|__less|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Implements C++14 std::less<void> specialization to allow parameter type
 // deduction.
 class __less {
@@ -100,7 +123,11 @@ public:
     return std::forward<_Xp>(__x) < std::forward<_Yp>(__y);
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|rebind_policy|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename Policy, typename NewName> struct rebind_policy {
   using type = Policy;
 };
@@ -118,7 +145,11 @@ struct rebind_policy<oneapi::dpl::execution::fpga_policy<factor, KernelName>,
   using type = oneapi::dpl::execution::fpga_policy<factor, NewName>;
 };
 #endif
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|perm_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T1, typename T2,
           typename R1 = typename std::iterator_traits<T1>::reference,
           typename R2 = typename std::iterator_traits<T2>::reference>
@@ -131,7 +162,11 @@ struct perm_fun {
 private:
   T1 source;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|compare_key_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Functor compares first element (key) from tied sequence.
 template <typename Compare = class internal::__less> struct compare_key_fun {
   typedef bool result_of;
@@ -146,7 +181,11 @@ template <typename Compare = class internal::__less> struct compare_key_fun {
 private:
   Compare comp;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|predicate_key_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Functor evaluates second element of tied sequence with predicate.
 // Used by: copy_if, remove_copy_if, stable_partition_copy
 // Lambda:
@@ -162,7 +201,11 @@ template <typename Predicate> struct predicate_key_fun {
 private:
   Predicate pred;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|negate_predicate_key_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Used by: remove_if
 template <typename Predicate> struct negate_predicate_key_fun {
   typedef bool result_of;
@@ -176,7 +219,11 @@ template <typename Predicate> struct negate_predicate_key_fun {
 private:
   Predicate pred;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sequence_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T> struct sequence_fun {
   using result_type = T;
   sequence_fun(T _init, T _step) : init(_init), step(_step) {}
@@ -189,7 +236,11 @@ private:
   const T init;
   const T step;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|unique_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 //[binary_pred](Ref a, Ref b){ return(binary_pred(get<0>(a),get<0>(b)));
 template <typename Predicate> struct unique_fun {
   typedef bool result_of;
@@ -202,7 +253,11 @@ template <typename Predicate> struct unique_fun {
 private:
   Predicate pred;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|replace_if_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 // Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
 // });
 template <typename T, typename Predicate> struct replace_if_fun {
@@ -219,7 +274,11 @@ private:
   Predicate pred;
   const T new_value;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|transform_if_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 //[pred,op](Ref a){return pred(a) ? op(a) : a; }
 template <typename T, typename Predicate, typename Operator>
 struct transform_if_fun {
@@ -233,7 +292,11 @@ private:
   Predicate pred;
   Operator op;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|transform_if_mask_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 //[pred, op](Ref1 a, Ref2 s) { return pred(s) ? op(a) : a; });
 template <typename T, typename Predicate, typename Operator>
 struct transform_if_mask_fun {
@@ -248,7 +311,11 @@ private:
   Predicate pred;
   Operator op;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|transform_if_zip_mask_fun|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T, typename Predicate, typename BinaryOperation>
 class transform_if_zip_mask_fun {
 public:
@@ -265,6 +332,7 @@ private:
   Predicate pred;
   BinaryOperation op;
 };
+// DPCT_LABEL_END
 } // end namespace internal
 
 } // end namespace dpct

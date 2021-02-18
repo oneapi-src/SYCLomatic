@@ -336,6 +336,24 @@ static opt<bool> EnableComments(
     "comments", llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
     cat(DPCTCat), init(false));
 
+static opt<HelperFilesCustomizationLevel> CustomHelperFiles(
+    "custom-helper-files", desc("Customize the helper files.\n"),
+    values(
+        llvm::cl::OptionEnumValue{
+            "none", int(HelperFilesCustomizationLevel::none),
+            "No customization for helper files. (default)", false},
+        llvm::cl::OptionEnumValue{
+            "file", int(HelperFilesCustomizationLevel::file),
+            "Only generate necessary helper files.", false}),
+    init(HelperFilesCustomizationLevel::none), value_desc("value"),
+    cat(DPCTCat), llvm::cl::Optional);
+
+opt<std::string> CustomHelperFileName(
+    "custom-helper-file-name",
+    desc(
+        "Specify the main helper function header file name. Default: dpct"),
+    init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
+
 bool AsyncHandlerFlag = false;
 static opt<bool, true>
     AsyncHandler("always-use-async-handler",
@@ -1120,6 +1138,10 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
+  DpctGlobalInfo::setHelperFilesCustomizationLevel(CustomHelperFiles);
+  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
+  MapNames::HelperFileNameMap[HelperFileEnum::Dpct] =
+      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);

@@ -371,12 +371,40 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite);
 llvm::Expected<std::string> applyAllReplacements(StringRef Code,
                                                  const Replacements &Replaces);
 
+#ifdef INTEL_CUSTOMIZATION
+struct HelperFuncForYaml {
+  HelperFuncForYaml() : IsCalled(false), CallerSrcFiles({}) {}
+  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles)
+      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles) {}
+  bool IsCalled = false;
+  std::vector<std::string> CallerSrcFiles;
+};
+#endif
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
 #ifdef INTEL_CUSTOMIZATION
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
+  std::string DpctVersion = "";
+  std::string MainHelperFileName = "";
+
+  // The Key of below maps is Feature Name
+  std::map<std::string, HelperFuncForYaml> AtomicHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> BlasUtilsHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DeviceHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DpctHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplUtilsHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> ImageHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> KernelHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> MemoryHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> UtilHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasAlgorithmHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasFunctionalHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasIteratorsHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasMemoryHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasNumericHelperFuncMap;
+  std::map<std::string, HelperFuncForYaml> DplExtrasVectorHelperFuncMap;
 #endif
   std::vector<Replacement> Replacements;
 };

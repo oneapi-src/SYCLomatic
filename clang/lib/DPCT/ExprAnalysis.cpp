@@ -402,6 +402,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
                                                 ECD->getName().str());
+    requestHelperFeatureForEnumNames(ECD->getName().str(), DRE);
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
@@ -542,6 +543,14 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
+
+  auto HelperFeatureIter =
+      MapNames::TextureAPIHelperFeaturesMap.find(RefString);
+  if (HelperFeatureIter != MapNames::TextureAPIHelperFeaturesMap.end()) {
+    requestFeature(HelperFeatureIter->second.first,
+                                   HelperFeatureIter->second.second, CE);
+  }
+
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
@@ -642,8 +651,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   default:
     return;
   }
-  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName))
+  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
+    requestHelperFeatureForTypeNames(TyName, SR.getBegin());
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+  }
 }
 
 void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
@@ -807,6 +818,9 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   } else {
     OS << " = ";
   }
+  requestFeature(HelperFileEnum::Memory, "dpct_malloc", Call);
+  requestFeature(HelperFileEnum::Memory, "dpct_malloc_2d", Call);
+  requestFeature(HelperFileEnum::Memory, "dpct_malloc_3d", Call);
   OS << "dpct::dpct_malloc(";
   ExprAnalysis ArgEA(SecondArg);
   ArgEA.analyze();
@@ -957,6 +971,8 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
       ExprAnalysis EA(SubE);
       EA.analyze();
       std::string Rep = EA.getReplacedString();
+      requestFeature(HelperFileEnum::Memory, "get_host_ptr",
+                                     Call);
       if (SubE->IgnoreImplicitAsWritten()->getStmtClass() ==
           Stmt::ParenExprClass) {
         Repl.push_back(
@@ -1005,6 +1021,8 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
                     std::string("dpct::get_host_ptr<" + PointerTempType + ">(" +
                                 PointerName + ")")});
+    requestFeature(HelperFileEnum::Memory, "get_host_ptr",
+                                   Call);
   }
 }
 void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {

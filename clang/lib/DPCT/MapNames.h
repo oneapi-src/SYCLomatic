@@ -19,6 +19,8 @@
 namespace clang {
 namespace dpct {
   enum class KernelArgType;
+  enum class HelperFileEnum : unsigned int;
+  struct HelperFunc;
 }
 }
 
@@ -309,6 +311,8 @@ public:
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
+  static std::map<std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+      TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static const MapTy SPBLASEnumsMap;
@@ -319,6 +323,9 @@ public:
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static ThrustMapTy ThrustFuncNamesMap;
+  static std::map<std::string,
+                  std::pair<clang::dpct::HelperFileEnum, std::string>>
+      ThrustFuncNamesHelperFeaturesMap;
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;
 
@@ -380,6 +387,22 @@ public:
 
   static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
   static const MapNames::SetTy PredefinedStreamName;
+
+
+
+  static std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
+                  clang::dpct::HelperFunc>
+      HelperNameContentMap;
+  static std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+      HelperFileNameMap;
+  static const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileHeaderGuardMacroMap;
+  static const std::unordered_map<
+      std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+      TextureAPIHelperFeaturesMap;
+  static const std::unordered_map<clang::dpct::HelperFileEnum,
+                                  std::vector<clang::dpct::HelperFileEnum>>
+      HelperFileDependencyMap;
 };
 
 class MigrationStatistics {

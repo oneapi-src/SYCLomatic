@@ -777,6 +777,8 @@ public:
   void handleComputeMode(std::string EnumName, const DeclRefExpr *E);
 
   static std::map<std::string, std::string> EnumNamesMap;
+  static std::map<std::string, HelperFeatureIDTy>
+      EnumNamesHelperFeaturesMap;
 };
 
 /// Migration rule for Error enums constants.
@@ -922,11 +924,14 @@ public:
         if (Size == "1")
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
-        else
+        else {
           Suffix = Suffix + getNL() + IndentStr +
                    "  dpct::get_default_queue().memcpy(" +
                    ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
                    ", sizeof(" + Type + ")*" + Size + ").wait();";
+          requestFeature(HelperFileEnum::Device,
+                                         "get_default_queue", CE);
+        }
       };
 
       if (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
@@ -938,6 +943,8 @@ public:
         declareTempArgs(X1Ptr, "x1_ct", Type, 3);
         declareTempArgs(ParamPtr, "param_ct", Type, 5);
 
+        requestFeature(HelperFileEnum::Device,
+                                       "get_default_queue", CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
                  "::malloc_shared<" + Type +
@@ -991,6 +998,8 @@ public:
         declareTempArgs(CPtr, "c_ct", RealType, 3);
         declareTempArgs(SPtr, "s_ct", Type, 4);
 
+        requestFeature(HelperFileEnum::Device,
+                                       "get_default_queue", CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
@@ -1070,6 +1079,8 @@ public:
 
       std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
 
+      requestFeature(HelperFileEnum::Device,
+                                     "get_default_queue", CE);
       PrefixInsertStr =
           OriginType + "* " + ResultTempPtr + " = " + EA.getReplacedString() + ";" +
           getNL() + IndentStr +
@@ -1117,6 +1128,8 @@ public:
         (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") &&
         (ArgIndex == 5);
 
+    requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+                                   CE);
     SyncAPIBufferAssignmentInThenBlock.emplace_back(
         BufferName + " = dpct::get_buffer<" + Type + ">(" + PointerStr + ");");
         SyncAPIBufferAssignmentInElseBlock.emplace_back(
@@ -1143,6 +1156,7 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
+      requestFeature(HelperFileEnum::Memory, "mem_mgr", CE);
       std::string IfStmtStr =
           "if (dpct::detail::mem_mgr::instance().is_device_ptr(" + PointerStr +
           ")) {" + getNL() + IndentStr +
