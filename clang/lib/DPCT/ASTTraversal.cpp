@@ -2244,7 +2244,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
                   "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
-                  "cufftType_t", "cufftType", "pair", "CUdeviceptr"),
+                  "cufftType_t", "cufftType", "pair", "CUdeviceptr",
+                  "cudaDeviceAttr"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -3815,9 +3816,9 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(
-                                hasAnyName("cudaComputeMode", "cudaMemcpyKind",
-                                           "cudaMemoryAdvise"))))))
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                                "cudaComputeMode", "cudaMemcpyKind",
+                                "cudaMemoryAdvise", "cudaDeviceAttr"))))))
                     .bind("EnumConstant"),
                 this);
 
@@ -3931,9 +3932,26 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
     handleComputeMode(EnumName, E);
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
-    if (ET->getDecl()->getName() == "cudaMemoryAdvise") {
-      report(E->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
-             " and was set to 0");
+    if (auto ETD = ET->getDecl()) {
+      auto EnumTypeName = ETD->getName().str();
+      if (EnumTypeName == "cudaMemoryAdvise") {
+        report(E->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
+               " and was set to 0");
+      } else if (EnumTypeName == "cudaDeviceAttr") {
+        auto &Context = DpctGlobalInfo::getContext();
+        auto Parent = Context.getParents(*E)[0];
+        if (auto PCE = Parent.get<CallExpr>()) {
+          if (auto DC = PCE->getDirectCallee()) {
+            if (DC->getNameAsString() == "cudaDeviceGetAttribute")
+              return;
+          }
+        }
+        if (auto EC = dyn_cast<EnumConstantDecl>(E->getDecl())) {
+          std::string Repl = EC->getInitVal().toString(10);
+          emplaceTransformation(new ReplaceStmt(E, Repl));
+          return;
+        }
+      }
     }
   }
   auto Search = EnumNamesMap.find(EnumName);

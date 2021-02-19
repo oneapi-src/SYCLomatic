@@ -189,6 +189,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"CUresourcetype", "dpct::image_data_type" },
       {"cudaResourceType", "dpct::image_data_type" },
       {"CUtexref", "dpct::image_wrapper_base_p"},
+      {"cudaDeviceAttr", "int"},
       // ...
   };
 
