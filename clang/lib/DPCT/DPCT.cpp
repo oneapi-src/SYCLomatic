@@ -650,6 +650,9 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
 
   size_t Count = 0;
   for (const auto &Elem : LOCStaticsMap) {
+    // Skip invalid file path.
+    if(!llvm::sys::fs::exists(Elem.first))
+      continue;
     unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
     unsigned TransToAPI = Elem.second[0];
     unsigned TransToSYCL = Elem.second[1];
