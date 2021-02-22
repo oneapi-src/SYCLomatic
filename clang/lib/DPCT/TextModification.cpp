@@ -90,7 +90,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       ReplacementString.empty()) {
       // Remove the callexpr spelling in macro define if it is outermost
       if (isOuterMostMacro(TheStmt)) {
-        auto RangeDef = getStmtSpellingSourceRange(TheStmt);
+        auto RangeDef = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
         auto BeginDef = RangeDef.getBegin();
         auto EndDef = RangeDef.getEnd();
         auto CallExprLength =

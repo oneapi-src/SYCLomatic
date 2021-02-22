@@ -773,21 +773,11 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   // Check if the whole kernel call is in macro arg
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
-  if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd)) {
-    // Just check if begin/end are the same macro arg, so use getBegin() for both loc
-    CallBegin = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallBegin).getBegin());
-    CallEnd = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallEnd).getBegin());
-    auto ItMatchBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(CallBegin));
-    auto ItMatchEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(CallEnd));
-    if (ItMatchBegin != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
-      && ItMatchEnd != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
-      && ItMatchBegin == ItMatchEnd) {
-      // The whole kernel call is in a single macro arg
-      IsInMacroDefine = false;
-      return;
-    }
+
+  if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd) &&
+      isLocInSameMacroArg(CallBegin, CallEnd)) {
+    IsInMacroDefine = false;
+    return;
   }
 
   auto CalleeSpelling = KernelCall->getCallee()->getBeginLoc();

@@ -118,30 +118,13 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation BeginLoc,
 }
 
 std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const Expr *E) {
-  SourceLocation SpellingBeginLoc, SpellingEndLoc;
-  SpellingBeginLoc = SM.getSpellingLoc(E->getBeginLoc());
-  SpellingEndLoc = SM.getSpellingLoc(E->getEndLoc());
-  // Both Begin/End are not macro
-  // or
-  // SpellingBeginLoc and SpellingEndLoc are in the same macro define
-  if (!isExprStraddle(E)) {
-    auto LastTokenLength =
-        Lexer::MeasureTokenLength(SpellingEndLoc, SM, Context.getLangOpts());
-    return std::pair<SourceLocation, size_t>(
-        SpellingBeginLoc, SM.getCharacterData(SpellingEndLoc) -
-                              SM.getCharacterData(SpellingBeginLoc) +
-                              LastTokenLength);
-  }
-  // If the expr is straddle, use the stmt expansion range
-  auto ExpansionBeginLoc = getStmtExpansionSourceRange(E).getBegin();
-  auto ExpansionEndLoc = getStmtExpansionSourceRange(E).getEnd();
-
+  auto ResultRange = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
   auto LastTokenLength =
-      Lexer::MeasureTokenLength(ExpansionEndLoc, SM, Context.getLangOpts());
+    Lexer::MeasureTokenLength(ResultRange.getEnd(), SM, Context.getLangOpts());
   return std::pair<SourceLocation, size_t>(
-      ExpansionBeginLoc, SM.getCharacterData(ExpansionEndLoc) -
-                             SM.getCharacterData(ExpansionBeginLoc) +
-                             LastTokenLength);
+      ResultRange.getBegin(), SM.getCharacterData(ResultRange.getEnd()) -
+                                  SM.getCharacterData(ResultRange.getBegin()) +
+                                  LastTokenLength);
 }
 
 
@@ -1329,15 +1312,19 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
     if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
       // Try getImmediateExpansionRange
       // e.g. #define M1(x) call(x)
+      BeginCandidate = E->getBeginLoc();
+      while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
+        BeginCandidate = SM.getImmediateSpellingLoc(BeginCandidate);
+      }
       BeginCandidate =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(BeginCandidate).getBegin());
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
         // Multi-Level funclike special process
         // e.g.
         // #define M1(x) call1(x)
         // #define M2(y) call2(y)
         // M1(M2(3))
-        BeginCandidate = getStmtSpellingSourceRange(E).getBegin();
+        BeginCandidate = getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
         if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
           if (!isExprStraddle(E)) {
             // Default use SpellingLoc
@@ -1363,13 +1350,17 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
     EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
     if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
       // Try ImmediateExpansion
+      EndCandidate = E->getEndLoc();
+      while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(EndCandidate))) {
+        EndCandidate = SM.getImmediateSpellingLoc(EndCandidate);
+      }
       EndCandidate =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(EndCandidate).getEnd());
       auto LastTokenLength =
         Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-        EndCandidate = getStmtSpellingSourceRange(E).getEnd();
+        EndCandidate = getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
         auto LastTokenLength =
           Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
         EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);

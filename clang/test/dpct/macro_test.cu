@@ -8,6 +8,15 @@
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
 #include <iostream>
+#include <cmath>
+#include <iomanip>
+#include <limits>
+#include <algorithm>
+
+#include <stdio.h>
+
+// CHECK: #include <algorithm>
+
 #include "macro_test.h"
 
 #define CUDA_NUM_THREADS 1024+32
@@ -780,12 +789,41 @@ __device__ Word mulhilo##W(Word a, Word b, Word* hip){ \
 }
 _mulhilo_(64, uint64_t, __umul64hi)
 
+
+
+
+//CHECK: #define AAA __heq
+//CHECK-NEXT: #define CALL(x) x
+//CHECK-NEXT: #define CALL2(x) CALL(x)
+//CHECK-NEXT: #define III CALL(CALL(CALL(h == h_1)))
+//CHECK-NEXT: #define JJJ CALL(CALL(CALL(III)))
+//CHECK-NEXT: #define KKK JJJ
+//CHECK-NEXT: void foo16() {
+//CHECK-NEXT:     sycl::half h, h_1, h_2;
+//CHECK-NEXT:     sycl::half2 h2, h2_1, h2_2;
+//CHECK-NEXT:     bool b;
+//CHECK-NEXT:     CALL(CALL(CALL(JJJ)));
+//CHECK-NEXT: }
+#define AAA __heq
+#define CALL(x) x
+#define CALL2(x) CALL(x)
+#define III CALL(CALL(CALL(AAA (h, h_1))))
+#define JJJ CALL(CALL(CALL(III)))
+#define KKK JJJ
+__global__ void foo16() {
+    __half h, h_1, h_2;
+    __half2 h2, h2_1, h2_2;
+    bool b;
+    CALL(CALL(CALL(JJJ)));
+}
+
 // Macro issue here will fix in issue jira
-void foo16(){
-    size_t result1, result2;
-    int size = 32;
-    float* f_A;
-    CALL(CUDA_MEMCPY3D cpy2);
-    CUdeviceptr f_D = 0;
-    CALL(cuMemAlloc(&f_D, size));
+void foo17(){
+  size_t result1, result2;
+  int size = 32;
+  float* f_A;
+  // Error CALL() will be removed
+  CALL(CUDA_MEMCPY3D cpy2);
+  CUdeviceptr f_D = 0;
+  CALL(cuMemAlloc(&f_D, size));
 }

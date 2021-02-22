@@ -191,28 +191,6 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   return SourceRange(BeginLoc, EndLoc);
 }
 
-SourceRange getStmtSpellingSourceRange(const Stmt *S) {
-  // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
-  // Remove outer function-like macro
-  auto Range = getRangeInsideFuncLikeMacro(S);
-  return getSpellingSourceRange(Range.getBegin(), Range.getEnd());
-}
-
-SourceRange getSpellingSourceRange(SourceLocation L1, SourceLocation L2) {
-  // For multi level macro, e.g.
-  // #define AAA a
-  // #define BBB AAA
-  // Keep finding the immediate expansion location
-  std::tie(L1, L2) =
-    getTheOneBeforeLastImmediateExapansion(L1, L2);
-  // For straddle expr, e.g.
-  // #define AAA a
-  // #define BBB 3 + AAA
-  std::tie(L1, L2) =
-    getTheLastCompleteImmediateRange(L1, L2);
-  return SourceRange(L1, L2);
-}
-
 size_t calculateExpansionLevel(const SourceLocation Loc) {
   if (Loc.isFileID())
     return 0;
@@ -2464,4 +2442,92 @@ llvm::StringRef getCalleeName(const CallExpr *CE) {
     End++;
   }
   return llvm::StringRef(Start, StrSize);
+}
+
+// Usually used to find a correct removing range.
+// Return the source range which is not straddle and mostly
+// close to the spelling location.
+// Let Begin/End are the begin/end location of pow(1, 2)
+// #define CALL(x) x
+// #define FUNC_NAME pow
+// #define ARGS (1, 2)
+// #define ALL FUNC_NAME ARGS
+// ex 1. CALL(CALL(CALL(FUNC_NAME ARGS)))
+// Result: Range of "FUNC_NAME ARGS"
+// ex 2. CALL(pow(1, 2))
+// Result: Range of "pow(1, 2)"
+// ex 3. CALL(ALL)
+// Result: Range of "FUNC_NAME ARGS" (in the definition of "ALL")
+SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // Remove the outer func-like macro
+  // ex. CALL(CALL(CALL(FUNC_NAME ARGS)));
+  // the following while will skip the 3 CALL()
+  SourceLocation PreBegin = Begin;
+  SourceLocation PreEnd = End;
+  while (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
+    PreBegin = Begin;
+    PreEnd = End;
+    Begin = SM.getImmediateSpellingLoc(Begin);
+    End = SM.getImmediateSpellingLoc(End);
+  }
+  // if there is still either one of begin/end is macro arg expansion
+  if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
+    // No precise range available which can be removed without delete extra
+    // syntax.
+    // ex. CALL(FUNC_NAME CALL(ARGS))
+    // After the above while loop, begin/end will be the Range of "FUNC_NAME
+    // CALL(ARGS)". However, FUNC_NAME and CALL() may contain syntax which are
+    // not belong to the CallExpr.
+    // ex.
+    // #define FUNC_NAME a = pow
+    // #define CALL(x) x;
+    // The "a =" and ";" will be removed if we use the range "FUNC_NAME
+    // CALL(ARGS)" therefore, return a range with length 0 for the caller of
+    // getDefinitionRange() to handle the exception.
+    return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
+  }
+
+  // If the begin/end are not in the same macro arg, no precise range available.
+  // Using PreBegin/PreEnd because they contains the info of the last func-like
+  // macro.
+  if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
+    return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
+  }
+
+  std::tie(Begin, End) =
+    getTheLastCompleteImmediateRange(Begin, End);
+
+  return SourceRange(Begin, End);
+}
+
+bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // Both Begin/End are not macro arg, treat as they are in same macro arg
+  if (!SM.isMacroArgExpansion(Begin) && !SM.isMacroArgExpansion(End)) {
+    return true;
+  }
+  if (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
+    // Check if begin/end are the same macro arg, so use getBegin() for
+    // both loc
+    Begin =
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+    End =
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getBegin());
+    auto ItMatchBegin =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(Begin));
+    auto ItMatchEnd =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(End));
+    if (ItMatchBegin !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+        ItMatchEnd !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+        ItMatchBegin == ItMatchEnd) {
+      // The whole kernel call is in a single macro arg
+      return true;
+    }
+  }
+  return false;
 }
