@@ -39,6 +39,8 @@ struct is_iterator<
 
 template <typename T> // For pointers
 struct is_iterator<T *> : std::true_type {};
+
+template <typename T, typename Name> class kernel_name;
 } // end namespace internal
 
 #ifndef DPCT_USM_LEVEL_NONE
@@ -69,8 +71,10 @@ private:
 public:
   template <typename OtherA> operator const std::vector<T, OtherA>() & {
     auto __tmp = std::vector<T, OtherA>(this->size());
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              this->begin(), this->end(), __tmp.begin());
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class StdVectorConv>>(get_default_queue()),
+        this->begin(), this->end(), __tmp.begin());
     return __tmp;
   }
   device_vector()
@@ -86,15 +90,19 @@ public:
       : _alloc(get_default_queue()), _size(n) {
     _capacity = 2 * _size;
     _storage = _alloc.allocate(_capacity);
-    std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+    std::fill(oneapi::dpl::execution::make_device_policy<
+                  internal::kernel_name<T, class DVCtorDefaultVal>>(
+                  get_default_queue()),
               begin(), end(), T(value));
   }
   device_vector(const device_vector &other) : _alloc(get_default_queue()) {
     _size = other.size();
     _capacity = other.capacity();
     _storage = _alloc.allocate(_capacity);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              other.begin(), other.end(), begin());
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVCopyCtor>>(get_default_queue()),
+        other.begin(), other.end(), begin());
   }
   device_vector(device_vector &&other)
       : _alloc(get_default_queue()), _size(other.size()),
@@ -110,7 +118,9 @@ public:
     _size = std::distance(first, last);
     _capacity = 2 * _size;
     _storage = _alloc.allocate(_capacity);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+    std::copy(oneapi::dpl::execution::make_device_policy<
+                  internal::kernel_name<T, class DVCtorIterRange>>(
+                  get_default_queue()),
               first, last, begin());
   }
 
@@ -125,13 +135,17 @@ public:
     auto ptr_type = sycl::get_pointer_type(first, get_default_context());
     if (ptr_type != sycl::usm::alloc::host &&
         ptr_type != sycl::usm::alloc::unknown) {
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+      std::copy(oneapi::dpl::execution::make_device_policy<
+                    internal::kernel_name<T, class DVCtorPtrRange1>>(
+                    get_default_queue()),
                 first, last, begin());
     } else {
       sycl::buffer<T, 1> buf(first, last);
       auto buf_first = oneapi::dpl::begin(buf);
       auto buf_last = oneapi::dpl::end(buf);
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+      std::copy(oneapi::dpl::execution::make_device_policy<
+                    internal::kernel_name<T, class DVCtorPtrRange2>>(
+                    get_default_queue()),
                 buf_first, buf_last, begin());
     }
   }
@@ -146,22 +160,28 @@ public:
       : _alloc(get_default_queue()), _size(v.size()) {
     _capacity = 2 * _size;
     _storage = _alloc.allocate(_capacity);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              v.begin(), v.end(), this->begin());
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVCtorStdVec>>(get_default_queue()),
+        v.begin(), v.end(), this->begin());
   }
 
   template <typename OtherAllocator>
   device_vector &operator=(const std::vector<T, OtherAllocator> &v) {
     resize(v.size());
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+    std::copy(oneapi::dpl::execution::make_device_policy<
+                  internal::kernel_name<T, class DVAssignOpStdVec>>(
+                  get_default_queue()),
               v.begin(), v.end(), begin());
     return *this;
   }
   device_vector &operator=(const device_vector &other) {
     // Copy assignment operator:
     resize(other.size());
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              other.begin(), other.end(), begin());
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVAssignOp>>(get_default_queue()),
+        other.begin(), other.end(), begin());
     return *this;
   }
   device_vector &operator=(device_vector &&other) {
@@ -196,8 +216,10 @@ public:
       // allocate buffer for new size
       auto tmp = _alloc.allocate(2 * n);
       // copy content (old buffer to new buffer)
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                begin(), end(), tmp);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVreserve>>(get_default_queue()),
+          begin(), end(), tmp);
       // deallocate old memory
       _alloc.deallocate(_storage, _capacity);
       _storage = tmp;
@@ -221,8 +243,10 @@ public:
   void shrink_to_fit(void) {
     if (_size != capacity()) {
       auto tmp = _alloc.allocate(_size);
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                begin(), end(), tmp);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVshrink>>(get_default_queue()),
+          begin(), end(), tmp);
       _alloc.deallocate(_storage, _capacity);
       _storage = tmp;
       _capacity = _size;
@@ -230,8 +254,10 @@ public:
   }
   void assign(size_type n, const T &x) {
     resize(n);
-    std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              begin(), begin() + n, x);
+    std::fill(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVassignN>>(get_default_queue()),
+        begin(), begin() + n, x);
   }
   template <typename InputIterator>
   void
@@ -240,7 +266,9 @@ public:
                                  InputIterator>::type last) {
     auto n = std::distance(first, last);
     resize(n);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+    std::copy(oneapi::dpl::execution::make_device_policy<
+                  internal::kernel_name<T, class DVassignIterRange>>(
+                  get_default_queue()),
               first, last, begin());
   }
   void clear(void) { _size = 0; }
@@ -259,11 +287,15 @@ public:
     auto m = std::distance(last, end());
     auto tmp = _alloc.allocate(m);
     // copy remainder to temporary buffer.
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              last, end(), tmp);
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVerase1>>(get_default_queue()),
+        last, end(), tmp);
     // override (erase) subsequence in storage.
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              tmp, tmp + m, first);
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVerase2>>(get_default_queue()),
+        tmp, tmp + m, first);
     _alloc.deallocate(tmp, m);
     _size -= n;
     return begin() + first.get_idx() + n;
@@ -277,26 +309,34 @@ public:
   void insert(iterator position, size_type n, const T &x) {
     if (position == end()) {
       resize(size() + n);
-      std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                end() - n, end(), x);
+      std::fill(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert1>>(get_default_queue()),
+          end() - n, end(), x);
     } else {
       auto i_n = std::distance(begin(), position);
       // allocate temporary storage
       auto m = std::distance(position, end());
       auto tmp = _alloc.allocate(m);
       // copy remainder
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                position, end(), tmp);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert2>>(get_default_queue()),
+          position, end(), tmp);
 
       resize(size() + n);
       // resizing might invalidate position
       position = begin() + position.get_idx();
 
-      std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                position, position + n, x);
+      std::fill(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert3>>(get_default_queue()),
+          position, position + n, x);
 
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                tmp, tmp + m, position + n);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert4>>(get_default_queue()),
+          tmp, tmp + m, position + n);
       _alloc.deallocate(tmp, m);
     }
   }
@@ -308,23 +348,31 @@ public:
     auto n = std::distance(first, last);
     if (position == end()) {
       resize(size() + n);
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                first, last, end());
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert5>>(get_default_queue()),
+          first, last, end());
     } else {
       auto m = std::distance(position, end());
       auto tmp = _alloc.allocate(m);
 
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                position, end(), tmp);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert6>>(get_default_queue()),
+          position, end(), tmp);
 
       resize(size() + n);
       // resizing might invalidate position
       position = begin() + position.get_idx();
 
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                first, last, position);
-      std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                tmp, tmp + m, position + n);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert7>>(get_default_queue()),
+          first, last, position);
+      std::copy(
+          oneapi::dpl::execution::make_device_policy<
+              internal::kernel_name<T, class DVinsert8>>(get_default_queue()),
+          tmp, tmp + m, position + n);
       _alloc.deallocate(tmp, m);
     }
   }
@@ -398,7 +446,9 @@ public:
         _size(std::distance(first, last)) {
     auto buf = get_buffer();
     auto dst = oneapi::dpl::begin(buf);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+    std::copy(oneapi::dpl::execution::make_device_policy<
+                  internal::kernel_name<T, class DVCtorIterRange>>(
+                  get_default_queue()),
               first, last, dst);
   }
 
@@ -407,8 +457,10 @@ public:
       : _storage(alloc_store(v.size() * sizeof(T))), _size(v.size()) {
     auto buf = get_buffer();
     auto dst = oneapi::dpl::begin(buf);
-    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-              v.real_begin(), v.real_begin() + v.size(), dst);
+    std::copy(
+        oneapi::dpl::execution::make_device_policy<
+            internal::kernel_name<T, class DVCopyCtor>>(get_default_queue()),
+        v.real_begin(), v.real_begin() + v.size(), dst);
   }
 
   template <typename OtherAllocator>
@@ -530,9 +582,7 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) {
-    return reinterpret_cast<pointer>(_storage);
-  }
+  pointer data(void) { return reinterpret_cast<pointer>(_storage); }
   const_pointer data(void) const {
     return reinterpret_cast<const_pointer>(_storage);
   }
