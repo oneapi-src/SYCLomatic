@@ -2593,3 +2593,65 @@ bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
   return false;
 }
 
+// This function will construct some union-find sets when tranverse the
+// call-graph of device/global funtions.
+// E.g.,
+// g1->d1->d2
+// g2->d3->d2
+//
+// This function will be called for each gloabl function.
+// 1st, visit g1, check its child d1, d1 is not visited, so set d1's parent ptr
+// value to g1's head (current is g1 itself).
+// Now the set becomes to:
+// g1<-d1
+// 2nd, visit d1, check its child d2, d2 is not visited, so set d2's parent ptr
+// value to d1's head (current is g1).
+// Now the set becomes to:
+// g1<-d1
+//  |<-d2
+// 3nd, visit d2, it does not have child, so return.
+// 4th, visit g2, check its child d3, d3 is not visited, so set d3's parent ptr
+// value to g2's head (current is g2 itself).
+// Now the set becomes to:
+// g1<-d1  g2<-d3
+//  |<-d2
+// 5th, visit d3, check its child d2, d2 is visited, so set d3's head node's
+// parent ptr value to d2's head.
+// Now the set becomes to:
+// g1<-d1
+//  |<-d2
+//  |<-g2<-d3
+//
+// Finally, all nodes can be represented by their head node. If we want to
+// change or get the field value of a node, we need to change or get the field
+// value of the node's head. In this function, we will change or get the field
+// "Dim" (the value is used in the dimension of nd_item/nd_range).
+// In this example, there is only one head node g1.
+void constructUnionFindSetRecursively(
+    std::shared_ptr<dpct::DeviceFunctionInfo> DFIPtr) {
+  if (!DFIPtr)
+    return;
+
+  if (DFIPtr->ConstructGraphVisited)
+    return;
+
+  auto CallExprMap = DFIPtr->getCallExprMap();
+  DFIPtr->ConstructGraphVisited = true;
+
+  dpct::MemVarMap *CurHead = dpct::MemVarMap::getHead(&(DFIPtr->getVarMap()));
+  for (auto &Item : CallExprMap) {
+    auto FuncInfoPtr = Item.second->getFuncInfo();
+    if (!FuncInfoPtr)
+      continue;
+
+    if (DFIPtr->getVarMap().hasItem() && FuncInfoPtr->getVarMap().hasItem()) {
+      if (FuncInfoPtr->ConstructGraphVisited) {
+        CurHead->Parent = dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
+        CurHead = CurHead->Parent;
+      } else
+        dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()))->Parent = CurHead;
+    }
+
+    constructUnionFindSetRecursively(FuncInfoPtr);
+  }
+}

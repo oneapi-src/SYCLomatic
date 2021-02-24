@@ -829,10 +829,12 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
                     .bind("declRefExpr"),
                 this);
 
-  MF.addMatcher(declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
-                                                  "blockIdx", "gridDim"))))
-                    .bind("declRefExprUnTempFunc"),
-                this);
+  MF.addMatcher(
+      declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim", "blockIdx",
+                                        "gridDim"))),
+                  hasAncestor(functionDecl().bind("funcDecl")))
+          .bind("declRefExprUnTempFunc"),
+      this);
 }
 
 bool IterationSpaceBuiltinRule::renameBuiltinName(StringRef BuiltinName,
@@ -859,7 +861,7 @@ bool IterationSpaceBuiltinRule::renameBuiltinName(StringRef BuiltinName,
 
 void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-
+  auto &SM = DpctGlobalInfo::getSourceManager();
   if (const DeclRefExpr *DRE =
           getNodeAsType<DeclRefExpr>(Result, "declRefExprUnTempFunc")) {
     // Take the case of instantiated template function for example:
@@ -871,8 +873,9 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     // available,  so dpct migrates it by 'threadIdx' matcher to identify the
     // SourceLocation of 'threadIdx', then look forward 2 tokens to check
     // whether .x appears.
-
-    SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
+    if (!FD)
+      return;
     const auto Begin = SM.getSpellingLoc(DRE->getBeginLoc());
     auto End = SM.getSpellingLoc(DRE->getEndLoc());
     End = End.getLocWithOffset(
@@ -908,9 +911,20 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
 
       const auto FieldName = Tok2.getRawIdentifier().str();
       unsigned Dimension;
-      if (FieldName == "x")
-        Dimension = 2;
-      else if (FieldName == "y")
+      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+      if (!DFI)
+        return;
+      DFI->setItem();
+
+      if (FieldName == "x") {
+        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
+                                                             Replacement, DFI);
+          return;
+        } else {
+          Dimension = 2;
+        }
+      } else if (FieldName == "y")
         Dimension = 1;
       else if (FieldName == "z")
         Dimension = 0;
@@ -928,10 +942,16 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
   const VarDecl *VD = nullptr;
   const DeclRefExpr *DRE = nullptr;
+  std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
   bool IsME = false;
   if (ME) {
-    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
-      DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+    auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func");
+    if (!FD)
+      return;
+    DFI = DeviceFunctionDecl::LinkRedecls(FD);
+    if (!DFI)
+      return;
+    DFI->setItem();
     VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
     if (!VD) {
       return;
@@ -962,9 +982,23 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (FieldName == "__fetch_builtin_x")
-      Dimension = 2;
-    else if (FieldName == "__fetch_builtin_y")
+    if (FieldName == "__fetch_builtin_x") {
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        SourceLocation Begin = SM.getExpansionLoc(ME->getBeginLoc());
+        SourceLocation End = SM.getExpansionLoc(ME->getEndLoc());
+
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+
+        unsigned int Len =
+            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                           Replacement, DFI);
+        return;
+      } else {
+        Dimension = 2;
+      }
+    } else if (FieldName == "__fetch_builtin_y")
       Dimension = 1;
     else if (FieldName == "__fetch_builtin_z")
       Dimension = 0;
@@ -8444,7 +8478,6 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     if (IndentLoc.isMacroID())
       IndentLoc = SM.getExpansionLoc(IndentLoc);
     Repl << getNL() << getIndent(IndentLoc, SM).str();
-    printf("---aa %s\n", Repl.str().c_str());
     auto TM = new InsertText(SM.getExpansionLoc(OuterStmt->getBeginLoc()), std::move(Repl.str()));
     TM->setInsertPosition(InsertPositionRight);
     emplaceTransformation(TM);
@@ -8556,7 +8589,6 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node) {
           << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM).str();
       auto TM = new InsertText(SM.getExpansionLoc(RecordEnd->getBeginLoc()),
                                SyncStmt.str());
-      printf("--- %s\n", SyncStmt.str().c_str());
       TM->setInsertPosition(InsertPositionAlwaysLeft);
       emplaceTransformation(TM);
     }

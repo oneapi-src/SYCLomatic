@@ -188,6 +188,17 @@ struct DeviceRandomDistrInfo {
   std::string IndentStr;
 };
 
+struct BuiltinVarInfo {
+  BuiltinVarInfo(unsigned int Len, std::string Repl,
+                 std::shared_ptr<DeviceFunctionInfo> DFI)
+      : Len(Len), Repl(Repl), DFI(DFI) {}
+  void buildInfo(std::string FilePath, unsigned int Offset, unsigned int Dim);
+
+  unsigned int Len = 0;
+  std::string Repl;
+  std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
+};
+
 struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
@@ -377,6 +388,9 @@ public:
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
+  void buildUnionFindSet();
+  void setDim();
+  void buildKernelInfo();
 
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSet /*out*/);
@@ -605,7 +619,9 @@ public:
       }
     }
   }
-
+  std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
+    return BuiltinVarInfoMap;
+  }
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
@@ -679,6 +695,7 @@ private:
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
       DeviceRandomGenerateAPIMap;
   std::map<unsigned int, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
+  std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
@@ -940,6 +957,12 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static unsigned int getAssumedNDRangeDim() {
+    return AssumedNDRangeDim;
+  }
+  inline static void setAssumedNDRangeDim(unsigned int Dim) {
+    AssumedNDRangeDim = Dim;
+  }
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
@@ -1198,6 +1221,27 @@ public:
   // them.
   void buildReplacements() {
     for (auto &File : FileMap)
+      File.second->buildKernelInfo();
+
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      // Construct a union-find set for all the instances of MemVarMap in
+      // DeviceFunctionInfo. During the tranversal of the call-graph, do union
+      // operation if caller and callee both need item variable, then after the
+      // tranversal, all MemVarMap instance which need item are devided into some
+      // groups. Among different groups, there is no call relationship.
+      // If kernel-call is 3D, then set its head's dim to 3D. When generating
+      // replacements, find current nodes' head to decide to use which dim.
+      //
+      // Below two for-loop cannot be merged, since the second loop depends the
+      // global info constructed in the first loop.
+      for (auto &File : FileMap)
+        File.second->buildUnionFindSet();
+      // Set the dim value for the head node (global function).
+      for (auto &File : FileMap)
+        File.second->setDim();
+    }
+
+    for (auto &File : FileMap)
       File.second->buildReplacements();
   }
 
@@ -1355,6 +1399,10 @@ public:
           Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
     }
   }
+
+  void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
+                            std::string Repl,
+                            std::shared_ptr<DeviceFunctionInfo> DFI);
 
   void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
                         unsigned int Offset) {
@@ -1583,7 +1631,7 @@ public:
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
   }
 
-static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
+  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
                                           const FFTDirectionType Direction,
                                           const FFTPlacementType Placement) {
     auto I = FFTHandleInfoMap.find(FileAndOffset);
@@ -1619,6 +1667,22 @@ static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
   }
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
+  }
+  static unsigned int getCudaBuiltinXDFIIndexThenInc() {
+    unsigned int Res = CudaBuiltinXDFIIndex;
+    ++CudaBuiltinXDFIIndex;
+    return Res;
+  }
+  static void insertCudaBuiltinXDFIMap(unsigned int Index,
+                                       std::shared_ptr<DeviceFunctionInfo> Ptr) {
+    CudaBuiltinXDFIMap.insert(std::make_pair(Index, Ptr));
+  }
+  static std::shared_ptr<DeviceFunctionInfo>
+  getCudaBuiltinXDFI(unsigned int Index) {
+    auto Iter = CudaBuiltinXDFIMap.find(Index);
+    if (Iter != CudaBuiltinXDFIMap.end())
+      return Iter->second;
+    return nullptr;
   }
 
   // #tokens, name of the second token, SourceRange of a macro
@@ -1714,6 +1778,7 @@ private:
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
+  static unsigned int AssumedNDRangeDim;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<int> DeviceRNGReturnNumSet;
@@ -1772,6 +1837,9 @@ private:
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
+  static unsigned int CudaBuiltinXDFIIndex;
+  static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
+      CudaBuiltinXDFIMap;
 };
 
 class TemplateArgumentInfo;
@@ -2508,7 +2576,9 @@ private:
 class MemVarMap {
 public:
   MemVarMap() : HasItem(false), HasStream(false) {}
-
+  unsigned int Dim = 1;
+  /// This member is only used to construct the union-find set.
+  MemVarMap *Parent = nullptr;
   bool hasItem() const { return HasItem; }
   bool hasStream() const { return HasStream; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
@@ -2583,6 +2653,45 @@ public:
     KernelArgument,
     DeclParameter,
   };
+
+  static const MemVarMap *
+  getHeadWithoutPathCompression(const MemVarMap *CurNode) {
+    if (!CurNode)
+      return nullptr;
+
+    const MemVarMap *Head = nullptr;
+
+    while (true) {
+      if (CurNode->Parent == nullptr) {
+        Head = CurNode;
+        break;
+      }
+      CurNode = CurNode->Parent;
+    }
+
+    return Head;
+  }
+
+  static MemVarMap *getHead(MemVarMap *CurNode) {
+    if (!CurNode)
+      return nullptr;
+
+    MemVarMap *Head =
+        const_cast<MemVarMap *>(getHeadWithoutPathCompression(CurNode));
+    if (!Head)
+      return nullptr;
+
+    while (CurNode != Head) {
+      MemVarMap *Temp = CurNode->Parent;
+      CurNode->Parent = Head;
+      CurNode = Temp;
+    }
+    return Head;
+  }
+
+  unsigned int getHeadNodeDim() const {
+    return getHeadWithoutPathCompression(this)->Dim;
+  }
 
 private:
   static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
@@ -2682,8 +2791,13 @@ private:
 template <>
 inline ParameterStream &
 MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
-  static std::string ItemParamDecl = MapNames::getClNamespace() +
-                                     "::nd_item<3> " +
+  std::string NDItem = "nd_item<3>";
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
+      MemVarMap::getHeadWithoutPathCompression(this)->Dim == 1) {
+    NDItem = "nd_item<1>";
+  }
+
+  std::string ItemParamDecl = MapNames::getClNamespace() + "::" + NDItem + " " +
                                      DpctGlobalInfo::getItemName();
   return PS << ItemParamDecl;
 }
@@ -2816,14 +2930,12 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
 
 protected:
   inline unsigned getBegin() { return BeginLoc; }
   inline const std::string &getFilePath() { return FilePath; }
   void buildInfo();
-  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() {
-    return FuncInfo;
-  }
   void buildCalleeInfo(const Expr *Callee);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
@@ -3026,6 +3138,8 @@ public:
         IsBuilt(false),
         TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
 
+  bool ConstructGraphVisited = false;
+
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
@@ -3040,7 +3154,7 @@ public:
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     VarMap.addTexture(Tex);
   }
-  inline const MemVarMap &getVarMap() { return VarMap; }
+  inline MemVarMap &getVarMap() { return VarMap; }
   inline std::shared_ptr<TextureTypeInfo> getTextureTypeInfo(unsigned Idx) {
     if (Idx < TextureObjectTypeList.size())
       return TextureObjectTypeList[Idx];
@@ -3078,6 +3192,7 @@ public:
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
+  GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
 
 private:
   void mergeCalledTexObj(
@@ -3299,6 +3414,9 @@ public:
 
   void addAccessorDecl();
   void buildInfo();
+  void buildUnionFindSet();
+  void setDim();
+  void addReplacements();
   inline std::string getExtraArguments() override {
     if (!getFuncInfo()) {
       return "";
@@ -3322,6 +3440,8 @@ public:
   static std::shared_ptr<KernelCallExpr>
   buildFromCudaLaunchKernel(const std::pair<std::string, unsigned> &LocInfo,
                             const CallExpr *);
+  unsigned int GridDim = 3;
+  unsigned int BlockDim = 3;
 
 private:
   KernelCallExpr(unsigned Offset, const std::string &FilePath)
@@ -3388,6 +3508,8 @@ private:
     std::string &ExternMemSize = Config[2];
     std::string &Stream = Config[3];
     bool LocalDirectRef = false, GroupDirectRef = false;
+    std::string GroupSizeFor1D = "";
+    std::string LocalSizeFor1D = "";
   } ExecutionConfig;
 
   std::string Event;

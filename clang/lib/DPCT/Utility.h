@@ -57,6 +57,7 @@ class DynTypedNode;
 
 namespace dpct{
 enum class FFTTypeEnum;
+class DeviceFunctionInfo;
 } // namespace dpct
 
 namespace tooling {
@@ -475,4 +476,6 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(
     const clang::CallExpr *CE);
 bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
                       clang::SourceLocation EndLoc);
+void constructUnionFindSetRecursively(
+    std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
 #endif // DPCT_UTILITY_H

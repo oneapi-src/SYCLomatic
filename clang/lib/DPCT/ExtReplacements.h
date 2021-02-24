@@ -45,6 +45,8 @@ public:
 
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
+  std::string processV();
+  std::string processR(unsigned int Index);
 
   inline bool empty() { return ReplMap.empty(); }
 

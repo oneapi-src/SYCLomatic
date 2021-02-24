@@ -27,6 +27,7 @@ enum class OutputVerbosityLev { silent, normal, detailed, diagnostics };
 enum class DPCTFormatStyle { llvm, google, custom };
 enum class ReportFormatEnum { notsetformat, csv, formatted };
 enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
+enum class AssumedNDRangeDimEnum : unsigned int { dim1 = 1, dim3 = 3 };
 
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);

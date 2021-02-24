@@ -342,6 +342,22 @@ static opt<bool, true>
                  llvm::cl::desc("Always create the cl::sycl::queue with an async "
                                 "exception handler. Default: off."),
                  cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
+
+static opt<AssumedNDRangeDimEnum> NDRangeDim(
+    "assume-nd-range-dim",
+    desc("Provide hint to the tool on dimensionality of nd_range to use in "
+         "generated code.\n"),
+    values(
+        llvm::cl::OptionEnumValue{"1", 1,
+                                  "generate kernel code assuming 1D nd_range, "
+                                  "where possible, and 3D in other cases",
+                                  false},
+        llvm::cl::OptionEnumValue{
+            "3", 3,
+            "generate kernel code assuming 3D nd_range, always. (default)",
+            false}),
+    init(AssumedNDRangeDimEnum::dim3), value_desc("value"), cat(DPCTCat),
+    llvm::cl::Optional);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -1100,6 +1116,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setAssumedNDRangeDim(
+      (NDRangeDim == AssumedNDRangeDimEnum::dim1) ? 1 : 3);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 

@@ -355,80 +355,95 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   return false;
 }
 
+std::string ExtReplacements::processV() {
+  std::string Res;
+  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
+    Res = std::to_string(*DpctGlobalInfo::getDeviceRNGReturnNumSet().begin());
+  } else {
+    Res = "dpct_placeholder/*Fix the vec_size manually*/";
+  }
+  return Res;
+}
+std::string ExtReplacements::processR(unsigned int Index) {
+  std::string Res = "2";
+  if (auto DFI = DpctGlobalInfo::getCudaBuiltinXDFI(Index)) {
+    auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+    if (Ptr && Ptr->Dim == 1) {
+      Res = "0";
+    }
+  }
+  return Res;
+}
+
 void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
   for (auto &R : ReplMap) {
     std::string OriginReplText = R.second->getReplacementText().str();
     std::string NewReplText;
 
-    std::regex RE("\\{\\{NEEDREPLACE[DQV][1-9][0-9]*\\}\\}");
+    // D: deivce, used for pretty code
+    // Q: queue, used for pretty code
+    // V: vector size, used for rand API migration
+    // R: range dim, used for built-in variables(threadIdx.x,...) migration
+    std::regex RE("\\{\\{NEEDREPLACE[DQVR][1-9][0-9]*\\}\\}");
     std::smatch MRes;
-    if (std::regex_search(OriginReplText, MRes, RE)) {
+    std::string MatchedSuffix;
+    bool Matched = false;
+    while (std::regex_search(OriginReplText, MRes, RE)) {
+      Matched = true;
       std::string MatchedStr = MRes.str();
       NewReplText = NewReplText + std::string(MRes.prefix());
 
-      if (MatchedStr.substr(13, 1) == "V") {
-        if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-          NewReplText =
-              NewReplText +
-              std::to_string(
-                  *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin());
+      if (MatchedStr.substr(13, 1) == "V" || MatchedStr.substr(13, 1) == "R") {
+        if (MatchedStr.substr(13, 1) == "V") {
+          NewReplText = NewReplText + processV();
         } else {
+          unsigned int Index =
+              std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
           NewReplText =
-              NewReplText + "dpct_placeholder/*Fix the vec_size manually*/";
+              NewReplText + processR(Index);
         }
-        NewReplText = NewReplText + std::string(MRes.suffix());
+        MatchedSuffix = std::string(MRes.suffix());
+        OriginReplText = MatchedSuffix;
+      } else if (MatchedStr.substr(13, 1) == "Q" ||
+                 MatchedStr.substr(13, 1) == "D") {
+        // get the index from the placeholder string
+        int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
+        // get the HelperFuncType from the placeholder string
+        HelperFuncType HFT = HelperFuncType::InitValue;
+        if (MatchedStr.substr(13, 1) == "Q")
+          HFT = HelperFuncType::DefaultQueue;
+        else if (MatchedStr.substr(13, 1) == "D")
+          HFT = HelperFuncType::CurrentDevice;
 
-        auto Repl = std::make_shared<ExtReplacement>(
-            FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
-            nullptr);
-        Repl->setInsertPosition(
-            (dpct::InsertPosition)R.second->getInsertPosition());
-        R.second = Repl;
-        continue;
+        auto HelperFuncReplInfoIter =
+            DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+        if (HelperFuncReplInfoIter ==
+            DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
+          // Cannot found HelperFuncReplInfo in the map, migrate it to default
+          // queue
+          NewReplText = NewReplText + "dpct::get_default_queue()";
+        } else {
+          std::string Text;
+          if (getStrReplacingPlaceholder(HFT, Index, Text)) {
+            NewReplText = NewReplText + Text;
+          } else {
+            NewReplText = NewReplText + MatchedStr;
+          }
+        }
+        MatchedSuffix = std::string(MRes.suffix());
+        OriginReplText = MatchedSuffix;
       }
+    }
 
-      // get the index from the placeholder string
-      int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
-      // get the HelperFuncType from the placeholder string
-      HelperFuncType HFT = HelperFuncType::InitValue;
-      if (MatchedStr.substr(13, 1) == "Q")
-        HFT = HelperFuncType::DefaultQueue;
-      else if (MatchedStr.substr(13, 1) == "D")
-        HFT = HelperFuncType::CurrentDevice;
-
-      auto HelperFuncReplInfoIter =
-          DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
-      if (HelperFuncReplInfoIter ==
-              DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
-        // Cannot found HelperFuncReplInfo in the map, migrate it to default queue
-        NewReplText = NewReplText + "dpct::get_default_queue()" +
-                      std::string(MRes.suffix());
-
-        // Using "NewReplText" to generate a new ExtReplacement, then replace
-        // the old one in the ReplMap
-        auto NewRepl = std::make_shared<ExtReplacement>(
+    if (Matched) {
+      NewReplText = NewReplText + MatchedSuffix;
+      auto NewRepl = std::make_shared<ExtReplacement>(
           FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
           nullptr);
-        NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
-        R.second = NewRepl;
-      } else {
-        std::string Text;
-        if (getStrReplacingPlaceholder(HFT, Index, Text)) {
-          NewReplText = NewReplText + Text;
-        } else {
-          NewReplText = NewReplText + MatchedStr;
-        }
-
-        NewReplText = NewReplText + std::string(MRes.suffix());
-
-        // Using "NewReplText" to generate a new ExtReplacement, then replace
-        // the old one in the ReplMap
-        auto NewRepl = std::make_shared<ExtReplacement>(
-            FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
-            nullptr);
-        NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
-        R.second = NewRepl;
-      }
+      NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
+      NewRepl->setInsertPosition(
+          (dpct::InsertPosition)R.second->getInsertPosition());
+      R.second = NewRepl;
     }
   }
 

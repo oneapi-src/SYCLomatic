@@ -465,8 +465,20 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (ItemItr != NdItemMap.end()) {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
-                                     ItemItr->second, "(", FieldName, ")"));
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
+          ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+        auto TargetExpr = getTargetExpr();
+        auto FD = getImmediateOuterFuncDecl(TargetExpr);
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
+        addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+                                       ItemItr->second, "({{NEEDREPLACER",
+                                       std::to_string(Index), "}})"));
+      } else {
+        addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+                                       ItemItr->second, "(", FieldName, ")"));
+      }
     }
   } else if (BaseType == "dim3") {
     addReplacement(
@@ -1171,28 +1183,68 @@ void KernelConfigAnalysis::analyzeExpr(
   }
 }
 
+bool KernelConfigAnalysis::isOneDimensionConfigArg(
+    const CXXConstructExpr *Ctor) {
+  if (Ctor->getNumArgs() == 1) {
+    // E.g., copy constructor: dim3 a(1,2,3); k<<<dim3(a), 1>>>();
+    return false;
+  }
+
+  if (Ctor->getNumArgs() == 3) {
+    Expr::EvalResult ER1, ER2;
+    if (!Ctor->getArg(1)->isValueDependent() &&
+        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
+        !Ctor->getArg(2)->isValueDependent() &&
+        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
+      if (ER1.Val.getInt().getZExtValue() == 1 &&
+          ER2.Val.getInt().getZExtValue() == 1)
+        return true;
+    }
+    return false;
+  }
+  return false;
+}
+
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     if (ArgIndex == 1) {
       if (calculateWorkgroupSize(Ctor) <= 256)
         NeedEmitWGSizeWarning = false;
+      if (IsTryToUseOneDimension)
+        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
+    } else if (ArgIndex == 0) {
+      if (IsTryToUseOneDimension)
+        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
     }
 
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
-                                   3)
-        << "(";
-    auto Args = getCtorArgs(Ctor);
-    if (DoReverse && Ctor->getNumArgs() == 3) {
-      Reversed = true;
-      int Index = Args.size();
-      while (Index)
-        OS << Args[--Index] << ", ";
+    if (IsTryToUseOneDimension && Dim == 1) {
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+                                     1)
+          << "(";
+      auto Args = getCtorArgs(Ctor);
+      if (Ctor->getNumArgs() > 0) {
+        OS << Args[0] << ", ";
+      } else {
+        llvm_unreachable("Ctor of the kernel config hasn't any argument!");
+      }
     } else {
-      for (auto &A : Args)
-        OS << A << ", ";
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+                                     3)
+          << "(";
+      auto Args = getCtorArgs(Ctor);
+      if (DoReverse && Ctor->getNumArgs() == 3) {
+        Reversed = true;
+        int Index = Args.size();
+        while (Index)
+          OS << Args[--Index] << ", ";
+      } else {
+        for (auto &A : Args)
+          OS << A << ", ";
+      }
     }
+
     OS.flush();
     // Special handling for implicit ctor.
     // #define GET_BLOCKS(a) a
@@ -1255,9 +1307,19 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
           Stmt::IntegerLiteralClass) {
     if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
                         DpctGlobalInfo::getContext())) {
-      addReplacement(buildString(DpctGlobalInfo::getCtadClass(
-                                     MapNames::getClNamespace() + "::range", 3),
-                                 "(1, 1, ", getReplacedString(), ")"));
+      if (IsTryToUseOneDimension) {
+        Dim = 1;
+        addReplacement(
+            buildString(DpctGlobalInfo::getCtadClass(
+                            MapNames::getClNamespace() + "::range", 1),
+                        "(", getReplacedString(), ")"));
+      } else {
+        addReplacement(
+            buildString(DpctGlobalInfo::getCtadClass(
+                            MapNames::getClNamespace() + "::range", 3),
+                        "(1, 1, ", getReplacedString(), ")"));
+      }
+
       Reversed = true;
       return;
     }

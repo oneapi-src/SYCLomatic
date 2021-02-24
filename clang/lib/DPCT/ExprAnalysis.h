@@ -290,11 +290,11 @@ public:
   }
 
   void applyAllSubExprRepl();
- // Replace a sub template arg
- inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
-   auto LocInfo = getOffsetAndLength(E);
-   addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
- }
+  // Replace a sub template arg
+  inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
+    auto LocInfo = getOffsetAndLength(E);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+  }
 
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
@@ -723,6 +723,7 @@ private:
     return KCA.getReplacedString();
   }
   int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
+  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
 
 protected:
   void dispatch(const Stmt *Expression) override;
@@ -735,6 +736,8 @@ public:
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }
   inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
+  unsigned int Dim = 3;
+  bool IsTryToUseOneDimension = false;
 };
 
 /// Analyzes the side effects of an expression while doing basic expression analysis
