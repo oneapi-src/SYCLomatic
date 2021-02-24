@@ -629,6 +629,10 @@ public:
     return EventMallocFreeMap;
   }
 
+  void setAddOneDplHeaders(bool Value) {
+    AddOneDplHeaders = Value;
+  }
+
 private:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
 
@@ -694,6 +698,7 @@ private:
 
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
+  bool AddOneDplHeaders = false;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -3565,6 +3570,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       }
       if (DpctGlobalInfo::isSyclNamedLambda() && (Type == SYCL)) {
         RSO << "#define DPCT_NAMED_LAMBDA" << getNL();
+      }
+      if (AddOneDplHeaders && Type == SYCL) {
+        RSO << "#include <oneapi/dpl/execution>" << getNL()
+            << "#include <oneapi/dpl/algorithm>" << getNL();
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);

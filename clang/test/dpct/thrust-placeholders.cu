@@ -3,11 +3,11 @@
 // RUN: dpct --format-range=none -out-root %T/thrust-placeholders %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/thrust-placeholders/thrust-placeholders.dp.cpp
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 #include <thrust/memory.h>
 #include <thrust/transform.h>
 #include <thrust/functional.h>

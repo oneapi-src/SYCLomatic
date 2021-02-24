@@ -3,11 +3,11 @@
 // RUN: dpct -out-root %T/thrust-for-RapidCFD %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.cpp --match-full-lines %s
 
-// CHECK:#include <CL/sycl.hpp>
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT:#include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <numeric>
 #include <thrust/scan.h>
 #include <thrust/host_vector.h>

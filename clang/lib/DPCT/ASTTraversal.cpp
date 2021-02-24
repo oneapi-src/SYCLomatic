@@ -643,10 +643,20 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!DplHeaderInserted) {
-      std::string Replacement = std::string("<dpct/dpl_utils.hpp>") + getNL() +
-                                "#include <oneapi/dpl/execution>" + getNL() +
-                                "#include <oneapi/dpl/algorithm>";
+      std::string Replacement = std::string("<dpct/dpl_utils.hpp>");
+      // CTST-2021:
+      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+      // previously added here.  However, due to some unfortunate include
+      // dependencies introduced with the PSTL/TBB headers from the
+      // gcc-9.3.0 include files, those two headers must now be included
+      // before the CL/sycl.hpp are included, so the FileInfo is set
+      // to hold a boolean that'll indicate whether to insert them when
+      // the #include CL/sycl.cpp is added later
       DplHeaderInserted = true;
+      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
+      auto FileInfo =
+          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+      FileInfo->setAddOneDplHeaders(true);
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
     } else {

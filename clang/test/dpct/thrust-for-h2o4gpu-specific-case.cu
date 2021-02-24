@@ -4,11 +4,11 @@
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu-specific-case/thrust-for-h2o4gpu-specific-case.dp.cpp --match-full-lines %s
 
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 

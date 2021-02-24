@@ -2,11 +2,11 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <complex>
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
