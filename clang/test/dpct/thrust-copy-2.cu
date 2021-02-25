@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T/thrust-copy-2 -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T/thrust-copy-2 -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-copy-2/thrust-copy-2.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
