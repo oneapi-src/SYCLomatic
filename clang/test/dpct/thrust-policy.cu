@@ -33,10 +33,14 @@ void checkCopyIf() {
   thrust::copy_if(vecDIn, vecDIn+N, vecDOut, isEven);
   cudaMemcpy(vecHOut, vecDOut, sizeof(int)*N, cudaMemcpyDeviceToHost);
  
-  // Policy specified. Derive memory source from policy. This works with nvcc!
-// CHECK:  std::copy_if(thrust::device, vecDIn, vecDIn+N, vecDOut, isEven);
+  // Policy (thrust::device) specified. Derive memory source from policy. This works with nvcc!
+// CHECK:  std::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), vecDIn, vecDIn+N, vecDOut, isEven);
   thrust::copy_if(thrust::device, vecDIn, vecDIn+N, vecDOut, isEven);
   cudaMemcpy(vecHOut, vecDOut, sizeof(int)*N, cudaMemcpyDeviceToHost);
+
+  // Policy (thrust::host) specified. Derive memory source from policy. This works with nvcc!
+// CHECK:  std::copy_if(oneapi::dpl::execution::seq, vecHIn, vecHIn+N, vecHOut, isEven);
+  thrust::copy_if(thrust::host, vecHIn, vecHIn+N, vecHOut, isEven);
 
   // No policy specified. thrust::device_vector used for input/output use device policy
 // CHECK:  std::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dVecIn.begin(), dVecIn.end(), dVecOut.begin(), isEven);

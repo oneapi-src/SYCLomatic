@@ -504,6 +504,23 @@ protected:
           new ReplaceStmt(CE, false, FuncName, true, Strings.Repl));
     }
   }
+
+  std::string makeDevicePolicy(const Stmt *S) {
+    auto UniqueName = [](const Stmt *S) {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      SourceLocation Loc = S->getBeginLoc();
+      return getHashAsString(Loc.printToString(SM)).substr(0, 6);
+    };
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, S, HelperFuncType::DefaultQueue);
+    std::string TemplateArg = "";
+    if (DpctGlobalInfo::isSyclNamedLambda())
+      TemplateArg = std::string("<class Policy_") + UniqueName(S) + ">";
+    std::string Policy = "oneapi::dpl::execution::make_device_policy" +
+                         TemplateArg + "({{NEEDREPLACEQ" +
+                         std::to_string(Index) + "}})";
+    return Policy;
+  }
 };
 
 template <typename T> const char NamedMigrationRule<T>::ID(0);

@@ -126,6 +126,8 @@ void MapNames::setClNamespace(bool Enable) {
       {"thrust::multiplies", "std::multiplies"},
       {"thrust::plus", "std::plus"},
       {"thrust::seq", "oneapi::dpl::execution::seq"},
+      {"thrust::device", "oneapi::dpl::execution::dpcpp_default"},
+      {"thrust::host", "oneapi::dpl::execution::seq"},
       {"thrust::minus", "std::minus"},
       {"thrust::negate", "std::negate"},
       {"thrust::identity", "oneapi::dpl::identity"},

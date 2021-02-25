@@ -1824,11 +1824,6 @@ void ThrustFunctionRule::thrustFuncMigration(
     const UnresolvedLookupExpr *ULExpr) {
 
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto UniqueName = [](const Stmt *S) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    SourceLocation Loc = S->getBeginLoc();
-    return getHashAsString(Loc.printToString(SM)).substr(0, 6);
-  };
 
   // handle the a regular call expr
   std::string ThrustFuncName;
@@ -2089,17 +2084,9 @@ void ThrustFunctionRule::thrustFuncMigration(
       if (CE->getArg(0)->getType()->isPointerType()) {
         ExtraParam = "oneapi::dpl::execution::seq";
       } else {
-        std::string Name = UniqueName(CE);
         if (checkWhetherIsDuplicate(CE, false))
           return;
-        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
-        std::string TemplateArg = "";
-        if (DpctGlobalInfo::isSyclNamedLambda())
-          TemplateArg = std::string("<class Policy_") + UniqueName(CE) + ">";
-        ExtraParam = "oneapi::dpl::execution::make_device_policy" +
-                     TemplateArg + "({{NEEDREPLACEQ" + std::to_string(Index) +
-                     "}})";
+        ExtraParam = makeDevicePolicy(CE);
       }
     }
     emplaceTransformation(
@@ -13383,7 +13370,9 @@ void RemoveBaseClassRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(RemoveBaseClassRule)
 
 void ThrustVarRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(varDecl(hasName("seq")).bind("varDecl")))
+  auto hasPolicyName = [&]() { return hasAnyName("seq", "host", "device"); };
+
+  MF.addMatcher(declRefExpr(to(varDecl(hasPolicyName()).bind("varDecl")))
                     .bind("declRefExpr"),
                 this);
 }
@@ -13407,6 +13396,9 @@ void ThrustVarRule::run(const MatchFinder::MatchResult &Result) {
 
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
+
+      if (Replacement == "oneapi::dpl::execution::dpcpp_default")
+        Replacement = makeDevicePolicy(DRE);
 
       if (!Replacement.empty()) {
         emplaceTransformation(new ReplaceToken(
