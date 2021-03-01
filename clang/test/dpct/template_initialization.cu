@@ -49,23 +49,17 @@ void run_test() {
   T* d_out;
   cudaMalloc((void **)&d_out, mem_size);
 
-  // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> d_in_buf_ct0 = dpct::get_buffer_and_offset(d_in);
-  // CHECK-NEXT:   size_t d_in_offset_ct0 = d_in_buf_ct0.second;
-  // CHECK-NEXT:   dpct::buffer_t d_out_buf_ct1 = dpct::get_buffer(d_out);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto d_in_acc_ct0 = d_in_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto d_out_acc_ct1 = d_out_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<T *> d_in_acc_ct0(d_in, cgh);
+  // CHECK-NEXT:     auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           T *d_in_ct0 = (T *)(&d_in_acc_ct0[0] + d_in_offset_ct0);
-  // CHECK-NEXT:           kernel<T>(d_in_ct0, (T *)(&d_out_acc_ct1[0]), item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), (T *)(&d_out_acc_ct1[0]), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   kernel<T><<<1, num_threads>>>(d_in, d_out);
 
   cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);

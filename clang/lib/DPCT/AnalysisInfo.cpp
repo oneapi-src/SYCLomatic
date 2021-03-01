@@ -666,32 +666,17 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
 
       if (Arg.IsUsedAsLvalueAfterMalloc) {
-        OuterStmts.emplace_back(
-            buildString("std::pair<dpct::buffer_t, size_t> ", BufferName,
-                        " = dpct::get_buffer_and_offset(", Arg.getArgString(),
-                        Arg.IsDefinedOnDevice ? ".get_ptr());" : ");"));
         SubmitStmtsList.AccessorList.emplace_back(buildString(
-            "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
-            ".first.get_access<" + MapNames::getClNamespace() +
-                "::access::mode::read_write>(cgh);"));
-        OuterStmts.emplace_back(buildString("size_t ",
-                                            Arg.getIdStringWithSuffix("offset"),
-                                            " = ", BufferName, ".second;"));
-
-        KernelStmts.emplace_back(buildString(
-            TypeStr, Arg.getIdStringWithIndex(), " = (", TypeStr,
-                        ")(&", Arg.getIdStringWithSuffix("acc"),
-            "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
-        KernelArgs += Arg.getIdStringWithIndex();
+            "dpct::access_wrapper<", TypeStr, "> ",
+            Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
+            Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
+        KernelArgs +=
+            buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
       } else {
-        OuterStmts.emplace_back(buildString(
-            "dpct::buffer_t ", BufferName, " = dpct::get_buffer(",
-            Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr());" : ");"));
-        SubmitStmtsList.AccessorList.emplace_back(buildString(
-            "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
-            ".get_access<" + MapNames::getClNamespace() +
-                "::access::mode::read_write>(cgh);"));
-
+        SubmitStmtsList.AccessorList.emplace_back(
+            buildString("auto ", Arg.getIdStringWithSuffix("acc"),
+                        " = dpct::get_access(", Arg.getArgString(),
+                        Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
         KernelArgs += buildString("(", TypeStr, ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0])");
       }

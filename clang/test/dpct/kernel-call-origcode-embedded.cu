@@ -74,25 +74,17 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT: */
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
-  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr(karg1_ct0, karg2_ct1, karg3, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
                                         karg2, karg3);
 

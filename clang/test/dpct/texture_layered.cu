@@ -99,7 +99,7 @@ int main() {
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto d_acc_ct0 = d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);

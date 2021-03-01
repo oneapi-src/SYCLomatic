@@ -526,6 +526,48 @@ static buffer_t get_buffer(const void *ptr) {
   return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
 }
 
+/// A wrapper class contains an accessor and an offset.
+template <typename dataT,
+          cl::sycl::access_mode accessMode = cl::sycl::access_mode::read_write>
+class access_wrapper {
+  cl::sycl::accessor<byte_t, 1, accessMode> accessor;
+  size_t offset;
+
+public:
+  /// Construct the accessor wrapper for memory pointed by \p ptr.
+  ///
+  /// \param ptr Pointer to memory.
+  /// \param cgh The command group handler.
+  access_wrapper(const void *ptr, cl::sycl::handler &cgh)
+      : accessor(get_buffer(ptr).get_access<accessMode>(cgh)), offset(0) {
+    auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+    offset = (byte_t *)ptr - alloc.alloc_ptr;
+  }
+
+  /// Get the device pointer.
+  ///
+  /// \returns a device pointer with offset.
+  dataT get_raw_pointer() const { return (dataT)(&accessor[0] + offset); }
+};
+
+/// Get the accessor for memory pointed by \p ptr.
+///
+/// \param ptr Pointer to memory.
+/// If NULL is passed as an argument, an exception will be thrown.
+/// \param cgh The command group handler.
+/// \returns an accessor.
+template <cl::sycl::access_mode accessMode = cl::sycl::access_mode::read_write>
+static cl::sycl::accessor<byte_t, 1, accessMode>
+get_access(const void *ptr, cl::sycl::handler &cgh) {
+  if (ptr) {
+    auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+    return alloc.buffer.get_access<accessMode>(cgh);
+  } else {
+    throw std::runtime_error(
+        "NULL pointer argument in get_access function is invalid");
+  }
+}
+
 /// Allocate memory block on the device.
 /// \param num_bytes Number of bytes to allocate.
 /// \param q Queue to execute the allocate task.

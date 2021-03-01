@@ -87,21 +87,16 @@ int main() {
   };
 
   // CHECK: sycl::int2* data;
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> data_buf_ct0 = dpct::get_buffer_and_offset(data);
-  // CHECK-NEXT:   size_t data_offset_ct0 = data_buf_ct0.second;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto data_acc_ct0 = data_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::int2 *> data_acc_ct0(data, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           sycl::int2 *data_ct0 = (sycl::int2 *)(&data_acc_ct0[0] + data_offset_ct0);
-  // CHECK-NEXT:           kernel(data_ct0);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         kernel(data_acc_ct0.get_raw_pointer());
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   int2* data;
   kernel<<<1, 1>>>(data);
 

@@ -316,10 +316,9 @@ void foo()
             {
 // CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:                */
-// CHECK-NEXT:                  dpct::buffer_t d_out_buf_ct1 = dpct::get_buffer(d_out);
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = d_out_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
@@ -351,10 +350,9 @@ void foo()
             {
 // CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:                */
-// CHECK-NEXT:                  dpct::buffer_t d_out_buf_ct1 = dpct::get_buffer(d_out);
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = d_out_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
@@ -387,10 +385,9 @@ void foo()
             {
 // CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:                */
-// CHECK-NEXT:                  dpct::buffer_t d_out_buf_ct1 = dpct::get_buffer(d_out);
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = d_out_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
@@ -548,23 +545,17 @@ void RunTest()
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
-// CHECK:              std::pair<dpct::buffer_t, size_t> d_idata_buf_ct0 = dpct::get_buffer_and_offset(d_idata);
-// CHECK-NEXT:              size_t d_idata_offset_ct0 = d_idata_buf_ct0.second;
-// CHECK-NEXT:              std::pair<dpct::buffer_t, size_t> d_block_sums_buf_ct1 = dpct::get_buffer_and_offset(d_block_sums);
-// CHECK-NEXT:              size_t d_block_sums_offset_ct1 = d_block_sums_buf_ct1.second;
-// CHECK-NEXT:              dpct::get_default_queue().submit(
-// CHECK-NEXT:                [&](sycl::handler &cgh) {
-// CHECK-NEXT:                  auto d_idata_acc_ct0 = d_idata_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-// CHECK-NEXT:                  auto d_block_sums_acc_ct1 = d_block_sums_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK:          dpct::get_default_queue().submit(
+// CHECK-NEXT:            [&](sycl::handler &cgh) {
+// CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
+// CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:                  cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
-// CHECK-NEXT:                    sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
-// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                      T *d_idata_ct0 = (T *)(&d_idata_acc_ct0[0] + d_idata_offset_ct0);
-// CHECK-NEXT:                      T *d_block_sums_ct1 = (T *)(&d_block_sums_acc_ct1[0] + d_block_sums_offset_ct1);
-// CHECK-NEXT:                      reduce<T, 256>(d_idata_ct0, d_block_sums_ct1, size);
-// CHECK-NEXT:                    });
+// CHECK-NEXT:              cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
+// CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
+// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:                  reduce<T, 256>(d_idata_acc_ct0.get_raw_pointer(), d_block_sums_acc_ct1.get_raw_pointer(), size);
 // CHECK-NEXT:                });
+// CHECK-NEXT:            });
             reduce<T, 256><<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
         }
         SAFE_CALL(cudaEventRecord(stop, 0));
@@ -616,29 +607,18 @@ void ctst_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_1_threads_in_block;
     dim3 foo_kernel_1_blocks_in_grid;
 
-// CHECK:    {
-// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
-// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
-// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_cur_image_buf_ct1 = dpct::get_buffer_and_offset(d_cur_image);
-// CHECK-NEXT:      size_t d_cur_image_offset_ct1 = d_cur_image_buf_ct1.second;
-// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> imgRef_buf_ct4 = dpct::get_buffer_and_offset(imgRef);
-// CHECK-NEXT:      size_t imgRef_offset_ct4 = imgRef_buf_ct4.second;
-// CHECK-NEXT:      q_ct1.submit(
-// CHECK-NEXT:        [&](sycl::handler &cgh) {
-// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-// CHECK-NEXT:          auto d_cur_image_acc_ct1 = d_cur_image_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
-// CHECK-NEXT:          auto imgRef_acc_ct4 = imgRef_buf_ct4.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK:    q_ct1.submit(
+// CHECK-NEXT:      [&](sycl::handler &cgh) {
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_cur_image_acc_ct1(d_cur_image, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> imgRef_acc_ct4(imgRef, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block), 
-// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
-// CHECK-NEXT:              unsigned short *d_cur_image_ct1 = (unsigned short *)(&d_cur_image_acc_ct1[0] + d_cur_image_offset_ct1);
-// CHECK-NEXT:              unsigned short *imgRef_ct4 = (unsigned short *)(&imgRef_acc_ct4[0] + imgRef_offset_ct4);
-// CHECK-NEXT:              foo_kernel_1(d_sads_ct0, d_cur_image_ct1, image_width_macroblocks, image_height_macroblocks, imgRef_ct4);
-// CHECK-NEXT:            });
-// CHECK-NEXT:        });
-// CHECK-NEXT:    }
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block), 
+// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:            foo_kernel_1(d_sads_acc_ct0.get_raw_pointer(), d_cur_image_acc_ct1.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks, imgRef_acc_ct4.get_raw_pointer());
+// CHECK-NEXT:          });
+// CHECK-NEXT:      });
     foo_kernel_1<<<foo_kernel_1_blocks_in_grid,
                   foo_kernel_1_threads_in_block>>>(d_sads, d_cur_image,
                                                   image_width_macroblocks,
@@ -660,21 +640,16 @@ void ctst_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_2_threads_in_block;
     dim3 foo_kernel_2_blocks_in_grid;
 
-// CHECK:    {
-// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
-// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
-// CHECK-NEXT:      q_ct1.submit(
-// CHECK-NEXT:        [&](sycl::handler &cgh) {
-// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK:    q_ct1.submit(
+// CHECK-NEXT:      [&](sycl::handler &cgh) {
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block), 
-// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
-// CHECK-NEXT:              foo_kernel_2(d_sads_ct0, image_width_macroblocks, image_height_macroblocks);
-// CHECK-NEXT:            });
-// CHECK-NEXT:        });
-// CHECK-NEXT:    }
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block), 
+// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:            foo_kernel_2(d_sads_acc_ct0.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks);
+// CHECK-NEXT:          });
+// CHECK-NEXT:      });
     foo_kernel_2<<<
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
@@ -694,21 +669,16 @@ void ctst_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_3_threads_in_block;
     dim3 foo_kernel_3_blocks_in_grid;
 
-// CHECK:    {
-// CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> d_sads_buf_ct0 = dpct::get_buffer_and_offset(d_sads);
-// CHECK-NEXT:      size_t d_sads_offset_ct0 = d_sads_buf_ct0.second;
-// CHECK-NEXT:      q_ct1.submit(
-// CHECK-NEXT:        [&](sycl::handler &cgh) {
-// CHECK-NEXT:          auto d_sads_acc_ct0 = d_sads_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+// CHECK:    q_ct1.submit(
+// CHECK-NEXT:      [&](sycl::handler &cgh) {
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:            sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block), 
-// CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              unsigned short *d_sads_ct0 = (unsigned short *)(&d_sads_acc_ct0[0] + d_sads_offset_ct0);
-// CHECK-NEXT:              foo_kernel_3(d_sads_ct0, image_width_macroblocks, image_height_macroblocks);
-// CHECK-NEXT:            });
-// CHECK-NEXT:        });
-// CHECK-NEXT:    }
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block), 
+// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:            foo_kernel_3(d_sads_acc_ct0.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks);
+// CHECK-NEXT:          });
+// CHECK-NEXT:      });
     foo_kernel_3<<<
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,

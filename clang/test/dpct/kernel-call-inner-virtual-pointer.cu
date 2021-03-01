@@ -62,31 +62,24 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b1' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:{
-  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> b1_buf_ct0 = dpct::get_buffer_and_offset(b1);
-  //CHECK-NEXT:  size_t b1_offset_ct0 = b1_buf_ct0.second;
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto b1_acc_ct0 = b1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-NEXT:      dpct::access_wrapper<AAA *> b1_acc_ct0(b1, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:          AAA *b1_ct0 = (AAA *)(&b1_acc_ct0[0] + b1_offset_ct0);
-  //CHECK-NEXT:          k2(b1_ct0);
+  //CHECK-NEXT:          k2(b1_acc_ct0.get_raw_pointer());
   //CHECK-NEXT:        });
   //CHECK-NEXT:    });
-  //CHECK-NEXT:}
   k2<<<1,1>>>(b1);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b2' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:{
-  //CHECK-NEXT:  dpct::buffer_t b2_buf_ct0 = dpct::get_buffer(b2);
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto b2_acc_ct0 = b2_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-NEXT:      auto b2_acc_ct0 = dpct::get_access(b2, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -94,47 +87,36 @@ int main() {
   //CHECK-NEXT:          k2((AAA *)(&b2_acc_ct0[0]));
   //CHECK-NEXT:        });
   //CHECK-NEXT:    });
-  //CHECK-NEXT:}
   k2<<<1,1>>>(b2);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a1' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:{
-  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> a1_buf_ct0 = dpct::get_buffer_and_offset(a1);
-  //CHECK-NEXT:  size_t a1_offset_ct0 = a1_buf_ct0.second;
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto a1_acc_ct0 = a1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-NEXT:      dpct::access_wrapper<int **> a1_acc_ct0(a1, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:          int **a1_ct0 = (int **)(&a1_acc_ct0[0] + a1_offset_ct0);
-  //CHECK-NEXT:          k3(a1_ct0);
+  //CHECK-NEXT:          k3(a1_acc_ct0.get_raw_pointer());
   //CHECK-NEXT:        });
   //CHECK-NEXT:    });
-  //CHECK-NEXT:}
   k3<<<1,1>>>(a1);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a2' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:{
-  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> a2_buf_ct0 = dpct::get_buffer_and_offset(a2);
-  //CHECK-NEXT:  size_t a2_offset_ct0 = a2_buf_ct0.second;
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto a2_acc_ct0 = a2_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK-NEXT:      dpct::access_wrapper<int **> a2_acc_ct0(a2, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:          int **a2_ct0 = (int **)(&a2_acc_ct0[0] + a2_offset_ct0);
-  //CHECK-NEXT:          k3(a2_ct0);
+  //CHECK-NEXT:          k3(a2_acc_ct0.get_raw_pointer());
   //CHECK-NEXT:        });
   //CHECK-NEXT:    });
-  //CHECK-NEXT:}
   k3<<<1,1>>>(a2);
 
   BBB b;

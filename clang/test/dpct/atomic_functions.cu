@@ -102,21 +102,16 @@ void InvokeKernel() {
   cudaMalloc((void **)&dev_ptr, size);
 
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
-  // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> dev_ptr_buf_ct0 = dpct::get_buffer_and_offset(dev_ptr);
-  // CHECK-NEXT:   size_t dev_ptr_offset_ct0 = dev_ptr_buf_ct0.second;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto dev_ptr_acc_ct0 = dev_ptr_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           T *dev_ptr_ct0 = (T *)(&dev_ptr_acc_ct0[0] + dev_ptr_offset_ct0);
-  // CHECK-NEXT:           test<T>(dev_ptr_ct0, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         test<T>(dev_ptr_acc_ct0.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
