@@ -7,6 +7,8 @@ void checkError(cudaError_t err) {
 
 }
 
+cudaDeviceAttr attr6;
+
 int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
@@ -50,13 +52,66 @@ int val;
 // CHECK: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
-// CHECK: int attr = 75;
+struct attr{
+    cudaDeviceAttr attr;
+} attr1;
+// CHECK: /*
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: */
+// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr1.attr, dev_id);
+cudaDeviceGetAttribute(&val, attr1.attr, dev_id);
+
+// CHECK: int attr2 = 86;
+// CHECK-NEXT: atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported();
+cudaDeviceAttr attr2 = cudaDevAttrHostNativeAtomicSupported;
+cudaDeviceGetAttribute(&atomicSupported, attr2, dev_id);
+
+// CHECK: int attr3;
+// CHECK-NEXT: attr3 = 75;
+// CHECK-NEXT: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
+cudaDeviceAttr attr3;
+attr3 = cudaDevAttrComputeCapabilityMajor;
+cudaDeviceGetAttribute(&val, attr3, dev_id);
+
+// CHECK: int attr4;
+// CHECK-NEXT: attr4 = 86;
+// CHECK-NEXT: attr4 = 75;
+// CHECK-NEXT: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
+cudaDeviceAttr attr4;
+attr4 = cudaDevAttrHostNativeAtomicSupported;
+attr4 = cudaDevAttrComputeCapabilityMajor;
+cudaDeviceGetAttribute(&val, attr4, dev_id);
+
+// CHECK: int attr5;
+// CHECK-NEXT: int somecondition;
+// CHECK-NEXT: attr5 = 86;
+// CHECK-NEXT: attr5 = 75;
+// CHECK-NEXT: if(somecondition)
+// CHECK-NEXT:   attr5 = 86;
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
 // CHECK-NEXT: */
-// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr, dev_id);
-cudaDeviceAttr attr = cudaDevAttrComputeCapabilityMajor;
-cudaDeviceGetAttribute(&val, attr, dev_id);
+// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr5, dev_id);
+cudaDeviceAttr attr5;
+int somecondition;
+attr5 = cudaDevAttrHostNativeAtomicSupported;
+attr5 = cudaDevAttrComputeCapabilityMajor;
+if(somecondition)
+  attr5 = cudaDevAttrHostNativeAtomicSupported;
+cudaDeviceGetAttribute(&val, attr5, dev_id);
+
+// CHECK: attr5 = 86;
+// CHECK-NEXT: attr6 = attr5;
+// CHECK-NEXT: checkError((val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
+attr5 = cudaDevAttrHostNativeAtomicSupported;
+attr6 = attr5;
+checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: */
+// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr6, dev_id);
+cudaDeviceGetAttribute(&val, attr6, dev_id);
 
 int computeMode = -1, minor = 0;
 // CHECK: /*

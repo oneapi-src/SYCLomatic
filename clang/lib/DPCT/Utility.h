@@ -478,4 +478,5 @@ bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
                       clang::SourceLocation EndLoc);
 void constructUnionFindSetRecursively(
     std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
+bool isModifiedRef(const clang::DeclRefExpr *DRE);
 #endif // DPCT_UTILITY_H

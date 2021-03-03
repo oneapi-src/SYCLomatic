@@ -8001,6 +8001,84 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
+std::string FunctionCallRule::findValueofAttrVar(const Expr *AttrArg,
+                                                 const CallExpr *CE) {
+  std::string AttributeName;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &CT = DpctGlobalInfo::getContext();
+  int MinDistance = INT_MAX;
+  int RecognizedMinDistance = INT_MAX;
+  if (!AttrArg || !CE)
+    return "";
+  auto DRE = dyn_cast<DeclRefExpr>(AttrArg->IgnoreImpCasts());
+  if (!DRE)
+    return "";
+  auto Decl = dyn_cast<VarDecl>(DRE->getDecl());
+  if (!Decl || CT.getParents(*Decl)[0].get<TranslationUnitDecl>())
+    return "";
+  int DRELocOffset = SM.getFileOffset(SM.getExpansionLoc(DRE->getBeginLoc()));
+
+  if (Decl->hasInit()) {
+    // get the attribute name from definition
+    if (auto Init = dyn_cast<DeclRefExpr>(Decl->getInit())) {
+      SourceLocation InitLoc = SM.getExpansionLoc(Init->getLocation());
+      MinDistance = DRELocOffset - SM.getFileOffset(InitLoc);
+      RecognizedMinDistance = MinDistance;
+      AttributeName = Init->getNameInfo().getName().getAsString();
+    }
+  }
+  std::string AttrVarName = DRE->getNameInfo().getName().getAsString();
+  auto AttrVarScope = findImmediateBlock(Decl);
+  if (!AttrVarScope)
+    return "";
+
+  // we need to track the reference of attr var in its scope
+  auto AttrVarMatcher =
+      findAll(declRefExpr(to(varDecl(hasName(AttrVarName)))).bind("AttrVar"));
+  auto MatchResult = ast_matchers::match(AttrVarMatcher, *AttrVarScope,
+                                         DpctGlobalInfo::getContext());
+
+  for (auto &SubResult : MatchResult) {
+    const DeclRefExpr *AugDRE = SubResult.getNodeAs<DeclRefExpr>("AttrVar");
+    if (!AugDRE)
+      break;
+    SourceLocation AugLoc = SM.getExpansionLoc(AugDRE->getBeginLoc());
+    int CurrentDistance = DRELocOffset - SM.getFileOffset(AugLoc);
+    // we need to skip no effect reference
+    if (CurrentDistance <= 0 || !isModifiedRef(AugDRE)) {
+      continue;
+    }
+    MinDistance = MinDistance > CurrentDistance ? CurrentDistance : MinDistance;
+
+    auto BO = CT.getParents(*AugDRE)[0].get<BinaryOperator>();
+    if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
+      auto Condition = [&](const clang::DynTypedNode &Node) -> bool {
+        if (Node.get<IfStmt>() || Node.get<WhileStmt>() ||
+            Node.get<ForStmt>() || Node.get<DoStmt>() || Node.get<CaseStmt>() ||
+            Node.get<SwitchStmt>() || Node.get<CompoundStmt>()) {
+          return true;
+        }
+        return false;
+      };
+      auto BOCS = DpctGlobalInfo::findAncestor<CompoundStmt>(BO, Condition);
+      auto CECS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition);
+      if (!(BOCS && CECS && BOCS == CECS))
+        continue;
+      if (auto RHS = dyn_cast<DeclRefExpr>(BO->getRHS())) {
+        RecognizedMinDistance = CurrentDistance < RecognizedMinDistance
+                                    ? CurrentDistance
+                                    : RecognizedMinDistance;
+        AttributeName = RHS->getNameInfo().getName().getAsString();
+      }
+    }
+  }
+  // if there is a non-recognized reference closer than recognized reference,
+  // then we need to clear current attributename
+  if (RecognizedMinDistance > MinDistance)
+    AttributeName.clear();
+  return AttributeName;
+}
+
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
@@ -8082,9 +8160,12 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (auto DRE = dyn_cast<DeclRefExpr>(AttrArg)) {
       AttributeName = DRE->getNameInfo().getName().getAsString();
     } else {
-      report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-             false, "recognized by the Intel(R) DPC++ Compatibility Tool");
-      return;
+      AttributeName = findValueofAttrVar(AttrArg, CE);
+      if(AttributeName.empty()){
+        report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+              false, "recognized by the Intel(R) DPC++ Compatibility Tool");
+        return;
+      }
     }
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));

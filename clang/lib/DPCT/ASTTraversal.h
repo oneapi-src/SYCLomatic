@@ -1323,6 +1323,7 @@ public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  std::string findValueofAttrVar(const Expr* AttrArg, const CallExpr* CE);
 };
 
 /// Migration rule for event API calls

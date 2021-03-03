@@ -2655,3 +2655,35 @@ void constructUnionFindSetRecursively(
     constructUnionFindSetRecursively(FuncInfoPtr);
   }
 }
+/// Determine whether a variable represented by DeclRefExpr is unmodified
+/// 1. func(..., T Val(pass by value), ...)
+/// 2. ... = Val
+/// The varibale is unmodified in above two cases
+/// \param [in] DRE Input DeclRefExpr
+/// \returns If variable not modified, return false
+bool isModifiedRef(const clang::DeclRefExpr *DRE) {
+  auto &CT = dpct::DpctGlobalInfo::getContext();
+  const clang::Stmt *P = CT.getParents(*DRE)[0].get<ImplicitCastExpr>();
+  if (!P) {
+    P = DRE;
+  }
+  if (auto CE = CT.getParents(*P)[0].get<CallExpr>()) {
+    int index, ArgNum = CE->getNumArgs();
+    for (index = 0; index < ArgNum; index++) {
+      if (CE->getArg(index)->IgnoreImplicit() == DRE)
+        break;
+    }
+    if (index == ArgNum)
+      return true;
+    if (auto CalleeDecl = CE->getDirectCallee()) {
+      auto ParaDecl = CalleeDecl->getParamDecl(index);
+      if (ParaDecl && !ParaDecl->getType()->isReferenceType()) {
+        return false;
+      }
+    }
+  } else if (auto BO = CT.getParents(*P)[0].get<BinaryOperator>()) {
+    if (BO->getRHS()->IgnoreImplicit() == DRE)
+      return false;
+  }
+  return true;
+}
