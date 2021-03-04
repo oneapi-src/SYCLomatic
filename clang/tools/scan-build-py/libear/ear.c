@@ -945,7 +945,14 @@ char * replace_binary_name(const char *src, const char *pos){
     }
     strcpy(file_path + strlen(file_path) - strlen("bin/dpct"), "libear/intercept-stub");
 
-    char *buffer = (char *)malloc(strlen(src) + strlen(file_path) - strlen("nvcc"));
+   // To malloc required size of physical memory it really needs may fail in
+   // some case, so malloc 4K bytes(one physical page) instead.
+    char *buffer = (char *)malloc(4096);
+    if(buffer == NULL) {
+        perror("bear: malloc memory fail.");
+        exit(EXIT_FAILURE);
+    }
+
     char *insert_point = buffer;
 
     // To handle the situation that \psrc is
