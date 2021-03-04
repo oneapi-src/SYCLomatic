@@ -207,26 +207,28 @@ struct IntrinsicDummyArgument {
 // KIND(0), KIND(0.0), KIND(''), &c. value for the function result.
 static constexpr IntrinsicDummyArgument DefaultingKIND{"kind",
     {IntType, KindCode::kindArg}, Rank::scalar,
-    Optionality::defaultsToDefaultForResult};
+    Optionality::defaultsToDefaultForResult, common::Intent::In};
 // MatchingDefaultKIND is a KIND= argument whose default value is the
 // kind of any "Same" function argument (viz., the one whose kind pattern is
 // "same").
 static constexpr IntrinsicDummyArgument MatchingDefaultKIND{"kind",
-    {IntType, KindCode::kindArg}, Rank::scalar,
-    Optionality::defaultsToSameKind};
+    {IntType, KindCode::kindArg}, Rank::scalar, Optionality::defaultsToSameKind,
+    common::Intent::In};
 // SizeDefaultKind is a KIND= argument whose default value should be
 // the kind of INTEGER used for address calculations, and can be
 // set so with a compiler flag; but the standard mandates the
 // kind of default INTEGER.
 static constexpr IntrinsicDummyArgument SizeDefaultKIND{"kind",
-    {IntType, KindCode::kindArg}, Rank::scalar,
-    Optionality::defaultsToSizeKind};
-static constexpr IntrinsicDummyArgument RequiredDIM{
-    "dim", {IntType, KindCode::dimArg}, Rank::scalar, Optionality::required};
-static constexpr IntrinsicDummyArgument OptionalDIM{
-    "dim", {IntType, KindCode::dimArg}, Rank::scalar, Optionality::optional};
-static constexpr IntrinsicDummyArgument OptionalMASK{
-    "mask", AnyLogical, Rank::conformable, Optionality::optional};
+    {IntType, KindCode::kindArg}, Rank::scalar, Optionality::defaultsToSizeKind,
+    common::Intent::In};
+static constexpr IntrinsicDummyArgument RequiredDIM{"dim",
+    {IntType, KindCode::dimArg}, Rank::scalar, Optionality::required,
+    common::Intent::In};
+static constexpr IntrinsicDummyArgument OptionalDIM{"dim",
+    {IntType, KindCode::dimArg}, Rank::scalar, Optionality::optional,
+    common::Intent::In};
+static constexpr IntrinsicDummyArgument OptionalMASK{"mask", AnyLogical,
+    Rank::conformable, Optionality::optional, common::Intent::In};
 
 struct IntrinsicInterface {
   static constexpr int maxArguments{7}; // if not a MAX/MIN(...)
@@ -474,6 +476,7 @@ static const IntrinsicInterface genericIntrinsicFunction[]{
         {{"i", SameInt}, {"shift", AnyInt},
             {"size", AnyInt, Rank::elemental, Optionality::optional}},
         SameInt},
+    {"isnan", {{"a", AnyFloating}}, DefaultLogical},
     {"is_contiguous", {{"array", Addressable, Rank::anyOrAssumedRank}},
         DefaultLogical, Rank::elemental, IntrinsicClass::inquiryFunction},
     {"is_iostat_end", {{"i", AnyInt}}, DefaultLogical},
@@ -682,6 +685,8 @@ static const IntrinsicInterface genericIntrinsicFunction[]{
         {{"array", AnyData, Rank::anyOrAssumedRank}, OptionalDIM,
             SizeDefaultKIND},
         KINDInt, Rank::scalar, IntrinsicClass::inquiryFunction},
+    {"sizeof", {{"a", AnyData, Rank::anyOrAssumedRank}}, SubscriptInt,
+        Rank::scalar, IntrinsicClass::inquiryFunction},
     {"spacing", {{"x", SameReal}}, SameReal},
     {"spread",
         {{"source", SameType, Rank::known}, RequiredDIM,
@@ -739,10 +744,10 @@ static const IntrinsicInterface genericIntrinsicFunction[]{
 //  AND, OR, XOR, LSHIFT, RSHIFT, SHIFT, ZEXT, IZEXT,
 //  COMPL, EQV, NEQV, INT8, JINT, JNINT, KNINT,
 //  QCMPLX, DFLOAT, QEXT, QFLOAT, QREAL, DNUM,
-//  INUM, JNUM, KNUM, QNUM, RNUM, RAN, RANF, ILEN, SIZEOF,
+//  INUM, JNUM, KNUM, QNUM, RNUM, RAN, RANF, ILEN,
 //  MCLOCK, SECNDS, COTAN, IBCHNG, ISHA, ISHC, ISHL, IXOR
 //  IARG, IARGC, NARGS, NUMARG, BADDRESS, IADDR, CACHESIZE,
-//  EOF, FP_CLASS, INT_PTR_KIND, ISNAN, MALLOC
+//  EOF, FP_CLASS, INT_PTR_KIND, MALLOC
 //  probably more (these are PGI + Intel, possibly incomplete)
 // TODO: Optionally warn on use of non-standard intrinsics:
 //  LOC, probably others
@@ -1554,7 +1559,12 @@ std::optional<SpecificCall> IntrinsicInterface::Match(
       if (const Expr<SomeType> *expr{arg->UnwrapExpr()}) {
         auto dc{characteristics::DummyArgument::FromActual(
             std::string{d.keyword}, *expr, context)};
-        CHECK(dc);
+        if (!dc) {
+          common::die("INTERNAL: could not characterize intrinsic function "
+                      "actual argument '%s'",
+              expr->AsFortran().c_str());
+          return std::nullopt;
+        }
         dummyArgs.emplace_back(std::move(*dc));
         if (d.typePattern.kindCode == KindCode::same && !sameDummyArg) {
           sameDummyArg = j;
@@ -1616,6 +1626,8 @@ public:
   }
 
   bool IsIntrinsic(const std::string &) const;
+  bool IsIntrinsicFunction(const std::string &) const;
+  bool IsIntrinsicSubroutine(const std::string &) const;
 
   IntrinsicClass GetIntrinsicClass(const std::string &) const;
   std::string GetGenericIntrinsicName(const std::string &) const;
@@ -1630,8 +1642,7 @@ public:
 
 private:
   DynamicType GetSpecificType(const TypePattern &) const;
-  SpecificCall HandleNull(
-      ActualArguments &, FoldingContext &, const IntrinsicProcTable &) const;
+  SpecificCall HandleNull(ActualArguments &, FoldingContext &) const;
   std::optional<SpecificCall> HandleC_F_Pointer(
       ActualArguments &, FoldingContext &) const;
 
@@ -1641,7 +1652,7 @@ private:
   std::multimap<std::string, const IntrinsicInterface *> subroutines_;
 };
 
-bool IntrinsicProcTable::Implementation::IsIntrinsic(
+bool IntrinsicProcTable::Implementation::IsIntrinsicFunction(
     const std::string &name) const {
   auto specificRange{specificFuncs_.equal_range(name)};
   if (specificRange.first != specificRange.second) {
@@ -1651,12 +1662,21 @@ bool IntrinsicProcTable::Implementation::IsIntrinsic(
   if (genericRange.first != genericRange.second) {
     return true;
   }
+  // special cases
+  return name == "null";
+}
+bool IntrinsicProcTable::Implementation::IsIntrinsicSubroutine(
+    const std::string &name) const {
   auto subrRange{subroutines_.equal_range(name)};
   if (subrRange.first != subrRange.second) {
     return true;
   }
   // special cases
-  return name == "null" || name == "__builtin_c_f_pointer";
+  return name == "__builtin_c_f_pointer";
+}
+bool IntrinsicProcTable::Implementation::IsIntrinsic(
+    const std::string &name) const {
+  return IsIntrinsicFunction(name) || IsIntrinsicSubroutine(name);
 }
 
 IntrinsicClass IntrinsicProcTable::Implementation::GetIntrinsicClass(
@@ -1746,8 +1766,7 @@ bool CheckAndRearrangeArguments(ActualArguments &arguments,
 
 // The NULL() intrinsic is a special case.
 SpecificCall IntrinsicProcTable::Implementation::HandleNull(
-    ActualArguments &arguments, FoldingContext &context,
-    const IntrinsicProcTable &intrinsics) const {
+    ActualArguments &arguments, FoldingContext &context) const {
   static const char *const keywords[]{"mold", nullptr};
   if (CheckAndRearrangeArguments(arguments, context.messages(), keywords, 1) &&
       arguments[0]) {
@@ -1761,7 +1780,7 @@ SpecificCall IntrinsicProcTable::Implementation::HandleNull(
           const Symbol *last{GetLastSymbol(*mold)};
           CHECK(last);
           auto procPointer{
-              characteristics::Procedure::Characterize(*last, intrinsics)};
+              characteristics::Procedure::Characterize(*last, context)};
           // procPointer is null if there was an error with the analysis
           // associated with the procedure pointer
           if (procPointer) {
@@ -1886,21 +1905,19 @@ IntrinsicProcTable::Implementation::HandleC_F_Pointer(
   }
 }
 
-static bool CheckAssociated(SpecificCall &call,
-    parser::ContextualMessages &messages,
-    const IntrinsicProcTable &intrinsics) {
+static bool CheckAssociated(SpecificCall &call, FoldingContext &context) {
   bool ok{true};
   if (const auto &pointerArg{call.arguments[0]}) {
     if (const auto *pointerExpr{pointerArg->UnwrapExpr()}) {
       if (const Symbol * pointerSymbol{GetLastSymbol(*pointerExpr)}) {
         if (!pointerSymbol->attrs().test(semantics::Attr::POINTER)) {
-          AttachDeclaration(
-              messages.Say("POINTER= argument of ASSOCIATED() must be a "
-                           "POINTER"_err_en_US),
+          AttachDeclaration(context.messages().Say(
+                                "POINTER= argument of ASSOCIATED() must be a "
+                                "POINTER"_err_en_US),
               *pointerSymbol);
         } else {
           const auto pointerProc{characteristics::Procedure::Characterize(
-              *pointerSymbol, intrinsics)};
+              *pointerSymbol, context)};
           if (const auto &targetArg{call.arguments[1]}) {
             if (const auto *targetExpr{targetArg->UnwrapExpr()}) {
               std::optional<characteristics::Procedure> targetProc{
@@ -1912,7 +1929,7 @@ static bool CheckAssociated(SpecificCall &call,
                       std::get_if<ProcedureRef>(&targetExpr->u)}) {
                 if (auto targetRefedChars{
                         characteristics::Procedure::Characterize(
-                            *targetProcRef, intrinsics)}) {
+                            *targetProcRef, context)}) {
                   targetProc = *targetRefedChars;
                   targetName = targetProcRef->proc().GetName() + "()";
                   isCall = true;
@@ -1920,7 +1937,7 @@ static bool CheckAssociated(SpecificCall &call,
               } else if (targetSymbol && !targetProc) {
                 // proc that's not a call
                 targetProc = characteristics::Procedure::Characterize(
-                    *targetSymbol, intrinsics);
+                    *targetSymbol, context);
                 targetName = targetSymbol->name().ToString();
               }
 
@@ -1931,7 +1948,7 @@ static bool CheckAssociated(SpecificCall &call,
                           CheckProcCompatibility(
                               isCall, pointerProc, &*targetProc)}) {
                     AttachDeclaration(
-                        messages.Say(std::move(*msg),
+                        context.messages().Say(std::move(*msg),
                             "pointer '" + pointerSymbol->name().ToString() +
                                 "'",
                             targetName),
@@ -1941,7 +1958,7 @@ static bool CheckAssociated(SpecificCall &call,
                   // procedure pointer and object target
                   if (!IsNullPointer(*targetExpr)) {
                     AttachDeclaration(
-                        messages.Say(
+                        context.messages().Say(
                             "POINTER= argument '%s' is a procedure "
                             "pointer but the TARGET= argument '%s' is not a "
                             "procedure or procedure pointer"_err_en_US,
@@ -1952,13 +1969,28 @@ static bool CheckAssociated(SpecificCall &call,
               } else if (targetProc) {
                 // object pointer and procedure target
                 AttachDeclaration(
-                    messages.Say("POINTER= argument '%s' is an object pointer "
-                                 "but the TARGET= argument '%s' is a "
-                                 "procedure designator"_err_en_US,
+                    context.messages().Say(
+                        "POINTER= argument '%s' is an object pointer "
+                        "but the TARGET= argument '%s' is a "
+                        "procedure designator"_err_en_US,
                         pointerSymbol->name(), targetName),
                     *pointerSymbol);
               } else {
                 // object pointer and target
+                if (const Symbol * targetSymbol{GetLastSymbol(*targetExpr)}) {
+                  if (!(targetSymbol->attrs().test(semantics::Attr::POINTER) ||
+                          targetSymbol->attrs().test(
+                              semantics::Attr::TARGET))) {
+                    AttachDeclaration(
+                        context.messages().Say(
+                            "TARGET= argument '%s' must have either "
+                            "the POINTER or the TARGET "
+                            "attribute"_err_en_US,
+                            targetName),
+                        *targetSymbol);
+                  }
+                }
+
                 if (const auto pointerType{pointerArg->GetType()}) {
                   if (const auto targetType{targetArg->GetType()}) {
                     ok = pointerType->IsTkCompatibleWith(*targetType);
@@ -1975,16 +2007,14 @@ static bool CheckAssociated(SpecificCall &call,
     ok = false;
   }
   if (!ok) {
-    messages.Say(
+    context.messages().Say(
         "Arguments of ASSOCIATED() must be a POINTER and an optional valid target"_err_en_US);
   }
   return ok;
 }
 
 // Applies any semantic checks peculiar to an intrinsic.
-static bool ApplySpecificChecks(SpecificCall &call,
-    parser::ContextualMessages &messages,
-    const IntrinsicProcTable &intrinsics) {
+static bool ApplySpecificChecks(SpecificCall &call, FoldingContext &context) {
   bool ok{true};
   const std::string &name{call.specificIntrinsic.name};
   if (name == "allocated") {
@@ -1996,17 +2026,17 @@ static bool ApplySpecificChecks(SpecificCall &call,
       }
     }
     if (!ok) {
-      messages.Say(
+      context.messages().Say(
           "Argument of ALLOCATED() must be an ALLOCATABLE object or component"_err_en_US);
     }
   } else if (name == "associated") {
-    return CheckAssociated(call, messages, intrinsics);
+    return CheckAssociated(call, context);
   } else if (name == "loc") {
     if (const auto &arg{call.arguments[0]}) {
       ok = arg->GetAssumedTypeDummy() || GetLastSymbol(arg->UnwrapExpr());
     }
     if (!ok) {
-      messages.Say(
+      context.messages().Say(
           "Argument of LOC() must be an object or procedure"_err_en_US);
     }
   } else if (name == "present") {
@@ -2018,7 +2048,7 @@ static bool ApplySpecificChecks(SpecificCall &call,
       }
     }
     if (!ok) {
-      messages.Say(
+      context.messages().Say(
           "Argument of PRESENT() must be the name of an OPTIONAL dummy argument"_err_en_US);
     }
   }
@@ -2058,7 +2088,7 @@ std::optional<SpecificCall> IntrinsicProcTable::Implementation::Probe(
     }
   } else {
     if (call.name == "null") {
-      return HandleNull(arguments, context, intrinsics);
+      return HandleNull(arguments, context);
     }
   }
 
@@ -2069,6 +2099,11 @@ std::optional<SpecificCall> IntrinsicProcTable::Implementation::Probe(
               iter->second->Match(call, defaults_, arguments, context)}) {
         return specificCall;
       }
+    }
+    if (IsIntrinsicFunction(call.name)) {
+      context.messages().Say(
+          "Cannot use intrinsic function '%s' as a subroutine"_err_en_US,
+          call.name);
     }
     return std::nullopt; // TODO
   }
@@ -2102,7 +2137,7 @@ std::optional<SpecificCall> IntrinsicProcTable::Implementation::Probe(
   for (auto iter{genericRange.first}; iter != genericRange.second; ++iter) {
     if (auto specificCall{
             matchOrBufferMessages(*iter->second, genericBuffer)}) {
-      ApplySpecificChecks(*specificCall, context.messages(), intrinsics);
+      ApplySpecificChecks(*specificCall, context);
       return specificCall;
     }
   }
@@ -2158,6 +2193,13 @@ std::optional<SpecificCall> IntrinsicProcTable::Implementation::Probe(
     }
   }
 
+  if (specificBuffer.empty() && genericBuffer.empty() &&
+      IsIntrinsicSubroutine(call.name)) {
+    context.messages().Say(
+        "Cannot use intrinsic subroutine '%s' as a function"_err_en_US,
+        call.name);
+  }
+
   // No match; report the right errors, if any
   if (finalBuffer) {
     if (specificBuffer.empty()) {
@@ -2208,21 +2250,23 @@ DynamicType IntrinsicProcTable::Implementation::GetSpecificType(
   return DynamicType{category, defaults_.GetDefaultKind(category)};
 }
 
-IntrinsicProcTable::~IntrinsicProcTable() {
-  // Discard the configured tables.
-  delete impl_;
-  impl_ = nullptr;
-}
+IntrinsicProcTable::~IntrinsicProcTable() = default;
 
 IntrinsicProcTable IntrinsicProcTable::Configure(
     const common::IntrinsicTypeDefaultKinds &defaults) {
   IntrinsicProcTable result;
-  result.impl_ = new IntrinsicProcTable::Implementation(defaults);
+  result.impl_ = std::make_unique<IntrinsicProcTable::Implementation>(defaults);
   return result;
 }
 
 bool IntrinsicProcTable::IsIntrinsic(const std::string &name) const {
   return DEREF(impl_).IsIntrinsic(name);
+}
+bool IntrinsicProcTable::IsIntrinsicFunction(const std::string &name) const {
+  return DEREF(impl_).IsIntrinsicFunction(name);
+}
+bool IntrinsicProcTable::IsIntrinsicSubroutine(const std::string &name) const {
+  return DEREF(impl_).IsIntrinsicSubroutine(name);
 }
 
 IntrinsicClass IntrinsicProcTable::GetIntrinsicClass(

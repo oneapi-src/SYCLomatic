@@ -146,31 +146,35 @@ void DpctFileInfo::buildLinesInfo() {
   if (std::error_code ec = FE.getError())
     return;
   auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-  auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
-  if (!Content->SourceLineCache)
-    SM.getLineNumber(FID, 0);
-  auto LineCache = Content->SourceLineCache;
-  auto NumLines = Content->NumLines;
-  FileSize = Content->getSize();
-  if(auto RawBuffer = Content->getRawBuffer())
-    FileContentCache = RawBuffer->getBuffer().str();
-  const char *Buffer = nullptr;
-  if (!LineCache) {
-    return;
+  auto &Content = SM.getSLocEntry(FID).getFile().getContentCache();
+  if (!Content.SourceLineCache) {
+    bool Invalid;
+    SM.getLineNumber(FID, 0, &Invalid);
+    if (Invalid)
+      return;
   }
-  if (DpctGlobalInfo::isKeepOriginCode())
-    Buffer = Content->getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
-                 .getValueOr(llvm::MemoryBufferRef())
-                 .getBufferStart();
-  for (unsigned L = 1; L < Content->NumLines; ++L)
-    Lines.emplace_back(L, LineCache, Buffer);
-  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, Buffer);
+  auto RawBuffer =
+      Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
+          .getValueOr(llvm::MemoryBufferRef())
+          .getBuffer();
+  if (RawBuffer.empty())
+    return;
+  FileContentCache = RawBuffer.str();
+  FileSize = RawBuffer.size();
+  auto LineCache = Content.SourceLineCache.getLines();
+  auto NumLines = Content.SourceLineCache.size();
+  StringRef CacheBuffer(FileContentCache);
+  for (unsigned L = 1; L < NumLines; ++L)
+    Lines.emplace_back(L, LineCache, CacheBuffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
 }
 
 void DpctFileInfo::buildReplacements() {
   if (!isInRoot())
     return;
 
+  if(FilePath.empty())
+    return;
   // Traver all the global variables stored one by one to check if its name is
   // same with normal global variable's name in host side, if the one is found,
   // postfix "_ct" is added to this __constant__ symbol's name.
@@ -771,21 +775,11 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   // Check if the whole kernel call is in macro arg
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
-  if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd)) {
-    // Just check if begin/end are the same macro arg, so use getBegin() for both loc
-    CallBegin = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallBegin).getBegin());
-    CallEnd = SM.getSpellingLoc(SM.getImmediateExpansionRange(CallEnd).getBegin());
-    auto ItMatchBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(CallBegin));
-    auto ItMatchEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(CallEnd));
-    if (ItMatchBegin != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
-      && ItMatchEnd != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
-      && ItMatchBegin == ItMatchEnd) {
-      // The whole kernel call is in a single macro arg
-      IsInMacroDefine = false;
-      return;
-    }
+
+  if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd) &&
+      isLocInSameMacroArg(CallBegin, CallEnd)) {
+    IsInMacroDefine = false;
+    return;
   }
 
   auto CalleeSpelling = KernelCall->getCallee()->getBeginLoc();
@@ -2015,7 +2009,7 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
   for (auto VarAttr : Attrs) {
     auto Kind = VarAttr->getKind();
-    if (Kind == attr::CUDAManaged)
+    if (Kind == attr::HIPManaged)
       return Managed;
   }
   for (auto VarAttr : Attrs) {

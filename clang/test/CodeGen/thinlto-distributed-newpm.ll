@@ -63,10 +63,6 @@
 ; CHECK-O: Running analysis: OuterAnalysisManagerProxy
 ; CHECK-O: Running pass: SimplifyCFGPass on main
 ; CHECK-O: Finished {{.*}}Function pass manager run.
-; CHECK-O: Running pass: RequireAnalysisPass<{{.*}}GlobalsAA
-; CHECK-O: Running analysis: GlobalsAA
-; CHECK-O: Running analysis: CallGraphAnalysis
-; CHECK-O: Running pass: RequireAnalysisPass<{{.*}}ProfileSummaryAnalysis
 ; CHECK-O: Running analysis: InnerAnalysisManagerProxy
 ; CHECK-O: Running analysis: LazyCallGraphAnalysis
 ; CHECK-O: Running analysis: FunctionAnalysisManagerCGSCCProxy on (main)
@@ -129,13 +125,13 @@
 ; CHECK-O: Running pass: InstCombinePass on main
 ; CHECK-O: Running pass: JumpThreadingPass on main
 ; CHECK-O: Running pass: CorrelatedValuePropagationPass on main
-; CHECK-O: Running pass: DSEPass on main
+; CHECK-O: Running pass: ADCEPass on main
 ; CHECK-O: Running analysis: PostDominatorTreeAnalysis on main
+; CHECK-O: Running pass: DSEPass on main
 ; CHECK-O: Starting {{.*}}Function pass manager run.
 ; CHECK-O: Running pass: LoopSimplifyPass on main
 ; CHECK-O: Running pass: LCSSAPass on main
 ; CHECK-O: Finished {{.*}}Function pass manager run.
-; CHECK-O: Running pass: ADCEPass on main
 ; CHECK-O: Running pass: SimplifyCFGPass on main
 ; CHECK-O: Running pass: InstCombinePass on main
 ; CHECK-O: Finished {{.*}}Function pass manager run.
@@ -178,7 +174,6 @@
 ; CHECK-O: Running analysis: PostDominatorTreeAnalysis on main
 ; CHECK-O: Running analysis: DemandedBitsAnalysis on main
 ; CHECK-O: Running pass: LoopLoadEliminationPass on main
-; CHECK-O: Running analysis: LoopAccessAnalysis on Loop at depth 1 containing: %b
 ; CHECK-O: Running pass: InstCombinePass on main
 ; CHECK-O: Running pass: SimplifyCFGPass on main
 ; CHECK-O: Running pass: SLPVectorizerPass on main

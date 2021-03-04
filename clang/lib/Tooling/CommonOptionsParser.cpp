@@ -257,9 +257,7 @@ llvm::Error CommonOptionsParser::init(
       if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
         std::string buf;
         llvm::raw_string_ostream OS(buf);
-        OS << "Error while trying to load a compilation database:\n"
-           << ErrorMessage;
-        DoPrintHandler(OS.str(), true);
+        OS << "Error while trying to load a compilation database:\n";
         // The ErrCode is set to CannotParseDatabase(-101) from
         // findCompilationDatabaseFromDirectory in autoDetectFromDirectory when
         // database file exists but it cannot be parsed successfully. No other
@@ -268,13 +266,45 @@ llvm::Error CommonOptionsParser::init(
 
         if (ErrCode == CannotParseDatabase
           /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
+          OS << ErrorMessage;
+          DoPrintHandle(OS.str(), true);
           return llvm::make_error<DPCTError>(
               CannotParseDatabase
               /*map to MigrationErrorCannotParseDatabase in DPCT*/);
         } else {
-          return llvm::make_error<DPCTError>(
-              CannotFindDatabase
-              /*map to MigrationErrorCannotFindDatabase in DPCT*/);
+          bool IsProcessAllSet = false;
+          for (auto &OM : cl::getRegisteredOptions(*cl::TopLevelSubCommand)) {
+            cl::Option *O = OM.second;
+            if (O->ArgStr == "process-all") {
+              IsProcessAllSet = O->getNumOccurrences();
+              break;
+            }
+          }
+
+          if (!IsProcessAllSet) {
+            // If no compilation database is found in the dir user specifies, dpct will
+            // exit with "code: -19 (Error: Cannot find compilation database)", so
+            // the sub misleading msg below should be removed.
+            std::string Sub = "Migration initiated without compilation "
+                      "database from directory \"" +
+                      BuildPath + "\"\n";
+            std::string::size_type Pos = ErrorMessage.find(Sub);
+            if (Pos != std::string::npos)
+              ErrorMessage.erase(Pos, ErrorMessage.length());
+
+            OS << ErrorMessage;
+            DoPrintHandle(OS.str(), true);
+
+            return llvm::make_error<DPCTError>(
+                CannotFindDatabase
+                /*map to MigrationErrorCannotFindDatabase in DPCT*/);
+          } else {
+            // if -process-all specified, emit a warning msg of no compilation
+            // database found, and try to migrate or copy all files from
+            // directory specified by -in-root.
+            OS << ErrorMessage;
+            DoPrintHandle(OS.str(), true);
+          }
         }
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         // need add -x cuda option for not using database
@@ -286,7 +316,7 @@ llvm::Error CommonOptionsParser::init(
           std::string buf;
           llvm::raw_string_ostream OS(buf);
           OS << "Could not get absolute path from '" << Name << "'\n";
-          DoPrintHandler(OS.str(), true);
+          DoPrintHandle(OS.str(), true);
         } else {
           File = path::filename(Name);
           Path = path::parent_path(Name);
@@ -296,7 +326,7 @@ llvm::Error CommonOptionsParser::init(
         OS << "NOTE: Could not auto-detect compilation database for"
            << " file '" << File << "' in '" << Path
            << "' or any parent directory.\n";
-        DoPrintHandler(OS.str(), true);
+        DoPrintHandle(OS.str(), true);
       } else {
         if (SourcePaths.size() >= 2 && BuildPath.getValue().empty()) {
           // need add -x cuda option for not using database
@@ -308,7 +338,7 @@ llvm::Error CommonOptionsParser::init(
           if (!BuildPath.getValue().empty())
             OS << "Error while trying to load a compilation database:\n";
           OS << ErrorMessage;
-          DoPrintHandler(OS.str(), true);
+          DoPrintHandle(OS.str(), true);
         }
       }
 #else

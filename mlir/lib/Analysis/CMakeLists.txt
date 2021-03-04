@@ -1,18 +1,23 @@
 set(LLVM_OPTIONAL_SOURCES
   AffineAnalysis.cpp
   AffineStructures.cpp
+  BufferAliasAnalysis.cpp
   CallGraph.cpp
+  LinearTransform.cpp
   Liveness.cpp
   LoopAnalysis.cpp
   NestedMatcher.cpp
+  NumberOfExecutions.cpp
   PresburgerSet.cpp
   SliceAnalysis.cpp
   Utils.cpp
   )
 
 add_mlir_library(MLIRAnalysis
+  BufferAliasAnalysis.cpp
   CallGraph.cpp
   Liveness.cpp
+  NumberOfExecutions.cpp
   SliceAnalysis.cpp
 
   ADDITIONAL_HEADER_DIRS
@@ -32,6 +37,7 @@ add_mlir_library(MLIRAnalysis
 add_mlir_library(MLIRLoopAnalysis
   AffineAnalysis.cpp
   AffineStructures.cpp
+  LinearTransform.cpp
   LoopAnalysis.cpp
   NestedMatcher.cpp
   PresburgerSet.cpp
@@ -51,5 +57,5 @@ add_mlir_library(MLIRLoopAnalysis
   MLIRPresburger
   MLIRSCF
   )
-  
+
 add_subdirectory(Presburger)

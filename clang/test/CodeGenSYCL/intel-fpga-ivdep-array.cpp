@@ -2,7 +2,7 @@
 
 // Array-specific ivdep - annotate the correspondent GEPs only
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_array_no_safelenv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_array_no_safelenv()
 void ivdep_array_no_safelen() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -18,7 +18,7 @@ void ivdep_array_no_safelen() {
 }
 
 // Array-specific ivdep w/ safelen - annotate the correspondent GEPs only
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_array_with_safelenv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_array_with_safelenv()
 void ivdep_array_with_safelen() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -35,7 +35,7 @@ void ivdep_array_with_safelen() {
 
 // Multiple array-specific ivdeps - annotate the correspondent GEPs
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_multiple_arraysv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_multiple_arraysv()
 void ivdep_multiple_arrays() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -63,7 +63,7 @@ void ivdep_multiple_arrays() {
 
 // Global ivdep with INF safelen & array-specific ivdep with the same safelen
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_array_and_globalv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_array_and_globalv()
 void ivdep_array_and_global() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -81,7 +81,7 @@ void ivdep_array_and_global() {
 
 // Global ivdep with INF safelen & array-specific ivdep with lesser safelen
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_array_and_inf_globalv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_array_and_inf_globalv()
 void ivdep_array_and_inf_global() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -99,7 +99,7 @@ void ivdep_array_and_inf_global() {
 
 // Global ivdep with specified safelen & array-specific ivdep with lesser safelen
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_array_and_greater_globalv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_array_and_greater_globalv()
 void ivdep_array_and_greater_global() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -117,7 +117,7 @@ void ivdep_array_and_greater_global() {
 
 // Global safelen, array-specific safelens
 //
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_mul_arrays_and_globalv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_mul_arrays_and_globalv()
 void ivdep_mul_arrays_and_global() {
   // CHECK: %[[ARRAY_A:[0-9a-z]+]] = alloca [10 x i32]
   int a[10];
@@ -138,7 +138,7 @@ void ivdep_mul_arrays_and_global() {
   }
 }
 
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_ptrv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_ptrv()
 void ivdep_ptr() {
   int *ptr;
   // CHECK: %[[PTR:[0-9a-z]+]] = alloca i32 addrspace(4)*
@@ -149,7 +149,7 @@ void ivdep_ptr() {
   // CHECK: br label %for.cond, !llvm.loop ![[MD_LOOP_PTR:[0-9]+]]
 }
 
-// CHECK: define spir_func void @_Z{{[0-9]+}}ivdep_structv()
+// CHECK: define {{.*}}spir_func void @_Z{{[0-9]+}}ivdep_structv()
 void ivdep_struct() {
   struct S {
     int *ptr;
@@ -193,13 +193,14 @@ int main() {
 /// A particular array with no safelen specified
 //
 // CHECK-DAG: ![[IDX_GROUP_ARR]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_ARR]] = distinct !{![[MD_LOOP_ARR]], ![[IVDEP_ARR:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_ARR]] = distinct !{![[MD_LOOP_ARR]], ![[MP:[0-9]+]], ![[IVDEP_ARR:[0-9]+]]}
+// CHECK-DAG: ![[MP]] = !{!"llvm.loop.mustprogress"}
 // CHECK-DAG: ![[IVDEP_ARR]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_ARR]]}
 
 /// A particular array with safelen specified
 //
 // CHECK: ![[IDX_GROUP_ARR_SAFELEN]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_ARR_SAFELEN]] = distinct !{![[MD_LOOP_ARR_SAFELEN]], ![[IVDEP_ARR_SAFELEN:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_ARR_SAFELEN]] = distinct !{![[MD_LOOP_ARR_SAFELEN]], ![[MP]], ![[IVDEP_ARR_SAFELEN:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_ARR_SAFELEN]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_ARR_SAFELEN]], i32 5}
 
 /// Multiple arrays.
@@ -209,7 +210,7 @@ int main() {
 // CHECK-DAG: ![[IDX_GROUP_B_MUL_ARR]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_C_MUL_ARR]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_D_MUL_ARR]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_MUL_ARR]] = distinct !{![[MD_LOOP_MUL_ARR]], ![[IVDEP_MUL_ARR_VAL:[0-9]+]], ![[IVDEP_MUL_ARR_INF:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_MUL_ARR]] = distinct !{![[MD_LOOP_MUL_ARR]], ![[MP]], ![[IVDEP_MUL_ARR_VAL:[0-9]+]], ![[IVDEP_MUL_ARR_INF:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_MUL_ARR_VAL]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_A_MUL_ARR]], ![[IDX_GROUP_B_MUL_ARR]], i32 5}
 // CHECK-DAG: ![[IVDEP_MUL_ARR_INF]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_C_MUL_ARR]], ![[IDX_GROUP_D_MUL_ARR]]}
 
@@ -221,7 +222,7 @@ int main() {
 //
 // CHECK-DAG: ![[IDX_GROUP_A_ARR_AND_GLOB]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_B_ARR_AND_GLOB]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_ARR_AND_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_GLOB]], ![[IVDEP_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ENABLE]]}
+// CHECK-DAG: ![[MD_LOOP_ARR_AND_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_GLOB]], ![[MP]], ![[IVDEP_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ENABLE]]}
 // CHECK-DAG: ![[IVDEP_ARR_AND_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_A_ARR_AND_GLOB]], ![[IDX_GROUP_B_ARR_AND_GLOB]]}
 
 /// Global INF safelen and specific array non-INF safelen
@@ -229,7 +230,7 @@ int main() {
 //
 // CHECK-DAG: ![[IDX_GROUP_A_ARR_AND_INF_GLOB]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_B_ARR_AND_INF_GLOB]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_ARR_AND_INF_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_INF_GLOB]], ![[IVDEP_ARR_AND_INF_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ENABLE]]}
+// CHECK-DAG: ![[MD_LOOP_ARR_AND_INF_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_INF_GLOB]], ![[MP]], ![[IVDEP_ARR_AND_INF_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ENABLE]]}
 // CHECK-DAG: ![[IVDEP_ARR_AND_INF_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_A_ARR_AND_INF_GLOB]], ![[IDX_GROUP_B_ARR_AND_INF_GLOB]]}
 
 /// Global safelen and specific array with lesser safelen
@@ -237,7 +238,7 @@ int main() {
 //
 // CHECK-DAG: ![[IDX_GROUP_A_ARR_AND_GREAT_GLOB]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_B_ARR_AND_GREAT_GLOB]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_ARR_AND_GREAT_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_GREAT_GLOB]], ![[IVDEP_ARR_AND_GREAT_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ARR_AND_GREAT_GLOB:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_ARR_AND_GREAT_GLOB]] = distinct !{![[MD_LOOP_ARR_AND_GREAT_GLOB]], ![[MP]], ![[IVDEP_ARR_AND_GREAT_GLOB:[0-9]+]], ![[IVDEP_LEGACY_ARR_AND_GREAT_GLOB:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_LEGACY_ARR_AND_GREAT_GLOB]] = !{!"llvm.loop.ivdep.safelen", i32 9}
 // CHECK-DAG: ![[IVDEP_ARR_AND_GREAT_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_A_ARR_AND_GREAT_GLOB]], ![[IDX_GROUP_B_ARR_AND_GREAT_GLOB]], i32 9}
 
@@ -247,20 +248,20 @@ int main() {
 // CHECK-DAG: ![[IDX_GROUP_A_MUL_ARR_AND_GLOB]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_B_MUL_ARR_AND_GLOB]] = distinct !{}
 // CHECK-DAG: ![[IDX_GROUP_C_MUL_ARR_AND_GLOB]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_MUL_ARR_AND_GLOB]] = distinct !{![[MD_LOOP_MUL_ARR_AND_GLOB]], ![[IVDEP_A_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_LEGACY_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_B_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_C_MUL_ARR_AND_GLOB:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_MUL_ARR_AND_GLOB]] = distinct !{![[MD_LOOP_MUL_ARR_AND_GLOB]], ![[MP]], ![[IVDEP_A_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_LEGACY_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_B_MUL_ARR_AND_GLOB:[0-9]+]], ![[IVDEP_C_MUL_ARR_AND_GLOB:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_LEGACY_MUL_ARR_AND_GLOB]] = !{!"llvm.loop.ivdep.safelen", i32 5}
 // CHECK-DAG: ![[IVDEP_A_MUL_ARR_AND_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_A_MUL_ARR_AND_GLOB]], i32 5}
 // CHECK-DAG: ![[IVDEP_B_MUL_ARR_AND_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_B_MUL_ARR_AND_GLOB]], i32 6}
 // CHECK-DAG: ![[IVDEP_C_MUL_ARR_AND_GLOB]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_C_MUL_ARR_AND_GLOB]]}
 
 // CHECK-DAG: ![[IDX_GROUP_PTR]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_PTR]] = distinct !{![[MD_LOOP_PTR]], ![[IVDEP_PTR:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_PTR]] = distinct !{![[MD_LOOP_PTR]], ![[MP]], ![[IVDEP_PTR:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_PTR]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_PTR]], i32 5}
 
 // CHECK-DAG: ![[IDX_GROUP_STRUCT_ARR]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_STRUCT_ARR]] = distinct !{![[MD_LOOP_STRUCT_ARR]], ![[IVDEP_STRUCT_ARR:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_STRUCT_ARR]] = distinct !{![[MD_LOOP_STRUCT_ARR]], ![[MP]], ![[IVDEP_STRUCT_ARR:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_STRUCT_ARR]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_STRUCT_ARR]], i32 5}
 
 // CHECK-DAG: ![[IDX_GROUP_STRUCT_PTR]] = distinct !{}
-// CHECK-DAG: ![[MD_LOOP_STRUCT_PTR]] = distinct !{![[MD_LOOP_STRUCT_PTR]], ![[IVDEP_STRUCT_PTR:[0-9]+]]}
+// CHECK-DAG: ![[MD_LOOP_STRUCT_PTR]] = distinct !{![[MD_LOOP_STRUCT_PTR]], ![[MP]], ![[IVDEP_STRUCT_PTR:[0-9]+]]}
 // CHECK-DAG: ![[IVDEP_STRUCT_PTR]] = !{!"llvm.loop.parallel_access_indices", ![[IDX_GROUP_STRUCT_PTR]], i32 5}

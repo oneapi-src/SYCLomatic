@@ -172,32 +172,23 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
 
 SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  SourceLocation BeginLoc, EndLoc;
   auto Range = getRangeInsideFuncLikeMacro(S);
-  auto BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
-  auto EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  if (Range.getBegin().isMacroID() && Range.getEnd().isMacroID() &&
+    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+      SM.getExpansionRange(Range.getBegin()).getEnd(),
+      SM.getSpellingLoc(Range.getBegin())) &&
+    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+      SM.getExpansionRange(Range.getBegin()).getEnd(),
+      SM.getSpellingLoc(Range.getEnd()))) {
+    // MACRO(callExpr())
+    BeginLoc = SM.getSpellingLoc(Range.getBegin());
+    EndLoc = SM.getSpellingLoc(Range.getEnd());
+  } else {
+    BeginLoc = SM.getExpansionRange(Range.getBegin()).getBegin();
+    EndLoc = SM.getExpansionRange(Range.getEnd()).getEnd();
+  }
   return SourceRange(BeginLoc, EndLoc);
-}
-
-SourceRange getStmtSpellingSourceRange(const Stmt *S) {
-  // For nested func-like macro, e.g. MACRO_A(MACRO_B(...)),
-  // Remove outer function-like macro
-  auto Range = getRangeInsideFuncLikeMacro(S);
-  return getSpellingSourceRange(Range.getBegin(), Range.getEnd());
-}
-
-SourceRange getSpellingSourceRange(SourceLocation L1, SourceLocation L2) {
-  // For multi level macro, e.g.
-  // #define AAA a
-  // #define BBB AAA
-  // Keep finding the immediate expansion location
-  std::tie(L1, L2) =
-    getTheOneBeforeLastImmediateExapansion(L1, L2);
-  // For straddle expr, e.g.
-  // #define AAA a
-  // #define BBB 3 + AAA
-  std::tie(L1, L2) =
-    getTheLastCompleteImmediateRange(L1, L2);
-  return SourceRange(L1, L2);
 }
 
 size_t calculateExpansionLevel(const SourceLocation Loc) {
@@ -526,7 +517,7 @@ bool endsWith(const std::string &Str, char C) {
   return Str.size() && Str[Str.size() - 1] == C;
 }
 
-const clang::Stmt *getParentStmt(ast_type_traits::DynTypedNode Node) {
+const clang::Stmt *getParentStmt(DynTypedNode Node) {
   if (auto S = Node.get<Stmt>()) {
     return getParentStmt(S);
   } else if (auto D = Node.get<Decl>()) {
@@ -590,11 +581,11 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
 
 // Find the ancestor DeclStmt node
 // Assumes: E != nullptr
-const ast_type_traits::DynTypedNode
+const DynTypedNode
 getAncestorDeclStmtNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
+  DynTypedNode ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     if (ParentNode.get<DeclStmt>())
@@ -610,22 +601,22 @@ const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E) {
   return getAncestorDeclStmtNode(E).get<DeclStmt>();
 }
 
-const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
-getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+const std::shared_ptr<clang::DynTypedNode>
+getParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*N);
   if (Parents.size() >= 1)
-    return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
+    return std::make_shared<clang::DynTypedNode>(Parents[0]);
 
   return nullptr;
 }
 
-const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
+const std::shared_ptr<clang::DynTypedNode>
 getNonImplicitCastParentNode(
-    const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+    const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
@@ -656,12 +647,12 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
 
 // Find the nearest non-Expr non-Decl ancestor node of Expr E
 // Assumes: E != nullptr
-const ast_type_traits::DynTypedNode
+const DynTypedNode
 findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode LastNode =
-                                    ast_type_traits::DynTypedNode::create(*E),
+  DynTypedNode LastNode =
+                                    DynTypedNode::create(*E),
                                 ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -694,7 +685,7 @@ SourceRange getScopeInsertRange(const Expr *E,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ParentNode = Context.getParents(*E);
-  ast_type_traits::DynTypedNode AncestorStmt;
+  DynTypedNode AncestorStmt;
   SourceLocation StmtEnd;
   if (ParentNode.empty()) {
     StmtBegin = FuncNameBegin;
@@ -1008,7 +999,7 @@ unsigned int getLenIncludingTrailingSpaces(SourceRange Range,
 /// increment parts of the \p Node.
 /// \param Node The statement node which is if, for, do, while or switch.
 /// \return The result statement nodes vector.
-std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
+std::vector<const Stmt *> getConditionNode(DynTypedNode Node) {
   std::vector<const Stmt *> Res;
   if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
     Res.push_back(CondtionNode->getCond());
@@ -1033,7 +1024,7 @@ std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
 /// This function gets the expression nodes of the condition part of the \p Node
 /// \param Node The statement node which is if, for, do, while or switch.
 /// \return The result statement nodes vector.
-std::vector<const Stmt *> getConditionExpr(ast_type_traits::DynTypedNode Node) {
+std::vector<const Stmt *> getConditionExpr(DynTypedNode Node) {
   std::vector<const Stmt *> Res;
   if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
     Res.push_back(CondtionNode->getCond());
@@ -1069,8 +1060,8 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
   CanAvoidUsingLambda = false;
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*CE);
-  ast_type_traits::DynTypedNode ParentNode;
-  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  DynTypedNode ParentNode;
+  std::vector<DynTypedNode> AncestorNodes;
   bool FoundStmtHasCondition = false;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -1187,8 +1178,8 @@ bool isConditionOfFlowControl(const clang::Expr *E,
                               bool OnlyCheckConditionExpr) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
-  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  DynTypedNode ParentNode;
+  std::vector<DynTypedNode> AncestorNodes;
   bool FoundStmtHasCondition = false;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -1487,9 +1478,9 @@ bool isOuterMostMacro(const Stmt *E) {
   llvm::raw_string_ostream StreamE(ExpandedExpr);
   E->printPretty(StreamE, nullptr, CT.getPrintingPolicy());
   StreamE.flush();
-  std::shared_ptr<ast_type_traits::DynTypedNode> P =
-      std::make_shared<ast_type_traits::DynTypedNode>(
-          ast_type_traits::DynTypedNode::create(*E));
+  std::shared_ptr<DynTypedNode> P =
+      std::make_shared<DynTypedNode>(
+          DynTypedNode::create(*E));
   // Find a parent stmt whose preprocessing result is different from
   // ExpandedExpr Since some parent is not writable.(is not shown in the
   // preprocessing result), a while loop is required to find the first writable
@@ -1519,7 +1510,7 @@ bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
 
 bool isInsideFunctionLikeMacro(
     const SourceLocation BeginLoc, const SourceLocation EndLoc,
-    const std::shared_ptr<ast_type_traits::DynTypedNode> Parent) {
+    const std::shared_ptr<DynTypedNode> Parent) {
 
   if (!BeginLoc.isMacroID() || !EndLoc.isMacroID()) {
     return false;
@@ -1875,7 +1866,7 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
 bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  ast_type_traits::DynTypedNode ParentNode;
+  DynTypedNode ParentNode;
   const ReturnStmt *RS = nullptr;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
@@ -2439,7 +2430,8 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
 
 llvm::StringRef getCalleeName(const CallExpr *CE) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  const char *Start = SM.getCharacterData(SM.getSpellingLoc(CE->getBeginLoc()));
+  const char *Start = SM.getCharacterData(
+      getStmtExpansionSourceRange(CE->getCallee()).getBegin());
   const char *End = Start;
   int StrSize = 0;
   while (((int)(*End) >= (int)'A' && (int)(*End) <= (int)'Z') ||
@@ -2450,4 +2442,92 @@ llvm::StringRef getCalleeName(const CallExpr *CE) {
     End++;
   }
   return llvm::StringRef(Start, StrSize);
+}
+
+// Usually used to find a correct removing range.
+// Return the source range which is not straddle and mostly
+// close to the spelling location.
+// Let Begin/End are the begin/end location of pow(1, 2)
+// #define CALL(x) x
+// #define FUNC_NAME pow
+// #define ARGS (1, 2)
+// #define ALL FUNC_NAME ARGS
+// ex 1. CALL(CALL(CALL(FUNC_NAME ARGS)))
+// Result: Range of "FUNC_NAME ARGS"
+// ex 2. CALL(pow(1, 2))
+// Result: Range of "pow(1, 2)"
+// ex 3. CALL(ALL)
+// Result: Range of "FUNC_NAME ARGS" (in the definition of "ALL")
+SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // Remove the outer func-like macro
+  // ex. CALL(CALL(CALL(FUNC_NAME ARGS)));
+  // the following while will skip the 3 CALL()
+  SourceLocation PreBegin = Begin;
+  SourceLocation PreEnd = End;
+  while (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
+    PreBegin = Begin;
+    PreEnd = End;
+    Begin = SM.getImmediateSpellingLoc(Begin);
+    End = SM.getImmediateSpellingLoc(End);
+  }
+  // if there is still either one of begin/end is macro arg expansion
+  if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
+    // No precise range available which can be removed without delete extra
+    // syntax.
+    // ex. CALL(FUNC_NAME CALL(ARGS))
+    // After the above while loop, begin/end will be the Range of "FUNC_NAME
+    // CALL(ARGS)". However, FUNC_NAME and CALL() may contain syntax which are
+    // not belong to the CallExpr.
+    // ex.
+    // #define FUNC_NAME a = pow
+    // #define CALL(x) x;
+    // The "a =" and ";" will be removed if we use the range "FUNC_NAME
+    // CALL(ARGS)" therefore, return a range with length 0 for the caller of
+    // getDefinitionRange() to handle the exception.
+    return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
+  }
+
+  // If the begin/end are not in the same macro arg, no precise range available.
+  // Using PreBegin/PreEnd because they contains the info of the last func-like
+  // macro.
+  if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
+    return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
+  }
+
+  std::tie(Begin, End) =
+    getTheLastCompleteImmediateRange(Begin, End);
+
+  return SourceRange(Begin, End);
+}
+
+bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // Both Begin/End are not macro arg, treat as they are in same macro arg
+  if (!SM.isMacroArgExpansion(Begin) && !SM.isMacroArgExpansion(End)) {
+    return true;
+  }
+  if (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
+    // Check if begin/end are the same macro arg, so use getBegin() for
+    // both loc
+    Begin =
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+    End =
+        SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getBegin());
+    auto ItMatchBegin =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(Begin));
+    auto ItMatchEnd =
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(End));
+    if (ItMatchBegin !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+        ItMatchEnd !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+        ItMatchBegin == ItMatchEnd) {
+      // The whole kernel call is in a single macro arg
+      return true;
+    }
+  }
+  return false;
 }

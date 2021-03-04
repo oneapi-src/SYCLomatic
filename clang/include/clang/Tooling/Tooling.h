@@ -52,11 +52,17 @@
 #include <set>
 namespace clang {
 namespace tooling {
-void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));
-void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal);
+using PrintType = void (*)(const std::string &, bool);
+using FileProcessType = void (*)(StringRef, StringRef,
+                                 std::vector<std::string> &);
+
+void SetPrintHandle(PrintType Handle);
+void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal);
 void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
+void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
+                          FileProcessType FileProcessHandle);
 } // namespace tooling
 } // namespace clang
 #endif
@@ -280,21 +286,12 @@ public:
     this->DiagConsumer = DiagConsumer;
   }
 
-  /// Map a virtual file to be used while running the tool.
-  ///
-  /// \param FilePath The path at which the content will be mapped.
-  /// \param Content A null terminated buffer of the file's content.
-  // FIXME: remove this when all users have migrated!
-  void mapVirtualFile(StringRef FilePath, StringRef Content);
-
   /// Run the clang invocation.
   ///
   /// \returns True if there were no errors during execution.
   bool run();
 
  private:
-  void addFileMappingsTo(SourceManager &SourceManager);
-
   bool runInvocation(const char *BinaryName,
                      driver::Compilation *Compilation,
                      std::shared_ptr<CompilerInvocation> Invocation,
@@ -305,8 +302,6 @@ public:
   bool OwnsAction;
   FileManager *Files;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
-  // Maps <file name> -> <file content>.
-  llvm::StringMap<StringRef> MappedFileContents;
   DiagnosticConsumer *DiagConsumer = nullptr;
   #ifdef INTEL_CUSTOMIZATION
   DiagnosticConsumer *DiagnosticPrinter = nullptr;
@@ -343,7 +338,10 @@ public:
             IntrusiveRefCntPtr<FileManager> Files = nullptr);
 
   ~ClangTool();
-
+#ifdef INTEL_CUSTOMIZATION
+  int proccessFiles(llvm::StringRef File, bool &ProcessingFailed,
+                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+#endif
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
     this->DiagConsumer = DiagConsumer;

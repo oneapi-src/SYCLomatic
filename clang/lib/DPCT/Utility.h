@@ -466,4 +466,8 @@ std::string getPrecAndDomainStrFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName);
 bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR);
 llvm::StringRef getCalleeName(const clang::CallExpr *CE);
+clang::SourceRange getDefinitionRange(clang::SourceLocation Begin,
+                                      clang::SourceLocation End);
+bool isLocInSameMacroArg(clang::SourceLocation Begin,
+                         clang::SourceLocation End);
 #endif // DPCT_UTILITY_H

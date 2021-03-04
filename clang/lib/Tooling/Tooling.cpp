@@ -70,16 +70,25 @@ using namespace tooling;
 #ifdef INTEL_CUSTOMIZATION
 namespace clang {
 namespace tooling {
-static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
+static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static StringRef InRoot;
+static StringRef OutRoot;
+static FileProcessType FileProcessHandle = nullptr;
 
-void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal)){
-  MsgPrintHandler = Handler;
+void SetPrintHandle(PrintType Handle) {
+  MsgPrintHandle = Handle;
 }
 
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
   FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+}
+
+void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
+  FileProcessHandle = Handle;
+  InRoot = In;
+  OutRoot = Out;
 }
 
 void CollectFileFromDB(std::string FileName) {
@@ -87,18 +96,27 @@ void CollectFileFromDB(std::string FileName) {
     (*FileSetInCompiationDBPtr).insert(FileName);
   }
 }
-void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
-  if (MsgPrintHandler != nullptr){
-    (*MsgPrintHandler)(Msg, IsPrintOnNormal);
+
+void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal) {
+  if (MsgPrintHandle != nullptr) {
+    (*MsgPrintHandle)(Msg, IsPrintOnNormal);
   }
+}
+
+void DoFileProcessHandle(std::vector<std::string> &FilesNotProcessed) {
+  if (FileProcessHandle != nullptr) {
+    (*FileProcessHandle)(InRoot, OutRoot, FilesNotProcessed);
+  }
+}
+
+bool isFileProcessAllSet() {
+  return FileProcessHandle != nullptr;
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
-void SetDiagnosticOutput(llvm::raw_ostream &OStream) {
-  OSTerm = &OStream;
-}
+void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
 
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
@@ -112,9 +130,9 @@ std::string ClangToolOutputMessage = "";
 } // namespace tooling
 } // namespace clang
 #if defined(__linux__)
-#define JMP_BUF   sigjmp_buf
-#define SETJMP(x)       sigsetjmp(x, 1)
-#define LONGJMP      siglongjmp
+#define JMP_BUF sigjmp_buf
+#define SETJMP(x) sigsetjmp(x, 1)
+#define LONGJMP siglongjmp
 
 #else
 #define JMP_BUF   jmp_buf
@@ -397,12 +415,6 @@ ToolInvocation::~ToolInvocation() {
   #endif
 }
 
-void ToolInvocation::mapVirtualFile(StringRef FilePath, StringRef Content) {
-  SmallString<1024> PathStorage;
-  llvm::sys::path::native(FilePath, PathStorage);
-  MappedFileContents[PathStorage] = Content;
-}
-
 bool ToolInvocation::run() {
   std::vector<const char*> Argv;
   for (const std::string &Str : CommandLine)
@@ -447,14 +459,6 @@ bool ToolInvocation::run() {
     return false;
   std::unique_ptr<CompilerInvocation> Invocation(
       newInvocation(&Diagnostics, *CC1Args, BinaryName));
-  // FIXME: remove this when all users have migrated!
-  for (const auto &It : MappedFileContents) {
-    // Inject the code as the given file name into the preprocessor options.
-    std::unique_ptr<llvm::MemoryBuffer> Input =
-        llvm::MemoryBuffer::getMemBuffer(It.getValue());
-    Invocation->getPreprocessorOpts().addRemappedFile(It.getKey(),
-                                                      Input.release());
-  }
   return runInvocation(BinaryName, Compilation.get(), std::move(Invocation),
                        std::move(PCHContainerOps));
 }
@@ -548,60 +552,14 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
                  CompilerInvocation::GetResourcesPath(Argv0, MainAddr));
 }
 
-int ClangTool::run(ToolAction *Action) {
-  // Exists solely for the purpose of lookup of the resource path.
-  // This just needs to be some symbol in the binary.
-  static int StaticSymbol;
-
-  // First insert all absolute paths into the in-memory VFS. These are global
-  // for all compile commands.
-  if (SeenWorkingDirectories.insert("/").second)
-    for (const auto &MappedFile : MappedFileContents)
-      if (llvm::sys::path::is_absolute(MappedFile.first))
-        InMemoryFileSystem->addFile(
-            MappedFile.first, 0,
-            llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
-
-  bool ProcessingFailed = false;
-  bool FileSkipped = false;
-  // Compute all absolute paths before we run any actions, as those will change
-  // the working directory.
-  std::vector<std::string> AbsolutePaths;
-  AbsolutePaths.reserve(SourcePaths.size());
-  for (const auto &SourcePath : SourcePaths) {
-    auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
-    if (!AbsPath) {
-      llvm::errs() << "Skipping " << SourcePath
-                   << ". Error while getting an absolute path: "
-                   << llvm::toString(AbsPath.takeError()) << "\n";
-      continue;
-    }
-    AbsolutePaths.push_back(std::move(*AbsPath));
-  }
 #ifdef INTEL_CUSTOMIZATION
-  // If target source file names do not exist in the command line, dpct will
-  // migrate all relevant files it detects in the compilation database.
-  if (SourcePaths.size() == 0) {
-    std::vector<std::string> SourcePaths = Compilations.getAllFiles();
-    for (const auto &SourcePath : SourcePaths) {
-      AbsolutePaths.push_back(SourcePath);
-      CollectFileFromDB(SourcePath);
-    }
-  }
-#endif
-  // Remember the working directory in case we need to restore it.
-  std::string InitialWorkingDir;
-  if (RestoreCWD) {
-    if (auto CWD = OverlayFileSystem->getCurrentWorkingDirectory()) {
-      InitialWorkingDir = std::move(*CWD);
-    } else {
-      llvm::errs() << "Could not get working directory: "
-                   << CWD.getError().message() << "\n";
-    }
-  }
-
-  for (llvm::StringRef File : AbsolutePaths) {
-#ifdef INTEL_CUSTOMIZATION
+// Try to parse and migrate \pFile, and return process result with
+// \pProcessingFailed, \pFileSkipped , \pStaticSymbol and its return value.
+// if return value is -1, means current input file \p File is not processed,
+// if return value < -1, report return value to upper caller,
+// other values are ignored.
+int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
+                     bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //enter point for the file processing.
     CheckPointStage = 1;
     CurFileMeetErr= false;
@@ -611,13 +569,12 @@ int ClangTool::run(ToolAction *Action) {
     int Ret=SETJMP(CPFileEnter);
     if(Ret == 0) {
       const std::string Msg = "Processing: " + File.str()  +  "\n";
-      DoPrintHandler(Msg, false);
+      DoPrintHandle(Msg, false);
     } else {
       const std::string Msg = "Skipping: " + File.str()  +  "\n";
-      DoPrintHandler(Msg, false);
-      continue;
+      DoPrintHandle(Msg, false);
+      return -1;
     }
-#endif
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -628,15 +585,11 @@ int ClangTool::run(ToolAction *Action) {
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
-#ifdef INTEL_CUSTOMIZATION
       llvm::errs() << "Skipping " << File
                    << ". Compile command for this file not found in "
                       "compile_commands.json.\n";
-#else
-      llvm::errs() << "Skipping " << File << ". Compile command not found.\n";
-#endif
       FileSkipped = true;
-      continue;
+      return -1;
     }
     for (CompileCommand &CompileCommand : CompileCommandsForFile) {
       // FIXME: chdir is thread hostile; on the other hand, creating the same
@@ -648,15 +601,10 @@ int ClangTool::run(ToolAction *Action) {
       // file system abstraction that allows openat() style interactions.
       if (OverlayFileSystem->setCurrentWorkingDirectory(
               CompileCommand.Directory))
-#ifdef INTEL_CUSTOMIZATION
       {
         ClangToolOutputMessage = CompileCommand.Directory;
         return -29 /*MigrationErrorCannotAccessDirInDatabase*/;
       }
-#else
-        llvm::report_fatal_error("Cannot chdir into \"" +
-                                 Twine(CompileCommand.Directory) + "\"!");
-#endif
 
       // Now fill the in-memory VFS with the relative file mappings so it will
       // have the correct relative paths. We never remove mappings but that
@@ -669,7 +617,6 @@ int ClangTool::run(ToolAction *Action) {
                 llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
-#ifdef INTEL_CUSTOMIZATION
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {
           // To convert the relative path to absolute path.
@@ -701,7 +648,7 @@ int ClangTool::run(ToolAction *Action) {
       bool Matched = false;
       for (size_t Index = 0; Index < CommandLine.size(); Index++) {
         if (!llvm::sys::path::has_filename(CommandLine[Index]))
-          continue;
+          return -1;
         StringRef ItemNameRef = llvm::sys::path::filename(CommandLine[Index]);
         ItemNameStr = ItemNameRef.str();
         if (ItemNameStr == BaseNameStr) {
@@ -743,8 +690,8 @@ int ClangTool::run(ToolAction *Action) {
             " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
             "migrate specify CUDA* Item Type for this file in project and try "
             "again.\n";
-        DoPrintHandler(Msg, false);
-        continue;
+        DoPrintHandle(Msg, false);
+        return -1;
       }
 
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
@@ -776,10 +723,7 @@ int ClangTool::run(ToolAction *Action) {
 #endif
       if (CudaArgsAdjuster)
         CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
-#else
-      if (ArgsAdjuster)
-        CommandLine = ArgsAdjuster(CommandLine, CompileCommand.Filename);
-#endif
+
       assert(!CommandLine.empty());
 
       // Add the resource dir based on the binary of this tool. argv[0] in the
@@ -800,7 +744,6 @@ int ClangTool::run(ToolAction *Action) {
       Invocation.setDiagnosticConsumer(DiagConsumer);
 
       if (!Invocation.run()) {
-        #ifdef INTEL_CUSTOMIZATION
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage && StopOnParseErrTooling) {
           std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
@@ -812,23 +755,180 @@ int ClangTool::run(ToolAction *Action) {
         ProcessingFailed = true;
         if(StopOnParseErrTooling)
             break;
-        #else
+      }
+    }
+    //collect the errror counter info.
+    ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
+    return 0;
+}
+#endif
+
+int ClangTool::run(ToolAction *Action) {
+  // Exists solely for the purpose of lookup of the resource path.
+  // This just needs to be some symbol in the binary.
+  static int StaticSymbol;
+
+  // First insert all absolute paths into the in-memory VFS. These are global
+  // for all compile commands.
+  if (SeenWorkingDirectories.insert("/").second)
+    for (const auto &MappedFile : MappedFileContents)
+      if (llvm::sys::path::is_absolute(MappedFile.first))
+        InMemoryFileSystem->addFile(
+            MappedFile.first, 0,
+            llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
+
+  bool ProcessingFailed = false;
+  bool FileSkipped = false;
+  // Compute all absolute paths before we run any actions, as those will change
+  // the working directory.
+  std::vector<std::string> AbsolutePaths;
+  AbsolutePaths.reserve(SourcePaths.size());
+  for (const auto &SourcePath : SourcePaths) {
+    auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
+    if (!AbsPath) {
+      llvm::errs() << "Skipping " << SourcePath
+                   << ". Error while getting an absolute path: "
+                   << llvm::toString(AbsPath.takeError()) << "\n";
+      continue;
+    }
+    AbsolutePaths.push_back(std::move(*AbsPath));
+  }
+#ifdef INTEL_CUSTOMIZATION
+  // If target source file names do not exist in the command line, dpct will
+  // migrate all relevant files it detects in the compilation database.
+  if (SourcePaths.size() == 0) {
+    std::vector<std::string> SourcePaths = Compilations.getAllFiles();
+    for (const auto &SourcePath : SourcePaths) {
+      AbsolutePaths.push_back(SourcePath);
+      CollectFileFromDB(SourcePath);
+    }
+  } else {
+    if (isFileProcessAllSet()) {
+      const std::string Msg =
+          "Warning: --process-all option was ignored, since input files were "
+          "provided in command line.\n";
+      DoPrintHandle(Msg, false);
+    }
+  }
+#endif
+  // Remember the working directory in case we need to restore it.
+  std::string InitialWorkingDir;
+  if (RestoreCWD) {
+    if (auto CWD = OverlayFileSystem->getCurrentWorkingDirectory()) {
+      InitialWorkingDir = std::move(*CWD);
+    } else {
+      llvm::errs() << "Could not get working directory: "
+                   << CWD.getError().message() << "\n";
+    }
+  }
+
+  for (llvm::StringRef File : AbsolutePaths) {
+
+#ifndef  INTEL_CUSTOMIZATION
+    // Currently implementations of CompilationDatabase::getCompileCommands can
+    // change the state of the file system (e.g.  prepare generated headers), so
+    // this method needs to run right before we invoke the tool, as the next
+    // file may require a different (incompatible) state of the file system.
+    //
+    // FIXME: Make the compilation database interface more explicit about the
+    // requirements to the order of invocation of its members.
+    std::vector<CompileCommand> CompileCommandsForFile =
+        Compilations.getCompileCommands(File);
+    if (CompileCommandsForFile.empty()) {
+      llvm::errs() << "Skipping " << File << ". Compile command not found.\n";
+      FileSkipped = true;
+      continue;
+    }
+    for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+      // FIXME: chdir is thread hostile; on the other hand, creating the same
+      // behavior as chdir is complex: chdir resolves the path once, thus
+      // guaranteeing that all subsequent relative path operations work
+      // on the same path the original chdir resulted in. This makes a
+      // difference for example on network filesystems, where symlinks might be
+      // switched during runtime of the tool. Fixing this depends on having a
+      // file system abstraction that allows openat() style interactions.
+      if (OverlayFileSystem->setCurrentWorkingDirectory(
+              CompileCommand.Directory))
+        llvm::report_fatal_error("Cannot chdir into \"" +
+                                 Twine(CompileCommand.Directory) + "\"!");
+
+      // Now fill the in-memory VFS with the relative file mappings so it will
+      // have the correct relative paths. We never remove mappings but that
+      // should be fine.
+      if (SeenWorkingDirectories.insert(CompileCommand.Directory).second)
+        for (const auto &MappedFile : MappedFileContents)
+          if (!llvm::sys::path::is_absolute(MappedFile.first))
+            InMemoryFileSystem->addFile(
+                MappedFile.first, 0,
+                llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
+
+      std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+
+      if (ArgsAdjuster)
+        CommandLine = ArgsAdjuster(CommandLine, CompileCommand.Filename);
+
+      assert(!CommandLine.empty());
+
+      // Add the resource dir based on the binary of this tool. argv[0] in the
+      // compilation database may refer to a different compiler and we want to
+      // pick up the very same standard library that compiler is using. The
+      // builtin headers in the resource dir need to match the exact clang
+      // version the tool is using.
+      // FIXME: On linux, GetMainExecutable is independent of the value of the
+      // first argument, thus allowing ClangTool and runToolOnCode to just
+      // pass in made-up names here. Make sure this works on other platforms.
+      injectResourceDir(CommandLine, "clang_tool", &StaticSymbol);
+
+      // FIXME: We need a callback mechanism for the tool writer to output a
+      // customized message for each file.
+      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
+                                PCHContainerOps);
+      Invocation.setDiagnosticConsumer(DiagConsumer);
+
+      if (!Invocation.run()) {
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage)
           llvm::errs() << "Error while processing " << File << ".\n";
         ProcessingFailed = true;
-        #endif
       }
     }
-    #ifdef INTEL_CUSTOMIZATION
-    //collect the errror counter info.
-    ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
-    #endif
+#else
+    int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+                            Action);
+    if (Ret == -1)
+      continue;
+    else if (Ret < -1)
+      return Ret;
+#endif
   }
-  #ifdef  INTEL_CUSTOMIZATION
-  //exit point for the file processing.
+
+#ifdef  INTEL_CUSTOMIZATION
+  // if input file(s) is not specified in command line, and the process-all
+  // option is given in the comomand line, dpct tries to migrate or copy all
+  // files from -in-root to the output directory.
+  if(SourcePaths.size() == 0 ) {
+    std::vector<std::string> FilesNotProcessed;
+
+    // To traverse all the files in the directory specified by
+    // -in-root, collecting *.cu files not processed by the first loop of
+    // calling proccessFiles() into FilesNotProcessed, and copies the rest
+    // files to the output directory.
+    DoFileProcessHandle(FilesNotProcessed);
+    for (auto Entry : FilesNotProcessed) {
+      auto File = llvm::StringRef(Entry);
+      int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+                              Action);
+      if (Ret == -1)
+        continue;
+      else if (Ret < -1)
+        return Ret;
+    }
+  }
+
+  // exit point for the file processing.
   CheckPointStage = 0;
-  #endif
+#endif
   if (!InitialWorkingDir.empty()) {
     if (auto EC =
             OverlayFileSystem->setCurrentWorkingDirectory(InitialWorkingDir))
@@ -919,7 +1019,7 @@ std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
 
   if (!Invocation.run())
     return nullptr;
-
+ 
   assert(ASTs.size() == 1);
   return std::move(ASTs[0]);
 }

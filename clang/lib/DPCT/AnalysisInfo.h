@@ -484,12 +484,13 @@ public:
 
   // Record line info in file.
   struct SourceLineInfo {
-    SourceLineInfo() : SourceLineInfo(-1, -1, -1, nullptr) {}
+    SourceLineInfo() : SourceLineInfo(-1, -1, -1, StringRef()) {}
     SourceLineInfo(unsigned LineNumber, unsigned Offset, unsigned End,
-                   const char *Buffer)
+                   StringRef Buffer)
         : Number(LineNumber), Offset(Offset), Length(End - Offset),
-          Line(Buffer ? std::string(Buffer + Offset, Length) : "") {}
-    SourceLineInfo(unsigned LineNumber, unsigned *LineCache, const char *Buffer)
+          Line(Buffer.substr(Offset, Length)) {}
+    SourceLineInfo(unsigned LineNumber, ArrayRef<unsigned> LineCache,
+                   StringRef Buffer)
         : SourceLineInfo(LineNumber, LineCache[LineNumber - 1],
                          LineCache[LineNumber], Buffer) {}
 
@@ -499,8 +500,8 @@ public:
     const unsigned Offset;
     // Length of the line.
     const unsigned Length;
-    // String of the line, only available when -keep-original-code is on.
-    const std::string Line;
+    // String of the line, ref to FileContentCache.
+    StringRef Line;
   };
 
   inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
@@ -512,7 +513,7 @@ public:
     }
     return Lines[--LineNumber];
   }
-  inline const std::string &getLineString(unsigned LineNumber) {
+  StringRef getLineString(unsigned LineNumber) {
     return getLineInfo(LineNumber).Line;
   }
 
@@ -628,6 +629,10 @@ public:
     return EventMallocFreeMap;
   }
 
+  void setAddOneDplHeaders(bool Value) {
+    AddOneDplHeaders = Value;
+  }
+
 private:
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
 
@@ -693,6 +698,7 @@ private:
 
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
+  bool AddOneDplHeaders = false;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -998,7 +1004,7 @@ public:
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
   findAncestor(const NodeTy *N,
-               const std::function<bool(const ast_type_traits::DynTypedNode &)>
+               const std::function<bool(const DynTypedNode &)>
                    &Condition) {
     if (!N)
       return nullptr;
@@ -1019,7 +1025,7 @@ public:
   static inline bool checkSpecificBO(const NodeTy *Node,
                                           const BinaryOperator *BO) {
     return findAncestor<BinaryOperator>(
-        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
+        Node, [&](const DynTypedNode &Cur) -> bool {
           return Cur.get<BinaryOperator>() == BO;
         });
   }
@@ -1027,7 +1033,7 @@ public:
   template <class TargetTy, class NodeTy>
   static const TargetTy *findAncestor(const NodeTy *Node) {
     return findAncestor<TargetTy>(
-        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
+        Node, [&](const DynTypedNode &Cur) -> bool {
           return Cur.get<TargetTy>();
         });
   }
@@ -1035,7 +1041,7 @@ public:
   static const TargetTy *findParent(const NodeTy *Node) {
     return findAncestor<TargetTy>(
         Node,
-        [](const ast_type_traits::DynTypedNode &Cur) -> bool { return true; });
+        [](const DynTypedNode &Cur) -> bool { return true; });
   }
   template <class NodeTy>
   inline static const clang::FunctionDecl *
@@ -3565,6 +3571,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       if (DpctGlobalInfo::isSyclNamedLambda() && (Type == SYCL)) {
         RSO << "#define DPCT_NAMED_LAMBDA" << getNL();
       }
+      if (AddOneDplHeaders && Type == SYCL) {
+        RSO << "#include <oneapi/dpl/execution>" << getNL()
+            << "#include <oneapi/dpl/algorithm>" << getNL();
+      }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
     insertHeader(std::move(RSO.str()), Offset);
@@ -3579,7 +3589,7 @@ template<typename T>
 inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
   auto &Context = DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
-  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  std::vector<DynTypedNode> AncestorNodes;
   while (Parents.size() >= 1) {
     AncestorNodes.push_back(Parents[0]);
     Parents = Context.getParents(Parents[0]);

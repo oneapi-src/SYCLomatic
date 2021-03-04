@@ -1,16 +1,16 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/thrust-header %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/thrust-header %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-header/thrust-header.dp.cpp --match-full-lines %s
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK-NEXT: #include <algorithm>
 #include <cstdio>
 #include <algorithm>
 // CHECK: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
 #include <cuda_runtime.h>
 #include <thrust/copy.h>
 #include <thrust/sequence.h>

@@ -14,25 +14,17 @@
 
 #include "AMDGPUISelLowering.h"
 #include "AMDGPU.h"
-#include "AMDGPUCallLowering.h"
-#include "AMDGPUFrameLowering.h"
-#include "AMDGPUSubtarget.h"
-#include "AMDGPUTargetMachine.h"
-#include "Utils/AMDGPUBaseInfo.h"
-#include "R600MachineFunctionInfo.h"
-#include "SIInstrInfo.h"
+#include "AMDGPUInstrInfo.h"
+#include "AMDGPUMachineFunction.h"
+#include "GCNSubtarget.h"
 #include "SIMachineFunctionInfo.h"
-#include "MCTargetDesc/AMDGPUMCTargetDesc.h"
 #include "llvm/CodeGen/Analysis.h"
-#include "llvm/CodeGen/CallingConvLower.h"
-#include "llvm/CodeGen/MachineFunction.h"
-#include "llvm/CodeGen/MachineRegisterInfo.h"
-#include "llvm/CodeGen/SelectionDAG.h"
-#include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
-#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DiagnosticInfo.h"
+#include "llvm/IR/IntrinsicsAMDGPU.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/KnownBits.h"
-#include "llvm/Support/MathExtras.h"
+#include "llvm/Target/TargetMachine.h"
+
 using namespace llvm;
 
 #include "AMDGPUGenCallingConv.inc"
@@ -397,6 +389,9 @@ AMDGPUTargetLowering::AMDGPUTargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::ROTL, MVT::i64, Expand);
   setOperationAction(ISD::ROTR, MVT::i64, Expand);
 
+  setOperationAction(ISD::MULHU, MVT::i16, Expand);
+  setOperationAction(ISD::MULHS, MVT::i16, Expand);
+
   setOperationAction(ISD::MUL, MVT::i64, Expand);
   setOperationAction(ISD::MULHU, MVT::i64, Expand);
   setOperationAction(ISD::MULHS, MVT::i64, Expand);
@@ -568,6 +563,17 @@ AMDGPUTargetLowering::AMDGPUTargetLowering(const TargetMachine &TM,
   setTargetDAGCombine(ISD::AssertZext);
   setTargetDAGCombine(ISD::AssertSext);
   setTargetDAGCombine(ISD::INTRINSIC_WO_CHAIN);
+}
+
+bool AMDGPUTargetLowering::mayIgnoreSignedZero(SDValue Op) const {
+  if (getTargetMachine().Options.NoSignedZerosFPMath)
+    return true;
+
+  const auto Flags = Op.getNode()->getFlags();
+  if (Flags.hasNoSignedZeros())
+    return true;
+
+  return false;
 }
 
 //===----------------------------------------------------------------------===//
@@ -939,6 +945,8 @@ CCAssignFn *AMDGPUCallLowering::CCAssignFnForCall(CallingConv::ID CC,
   case CallingConv::Fast:
   case CallingConv::Cold:
     return CC_AMDGPU_Func;
+  case CallingConv::AMDGPU_Gfx:
+    return CC_SI_Gfx;
   case CallingConv::AMDGPU_KERNEL:
   case CallingConv::SPIR_KERNEL:
   default:
@@ -960,6 +968,8 @@ CCAssignFn *AMDGPUCallLowering::CCAssignFnForReturn(CallingConv::ID CC,
   case CallingConv::AMDGPU_ES:
   case CallingConv::AMDGPU_LS:
     return RetCC_SI_Shader;
+  case CallingConv::AMDGPU_Gfx:
+    return RetCC_SI_Gfx;
   case CallingConv::C:
   case CallingConv::Fast:
   case CallingConv::Cold:
@@ -1294,7 +1304,7 @@ SDValue AMDGPUTargetLowering::LowerGlobalAddress(AMDGPUMachineFunction* MFI,
 
   if (G->getAddressSpace() == AMDGPUAS::LOCAL_ADDRESS ||
       G->getAddressSpace() == AMDGPUAS::REGION_ADDRESS) {
-    if (!MFI->isEntryFunction()) {
+    if (!MFI->isModuleEntryFunction()) {
       SDLoc DL(Op);
       const Function &Fn = DAG.getMachineFunction().getFunction();
       DiagnosticInfoUnsupported BadLDSDecl(
@@ -1563,17 +1573,25 @@ SDValue AMDGPUTargetLowering::SplitVectorLoad(const SDValue Op,
   return DAG.getMergeValues(Ops, SL);
 }
 
-// Widen a vector load from vec3 to vec4.
-SDValue AMDGPUTargetLowering::WidenVectorLoad(SDValue Op,
-                                              SelectionDAG &DAG) const {
+SDValue AMDGPUTargetLowering::WidenOrSplitVectorLoad(SDValue Op,
+                                                     SelectionDAG &DAG) const {
   LoadSDNode *Load = cast<LoadSDNode>(Op);
   EVT VT = Op.getValueType();
-  assert(VT.getVectorNumElements() == 3);
   SDValue BasePtr = Load->getBasePtr();
   EVT MemVT = Load->getMemoryVT();
   SDLoc SL(Op);
   const MachinePointerInfo &SrcValue = Load->getMemOperand()->getPointerInfo();
   unsigned BaseAlign = Load->getAlignment();
+  unsigned NumElements = MemVT.getVectorNumElements();
+
+  // Widen from vec3 to vec4 when the load is at least 8-byte aligned
+  // or 16-byte fully dereferenceable. Otherwise, split the vector load.
+  if (NumElements != 3 ||
+      (BaseAlign < 8 &&
+       !SrcValue.isDereferenceable(16, *DAG.getContext(), DAG.getDataLayout())))
+    return SplitVectorLoad(Op, DAG);
+
+  assert(NumElements == 3);
 
   EVT WideVT =
       EVT::getVectorVT(*DAG.getContext(), VT.getVectorElementType(), 4);

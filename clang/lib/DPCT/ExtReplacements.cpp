@@ -92,7 +92,7 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
   }
 }
 
-void ExtReplacements::removeCommentsInSrcCode(const std::string &SrcCode,
+void ExtReplacements::removeCommentsInSrcCode(StringRef SrcCode,
                                               std::string &Result,
                                               bool &BlockComment) {
   StringRef Uncommented(Result);
@@ -119,12 +119,12 @@ void ExtReplacements::removeCommentsInSrcCode(const std::string &SrcCode,
       FindResult = false;
       if (SrcCode[Pos] == '/') {
         // encount "//", line comment.
-        Result.append(SrcCode, PrevPos, Pos - PrevPos - 1);
+        Result.append(SrcCode.data(), PrevPos, Pos - PrevPos - 1);
         LineComment = true;
         break;
       } else if (SrcCode[Pos] == '*') {
         // encount "/*", block comment.
-        Result.append(SrcCode, PrevPos, Pos - PrevPos - 1);
+        Result.append(SrcCode.data(), PrevPos, Pos - PrevPos - 1);
         BlockComment = true;
       }
       // else nothing to do.
@@ -137,10 +137,10 @@ void ExtReplacements::removeCommentsInSrcCode(const std::string &SrcCode,
   if (LineComment || BlockComment) {
     Result += getNL();
   } else
-    Result.append(SrcCode.begin() + PrevPos, SrcCode.end());
+    Result.append(SrcCode.data() + PrevPos, SrcCode.end());
 }
 
-size_t ExtReplacements::findCR(const std::string &Line) {
+size_t ExtReplacements::findCR(StringRef Line) {
   auto Pos = Line.rfind('\n');
   if (Pos && Pos != std::string::npos) {
     if (Line[Pos - 1] == '\r')
@@ -152,7 +152,7 @@ size_t ExtReplacements::findCR(const std::string &Line) {
 bool ExtReplacements::isEndWithSlash(unsigned LineNumber) {
   if (!LineNumber)
     return false;
-  auto &Line = FileInfo->getLineString(LineNumber);
+  auto Line = FileInfo->getLineString(LineNumber);
   auto CRPos = findCR(Line);
   if (!CRPos || CRPos == std::string::npos)
     return false;
@@ -199,24 +199,34 @@ void ExtReplacements::buildOriginCodeReplacements() {
 std::vector<std::shared_ptr<ExtReplacement>>
 ExtReplacements::mergeReplsAtSameOffset() {
   std::vector<std::shared_ptr<ExtReplacement>> ReplsList;
-  std::shared_ptr<ExtReplacement> Insert, Replace;
+  std::shared_ptr<ExtReplacement> Insert, InsertLeft, InsertRight, Replace;
   unsigned Offset = ReplMap.begin()->first;
   for (auto &R : ReplMap) {
     if (R.first != Offset) {
       Offset = R.first;
-      ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+      ReplsList.emplace_back(mergeAtSameOffset(
+          mergeAtSameOffset(InsertLeft, mergeAtSameOffset(Insert, InsertRight)),
+          Replace));
+      InsertLeft.reset();
+      InsertRight.reset();
       Insert.reset();
       Replace.reset();
     }
     auto &Repl = R.second;
     if (Repl->getLength()) {
       Replace = mergeAtSameOffset(Replace, Repl);
+    } else if (Repl->getInsertPosition()==InsertPosition::InsertPositionAlwaysLeft){
+      InsertLeft = mergeAtSameOffset(InsertLeft, Repl);
+    } else if (Repl->getInsertPosition() == InsertPosition::InsertPositionRight) {
+      InsertRight = mergeAtSameOffset(InsertRight, Repl);
     } else {
       Insert = mergeAtSameOffset(Insert, Repl);
     }
   }
   if (Insert || Replace) {
-    ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+    ReplsList.emplace_back(mergeAtSameOffset(
+        mergeAtSameOffset(InsertLeft, mergeAtSameOffset(Insert, InsertRight)),
+        Replace));
   }
   return ReplsList;
 }

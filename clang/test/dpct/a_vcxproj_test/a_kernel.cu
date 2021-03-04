@@ -8,13 +8,18 @@
 
 // RUN: FileCheck --match-full-lines --input-file %T/check_compilation_db.txt %T/check_compilation_db.txt
 
+// RUN: dpct --format-range=none  -p=%S  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+
+// RUN: FileCheck --input-file %T/a_kernel.dp.cpp --match-full-lines %S/a_kernel.cu
+// RUN: FileCheck --match-full-lines --input-file %T/readme_1.txt %T/readme_1.txt
+
 #include "cuda_runtime.h"
 #include <stdio.h>
 
 // CHECK: void addKernel(int *c, const int *a, const int *b, sycl::nd_item<3> item_ct1)
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
-    // CHECK: int i = item_ct1.get_local_id(0);
+    // CHECK: int i = item_ct1.get_local_id(2);
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
 }

@@ -11,9 +11,9 @@ __device__ void test() {
   cl[0] = b[0][0] + a;
 }
 
+__device__ uint2 al[16];
 __global__ void kernel() {
   test();
-  __device__ uint2 al[16];
   __shared__ int bl[12][12];
   al[0] = tex1D(tex21, 1);
   bl[0][0] = 0;
@@ -24,7 +24,7 @@ int main() {
     // CHECK: // These variables are defined for 3d matrix memory copy.
     // CHECK-NEXT: dpct::pitched_data p_from_data_ct1, p_to_data_ct1;
     // CHECK-NEXT: sycl::id<3> p_from_pos_ct1(0, 0, 0), p_to_pos_ct1(0, 0, 0);
-    // CHECK-NEXT: sycl::range<3> p_size_ct1(0, 0, 0);
+    // CHECK-NEXT: sycl::range<3> p_size_ct1(1, 1, 1);
     // CHECK-NEXT: dpct::memcpy_direction p_direction_ct1;
     cudaMemcpy3DParms p;
     dim3 griddim(1, 2, 3);
@@ -33,20 +33,18 @@ int main() {
 // CHECK:    dpct::get_default_queue().submit(
 // CHECK-NEXT:        [&](sycl::handler &cgh) {
 // CHECK-NEXT:          sycl::stream stream_ct1(64 * 1024, 80, cgh);
-// CHECK-EMPTY:  
-// CHECK-NEXT:          dpct::global_memory<sycl::uint2, 1> al(16);
-// CHECK-EMPTY:  
+// CHECK-EMPTY:
 // CHECK-NEXT:          // init global memory
-// CHECK-NEXT:          al.init();
 // CHECK-NEXT:          a.init();
 // CHECK-NEXT:          b.init();
+// CHECK-NEXT:          al.init();
 // CHECK-EMPTY:
 // CHECK-NEXT:          // ranges used for accessors to device memory
 // CHECK-NEXT:          sycl::range<2> bl_range_ct1(12, 12);
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // pointers to device memory
-// CHECK-NEXT:          auto al_ptr_ct1 = al.get_ptr();
 // CHECK-NEXT:          auto a_ptr_ct1 = a.get_ptr();
+// CHECK-NEXT:          auto al_ptr_ct1 = al.get_ptr();
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // accessors to device memory
 // CHECK-NEXT:          sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> cl_acc_ct1(sycl::range<1>(36), cgh);
@@ -62,7 +60,7 @@ int main() {
 // CHECK-NEXT:          cgh.parallel_for(
 // CHECK-NEXT:            sycl::nd_range<3>(griddim * threaddim, threaddim),
 // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, cl_acc_ct1.get_pointer(), al_ptr_ct1, dpct::accessor<int, dpct::local, 2>(bl_acc_ct1, bl_range_ct1), dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
+// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, al_ptr_ct1, cl_acc_ct1.get_pointer(), dpct::accessor<int, dpct::local, 2>(bl_acc_ct1, bl_range_ct1), dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
 // CHECK-NEXT:            });
 // CHECK-NEXT:        });
     kernel<<<griddim, threaddim>>>();

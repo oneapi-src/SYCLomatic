@@ -31,7 +31,7 @@ void foo(int *data, int x, int y) {
 
   // CHECK: dpct::pitched_data p2_from_data_ct1, p2_to_data_ct1;
   // CHECK-NEXT: sycl::id<3> p2_from_pos_ct1(0, 0, 0), p2_to_pos_ct1(0, 0, 0);
-  // CHECK-NEXT: sycl::range<3> p2_size_ct1(0, 0, 0);
+  // CHECK-NEXT: sycl::range<3> p2_size_ct1(1, 1, 1);
   // CHECK-NEXT: dpct::memcpy_direction p2_direction_ct1;
   cudaMemcpy3DParms p2;
   cudaArray_t a1;

@@ -80,7 +80,7 @@ static void dumpLocation(raw_ostream &OS, DWARFFormValue &FormValue,
     DataExtractor Data(StringRef((const char *)Expr.data(), Expr.size()),
                        Ctx.isLittleEndian(), 0);
     DWARFExpression(Data, U->getAddressByteSize(), U->getFormParams().Format)
-        .print(OS, MRI, U);
+        .print(OS, DumpOpts, MRI, U);
     return;
   }
 
@@ -479,8 +479,7 @@ void DWARFDie::collectChildrenAddressRanges(
     return;
   if (isSubprogramDIE()) {
     if (auto DIERangesOrError = getAddressRanges())
-      Ranges.insert(Ranges.end(), DIERangesOrError.get().begin(),
-                    DIERangesOrError.get().end());
+      llvm::append_range(Ranges, DIERangesOrError.get());
     else
       llvm::consumeError(DIERangesOrError.takeError());
   }

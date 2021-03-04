@@ -499,6 +499,12 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
     CodeGen::CodeGenModule &CGM = CGF.CGM;
     ConstantEmitter Emitter(CGF);
     LangAS AS = ArrayQTy.getAddressSpace();
+    if (CGM.getLangOpts().SYCLIsDevice && AS == LangAS::Default) {
+      // SYCL's default AS is 'generic', which can't be used to define constant
+      // initializer data in. It is reasonable to keep it in the same AS
+      // as string literals.
+      AS = CGM.getStringLiteralAddressSpace();
+    }
     if (llvm::Constant *C = Emitter.tryEmitForInitializer(E, AS, ArrayQTy)) {
       auto GV = new llvm::GlobalVariable(
           CGM.getModule(), C->getType(),
@@ -1216,6 +1222,11 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
 
   // Copy into the destination if the assignment isn't ignored.
   EmitFinalDestCopy(E->getType(), LHS);
+
+  if (!Dest.isIgnored() && !Dest.isExternallyDestructed() &&
+      E->getType().isDestructedType() == QualType::DK_nontrivial_c_struct)
+    CGF.pushDestroy(QualType::DK_nontrivial_c_struct, Dest.getAddress(),
+                    E->getType());
 }
 
 void AggExprEmitter::
@@ -1233,6 +1244,11 @@ VisitAbstractConditionalOperator(const AbstractConditionalOperator *E) {
 
   // Save whether the destination's lifetime is externally managed.
   bool isExternallyDestructed = Dest.isExternallyDestructed();
+  bool destructNonTrivialCStruct =
+      !isExternallyDestructed &&
+      E->getType().isDestructedType() == QualType::DK_nontrivial_c_struct;
+  isExternallyDestructed |= destructNonTrivialCStruct;
+  Dest.setExternallyDestructed(isExternallyDestructed);
 
   eval.begin(CGF);
   CGF.EmitBlock(LHSBlock);
@@ -1253,6 +1269,10 @@ VisitAbstractConditionalOperator(const AbstractConditionalOperator *E) {
   CGF.EmitBlock(RHSBlock);
   Visit(E->getFalseExpr());
   eval.end(CGF);
+
+  if (destructNonTrivialCStruct)
+    CGF.pushDestroy(QualType::DK_nontrivial_c_struct, Dest.getAddress(),
+                    E->getType());
 
   CGF.EmitBlock(ContBlock);
 }
