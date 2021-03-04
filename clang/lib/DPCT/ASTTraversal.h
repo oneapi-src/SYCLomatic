@@ -91,7 +91,7 @@ public:
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
-
+  bool isInRoot(SourceLocation Loc);
 private:
   /// e.g. "__launch_bounds(32, 32)  void foo()"
   /// Result is "void foo()"
@@ -1925,6 +1925,13 @@ public:
 class DriverContextAPIRule : public NamedMigrationRule<DriverContextAPIRule> {
 public:
   DriverContextAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+class CudaArchMacroRule : public NamedMigrationRule<CudaArchMacroRule> {
+public:
+  CudaArchMacroRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

@@ -719,7 +719,13 @@ bool Sema::CheckCUDACall(SourceLocation Loc, FunctionDecl *Callee) {
   FunctionDecl *Caller = dyn_cast<FunctionDecl>(CurContext);
   if (!Caller)
     return true;
-
+#ifdef INTEL_CUSTOMIZATION
+  CUDAFunctionTarget CallerTarget = IdentifyCUDATarget(Caller);
+  CUDAFunctionTarget CalleeTarget = IdentifyCUDATarget(Callee);
+  if(CallerTarget == CFT_HostDevice && CalleeTarget == CFT_Device){
+    return true;
+  }
+#endif // INTEL_CUSTOMIZATION
   // If the caller is known-emitted, mark the callee as known-emitted.
   // Otherwise, mark the call in our call graph so we can traverse it later.
   bool CallerKnownEmitted =

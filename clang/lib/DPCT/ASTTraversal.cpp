@@ -68,13 +68,14 @@ static internal::Matcher<NamedDecl> vectorTypeName() {
 }
 
 unsigned MigrationRule::PairID = 0;
-
-void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+bool IncludesCallbacks::isInRoot(SourceLocation Loc){
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+  std::string InFile = SM.getFilename(Loc).str();
+  return !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
-
+}
+void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+  bool IsInRoot = isInRoot(MacroNameTok.getLocation());
   if (!IsInRoot) {
     return;
   }
@@ -82,6 +83,15 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     return;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
+  if(MacroName == "__CUDA_ARCH__"){
+   if(DpctGlobalInfo::getRunRound() == 0){
+     DpctGlobalInfo::getInstance().insertCudaArchPPInfo(MacroNameTok.getLocation());
+   }else if(DpctGlobalInfo::getRunRound() == 1) {
+    TransformSet.emplace_back(new ReplaceToken(MacroNameTok.getLocation(),
+                                               "DPCT_NOT_DEFINED"));
+    return;
+   }
+  }
   auto Iter = MapNames::MacrosMap.find(MacroName);
   if (Iter != MapNames::MacrosMap.end()) {
     std::string ReplacedMacroName = Iter->second;
@@ -286,8 +296,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 
   if (MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
-    TransformSet.emplace_back(
-        new ReplaceText(Range.getBegin(), 13, "DPCT_COMPATIBILITY_TEMP"));
+    if(DpctGlobalInfo::getRunRound() == 0)
+      TransformSet.emplace_back(
+          new ReplaceText(Range.getBegin(), 13, "DPCT_COMPATIBILITY_TEMP"));
+    else
+      TransformSet.emplace_back(
+          new ReplaceText(Range.getBegin(), 13, "DPCT_NOT_DEFINED"));
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
@@ -407,7 +421,6 @@ void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
         DpctGlobalInfo::getInstance().getLocInfo(IfLoc));
   }
 }
-
 void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   auto Begin = SM.getExpansionLoc(ConditionRange.getBegin());
   auto End = SM.getExpansionLoc(ConditionRange.getEnd());
@@ -417,14 +430,21 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   std::string E(BP, Size);
   size_t Pos = 0;
   const std::string MacroName = "__CUDA_ARCH__";
+  unsigned RunRound = DpctGlobalInfo::getRunRound();
   std::string ReplacedMacroName;
   if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
-    ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
+    if(RunRound == 0)
+      ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
+    else
+      ReplacedMacroName = "DPCT_NOT_DEFINED";
   } else {
     return;
   }
 
   std::size_t Found = E.find(MacroName, Pos);
+  if(Found != std::string::npos && RunRound == 0) {
+    DpctGlobalInfo::getInstance().insertCudaArchPPInfo(Begin);
+  }
   while (Found != std::string::npos) {
     // found one, insert replace for it
     if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
@@ -468,7 +488,6 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
 
   ReplaceCuMacro(ConditionRange);
 }
-
 bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #ifdef _WIN32
   std::string Name = FileName.str();
@@ -9332,7 +9351,8 @@ void DeviceFunctionCallRule::run(
 
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
-  if (!FD)
+  if (!FD || (FD->hasAttr<CUDADeviceAttr>() && FD->hasAttr<CUDAHostAttr>() &&
+              DpctGlobalInfo::getRunRound() == 1))
     return;
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
@@ -9734,7 +9754,9 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       // R(dcpt::constant_memery):
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      auto &M = FileInfo->getRepls().getReplMap();
+      if(!FileInfo->getRepls())
+        return false;
+      auto &M = FileInfo->getRepls()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
         if (R.second->getConstantFlag() == dpct::ConstantFlagType::Host &&
@@ -9843,7 +9865,9 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 
       // 1. check previous processed replacements, if found, do not check
       // info from yaml
-      auto &M = FileInfo->getRepls().getReplMap();
+      if(!FileInfo->getRepls())
+        return false;
+      auto &M = FileInfo->getRepls()->getReplMap();
       for (auto &R : M) {
         if (R.second->getConstantFlag() == dpct::ConstantFlagType::Device &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
@@ -14042,6 +14066,99 @@ void DriverContextAPIRule::run(
 
 REGISTER_RULE(DriverContextAPIRule)
 
+void CudaArchMacroRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto HostDeviceFunctionMatcher =
+      functionDecl(allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAHost),
+                         unless(cxxMethodDecl())));
+  MF.addMatcher(callExpr(callee(HostDeviceFunctionMatcher)).bind("callExpr"),
+                this);
+  MF.addMatcher(HostDeviceFunctionMatcher.bind("funcDecl"), this);
+}
+void CudaArchMacroRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &Global = DpctGlobalInfo::getInstance();
+  auto &CT = DpctGlobalInfo::getContext();
+  DpctNameGenerator DNG;
+  const FunctionDecl *FD =
+      getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
+  // process __host__ __device__ function definition except overloaded operator
+  if (FD && !FD->isOverloadedOperator() &&
+      FD->getTemplateSpecializationKind() ==
+          TemplateSpecializationKind::TSK_Undeclared) {
+    auto NameInfo = FD->getNameInfo();
+    /// TODO: add support for macro
+    if (NameInfo.getBeginLoc().isMacroID())
+      return;
+    auto BeginLoc = SM.getExpansionLoc(FD->getBeginLoc());
+    HostDeviceFuncInfo HDFI;
+    if (FD->isTemplated()) {
+      auto P = CT.getParents(*FD);
+      if (!P.size())
+        return;
+      const FunctionTemplateDecl *FTD = P[0].get<FunctionTemplateDecl>();
+      if (FTD)
+        BeginLoc = SM.getExpansionLoc(FTD->getBeginLoc());
+    }
+    auto EndLoc = SM.getExpansionLoc(FD->getEndLoc());
+    auto Beg = Global.getLocInfo(BeginLoc);
+    auto End = Global.getLocInfo(EndLoc);
+    auto T = Lexer::findNextToken(EndLoc, SM, LangOptions());
+    if (T.hasValue() && T.getValue().is(tok::TokenKind::semi)) {
+      End = Global.getLocInfo(T.getValue().getLocation());
+    }
+    auto FileInfo = DpctGlobalInfo::getInstance().insertFile(Beg.first);
+    std::string &FileContent = FileInfo->getFileContent();
+    auto NameLocInfo = Global.getLocInfo(NameInfo.getBeginLoc());
+    HDFI.FuncStartOffset = Beg.second;
+    HDFI.FuncEndOffset = End.second;
+    HDFI.FuncNameOffset = NameLocInfo.second + NameInfo.getAsString().length();
+    HDFI.FuncContentCache =
+        FileContent.substr(Beg.second, End.second - Beg.second + 1);
+    if (!FD->isThisDeclarationADefinition()) {
+      Global.insertHostDeviceFuncDeclInfo(
+          DNG.getName(FD), std::make_pair(NameLocInfo.first, HDFI));
+      return;
+    }
+    auto Range =
+        Global.getCudaArchPPInfoMap().equal_range(FileInfo->getFilePath());
+    for (auto It = Range.first; It != Range.second; It++) {
+      if ((It->second > Beg.second) && (It->second < End.second)) {
+        Global.insertHostDeviceFuncDefInfo(
+            DNG.getName(FD), std::make_pair(NameLocInfo.first, HDFI));
+        break;
+      }
+    }
+  } // address __host__ __device__ function call
+  else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "callExpr")) {
+    /// TODO: add support for macro
+    if (CE->getBeginLoc().isMacroID())
+      return;
+    if (auto *PF = DpctGlobalInfo::getParentFunction(CE)) {
+      if (PF->hasAttr<CUDADeviceAttr>() || PF->hasAttr<CUDAGlobalAttr>())
+        return;
+    }
+    const FunctionDecl *DC = CE->getDirectCallee();
+    if (DC) {
+      unsigned int Offset = DC->getNameAsString().length();
+      std::string Name(DNG.getName(DC));
+      if (DC->isTemplateInstantiation()) {
+        if (auto DFT = DC->getPrimaryTemplate()) {
+          const FunctionDecl *TFD = DFT->getTemplatedDecl();
+          if (TFD)
+            Name = DNG.getName(TFD);
+        }
+      }
+      auto LocInfo = Global.getLocInfo(CE->getBeginLoc());
+      Global.insertHostDeviceFuncCallInfo(
+          std::move(Name),
+          std::make_pair(LocInfo.first, LocInfo.second + Offset));
+    }
+  }
+}
+REGISTER_RULE(CudaArchMacroRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;
@@ -14074,6 +14191,9 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
 
     if (RType & SourceFileFlag) {
       std::string CurrentRuleName = ASTTraversalMetaInfo::getName(F.first);
+      if (DpctGlobalInfo::getRunRound() == 1 &&
+          CurrentRuleName == "CudaArchMacroRule")
+        continue;
       std::vector<std::string> Vec;
       Vec.push_back(CurrentRuleName);
       for (auto const &RuleName : RulesDependon) {

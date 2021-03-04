@@ -76,7 +76,9 @@ static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
-
+static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<std::string> *ProcessedFilePtr = nullptr;
+static std::function<unsigned int()> GetRunRoundPtr;
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
@@ -111,6 +113,38 @@ void DoFileProcessHandle(std::vector<std::string> &FilesNotProcessed) {
 
 bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
+}
+
+void SetProcessedFile(std::set<std::string> &ProcessedFile){
+  ProcessedFilePtr = &ProcessedFile;
+}
+
+void SetReProcessFile(std::set<std::string> &ReProcessFile){
+  ReProcessFilePtr = &ReProcessFile;
+}
+
+void SetGetRunRound(std::function<unsigned int()> Func){
+  GetRunRoundPtr = Func;
+}
+
+unsigned int DoGetRunRound(){
+  if(GetRunRoundPtr){
+    return GetRunRoundPtr();
+  }
+  return 0;
+}
+
+void CollectProcessedFile(std::string File){
+  if(ProcessedFilePtr){
+    (*ProcessedFilePtr).insert(File);
+  }
+}
+
+std::set<std::string> GetReProcessFile(){
+  if(ReProcessFilePtr){
+    return *ReProcessFilePtr;
+  }
+  return std::set<std::string>();
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
@@ -772,6 +806,8 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         ProcessingFailed = true;
         if(StopOnParseErrTooling)
             break;
+      } else {
+        CollectProcessedFile(File.str());
       }
     }
     //collect the errror counter info.
@@ -799,6 +835,9 @@ int ClangTool::run(ToolAction *Action) {
   // Compute all absolute paths before we run any actions, as those will change
   // the working directory.
   std::vector<std::string> AbsolutePaths;
+#ifdef INTEL_CUSTOMIZATION
+  if(DoGetRunRound() == 0) {
+#endif
   AbsolutePaths.reserve(SourcePaths.size());
   for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
@@ -826,6 +865,10 @@ int ClangTool::run(ToolAction *Action) {
           "provided in command line.\n";
       DoPrintHandle(Msg, false);
     }
+  }
+  } else {
+     for (auto &File : GetReProcessFile())
+       AbsolutePaths.push_back(File);
   }
 #endif
   // Remember the working directory in case we need to restore it.
@@ -924,7 +967,7 @@ int ClangTool::run(ToolAction *Action) {
   // if input file(s) is not specified in command line, and the process-all
   // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
-  if(SourcePaths.size() == 0 ) {
+  if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
     std::vector<std::string> FilesNotProcessed;
 
     // To traverse all the files in the directory specified by

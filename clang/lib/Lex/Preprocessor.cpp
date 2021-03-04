@@ -74,6 +74,7 @@ using namespace clang;
 #if INTEL_CUSTOMIZATION
 namespace clang {
   extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<unsigned int()> GetRunRound;
 }
 #endif
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)

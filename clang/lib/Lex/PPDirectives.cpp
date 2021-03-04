@@ -50,7 +50,6 @@
 #include <utility>
 
 using namespace clang;
-
 //===----------------------------------------------------------------------===//
 // Utility Methods for Preprocessor Directive Handling.
 //===----------------------------------------------------------------------===//
@@ -2924,6 +2923,7 @@ void Preprocessor::HandleUndefDirective() {
 #if INTEL_CUSTOMIZATION
 namespace clang{
   extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<unsigned int()> GetRunRound;
 }
 #endif
 //===----------------------------------------------------------------------===//
@@ -2992,7 +2992,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
   // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle it as
   // defined.
   if (!MI && MII->getName() == "__CUDA_ARCH__" &&
-      IsInRootFunc(MacroNameTok.getLocation())) {
+      IsInRootFunc(MacroNameTok.getLocation()) && GetRunRound() == 0) {
     static MacroInfo CudaArchFaker(SourceLocation::getFromRawEncoding(0));
     MI = &CudaArchFaker;
   }

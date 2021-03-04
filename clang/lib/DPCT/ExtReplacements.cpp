@@ -19,10 +19,10 @@
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(DpctFileInfo *FileInfo)
-    : FilePath(FileInfo->getFilePath()), FileInfo(FileInfo) {}
+ExtReplacements::ExtReplacements(std::string FilePath)
+    : FilePath(FilePath) {}
 
-bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
+bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!Repl)
     return true;
   if (Repl->getFilePath().empty() || Repl->getFilePath() != FilePath)
@@ -38,9 +38,9 @@ bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
 #endif
     return true;
   }
-  return isReplRedundant(Repl);
+  return isReplRedundant(Repl, FileInfo);
 }
-bool ExtReplacements::isReplRedundant(std::shared_ptr<ExtReplacement> Repl) {
+bool ExtReplacements::isReplRedundant(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo) {
   std::string &FileContent = FileInfo->getFileContent();
   if (FileContent.empty())
     return true;
@@ -149,7 +149,7 @@ size_t ExtReplacements::findCR(StringRef Line) {
   return Pos;
 }
 
-bool ExtReplacements::isEndWithSlash(unsigned LineNumber) {
+bool ExtReplacements::isEndWithSlash(unsigned LineNumber, std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!LineNumber)
     return false;
   auto Line = FileInfo->getLineString(LineNumber);
@@ -160,7 +160,7 @@ bool ExtReplacements::isEndWithSlash(unsigned LineNumber) {
 }
 
 std::shared_ptr<ExtReplacement>
-ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange) {
+ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange, std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!LineRange.SrcBeginLine)
     return std::shared_ptr<ExtReplacement>();
   std::string Text = "/* DPCT_ORIG ";
@@ -170,7 +170,7 @@ ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange) {
     removeCommentsInSrcCode(FileInfo->getLineString(Line), Text, BlockComment);
 
   std::string Suffix =
-      std::string(isEndWithSlash(LineRange.SrcBeginLine - 1) ? "*/ \\" : "*/");
+      std::string(isEndWithSlash(LineRange.SrcBeginLine - 1, FileInfo) ? "*/ \\" : "*/");
   Text.insert(findCR(Text), Suffix);
   auto R = std ::make_shared<ExtReplacement>(FilePath, LineRange.SrcBeginOffset,
                                              0, std::move(Text), nullptr);
@@ -178,14 +178,14 @@ ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange) {
   return R;
 }
 
-void ExtReplacements::buildOriginCodeReplacements() {
+void ExtReplacements::buildOriginCodeReplacements(std::shared_ptr<DpctFileInfo> FileInfo) {
   SourceLineRange LineRange, ReplLineRange;
   for (auto &R : ReplMap) {
     auto &Repl = R.second;
     if (Repl->getLength()) {
       FileInfo->setLineRange(ReplLineRange, Repl);
       if (LineRange.SrcEndLine < ReplLineRange.SrcBeginLine) {
-        addReplacement(buildOriginCodeReplacement(LineRange));
+        addReplacement(buildOriginCodeReplacement(LineRange, FileInfo));
         LineRange = ReplLineRange;
       } else
         LineRange.SrcEndLine =
@@ -193,8 +193,10 @@ void ExtReplacements::buildOriginCodeReplacements() {
     }
   }
   if (LineRange.SrcBeginLine)
-    addReplacement(buildOriginCodeReplacement(LineRange));
+    addReplacement(buildOriginCodeReplacement(LineRange, FileInfo));
 }
+
+
 
 std::vector<std::shared_ptr<ExtReplacement>>
 ExtReplacements::mergeReplsAtSameOffset() {
@@ -272,7 +274,8 @@ bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
 }
 
 void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-  if (isInvalid(Repl))
+  auto const &FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  if (isInvalid(Repl, FileInfo))
     return;
   if (Repl->getLength()) {
     if(Repl->IsSYCLHeaderNeeded())
@@ -375,7 +378,93 @@ std::string ExtReplacements::processR(unsigned int Index) {
   return Res;
 }
 
-void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
+void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet){
+  std::vector<std::shared_ptr<clang::dpct::ExtReplacement>> ReplsList =
+      mergeReplsAtSameOffset();
+  unsigned PrevEnd = 0;
+  for (auto &R : ReplsList) {
+    if (auto Repl = filterOverlappedReplacement(R, PrevEnd)) {
+      if (auto Err = ReplSet.add(*Repl)) {
+        llvm::dbgs() << Err << "\n";
+      }
+    }
+  }
+}
+
+void ExtReplacements::processCudaArch(std::shared_ptr<DpctFileInfo> FileInfo) {
+  std::vector<std::shared_ptr<ExtReplacement>> ReplsList =
+      mergeReplsAtSameOffset();
+  std::vector<std::shared_ptr<ExtReplacement>> ProcessedReplList;
+  unsigned PrevEnd = 0;
+  for (auto &R : ReplsList) {
+    if (auto Repl = filterOverlappedReplacement(R, PrevEnd)) {
+      ProcessedReplList.emplace_back(Repl);
+    }
+  }
+  std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
+  auto &HDFDIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncDefInfoMap();
+  auto &HDFDeclIMap =
+      DpctGlobalInfo::getInstance().getHostDeviceFuncDeclInfoMap();
+  auto &HDFCIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncCallInfoMap();
+  // process call
+  for (auto &Call : HDFCIMap) {
+    if (Call.second.first != FilePath || !HDFDIMap.count(Call.first))
+      continue;
+    unsigned Offset = Call.second.second;
+    auto R =
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, "_host", nullptr);
+    ExtraRepl.emplace_back(R);
+  }
+  auto GenerateHostCode = [&ProcessedReplList, &ExtraRepl,
+                           &FileInfo](HostDeviceFuncInfo &Info) {
+    unsigned int Pos, Len;
+    std::string OriginText = Info.FuncContentCache;
+    StringRef SR(OriginText);
+    RewriteBuffer RB;
+    RB.Initialize(SR.begin(), SR.end());
+
+    for (auto &R : ProcessedReplList) {
+      unsigned ROffset = R->getOffset();
+      if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
+        Pos = ROffset - Info.FuncStartOffset;
+        Len = R->getLength();
+        RB.ReplaceText(Pos, Len, R->getReplacementText());
+      }
+    }
+    Pos = Info.FuncNameOffset - Info.FuncStartOffset;
+    Len = 0;
+    RB.ReplaceText(Pos, Len, "_host");
+    std::string DefResult;
+    llvm::raw_string_ostream DefStream(DefResult);
+    RB.write(DefStream);
+    std::string NewFuncBody = DefStream.str();
+    auto R = std::make_shared<ExtReplacement>(FileInfo->getFilePath(),
+                                              Info.FuncEndOffset + 1, 0,
+                                              getNL() + NewFuncBody, nullptr);
+    ExtraRepl.emplace_back(R);
+  };
+  // process def
+  for (auto &HDFDInfo : HDFDIMap) {
+    if (!HDFCIMap.count(HDFDInfo.first) || HDFDInfo.second.first != FilePath)
+      continue;
+    GenerateHostCode(HDFDInfo.second.second);
+  }
+  // process decl
+  for (auto &Decl : HDFDeclIMap) {
+    if (Decl.second.first != FilePath || !HDFCIMap.count(Decl.first) ||
+        !HDFDIMap.count(Decl.first))
+      continue;
+    GenerateHostCode(Decl.second.second);
+  }
+  for (auto &R : ExtraRepl) {
+    auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
+    FileReplCache[R->getFilePath().str()]->addReplacement(R);
+  }
+  return;
+}
+
+void ExtReplacements::postProcess() {
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
   for (auto &R : ReplMap) {
     std::string OriginReplText = R.second->getReplacementText().str();
     std::string NewReplText;
@@ -446,20 +535,14 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
       R.second = NewRepl;
     }
   }
-
   if (DpctGlobalInfo::isKeepOriginCode())
-    buildOriginCodeReplacements();
+    buildOriginCodeReplacements(FileInfo);
 
-  std::vector<std::shared_ptr<ExtReplacement>> ReplsList =
-      mergeReplsAtSameOffset();
-  unsigned PrevEnd = 0;
-  for (auto &R : ReplsList) {
-    if (auto Repl = filterOverlappedReplacement(R, PrevEnd)) {
-      if (auto Err = ReplSet.add(*Repl)) {
-        llvm::dbgs() << Err << "\n";
-      }
-    }
+  // process __CUDA_ARCH__ macro
+  if (DpctGlobalInfo::getRunRound() == 1) {
+    processCudaArch(FileInfo);
   }
+  return;
 }
 } // namespace dpct
 } // namespace clang

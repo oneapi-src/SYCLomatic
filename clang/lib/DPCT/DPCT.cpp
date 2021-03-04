@@ -1127,45 +1127,55 @@ int runDPCT(int argc, const char **argv) {
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }
-
-  DPCTActionFactory Factory(Tool.getReplacements());
-
-  if(ProcessAllFlag) {
-    clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
-  }
-
-  int RunResult = Tool.run(&Factory);
-  if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
-    DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
-                          ClangToolOutputMessage);
-    return MigrationErrorCannotAccessDirInDatabase;
-  } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
-    DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
-                          ClangToolOutputMessage);
-    return MigrationErrorInconsistentFileInDatabase;
-  }
-
-  if (RunResult && StopOnParseErr) {
-    DumpOutputFile();
-    if (RunResult == 1) {
-      DebugInfo::ShowStatus(MigrationErrorFileParseError);
-      return MigrationErrorFileParseError;
-    } else {
-      // When RunResult equals to 2, it means no error but some files are
-      // skipped due to missing compile commands.
-      // And clang::tooling::ReFactoryTool will emit error message.
-      return MigrationSKIPForMissingCompileCommand;
+  auto &Global = DpctGlobalInfo::getInstance();
+  int RunCount = 0;
+  do{
+    if(RunCount == 1){
+      // Currently, we just need maximum two parse
+      DpctGlobalInfo::setNeedRunAgain(false);
+      DpctGlobalInfo::getInstance().resetInfo();
+      DeviceFunctionDecl::reset();
     }
-  }
+    DpctGlobalInfo::setRunRound(RunCount++);
+    DPCTActionFactory Factory(Tool.getReplacements());
 
-  int RetJmp = 0;
-  CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-  if (RetJmp == 0) {
-    auto &Global = DpctGlobalInfo::getInstance();
-    Global.buildReplacements();
-    Global.emplaceReplacements(Tool.getReplacements());
-  }
-  CHECKPOINT_ReplacementPostProcess_EXIT();
+    if (ProcessAllFlag) {
+      clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
+    }
+
+    int RunResult = Tool.run(&Factory);
+    if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
+      DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
+                            ClangToolOutputMessage);
+      return MigrationErrorCannotAccessDirInDatabase;
+    } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
+      DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
+                            ClangToolOutputMessage);
+      return MigrationErrorInconsistentFileInDatabase;
+    }
+
+    if (RunResult && StopOnParseErr) {
+      DumpOutputFile();
+      if (RunResult == 1) {
+        DebugInfo::ShowStatus(MigrationErrorFileParseError);
+        return MigrationErrorFileParseError;
+      } else {
+        // When RunResult equals to 2, it means no error but some files are
+        // skipped due to missing compile commands.
+        // And clang::tooling::ReFactoryTool will emit error message.
+        return MigrationSKIPForMissingCompileCommand;
+      }
+    }
+
+    int RetJmp = 0;
+    CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
+    if (RetJmp == 0) {
+      Global.buildReplacements();
+      Global.postProcess();
+      Global.emplaceReplacements(Tool.getReplacements());
+    }
+    CHECKPOINT_ReplacementPostProcess_EXIT();
+  } while (DpctGlobalInfo::isNeedRunAgain());
 
   if (GenReport) {
     // report: apis, stats, all, diags

@@ -27,6 +27,8 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ParentMapContext.h"
+#include "clang/AST/Mangle.h"
+
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -210,6 +212,18 @@ struct FormatInfo {
   bool IsFirstArg = false;
 };
 
+struct HostDeviceFuncInfo{
+  unsigned FuncStartOffset;
+  unsigned FuncEndOffset;
+  unsigned FuncNameOffset;
+  std::string FuncContentCache;
+};
+
+using HDDefMap = std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>>;
+using HDDeclMap = std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>>;
+using HDCallMap = std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
+using CudaArchPPMap = std::unordered_multimap<std::string, unsigned int>;
+
 class ParameterStream {
 public:
   ParameterStream() { FormatInformation = FormatInfo(); }
@@ -364,7 +378,7 @@ enum UsingType {
 class DpctFileInfo {
 public:
   DpctFileInfo(const std::string &FilePathIn)
-      : Repls(this), FilePath(FilePathIn) {
+      : Repls(std::make_shared<ExtReplacements>(FilePathIn)), FilePath(FilePathIn) {
     buildLinesInfo();
   }
   template <class Obj> std::shared_ptr<Obj> findNode(unsigned Offset) {
@@ -391,6 +405,7 @@ public:
   void buildUnionFindSet();
   void setDim();
   void buildKernelInfo();
+  void postProcess();
 
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSet /*out*/);
@@ -398,11 +413,10 @@ public:
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
       return;
-
-    Repls.addReplacement(Repl);
+    Repls->addReplacement(Repl);
   }
-
-  ExtReplacements &getRepls() { return Repls; }
+  bool isInRoot();
+  std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
 
   size_t getFileSize() const { return FileSize; }
 
@@ -669,7 +683,6 @@ private:
     return NullMap;
   }
 
-  bool isInRoot();
   // TODO: implement one of this for each source language.
   bool isInCudaPath();
 
@@ -706,7 +719,6 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-
   // Key is the begin location offset of the CompoundStmt and the begin location
   // offset of the plan handle VarDecl/FieldDecl.
   // Value is the stream name.
@@ -722,8 +734,7 @@ private:
   // If we can evaluate the value of "CXXBoolLiteralExpr" is always true, then
   // the #1 will be used as key.
   std::unordered_map<std::string, FFTSetStreamAPIInfo> FFTSetStreamAPIInfoMap;
-
-  ExtReplacements Repls;
+  std::shared_ptr<ExtReplacements> Repls;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
@@ -1244,13 +1255,49 @@ public:
     for (auto &File : FileMap)
       File.second->buildReplacements();
   }
-
+  void postProcess() {
+    for (auto &File : FileMap) {
+      File.second->postProcess();
+    }
+    if (DpctGlobalInfo::getRunRound() == 0) {
+      for (auto &Info : HostDeviceFDefIMap) {
+        if (HostDeviceFCallIMap.count(Info.first)) {
+          DpctGlobalInfo::setNeedRunAgain(true);
+          break;
+        }
+      }
+      // record file that need parse again
+      if (DpctGlobalInfo::isNeedRunAgain()) {
+        for (auto &Info : HostDeviceFDefIMap) {
+          if (HostDeviceFCallIMap.count(Info.first) &&
+              ProcessedFile.count(Info.second.first))
+            ReProcessFile.emplace(Info.second.first);
+        }
+        for (auto &Info : HostDeviceFCallIMap) {
+          if (HostDeviceFDefIMap.count(Info.first) &&
+              ProcessedFile.count(Info.second.first))
+            ReProcessFile.emplace(Info.second.first);
+        }
+        for (auto &Info : HostDeviceFDeclIMap) {
+          if (HostDeviceFDefIMap.count(Info.first) &&
+              HostDeviceFCallIMap.count(Info.first) &&
+              ProcessedFile.count(Info.second.first))
+            ReProcessFile.emplace(Info.second.first);
+        }
+      }
+    }
+  }
+  void cacheFileRepl(std::string FilePath, std::shared_ptr<ExtReplacements> Repl){
+      FileReplCache[FilePath] = Repl;
+  }
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
-    for (auto &File : FileMap)
-      File.second->emplaceReplacements(ReplSets);
+    if(DpctGlobalInfo::isNeedRunAgain())
+      return;
+    for(auto &FileRepl : FileReplCache){
+      FileRepl.second->emplaceIntoReplSet(ReplSets[FileRepl.first]);
+    }
   }
-
   std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
 
   void insertCudaMalloc(const CallExpr *CE);
@@ -1278,7 +1325,31 @@ public:
       M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
     }
   }
-
+  void insertCudaArchPPInfo(SourceLocation SL){
+    auto LocInfo = getLocInfo(SL);
+    CAPPInfoMap.emplace(LocInfo.first, LocInfo.second);
+  }
+  void insertHostDeviceFuncCallInfo(std::string &&FuncName, std::pair<std::string, unsigned int> &&Info){
+    HostDeviceFCallIMap.emplace(std::move(FuncName), std::move(Info));
+  }
+  void insertHostDeviceFuncDefInfo(std::string &&FuncName, std::pair<std::string, HostDeviceFuncInfo> &&Info){
+    HostDeviceFDefIMap.emplace(std::move(FuncName), std::move(Info));
+  }
+  void insertHostDeviceFuncDeclInfo(std::string &&FuncName, std::pair<std::string, HostDeviceFuncInfo> &&Info){
+    HostDeviceFDeclIMap.emplace(std::move(FuncName), std::move(Info));
+  }
+  CudaArchPPMap &getCudaArchPPInfoMap(){
+    return CAPPInfoMap;
+  }
+  HDCallMap &getHostDeviceFuncCallInfoMap(){
+    return HostDeviceFCallIMap;
+  }
+  HDDefMap &getHostDeviceFuncDefInfoMap(){
+    return HostDeviceFDefIMap;
+  }
+  HDDeclMap &getHostDeviceFuncDeclInfoMap(){
+    return HostDeviceFDeclIMap;
+  }
   void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
   void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
@@ -1668,6 +1739,7 @@ public:
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
   }
+
   static unsigned int getCudaBuiltinXDFIIndexThenInc() {
     unsigned int Res = CudaBuiltinXDFIIndex;
     ++CudaBuiltinXDFIIndex;
@@ -1687,6 +1759,18 @@ public:
 
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
+
+  static void setFFTSetStreamFlag(bool Flag) { HasFFTSetStream = Flag; }
+  static bool getFFTSetStreamFlag() { return HasFFTSetStream; }
+  static void setRunRound(unsigned int Round) { RunRound = Round; }
+  static unsigned int getRunRound() { return RunRound; }
+  static void setNeedRunAgain(bool NRA){ NeedRunAgain = NRA; }
+  static bool isNeedRunAgain() { return NeedRunAgain; }
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> &getFileReplCache(){
+    return FileReplCache;
+  }
+  void resetInfo();
+
 private:
   DpctGlobalInfo();
 
@@ -1840,6 +1924,47 @@ private:
   static unsigned int CudaBuiltinXDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaBuiltinXDFIMap;
+  static bool HasFFTSetStream;
+  static std::unordered_multimap<std::string, unsigned int> CAPPInfoMap;
+  static std::unordered_multimap<std::string, std::pair<std::string, unsigned int>> HostDeviceFCallIMap;
+  static std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>> HostDeviceFDefIMap;
+  static std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>> HostDeviceFDeclIMap;
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> FileReplCache;
+  static std::set<std::string> ReProcessFile;
+  static std::set<std::string> ProcessedFile;
+  static bool NeedRunAgain;
+  static unsigned int RunRound;
+};
+
+/// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
+/// For template dependent FunctionDecl, generate name with pattern
+/// "QuailifiedName@FunctionType".
+/// e.g.: template<class T> void test(T *int)
+/// -> test@void (type-parameter-0-1 *)
+class DpctNameGenerator {
+  ASTNameGenerator G;
+  PrintingPolicy PP;
+
+  void printName(const FunctionDecl *FD, llvm::raw_ostream &OS) {
+    if (G.writeName(FD, OS)) {
+      FD->printQualifiedName(OS, PP);
+      OS << "@";
+      FD->getType().print(OS, PP);
+    }
+  }
+
+public:
+  DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
+  explicit DpctNameGenerator(ASTContext &Ctx)
+      : G(Ctx), PP(Ctx.getPrintingPolicy()) {
+    PP.PrintCanonicalTypes = true;
+  }
+  std::string getName(const FunctionDecl*D) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    printName(D, OS);
+    return OS.str();
+  }
 };
 
 class TemplateArgumentInfo;
@@ -3034,6 +3159,7 @@ public:
     return FuncInfo;
   }
   void emplaceReplacement();
+  static void reset() { FuncInfoMap.clear(); };
 
 private:
   using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;

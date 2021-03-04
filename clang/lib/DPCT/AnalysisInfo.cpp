@@ -17,15 +17,14 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/AST/Mangle.h"
-
+#include "clang/Tooling/Tooling.h"
 #include <deque>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 namespace clang {
 extern std::function<bool(SourceLocation)> IsInRootFunc;
-
+extern std::function<unsigned int()> GetRunRound;
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
@@ -85,17 +84,68 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
+std::unordered_map<std::string, FFTExecAPIInfo> DpctGlobalInfo::FFTExecAPIInfoMap;
 std::unordered_map<std::string, FFTHandleInfo>
     DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaBuiltinXDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaBuiltinXDFIMap;
-
+bool DpctGlobalInfo::HasFFTSetStream = false;
+unsigned int DpctGlobalInfo::RunRound = 0;
+bool DpctGlobalInfo::NeedRunAgain = false;
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
+CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
+HDCallMap DpctGlobalInfo::HostDeviceFCallIMap;
+HDDefMap DpctGlobalInfo::HostDeviceFDefIMap;
+HDDeclMap DpctGlobalInfo::HostDeviceFDeclIMap;
+std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
+    DpctGlobalInfo::FileReplCache;
+std::set<std::string> DpctGlobalInfo::ReProcessFile;
+std::set<std::string> DpctGlobalInfo::ProcessedFile;
+
+void DpctGlobalInfo::resetInfo() {
+  FileMap.clear();
+  PrecAndDomPairSet.clear();
+  FFTTypeSet.clear();
+  DeviceRNGReturnNumSet.clear();
+  HostRNGEngineTypeSet.clear();
+  KCIndentWidthMap.clear();
+  LocationInitIndexMap.clear();
+  ExpansionRangeToMacroRecord.clear();
+  EndifLocationOfIfdef.clear();
+  ConditionalCompilationLoc.clear();
+  MacroTokenToMacroDefineLoc.clear();
+  FunctionCallInMacroMigrateRecord.clear();
+  EndOfEmptyMacros.clear();
+  BeginOfEmptyMacros.clear();
+  FileRelpsMap.clear();
+  DigestMap.clear();
+  MacroDefines.clear();
+  CurrentMaxIndex = 0;
+  CurrentIndexInRule = 0;
+  IncludingFileSet.clear();
+  FileSetInCompiationDB.clear();
+  GlobalVarNameSet.clear();
+  HasFoundDeviceChanged = false;
+  HelperFuncReplInfoMap.clear();
+  HelperFuncReplInfoIndex = 1;
+  TempVariableDeclCounterMap.clear();
+  TempVariableHandledSet.clear();
+  UsingDRYPattern = true;
+  SpBLASUnsupportedMatrixTypeFlag = false;
+  FFTExecAPIInfoMap.clear();
+  FFTHandleInfoMap.clear();
+  HasFFTSetStream = false;
+  NeedRunAgain = false;
+}
 
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
+  GetRunRound = DpctGlobalInfo::getRunRound;
+  tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
+  tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
+  tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
 }
 
 std::shared_ptr<KernelCallExpr>
@@ -187,6 +237,18 @@ void DpctFileInfo::setDim() {
 void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+}
+void DpctFileInfo::postProcess(){
+  if(!isInRoot())
+    return;
+  for (auto &D : FuncMap)
+    D.second->emplaceReplacement();
+  if(!Repls->empty()){
+    Repls->postProcess();
+    if(DpctGlobalInfo::getRunRound() == 0){
+      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
+    }
+  }
 }
 
 void DpctFileInfo::buildReplacements() {
@@ -312,12 +374,8 @@ void DpctFileInfo::buildReplacements() {
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
-  if(!isInRoot())
-    return;
-  for (auto &D : FuncMap)
-    D.second->emplaceReplacement();
-  if(!Repls.empty())
-    Repls.emplaceIntoReplSet(ReplSet[FilePath]);
+  if(!Repls->empty())
+    Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
@@ -2069,37 +2127,6 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
 
   newConstVarInit(Var);
 }
-
-/// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
-/// For template dependent FunctionDecl, generate name with pattern
-/// "QuailifiedName@FunctionType".
-/// e.g.: template<class T> void test(T *int)
-/// -> test@void (type-parameter-0-1 *)
-class DpctNameGenerator {
-  ASTNameGenerator G;
-  PrintingPolicy PP;
-
-  void printName(const FunctionDecl *FD, llvm::raw_ostream &OS) {
-    if (G.writeName(FD, OS)) {
-      FD->printQualifiedName(OS, PP);
-      OS << "@";
-      FD->getType().print(OS, PP);
-    }
-  }
-
-public:
-  DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
-  explicit DpctNameGenerator(ASTContext &Ctx)
-      : G(Ctx), PP(Ctx.getPrintingPolicy()) {
-    PP.PrintCanonicalTypes = true;
-  }
-  std::string getName(const FunctionDecl *D) {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    printName(D, OS);
-    return OS.str();
-  }
-};
 
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
