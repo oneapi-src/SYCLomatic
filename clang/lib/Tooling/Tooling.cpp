@@ -617,6 +617,23 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
                 llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+
+      /// TODO: When supporting Driver API migration, dpct needs to migrate the
+      ///       source file(s) which is built by --cubin/--ptx option as module
+      ///       file(s).
+
+      // To remove --cubin/--ptx option from command line is to
+      // avoid parsing error msgs like: "error: unknown argument: '-ptx'" or
+      // "error: unknown argument: '-cubin'".
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx") {
+          CommandLine.erase(CommandLine.begin() + Index--);
+        }
+        if (CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
+          CommandLine.erase(CommandLine.begin() + Index--);
+        }
+      }
+
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {
           // To convert the relative path to absolute path.
