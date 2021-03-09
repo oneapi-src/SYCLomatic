@@ -2531,6 +2531,7 @@ bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
   }
   return false;
 }
+
 const CompoundStmt *
 findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   const CompoundStmt *LatestCS = nullptr;
@@ -2574,5 +2575,21 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   }
 
   return LatestCS;
+}
+
+bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    getCombinedStrFromLoc(BeginLoc));
+  auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    getCombinedStrFromLoc(EndLoc));
+  // If any of begin/end is not in the macro or the begin is not the 1st token
+  // or the end is not the last macro
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItEnd == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItBegin->second->TokenIndex != 0 ||
+      ItEnd->second->TokenIndex != ItEnd->second->NumTokens - 1) {
+    return true;
+  }
+  return false;
 }
 

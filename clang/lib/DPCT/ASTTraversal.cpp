@@ -196,6 +196,44 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                 MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
       }
     }
+
+    // If PredefinedStreamName is used with concatinated macro token,
+    // detect the previous macro expansion and
+    std::string MacroNameStr =
+        MacroNameTok.getIdentifierInfo()->getName().str();
+    if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
+        MapNames::PredefinedStreamName.end()) {
+      // Currently, only support examples like,
+      // #define CONCATE(name) cuda##name
+      // which contains 3 tokens and the 2nd token is ##.
+      // To support more complicated cases like,
+      // #define CONCATE(name1, name2) cuda##name1##name2
+      // will need to calculate the complete replaced string of the previous macro.
+      if (std::get<0>(dpct::DpctGlobalInfo::LastMacroRecord) == 3 &&
+          std::get<1>(dpct::DpctGlobalInfo::LastMacroRecord) == "hashhash") {
+        auto DefRange = getDefinitionRange(
+            std::get<2>(dpct::DpctGlobalInfo::LastMacroRecord).getBegin(),
+            std::get<2>(dpct::DpctGlobalInfo::LastMacroRecord).getEnd());
+        auto Length = Lexer::MeasureTokenLength(
+            DefRange.getEnd(), SM,
+            dpct::DpctGlobalInfo::getContext().getLangOpts());
+        Length += SM.getDecomposedLoc(DefRange.getEnd()).second -
+                  SM.getDecomposedLoc(DefRange.getBegin()).second;
+        TransformSet.emplace_back(new ReplaceText(
+            DefRange.getBegin(), Length, "&dpct::get_default_queue()"));
+      }
+    }
+
+    // Record (#tokens, name of the 2nd token, range) as a tuple
+    SourceRange LastRange = Range;
+    dpct::DpctGlobalInfo::LastMacroRecord =
+        std::make_tuple<unsigned int, std::string, SourceRange>(
+            MD.getMacroInfo()->getNumTokens(),
+            MD.getMacroInfo()->getNumTokens() >= 3
+                ? std::string(
+                      MD.getMacroInfo()->getReplacementToken(1).getName())
+                : "",
+            std::move(LastRange));
   } else {
     // Extend the Range to include comments/whitespaces before next token
     auto EndLoc = Range.getEnd();
@@ -2253,52 +2291,6 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
-                                  std::string *TypeStrRemovePrefix = nullptr) {
-  // divide TypeStr into elements, separated by whitespace
-  std::istringstream ISS(TypeStr);
-  std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
-                                std::istream_iterator<std::string>());
-  auto it = std::remove_if(Strs.begin(), Strs.end(), [](llvm::StringRef Str) {
-    return (Str.contains("&") || Str.contains("*"));
-  });
-  if (it != Strs.end())
-    Strs.erase(it);
-
-  // append possible '>' at the end to the previous element
-  while (Strs.size() > 1 && Strs.back() == ">") {
-    Strs[Strs.size() - 2] += Strs.back();
-    Strs.pop_back();
-  }
-
-  std::string TypeName = Strs.back();
-  // remove possible template parameters from TypeName
-  size_t bracketBeginPos = TypeName.find('<');
-  if (bracketBeginPos != std::string::npos) {
-    size_t bracketEndPos = TypeName.rfind('>');
-    TypeName.erase(bracketBeginPos, bracketEndPos - bracketBeginPos + 1);
-  }
-  if (TypeStrRemovePrefix != nullptr)
-    *TypeStrRemovePrefix = TypeName;
-  SrcAPIStaticsMap[TypeName]++;
-  auto Search = MapNames::TypeNamesMap.find(TypeName);
-  if (Search == MapNames::TypeNamesMap.end())
-    return "";
-
-  std::string Replacement = TypeStr;
-  if (Replacement.find(TypeName) == std::string::npos)
-    return "";
-
-  Replacement = Replacement.substr(Replacement.find(TypeName));
-  if (IsVarDecl) {
-    return Replacement.replace(0, TypeName.length(), Search->second);
-  } else {
-    Replacement.replace(0, TypeName.length(), Search->second);
-  }
-
-  return Replacement;
-}
-
 template <typename T>
 bool getLocation(const Type *TypePtr, SourceLocation &SL) {
   auto TType = TypePtr->getAs<T>();
@@ -2814,22 +2806,40 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+
+    // if TL is the T in
+    // template<typename T> void foo(T a);
+    if (TL->getTypeLocClass() == clang::TypeLoc::SubstTemplateTypeParm) {
+      return;
+    }
+
+    auto TypeStr =
+        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
+
     if (ProcessedTypeLocs.find(*TL) != ProcessedTypeLocs.end())
       return;
 
-    auto BeginLoc = TL->getBeginLoc();
+    // when the following code is not in inroot
+    // #define MACRO_SHOULD_NOT_BE_MIGRATED (MatchedType)3
+    // Even if MACRO_SHOULD_NOT_BE_MIGRATED used in inroot, DPCT should not
+    // migrate MatchedType.
+    if (!DpctGlobalInfo::isInRoot(SM->getSpellingLoc(TL->getBeginLoc())) &&
+      isPartOfMacroDef(SM->getSpellingLoc(TL->getBeginLoc()),
+        SM->getSpellingLoc(TL->getBeginLoc()))) {
+      return;
+    }
 
-    if (BeginLoc.isMacroID()) {
-      auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-      if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-        BeginLoc = SM->getExpansionLoc(BeginLoc);
-      } else {
-        BeginLoc = SpellingLocation;
-      }
+    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
+    auto BeginLoc = Range.getBegin();
+    auto EndLoc = Range.getEnd();
+
+    // WA for concatinated macro token
+    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
+      BeginLoc = SM->getExpansionRange(TL->getBeginLoc()).getBegin();
+      EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
     }
 
     if (isDeviceRandomStateType(TL, BeginLoc)) {
-      std::string TypeStr = TL->getType().getAsString();
       auto P = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
       DpctGlobalInfo::getInstance().insertDeviceRandomStateTypeInfo(
           BeginLoc,
@@ -2839,7 +2849,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    if (TL->getType().getAsString() == "curandGenerator_t") {
+    if (TypeStr == "curandGenerator_t") {
       DpctGlobalInfo::getInstance().insertHostRandomEngineTypeInfo(
           BeginLoc,
           Lexer::MeasureTokenLength(
@@ -2847,7 +2857,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    if (TL->getType().getAsString() == "cufftHandle") {
+    if (TypeStr == "cufftHandle") {
       DpctGlobalInfo::getInstance().insertFFTDescriptorTypeInfo(
           BeginLoc,
           Lexer::MeasureTokenLength(
@@ -2865,141 +2875,141 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    Token Tok;
-    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-    if (Tok.isAnyIdentifier()) {
 
-      std::string TypeStr = Tok.getRawIdentifier().str();
-      if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
-        auto ETC = TL->getAs<ElaboratedTypeLoc>();
-        auto NTL = ETC.getNamedTypeLoc();
+    if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
+      auto ETC = TL->getAs<ElaboratedTypeLoc>();
+      auto NTL = ETC.getNamedTypeLoc();
 
-        if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
-          auto TSL =
-              NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
-          if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
-            return;
-          }
-        } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
-          auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
-
-          const std::string TyName =
-              dpct::DpctGlobalInfo::getTypeName(TSL.getType());
-          std::string Replacement =
-              MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
-
-          if (!Replacement.empty()) {
-            emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
-                                                   std::move(Replacement)));
-            return;
-          }
+      if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+        auto TSL =
+            NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+        if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
+          return;
         }
-      } else if (TL->getTypeLocClass() ==
-                 clang::TypeLoc::TemplateSpecialization) {
-        // To process the case like "typename
-        // thrust::device_vector<int>::iterator itr;".
-        auto ND = DpctGlobalInfo::findAncestor<NamedDecl>(TL);
-        if (ND) {
-          auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
-          if (replaceTemplateSpecialization(SM, LOpts, ND->getBeginLoc(),
-                                            TSL)) {
-            return;
-          }
+      } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
+        auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
+
+        const std::string TyName =
+            dpct::DpctGlobalInfo::getTypeName(TSL.getType());
+        std::string Replacement =
+            MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
+
+        if (!Replacement.empty()) {
+          emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
+                                                  std::move(Replacement)));
+          return;
         }
       }
-
-      std::string Str =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
-      // Add '#include <complex>' directive to the file only once
-      if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
-        DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
-      }
-
-      if (TypeStr == "identity") {
-        emplaceTransformation(new ReplaceToken(
-            TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-                TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
-                dpct::DpctGlobalInfo::getContext().getLangOpts())),
-            TL->getEndLoc(), ""));
-      }
-
-      const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
-      if (TypeStr == "cusparseMatDescr_t" && DS) {
-        for (auto I : DS->decls()) {
-          const VarDecl *VDI = dyn_cast<VarDecl>(I);
-          if (VDI && VDI->hasInit()) {
-            if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
-              const Expr *IE = VDI->getInit();
-              // cusparseMatDescr_t descr = InitExpr ;
-              //                         |          |
-              //                       Begin       End
-              SourceLocation End =
-                  IE->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-                      SM->getExpansionLoc(IE->getEndLoc()), *SM,
-                      DpctGlobalInfo::getContext().getLangOpts()));
-
-              SourceLocation Begin = IE->getEndLoc().getLocWithOffset(-1);
-              auto C = SM->getCharacterData(Begin);
-              int Offset = 0;
-              while (*C != '=') {
-                C--;
-                Offset--;
-              }
-              Begin = Begin.getLocWithOffset(Offset);
-              unsigned int Len = SM->getDecomposedLoc(End).second -
-                                 SM->getDecomposedLoc(Begin).second;
-              emplaceTransformation(new ReplaceText(Begin, Len, ""));
-            }
-          }
+    } else if (TL->getTypeLocClass() ==
+                clang::TypeLoc::TemplateSpecialization) {
+      // To process the case like "typename
+      // thrust::device_vector<int>::iterator itr;".
+      auto ND = DpctGlobalInfo::findAncestor<NamedDecl>(TL);
+      if (ND) {
+        auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
+        if (replaceTemplateSpecialization(SM, LOpts, ND->getBeginLoc(),
+                                          TSL)) {
+          return;
         }
-      }
-
-      const DeclaratorDecl *DD = nullptr;
-      const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
-      const FieldDecl *FieldD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
-      const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
-      if (FD &&
-          (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
-        if (TL->getType().getAsString().find("cublasHandle_t") !=
-            std::string::npos)
-          report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
-      }
-
-      const Expr *Init = nullptr;
-
-      if (VarD) {
-        DD = VarD;
-        if (VarD->hasInit())
-          Init = VarD->getInit();
-      } else if (FieldD) {
-        DD = FieldD;
-        if (FieldD->hasInClassInitializer())
-          Init = FieldD->getInClassInitializer();
-      }
-
-      auto IsTypeInInitializer = [&]() -> bool {
-        if (!Init)
-          return false;
-        if (TL->getBeginLoc() >= Init->getBeginLoc() &&
-            TL->getEndLoc() <= Init->getEndLoc())
-          return true;
-        return false;
-      };
-
-      bool SpecialCaseHappened = false;
-      if (DD && !IsTypeInInitializer()) {
-        if (TL->getType().getAsString().find("cudaStream_t") !=
-            std::string::npos) {
-          processCudaStreamType(DD, SM, SpecialCaseHappened);
-        }
-      }
-      if (!Str.empty() && !SpecialCaseHappened) {
-        SrcAPIStaticsMap[TypeStr]++;
-        emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-        return;
       }
     }
+
+    std::string Str =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+    // Add '#include <complex>' directive to the file only once
+    if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
+    }
+
+    if (TypeStr.rfind("identity", 0) == 0) {
+      emplaceTransformation(new ReplaceToken(
+          TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+              TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
+              dpct::DpctGlobalInfo::getContext().getLangOpts())),
+          TL->getEndLoc(), ""));
+    }
+
+    const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
+    if (TypeStr == "cusparseMatDescr_t" && DS) {
+      for (auto I : DS->decls()) {
+        const VarDecl *VDI = dyn_cast<VarDecl>(I);
+        if (VDI && VDI->hasInit()) {
+          if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
+            const Expr *IE = VDI->getInit();
+            // cusparseMatDescr_t descr = InitExpr ;
+            //                         |          |
+            //                       Begin       End
+            SourceLocation End =
+                IE->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                    SM->getExpansionLoc(IE->getEndLoc()), *SM,
+                    DpctGlobalInfo::getContext().getLangOpts()));
+
+            SourceLocation Begin = IE->getEndLoc().getLocWithOffset(-1);
+            auto C = SM->getCharacterData(Begin);
+            int Offset = 0;
+            while (*C != '=') {
+              C--;
+              Offset--;
+            }
+            Begin = Begin.getLocWithOffset(Offset);
+            unsigned int Len = SM->getDecomposedLoc(End).second -
+                                SM->getDecomposedLoc(Begin).second;
+            emplaceTransformation(new ReplaceText(Begin, Len, ""));
+          }
+        }
+      }
+    }
+
+    const DeclaratorDecl *DD = nullptr;
+    const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
+    const FieldDecl *FieldD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
+    const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
+    if (FD &&
+        (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
+      if (TL->getType().getAsString().find("cublasHandle_t") !=
+          std::string::npos)
+        report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
+    }
+
+    const Expr *Init = nullptr;
+
+    if (VarD) {
+      DD = VarD;
+      if (VarD->hasInit())
+        Init = VarD->getInit();
+    } else if (FieldD) {
+      DD = FieldD;
+      if (FieldD->hasInClassInitializer())
+        Init = FieldD->getInClassInitializer();
+    }
+
+    auto IsTypeInInitializer = [&]() -> bool {
+      if (!Init)
+        return false;
+      if (TL->getBeginLoc() >= Init->getBeginLoc() &&
+          TL->getEndLoc() <= Init->getEndLoc())
+        return true;
+      return false;
+    };
+
+    bool SpecialCaseHappened = false;
+    if (DD && !IsTypeInInitializer()) {
+      if (TL->getType().getAsString().find("cudaStream_t") !=
+          std::string::npos) {
+        processCudaStreamType(DD, SM, SpecialCaseHappened);
+      }
+    }
+    if (!Str.empty() && !SpecialCaseHappened) {
+      SrcAPIStaticsMap[TypeStr]++;
+      auto Len = Lexer::MeasureTokenLength(
+          EndLoc, *SM, DpctGlobalInfo::getContext().getLangOpts());
+      Len += SM->getDecomposedLoc(EndLoc).second -
+             SM->getDecomposedLoc(BeginLoc).second;
+      emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Str)));
+      return;
+    }
   }
+
   if (auto VD =
           getNodeAsType<VarDecl>(Result, "useDefaultVarDeclInTemplateArg")) {
     auto TL = VD->getTypeSourceInfo()->getTypeLoc();
@@ -3049,20 +3059,13 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   SourceManager *SM = Result.SourceManager;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
-    auto BeginLoc = TL->getBeginLoc();
+    auto BeginLoc = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
 
     bool IsInScratchspace = false;
-    if (BeginLoc.isMacroID()) {
-      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(BeginLoc))) {
-        BeginLoc = SM->getImmediateExpansionRange(BeginLoc).getBegin();
-        IsInScratchspace = true;
-      }
-      auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-      if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-        BeginLoc = SM->getExpansionLoc(BeginLoc);
-      } else {
-        BeginLoc = SpellingLocation;
-      }
+    // WA for concatinated macro token
+    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
+      BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
+      IsInScratchspace = true;
     }
 
     const FieldDecl *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
@@ -3602,16 +3605,12 @@ void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {
-    auto BeginLoc = TL->getBeginLoc();
+    auto BeginLoc = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
     SourceManager *SM = Result.SourceManager;
 
-    if (BeginLoc.isMacroID()) {
-      auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-      if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-        BeginLoc = SM->getExpansionLoc(BeginLoc);
-      } else {
-        BeginLoc = SpellingLocation;
-      }
+    // WA for concatinated macro token
+    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
+      BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
     }
 
     Token Tok;

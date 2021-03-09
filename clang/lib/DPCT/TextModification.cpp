@@ -67,7 +67,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   const SourceManager &SM = Context.getSourceManager();
-  auto Range = getStmtExpansionSourceRange(TheStmt);
+  auto Range = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
   SourceLocation Begin(Range.getBegin()), End(Range.getEnd());
 
   // If ReplaceStmt replaces calls to compatibility APIs, record the
@@ -114,7 +114,6 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       }
     }
 
-
     auto CallExprLength =
         SM.getCharacterData(End) - SM.getCharacterData(Begin) +
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
@@ -136,8 +135,14 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    auto R = std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
-                                              this);
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto LastTokenLength =
+        Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
+    auto CallExprLength = SM.getDecomposedLoc(End).second -
+                          SM.getDecomposedLoc(Begin).second +
+                          LastTokenLength;
+    auto R = std::make_shared<ExtReplacement>(
+        SM, Begin, CallExprLength, ReplacementString, this);
     R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
     R->setInsertPosition(InsertPos);
     return R;

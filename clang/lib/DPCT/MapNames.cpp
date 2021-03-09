@@ -3246,3 +3246,11 @@ const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
 #include "APINamesWarp.inc"
 #undef ENTRY_WARP
 };
+
+
+const MapNames::SetTy MapNames::PredefinedStreamName{
+    "cudaStreamDefault",
+    "cudaStreamNonBlocking",
+    "cudaStreamLegacy",
+    "cudaStreamPerThread"
+};

@@ -379,6 +379,7 @@ public:
   static const MapNames::MapTy MathRewriterMap;
 
   static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
+  static const MapNames::SetTy PredefinedStreamName;
 };
 
 class MigrationStatistics {

@@ -31,16 +31,18 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
   if (!HandleVar)
     return;
 
-  SourceLocation TypeBeginLoc =
-      HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-  if (TypeBeginLoc.isMacroID()) {
-    auto SpellingLocation = SM.getSpellingLoc(TypeBeginLoc);
-    if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-      TypeBeginLoc = SM.getExpansionLoc(TypeBeginLoc);
-    } else {
-      TypeBeginLoc = SpellingLocation;
-    }
+  auto TypeBeginLoc =
+      getDefinitionRange(
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getEndLoc())
+          .getBegin();
+  // WA for concatinated macro token
+  if (SM.isWrittenInScratchSpace(SM.getSpellingLoc(
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc()))) {
+    TypeBeginLoc = SM.getExpansionLoc(
+        HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
   }
+
   unsigned int TypeLength = Lexer::MeasureTokenLength(
       TypeBeginLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
 

@@ -400,11 +400,17 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
           DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
       if (HelperFuncReplInfoIter ==
               DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
-        // Not found HelperFuncReplInfo in the map, it means this place is migrated,
-        // So only the first time will have HelperFuncReplInfo.
-        // In this case, just remove whole replacement.
-        R.second = std::make_shared<ExtReplacement>(
-            FilePath, R.second->getOffset(), 0, "", nullptr);
+        // Cannot found HelperFuncReplInfo in the map, migrate it to default queue
+        NewReplText = NewReplText + "dpct::get_default_queue()" +
+                      std::string(MRes.suffix());
+
+        // Using "NewReplText" to generate a new ExtReplacement, then replace
+        // the old one in the ReplMap
+        auto NewRepl = std::make_shared<ExtReplacement>(
+          FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
+          nullptr);
+        NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
+        R.second = NewRepl;
       } else {
         std::string Text;
         if (getStrReplacingPlaceholder(HFT, Index, Text)) {

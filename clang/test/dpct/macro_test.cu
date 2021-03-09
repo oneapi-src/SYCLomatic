@@ -817,7 +817,7 @@ __global__ void foo16() {
     CALL(CALL(CALL(JJJ)));
 }
 
-// Macro issue here will fix in issue jira
+// [Todo] Macro issue here will fix in issue jira
 void foo17(){
   size_t result1, result2;
   int size = 32;
@@ -827,3 +827,49 @@ void foo17(){
   CUdeviceptr f_D = 0;
   CALL(cuMemAlloc(&f_D, size));
 }
+
+//CHECK: #define CONCATE(name) cuda##name
+//CHECK-NEXT: typedef sycl::queue *stream_t2;
+//CHECK-NEXT: typedef sycl::event event_t2;
+#define CONCATE(name) cuda##name
+typedef CONCATE(Stream_t) stream_t2;
+typedef CONCATE(Event_t) event_t2;
+
+//CHECK: void foo18() {
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:   sycl::event event;
+//CHECK-NEXT:   event.wait_and_throw();
+//CHECK-NEXT:   stream_t2 *stream;
+//CHECK-NEXT:   stream_t2 stream2;
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   unsigned int flags;
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   int priority;
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   dev_ct1.destroy_queue(stream2);
+//CHECK-NEXT: }
+void foo18(){
+  cudaEvent_t event;
+  CONCATE(EventSynchronize)(event);
+  stream_t2 *stream;
+  stream_t2 stream2;
+  CONCATE(StreamCreate)(stream);
+  unsigned int flags;
+  CONCATE(StreamCreateWithFlags)(stream, flags);
+  int priority;
+  CONCATE(StreamCreateWithPriority)(stream, flags, priority);
+  CONCATE(StreamDestroy)(stream2);
+}
+
+// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
+// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
+// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+static const int streamDefault2 = cudaStreamDefault;
+static const int streamDefault = CALL(CONCATE(StreamDefault));
+static const int streamNonBlocking = CONCATE(StreamNonBlocking);

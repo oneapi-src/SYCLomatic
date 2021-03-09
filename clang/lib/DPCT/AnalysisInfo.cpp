@@ -48,6 +48,8 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::tuple<unsigned int, std::string, SourceRange> DpctGlobalInfo::LastMacroRecord =
+  std::make_tuple<unsigned int, std::string, SourceRange>(0, "", SourceRange());
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
