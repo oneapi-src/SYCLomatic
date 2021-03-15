@@ -2544,7 +2544,8 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
       const char *Start = SM->getCharacterData(ETBeginLoc);
       const char *End = SM->getCharacterData(ETEndLoc);
       auto TyLen = End - Start;
-      assert(TyLen > 0);
+      if(TyLen <= 0)
+        return false;
 
       std::string RealTypeNameStr(Start, TyLen);
 
@@ -2582,7 +2583,9 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   const char *Start = SM->getCharacterData(BeginLoc);
   const char *End = SM->getCharacterData(LAngleLoc);
   auto TyLen = End - Start;
-  assert(TyLen > 0);
+  if(TyLen <= 0)
+    return false;
+
   const std::string RealTypeNameStr(Start, TyLen);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
@@ -9497,6 +9500,8 @@ void GlibcMemoryAPIRule::run(
   }
 
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "FreeCallExpr")) {
+    if(CE->getNumArgs() != 1)
+      return;
 
     if (auto IIC = CE->getArg(0)->IgnoreImpCasts()) {
       auto Type = IIC->getType().getAsString();
@@ -11906,13 +11911,18 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
                       "__threadfence_block", "__syncthreads_and",
                       "__syncthreads_or");
   };
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
-                               hasAncestor(functionDecl().bind("FuncDecl"))))
-                    .bind("SyncFuncCall"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
+                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                    hasAttr(attr::CUDAGlobal)))
+                                     .bind("FuncDecl"))))
+          .bind("SyncFuncCall"),
+      this);
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(SyncAPI())), unless(parentStmt()),
-                     hasAncestor(functionDecl().bind("FuncDeclUsed"))))
+                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                    hasAttr(attr::CUDAGlobal)))
+                                     .bind("FuncDeclUsed"))))
           .bind("SyncFuncCallUsed"),
       this);
 }
