@@ -189,6 +189,11 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     auto FilePath = Iter->path();
+
+    // Skip output directory if it is in the in-root directory.
+    if(isChildOrSamePath(OutRoot.str(), FilePath))
+      continue;
+
     bool IsHidden = false;
     for (path::const_iterator PI = path::begin(FilePath),
                               PE = path::end(FilePath);
