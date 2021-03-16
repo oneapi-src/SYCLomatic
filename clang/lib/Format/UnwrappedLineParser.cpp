@@ -3130,8 +3130,21 @@ void UnwrappedLineParser::addUnwrappedLine() {
 #ifdef INTEL_CUSTOMIZATION
   if ((formatRangeGetter() == FormatRange::migrated) && !MustAdd &&
       FormatTok->Previous &&
-      isInSameLine(FormatTok->Previous, FormatTok, SourceMgr))
+      isInSameLine(FormatTok->Previous, FormatTok, SourceMgr)) {
+
+    // Below if-stmt is added to fix CTST-2036.
+    // If a line is devided into 2 parts by some PPDirectives, the calculation
+    // of OpeningLineIndex will be incorrect.
+    // So here althougth we do not add new UnwrappedLine for "Line",
+    // we add PPDirectives into new UnwrappedLines.
+    if (CurrentLines == &Lines && !PreprocessorDirectives.empty()) {
+      CurrentLines->append(
+          std::make_move_iterator(PreprocessorDirectives.begin()),
+          std::make_move_iterator(PreprocessorDirectives.end()));
+      PreprocessorDirectives.clear();
+    }
     return false;
+  }
 #endif
   CurrentLines->push_back(std::move(*Line));
   Line->Tokens.clear();
