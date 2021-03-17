@@ -1785,6 +1785,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// RecognizeTypeRule to emit warning message for known unsupported type
+class RecognizeTypeRule : public NamedMigrationRule<RecognizeTypeRule> {
+public:
+  RecognizeTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 class TextureMemberSetRule : public NamedMigrationRule<TextureMemberSetRule> {
 public:
   TextureMemberSetRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

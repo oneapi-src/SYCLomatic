@@ -12336,6 +12336,43 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(RecognizeAPINameRule)
 
+void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      typeLoc(anyOf(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                        "cusparseSolvePolicy_t", "CUexternalMemory",
+                        "CUexternalSemaphore", "CUgraph", "CUgraphExec",
+                        "CUgraphNode", "CUgraphicsResource"))))),
+                    loc(pointerType(pointee(qualType(hasDeclaration(
+                        namedDecl(hasAnyName("cudaMemcpy3DParms",
+                                             "CUDA_ARRAY_DESCRIPTOR")))))))))
+          .bind("typeloc"),
+      this);
+}
+
+void RecognizeTypeRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "typeloc");
+  if (!TL)
+    return;
+  auto &Context = DpctGlobalInfo::getContext();
+  QualType QTy = TL->getType();
+  std::string TypeName =
+      DpctGlobalInfo::getTypeName(QTy.getUnqualifiedType(), Context);
+  // process pointer type
+  if (!QTy->isTypedefNameType() && QTy->isPointerType()) {
+    std::string PointeeTy = DpctGlobalInfo::getTypeName(
+        QTy->getPointeeType().getUnqualifiedType(), Context);
+    report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false,
+           PointeeTy + " *",
+           "the Intel(R) DPC++ Compatibility Tool doesn't support this type");
+    return;
+  }
+  report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false, TypeName,
+         "the Intel(R) DPC++ Compatibility Tool doesn't support this type");
+}
+
+REGISTER_RULE(RecognizeTypeRule)
+
 void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
   auto ObjectType =
       hasObjectExpression(hasType(namedDecl(hasAnyName("cudaResourceDesc"))));
