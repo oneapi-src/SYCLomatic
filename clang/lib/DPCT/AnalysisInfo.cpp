@@ -90,7 +90,6 @@ std::unordered_map<std::string, FFTHandleInfo>
 unsigned int DpctGlobalInfo::CudaBuiltinXDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaBuiltinXDFIMap;
-bool DpctGlobalInfo::HasFFTSetStream = false;
 unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
 std::set<std::string> DpctGlobalInfo::ModuleFiles;
@@ -138,7 +137,6 @@ void DpctGlobalInfo::resetInfo() {
   SpBLASUnsupportedMatrixTypeFlag = false;
   FFTExecAPIInfoMap.clear();
   FFTHandleInfoMap.clear();
-  HasFFTSetStream = false;
   NeedRunAgain = false;
 }
 

@@ -1791,8 +1791,6 @@ public:
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
-  static void setFFTSetStreamFlag(bool Flag) { HasFFTSetStream = Flag; }
-  static bool getFFTSetStreamFlag() { return HasFFTSetStream; }
   static void setRunRound(unsigned int Round) { RunRound = Round; }
   static unsigned int getRunRound() { return RunRound; }
   static void setNeedRunAgain(bool NRA){ NeedRunAgain = NRA; }
@@ -1955,7 +1953,6 @@ private:
   static unsigned int CudaBuiltinXDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaBuiltinXDFIMap;
-  static bool HasFFTSetStream;
   static std::unordered_multimap<std::string, unsigned int> CAPPInfoMap;
   static std::unordered_multimap<std::string, std::pair<std::string, unsigned int>> HostDeviceFCallIMap;
   static std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>> HostDeviceFDefIMap;

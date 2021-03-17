@@ -7037,32 +7037,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2") {
     std::string Msg = "the function call is redundant in DPC++.";
-    SourceRange SR = getFunctionRange(CE);
-    auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
-               SM->getDecomposedLoc(SR.getBegin()).second;
-    if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
-        SM->isMacroArgExpansion(CE->getEndLoc())) {
-      if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName), Msg);
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName), Msg);
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
-      }
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+             MapNames::ITFName.at(FuncName), Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, "0"));
     } else {
-      if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName), Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, "0"));
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName), Msg);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, ""));
-      }
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName), Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, ""));
     }
   } else if (FuncName == "cublasSetVector" || FuncName == "cublasGetVector" ||
              FuncName == "cublasSetVectorAsync" ||
@@ -8265,10 +8247,17 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaGetLastError" ||
              FuncName == "cudaPeekAtLastError") {
-    report(CE->getBeginLoc(),
-           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, false,
-           MapNames::ITFName.at(FuncName));
-    emplaceTransformation(new ReplaceStmt(CE, "0"));
+    if (IsAssigned) {
+      report(CE->getBeginLoc(),
+             Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, false,
+             MapNames::ITFName.at(FuncName));
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName),
+             "the function call is redundant in DPC++.");
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, ""));
+    }
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
     // Insert warning messages into the spelling locations in case
@@ -8604,7 +8593,11 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   // Insert the helper variable right after the event variables
   static std::set<std::pair<const Decl *, std::string>> DeclDupFilter;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  std::string InsertStr = getNL();
+  std::string InsertStr;
+  if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
+    InsertStr += "\\";
+  }
+  InsertStr += getNL();
   InsertStr += getIndent(MD->getBeginLoc(), SM).str();
   InsertStr += "std::chrono::time_point<std::chrono::steady_clock> ";
   InsertStr += getTimePointNameForEvent(CE->getArg(0), true);

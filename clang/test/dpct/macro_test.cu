@@ -903,3 +903,59 @@ void foo19(){
   CBTTA(tex42,a42);
   CBTTA2(tex42,a42,tex42.channelDesc);
 }
+
+//     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
+//CHECK-NEXT:  sycl::event start;                                                           \
+//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
+//CHECK-NEXT:  sycl::event stop;                                                            \
+//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
+//CHECK-NEXT:  if (CMC_profile)                                                             \
+//CHECK-NEXT:  {                                                                            \
+//CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
+//CHECK-NEXT:  }
+#define CMC_PROFILING_BEGIN()                                                                                      \
+  cudaEvent_t start;                                                                                               \
+  cudaEvent_t stop;                                                                                                \
+  if (CMC_profile)                                                                                                 \
+  {                                                                                                                \
+    cudaEventCreate(&start);                                                                                       \
+    cudaEventCreate(&stop);                                                                                        \
+    cudaGetLastError();                                                                                            \
+    cudaEventRecord(start);                                                                                        \
+  }
+
+
+//     CHECK:#define CMC_PROFILING_END(lineno)                                              \
+//CHECK-NEXT:  if (CMC_profile)                                                             \
+//CHECK-NEXT:  {                                                                            \
+//CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
+//CHECK-NEXT:    stop.wait_and_throw();                                                     \
+//CHECK-NEXT:    float time = 0.0f;                                                         \
+//CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
+//CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:  }                                                                            \
+//CHECK-NEXT:  int error = 0;
+#define CMC_PROFILING_END(lineno)                                                                          \
+  if (CMC_profile)                                                                                         \
+  {                                                                                                        \
+    cudaEventRecord(stop);                                                                                 \
+    cudaEventSynchronize(stop);                                                                            \
+    float time = 0.0f;                                                                                     \
+    cudaEventElapsedTime(&time, start, stop);                                                              \
+    cudaEventDestroy(start);                                                                               \
+    cudaEventDestroy(stop);                                                                                \
+  }                                                                                                        \
+  cudaError_t error = cudaGetLastError();                                                                  \
+  if (error)                                                                                               \
+  {                                                                                                        \
+    printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC line %d!!!\n", \
+           cudaGetErrorString(error),                                                                      \
+           lineno);                                                                                        \
+    exit(1);                                                                                               \
+  }
+
+void foo20() {
+  bool CMC_profile = true;
+  CMC_PROFILING_BEGIN();
+  CMC_PROFILING_END(__LINE__);
+}
