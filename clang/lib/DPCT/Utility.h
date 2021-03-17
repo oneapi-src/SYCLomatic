@@ -474,6 +474,8 @@ bool isLocInSameMacroArg(clang::SourceLocation Begin,
 const clang::CompoundStmt *
 findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(
     const clang::CallExpr *CE);
+bool isInMacroDefinition(clang::SourceLocation BeginLoc,
+                         clang::SourceLocation EndLoc);
 bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
                       clang::SourceLocation EndLoc);
 void constructUnionFindSetRecursively(

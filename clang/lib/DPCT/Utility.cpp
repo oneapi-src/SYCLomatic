@@ -2577,6 +2577,16 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   return LatestCS;
 }
 
+bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  auto Range = getDefinitionRange(BeginLoc, EndLoc);
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(Range.getBegin()));
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    return false;
+  }
+  return true;
+}
+
 bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
     getCombinedStrFromLoc(BeginLoc));
@@ -2639,17 +2649,30 @@ void constructUnionFindSetRecursively(
   DFIPtr->ConstructGraphVisited = true;
 
   dpct::MemVarMap *CurHead = dpct::MemVarMap::getHead(&(DFIPtr->getVarMap()));
+  if (!CurHead)
+    return;
   for (auto &Item : CallExprMap) {
     auto FuncInfoPtr = Item.second->getFuncInfo();
     if (!FuncInfoPtr)
       continue;
 
-    if (DFIPtr->getVarMap().hasItem() && FuncInfoPtr->getVarMap().hasItem()) {
+    if (FuncInfoPtr->getVarMap().hasItem() && DFIPtr->getVarMap().hasItem()) {
+      dpct::MemVarMap *HeadOfTheChild =
+          dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
+      if (!HeadOfTheChild)
+        continue;
       if (FuncInfoPtr->ConstructGraphVisited) {
-        CurHead->Parent = dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
+        // Update dim
+        HeadOfTheChild->Dim = std::max(HeadOfTheChild->Dim, CurHead->Dim);
+        // Update head node
+        CurHead->Parent = HeadOfTheChild;
         CurHead = CurHead->Parent;
-      } else
-        dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()))->Parent = CurHead;
+      } else {
+        // Update dim
+        CurHead->Dim = std::max(CurHead->Dim, HeadOfTheChild->Dim);
+        // Update head node
+        HeadOfTheChild->Parent = CurHead;
+      }
     }
 
     constructUnionFindSetRecursively(FuncInfoPtr);

@@ -99,7 +99,6 @@ protected:
   // Call is guaranteed not to be nullptr
   const CallExpr *Call;
   StringRef SourceCalleeName;
-  ArgumentAnalysis Analyzer;
 
 protected:
   // All instances of the subclasses can only be constructed by corresponding
@@ -109,6 +108,7 @@ protected:
       : Call(Call), SourceCalleeName(SourceCalleeName) {}
   bool NoRewrite = false;
 public:
+  ArgumentAnalysis Analyzer;
   virtual ~CallExprRewriter() {}
 
   /// This function should be overwrited to implement call expression rewriting.

@@ -201,6 +201,17 @@ struct BuiltinVarInfo {
   std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
 };
 
+struct CGBlockInfo {
+  CGBlockInfo(unsigned int Len, std::vector<std::string> Vars,
+                 std::shared_ptr<DeviceFunctionInfo> DFI)
+      : Len(Len), Vars(Vars), DFI(DFI) {}
+  void buildInfo(std::string FilePath, unsigned int Offset, unsigned int Dim);
+
+  unsigned int Len = 0;
+  std::vector<std::string> Vars;
+  std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
+};
+
 struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
@@ -403,7 +414,7 @@ public:
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
   void buildUnionFindSet();
-  void setDim();
+  void buildUnionFindSetForUncalledFunc();
   void buildKernelInfo();
   void postProcess();
 
@@ -636,6 +647,9 @@ public:
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
   }
+  std::map<unsigned int, CGBlockInfo> &getCGBlockInfoMap() {
+    return CGBlockInfoMap;
+  }
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
@@ -709,6 +723,7 @@ private:
       DeviceRandomGenerateAPIMap;
   std::map<unsigned int, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
+  std::map<unsigned int, CGBlockInfo> CGBlockInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
@@ -1242,14 +1257,13 @@ public:
       // groups. Among different groups, there is no call relationship.
       // If kernel-call is 3D, then set its head's dim to 3D. When generating
       // replacements, find current nodes' head to decide to use which dim.
-      //
-      // Below two for-loop cannot be merged, since the second loop depends the
-      // global info constructed in the first loop.
+
+      // Below two for-loop cannot be merged.
+      // The second loop depends on the info gererated by the first loop.
       for (auto &File : FileMap)
         File.second->buildUnionFindSet();
-      // Set the dim value for the head node (global function).
       for (auto &File : FileMap)
-        File.second->setDim();
+        File.second->buildUnionFindSetForUncalledFunc();
     }
 
     for (auto &File : FileMap)
@@ -1474,6 +1488,9 @@ public:
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
+  void insertCGBlockInfo(SourceLocation SL, unsigned int Len,
+                         std::vector<std::string> Vars,
+                         std::shared_ptr<DeviceFunctionInfo> DFI);
 
   void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
                         unsigned int Offset) {
@@ -2703,7 +2720,7 @@ public:
   MemVarMap() : HasItem(false), HasStream(false) {}
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
-  MemVarMap *Parent = nullptr;
+  MemVarMap *Parent = this;
   bool hasItem() const { return HasItem; }
   bool hasStream() const { return HasStream; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
@@ -2787,7 +2804,7 @@ public:
     const MemVarMap *Head = nullptr;
 
     while (true) {
-      if (CurNode->Parent == nullptr) {
+      if (CurNode->Parent == CurNode) {
         Head = CurNode;
         break;
       }
@@ -2815,7 +2832,11 @@ public:
   }
 
   unsigned int getHeadNodeDim() const {
-    return getHeadWithoutPathCompression(this)->Dim;
+    auto Ptr = getHeadWithoutPathCompression(this);
+    if (Ptr)
+      return Ptr->Dim;
+    else
+      return 3;
   }
 
 private:
@@ -2918,6 +2939,7 @@ inline ParameterStream &
 MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   std::string NDItem = "nd_item<3>";
   if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
+      MemVarMap::getHeadWithoutPathCompression(this) &&
       MemVarMap::getHeadWithoutPathCompression(this)->Dim == 1) {
     NDItem = "nd_item<1>";
   }
@@ -3541,7 +3563,6 @@ public:
   void addAccessorDecl();
   void buildInfo();
   void buildUnionFindSet();
-  void setDim();
   void addReplacements();
   inline std::string getExtraArguments() override {
     if (!getFuncInfo()) {

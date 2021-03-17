@@ -11,6 +11,9 @@
 // k5(1D) -> d8 -> d10(no item)
 // k6(3D) -> d9 -> d10(no item)
 
+// k7(1D) -> d12 -> d14(3D)
+// k8(1D) -> d13 -> d14(3D)
+
 //CHECK:void d1(sycl::nd_item<1> item_ct1);
 //CHECK-NEXT:void d2(sycl::nd_item<1> item_ct1);
 //CHECK-NEXT:void d3(sycl::nd_item<3> item_ct1);
@@ -21,6 +24,9 @@
 //CHECK-NEXT:void d8(sycl::nd_item<1> item_ct1);
 //CHECK-NEXT:void d9(sycl::nd_item<3> item_ct1);
 //CHECK-NEXT:void d10();
+//CHECK-NEXT:void d11(sycl::nd_item<1> item_ct1);
+//CHECK-NEXT:void d12(sycl::nd_item<3> item_ct1);
+//CHECK-NEXT:void d13(sycl::nd_item<3> item_ct1);
 __device__ void d1();
 __device__ void d2();
 __device__ void d3();
@@ -31,6 +37,10 @@ __device__ void d7();
 __device__ void d8();
 __device__ void d9();
 __device__ void d10();
+__device__ void d11();
+__device__ void d12();
+__device__ void d13();
+__device__ void d14();
 
 //CHECK:void k1(sycl::nd_item<1> item_ct1);
 //CHECK-NEXT:void k2(sycl::nd_item<3> item_ct1);
@@ -38,12 +48,16 @@ __device__ void d10();
 //CHECK-NEXT:void k4(sycl::nd_item<3> item_ct1);
 //CHECK-NEXT:void k5(sycl::nd_item<1> item_ct1);
 //CHECK-NEXT:void k6(sycl::nd_item<3> item_ct1);
+//CHECK-NEXT:void k7(sycl::nd_item<3> item_ct1);
+//CHECK-NEXT:void k8(sycl::nd_item<3> item_ct1);
 __global__ void k1();
 __global__ void k2();
 __global__ void k3();
 __global__ void k4();
 __global__ void k5();
 __global__ void k6();
+__global__ void k7();
+__global__ void k8();
 
 //CHECK:void d1(sycl::nd_item<1> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
@@ -231,6 +245,35 @@ __device__ void d11() {
   double c = atan2(acos(threadIdx.x), acos(threadIdx.x));
 }
 
+//CHECK:void d12(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  d14(item_ct1);
+//CHECK-NEXT:}
+__device__ void d12() {
+  int a = threadIdx.x;
+  d14();
+}
+
+//CHECK:void d13(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  d14(item_ct1);
+//CHECK-NEXT:}
+__device__ void d13() {
+  int a = threadIdx.x;
+  d14();
+}
+
+//CHECK:void d14(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  double b = sycl::sqrt((double)(item_ct1.get_local_id(2)));
+//CHECK-NEXT:  double c = sycl::atan2((double)(sycl::acos((double)(item_ct1.get_local_id(0)))), (double)(sycl::acos((double)(item_ct1.get_local_id(1)))));
+//CHECK-NEXT:}
+__device__ void d14() {
+  int a = threadIdx.x;
+  double b = sqrt(threadIdx.x);
+  double c = atan2(acos(threadIdx.z), acos(threadIdx.y));
+}
+
 //CHECK:void k1(sycl::nd_item<1> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
@@ -342,6 +385,24 @@ __global__ void k6() {
   d9();
 }
 
+//CHECK:void k7(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  d12(item_ct1);
+//CHECK-NEXT:}
+__global__ void k7() {
+  int a = threadIdx.x;
+  d12();
+}
+
+//CHECK:void k8(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  d13(item_ct1);
+//CHECK-NEXT:}
+__global__ void k8() {
+  int a = threadIdx.x;
+  d13();
+}
+
 int main() {
   int aa = 2;
   //CHECK:q_ct1.submit(
@@ -405,6 +466,166 @@ int main() {
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   k6<<<dim3(cc), 15>>>();
+
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        k7(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  k7<<<1, 1>>>();
+
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        k8(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  k8<<<1, 1>>>();
   return 0;
 }
 
+//CHECK: #define MM __umul24
+//CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
+//CHECK-NEXT: void foo1(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range().get(0), item_ct1.get_group(0)) + item_ct1.get_local_range().get(0);
+//CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(0), (unsigned int)item_ct1.get_group_range(0));
+//CHECK-NEXT: }
+#define MM __umul24
+#define MUL(a, b) __umul24(a, b)
+__device__ void foo1() {
+  unsigned int      tid = MUL(blockDim.x, blockIdx.x) + blockDim.x;
+  unsigned int      tid2 = MM(blockDim.x, gridDim.x);
+}
+//CHECK: void foo2(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range().get(1), item_ct1.get_group(0)) + item_ct1.get_local_range().get(2);
+//CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(1), (unsigned int)item_ct1.get_group_range(0));
+//CHECK-NEXT: }
+__device__ void foo2() {
+  unsigned int      tid = MUL(blockDim.y, blockIdx.z) + blockDim.x;
+  unsigned int      tid2 = MM(blockDim.y, gridDim.z);
+}
+
+
+//CHECK:void device1(sycl::nd_item<1> item_ct1);
+//CHECK-NEXT:void device2(sycl::nd_item<1> item_ct1);
+__device__ void device1();
+__device__  void device2();
+
+//CHECK:void device1(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(0);
+//CHECK-NEXT:  device2(item_ct1);
+//CHECK-NEXT:}
+__device__ void device1() {
+  int a = threadIdx.x;
+  device2();
+}
+
+//CHECK:void device2(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(0);
+//CHECK-NEXT:  device1(item_ct1);
+//CHECK-NEXT:}
+__device__ void device2() {
+  int a = threadIdx.x;
+  device1();
+}
+
+//CHECK:void global1(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(0);
+//CHECK-NEXT:  device1(item_ct1);
+//CHECK-NEXT:}
+__global__ void global1() {
+  int a = threadIdx.x;
+  device1();
+}
+
+
+int foo3() {
+  //CHECK:dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
+  //CHECK-NEXT:        global1(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global1<<<1,1>>>();
+  return 0;
+}
+
+
+//CHECK:void device3(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(1);
+//CHECK-NEXT:}
+__device__ void device3() {
+  int a = threadIdx.y;
+}
+
+//CHECK:void device4(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  device3(item_ct1);
+//CHECK-NEXT:}
+__device__ void device4() {
+  device3();
+}
+
+//CHECK:void global2(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int a = item_ct1.get_local_id(2);
+//CHECK-NEXT:  device3(item_ct1);
+//CHECK-NEXT:}
+__global__ void global2() {
+  int a = threadIdx.x;
+  device3();
+}
+
+int foo4() {
+  //CHECK:dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        global2(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global2<<<3 ,4>>>();
+  return 0;
+}
+
+
+#define TIDx threadIdx.x
+
+// CHECK: void global3(sycl::nd_item<3> item_ct1) {
+__global__ void global3() {
+  int t = TIDx;
+}
+  
+// CHECK: void global4(sycl::nd_item<3> item_ct1) {
+__global__ void global4() {
+  int t = TIDx;
+}
+
+int foo5() {
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        global3(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global3<<<1,1>>>();
+
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        global4(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global4<<<1,1>>>();
+  return 0;
+}

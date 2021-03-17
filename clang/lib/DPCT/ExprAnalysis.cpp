@@ -465,16 +465,23 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (ItemItr != NdItemMap.end()) {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
-          ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         auto TargetExpr = getTargetExpr();
         auto FD = getImmediateOuterFuncDecl(TargetExpr);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
-        DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
-        addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
-                                       ItemItr->second, "({{NEEDREPLACER",
-                                       std::to_string(Index), "}})"));
+        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x" &&
+            !isInMacroDefinition(TargetExpr->getBeginLoc(),
+                                 TargetExpr->getEndLoc())) {
+          auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
+          addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+                                         ItemItr->second, "({{NEEDREPLACER",
+                                         std::to_string(Index), "}})"));
+        } else {
+          DFI->getVarMap().Dim = 3;
+          addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+                                         ItemItr->second, "(", FieldName, ")"));
+        }
       } else {
         addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
                                        ItemItr->second, "(", FieldName, ")"));
@@ -552,7 +559,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         addExtReplacement(std::make_shared<ExtReplacement>(
             SM, SM.getSpellingLoc(CE->getBeginLoc()),
             getCalleeName(CE).size(), ResultStr, nullptr));
-        applyAllSubExprRepl();
+        Rewriter->Analyzer.applyAllSubExprRepl();
       }
     } else {
       if (Result.hasValue()) {
@@ -568,6 +575,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         else {
           FCIMMR[LocStr] = ResultStr;
           addReplacement(CE, ResultStr);
+          Rewriter->Analyzer.applyAllSubExprRepl();
           return;
         }
       }

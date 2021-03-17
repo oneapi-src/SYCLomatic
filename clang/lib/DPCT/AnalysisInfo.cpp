@@ -228,10 +228,12 @@ void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildUnionFindSet();
 }
-
-void DpctFileInfo::setDim() {
-  for (auto &Kernel : KernelMap)
-    Kernel.second->setDim();
+void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    Info->buildInfo();
+    constructUnionFindSetRecursively(Info);
+  }
 }
 
 void DpctFileInfo::buildKernelInfo() {
@@ -298,6 +300,14 @@ void DpctFileInfo::buildReplacements() {
     if (Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    }
+  }
+  // Below loop will add replacement for this_thread_block API
+  for (auto &Info : CGBlockInfoMap) {
+    auto Ptr = MemVarMap::getHeadWithoutPathCompression(
+        &(Info.second.DFI->getVarMap()));
+    if (Ptr) {
+      Info.second.buildInfo(FilePath, Info.first, Ptr->Dim);
     }
   }
 
@@ -415,6 +425,19 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   if (Iter == M.end()) {
     BuiltinVarInfo BVI(Len, Repl, DFI);
     M.insert(std::make_pair(LocInfo.second, BVI));
+  }
+}
+
+void DpctGlobalInfo::insertCGBlockInfo(
+    SourceLocation SL, unsigned int Len, std::vector<std::string> Vars,
+    std::shared_ptr<DeviceFunctionInfo> DFI) {
+  auto LocInfo = getLocInfo(SL);
+  auto FileInfo = insertFile(LocInfo.first);
+  auto &M = FileInfo->getCGBlockInfoMap();
+  auto Iter = M.find(LocInfo.second);
+  if (Iter == M.end()) {
+    CGBlockInfo CGBI(Len, Vars, DFI);
+    M.insert(std::make_pair(LocInfo.second, CGBI));
   }
 }
 
@@ -886,23 +909,15 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
   return std::shared_ptr<KernelCallExpr>();
 }
 
-void KernelCallExpr::setDim() {
-  if (auto InfoPtr = getFuncInfo()) {
-    if (auto HeadMemVarMapPtr = MemVarMap::getHead(&(InfoPtr->getVarMap()))) {
-      if (InfoPtr->getVarMap().Dim == 3) {
-        HeadMemVarMapPtr->Dim = 3;
-      }
-    } else {
-      llvm_unreachable("The head of current node is not available!");
-    }
-  }
-}
-
 void KernelCallExpr::buildUnionFindSet() {
   if (auto Ptr = getFuncInfo()) {
-    if (GridDim == 1 && BlockDim == 1)
-      Ptr->getVarMap().Dim = 1;
-    else
+    if (GridDim == 1 && BlockDim == 1) {
+      if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
+        Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
+      } else {
+        Ptr->getVarMap().Dim = 1;
+      }
+    } else
       Ptr->getVarMap().Dim = 3;
     constructUnionFindSetRecursively(Ptr);
   }
@@ -2628,6 +2643,22 @@ void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
   std::string R = Repl + std::to_string(ID) + ")";
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Len, R, nullptr));
+}
+void CGBlockInfo::buildInfo(std::string FilePath, unsigned int Offset,
+                               unsigned int Dim) {
+  std::string ReplStr =
+      MapNames::getClNamespace() + "::group<" + std::to_string(Dim) + "> ";
+
+  for (size_t i = 0; i < Vars.size(); ++i) {
+    if (i != 0)
+      ReplStr += ", ";
+    ReplStr += Vars[i];
+    ReplStr += " = ";
+    ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
+  }
+  ReplStr += ";";
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, Offset, Len, ReplStr, nullptr));
 }
 
 bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }

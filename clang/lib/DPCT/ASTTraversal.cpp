@@ -935,20 +935,34 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
         return;
       DFI->setItem();
 
-      if (FieldName == "x") {
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
-                                                             Replacement, DFI);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        if (FieldName == "x") {
+          if (!isInMacroDefinition(DRE->getBeginLoc(), DRE->getEndLoc())) {
+            DpctGlobalInfo::getInstance().insertBuiltinVarInfo(
+                Begin, TyLen, Replacement, DFI);
+            return;
+          } else {
+            Dimension = 2;
+            DFI->getVarMap().Dim = 3;
+          }
+        } else if (FieldName == "y") {
+          Dimension = 1;
+          DFI->getVarMap().Dim = 3;
+        } else if (FieldName == "z") {
+          Dimension = 0;
+          DFI->getVarMap().Dim = 3;
+        } else
           return;
-        } else {
+      } else {
+        if (FieldName == "x") {
           Dimension = 2;
-        }
-      } else if (FieldName == "y")
-        Dimension = 1;
-      else if (FieldName == "z")
-        Dimension = 0;
-      else
-        return;
+        } else if (FieldName == "y")
+          Dimension = 1;
+        else if (FieldName == "z")
+          Dimension = 0;
+        else
+          return;
+      }
 
       Replacement += std::to_string(Dimension);
       Replacement += ")";
@@ -1001,31 +1015,50 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (FieldName == "__fetch_builtin_x") {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        SourceLocation Begin = SM.getExpansionLoc(ME->getBeginLoc());
-        SourceLocation End = SM.getExpansionLoc(ME->getEndLoc());
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (FieldName == "__fetch_builtin_x") {
+        if (!isInMacroDefinition(ME->getBeginLoc(), ME->getEndLoc())) {
+          auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
+          SourceLocation Begin = Range.getBegin();
+          SourceLocation End = Range.getEnd();
 
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, SM, DpctGlobalInfo::getContext().getLangOpts()));
 
-        unsigned int Len =
-            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
-                                                           Replacement, DFI);
-        return;
+          unsigned int Len = SM.getDecomposedLoc(End).second -
+                             SM.getDecomposedLoc(Begin).second;
+          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                             Replacement, DFI);
+          return;
+        } else {
+          Dimension = 2;
+          DFI->getVarMap().Dim = 3;
+        }
+      } else if (FieldName == "__fetch_builtin_y") {
+        Dimension = 1;
+        DFI->getVarMap().Dim = 3;
+      } else if (FieldName == "__fetch_builtin_z") {
+        Dimension = 0;
+        DFI->getVarMap().Dim = 3;
       } else {
-        Dimension = 2;
+        llvm::dbgs() << "[" << getName()
+                     << "] Unexpected field name: " << FieldName;
+        return;
       }
-    } else if (FieldName == "__fetch_builtin_y")
-      Dimension = 1;
-    else if (FieldName == "__fetch_builtin_z")
-      Dimension = 0;
-    else {
-      llvm::dbgs() << "[" << getName()
-                   << "] Unexpected field name: " << FieldName;
-      return;
+    } else {
+      if (FieldName == "__fetch_builtin_x")
+        Dimension = 2;
+      else if (FieldName == "__fetch_builtin_y")
+        Dimension = 1;
+      else if (FieldName == "__fetch_builtin_z")
+        Dimension = 0;
+      else {
+        llvm::dbgs() << "[" << getName()
+                     << "] Unexpected field name: " << FieldName;
+        return;
+      }
     }
+
     Replacement += std::to_string(Dimension);
     Replacement += ")";
   }
@@ -12055,28 +12088,65 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
-      std::string ReplStr{"sycl::group<3> "};
-      for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
-        auto VD = dyn_cast<VarDecl>(*It);
-        if (It != P->decl_begin())
-          ReplStr += ", ";
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
+          !isInMacroDefinition(CE->getBeginLoc(), CE->getEndLoc())) {
         auto &SM = DpctGlobalInfo::getSourceManager();
-        if (VD->getLocation().isMacroID() &&
-            SM.isMacroArgExpansion(VD->getLocation())) {
-          auto VDBegin =
-              SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
-          VDBegin = SM.getSpellingLoc(VDBegin);
-          Token T;
-          Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
-          ReplStr += T.getRawIdentifier().str();
-        } else {
-          ReplStr += VD->getName();
+        std::vector<std::string> Vars;
+        for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
+          auto VD = dyn_cast<VarDecl>(*It);
+          if (VD->getLocation().isMacroID() &&
+              SM.isMacroArgExpansion(VD->getLocation())) {
+            auto VDBegin =
+                SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
+            VDBegin = SM.getSpellingLoc(VDBegin);
+            Token T;
+            Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
+            Vars.push_back(T.getRawIdentifier().str());
+          } else {
+            Vars.push_back(VD->getName().str());
+          }
         }
-        ReplStr += " = ";
-        ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
+
+        auto Begin = P->getBeginLoc();
+        auto End = P->getEndLoc();
+        auto Range = getDefinitionRange(Begin, End);
+        Begin = Range.getBegin();
+        End = Range.getEnd();
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+        unsigned int Len =
+            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+
+        auto FD = getImmediateOuterFuncDecl(P);
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        DpctGlobalInfo::getInstance().insertCGBlockInfo(Begin, Len, Vars, DFI);
+      } else {
+        auto FD = getImmediateOuterFuncDecl(P);
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        DFI->getVarMap().Dim = 3;
+        std::string ReplStr{"sycl::group<3> "};
+        for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
+          auto VD = dyn_cast<VarDecl>(*It);
+          if (It != P->decl_begin())
+            ReplStr += ", ";
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          if (VD->getLocation().isMacroID() &&
+              SM.isMacroArgExpansion(VD->getLocation())) {
+            auto VDBegin =
+                SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
+            VDBegin = SM.getSpellingLoc(VDBegin);
+            Token T;
+            Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
+            ReplStr += T.getRawIdentifier().str();
+          } else {
+            ReplStr += VD->getName();
+          }
+          ReplStr += " = ";
+          ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
+        }
+        ReplStr += ";";
+        emplaceTransformation(new ReplaceStmt(P, std::move(ReplStr)));
       }
-      ReplStr += ";";
-      emplaceTransformation(new ReplaceStmt(P, std::move(ReplStr)));
     } else {
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
