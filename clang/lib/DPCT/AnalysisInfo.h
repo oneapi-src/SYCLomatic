@@ -63,9 +63,11 @@ class KernelCallExpr;
 class DeviceFunctionInfo;
 class CallFunctionExpr;
 class DeviceFunctionDecl;
+class DeviceFunctionDeclInModule;
 class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
+class KernelPrinter;
 
 // This struct saves the engine's type.
 // These rules determine the engine's type:
@@ -1243,6 +1245,14 @@ public:
             LocInfo.second, FTL, Attrs, Specialization, TAList);
   }
 
+  std::shared_ptr<DeviceFunctionDecl> insertDeviceFunctionDeclInModule(
+    const FunctionDecl *FD) {
+    auto LocInfo = getLocInfo(FD);
+    return insertFile(LocInfo.first)
+      ->insertNode<DeviceFunctionDeclInModule, DeviceFunctionDecl>(
+        LocInfo.second, FD);
+  }
+
   // Build kernel and device function declaration replacements and store
   // them.
   void buildReplacements() {
@@ -1774,6 +1784,10 @@ public:
     return nullptr;
   }
 
+  static std::set<std::string> &getModuleFiles() {
+    return ModuleFiles;
+  }
+
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
@@ -1951,6 +1965,7 @@ private:
   static std::set<std::string> ProcessedFile;
   static bool NeedRunAgain;
   static unsigned int RunRound;
+  static std::set<std::string> ModuleFiles;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -3080,6 +3095,8 @@ public:
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
 
 protected:
+  std::string Name;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   inline unsigned getBegin() { return BeginLoc; }
   inline const std::string &getFilePath() { return FilePath; }
   void buildInfo();
@@ -3125,13 +3142,11 @@ private:
   }
   void mergeTextureObjectTypeInfo();
 
-private:
   const std::string FilePath;
   unsigned BeginLoc;
   unsigned ExtraArgLoc;
-  std::string Name;
   std::vector<TemplateArgumentInfo> TemplateArgs;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+
   MemVarMap VarMap;
   bool HasArgs;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
@@ -3146,7 +3161,6 @@ public:
   DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
-
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkUnresolved(const UnresolvedLookupExpr *ULE) {
     return LinkDeclRange(ULE->decls());
@@ -3180,10 +3194,12 @@ public:
   inline std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const {
     return FuncInfo;
   }
-  void emplaceReplacement();
+
+  virtual void emplaceReplacement();
   static void reset() { FuncInfoMap.clear(); };
 
 private:
+  std::shared_ptr<DeviceFunctionInfo> &FuncInfo;
   using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;
 
   static void LinkDecl(const FunctionDecl *FD, DeclList &List,
@@ -3221,9 +3237,8 @@ private:
   void buildReplaceLocInfo(const FunctionDecl *FD);
 
 protected:
+  const std::string FilePath;
   const FormatInfo &getFormatInfo() { return FormatInformation; }
-
-private:
   void buildTextureObjectParamsInfo(const ArrayRef<ParmVarDecl *> &Parms) {
     TextureObjectList.assign(Parms.size(),
                              std::shared_ptr<TextureObjectInfo>());
@@ -3241,14 +3256,11 @@ private:
   virtual std::string getExtraParameters();
 
   unsigned Offset;
-  const std::string FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
   unsigned NonDefaultParamNum;
   bool IsDefFilePathNeeded;
-  std::shared_ptr<DeviceFunctionInfo> &FuncInfo;
-
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
 
@@ -3275,6 +3287,39 @@ private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
   std::string getExtraParameters() override;
+};
+
+class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
+  void insertWrapper();
+  bool HasBody = false;
+  size_t DeclEnd;
+  std::string FuncName;
+  std::vector<std::pair<std::string, std::string>> ParametersInfo;
+  std::shared_ptr<KernelCallExpr> Kernel;
+  void buildParameterInfo(const FunctionDecl *FD);
+  void buildWrapperInfo(const FunctionDecl *FD);
+  void buildCallInfo(const FunctionDecl *FD);
+  std::vector<std::pair<std::string, std::string>> &getParametersInfo() {
+    return ParametersInfo;
+  }
+public:
+  DeviceFunctionDeclInModule(unsigned Offset, const std::string &FilePathIn,
+    const FunctionTypeLoc &FTL,
+    const ParsedAttributes &Attrs,
+    const FunctionDecl *FD)
+    : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, FD) {
+    buildParameterInfo(FD);
+    buildWrapperInfo(FD);
+    buildCallInfo(FD);
+  }
+  DeviceFunctionDeclInModule(unsigned Offset,
+    const std::string &FilePathIn,
+    const FunctionDecl *FD) : DeviceFunctionDecl(Offset, FilePathIn, FD) {
+    buildParameterInfo(FD);
+    buildWrapperInfo(FD);
+    buildCallInfo(FD);
+  }
+  void emplaceReplacement();
 };
 
 // device function info includes parameters num, memory variable and call
@@ -3357,6 +3402,68 @@ private:
   MemVarMap VarMap;
 
   std::vector<std::shared_ptr<TextureTypeInfo>> TextureObjectTypeList;
+};
+
+class KernelPrinter {
+  const std::string NL;
+  std::string Indent;
+  llvm::raw_string_ostream &Stream;
+
+  void incIndent() { Indent += "  "; }
+  void decIndent() { Indent.erase(Indent.length() - 2, 2); }
+
+public:
+  class Block {
+    KernelPrinter &Printer;
+    bool WithBrackets;
+
+  public:
+    Block(KernelPrinter &Printer, bool WithBrackets)
+      : Printer(Printer), WithBrackets(WithBrackets) {
+      if (WithBrackets)
+        Printer.line("{");
+      Printer.incIndent();
+    }
+    ~Block() {
+      Printer.decIndent();
+      if (WithBrackets)
+        Printer.line("}");
+    }
+  };
+
+public:
+  KernelPrinter(const std::string &NL, const std::string &Indent,
+    llvm::raw_string_ostream &OS)
+    : NL(NL), Indent(Indent), Stream(OS) {}
+  std::unique_ptr<Block> block(bool WithBrackets = false) {
+    return std::make_unique<Block>(*this, WithBrackets);
+  }
+  template <class T> KernelPrinter &operator<<(const T &S) {
+    Stream << S;
+    return *this;
+  }
+  template <class... Args> KernelPrinter &line(Args &&... Arguments) {
+    appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
+    return *this;
+  }
+  KernelPrinter &operator<<(const StmtList &Stmts) {
+    for (auto &S : Stmts) {
+      if (!S.Warning.empty()) {
+        line("/*");
+        line(S.Warning);
+        line("*/");
+      }
+      line(S.StmtStr);
+    }
+    return *this;
+  }
+  KernelPrinter &indent() { return (*this) << Indent; }
+  KernelPrinter &newLine() { return (*this) << NL; }
+  std::string str() {
+    auto Result = Stream.str();
+    return Result.substr(Indent.length(),
+      Result.length() - Indent.length() - NL.length());
+  }
 };
 
 // kernel call info is specific CallFunctionExpr, which include info of kernel
@@ -3447,6 +3554,24 @@ private:
       }
     }
 
+    ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
+      : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+      IsUsedAsLvalueAfterMalloc(true),
+      TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+        IsPointer),
+      TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+      IdString(PVD->getName().str() + "_"),
+      Index(PVD->getFunctionScopeIndex()) {
+      auto ArgName = PVD->getNameAsString();
+      ArgString = ArgName;
+
+      if (TextureObjectInfo::isTextureObject(PVD)) {
+        Texture = std::make_shared<CudaLaunchTextureObjectInfo>(PVD, ArgName);
+        Kernel->addTextureObjectArgInfo(Index, Texture);
+      }
+      IsRedeclareRequired = false;
+    }
+
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
         : Texture(Obj) {
       IsPointer = false;
@@ -3481,68 +3606,6 @@ private:
     std::shared_ptr<TextureObjectInfo> Texture;
   };
 
-  class KernelPrinter {
-    const std::string NL;
-    std::string Indent;
-    llvm::raw_string_ostream &Stream;
-
-    void incIndent() { Indent += "  "; }
-    void decIndent() { Indent.erase(Indent.length() - 2, 2); }
-
-  public:
-    class Block {
-      KernelPrinter &Printer;
-      bool WithBrackets;
-
-    public:
-      Block(KernelPrinter &Printer, bool WithBrackets)
-          : Printer(Printer), WithBrackets(WithBrackets) {
-        if (WithBrackets)
-          Printer.line("{");
-        Printer.incIndent();
-      }
-      ~Block() {
-        Printer.decIndent();
-        if (WithBrackets)
-          Printer.line("}");
-      }
-    };
-
-  public:
-    KernelPrinter(const std::string &NL, const std::string &Indent,
-                  llvm::raw_string_ostream &OS)
-        : NL(NL), Indent(Indent), Stream(OS) {}
-    std::unique_ptr<Block> block(bool WithBrackets = false) {
-      return std::make_unique<Block>(*this, WithBrackets);
-    }
-    template <class T> KernelPrinter &operator<<(const T &S) {
-      Stream << S;
-      return *this;
-    }
-    template <class... Args> KernelPrinter &line(Args &&... Arguments) {
-      appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
-      return *this;
-    }
-    KernelPrinter &operator<<(const StmtList &Stmts) {
-      for (auto &S : Stmts) {
-        if (!S.Warning.empty()) {
-          line("/*");
-          line(S.Warning);
-          line("*/");
-        }
-        line(S.StmtStr);
-      }
-      return *this;
-    }
-    KernelPrinter &indent() { return (*this) << Indent; }
-    KernelPrinter &newLine() { return (*this) << NL; }
-    std::string str() {
-      auto Result = Stream.str();
-      return Result.substr(Indent.length(),
-        Result.length() - Indent.length() - NL.length());
-    }
-  };
-
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
   void printSubmitLamda(KernelPrinter &Printer);
@@ -3568,6 +3631,7 @@ public:
     if (!getFuncInfo()) {
       return "";
     }
+
     return getVarMap().getKernelArguments(
         getFuncInfo()->NonDefaultParamNum,
         getFuncInfo()->ParamsNum - getFuncInfo()->NonDefaultParamNum);
@@ -3587,13 +3651,14 @@ public:
   static std::shared_ptr<KernelCallExpr>
   buildFromCudaLaunchKernel(const std::pair<std::string, unsigned> &LocInfo,
                             const CallExpr *);
+  static std::shared_ptr<KernelCallExpr> buildForWrapper(std::string,
+    const FunctionDecl *, std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
 
 private:
   KernelCallExpr(unsigned Offset, const std::string &FilePath)
-      : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
-
+    : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
   void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE) {
@@ -3613,7 +3678,8 @@ private:
     }
   }
   bool isDefaultStream() {
-    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ");
+    return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
+           ExecutionConfig.IsDefaultStream;
   }
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -3649,7 +3715,7 @@ private:
   // true, if migrated DPC++ code block need extra { }
   bool NeedBraces = true;
   struct {
-    std::string Config[4] = {"", "", "", "0"};
+    std::string Config[5] = { "", "", "", "0", "" };
     std::string &GroupSize = Config[0];
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
@@ -3657,11 +3723,15 @@ private:
     bool LocalDirectRef = false, GroupDirectRef = false;
     std::string GroupSizeFor1D = "";
     std::string LocalSizeFor1D = "";
+    std::string &NdRange = Config[4];
+    bool IsDefaultStream = false;
   } ExecutionConfig;
+
+  std::vector<ArgInfo> ArgsInfo;
 
   std::string Event;
   bool IsSync;
-  std::vector<ArgInfo> ArgsInfo;
+
 
   class {
   public:

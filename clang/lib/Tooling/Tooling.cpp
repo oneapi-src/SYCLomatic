@@ -79,6 +79,8 @@ static FileProcessType FileProcessHandle = nullptr;
 static std::set<std::string> *ReProcessFilePtr = nullptr;
 static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
+static std::set<std::string> *ModuleFiles = nullptr;
+
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
@@ -151,7 +153,7 @@ void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-
+void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -659,14 +661,16 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
       // To remove --cubin/--ptx option from command line is to
       // avoid parsing error msgs like: "error: unknown argument: '-ptx'" or
       // "error: unknown argument: '-cubin'".
+      bool IsModuleFile = false;
       for (size_t Index = 0; Index < CommandLine.size(); Index++) {
-        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx") {
+        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx" ||
+            CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
           CommandLine.erase(CommandLine.begin() + Index--);
-        }
-        if (CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
-          CommandLine.erase(CommandLine.begin() + Index--);
+          IsModuleFile = true;
         }
       }
+      if(IsModuleFile)
+        ModuleFiles->insert(File.str());
 
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {

@@ -1421,10 +1421,10 @@ public:
 };
 
 /// Migration rule for device function calls
-class DeviceFunctionCallRule
-    : public NamedMigrationRule<DeviceFunctionCallRule> {
+class DeviceFunctionDeclRule
+    : public NamedMigrationRule<DeviceFunctionDeclRule> {
 public:
-  DeviceFunctionCallRule() {
+  DeviceFunctionDeclRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

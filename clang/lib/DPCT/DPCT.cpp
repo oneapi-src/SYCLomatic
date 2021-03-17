@@ -902,6 +902,8 @@ int runDPCT(int argc, const char **argv) {
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
+  clang::tooling::SetModuleFiles(
+    dpct::DpctGlobalInfo::getModuleFiles());
 #ifdef _WIN32
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);

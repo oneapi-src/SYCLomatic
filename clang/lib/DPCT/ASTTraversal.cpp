@@ -9440,7 +9440,7 @@ void KernelCallRule::removeTrailingSemicolon(
 REGISTER_RULE(KernelCallRule)
 
 // __device__ function call information collection
-void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
       functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))
           .bind("funcDecl");
@@ -9459,7 +9459,7 @@ void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 }
 
-void DeviceFunctionCallRule::run(
+void DeviceFunctionDeclRule::run(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
 
@@ -9495,7 +9495,7 @@ void DeviceFunctionCallRule::run(
   }
 }
 
-REGISTER_RULE(DeviceFunctionCallRule)
+REGISTER_RULE(DeviceFunctionDeclRule)
 
 void GlibcMemoryAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 

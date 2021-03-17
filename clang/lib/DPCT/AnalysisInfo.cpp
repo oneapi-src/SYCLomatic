@@ -93,6 +93,8 @@ std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
 bool DpctGlobalInfo::HasFFTSetStream = false;
 unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
+std::set<std::string> DpctGlobalInfo::ModuleFiles;
+
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
 CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
@@ -139,6 +141,8 @@ void DpctGlobalInfo::resetInfo() {
   HasFFTSetStream = false;
   NeedRunAgain = false;
 }
+
+
 
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
@@ -611,6 +615,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
 
 void KernelCallExpr::buildKernelArgsStmt() {
   size_t ArgCounter = 0;
+  KernelArgs = "";
   for (auto &Arg : getArgsInfo()) {
     // if current arg is the first arg with default value, insert extra args
     // before current arg
@@ -775,8 +780,11 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   static std::string CanIgnoreRangeStr1D =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 1) +
       "(1)";
-
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
+  if (ExecutionConfig.NdRange != "") {
+    Printer.line(ExecutionConfig.NdRange + ",");
+    Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
+      DpctGlobalInfo::getItemName(), ") {");
+  } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
       MemVarMap::getHeadWithoutPathCompression(&(getFuncInfo()->getVarMap())) &&
       MemVarMap::getHeadWithoutPathCompression(&(getFuncInfo()->getVarMap()))
               ->Dim == 1) {
@@ -907,6 +915,30 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     return Kernel;
   }
   return std::shared_ptr<KernelCallExpr>();
+}
+
+std::shared_ptr<KernelCallExpr>
+KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
+                                std::shared_ptr<DeviceFunctionInfo> FuncInfo) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto Kernel =
+      std::shared_ptr<KernelCallExpr>(new KernelCallExpr(0, FilePath));
+  Kernel->Name = FD->getNameAsString();
+  Kernel->FuncInfo = FuncInfo;
+  Kernel->ExecutionConfig.Config[0] = "";
+  Kernel->ExecutionConfig.Config[1] = "";
+  Kernel->ExecutionConfig.Config[2] = "localMemSize";
+  Kernel->ExecutionConfig.Config[3] = "queue";
+  Kernel->ExecutionConfig.Config[4] = "nr";
+  Kernel->ExecutionConfig.IsDefaultStream = true;
+  Kernel->NeedBraces = false;
+  Kernel->FuncInfo->getVarMap().Dim = 3;
+  for (auto &Parm : FD->parameters()) {
+    Kernel->ArgsInfo.emplace_back(Parm, Kernel.get());
+  }
+  Kernel->LocInfo.NL = getNL();
+  Kernel->LocInfo.Indent = getIndent(FD->getBeginLoc(), SM).str() + "    ";
+  return Kernel;
 }
 
 void KernelCallExpr::buildUnionFindSet() {
@@ -1691,6 +1723,71 @@ std::string ExplicitInstantiationDecl::getExtraParameters() {
   return getFuncInfo()->getExtraParameters(InstantiationArgs, getFormatInfo());
 }
 
+inline void DeviceFunctionDeclInModule::insertWrapper() {
+  auto NL = std::string(getNL());
+  std::string WrapperStr = "";
+  llvm::raw_string_ostream OS(WrapperStr);
+  KernelPrinter Printer(NL, "", OS);
+  Printer.newLine();
+  Printer.newLine();
+  Printer.line("extern \"C\" {");
+  {
+    auto FunctionBlock = Printer.block();
+    Printer.indent();
+    Printer << "void " << FuncName << "_wrapper_ct1("
+            << MapNames::getClNamespace() << "::queue &queue, const "
+            << MapNames::getClNamespace()
+            << "::nd_range<3> &nr, unsigned int localMemSize, void "
+               "**kernelParams, void **extra)";
+    if (HasBody) {
+      Printer << "{";
+      {
+        auto BodyBlock = Printer.block();
+        Printer.newLine();
+        for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
+          It++) {
+          Printer.line(It->first + " " + It->second + ";");
+        }
+        Printer.line("if(kernelParams){");
+        {
+          auto IfBlock = Printer.block();
+          auto Counter = 0;
+          for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
+            It++) {
+            Printer.line(It->second + " = (" + It->first +")kernelParams[" + std::to_string(Counter) + "];");
+            Counter += 1;
+          }
+        }
+        Printer.line("} else {");
+        {
+          auto ElseBlock = Printer.block();
+          std::string ExtraOffsetStr = "sizeof(void*)";
+          for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
+            It++) {
+            Printer.line(It->second + " = (" + It->first + ")(extra + " + ExtraOffsetStr + ");");
+            ExtraOffsetStr += " + sizeof(" + It->first + ")";
+          }
+        }
+        Printer.line("}");
+        Kernel->buildInfo();
+        Printer.line(Kernel->getReplacement());
+      }
+      Printer.line("}");
+    }
+    else {
+      Printer << ";";
+      Printer.newLine();
+    }
+  }
+
+  Printer << "}";
+
+  auto Repl = std::make_shared<ExtReplacement>(
+    FilePath, DeclEnd, 0, WrapperStr, nullptr);
+  Repl->setBlockLevelFormatFlag();
+  DpctGlobalInfo::getInstance().addReplacement(Repl);
+}
+
 inline void DeviceFunctionDecl::emplaceReplacement() {
   // TODO: Output debug info.
   auto Repl = std::make_shared<ExtReplacement>(
@@ -1717,6 +1814,55 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
       Obj->addParamDeclReplacement();
     }
   }
+}
+
+inline void DeviceFunctionDeclInModule::emplaceReplacement() {
+  DeviceFunctionDecl::emplaceReplacement();
+  insertWrapper();
+}
+
+void DeviceFunctionDeclInModule::buildParameterInfo(const FunctionDecl *FD) {
+  for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
+    ParametersInfo.push_back(std::pair<std::string, std::string>(
+        (*It)->getOriginalType().getAsString(), (*It)->getNameAsString()));
+  }
+}
+
+void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const FunctionDecl *Def;
+  HasBody = FD->hasBody(Def);
+  if (HasBody && FD != Def) {
+    HasBody = false;
+  }
+
+  FuncName = FD->getNameAsString();
+  // FD has relative large range, which is likely to be straddle,
+  // getDefinitionRange may not work as good as getExpansionRange
+  auto EndLoc = SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
+  auto LastTokenLen = Lexer::MeasureTokenLength(EndLoc, SM,
+    dpct::DpctGlobalInfo::getContext().getLangOpts());
+  EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
+  if (!HasBody) {
+    LastTokenLen = Lexer::MeasureTokenLength(EndLoc, SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts());
+    EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
+  }
+  DeclEnd = SM.getFileOffset(EndLoc);
+}
+
+void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
+  Kernel = KernelCallExpr::buildForWrapper(FilePath, FD, getFuncInfo(FD));
+}
+
+bool isModuleFunction(const FunctionDecl *FD) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (DpctGlobalInfo::getModuleFiles().find(
+          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
+              .first) != DpctGlobalInfo::getModuleFiles().end()) {
+    return true;
+  }
+  return false;
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
@@ -2032,7 +2178,13 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     }
     return;
   }
-  auto D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
+  std::shared_ptr<DeviceFunctionDecl> D;
+  if (isModuleFunction(FD)) {
+    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDeclInModule(FD);
+  }
+  else {
+    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
+  }
   if (Info) {
     if (auto FuncInfo = D->getFuncInfo())
       Info->merge(FuncInfo);

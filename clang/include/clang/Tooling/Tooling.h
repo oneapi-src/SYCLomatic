@@ -69,6 +69,7 @@ void CollectProcessedFile(std::string File);
 std::set<std::string> GetReProcessFile();
 void SetGetRunRound(std::function<unsigned int()> Func);
 unsigned int DoGetRunRound();
+void SetModuleFiles(std::set<std::string> &MF);
 } // namespace tooling
 } // namespace clang
 #endif
