@@ -13,6 +13,7 @@
 #include "AnalysisInfo.h"
 #include "Debug.h"
 #include "ExternalReplacement.h"
+#include "Checkpoint.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -93,7 +94,6 @@ static bool formatFile(StringRef FileName,
   FSO.WorkingDir = ".";
   clang::FileManager FM(FSO, nullptr);
   clang::SourceManager SM(Diagnostics, FM, false);
-
   clang::Rewriter Rewrite(SM, clang::LangOptions());
   if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
     std::vector<clang::tooling::Range> AllLineRanges;
@@ -277,7 +277,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                  StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   using namespace clang;
-  ProcessStatus status = MigrationSucceeded;
+  volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -467,40 +467,47 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
     PrintMsg(ReportMsg);
 
-    if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
-      clang::format::setFormatRangeGetterHandler(
-          clang::dpct::DpctGlobalInfo::getFormatRange);
-      bool FormatResult = true;
-      for (auto Iter : FileRangesMap) {
-        clang::tooling::Replacements FormatChanges;
-        FormatResult =
-            formatFile(Iter.first, Iter.second, FormatChanges) && FormatResult;
-
-        // If range is "all", one file only need to be formated once.
-        if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all)
-          continue;
-
-        auto BlockLevelFormatIter =
-            FileBlockLevelFormatRangesMap.find(Iter.first);
-        if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
-          clang::format::BlockLevelFormatFlag = true;
-
-          std::vector<clang::tooling::Range>
-              BlockLevelFormatRangeAfterFisrtFormat = calculateUpdatedRanges(
-                  FormatChanges, BlockLevelFormatIter->second);
-          FormatResult = formatFile(BlockLevelFormatIter->first,
-                                    BlockLevelFormatRangeAfterFisrtFormat,
-                                    FormatChanges) &&
+    int RetJmp = 0;
+    CHECKPOINT_FORMATTING_CODE_ENTRY(RetJmp);
+    if (RetJmp == 0) {
+      if (DpctGlobalInfo::getFormatRange() !=
+          clang::format::FormatRange::none) {
+        clang::format::setFormatRangeGetterHandler(
+            clang::dpct::DpctGlobalInfo::getFormatRange);
+        bool FormatResult = true;
+        for (auto Iter : FileRangesMap) {
+          clang::tooling::Replacements FormatChanges;
+          FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
                          FormatResult;
 
-          clang::format::BlockLevelFormatFlag = false;
+          // If range is "all", one file only need to be formated once.
+          if (DpctGlobalInfo::getFormatRange() ==
+              clang::format::FormatRange::all)
+            continue;
+
+          auto BlockLevelFormatIter =
+              FileBlockLevelFormatRangesMap.find(Iter.first);
+          if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
+            clang::format::BlockLevelFormatFlag = true;
+
+            std::vector<clang::tooling::Range>
+                BlockLevelFormatRangeAfterFisrtFormat = calculateUpdatedRanges(
+                    FormatChanges, BlockLevelFormatIter->second);
+            FormatResult = formatFile(BlockLevelFormatIter->first,
+                                      BlockLevelFormatRangeAfterFisrtFormat,
+                                      FormatChanges) &&
+                           FormatResult;
+
+            clang::format::BlockLevelFormatFlag = false;
+          }
+        }
+        if (!FormatResult) {
+          PrintMsg("[Warning] Error happened while formatting. Generating "
+                   "unformatted code.\n");
         }
       }
-      if (!FormatResult) {
-        PrintMsg("[Warning] Error happened while formatting. Generating "
-                 "unformatted code.\n");
-      }
     }
+    CHECKPOINT_FORMATTING_CODE_EXIT();
   }
 
   // The necessary header files which have no no replacements will be copied to

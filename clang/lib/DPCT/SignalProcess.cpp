@@ -75,7 +75,17 @@ void recoverCheckpoint(int Signo){
           CurFileMeetErr=true;
         }
         LONGJMP(CPRepPostprocessEnter, 1);
-      } else if(CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
+      } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
+        std::string FaultMsg = "dpct error: segmentation fault."
+                               " Intel(R) DPC++ Compatibility Tool tries to "
+                               "recover by skipping formatting step.\n";
+        PrintReportOnFault(FaultMsg);
+        if (!CurFileMeetErr) {
+          FatalErrorCnt++;
+          CurFileMeetErr = true;
+        }
+        LONGJMP(CPFormatCodeEnter, 1);
+      } else if (CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
           std::string FaultMsg = "dpct error: segmentation fault."
                                  " Intel(R) DPC++ Compatibility Tool tries to "
                                  "recover and write the migration result.\n";

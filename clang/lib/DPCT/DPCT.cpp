@@ -430,6 +430,7 @@ extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
 JMP_BUF CPFileASTMaterEnter;
 JMP_BUF CPRepPostprocessEnter;
+JMP_BUF CPFormatCodeEnter;
 
 class DPCTConsumer : public ASTConsumer {
 public:
