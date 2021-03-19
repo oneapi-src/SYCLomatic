@@ -229,14 +229,11 @@ static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
 #endif // DPCT_USM_LEVEL_NONE
 }
 
-static void *dpct_malloc(size_t size) {
-  return dpct_malloc(size, get_default_queue());
-}
-
 #define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
-static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z) {
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
+                                cl::sycl::queue &q) {
   pitch = PITCH_DEFAULT_ALIGN(x);
-  return dpct_malloc(pitch * y * z);
+  return dpct_malloc(pitch * y * z, q);
 }
 
 /// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
@@ -531,10 +528,12 @@ static buffer_t get_buffer(const void *ptr) {
 
 /// Allocate memory block on the device.
 /// \param num_bytes Number of bytes to allocate.
+/// \param q Queue to execute the allocate task.
 /// \returns A pointer to the newly allocated memory.
 template <typename T>
-static inline void *dpct_malloc(T num_bytes) {
-  return detail::dpct_malloc(static_cast<size_t>(num_bytes));
+static inline void *dpct_malloc(T num_bytes,
+                                cl::sycl::queue &q = get_default_queue()) {
+  return detail::dpct_malloc(static_cast<size_t>(num_bytes), q);
 }
 
 /// Get the host pointer from a buffer that is mapped to virtual pointer ptr.
@@ -550,12 +549,14 @@ template <typename T> static inline T *get_host_ptr(const void *ptr) {
 
 /// Allocate memory block for 3D array on the device.
 /// \param size Size of of the memory block, in bytes.
+/// \param q Queue to execute the allocate task.
 /// \returns A pitched_data object which stores the memory info.
-static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
+static inline pitched_data
+dpct_malloc(cl::sycl::range<3> size, cl::sycl::queue &q = get_default_queue()) {
   pitched_data pitch(nullptr, 0, size.get(0), size.get(1));
   size_t pitch_size;
-  pitch.set_data_ptr(
-      detail::dpct_malloc(pitch_size, size.get(0), size.get(1), size.get(2)));
+  pitch.set_data_ptr(detail::dpct_malloc(pitch_size, size.get(0), size.get(1),
+                                         size.get(2), q));
   pitch.set_pitch(pitch_size);
   return pitch;
 }
@@ -564,20 +565,24 @@ static inline pitched_data dpct_malloc(cl::sycl::range<3> size) {
 /// \param [out] pitch Aligned size of x in bytes.
 /// \param x Range in dim x.
 /// \param y Range in dim y.
+/// \param q Queue to execute the allocate task.
 /// \returns A pointer to the newly allocated memory.
-static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y) {
-  return detail::dpct_malloc(pitch, x, y, 1);
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
+                                cl::sycl::queue &q = get_default_queue()) {
+  return detail::dpct_malloc(pitch, x, y, 1, q);
 }
 
 /// free
 /// \param ptr Point to free.
+/// \param q Queue to execute the free task.
 /// \returns no return value.
-static inline void dpct_free(void *ptr) {
+static inline void dpct_free(void *ptr,
+                             cl::sycl::queue &q = get_default_queue()) {
   if (ptr) {
 #ifdef DPCT_USM_LEVEL_NONE
     detail::mem_mgr::instance().mem_free(ptr);
 #else
-    cl::sycl::free(ptr, get_default_queue().get_context());
+    cl::sycl::free(ptr, q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
   }
 }
@@ -592,11 +597,12 @@ static inline void dpct_free(void *ptr) {
 /// \param from_ptr Pointer to source memory address.
 /// \param size Number of bytes to be copied.
 /// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
 /// \returns no return value.
 static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
-                        memcpy_direction direction = automatic) {
-  detail::dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction)
-      .wait();
+                        memcpy_direction direction = automatic,
+                        cl::sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction).wait();
 }
 
 /// Asynchronously copies \p size bytes from the address specified by \p
@@ -632,14 +638,15 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param x Range of dim x of matrix to be copied.
 /// \param y Range of dim y of matrix to be copied.
 /// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
 /// \returns no return value.
 static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
                                const void *from_ptr, size_t from_pitch,
                                size_t x, size_t y,
-                               memcpy_direction direction = automatic) {
-  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue(), to_ptr,
-                                            from_ptr, to_pitch, from_pitch, x,
-                                            y, direction));
+                               memcpy_direction direction = automatic,
+                               cl::sycl::queue &q = dpct::get_default_queue()) {
+  cl::sycl::event::wait(detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch,
+                                            from_pitch, x, y, direction));
 }
 
 /// Asynchronously copies 2D matrix specified by \p x and \p y from the address
@@ -681,13 +688,15 @@ async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
 /// \param from_pos Position of destination.
 /// \param size Range of the submatrix to be copied.
 /// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
 /// \returns no return value.
 static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
                                pitched_data from, cl::sycl::id<3> from_pos,
                                cl::sycl::range<3> size,
-                               memcpy_direction direction = automatic) {
-  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue(), to, to_pos,
-                                            from, from_pos, size, direction));
+                               memcpy_direction direction = automatic,
+                               cl::sycl::queue &q = dpct::get_default_queue()) {
+  cl::sycl::event::wait(
+      detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction));
 }
 
 /// Asynchronously copies a subset of a 3D matrix specified by \p to to another
@@ -720,9 +729,11 @@ async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
 /// \param dev_ptr Pointer to the device memory address.
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
+/// \param q The queue in which the operation is done.
 /// \returns no return value.
-static void dpct_memset(void *dev_ptr, int value, size_t size) {
-  detail::dpct_memset(get_default_queue(), dev_ptr, value, size).wait();
+static void dpct_memset(void *dev_ptr, int value, size_t size,
+                        cl::sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
 
 /// Asynchronously sets \p value to the first \p size bytes starting from \p
@@ -748,11 +759,12 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
 /// \param value Value to be set.
 /// \param x The setted memory size in linear dimension.
 /// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
 /// \returns no return value.
 static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
-                               size_t y) {
-  cl::sycl::event::wait(
-      detail::dpct_memset(get_default_queue(), ptr, pitch, val, x, y));
+                               size_t y,
+                               cl::sycl::queue &q = get_default_queue()) {
+  cl::sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
 
 /// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
@@ -780,11 +792,12 @@ static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
 /// \param pitch Specify the 3D memory region.
 /// \param value Value to be set.
 /// \param size The setted 3D memory size.
+/// \param q The queue in which the operation is done.
 /// \returns no return value.
 static inline void dpct_memset(pitched_data pitch, int val,
-                               cl::sycl::range<3> size) {
-  cl::sycl::event::wait(
-      detail::dpct_memset(get_default_queue(), pitch, val, size));
+                               cl::sycl::range<3> size,
+                               cl::sycl::queue &q = get_default_queue()) {
+  cl::sycl::event::wait(detail::dpct_memset(q, pitch, val, size));
 }
 
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
