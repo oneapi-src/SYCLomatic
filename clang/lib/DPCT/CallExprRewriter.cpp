@@ -1132,6 +1132,13 @@ std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
 }
 
+std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+makeCallArgCreatorWithCall(unsigned Idx) {
+  return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
+    return std::pair<const CallExpr *, const Expr *>(C, C->getArg(Idx));
+  };
+}
+
 std::function<std::vector<RenameWithSuffix>(const CallExpr *)>
 makeStructDismantler(unsigned Idx, const std::vector<std::string> &Suffixes) {
   return [=](const CallExpr *C) -> std::vector<RenameWithSuffix> {
@@ -1430,9 +1437,9 @@ createBindTextureRewriterFactory(const std::string &Source) {
               makeCallArgCreator(StartIdx + Idx + 1)...,
               makeCallArgCreator(StartIdx + 2)),
           createMemberCallExprRewriterFactory(
-              Source, makeCallArgCreator(StartIdx + 0), false, "attach",
-              makeCallArgCreator(StartIdx + 1),
-              makeCallArgCreator(StartIdx + Idx)...)));
+              Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
+              makeCallArgCreatorWithCall(StartIdx + 1),
+              makeCallArgCreatorWithCall(StartIdx + Idx)...)));
 }
 
 void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {

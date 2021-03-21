@@ -385,6 +385,15 @@ void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
   Stream << EA.getRewritePrefix() << EA.getReplacedString()
          << EA.getRewritePostfix();
 }
+
+template <class StreamT>
+void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<const CallExpr*, const Expr*> P) {
+  AA.setCallSpelling(P.first);
+  AA.analyze(P.second);
+  Stream << AA.getRewritePrefix() << AA.getRewriteString()
+    << AA.getRewritePostfix();
+}
+
 template <class StreamT>
 void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
   std::unique_ptr<ParensPrinter<StreamT>> Paren;
@@ -396,6 +405,20 @@ void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
 template <class StreamT> void printWithParens(StreamT &Stream, const Expr *E) {
   ExprAnalysis EA;
   printWithParens(Stream, EA, E);
+}
+
+template <class StreamT>
+void printWithParens(StreamT &Stream, ArgumentAnalysis &AA, std::pair<const CallExpr*, const Expr*> P) {
+  std::unique_ptr<ParensPrinter<StreamT>> Paren;
+  P.second = P.second->IgnoreImplicitAsWritten();
+  if (needExtraParens(P.second))
+    Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+  print(Stream, AA, P);
+}
+
+template <class StreamT> void printWithParens(StreamT &Stream, std::pair<const CallExpr*, const Expr*> P) {
+  ArgumentAnalysis AA;
+  printWithParens(Stream, AA, P);
 }
 
 template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
@@ -430,6 +453,7 @@ public:
     print(Stream, EA, true);
     printMemberOp(Stream, !AddrOfRemoved);
   }
+
   template <class StreamT> void print(StreamT &Stream) const {
     ExprAnalysis EA;
     print(Stream, EA, false);
@@ -461,6 +485,13 @@ public:
   void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
     dpct::print(Stream, A, E);
   }
+
+  template <class StreamT>
+  void printArg(std::false_type, StreamT &Stream,
+                std::pair<const CallExpr *, const Expr *> P) const {
+    dpct::print(Stream, A, P);
+  }
+
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream, DerefExpr Arg) const {
     Arg.printArg(Stream, A);
@@ -512,6 +543,12 @@ public:
     Base::print(Stream);
   }
 };
+
+template <class StreamT>
+void printBase(StreamT &Stream, std::pair<const CallExpr*, const Expr*> P, bool IsArrow) {
+  printWithParens(Stream, P);
+  printMemberOp(Stream, IsArrow);
+}
 
 template <class StreamT>
 void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {

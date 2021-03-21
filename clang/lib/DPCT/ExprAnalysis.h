@@ -664,11 +664,11 @@ protected:
 
 private:
   static const std::string &getDefaultArgument(const Expr *E);
-
-  using DefaultArgMapTy = std::map<const Expr *, std::string>;
-  static DefaultArgMapTy DefaultArgMap;
   SourceLocation CallSpellingBegin;
   SourceLocation CallSpellingEnd;
+  using DefaultArgMapTy = std::map<const Expr *, std::string>;
+  static DefaultArgMapTy DefaultArgMap;
+
 };
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {
