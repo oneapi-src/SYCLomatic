@@ -172,3 +172,5 @@ DEF_WARNING(UNPROCESSED_DEVICE_ATTRIBUTE, 1076, "The device attribute was not %0
 DEF_COMMENT(UNPROCESSED_DEVICE_ATTRIBUTE, 1076, "The device attribute was not {0}. You may need to adjust the code.")
 DEF_WARNING(MACRO_SAME_AS_SYCL_TYPE, 1077, "'%0' redefines a standard SYCL type, which may cause conflicts.")
 DEF_COMMENT(MACRO_SAME_AS_SYCL_TYPE, 1077, "'{0}' redefines a standard SYCL type, which may cause conflicts.")
+DEF_WARNING(MEMORY_ORDER_PERFORMANCE_TUNNING, 1078, "Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.")
+DEF_COMMENT(MEMORY_ORDER_PERFORMANCE_TUNNING, 1078, "Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.")

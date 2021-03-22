@@ -12049,7 +12049,8 @@ REGISTER_RULE(WarpFunctionsRule)
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
   auto SyncAPI = [&]() {
     return hasAnyName("__syncthreads", "this_thread_block", "sync",
-                      "__threadfence_block", "__syncthreads_and",
+                      "__threadfence_block", "__threadfence",
+                      "__threadfence_system", "__syncthreads_and",
                       "__syncthreads_or");
   };
   MF.addMatcher(
@@ -12153,7 +12154,25 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
   } else if (FuncName == "__threadfence_block") {
-    std::string ReplStr = DpctGlobalInfo::getItemName() + ".mem_fence()";
+    std::string CLNS = MapNames::getClNamespace();
+    std::string ReplStr = CLNS + "::ONEAPI::atomic_fence(" + CLNS +
+                          "::ONEAPI::memory_order::acq_rel, " + CLNS +
+                          "::ONEAPI::memory_scope::work_group" + ")";
+    report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING, true);
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+  } else if (FuncName == "__threadfence") {
+    std::string CLNS = MapNames::getClNamespace();
+    std::string ReplStr = CLNS + "::ONEAPI::atomic_fence(" + CLNS +
+                          "::ONEAPI::memory_order::acq_rel, " + CLNS +
+                          "::ONEAPI::memory_scope::device" + ")";
+    report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING, true);
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+  } else if (FuncName == "__threadfence_system") {
+    std::string CLNS = MapNames::getClNamespace();
+    std::string ReplStr = CLNS + "::ONEAPI::atomic_fence(" + CLNS +
+                          "::ONEAPI::memory_order::acq_rel, " + CLNS +
+                          "::ONEAPI::memory_scope::system" + ")";
+    report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING, true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__syncthreads_and" ||
              FuncName == "__syncthreads_or") {
