@@ -2648,18 +2648,19 @@ void RandomEngineInfo::buildInfo() {
                                Diagnostics::UNDEDUCED_TYPE, true, false, "RNG engine");
   }
 
-  std::string Repl = GeneratorName + " = new " + TypeReplacement + "(" +
-                     QueueStr + ", " + (IsQuasiEngine ? DimExpr : SeedExpr) +
-                     ")";
-  if (IsAssigned) {
-    Repl = "(" + Repl + ", 0)";
-  }
-
-  for (unsigned int i = 0; i < CreateAPINum; ++i)
+  for (unsigned int i = 0; i < CreateAPINum; ++i) {
+    auto QueueStrFromStream = CreateAPIQueueName[i] == "" ? QueueStr : CreateAPIQueueName[i];
+    std::string Repl = GeneratorName + " = std::make_shared<" + TypeReplacement + ">(" +
+      QueueStrFromStream + ", " + (IsQuasiEngine ? DimExpr : SeedExpr) +
+      ")";
+    if (IsAssigned) {
+      Repl = "(" + Repl + ", 0)";
+    }
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(CreateCallFilePath[i],
-                                         CreateAPIBegin[i], CreateAPILength[i],
-                                         Repl, nullptr));
+      std::make_shared<ExtReplacement>(CreateCallFilePath[i],
+        CreateAPIBegin[i], CreateAPILength[i],
+        Repl, nullptr));
+  }
 }
 
 void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
@@ -2746,17 +2747,20 @@ void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
   if (HasValue && !EngineType.empty()) {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                         EngineType + "*", nullptr));
+                                         "std::shared_ptr<" + EngineType + ">",
+                                         nullptr));
   } else if (DpctGlobalInfo::getHostRNGEngineTypeSet().size() == 1) {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
-            *DpctGlobalInfo::getHostRNGEngineTypeSet().begin() + "*", nullptr));
+            "std::shared_ptr<" +
+                *DpctGlobalInfo::getHostRNGEngineTypeSet().begin() + ">",
+            nullptr));
   } else {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
-            "dpct_placeholder/*Fix the engine type manually*/*", nullptr));
+            "std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/>", nullptr));
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
                              true, false, "RNG engine");
   }

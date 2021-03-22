@@ -177,8 +177,8 @@ int main() {
 
 
     float * __restrict__ d_data;
-    //CHECK:oneapi::mkl::rng::philox4x32x10* rng;
-    //CHECK-NEXT:curandErrCheck((rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_default_queue(), 1337ull), 0));
+    //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+    //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/
@@ -194,7 +194,7 @@ int main() {
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((delete rng, 0));
+    //CHECK-NEXT:curandErrCheck((rng.reset(), 0));
     curandGenerator_t rng;
     curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_DEFAULT));
     curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));

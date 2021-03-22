@@ -4767,7 +4767,7 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curandGenerateLogNormal", "curandGenerateLogNormalDouble",
         "curandGenerateNormal", "curandGenerateNormalDouble",
         "curandGeneratePoisson", "curandGenerateUniform",
-        "curandGenerateUniformDouble");
+        "curandGenerateUniformDouble", "curandSetStream");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -4908,11 +4908,13 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     std::string EngineType =
         MapNames::RandomEngineTypeMap.find(EnumStr)->second;
-    if (IsDuplicated && (REInfo->getEngineType() != EngineType)) {
+    if (IsDuplicated && (REInfo->getEngineType() != EngineType) &&
+        REInfo->getIsRealCreate()) {
       REInfo->setEngineTypeReplacement("");
     } else {
       REInfo->setEngineTypeReplacement(EngineType);
     }
+    REInfo->setIsRealCreate(true);
     DpctGlobalInfo::getHostRNGEngineTypeSet().insert(
         MapNames::RandomEngineTypeMap.find(EnumStr)->second);
 
@@ -4941,7 +4943,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(
         new ReplaceStmt(CE, false, FuncName, false,
-                        "delete " + ExprAnalysis::ref(CE->getArg(0))));
+                        ExprAnalysis::ref(CE->getArg(0)) + ".reset()"));
   } else if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (!REInfo) {
@@ -5096,6 +5098,20 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     EO.analyze(CE->getArg(1));
     Repl = Repl + EO.getReplacedString() + ")";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Repl)));
+  } else if (FuncName == "curandSetStream") {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      // Cannot find matched curandCreateGenerator, construct a fake RandomEngineInfo
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+      REInfo->setEngineTypeReplacement("");
+      REInfo->setIsRealCreate(false);
+    }
+    REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd,
+      getDrefName(CE->getArg(1)));
+    if (IsAssigned) {
+      REInfo->setAssigned();
+    }
   }
 }
 

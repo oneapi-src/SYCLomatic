@@ -59,7 +59,7 @@ ENTRY(curandSetGeneratorOffset, curandSetGeneratorOffset, true, NO_FLAG, P4, "Su
 ENTRY(curandSetGeneratorOrdering, curandSetGeneratorOrdering, false, NO_FLAG, P4, "comment")
 ENTRY(curandSetPseudoRandomGeneratorSeed, curandSetPseudoRandomGeneratorSeed, true, NO_FLAG, P4, "Successful")
 ENTRY(curandSetQuasiRandomGeneratorDimensions, curandSetQuasiRandomGeneratorDimensions, true, NO_FLAG, P4, "Successful")
-ENTRY(curandSetStream, curandSetStream, false, NO_FLAG, P4, "comment")
+ENTRY(curandSetStream, curandSetStream, true, NO_FLAG, P4, "Successful")
 ENTRY(curandMakeMTGP32KernelState, curandMakeMTGP32KernelState, false, NO_FLAG, P4, "comment")
 ENTRY(curand, curand, false, NO_FLAG, P4, "comment")
 ENTRY(curand4, curand4, false, NO_FLAG, P4, "comment")

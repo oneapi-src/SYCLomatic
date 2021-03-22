@@ -3864,12 +3864,14 @@ public:
   std::string getSeedExpr() { return SeedExpr; }
   std::string getDimExpr() { return DimExpr; }
 
-  void setCreateAPIInfo(SourceLocation Begin, SourceLocation End) {
+  void setCreateAPIInfo(SourceLocation Begin, SourceLocation End,
+                        std::string QueueStr = "") {
     auto BeginInfo = DpctGlobalInfo::getLocInfo(Begin);
     auto EndInfo = DpctGlobalInfo::getLocInfo(End);
     CreateAPILength.push_back(EndInfo.second - BeginInfo.second);
     CreateAPIBegin.push_back(BeginInfo.second);
     CreateCallFilePath.push_back(BeginInfo.first);
+    CreateAPIQueueName.push_back(QueueStr);
     CreateAPINum++;
   }
 
@@ -3900,7 +3902,8 @@ public:
   void setUnsupportEngineFlag(bool Flag) { IsUnsupportEngine = Flag; }
   void setQueueStr(std::string Q) { QueueStr = Q; }
   std::string getEngineType() { return TypeReplacement; }
-
+  void setIsRealCreate(bool IRC) { IsRealCreate = IRC; };
+  bool getIsRealCreate() { return IsRealCreate; };
 private:
   std::string SeedExpr;     // Replaced Seed variable string
   std::string DimExpr;      // Replaced Dimension variable string
@@ -3914,6 +3917,7 @@ private:
       CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
   std::vector <unsigned int>
       CreateAPILength; // The length of the begin of curandCreateGenerator API.
+  std::vector <std::string> CreateAPIQueueName;
   std::string TypeReplacement;      // The replcaement string of the type of
                                     // curandGenerator_t handle.
   std::string DeclaratorDeclName;   // Name of declarator declaration.
@@ -3924,6 +3928,7 @@ private:
   std::string GeneratorName;
   bool IsAssigned = false;
   unsigned int CreateAPINum = 0;
+  bool IsRealCreate = true;
 };
 
 template <class... T>
