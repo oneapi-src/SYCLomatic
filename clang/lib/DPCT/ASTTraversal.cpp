@@ -13954,7 +13954,7 @@ void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverDeviceAPI = [&]() {
     return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
                       "cuDriverGetVersion", "cuDeviceGetCount",
-                      "cuDeviceGetAttribute");
+                      "cuDeviceGetAttribute", "cuDeviceGetName");
   };
 
   MF.addMatcher(
@@ -13998,6 +13998,28 @@ void DriverDeviceAPIRule::run(
     std::string Rep;
     printDerefOp(OS, FirArg);
     OS << " = " << SecEA.getReplacedString();
+    if (IsAssigned) {
+      OS << ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  } else if (APIName == "cuDeviceGetName") {
+    if (IsAssigned)
+      OS << "(";
+    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
+    auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
+    auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
+    ExprAnalysis FirEA(FirArg);
+    ExprAnalysis SecEA(SecArg);
+    ExprAnalysis ThrEA(ThrArg);
+    FirEA.analyze();
+    SecEA.analyze();
+    ThrEA.analyze();
+    OS << "memcpy(" << FirEA.getReplacedString()
+       << ", dpct::dev_mgr::instance().get_device(" << ThrEA.getReplacedString()
+       << ").get_info<" << MapNames::getClNamespace()
+       << "::info::device::name>().c_str(), " << SecEA.getReplacedString()
+       << ")";
     if (IsAssigned) {
       OS << ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);

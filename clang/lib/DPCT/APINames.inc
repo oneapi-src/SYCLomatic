@@ -1199,7 +1199,7 @@ ENTRY(cuD3D9UnregisterResource, cuD3D9UnregisterResource, false, NO_FLAG, P4, "c
 ENTRY(cuDeviceGet, cuDeviceGet, true, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetAttribute, cuDeviceGetAttribute, true, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetCount, cuDeviceGetCount, true, NO_FLAG, P4, "comment")
-ENTRY(cuDeviceGetName, cuDeviceGetName, false, NO_FLAG, P4, "comment")
+ENTRY(cuDeviceGetName, cuDeviceGetName, true, NO_FLAG, P4, "Successful")
 ENTRY(cuDeviceTotalMem, cuDeviceTotalMem, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceComputeCapability, cuDeviceComputeCapability, true, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetProperties, cuDeviceGetProperties, false, NO_FLAG, P4, "comment")
