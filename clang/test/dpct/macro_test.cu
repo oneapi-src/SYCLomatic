@@ -879,18 +879,27 @@ static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 //CHECK-NEXT:                      do {                                                                         \
 //CHECK-NEXT:   CALL(aa.attach(bb));                                                       \
 //CHECK-NEXT: } while (0)
+#define CBTTA(aa,bb) do {                 \
+  CALL(cudaBindTextureToArray(aa, bb));   \
+} while(0)
+
+//CHECK: #define CBTTA2(aa, bb, cc)                                                          \
+//CHECK-NEXT:                         do {                                                                         \
+//CHECK-NEXT:   CALL(aa.attach(bb, cc));                                                   \
+//CHECK-NEXT: } while (0)
+#define CBTTA2(aa,bb,cc) do {                 \
+  CALL(cudaBindTextureToArray(aa, bb, cc));   \
+} while(0)
 
 //CHECK: void foo19(){
 //CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
 //CHECK-NEXT:   dpct::image_matrix_p a42;
 //CHECK-NEXT:   CBTTA(tex42,a42);
+//CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
 //CHECK-NEXT: }
-#define CBTTA(aa,bb) do {                 \
-  CALL(cudaBindTextureToArray(aa, bb));   \
-} while(0)
-
 void foo19(){
   static texture<float4, 2> tex42;
   cudaArray_t a42;
   CBTTA(tex42,a42);
+  CBTTA2(tex42,a42,tex42.channelDesc);
 }

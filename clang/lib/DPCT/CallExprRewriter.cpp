@@ -1432,10 +1432,10 @@ createBindTextureRewriterFactory(const std::string &Source) {
       std::make_shared<ConditionalRewriterFactory>(
           TypeChecker,
           createMemberCallExprRewriterFactory(
-              Source, makeCallArgCreator(StartIdx + 0), false, "attach",
-              makeCallArgCreator(StartIdx + 1),
-              makeCallArgCreator(StartIdx + Idx + 1)...,
-              makeCallArgCreator(StartIdx + 2)),
+              Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
+              makeCallArgCreatorWithCall(StartIdx + 1),
+              makeCallArgCreatorWithCall(StartIdx + Idx + 1)...,
+              makeCallArgCreatorWithCall(StartIdx + 2)),
           createMemberCallExprRewriterFactory(
               Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
               makeCallArgCreatorWithCall(StartIdx + 1),
