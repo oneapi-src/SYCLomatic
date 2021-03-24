@@ -104,6 +104,12 @@ std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
 std::set<std::string> DpctGlobalInfo::ReProcessFile;
 std::set<std::string> DpctGlobalInfo::ProcessedFile;
+std::unordered_map<std::string,
+                   std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
+    DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
+std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
+                   std::unordered_set<std::string>>
+    DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -138,6 +144,8 @@ void DpctGlobalInfo::resetInfo() {
   FFTExecAPIInfoMap.clear();
   FFTHandleInfoMap.clear();
   NeedRunAgain = false;
+  SpellingLocToDFIsMapForAssumeNDRange.clear();
+  DFIToSpellingLocsMapForAssumeNDRange.clear();
 }
 
 
@@ -226,6 +234,10 @@ void DpctFileInfo::buildLinesInfo() {
   Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
 }
 
+void DpctFileInfo::setKernelCallDim() {
+  for (auto &Kernel : KernelMap)
+    Kernel.second->setKernelCallDim();
+}
 void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildUnionFindSet();
@@ -939,7 +951,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
   return Kernel;
 }
 
-void KernelCallExpr::buildUnionFindSet() {
+void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
@@ -947,8 +959,14 @@ void KernelCallExpr::buildUnionFindSet() {
       } else {
         Ptr->getVarMap().Dim = 1;
       }
-    } else
+    } else {
       Ptr->getVarMap().Dim = 3;
+    }
+  }
+}
+
+void KernelCallExpr::buildUnionFindSet() {
+  if (auto Ptr = getFuncInfo()) {
     constructUnionFindSetRecursively(Ptr);
   }
 }

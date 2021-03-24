@@ -408,7 +408,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(aa) * sycl::range<1>(3), sycl::range<1>(3)), 
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(aa) * sycl::range<1>(3), sycl::range<1>(3)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        k1(item_ct1);
   //CHECK-NEXT:      });
@@ -418,7 +418,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(6, 5, 4), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(6, 5, 4), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k2(item_ct1);
   //CHECK-NEXT:      });
@@ -428,7 +428,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 7) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 7) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k3(item_ct1);
   //CHECK-NEXT:      });
@@ -438,7 +438,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 9) * sycl::range<3>(12, 11, 10), sycl::range<3>(12, 11, 10)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 9) * sycl::range<3>(12, 11, 10), sycl::range<3>(12, 11, 10)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k4(item_ct1);
   //CHECK-NEXT:      });
@@ -449,7 +449,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(13) * sycl::range<1>(bb), sycl::range<1>(bb)), 
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(13) * sycl::range<1>(bb), sycl::range<1>(bb)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        k5(item_ct1);
   //CHECK-NEXT:      });
@@ -460,7 +460,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(cc) * sycl::range<3>(1, 1, 15), sycl::range<3>(1, 1, 15)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(cc) * sycl::range<3>(1, 1, 15), sycl::range<3>(1, 1, 15)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k6(item_ct1);
   //CHECK-NEXT:      });
@@ -470,7 +470,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k7(item_ct1);
   //CHECK-NEXT:      });
@@ -480,7 +480,7 @@ int main() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k8(item_ct1);
   //CHECK-NEXT:      });
@@ -548,7 +548,7 @@ int foo3() {
   //CHECK:dpct::get_default_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)), 
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global1(item_ct1);
   //CHECK-NEXT:      });
@@ -585,7 +585,7 @@ int foo4() {
   //CHECK:dpct::get_default_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global2(item_ct1);
   //CHECK-NEXT:      });
@@ -594,15 +594,19 @@ int foo4() {
   return 0;
 }
 
-
+//CHECK:#define TIDx item_ct1.get_local_id(0)
 #define TIDx threadIdx.x
 
-// CHECK: void global3(sycl::nd_item<3> item_ct1) {
+// CHECK: void global3(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  int t = TIDx;
+//CHECK-NEXT:}
 __global__ void global3() {
   int t = TIDx;
 }
-  
-// CHECK: void global4(sycl::nd_item<3> item_ct1) {
+
+// CHECK: void global4(sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  int t = TIDx;
+//CHECK-NEXT:}
 __global__ void global4() {
   int t = TIDx;
 }
@@ -611,8 +615,8 @@ int foo5() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
-  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global3(item_ct1);
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
@@ -621,11 +625,51 @@ int foo5() {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
-  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global4(item_ct1);
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   global4<<<1,1>>>();
+  return 0;
+}
+
+//CHECK:#define TIDx2 item_ct1.get_local_id(2)
+#define TIDx2 threadIdx.x
+
+//CHECK:void global5(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  int t = TIDx2;
+//CHECK-NEXT:}
+__global__ void global5() {
+  int t = TIDx2;
+}
+
+//CHECK:void global6(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  unsigned int tid = MUL(TIDx2, TIDx2);
+//CHECK-NEXT:}
+__global__ void global6() {
+  unsigned int tid = MUL(TIDx2, TIDx2);
+}
+
+int foo6() {
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        global5(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global5<<<1,1>>>();
+
+  //CHECK:q_ct1.submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(3, 2, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        global6(item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  global6<<<dim3(1,2,3),1>>>();
   return 0;
 }

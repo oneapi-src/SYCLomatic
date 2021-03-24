@@ -2653,11 +2653,24 @@ void constructUnionFindSetRecursively(
   dpct::MemVarMap *CurHead = dpct::MemVarMap::getHead(&(DFIPtr->getVarMap()));
   if (!CurHead)
     return;
+
+  std::vector<std::shared_ptr<dpct::DeviceFunctionInfo>> RelatedDFI;
   for (auto &Item : CallExprMap) {
     auto FuncInfoPtr = Item.second->getFuncInfo();
     if (!FuncInfoPtr)
       continue;
+    RelatedDFI.push_back(FuncInfoPtr);
+  }
+  auto RelatedDFIFromSpellingLoc =
+      dpct::DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);
+  RelatedDFI.insert(RelatedDFI.end(), RelatedDFIFromSpellingLoc.begin(),
+                    RelatedDFIFromSpellingLoc.end());
 
+  for (auto &FuncInfoPtr : RelatedDFI) {
+    if (!FuncInfoPtr)
+      continue;
+    if (FuncInfoPtr == DFIPtr)
+      continue;
     if (FuncInfoPtr->getVarMap().hasItem() && DFIPtr->getVarMap().hasItem()) {
       dpct::MemVarMap *HeadOfTheChild =
           dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));

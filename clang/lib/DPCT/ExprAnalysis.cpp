@@ -469,14 +469,13 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         auto TargetExpr = getTargetExpr();
         auto FD = getImmediateOuterFuncDecl(TargetExpr);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x" &&
-            !isInMacroDefinition(TargetExpr->getBeginLoc(),
-                                 TargetExpr->getEndLoc())) {
+        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
           auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
           DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
           addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
                                          ItemItr->second, "({{NEEDREPLACER",
                                          std::to_string(Index), "}})"));
+          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
         } else {
           DFI->getVarMap().Dim = 3;
           addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",

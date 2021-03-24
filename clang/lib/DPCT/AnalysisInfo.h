@@ -415,6 +415,7 @@ public:
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
+  void setKernelCallDim();
   void buildUnionFindSet();
   void buildUnionFindSetForUncalledFunc();
   void buildKernelInfo();
@@ -1268,8 +1269,17 @@ public:
       // If kernel-call is 3D, then set its head's dim to 3D. When generating
       // replacements, find current nodes' head to decide to use which dim.
 
-      // Below two for-loop cannot be merged.
-      // The second loop depends on the info gererated by the first loop.
+      // Below three for-loop cannot be merged.
+      // The later loop depends on the info gererated by the previous loop.
+      // Now we consider two links: the call-chain and the macro spelling loc
+      // link Since the macro spelling loc may link a global func from a device
+      // func, we cannot merge set dim into the second loop. Because global func
+      // is the first level function in the buildUnionFindSet(), if it is
+      // visited from previous device func, there is no chance to propagate its
+      // correct dim value (there is no upper level func call to gloabl func and
+      // then it will be skipped).
+      for (auto &File : FileMap)
+        File.second->setKernelCallDim();
       for (auto &File : FileMap)
         File.second->buildUnionFindSet();
       for (auto &File : FileMap)
@@ -1799,6 +1809,47 @@ public:
     return FileReplCache;
   }
   void resetInfo();
+  static inline void
+  updateSpellingLocDFIMaps(SourceLocation SL,
+                           std::shared_ptr<DeviceFunctionInfo> DFI) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Loc = getCombinedStrFromLoc(SM.getSpellingLoc(SL));
+
+    auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(Loc);
+    if (IterOfL2D == SpellingLocToDFIsMapForAssumeNDRange.end()) {
+      std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Set;
+      Set.insert(DFI);
+      SpellingLocToDFIsMapForAssumeNDRange.insert(std::make_pair(Loc, Set));
+    } else {
+      IterOfL2D->second.insert(DFI);
+    }
+
+    auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
+    if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
+      std::unordered_set<std::string> Set;
+      Set.insert(Loc);
+      DFIToSpellingLocsMapForAssumeNDRange.insert(std::make_pair(DFI, Set));
+    } else {
+      IterOfD2L->second.insert(Loc);
+    }
+  }
+
+  static inline std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>
+  getDFIVecRelatedFromSpellingLoc(std::shared_ptr<DeviceFunctionInfo> DFI) {
+    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>> Res;
+    auto IterOfD2L = DFIToSpellingLocsMapForAssumeNDRange.find(DFI);
+    if (IterOfD2L == DFIToSpellingLocsMapForAssumeNDRange.end()) {
+      return Res;
+    }
+
+    for (auto SpellingLoc : IterOfD2L->second) {
+      auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
+      if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
+        Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
+      }
+    }
+    return Res;
+  }
 
 private:
   DpctGlobalInfo();
@@ -1963,6 +2014,12 @@ private:
   static bool NeedRunAgain;
   static unsigned int RunRound;
   static std::set<std::string> ModuleFiles;
+  static std::unordered_map<
+      std::string, std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
+      SpellingLocToDFIsMapForAssumeNDRange;
+  static std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
+                            std::unordered_set<std::string>>
+      DFIToSpellingLocsMapForAssumeNDRange;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -3195,8 +3252,6 @@ public:
   virtual void emplaceReplacement();
   static void reset() { FuncInfoMap.clear(); };
 
-private:
-  std::shared_ptr<DeviceFunctionInfo> &FuncInfo;
   using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;
 
   static void LinkDecl(const FunctionDecl *FD, DeclList &List,
@@ -3234,7 +3289,6 @@ private:
   void buildReplaceLocInfo(const FunctionDecl *FD);
 
 protected:
-  const std::string FilePath;
   const FormatInfo &getFormatInfo() { return FormatInformation; }
   void buildTextureObjectParamsInfo(const ArrayRef<ParmVarDecl *> &Parms) {
     TextureObjectList.assign(Parms.size(),
@@ -3253,6 +3307,7 @@ protected:
   virtual std::string getExtraParameters();
 
   unsigned Offset;
+  const std::string FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
@@ -3264,6 +3319,9 @@ protected:
   static std::shared_ptr<DeviceFunctionInfo> &getFuncInfo(const FunctionDecl *);
   static std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
       FuncInfoMap;
+
+private:
+  std::shared_ptr<DeviceFunctionInfo> &FuncInfo;
 };
 
 class ExplicitInstantiationDecl : public DeviceFunctionDecl {
@@ -3622,6 +3680,7 @@ public:
 
   void addAccessorDecl();
   void buildInfo();
+  void setKernelCallDim();
   void buildUnionFindSet();
   void addReplacements();
   inline std::string getExtraArguments() override {

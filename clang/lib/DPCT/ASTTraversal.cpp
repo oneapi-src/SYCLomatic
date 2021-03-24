@@ -938,14 +938,10 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
 
       if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         if (FieldName == "x") {
-          if (!isInMacroDefinition(DRE->getBeginLoc(), DRE->getEndLoc())) {
-            DpctGlobalInfo::getInstance().insertBuiltinVarInfo(
-                Begin, TyLen, Replacement, DFI);
-            return;
-          } else {
-            Dimension = 2;
-            DFI->getVarMap().Dim = 3;
-          }
+          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
+                                                             Replacement, DFI);
+          DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
+          return;
         } else if (FieldName == "y") {
           Dimension = 1;
           DFI->getVarMap().Dim = 3;
@@ -1018,23 +1014,19 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     unsigned Dimension;
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       if (FieldName == "__fetch_builtin_x") {
-        if (!isInMacroDefinition(ME->getBeginLoc(), ME->getEndLoc())) {
-          auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
-          SourceLocation Begin = Range.getBegin();
-          SourceLocation End = Range.getEnd();
+        auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
+        SourceLocation Begin = Range.getBegin();
+        SourceLocation End = Range.getEnd();
 
-          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
 
-          unsigned int Len = SM.getDecomposedLoc(End).second -
-                             SM.getDecomposedLoc(Begin).second;
-          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
-                                                             Replacement, DFI);
-          return;
-        } else {
-          Dimension = 2;
-          DFI->getVarMap().Dim = 3;
-        }
+        unsigned int Len =
+            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                           Replacement, DFI);
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+        return;
       } else if (FieldName == "__fetch_builtin_y") {
         Dimension = 1;
         DFI->getVarMap().Dim = 3;
@@ -12100,8 +12092,7 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
-          !isInMacroDefinition(CE->getBeginLoc(), CE->getEndLoc())) {
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         std::vector<std::string> Vars;
         for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
@@ -12132,10 +12123,10 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
         auto FD = getImmediateOuterFuncDecl(P);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         DpctGlobalInfo::getInstance().insertCGBlockInfo(Begin, Len, Vars, DFI);
+        DpctGlobalInfo::updateSpellingLocDFIMaps(CE->getBeginLoc(), DFI);
       } else {
         auto FD = getImmediateOuterFuncDecl(P);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        DFI->getVarMap().Dim = 3;
         std::string ReplStr{"sycl::group<3> "};
         for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
           auto VD = dyn_cast<VarDecl>(*It);
