@@ -1103,9 +1103,15 @@ int runDPCT(int argc, const char **argv) {
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                ArgumentInsertPosition::BEGIN));
+  if (!(SDKVersionMajor == 11 && SDKVersionMinor == 2)) {
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
+                                  ArgumentInsertPosition::BEGIN));
+  } else {
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
+                                  ArgumentInsertPosition::BEGIN));
+  }
 #endif
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
