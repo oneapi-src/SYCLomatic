@@ -209,8 +209,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 
     // If PredefinedStreamName is used with concatinated macro token,
     // detect the previous macro expansion and
-    std::string MacroNameStr =
-        MacroNameTok.getIdentifierInfo()->getName().str();
+    std::string MacroNameStr;
+    if (auto Identifier = MacroNameTok.getIdentifierInfo())
+      MacroNameStr = Identifier->getName().str();
     if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
         MapNames::PredefinedStreamName.end()) {
       // Currently, only support examples like,
