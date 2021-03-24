@@ -5205,6 +5205,8 @@ void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     const CompoundStmt *CS = findImmediateBlock(CE);
     if (!CS)
       return;
+    if (!CS->body_front())
+      return;
 
     SourceLocation DistrInsertLoc =
         SM.getExpansionLoc(CS->body_front()->getBeginLoc());

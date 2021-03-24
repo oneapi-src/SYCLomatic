@@ -979,7 +979,7 @@ int ClangTool::run(ToolAction *Action) {
     // calling proccessFiles() into FilesNotProcessed, and copies the rest
     // files to the output directory.
     DoFileProcessHandle(FilesNotProcessed);
-    for (auto Entry : FilesNotProcessed) {
+    for (auto &Entry : FilesNotProcessed) {
       auto File = llvm::StringRef(Entry);
       int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
                               Action);

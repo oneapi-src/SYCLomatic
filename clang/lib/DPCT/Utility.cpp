@@ -2548,6 +2548,8 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
         LatestCS = dyn_cast<CompoundStmt>(Parent);
       } else if (Parent->getStmtClass() == Stmt::StmtClass::DoStmtClass) {
         const DoStmt *DS = dyn_cast<DoStmt>(Parent);
+        if (!DS)
+          break;
         const Expr *Cond = DS->getCond();
         Expr::EvalResult ER;
         if (!Cond->isTypeDependent() && !Cond->isValueDependent() &&
