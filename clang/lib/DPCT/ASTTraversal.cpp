@@ -2890,7 +2890,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
     // if TL is the T in
     // template<typename T> void foo(T a);
-    if (TL->getTypeLocClass() == clang::TypeLoc::SubstTemplateTypeParm) {
+    if (TL->getTypeLocClass() == clang::TypeLoc::SubstTemplateTypeParm ||
+        TL->getBeginLoc().isInvalid()) {
       return;
     }
 
@@ -3140,6 +3141,9 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   SourceManager *SM = Result.SourceManager;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
+    if (TL->getBeginLoc().isInvalid())
+      return;
+
     auto BeginLoc = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
 
     bool IsInScratchspace = false;
@@ -3245,6 +3249,9 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
         return;
       auto Begin = ItBase->getSourceRange().getBegin();
       auto End = ItBase->getSourceRange().getEnd();
+      if (Begin.isInvalid()) {
+        return;
+      }
       if (*(TypeName.end() - 1) == '1') {
         if (Begin.isMacroID() &&
             (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
@@ -3274,6 +3281,10 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
         auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
         return emplaceTransformation(new ReplaceText(Begin, Length, ""));
       }
+
+      if (Begin.isInvalid())
+        return;
+
       if (Begin.isMacroID()) {
         // Macro concatenate --> use immediateExpansion
         // Make Begin be the begin of "MACROARG##1"
@@ -3686,6 +3697,9 @@ void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {
+    if (TL->getBeginLoc().isInvalid())
+      return;
+
     auto BeginLoc = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
     SourceManager *SM = Result.SourceManager;
 

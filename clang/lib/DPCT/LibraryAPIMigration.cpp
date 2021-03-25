@@ -31,6 +31,10 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
   if (!HandleVar)
     return;
 
+  if (HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc().isInvalid()) {
+    return;
+  }
+
   auto TypeBeginLoc =
       getDefinitionRange(
           HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
