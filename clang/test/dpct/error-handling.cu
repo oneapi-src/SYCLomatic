@@ -573,7 +573,7 @@ void foo4(){
 // CHECK-NEXT:   sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
 // CHECK-NEXT:   oneapi::mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), 10,
 // CHECK-NEXT:                    ct_0_buf_ct{{[0-9]+}}, 0, res_temp_buf_ct{{[0-9]+}});
-// CHECK-NEXT:   res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+// CHECK-NEXT:   res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 void foo5(){

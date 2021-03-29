@@ -43,14 +43,14 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<int, 4, sycl::access::mode::read_write, sycl::access::target::local> sha2_mem_acc_ct1(sha2_mem_range_ct1, cgh);
+// CHECK-NEXT: sycl::accessor<int, 4, sycl::access_mode::read_write, sycl::access::target::local> sha2_mem_acc_ct1(sha2_mem_range_ct1, cgh);
 
   staticReverse<<<10,10>>>();
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
+// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
 
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;

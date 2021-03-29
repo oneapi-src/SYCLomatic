@@ -19,7 +19,7 @@ namespace dpct {
 namespace sycl = cl::sycl;
 
 #ifdef DPCT_USM_LEVEL_NONE
-template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
+template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = sycl::buffer_allocator>
 class device_pointer;
 #else
@@ -140,7 +140,7 @@ struct is_hetero_iterator<
 } // namespace internal
 
 #ifdef DPCT_USM_LEVEL_NONE
-template <typename T, sycl::access::mode Mode, typename Allocator>
+template <typename T, sycl::access_mode Mode, typename Allocator>
 class device_iterator;
 
 template <typename ValueType, typename Allocator, typename Derived>
@@ -174,19 +174,19 @@ public:
   pointer get() const {
     auto res =
         (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access::mode::read_write>())
+             ->buffer.template get_access<sycl::access_mode::read_write>())
             .get_pointer();
     return res + idx;
   }
   operator ValueType *() {
-    auto res = (buffer.template get_access<sycl::access::mode::read_write>())
+    auto res = (buffer.template get_access<sycl::access_mode::read_write>())
                    .get_pointer();
     return res + idx;
   }
   operator ValueType *() const {
     auto res =
         (const_cast<device_pointer_base *>(this)
-             ->buffer.template get_access<sycl::access::mode::read_write>())
+             ->buffer.template get_access<sycl::access_mode::read_write>())
             .get_pointer();
     return res + idx;
   }
@@ -221,7 +221,7 @@ public:
   } // required
 };
 
-template <typename T, sycl::access::mode Mode, typename Allocator>
+template <typename T, sycl::access_mode Mode, typename Allocator>
 class device_pointer
     : public device_pointer_base<T, Allocator,
                                  device_pointer<T, Mode, Allocator>> {
@@ -236,7 +236,7 @@ public:
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type; // required
   using is_passed_directly = std::false_type;
-  static constexpr sycl::access::mode mode = Mode; // required
+  static constexpr sycl::access_mode mode = Mode; // required
 
   device_pointer(sycl::buffer<T, 1> in, std::size_t i = 0) : base_type(in, i) {}
 #ifdef __USE_DPCT
@@ -267,7 +267,7 @@ public:
   }
 };
 
-template <sycl::access::mode Mode, typename Allocator>
+template <sycl::access_mode Mode, typename Allocator>
 class device_pointer<void, Mode, Allocator>
     : public device_pointer_base<dpct::byte_t, Allocator,
                                  device_pointer<void, Mode, Allocator>> {
@@ -283,7 +283,7 @@ public:
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type; // required
   using is_passed_directly = std::false_type;
-  static constexpr sycl::access::mode mode = Mode; // required
+  static constexpr sycl::access_mode mode = Mode; // required
 
   device_pointer(sycl::buffer<value_type, 1> in, std::size_t i = 0)
       : base_type(in, i) {}
@@ -450,7 +450,7 @@ public:
 #endif
 
 #ifdef DPCT_USM_LEVEL_NONE
-template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
+template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = sycl::buffer_allocator>
 class device_iterator : public device_pointer<T, Mode, Allocator> {
   using Base = device_pointer<T, Mode, Allocator>;
@@ -463,12 +463,12 @@ public:
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type;                // required
   using is_passed_directly = std::false_type;      // required
-  static constexpr sycl::access::mode mode = Mode; // required
+  static constexpr sycl::access_mode mode = Mode; // required
 
   device_iterator() : Base() {}
   device_iterator(sycl::buffer<T, 1, Allocator> vec, std::size_t index)
       : Base(vec, index) {}
-  template <cl::sycl::access::mode inMode>
+  template <cl::sycl::access_mode inMode>
   device_iterator(const device_iterator<T, inMode, Allocator> &in)
       : Base(in.buffer, in.idx) {} // required for iter_mode
   device_iterator &operator=(const device_iterator &in) {
@@ -557,12 +557,12 @@ public:
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::false_type;         // required
   using is_passed_directly = std::true_type; // required
-  static constexpr sycl::access::mode mode =
-      cl::sycl::access::mode::read_write; // required
+  static constexpr sycl::access_mode mode =
+      cl::sycl::access_mode::read_write; // required
 
   device_iterator() : Base(nullptr), idx(0) {}
   device_iterator(T *vec, std::size_t index) : Base(vec), idx(index) {}
-  template <cl::sycl::access::mode inMode>
+  template <cl::sycl::access_mode inMode>
   device_iterator(const device_iterator<T> &in)
       : Base(in.ptr), idx(in.idx) {} // required for iter_mode
   device_iterator &operator=(const device_iterator &in) {

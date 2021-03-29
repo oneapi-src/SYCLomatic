@@ -100,8 +100,8 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 
     auto to_buffer = get_buffer<int>(ipiv);
     exec_queue.submit([&](cl::sycl::handler &cgh) {
-      auto from_acc = ipiv_buf.get_access<cl::sycl::access::mode::read>(cgh);
-      auto to_acc = to_buffer.get_access<cl::sycl::access::mode::write>(cgh);
+      auto from_acc = ipiv_buf.get_access<cl::sycl::access_mode::read>(cgh);
+      auto to_acc = to_buffer.get_access<cl::sycl::access_mode::write>(cgh);
       cgh.parallel_for<class device_int64_to_int>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * n + id.get(1)] =
@@ -215,8 +215,8 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
         cl::sycl::range<1>(batch_size * stride_ipiv));
     auto from_buf = get_buffer<int>(ipiv);
     exec_queue.submit([&](cl::sycl::handler &cgh) {
-      auto from_acc = from_buf.get_access<cl::sycl::access::mode::read>(cgh);
-      auto to_acc = ipiv_buf.get_access<cl::sycl::access::mode::write>(cgh);
+      auto from_acc = from_buf.get_access<cl::sycl::access_mode::read>(cgh);
+      auto to_acc = ipiv_buf.get_access<cl::sycl::access_mode::write>(cgh);
       cgh.parallel_for<class device_int_to_int64>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =
@@ -331,8 +331,8 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
         cl::sycl::range<1>(batch_size * stride_ipiv));
     auto from_buf = get_buffer<int>(ipiv);
     exec_queue.submit([&](cl::sycl::handler &cgh) {
-      auto from_acc = from_buf.get_access<cl::sycl::access::mode::read>(cgh);
-      auto to_acc = ipiv_buf.get_access<cl::sycl::access::mode::write>(cgh);
+      auto from_acc = from_buf.get_access<cl::sycl::access_mode::read>(cgh);
+      auto to_acc = ipiv_buf.get_access<cl::sycl::access_mode::write>(cgh);
       cgh.parallel_for<class device_int_to_int64>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =

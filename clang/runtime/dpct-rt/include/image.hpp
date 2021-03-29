@@ -33,11 +33,11 @@ template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
   template <int dimensions>
   using accessor_t =
-      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access::mode::read,
+      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access_mode::read,
                          cl::sycl::access::target::image>;
   template <int dimensions>
   using array_accessor_t =
-      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access::mode::read,
+      cl::sycl::accessor<acc_data_t, dimensions, cl::sycl::access_mode::read,
                          cl::sycl::access::target::image_array>;
   using data_t = T;
   using elem_t = T;
@@ -791,7 +791,7 @@ template <> struct image_creator<1> {
     auto ptr = data.get_data_ptr();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
-                .template get_access<cl::sycl::access::mode::read_write>()
+                .template get_access<cl::sycl::access_mode::read_write>()
                 .get_pointer();
     auto channel = data.get_channel();
     return new cl::sycl::image<1>(
@@ -810,7 +810,7 @@ template <> struct image_creator<2> {
     auto ptr = data.get_data_ptr();
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
-                .template get_access<cl::sycl::access::mode::read_write>()
+                .template get_access<cl::sycl::access_mode::read_write>()
                 .get_pointer();
     auto channel = data.get_channel();
     return new cl::sycl::image<2>(

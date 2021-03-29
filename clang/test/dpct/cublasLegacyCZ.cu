@@ -60,7 +60,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   int res = cublasIcamax(n, x_C, incx);
 
@@ -68,7 +68,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIzamax(n, x_Z, incx);
 
@@ -77,7 +77,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIcamin(n, x_C, incx);
 
@@ -85,7 +85,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIzamin(n, x_Z, incx);
 
@@ -94,7 +94,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::asum(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result_S = cublasScasum(n, x_C, incx);
 
@@ -102,7 +102,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::asum(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result_D = cublasDzasum(n, x_Z, incx);
 
@@ -113,7 +113,7 @@ int main() {
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: sycl::buffer<std::complex<float>> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::dotu(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: resCuComplex = sycl::float2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].imag());
+  // CHECK-NEXT: resCuComplex = sycl::float2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].imag());
   // CHECK-NEXT: }
   cuComplex resCuComplex = cublasCdotu(n, x_C, incx, y_C, incy);
 
@@ -122,7 +122,7 @@ int main() {
   // CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: sycl::buffer<std::complex<float>> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::dotc(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_C = sycl::float2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].imag());
+  // CHECK-NEXT: *result_C = sycl::float2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].imag());
   // CHECK-NEXT: }
   *result_C = cublasCdotc(n, x_C, incx, y_C, incy);
 
@@ -131,7 +131,7 @@ int main() {
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: sycl::buffer<std::complex<double>> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::dotu(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_Z = sycl::double2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].imag());
+  // CHECK-NEXT: *result_Z = sycl::double2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].imag());
   // CHECK-NEXT: }
   *result_Z = cublasZdotu(n, x_Z, incx, y_Z, incy);
 
@@ -140,7 +140,7 @@ int main() {
   // CHECK-NEXT: auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: sycl::buffer<std::complex<double>> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::dotc(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_Z = sycl::double2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0].imag());
+  // CHECK-NEXT: *result_Z = sycl::double2(res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].real(), res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0].imag());
   // CHECK-NEXT: }
   *result_Z = cublasZdotc(n, x_Z, incx, y_Z, incy);
 
@@ -149,7 +149,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result_S = cublasScnrm2(n, x_C, incx);
 
@@ -157,7 +157,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   *result_D = cublasDznrm2(n, x_Z, incx);
 

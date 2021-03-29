@@ -2432,7 +2432,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     auto Dimension = getType()->getDimension();
     OS << MapNames::getClNamespace() + "::accessor<"
        << getAccessorDataType() << ", " << Dimension
-       << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
+       << ", " + MapNames::getClNamespace() + "::access_mode::read_write, " +
           MapNames::getClNamespace() + "::access::target::local> "
        << getAccessorName() << "(";
     if (Dimension > 1) {

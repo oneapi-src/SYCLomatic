@@ -209,9 +209,9 @@ public:
           ? cl::sycl::access::target::global_buffer
           : ((Memory == constant) ? cl::sycl::access::target::constant_buffer
                                   : cl::sycl::access::target::local);
-  static constexpr cl::sycl::access::mode mode =
-      (Memory == constant) ? cl::sycl::access::mode::read
-                           : cl::sycl::access::mode::read_write;
+  static constexpr cl::sycl::access_mode mode =
+      (Memory == constant) ? cl::sycl::access_mode::read
+                           : cl::sycl::access_mode::read_write;
   static constexpr size_t type_size = sizeof(T);
   using element_t =
       typename std::conditional<Memory == constant, const T, T>::type;
@@ -254,7 +254,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
   return q.submit([&](cl::sycl::handler &cgh) {
     auto r = cl::sycl::range<1>(size);
     auto o = cl::sycl::id<1>(offset);
-    cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+    cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
                        cl::sycl::access::target::global_buffer>
         acc(alloc.buffer, cgh, r, o);
     cgh.fill(acc, (byte_t)value);
@@ -350,8 +350,8 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
       return q.submit([&](cl::sycl::handler &cgh) {
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
-        auto from_acc = from_buffer.get_access<cl::sycl::access::mode::read>(cgh);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+        auto from_acc = from_buffer.get_access<cl::sycl::access_mode::read>(cgh);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
                            cl::sycl::access::target::global_buffer>
             acc(alloc.buffer, cgh, r, o);
         cgh.parallel_for<class memcopyh2d>(r, [=](cl::sycl::id<1> idx) {
@@ -362,7 +362,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
       return q.submit([&](cl::sycl::handler &cgh) {
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
-         cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
                            cl::sycl::access::target::global_buffer>
             acc(alloc.buffer, cgh, r, o);
         cgh.copy(from_ptr, acc);
@@ -377,8 +377,8 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
       return q.submit([&](cl::sycl::handler &cgh) {
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
-        auto to_acc = to_buffer.get_access<cl::sycl::access::mode::write>(cgh);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+        auto to_acc = to_buffer.get_access<cl::sycl::access_mode::write>(cgh);
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
                            cl::sycl::access::target::global_buffer>
             acc(alloc.buffer, cgh, r, o);
         cgh.parallel_for<class memcopyd2h>(r, [=](cl::sycl::id<1> idx) {
@@ -389,7 +389,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
       return q.submit([&](cl::sycl::handler &cgh) {
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
                            cl::sycl::access::target::global_buffer>
             acc(alloc.buffer, cgh, r, o);
         cgh.copy(acc, to_ptr);
@@ -406,10 +406,10 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto r = cl::sycl::range<1>(size);
         auto to_o = cl::sycl::id<1>(to_offset);
         auto from_o = cl::sycl::id<1>(from_offset);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
                            cl::sycl::access::target::global_buffer>
             to_acc(to_alloc.buffer, cgh, r, to_o);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
                            cl::sycl::access::target::global_buffer>
             from_acc(from_alloc.buffer, cgh, r, from_o);
         cgh.parallel_for<class memcopyd2d>(r, [=](cl::sycl::id<1> idx) {
@@ -421,10 +421,10 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto r = cl::sycl::range<1>(size);
         auto to_o = cl::sycl::id<1>(to_offset);
         auto from_o = cl::sycl::id<1>(from_offset);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
                            cl::sycl::access::target::global_buffer>
             to_acc(to_alloc.buffer, cgh, r, to_o);
-        cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+        cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
                            cl::sycl::access::target::global_buffer>
             from_acc(from_alloc.buffer, cgh, r, from_o);
         cgh.copy(from_acc, to_acc);
@@ -584,7 +584,7 @@ static inline void *dpct_malloc(T num_bytes,
 template <typename T> static inline T *get_host_ptr(const void *ptr) {
   auto BufferOffset = get_buffer_and_offset(ptr);
   auto host_ptr =
-      BufferOffset.first.get_access<cl::sycl::access::mode::read_write>()
+      BufferOffset.first.get_access<cl::sycl::access_mode::read_write>()
           .get_pointer();
   return (T *)(host_ptr + BufferOffset.second);
 }
@@ -1012,7 +1012,7 @@ public:
     init();
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
                _device_ptr)
-        .template get_access<sycl::access::mode::read_write>()[index];
+        .template get_access<sycl::access_mode::read_write>()[index];
   }
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {

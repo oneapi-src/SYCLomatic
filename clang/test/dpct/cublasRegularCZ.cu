@@ -34,7 +34,7 @@ int main(){
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::iamax(*handle, n, x_c_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}), 0);
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
@@ -46,7 +46,7 @@ int main(){
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*handle, n, x_c_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   status = cublasIcamax(handle, n, x_c, incx, result);
   cublasIcamax(handle, n, x_c, incx, result);
@@ -64,7 +64,7 @@ int main(){
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::iamax(*handle, n, x_z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}), 0);
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
@@ -76,7 +76,7 @@ int main(){
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamax(*handle, n, x_z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   status = cublasIzamax(handle, n, x_z, incx, result);
   cublasIzamax(handle, n, x_z, incx, result);
@@ -94,7 +94,7 @@ int main(){
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::iamin(*handle, n, x_c_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}), 0);
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
@@ -106,7 +106,7 @@ int main(){
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*handle, n, x_c_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   status = cublasIcamin(handle, n, x_c, incx, result);
   cublasIcamin(handle, n, x_c, incx, result);
@@ -124,7 +124,7 @@ int main(){
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (oneapi::mkl::blas::iamin(*handle, n, x_z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}), 0);
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
@@ -136,7 +136,7 @@ int main(){
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::iamin(*handle, n, x_z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   status = cublasIzamin(handle, n, x_z, incx, result);
   cublasIzamin(handle, n, x_z, incx, result);

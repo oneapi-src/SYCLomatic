@@ -408,7 +408,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:int run_foo5 () {
 //CHECK-NEXT:  dpct::get_default_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result_acc_ct0(result.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
@@ -434,7 +434,7 @@ int run_foo5 () {
 //CHECK-NEXT:int run_foo6 () {
 //CHECK-NEXT:  dpct::get_default_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result2_acc_ct0(result2.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
@@ -455,7 +455,7 @@ int run_foo6 () {
 //CHECK-NEXT:int run_foo7 () {
 //CHECK-NEXT:  dpct::get_default_queue().submit(
 //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
 //CHECK-NEXT:      dpct::access_wrapper<float *> result3_acc_ct0(result3.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
@@ -585,7 +585,7 @@ int run_foo9() {
 //CHECK-NEXT:int run_foo10() {
 //CHECK-NEXT: dpct::get_default_queue().submit(
 //CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:     cl::sycl::accessor<float *, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> afn_s_acc_ct1(cl::sycl::range<1>(3), cgh);
+//CHECK-NEXT:     cl::sycl::accessor<float *, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> afn_s_acc_ct1(cl::sycl::range<1>(3), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -649,9 +649,9 @@ __global__ void kernel_ctor() {
 void test_ctor() {
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:     cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
-  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s2_acc_ct1(cgh);
-  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<int, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s2_acc_ct1(cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -681,11 +681,11 @@ void test_ctor() {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -730,11 +730,11 @@ void foo11() {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name UnionType. Adjust the code to make the UnionType declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(UnionType)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(UnionType)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct2. Adjust the code to make the type_ct2 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct2)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct2)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),

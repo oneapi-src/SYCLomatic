@@ -47,8 +47,8 @@ int main() {
 // CHECK-NEXT:          auto al_ptr_ct1 = al.get_ptr();
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // accessors to device memory
-// CHECK-NEXT:          sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> cl_acc_ct1(sycl::range<1>(36), cgh);
-// CHECK-NEXT:          sycl::accessor<int, 2, sycl::access::mode::read_write, sycl::access::target::local> bl_acc_ct1(bl_range_ct1, cgh);
+// CHECK-NEXT:          sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> cl_acc_ct1(sycl::range<1>(36), cgh);
+// CHECK-NEXT:          sycl::accessor<int, 2, sycl::access_mode::read_write, sycl::access::target::local> bl_acc_ct1(bl_range_ct1, cgh);
 // CHECK-NEXT:          auto b_acc_ct1 = b.get_access(cgh);
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // accessors to image objects

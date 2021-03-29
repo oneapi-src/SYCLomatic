@@ -6342,9 +6342,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             SuffixInsertStr =
                 SuffixInsertStr + getNL() + IndentStr + BufferName +
                 ".get_access<" + MapNames::getClNamespace() +
-                "::access::mode::" + "write>()[0] = (int)" + ResultTempBuf +
+                "::access_mode::" + "write>()[0] = (int)" + ResultTempBuf +
                 "." + "get_access<" + MapNames::getClNamespace() +
-                "::access::mode::read>()[0];";
+                "::access_mode::read>()[0];";
             CurrentArgumentRepl = ResultTempBuf;
           } else {
             CurrentArgumentRepl = BufferName;
@@ -6486,9 +6486,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             SuffixInsertStr =
                 SuffixInsertStr + getNL() + IndentStr + BufferName +
                 ".get_access<" + MapNames::getClNamespace() +
-                "::access::mode::" + "write>()[0] = (int)" + ResultTempBuf +
+                "::access_mode::" + "write>()[0] = (int)" + ResultTempBuf +
                 "." + "get_access<" + MapNames::getClNamespace() +
-                "::access::mode::read>()[0];";
+                "::access_mode::read>()[0];";
             CurrentArgumentRepl = ResultTempBuf;
           } else {
             CurrentArgumentRepl = BufferName;
@@ -6789,9 +6789,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ResultTempBuf + ");" + getNL() + IndentStr;
         ReturnValueParamsStr =
             "(" + ResultTempBuf + ".get_access<" + MapNames::getClNamespace() +
-            "::access::mode::read>()[0].real(), " + ResultTempBuf +
+            "::access_mode::read>()[0].real(), " + ResultTempBuf +
             ".get_access<" + MapNames::getClNamespace() +
-            "::access::mode::read>()[0].imag())";
+            "::access_mode::read>()[0].imag())";
       }
 
       std::string Repl;
@@ -6807,7 +6807,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             Repl = "*" + ResultTempPtr;
         } else {
           Repl = ResultTempBuf + ".get_access<" + MapNames::getClNamespace() +
-                 "::access::mode::read>()[0]";
+                 "::access_mode::read>()[0]";
         }
       }
       if (NeedUseLambda) {
@@ -7663,11 +7663,11 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                 "::range<1>(1));" + getNL();
             SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
                               MapNames::getClNamespace() +
-                              "::access::mode::write>()[0] = "
+                              "::access_mode::write>()[0] = "
                               "(int)result_temp_buffer" +
                               std::to_string(i) + ".get_access<" +
                               MapNames::getClNamespace() +
-                              "::access::mode::read>()[0];" + getNL() +
+                              "::access_mode::read>()[0];" + getNL() +
                               IndentStr;
             BufferName = "result_temp_buffer" + std::to_string(i);
           }

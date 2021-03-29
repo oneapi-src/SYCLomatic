@@ -54,7 +54,7 @@ int main() {
 // CHECK-NEXT:int run_foo5 () {
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access_mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto result_ct0 = result.get_ptr();
 // CHECK-EMPTY:
@@ -81,7 +81,7 @@ int run_foo5 () {
 // CHECK-NEXT:int run_foo6 () {
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access_mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto result2_ct0 = result2.get_ptr();
 // CHECK-EMPTY:
@@ -103,7 +103,7 @@ int run_foo6 () {
 // CHECK-NEXT:int run_foo7 () {
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access_mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto result3_ct0 = result3.get_ptr();
 // CHECK-EMPTY:
@@ -204,7 +204,7 @@ int run_foo9() {
 // CHECK-NEXT:int run_foo10() {
 // CHECK-NEXT: dpct::get_default_queue().submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<float *, 1, sycl::access::mode::read_write, sycl::access::target::local> afn_s_acc_ct1(sycl::range<1>(3), cgh);
+// CHECK-NEXT:     sycl::accessor<float *, 1, sycl::access_mode::read_write, sycl::access::target::local> afn_s_acc_ct1(sycl::range<1>(3), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
