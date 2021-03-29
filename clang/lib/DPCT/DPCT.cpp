@@ -366,6 +366,7 @@ std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
+std::unordered_map<std::string, bool> IsDirectoryCache;
 int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
@@ -444,7 +445,8 @@ public:
       auto Repl = I->getReplacement(Context);
 
       // When processing __constant__ between two executions, tool may set the
-      // replacement from TextModification as nullptr to ignore this replacement.
+      // replacement from TextModification as nullptr to ignore this
+      // replacement.
       if (Repl == nullptr)
         continue;
 
@@ -563,7 +565,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
 
-  if(!CudaIncludePath.empty()) {
+  if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -573,7 +575,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       DebugInfo::ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if(!CudaIncludeDetector.isSupportedVersionAvailable()) {
+  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
     DebugInfo::ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
     dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
@@ -667,7 +669,7 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
   size_t Count = 0;
   for (const auto &Elem : LOCStaticsMap) {
     // Skip invalid file path.
-    if(!llvm::sys::fs::exists(Elem.first))
+    if (!llvm::sys::fs::exists(Elem.first))
       continue;
     unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
     unsigned TransToAPI = Elem.second[0];
@@ -902,8 +904,7 @@ int runDPCT(int argc, const char **argv) {
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
-  clang::tooling::SetModuleFiles(
-    dpct::DpctGlobalInfo::getModuleFiles());
+  clang::tooling::SetModuleFiles(dpct::DpctGlobalInfo::getModuleFiles());
 #ifdef _WIN32
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);
@@ -1137,8 +1138,8 @@ int runDPCT(int argc, const char **argv) {
   }
   auto &Global = DpctGlobalInfo::getInstance();
   int RunCount = 0;
-  do{
-    if(RunCount == 1){
+  do {
+    if (RunCount == 1) {
       // Currently, we just need maximum two parse
       DpctGlobalInfo::setNeedRunAgain(false);
       DpctGlobalInfo::getInstance().resetInfo();

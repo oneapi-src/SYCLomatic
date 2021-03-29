@@ -104,6 +104,22 @@ bool isCanonical(llvm::StringRef Path);
 
 extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 extern std::unordered_map<std::string, bool> ChildPathCache;
+extern std::unordered_map<std::string, bool> IsDirectoryCache;
+
+/// Check \param FilePath is whether a directory path
+/// \param [in] FilePath is a file path.
+/// \return true: directory path, false: not directory path.
+inline bool isDirectory(const std::string &FilePath) {
+  const auto &Key = FilePath;
+  auto Iter = IsDirectoryCache.find(Key);
+  if (Iter != IsDirectoryCache.end()) {
+    return Iter->second;
+  } else {
+    auto Ret = llvm::sys::fs::is_directory(FilePath);
+    IsDirectoryCache[Key] = Ret;
+    return Ret;
+  }
+}
 
 /// Check \param Child is whether the child path of \param RootAbs
 /// \param [in] RootAbs An absolute path as reference.

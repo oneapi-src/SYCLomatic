@@ -38,7 +38,7 @@ namespace fs = llvm::sys::fs;
 bool IsUsingDefaultOutRoot = false;
 
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
-  if (llvm::sys::fs::is_directory(DefaultOutRoot)) {
+  if (isDirectory(DefaultOutRoot)) {
     std::error_code EC;
     llvm::sys::fs::directory_iterator Iter(DefaultOutRoot, EC);
     if ((bool)EC)
@@ -1883,10 +1883,9 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
 
 std::string getHashStrFromLoc(SourceLocation Loc) {
   auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
-  std::stringstream CombinedStr;
-  CombinedStr << std::hex
-              << std::hash<std::string>()(dpct::buildString(R.first, R.second));
-  return CombinedStr.str();
+  std::string Ret = std::to_string(
+      std::hash<std::string>()(dpct::buildString(R.first, R.second)));
+  return Ret;
 }
 
 bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {

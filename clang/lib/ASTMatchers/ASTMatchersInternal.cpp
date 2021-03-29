@@ -529,65 +529,65 @@ public:
   PatternSet(ArrayRef<std::string> Names) {
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
-      #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
       Patterns.push_back({Name, Name.startswith("::"), true});
-      #else
+#else
       Patterns.push_back({Name, Name.startswith("::")});
-      #endif
+#endif
   }
 
   /// Consumes the name suffix from each pattern in the set and removes the ones
   /// that didn't match.
   /// Return true if there are still any patterns left.
   bool consumeNameSuffix(StringRef NodeName, bool CanSkip) {
-    #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bool IsEmpty=true;
-    #endif
+#endif
     for (size_t I = 0; I < Patterns.size();) {
-      #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
       if (!Patterns[I].IsValid) {
         I++;
         continue;
       }
-      #endif
+#endif
       if (::clang::ast_matchers::internal::consumeNameSuffix(Patterns[I].P,
                                                              NodeName) ||
           CanSkip) {
         ++I;
-        #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
         IsEmpty = false;
-        #endif
+#endif
       } else {
-        #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
         Patterns[I].IsValid = false;
         I++;
-        #else
+#else
         Patterns.erase(Patterns.begin() + I);
         #endif
       }
     }
-    #ifdef INTEL_CUSTOMIZATION
+ #ifdef INTEL_CUSTOMIZATION
     return !IsEmpty;
-    #else
+ #else
     return !Patterns.empty();
-    #endif
+ #endif
   }
 
   /// Check if any of the patterns are a match.
   /// A match will be a pattern that was fully consumed, that also matches the
   /// 'fully qualified' requirement.
   bool foundMatch(bool AllowFullyQualified) const {
-    #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
       return Pattern.IsValid && Pattern.P.empty() &&
              (AllowFullyQualified || !Pattern.IsFullyQualified);
     });
-    #else
+#else
     return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
       return Pattern.P.empty() &&
              (AllowFullyQualified || !Pattern.IsFullyQualified);
     });
-    #endif
+#endif
   }
 
 private:
@@ -599,11 +599,13 @@ private:
     #endif
   };
 
-  #ifdef INTEL_CUSTOMIZATION
-  llvm::SmallVector<Pattern, 1024> Patterns;
-  #else
+#ifdef INTEL_CUSTOMIZATION
+  // Enlarge the pre-alloced size of memory to reduce the overhead of
+  // temporarily expanding memory.
+  llvm::SmallVector<Pattern, 8192> Patterns;
+#else
   llvm::SmallVector<Pattern, 8> Patterns;
-  #endif
+#endif
 };
 
 } // namespace

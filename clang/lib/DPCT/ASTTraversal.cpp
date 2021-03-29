@@ -71,8 +71,7 @@ unsigned MigrationRule::PairID = 0;
 bool IncludesCallbacks::isInRoot(SourceLocation Loc){
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc).str();
-  return !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  return !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 }
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   bool IsInRoot = isInRoot(MacroNameTok.getLocation());
@@ -104,8 +103,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      const MacroDirective *MD) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
   size_t i;
   // Record all macro define locations
@@ -176,8 +174,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      SourceRange Range, const MacroArgs *Args) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
   if (!MD.getMacroInfo())
     return;
@@ -411,8 +408,7 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
 void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
   if (IsInRoot) {
     dpct::DpctGlobalInfo::getEndifLocationOfIfdef()[getHashStrFromLoc(IfLoc)] =
         Loc;
@@ -467,8 +463,7 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
                            ConditionValueKind ConditionValue) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
   if (!IsInRoot) {
     return;
@@ -480,8 +475,7 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              SourceLocation IfLoc) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildOrSamePath(InRoot, InFile));
+  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
   if (!IsInRoot) {
     return;
@@ -533,8 +527,8 @@ void IncludesCallbacks::InclusionDirective(
   StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
   std::string InRoot = ATM.InRoot;
 
-  bool IsIncludingFileInInRoot = !llvm::sys::fs::is_directory(IncludingFile) &&
-                                 (isChildOrSamePath(InRoot, Directory.str()));
+  bool IsIncludingFileInInRoot = !isDirectory(IncludingFile) &&
+                                 isChildOrSamePath(InRoot, Directory.str());
 
   // If the header file included can not be found, just return.
   if (!File) {
@@ -768,8 +762,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
     std::string InRoot = ATM.InRoot;
     std::string InFile = SM.getFilename(Loc).str();
-    bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                    (isChildOrSamePath(InRoot, InFile));
+    bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
     if (!IsInRoot) {
       return;
