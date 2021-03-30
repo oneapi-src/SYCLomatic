@@ -2628,7 +2628,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   const char *Start = SM->getCharacterData(BeginLoc);
   const char *End = SM->getCharacterData(LAngleLoc);
   auto TyLen = End - Start;
-  if(TyLen <= 0)
+  if (TyLen <= 0)
     return false;
 
   const std::string RealTypeNameStr(Start, TyLen);
@@ -2636,6 +2636,12 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
+    if (RealTypeNameStr == "thrust::identity") {
+      // CTST-2049: For thrust::identity the template type argument must be
+      // removed as well for correct mapping to oneapi::dpl::identity
+      auto RAngleLoc = TSL.getRAngleLoc();
+      TyLen = SM->getCharacterData(RAngleLoc) - Start + 1;
+    }
     emplaceTransformation(
         new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
     return true;
