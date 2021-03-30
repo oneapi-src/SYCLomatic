@@ -1326,10 +1326,50 @@ public:
   std::string findValueofAttrVar(const Expr* AttrArg, const CallExpr* CE);
 };
 
+class EventAPICallRule;
+class EventQueryTraversal {
+  EventAPICallRule *Rule;
+  ASTContext &Context;
+
+  bool QueryCallUsed = false;
+
+  using ResultTy = std::vector<std::pair<const Stmt *, TextModification *>>;
+
+  const VarDecl *getAssignTarget(const CallExpr *);
+
+  bool checkVarDecl(const VarDecl *, const FunctionDecl *);
+  bool isEventQuery(const CallExpr *);
+  StringRef getReplacedEnumValue(const DeclRefExpr *);
+
+  TextModification *buildCallReplacement(const CallExpr *);
+
+  bool traverseFunction(const FunctionDecl *, const VarDecl *);
+  bool traverseStmt(const Stmt *, const VarDecl *, ResultTy &);
+  bool traverseAssignRhs(const Expr *, ResultTy &);
+  bool traverseEqualStmt(const Stmt *, const VarDecl *, ResultTy &);
+
+  void handleDirectEqualStmt(const DeclRefExpr*, const CallExpr*);
+
+  bool startFromStmt(const Stmt *, const std::function<const VarDecl *()> &);
+
+public:
+  EventQueryTraversal(EventAPICallRule *R)
+      : Rule(R), Context(DpctGlobalInfo::getContext()) {}
+  bool startFromQuery(const CallExpr *);
+  bool startFromEnumRef(const DeclRefExpr *);
+  bool startFromTypeLoc(TypeLoc TL);
+};
 /// Migration rule for event API calls
 class EventAPICallRule : public NamedMigrationRule<EventAPICallRule> {
 public:
-  EventAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  EventAPICallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+    CurrentRule = this;
+  }
+  ~EventAPICallRule() {
+    if (CurrentRule == this)
+      CurrentRule = nullptr;
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
   void handleEventRecord(const CallExpr *CE,
@@ -1343,6 +1383,8 @@ public:
   void handleOrdinaryCalls(const CallExpr *Call);
   bool IsEventArgArraySubscriptExpr(const Expr *E);
   const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
+
+  static EventQueryTraversal getEventQueryTraversal();
 
 private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
@@ -1394,6 +1436,12 @@ private:
   // To check whether kernel calll needs wait between RecordBeginLoc and
   // RecordEndLoc
   bool IsKernelSync = false;
+
+  std::map<const Stmt *, bool> ExprCache;
+  std::map<const VarDecl *, bool> VarDeclCache;
+
+  friend class EventQueryTraversal;
+  static EventAPICallRule *CurrentRule;
 };
 
 /// Migration rule for stream API calls

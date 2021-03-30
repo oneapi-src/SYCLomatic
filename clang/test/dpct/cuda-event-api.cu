@@ -269,17 +269,68 @@ int main(int argc, char* argv[]) {
   cudaEventCreate(&stop);
 
   // CHECK: int e = (int)stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT: checkCudaErrors(e);
   // CHECK-NEXT: checkCudaErrors((int)stop.get_info<sycl::info::event::command_execution_status>());
   // CHECK-NEXT: if (0 == (int)stop.get_info<sycl::info::event::command_execution_status>()){}
   // CHECK-NEXT: while((int)stop.get_info<sycl::info::event::command_execution_status>() != 0){}
   // CHECK-NEXT: for(;0 != (int)stop.get_info<sycl::info::event::command_execution_status>();){}
   // CHECK-NEXT: do{}while((int)stop.get_info<sycl::info::event::command_execution_status>() == 0);
+  // CHECK-NEXT: {
+  // CHECK-NEXT:   int *a;
+  // CHECK-NEXT:   sycl::info::event_command_status e1;
+  // CHECK-NEXT:   e1 = stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT:   if (sycl::info::event_command_status::complete != stop.get_info<sycl::info::event::command_execution_status>()) {}
+  // CHECK-NEXT:   if (e1 == sycl::info::event_command_status::complete){}
+  // CHECK-NEXT:   while(e1 != sycl::info::event_command_status::complete) {
+  // CHECK-NEXT:     e1 = stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT:   }
+  // CHECK-NEXT:   for(;e1 != sycl::info::event_command_status::complete;){
+  // CHECK-NEXT:     e1 = stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT:   }
+  // CHECK-NEXT:   {
+  // CHECK-NEXT:     int e;
+  // CHECK-NEXT:     e = (int)stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     e = (a = (int *)dpct::dpct_malloc(sizeof(int)), 0);
+  // CHECK-NEXT:   }
+  // CHECK-NEXT:   int et1, et2;
+  // CHECK-NEXT:   et1 = (int)stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   et2 = (a = (int *)dpct::dpct_malloc(sizeof(int)), 0);
+  // CHECK-NEXT: }
+
   cudaError_t e = cudaEventQuery(stop);
+  checkCudaErrors(e);
   checkCudaErrors(cudaEventQuery(stop));
   if (cudaErrorNotReady != cudaEventQuery(stop)){}
   while(cudaEventQuery(stop) == cudaErrorNotReady){}
   for(;cudaErrorNotReady == cudaEventQuery(stop);){}
   do{}while(cudaEventQuery(stop) != cudaErrorNotReady);
+  {
+    int *a;
+    cudaError_t e1;
+    e1 = cudaEventQuery(stop);
+    if (cudaSuccess != cudaEventQuery(stop)) {}
+    if (e1 == cudaSuccess){}
+    while(e1 != cudaSuccess) {
+      e1 = cudaEventQuery(stop);
+    }
+    for(;e1 != cudaSuccess;){
+      e1 = cudaEventQuery(stop);
+    }
+    {
+      cudaError_t e;
+      e = cudaEventQuery(stop);
+      e = cudaMalloc(&a, sizeof(int));
+    }
+    cudaError_t et1, et2;
+    et1 = cudaEventQuery(stop);
+    et2 = cudaMalloc(&a, sizeof(int));
+  }
 
   // CHECK: dev_ct1.queues_wait_and_throw();
   // CHECK-EMPTY:

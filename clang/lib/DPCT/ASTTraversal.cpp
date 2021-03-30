@@ -2901,6 +2901,11 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     if (ProcessedTypeLocs.find(*TL) != ProcessedTypeLocs.end())
       return;
 
+    // Try to migrate cudaSuccess to sycl::info::event_command_status if it is
+    // used in cases like "cudaSuccess == cudaEventQuery()".
+    if (EventAPICallRule::getEventQueryTraversal().startFromTypeLoc(*TL))
+      return;
+
     // when the following code is not in inroot
     // #define MACRO_SHOULD_NOT_BE_MIGRATED (MatchedType)3
     // Even if MACRO_SHOULD_NOT_BE_MIGRATED used in inroot, DPCT should not
@@ -4070,6 +4075,8 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
   const DeclRefExpr *DE = getNodeAsType<DeclRefExpr>(Result, "ErrorConstants");
   if (!DE)
     return;
+  if (EventAPICallRule::getEventQueryTraversal().startFromEnumRef(DE))
+    return;
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
   std::string Repl = EC->getInitVal().toString(10);
 
@@ -5209,8 +5216,6 @@ void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else {
     const CompoundStmt *CS = findImmediateBlock(CE);
     if (!CS)
-      return;
-    if (!CS->body_front())
       return;
 
     SourceLocation DistrInsertLoc =
@@ -8387,6 +8392,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionCallRule)
 
+EventAPICallRule *EventAPICallRule::CurrentRule = nullptr;
 void EventAPICallRule::registerMatcher(MatchFinder &MF) {
   auto eventAPIName = [&]() {
     return hasAnyName("cudaEventCreate", "cudaEventCreateWithFlags",
@@ -8403,6 +8409,274 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
                                unless(parentStmt())))
                     .bind("eventAPICallUsed"),
                 this);
+}
+
+bool isEqualOperator(const Stmt *S) {
+  if (!S)
+    return false;
+  if (auto BO = dyn_cast<BinaryOperator>(S))
+    return BO->getOpcode() == BO_EQ || BO->getOpcode() == BO_NE;
+
+  if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S))
+    return COCE->getOperator() == OO_EqualEqual ||
+           COCE->getOperator() == OO_ExclaimEqual;
+
+  return false;
+}
+bool isAssignOperator(const Stmt *);
+const Expr *getLhs(const Stmt *);
+const Expr *getRhs(const Stmt *);
+const VarDecl *getAssignTargetDecl(const Stmt *E) {
+  if (isAssignOperator(E))
+    if (auto L = getLhs(E))
+      if (auto DRE = dyn_cast<DeclRefExpr>(L->IgnoreImpCasts()))
+        return dyn_cast<VarDecl>(DRE->getDecl());
+
+  return nullptr;
+}
+
+const VarDecl *EventQueryTraversal::getAssignTarget(const CallExpr *Call) {
+  auto ParentMap = Context.getParents(*Call);
+  if (ParentMap.size() == 0)
+    return nullptr;
+
+  auto &Parent = ParentMap[0];
+  if (auto VD = Parent.get<VarDecl>()) {
+    return VD;
+  }
+  if (auto BO = Parent.get<BinaryOperator>())
+    return getAssignTargetDecl(BO);
+
+  if (auto COE = Parent.get<CXXOperatorCallExpr>())
+    return getAssignTargetDecl(COE);
+
+  return nullptr;
+}
+
+bool EventQueryTraversal::isEventQuery(const CallExpr *Call) {
+  if (!Call)
+    return false;
+  if (auto Callee = Call->getDirectCallee())
+    if (Callee->getName() == "cudaEventQuery")
+      return QueryCallUsed = true;
+  return false;
+}
+
+StringRef EventQueryTraversal::getReplacedEnumValue(const DeclRefExpr *DRE) {
+  if (!DRE)
+    return StringRef();
+  if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+    auto Name = ECD->getName();
+    if (Name == "cudaSuccess")
+      return "sycl::info::event_command_status::complete";
+  }
+  return StringRef();
+}
+
+TextModification *
+EventQueryTraversal::buildCallReplacement(const CallExpr *Call) {
+  static std::string MemberName = "get_info<" + MapNames::getClNamespace() +
+                                  "::info::event::command_execution_status>";
+  std::string ReplStr;
+  MemberCallPrinter<const Expr *, StringRef> Printer(Call->getArg(0), false,
+                                                     MemberName);
+  llvm::raw_string_ostream OS(ReplStr);
+  Printer.print(OS);
+  return new ReplaceStmt(Call, false, std::string("cudaEventQuery"),
+                         std::move(OS.str()));
+}
+
+bool EventQueryTraversal::checkVarDecl(const VarDecl *VD,
+                                       const FunctionDecl *TargetFD) {
+  if (!VD || !TargetFD)
+    return false;
+  if (dyn_cast<FunctionDecl>(VD->getDeclContext()) == TargetFD &&
+      VD->getKind() == Decl::Var) {
+    auto DS = DpctGlobalInfo::findParent<DeclStmt>(VD);
+    return DS && DS->isSingleDecl();
+  }
+  return false;
+}
+
+bool EventQueryTraversal::traverseFunction(const FunctionDecl *FD,
+                                           const VarDecl *VD) {
+  if (!checkVarDecl(VD, FD))
+    return Rule->VarDeclCache[VD] = false;
+  ResultTy Result;
+  auto Ret = traverseStmt(FD->getBody(), VD, Result) && QueryCallUsed;
+
+  for (auto R : Result) {
+    Rule->ExprCache[R.first] = Ret;
+    if (Ret)
+      Rule->emplaceTransformation(R.second);
+  }
+  return Rule->VarDeclCache[VD] = Ret;
+}
+
+bool EventQueryTraversal::traverseAssignRhs(const Expr *Rhs, ResultTy &Result) {
+  if (!Rhs)
+    return true;
+  auto Call = dyn_cast<CallExpr>(Rhs->IgnoreImpCasts());
+  if (!isEventQuery(Call))
+    return false;
+
+  Result.emplace_back(Call, buildCallReplacement(Call));
+  return true;
+}
+
+bool EventQueryTraversal::traverseEqualStmt(const Stmt *S, const VarDecl *VD,
+                                            ResultTy &Result) {
+  const Expr *L = getLhs(S), *R = getRhs(S);
+  do {
+    if (!L || !R)
+      break;
+    const DeclRefExpr *LRef = dyn_cast<DeclRefExpr>(L->IgnoreImpCasts()),
+                      *RRef = dyn_cast<DeclRefExpr>(R->IgnoreImpCasts());
+    if (!LRef || !RRef)
+      break;
+
+    const DeclRefExpr *TargetExpr = nullptr;
+    if (LRef->getDecl() == VD)
+      TargetExpr = RRef;
+    else if (RRef->getDecl() == VD)
+      TargetExpr = LRef;
+
+    auto Replaced = getReplacedEnumValue(TargetExpr);
+    if (Replaced.empty())
+      break;
+    Result.emplace_back(TargetExpr,
+                        new ReplaceStmt(TargetExpr, Replaced.str()));
+    return true;
+  } while (false);
+  for (auto Child : S->children())
+    if (!traverseStmt(Child, VD, Result))
+      return false;
+  return true;
+}
+
+bool EventQueryTraversal::traverseStmt(const Stmt *S, const VarDecl *VD,
+                                       ResultTy &Result) {
+  if (!S)
+    return true;
+  switch (S->getStmtClass()) {
+  case Stmt::DeclStmtClass: {
+    auto DS = static_cast<const DeclStmt *>(S);
+    if (DS->isSingleDecl() && VD == DS->getSingleDecl()) {
+      Result.emplace_back(
+          S, new ReplaceTypeInDecl(VD, MapNames::getClNamespace() +
+                                            "::info::event_command_status"));
+      return traverseAssignRhs(VD->getInit(), Result);
+    }
+    for (auto D : DS->decls())
+      if (auto VDecl = dyn_cast<VarDecl>(D))
+        if (!traverseStmt(VDecl->getInit(), VD, Result))
+          return false;
+    break;
+  }
+  case Stmt::DeclRefExprClass:
+    if (auto D =
+            dyn_cast<VarDecl>(static_cast<const DeclRefExpr *>(S)->getDecl()))
+      return D != VD;
+    break;
+  case Stmt::BinaryOperatorClass:
+  case Stmt::CXXOperatorCallExprClass:
+    if (getAssignTargetDecl(S) == VD)
+      return traverseAssignRhs(getRhs(S), Result);
+    if (isEqualOperator(S))
+      return traverseEqualStmt(S, VD, Result);
+    LLVM_FALLTHROUGH;
+  default:
+    for (auto Child : S->children())
+      if (!traverseStmt(Child, VD, Result))
+        return false;
+    break;
+  }
+  return true;
+}
+
+bool EventQueryTraversal::startFromStmt(
+    const Stmt *S, const std::function<const VarDecl *()> &VDGetter) {
+  if (!Rule)
+    return false;
+  auto ExprIter = Rule->ExprCache.find(S);
+  if (ExprIter != Rule->ExprCache.end())
+    return ExprIter->second;
+
+  const VarDecl *VD = VDGetter();
+  if (!VD)
+    return Rule->ExprCache[S] = false;
+  auto VarDeclIter = Rule->VarDeclCache.find(VD);
+  if (VarDeclIter != Rule->VarDeclCache.end())
+    return Rule->ExprCache[S] = VarDeclIter->second;
+
+  return traverseFunction(DpctGlobalInfo::findAncestor<FunctionDecl>(S), VD);
+}
+
+// Handle case like "cudaSuccess == cudaEventQuery()" or "cudaSuccess !=
+// cudaEventQeury()".
+void EventQueryTraversal::handleDirectEqualStmt(const DeclRefExpr *DRE,
+                                                const CallExpr *Call) {
+  if (!isEventQuery(Call))
+    return;
+  auto DREReplaceStr = getReplacedEnumValue(DRE);
+  if (DREReplaceStr.empty())
+    return;
+  Rule->emplaceTransformation(new ReplaceStmt(DRE, DREReplaceStr.str()));
+  Rule->emplaceTransformation(buildCallReplacement(Call));
+  Rule->ExprCache[DRE] = Rule->ExprCache[Call] = true;
+  return;
+}
+
+bool EventQueryTraversal::startFromQuery(const CallExpr *Call) {
+  return startFromStmt(Call, [&]() -> const VarDecl * {
+    if (isEventQuery(Call))
+      return getAssignTarget(Call);
+    return nullptr;
+  });
+}
+
+bool EventQueryTraversal::startFromEnumRef(const DeclRefExpr *DRE) {
+  if (getReplacedEnumValue(DRE).empty())
+    return false;
+
+  return startFromStmt(DRE, [&]() -> const VarDecl * {
+    auto ImpCast = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
+    if (!ImpCast)
+      return nullptr;
+    auto S = DpctGlobalInfo::findParent<Stmt>(ImpCast);
+    if (!isEqualOperator(S))
+      return nullptr;
+    const Expr *TargetExpr = nullptr, *L = getLhs(S), *R = getRhs(S);
+    if (L == ImpCast)
+      TargetExpr = R;
+    else if (R == ImpCast)
+      TargetExpr = L;
+
+    if (!TargetExpr)
+      return nullptr;
+    if (auto TargetDRE = dyn_cast<DeclRefExpr>(TargetExpr->IgnoreImpCasts()))
+      return dyn_cast<VarDecl>(TargetDRE->getDecl());
+    else if (auto Call = dyn_cast<CallExpr>(TargetExpr->IgnoreImpCasts()))
+      handleDirectEqualStmt(DRE, Call);
+    return nullptr;
+  });
+}
+
+bool EventQueryTraversal::startFromTypeLoc(TypeLoc TL) {
+  if (DpctGlobalInfo::getUnqualifiedTypeName(QualType(TL.getTypePtr(), 0)) ==
+      "cudaError_t")
+    if (auto DS = DpctGlobalInfo::findAncestor<DeclStmt>(&TL))
+      return startFromStmt(DS, [&]() -> const VarDecl * {
+        if (DS->isSingleDecl())
+          if (auto VD = dyn_cast<VarDecl>(DS->getSingleDecl()))
+            return (VD->getTypeSourceInfo()->getTypeLoc() == TL) ? VD : nullptr;
+        return nullptr;
+      });
+  return false;
+}
+
+EventQueryTraversal EventAPICallRule::getEventQueryTraversal() {
+  return EventQueryTraversal(CurrentRule);
 }
 
 void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
@@ -8437,7 +8711,8 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
                           /*IsProcessMacro*/ true, ""));
     }
   } else if (FuncName == "cudaEventQuery") {
-
+    if (getEventQueryTraversal().startFromQuery(CE))
+      return;
     if (auto FD = getImmediateOuterFuncDecl(CE)) {
       reset();
       TimeElapsedCE = CE;
@@ -8776,7 +9051,8 @@ void EventAPICallRule::updateAsyncRangRecursive(
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto CELoc = SM.getExpansionLoc(AsyncCE->getBeginLoc()).getRawEncoding();
   for (auto Iter = Node->child_begin(); Iter != Node->child_end(); ++Iter) {
-
+    if (*Iter == nullptr)
+      continue;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
       findThreadSyncLocation(*Iter);
 
@@ -8969,6 +9245,8 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
+    if (*It == nullptr)
+      continue;
     auto Loc = SM.getExpansionLoc(It->getBeginLoc()).getRawEncoding();
 
     // Skip statements before RecordBeginLoc or after TimeElapsedLoc
@@ -13280,7 +13558,9 @@ const Expr *getLhs(const Stmt *S) {
   if (auto BO = dyn_cast<BinaryOperator>(S)) {
     return BO->getLHS();
   } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S)) {
-    return COCE->getArg(0);
+    if (COCE->getNumArgs() > 0) {
+      return COCE->getArg(0);
+    }
   }
   return nullptr;
 }
@@ -13289,7 +13569,9 @@ const Expr *getRhs(const Stmt *S) {
   if (auto BO = dyn_cast<BinaryOperator>(S)) {
     return BO->getRHS();
   } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(S)) {
-    return COCE->getArg(1);
+    if (COCE->getNumArgs() > 1) {
+      return COCE->getArg(1);
+    }
   }
   return nullptr;
 }
