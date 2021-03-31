@@ -79,7 +79,7 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   void ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange);
+  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT, SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
   void Endif(SourceLocation Loc, SourceLocation IfLoc) override;
@@ -88,10 +88,13 @@ public:
                    FileID PrevFID = FileID()) override;
   void If(SourceLocation Loc, SourceRange ConditionRange,
           ConditionValueKind ConditionValue) override;
+  void Else(SourceLocation Loc, SourceLocation IfLoc) override;
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
   bool isInRoot(SourceLocation Loc);
+  // Find the "#" before a preprocessing directive, return -1 if have some false
+  int findPoundSign(SourceLocation DirectiveStart);
 private:
   /// e.g. "__launch_bounds(32, 32)  void foo()"
   /// Result is "void foo()"

@@ -100,6 +100,9 @@ CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
 HDCallMap DpctGlobalInfo::HostDeviceFCallIMap;
 HDDefMap DpctGlobalInfo::HostDeviceFDefIMap;
 HDDeclMap DpctGlobalInfo::HostDeviceFDeclIMap;
+// __CUDA_ARCH__ Offset -> defined(...) Offset
+CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
+std::set<std::shared_ptr<ExtReplacement>> DpctGlobalInfo::CudaArchMacroRepl;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
 std::set<std::string> DpctGlobalInfo::ReProcessFile;

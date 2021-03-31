@@ -232,11 +232,40 @@ struct HostDeviceFuncInfo{
   std::string FuncContentCache;
 };
 
-using HDDefMap = std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>>;
-using HDDeclMap = std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>>;
-using HDCallMap = std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
-using CudaArchPPMap = std::unordered_multimap<std::string, unsigned int>;
+enum IfType { unknow, If, Ifdef, Ifndef, Elif };
 
+struct DirectiveInfo {
+  unsigned NumberSignLoc = 0;
+  unsigned DirectiveLoc = 0;
+  unsigned ConditionLoc = 0;
+  std::string Condition;
+};
+
+struct CudaArchPPInfo {
+  IfType DT = IfType::unknow;
+  DirectiveInfo IfInfo;
+  DirectiveInfo ElseInfo;
+  DirectiveInfo EndInfo;
+  std::unordered_map<unsigned, DirectiveInfo> ElInfo;
+  bool isInHDFunc = false;
+};
+
+// functin name, <file path, Info>
+using HDDefMap =
+    std::unordered_multimap<std::string,
+                            std::pair<std::string, HostDeviceFuncInfo>>;
+using HDDeclMap =
+    std::unordered_multimap<std::string,
+                            std::pair<std::string, HostDeviceFuncInfo>>;
+using HDCallMap =
+    std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
+// filt path, <Ofset, Info>
+using CudaArchPPMap =
+    std::unordered_map<std::string,
+                       std::unordered_map<unsigned int, CudaArchPPInfo>>;
+using CudaArchDefMap =
+    std::unordered_map<std::string,
+                       std::unordered_map<unsigned int, unsigned int>>;
 class ParameterStream {
 public:
   ParameterStream() { FormatInformation = FormatInfo(); }
@@ -1359,10 +1388,6 @@ public:
       M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
     }
   }
-  void insertCudaArchPPInfo(SourceLocation SL){
-    auto LocInfo = getLocInfo(SL);
-    CAPPInfoMap.emplace(LocInfo.first, LocInfo.second);
-  }
   void insertHostDeviceFuncCallInfo(std::string &&FuncName, std::pair<std::string, unsigned int> &&Info){
     HostDeviceFCallIMap.emplace(std::move(FuncName), std::move(Info));
   }
@@ -1383,6 +1408,12 @@ public:
   }
   HDDeclMap &getHostDeviceFuncDeclInfoMap(){
     return HostDeviceFDeclIMap;
+  }
+  std::set<std::shared_ptr<ExtReplacement>> &getCudaArchMacroReplSet() {
+    return CudaArchMacroRepl;
+  }
+  CudaArchDefMap &getCudaArchDefinedMap() {
+    return CudaArchDefinedMap;
   }
   void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
   void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
@@ -2004,10 +2035,12 @@ private:
   static unsigned int CudaBuiltinXDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaBuiltinXDFIMap;
-  static std::unordered_multimap<std::string, unsigned int> CAPPInfoMap;
-  static std::unordered_multimap<std::string, std::pair<std::string, unsigned int>> HostDeviceFCallIMap;
-  static std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>> HostDeviceFDefIMap;
-  static std::unordered_multimap<std::string, std::pair<std::string, HostDeviceFuncInfo>> HostDeviceFDeclIMap;
+  static CudaArchPPMap CAPPInfoMap;
+  static HDCallMap HostDeviceFCallIMap;
+  static HDDefMap HostDeviceFDefIMap;
+  static HDDeclMap HostDeviceFDeclIMap;
+  static CudaArchDefMap CudaArchDefinedMap;
+  static std::set<std::shared_ptr<ExtReplacement>> CudaArchMacroRepl;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> FileReplCache;
   static std::set<std::string> ReProcessFile;
   static std::set<std::string> ProcessedFile;

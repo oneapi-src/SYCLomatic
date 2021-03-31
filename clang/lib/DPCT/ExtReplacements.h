@@ -153,8 +153,8 @@ private:
 
   bool getStrReplacingPlaceholder(HelperFuncType HelperFuncType, int Index,
                                   std::string &Text);
-  void processCudaArch(std::shared_ptr<DpctFileInfo> FileInfo);
-
+  void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
+  void processCudaArchMacro();
   std::string FilePath;
   ///<Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
