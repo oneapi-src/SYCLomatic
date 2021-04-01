@@ -1146,6 +1146,10 @@ std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
 }
 
+std::function<const StringRef (const CallExpr *)> makeCallArgCreator(std::string Str) {
+  return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
+}
+
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
@@ -1167,6 +1171,18 @@ makeStructDismantler(unsigned Idx, const std::vector<std::string> &Suffixes) {
                      });
     }
     return Ret;
+  };
+}
+
+std::function<std::string(const CallExpr *)>
+makeExtendStr(unsigned Idx, const std::string Suffix) {
+  return [=](const CallExpr *C) -> std::string {
+    ArgumentAnalysis AA;
+    AA.setCallSpelling(C);
+    AA.analyze(C->getArg(Idx));
+    std::string S = "(std::string(" + AA.getRewriteString() + ") + \"" +
+                    Suffix + "\").c_str()";
+    return S;
   };
 }
 
@@ -1289,6 +1305,21 @@ creatAssignExprRewriterFactory(
       std::forward<std::function<LValue(const CallExpr *)>>(LValueCreator),
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
+
+/// Create CallExprRewriterFactory with given argumens.
+/// \p SourceName the source callee name of original call expr.
+/// \p ArgsCreator use to get call args from original call expr.
+template <class... CallArgsT>
+std::shared_ptr<CallExprRewriterFactoryBase> creatCallExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<CallExprPrinter<StringRef, CallArgsT...>(const CallExpr *)>
+        Args) {
+  return std::make_shared<CallExprRewriterFactory<
+      SimpleCallExprRewriter<CallArgsT...>,
+      std::function<CallExprPrinter<StringRef, CallArgsT...>(
+          const CallExpr *)>>>(SourceName, Args);
+}
+
 
 /// Create TemplatedCallExprRewriterFactory with given argumens.
 /// \p SourceName the source callee name of original call expr.
@@ -1524,6 +1555,7 @@ public:
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
+#define EXTENDSTR(idx, str) makeExtendStr(idx,str)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
@@ -1536,6 +1568,8 @@ public:
   { FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__) },
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
+#define CALL_FACTORY_ENTRY(FuncName, C)                                   \
+  {FuncName, creatCallExprRewriterFactory(FuncName, C)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
@@ -1641,6 +1675,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #include "APINamesTexture.inc"
+#include "APINamesDriver.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

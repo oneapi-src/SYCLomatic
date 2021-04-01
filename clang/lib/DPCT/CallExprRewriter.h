@@ -792,6 +792,23 @@ public:
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
 };
 
+template <class... ArgsT>
+class SimpleCallExprRewriter : public CallExprRewriter {
+  CallExprPrinter<StringRef, ArgsT...> Printer;
+public:
+  SimpleCallExprRewriter(
+      const CallExpr *C, StringRef Source,
+      const std::function<CallExprPrinter<StringRef, ArgsT...>(const CallExpr *)>
+          &CallPrinterFunctor)
+      : CallExprRewriter(C, Source), Printer(CallPrinterFunctor(C)){}
+  Optional<std::string> rewrite() override {
+    std::string Result = "";
+    llvm::raw_string_ostream OS(Result);
+    Printer.print(OS);
+    return OS.str();
+  }
+};
+
 template <class LValueT, class RValueT>
 class AssignExprRewriter
     : public PrinterRewriter<AssignExprPrinter<LValueT, RValueT>> {

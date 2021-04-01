@@ -1989,6 +1989,13 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
+public:
+  DriverModuleAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 class DriverDeviceAPIRule : public NamedMigrationRule<DriverDeviceAPIRule> {
 public:
   DriverDeviceAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

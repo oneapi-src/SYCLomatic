@@ -21,6 +21,13 @@
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|kernel_functor|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef void (*kernel_functor)(cl::sycl::queue &, const cl::sycl::nd_range<3> &,
+                               unsigned int, void **, void **);
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|kernel_function_info|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

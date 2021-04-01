@@ -42,6 +42,12 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaError", "int"},
       {"CUresult", "int"},
       {"CUcontext", "int"},
+#ifdef _WIN32
+      {"CUmodule","HMODULE"},
+#else
+      {"CUmodule","void *"},
+#endif
+      {"CUfunction","dpct::kernel_functor"},
       {"dim3", ClNamespace + "::range<3>"},
       {"int2", ClNamespace + "::int2"},
       {"struct int2", ClNamespace + "::int2"},
@@ -227,6 +233,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"CUresourcetype", {HelperFileEnum::Image, "image_data_type"}},
       {"cudaResourceType", {HelperFileEnum::Image, "image_data_type"}},
       {"CUtexref", {HelperFileEnum::Image, "image_wrapper_base_p_alias"}},
+      {"CUfunction", {HelperFileEnum::Kernel, "kernel_functor"}},
   };
 
   // Enum constants name mapping.

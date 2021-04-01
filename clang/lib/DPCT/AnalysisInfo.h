@@ -421,6 +421,7 @@ enum HeaderType {
   MKL_SPBLAS_Without_Util,
   MKL_FFT,
   Chrono,
+  DL,
 };
 
 enum UsingType {
@@ -589,6 +590,14 @@ public:
     case Chrono:
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
         "<chrono>");
+    case DL:
+#ifdef _WIN32
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
+        "<libloaderapi.h>");
+#else
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
+        "<dlfcn.h>");
+#endif
     }
   }
 

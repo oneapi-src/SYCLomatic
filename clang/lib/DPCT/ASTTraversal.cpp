@@ -2582,7 +2582,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "pair", "CUdeviceptr",
-                  "cudaDeviceAttr"),
+                  "cudaDeviceAttr", "CUmodule", "CUfunction"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -14735,6 +14735,56 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(FFTFunctionCallRule)
+
+void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto DriverModuleAPI = [&]() {
+    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleUnload",
+                      "cuModuleGetFunction");
+  };
+
+  MF.addMatcher(
+    callExpr(allOf(callee(functionDecl(DriverModuleAPI())), parentStmt()))
+    .bind("call"),
+    this);
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(DriverModuleAPI())),
+    unless(parentStmt())))
+    .bind("callUsed"),
+    this);
+}
+
+void DriverModuleAPIRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+  bool IsAssigned = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed"))) {
+      return;
+    }
+    IsAssigned = true;
+  }
+
+  std::string APIName = "";
+  if (auto DC = CE->getDirectCallee()) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    APIName = DC->getNameAsString();
+    DpctGlobalInfo::getInstance().insertHeader(
+        SM.getExpansionLoc(CE->getBeginLoc()), DL);
+  } else {
+    return;
+  }
+
+  if (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_FILENAME_MANUAL_FIX, false);
+  }
+
+  ExprAnalysis EA;
+  EA.analyze(CE);
+  emplaceTransformation(EA.getReplacement());
+}
+
+REGISTER_RULE(DriverModuleAPIRule)
 
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
