@@ -1232,7 +1232,7 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
       PointerName + "_buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }
@@ -1252,7 +1252,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }

@@ -359,7 +359,7 @@ protected:
 /// The rewriter for migrating warp functions
 class WarpFunctionRewriter : public FuncCallExprRewriter {
 private:
-  static const std::map<std::string, std::string> WarpFunctionsMap;
+  static std::map<std::string, std::string> WarpFunctionsMap;
   void reportNoMaskWarning() {
     report(Diagnostics::MASK_UNSUPPORTED, false, TargetCalleeName);
   }
@@ -376,6 +376,7 @@ protected:
   std::string getNewFuncName();
 
   friend WarpFunctionRewriterFactory;
+  friend MapNames;
 };
 
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {

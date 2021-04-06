@@ -18,6 +18,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "LibraryAPIMigration.h"
+#include "SaveNewFiles.h"
 #include <bitset>
 #include <unordered_set>
 #include <vector>
@@ -1089,6 +1090,35 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
+  inline static std::set<ExplicitNamespace> getExplicitNamespaceSet() { return ExplicitNamespaceSet; }
+  inline static void setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec) {
+    size_t NamespaceVecSize = NamespacesVec.size();
+    if(!NamespaceVecSize || NamespaceVecSize > 2) {
+      DebugInfo::ShowStatus(MigrationErrorInvalidExplicitNamespace);
+      dpctExit(MigrationErrorInvalidExplicitNamespace);
+    }
+    for (auto &Namespace : NamespacesVec) {
+      // 1.Ensure option none is alone
+      bool Check1 =
+          (Namespace == ExplicitNamespace::none && NamespaceVecSize == 2);
+      // 2.Ensuere option cl, sycl, sycl-math only enabled one
+      bool Check2 =
+          ((Namespace == ExplicitNamespace::cl ||
+            Namespace == ExplicitNamespace::sycl ||
+            Namespace == ExplicitNamespace::sycl_math) &&
+           (ExplicitNamespaceSet.size() == 1 &&
+            ExplicitNamespaceSet.count(ExplicitNamespace::dpct) == 0));
+      // 3.Check whether option dpct duplicated
+      bool Check3 = (Namespace == ExplicitNamespace::dpct &&
+                     ExplicitNamespaceSet.count(ExplicitNamespace::dpct) == 1);
+      if (Check1 || Check2 || Check3) {
+        DebugInfo::ShowStatus(MigrationErrorInvalidExplicitNamespace);
+        dpctExit(MigrationErrorInvalidExplicitNamespace);
+      } else {
+        ExplicitNamespaceSet.insert(Namespace);
+      }
+    }
+  }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
   inline static bool isCommentsEnabled() { return EnableComments; }
@@ -2127,6 +2157,7 @@ private:
   static bool EnableCtad;
   static bool EnableComments;
   static std::string ClNamespace;
+  static std::set<ExplicitNamespace> ExplicitNamespaceSet;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -2480,7 +2511,7 @@ public:
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     return DpctGlobalInfo::printCtadClass(
-               OS, MapNames::getClNamespace() + "::range",
+               OS, MapNames::getClNamespace() + "range",
                getType()->getDimension())
         .str();
   }
@@ -2582,8 +2613,9 @@ private:
     requestFeature(HelperFileEnum::Memory, "dpct_accessor",
                                    getFilePath());
     auto Type = getType();
-    return buildString("dpct::accessor<", getAccessorDataType(), ", ",
-                       getMemoryAttr(), ", ", Type->getDimension(), ">");
+    return buildString(MapNames::getDpctNamespace(true), "accessor<",
+                       getAccessorDataType(), ", ", getMemoryAttr(), ", ",
+                       Type->getDimension(), ">");
   }
   inline std::string getNameWithSuffix(StringRef Suffix) {
     return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
@@ -2712,7 +2744,8 @@ protected:
 
   ParameterStream &getDecl(ParameterStream &PS,
                              const std::string &TemplateDeclName) {
-    return Type->printType(PS, "dpct::" + TemplateDeclName) << " " << Name;
+    return Type->printType(PS, MapNames::getDpctNamespace() + TemplateDeclName)
+           << " " << Name;
   }
 
 public:
@@ -2789,7 +2822,7 @@ public:
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
     requestFeature(HelperFileEnum::Image, "image_accessor_ext",
                                    FilePath);
-    getType()->printType(OS, "dpct::image_accessor_ext");
+    getType()->printType(OS, MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
     return OS;
   }
@@ -2827,7 +2860,7 @@ public:
     ParameterStream PS;
 
     PS << "auto " << NewVarName << "_acc = static_cast<";
-    getType()->printType(PS, "dpct::image_wrapper")
+    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
     requestFeature(HelperFileEnum::Image, "image_wrapper",
                                    FilePath);
@@ -2843,7 +2876,7 @@ public:
     requestFeature(HelperFileEnum::Image, "image_accessor_ext",
                                    FilePath);
     ParameterStream PS;
-    Type->printType(PS, "dpct::image_accessor_ext");
+    Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
     return PS.Str;
   }
 
@@ -2874,7 +2907,7 @@ public:
                                    FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(PS, "dpct::image_wrapper")
+    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
         << " *>(" << ArgStr << ")->get_access(cgh);";
     return PS.Str;
   }
@@ -3206,7 +3239,7 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
     NDItem = "nd_item<1>";
   }
 
-  std::string ItemParamDecl = MapNames::getClNamespace() + "::" + NDItem + " " +
+  std::string ItemParamDecl = MapNames::getClNamespace() + NDItem + " " +
                                      DpctGlobalInfo::getItemName();
   return PS << ItemParamDecl;
 }
@@ -3215,7 +3248,7 @@ template <>
 inline ParameterStream &
 MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   static std::string StreamParamDecl = "const " + MapNames::getClNamespace() +
-                                       "::stream &" +
+                                       "stream &" +
                                        DpctGlobalInfo::getStreamName();
   return PS << StreamParamDecl;
 }
@@ -3950,7 +3983,7 @@ private:
   void addStreamDecl() {
     if (getVarMap().hasStream())
       SubmitStmtsList.StreamList.emplace_back(buildString(
-          MapNames::getClNamespace() + "::stream ",
+          MapNames::getClNamespace() + "stream ",
           DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   }
 
@@ -4202,6 +4235,13 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::dpct)) {
+      RSO << "using namespace dpct;" << getNL();
+    }
+    if(!DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::sycl) &&
+      !DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::cl)) {
+      RSO << "using namespace sycl;" << getNL();
+    }
     insertHeader(std::move(RSO.str()), Offset);
   }
 }
@@ -4333,10 +4373,11 @@ inline void buildTempVariableMap(int Index, const T *S,
     std::string IndentStr = std::string(IndentLen, ' ');
 
     std::string DevDecl =
-        getNL() + IndentStr +
-        "dpct::device_ext &dev_ct1 = dpct::get_current_device();";
+        getNL() + IndentStr + MapNames::getDpctNamespace() +
+        "device_ext &dev_ct1 = " + MapNames::getDpctNamespace() +
+        "get_current_device();";
     std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
-                        "::queue &q_ct1 = dev_ct1.default_queue();";
+                        "queue &q_ct1 = dev_ct1.default_queue();";
     if (HFT == HelperFuncType::DefaultQueue) {
       if (Iter->second.DefaultQueueCounter == 1) {
         if (Iter->second.CurrentDeviceCounter <= 1) {

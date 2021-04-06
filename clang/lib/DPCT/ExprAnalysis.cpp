@@ -418,7 +418,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                    3)
         << "(";
     ArgumentAnalysis A;
@@ -821,7 +821,7 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   requestFeature(HelperFileEnum::Memory, "dpct_malloc", Call);
   requestFeature(HelperFileEnum::Memory, "dpct_malloc_2d", Call);
   requestFeature(HelperFileEnum::Memory, "dpct_malloc_3d", Call);
-  OS << "dpct::dpct_malloc(";
+  OS << MapNames::getDpctNamespace() << "dpct_malloc(";
   ExprAnalysis ArgEA(SecondArg);
   ArgEA.analyze();
   OS << ArgEA.getReplacedString() << ")";
@@ -977,11 +977,13 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
           Stmt::ParenExprClass) {
         Repl.push_back(
             {{SubE->getBeginLoc(), SubE->getEndLoc()},
-             std::string("dpct::get_host_ptr<" + PointerTempType + ">" + Rep)});
+             std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
+                         PointerTempType + ">" + Rep)});
       } else {
-        Repl.push_back({{SubE->getBeginLoc(), SubE->getEndLoc()},
-                        std::string("dpct::get_host_ptr<" + PointerTempType +
-                                    ">(" + Rep + ")")});
+        Repl.push_back(
+            {{SubE->getBeginLoc(), SubE->getEndLoc()},
+             std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
+                         PointerTempType + ">(" + Rep + ")")});
       }
     }
   } else if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
@@ -1019,8 +1021,8 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
   if (UK == Literal) {
     UK = Reference;
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
-                    std::string("dpct::get_host_ptr<" + PointerTempType + ">(" +
-                                PointerName + ")")});
+                    std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
+                                PointerTempType + ">(" + PointerName + ")")});
     requestFeature(HelperFileEnum::Memory, "get_host_ptr",
                                    Call);
   }
@@ -1200,7 +1202,7 @@ void KernelConfigAnalysis::analyzeExpr(
   if (ArgIndex < 2) {
     std::string CDSMEString;
     llvm::raw_string_ostream OS(CDSMEString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                    3);
     OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
     OS.flush();
@@ -1245,7 +1247,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
     if (IsTryToUseOneDimension && Dim == 1) {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                      1)
           << "(";
       auto Args = getCtorArgs(Ctor);
@@ -1255,7 +1257,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         llvm_unreachable("Ctor of the kernel config hasn't any argument!");
       }
     } else {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                      3)
           << "(";
       auto Args = getCtorArgs(Ctor);
@@ -1336,12 +1338,12 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
         Dim = 1;
         addReplacement(
             buildString(DpctGlobalInfo::getCtadClass(
-                            MapNames::getClNamespace() + "::range", 1),
+                            MapNames::getClNamespace() + "range", 1),
                         "(", getReplacedString(), ")"));
       } else {
         addReplacement(
             buildString(DpctGlobalInfo::getCtadClass(
-                            MapNames::getClNamespace() + "::range", 3),
+                            MapNames::getClNamespace() + "range", 3),
                         "(1, 1, ", getReplacedString(), ")"));
       }
 

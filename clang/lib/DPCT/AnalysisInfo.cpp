@@ -43,6 +43,7 @@ std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
+std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableComments = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
@@ -642,7 +643,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs += getExtraArguments();
       }
     }
-    if(ArgCounter != 0)
+    if (ArgCounter != 0)
       KernelArgs += ", ";
 
     if (Arg.IsDoublePointer) {
@@ -677,7 +678,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         requestFeature(HelperFileEnum::Memory, "access_wrapper",
                                        getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(buildString(
-            "dpct::access_wrapper<", TypeStr, "> ",
+            MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
             Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
             Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
         KernelArgs +=
@@ -687,7 +688,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                        getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(
             buildString("auto ", Arg.getIdStringWithSuffix("acc"),
-                        " = dpct::get_access(", Arg.getArgString(),
+                        " = " + MapNames::getDpctNamespace() + "get_access(",
+                        Arg.getArgString(),
                         Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
         KernelArgs += buildString("(", TypeStr, ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0])");
@@ -758,7 +760,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
 
 void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
-  Printer.line("[&](" + MapNames::getClNamespace() + "::handler &cgh) {");
+  Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
     auto Body = Printer.block();
     SubmitStmtsList.print(Printer);
@@ -784,21 +786,23 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   }
   auto B = Printer.block();
   static std::string CanIgnoreRangeStr3D =
-      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
+      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3) +
       "(1, 1, 1)";
   static std::string CanIgnoreRangeStr1D =
-      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 1) +
+      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
-    Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
-      DpctGlobalInfo::getItemName(), ") {");
+    Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
+                 DpctGlobalInfo::getItemName(), ") {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
-      MemVarMap::getHeadWithoutPathCompression(&(getFuncInfo()->getVarMap())) &&
-      MemVarMap::getHeadWithoutPathCompression(&(getFuncInfo()->getVarMap()))
-              ->Dim == 1) {
+             MemVarMap::getHeadWithoutPathCompression(
+                 &(getFuncInfo()->getVarMap())) &&
+             MemVarMap::getHeadWithoutPathCompression(
+                 &(getFuncInfo()->getVarMap()))
+                     ->Dim == 1) {
     DpctGlobalInfo::printCtadClass(Printer.indent(),
-                                   MapNames::getClNamespace() + "::nd_range", 1)
+                                   MapNames::getClNamespace() + "nd_range", 1)
         << "(";
     if (ExecutionConfig.GroupSizeFor1D == CanIgnoreRangeStr1D) {
       Printer << ExecutionConfig.LocalSizeFor1D;
@@ -811,11 +815,11 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
-    Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<1> ",
+    Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  DpctGlobalInfo::getItemName(), ") {");
   } else {
     DpctGlobalInfo::printCtadClass(Printer.indent(),
-                                   MapNames::getClNamespace() + "::nd_range", 3)
+                                   MapNames::getClNamespace() + "nd_range", 3)
         << "(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
@@ -828,7 +832,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
-    Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
+    Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  DpctGlobalInfo::getItemName(), ") {");
   }
 
@@ -1753,9 +1757,9 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
     auto FunctionBlock = Printer.block();
     Printer.indent();
     Printer << "void " << FuncName << "_wrapper("
-            << MapNames::getClNamespace() << "::queue &queue, const "
+            << MapNames::getClNamespace() << "queue &queue, const "
             << MapNames::getClNamespace()
-            << "::nd_range<3> &nr, unsigned int localMemSize, void "
+            << "nd_range<3> &nr, unsigned int localMemSize, void "
                "**kernelParams, void **extra)";
     if (HasBody) {
       Printer << "{";
@@ -2358,26 +2362,34 @@ std::string MemVarInfo::getMemoryType() {
   case clang::dpct::MemVarInfo::Device: {
     requestFeature(HelperFileEnum::Memory,
                                    "global_memory_alias", getFilePath());
-    static std::string DeviceMemory = "dpct::global_memory";
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() + "global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFileEnum::Memory,
                                    "constant_memory_alias", getFilePath());
-    static std::string ConstantMemory = "dpct::constant_memory";
+    static std::string ConstantMemory =
+        MapNames::getDpctNamespace() + "constant_memory";
     return getMemoryType(ConstantMemory, getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = "dpct::local_memory";
-    static std::string ExternSharedMemory = "dpct::extern_local_memory";
+    static std::string SharedMemory =
+        MapNames::getDpctNamespace() + "local_memory";
+    static std::string ExternSharedMemory =
+        MapNames::getDpctNamespace() + "extern_local_memory";
     if (isExtern())
       return ExternSharedMemory;
     return getMemoryType(SharedMemory, getType());
   }
   case clang::dpct::MemVarInfo::Managed: {
+
     requestFeature(HelperFileEnum::Memory,
                                    "shared_memory_alias", getFilePath());
-    static std::string ManagedMemory = "dpct::shared_memory";
+
+    static std::string ManagedMemory =
+        MapNames::getDpctNamespace() + "shared_memory";
+
     return getMemoryType(ManagedMemory, getType());
   }
   default:
@@ -2391,19 +2403,20 @@ const std::string &MemVarInfo::getMemoryAttr() {
                                  getFilePath());
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = "dpct::device";
+    static std::string DeviceMemory = MapNames::getDpctNamespace() + "device";
     return DeviceMemory;
   }
   case clang::dpct::MemVarInfo::Constant: {
-    static std::string ConstantMemory = "dpct::constant";
+    static std::string ConstantMemory =
+        MapNames::getDpctNamespace() + "constant";
     return ConstantMemory;
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = "dpct::local";
+    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
     return SharedMemory;
   }
   case clang::dpct::MemVarInfo::Managed: {
-    static std::string ManagedMemory = "dpct::shared";
+    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
     return ManagedMemory;
   }
   default:
@@ -2455,10 +2468,10 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
   llvm::raw_string_ostream OS(Result);
   if (isShared()) {
     auto Dimension = getType()->getDimension();
-    OS << MapNames::getClNamespace() + "::accessor<"
+    OS << MapNames::getClNamespace() + "accessor<"
        << getAccessorDataType() << ", " << Dimension
-       << ", " + MapNames::getClNamespace() + "::access_mode::read_write, " +
-          MapNames::getClNamespace() + "::access::target::local> "
+       << ", " + MapNames::getClNamespace() + "access_mode::read_write, " +
+          MapNames::getClNamespace() + "access::target::local> "
        << getAccessorName() << "(";
     if (Dimension > 1) {
       OS << getRangeName() << ", ";
@@ -2829,7 +2842,7 @@ void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
 void CGBlockInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                unsigned int Dim) {
   std::string ReplStr =
-      MapNames::getClNamespace() + "::group<" + std::to_string(Dim) + "> ";
+      MapNames::getClNamespace() + "group<" + std::to_string(Dim) + "> ";
 
   for (size_t i = 0; i < Vars.size(); ++i) {
     if (i != 0)

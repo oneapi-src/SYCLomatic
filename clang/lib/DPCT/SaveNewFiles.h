@@ -65,6 +65,7 @@ enum ProcessStatus {
   MigrationErrorInconsistentFileInDatabase = -30,
   MigrationErrorCudaVersionUnsupported = -31,
   MigrationErrorSupportedCudaVersionNotAvailable = -32,
+  MigrationErrorInvalidExplicitNamespace = -33,
   MigrationErrorCustomHelperFileNameContainInvalidChar = -34,
   MigrationErrorCustomHelperFileNameTooLong = -35,
   MigrationErrorCustomHelperFileNamePathTooLong = -36,

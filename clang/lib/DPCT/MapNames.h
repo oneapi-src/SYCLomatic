@@ -13,6 +13,7 @@
 #define DPCT_MAPNAMES_H
 
 #include "Utility.h"
+#include "ValidateArguments.h"
 #include <map>
 #include <set>
 
@@ -37,11 +38,17 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 /// Record mapping between names
 class MapNames {
-  static std::string ClNamespace;
+  static std::vector<std::string> ClNamespace;
+  static std::vector<std::string> DpctNamespace;
 public:
-  static void setClNamespace(bool enable);
-
-  static std::string getClNamespace();
+  static void setExplicitNamespaceMap();
+// KeepNamespace = true for funtion or type that need avoid ambiguous.
+// Example: sycl::exception <--> std::exception
+// IsMathFunc = true for namespace before math functions.
+// Example: sycl::exp
+  static std::string getClNamespace(bool KeepNamespace = false,
+                                           bool IsMathFunc = false);
+  static std::string getDpctNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -317,7 +324,7 @@ public:
   static const MapTy MacrosMap;
   static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
-  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+  static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;
@@ -326,12 +333,12 @@ public:
   static std::map<std::string,
                   std::pair<clang::dpct::HelperFileEnum, std::string>>
       ThrustFuncNamesHelperFeaturesMap;
-  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+  static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
-  static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+  static std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BatchedBLASFuncReplInfoMap;
 
   static const std::set<std::string> MustSyncBLASFunc;
@@ -341,17 +348,17 @@ public:
   static const std::map<std::string, std::map<int, std::string>>
       MaySyncBLASFuncWithMultiArgs;
 
-  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+  static std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASGemmExTypeInfoMap;
 
-  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+  static std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASTGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
       SOLVERFuncReplInfoMap;
 
-  static const MapTy ITFName;
+  static MapTy ITFName;
   static const MapTy RandomEngineTypeMap;
   static const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
       RandomGenerateFuncReplInfoMap;
@@ -383,9 +390,9 @@ public:
 
   static const MapNames::MapTy MemberNamesMap;
   static const MapNames::SetTy HostAllocSet;
-  static const MapNames::MapTy MathRewriterMap;
+  static MapNames::MapTy MathRewriterMap;
 
-  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
+  static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
   static const MapNames::SetTy PredefinedStreamName;
 
 

@@ -307,11 +307,11 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
     if (HFT == HelperFuncType::DefaultQueue) {
       requestFeature(HelperFileEnum::Device,
                                      "get_default_queue", FilePath);
-      Text = "dpct::get_default_queue()";
+      Text = MapNames::getDpctNamespace() + "get_default_queue()";
     } else if (HFT == HelperFuncType::CurrentDevice) {
       requestFeature(HelperFileEnum::Device,
                                      "get_current_device", FilePath);
-      Text = "dpct::get_current_device()";
+      Text = MapNames::getDpctNamespace() + "get_current_device()";
     }
     return true;
   }
@@ -339,12 +339,12 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
       requestFeature(HelperFileEnum::Device,
                                      "get_default_queue", FilePath);
-      Text = "dpct::get_default_queue()";
+      Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else if (TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
       requestFeature(HelperFileEnum::Device,
                                      "get_default_queue", FilePath);
-      Text = "dpct::get_default_queue()";
+      Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else {
       Text = "q_ct1";
@@ -354,13 +354,13 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
       requestFeature(HelperFileEnum::Device,
                                      "get_current_device", FilePath);
-      Text = "dpct::get_current_device()";
+      Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else if (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
                TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
       requestFeature(HelperFileEnum::Device,
                                      "get_current_device", FilePath);
-      Text = "dpct::get_current_device()";
+      Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else {
       Text = "dev_ct1";
@@ -739,7 +739,8 @@ void ExtReplacements::postProcess() {
             DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
           // Cannot found HelperFuncReplInfo in the map, migrate it to default
           // queue
-          NewReplText = NewReplText + "dpct::get_default_queue()";
+          NewReplText = NewReplText + MapNames::getDpctNamespace() +
+                        "get_default_queue()";
           requestFeature(HelperFileEnum::Device,
                                          "get_default_queue", FilePath);
         } else {

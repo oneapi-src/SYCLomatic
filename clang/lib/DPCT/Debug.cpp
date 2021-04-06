@@ -265,6 +265,10 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
                    "fields of the compilation database are inconsistent:\n" +
                    Message;
     break;
+  case MigrationErrorInvalidExplicitNamespace:
+    StatusString = "Error: The input for --use-explicit-namespace is not valid."
+                   " Run 'dpct --help' to see supported options and values.";
+    break;
   case MigrationErrorCustomHelperFileNameContainInvalidChar:
     StatusString =
         "Error: Custom helper header file name is invalid. The name can only "
@@ -277,7 +281,6 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
   case MigrationErrorCustomHelperFileNamePathTooLong:
     StatusString = "Error: The path resulted from --out-root and --custom-helper-file "
                    "option values: \"" + Message + "\" is too long.";
-    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

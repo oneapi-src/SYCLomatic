@@ -10,12 +10,15 @@
 //===-----------------------------------------------------------------===//
 CONDITIONAL_FACTORY_ENTRY(
     [](const CallExpr *C) -> bool { return C->getNumArgs(); },
-    ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::image_channel"),
+    ENTRY_RENAMED("cudaCreateChannelDesc",
+                  MapNames::getDpctNamespace() + "image_channel"),
     ENTRY_TEMPLATED("cudaCreateChannelDesc",
-                    TEMPLATED_CALLEE("dpct::image_channel::create", {0})))
-ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::image_channel::create<" +
-                                               MapNames::getClNamespace() +
-                                               "::cl_half>")
+                    TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                         "image_channel::create",
+                                     {0})))
+ENTRY_RENAMED("cudaCreateChannelDescHalf",
+              MapNames::getDpctNamespace() + "image_channel::create<" +
+                  MapNames::getClNamespace() + "cl_half>")
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     POINTER_CHECKER(0),
@@ -52,10 +55,10 @@ ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
 ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray", 0 /*start arg idx*/))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
-                                        CALL("dpct::create_image_wrapper",
+                                        CALL(MapNames::getDpctNamespace() + "create_image_wrapper",
                                              DEREF(1), DEREF(2))))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),
-                                        CALL("dpct::create_image_wrapper",
+                                        CALL(MapNames::getDpctNamespace() + "create_image_wrapper",
                                              DEREF(1), DEREF(2))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
@@ -65,7 +68,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckWarning1073(1),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuArrayCreate_v2", DEREF(0),
-        NEW("dpct::image_matrix",
+        NEW(MapNames::getDpctNamespace() + "image_matrix",
             STRUCT_DISMANTLE(1, "channel_type_ct1", "channel_num_ct1", "x_ct1",
                              "y_ct1")))),
     UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
@@ -74,7 +77,7 @@ ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::NOTSUPPORTED)
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetArray", ARG(0), true,
                                              "attach",
-                                             CALL("dpct::image_data", ARG(1))))
+                                             CALL(MapNames::getDpctNamespace() + "image_data", ARG(1))))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetAddressMode", ARG(0),
                                              true, "set", ARG(2)))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetFilterMode", ARG(0),

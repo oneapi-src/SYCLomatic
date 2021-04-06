@@ -37,6 +37,7 @@ enum class ReportFormatEnum { notsetformat, csv, formatted };
 enum class HelperFilesCustomizationLevel { none, file, all };
 enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
 enum class AssumedNDRangeDimEnum : unsigned int { dim1 = 1, dim3 = 3 };
+enum class ExplicitNamespace {none, cl, sycl, sycl_math, dpct};
 
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);

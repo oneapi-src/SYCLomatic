@@ -116,8 +116,9 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
                                      Locations.PrefixInsertLoc);
     }
 
-    BufferDecl = "auto " + ArgsList[Idx] + " = dpct::get_buffer<" + TypeStr +
-                 ">(" + PointerName + ");";
+    BufferDecl = "auto " + ArgsList[Idx] + " = " +
+                 MapNames::getDpctNamespace() + "get_buffer<" + TypeStr + ">(" +
+                 PointerName + ");";
     PrefixStmts.emplace_back(BufferDecl);
   } else {
     if ((Idx == 1 && (FuncName[9] == 'C' || FuncName[9] == 'Z')) ||
@@ -137,9 +138,9 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
 
   auto getType = [=](const char C) -> std::string {
     if (C == 'Z')
-      return MapNames::getClNamespace() + "::double2";
+      return MapNames::getClNamespace() + "double2";
     else if (C == 'C')
-      return MapNames::getClNamespace() + "::float2";
+      return MapNames::getClNamespace() + "float2";
     else if (C == 'D')
       return "double";
     else
@@ -207,7 +208,8 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       PrefixStmts.push_back(DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
           Diagnostics::CHECK_RELATED_QUEUE));
       PrefixStmts.push_back("*/");
-      PrefixStmts.push_back("desc->commit(dpct::get_default_queue());");
+      PrefixStmts.push_back("desc->commit(" + MapNames::getDpctNamespace() +
+                            "get_default_queue());");
       requestFeature(HelperFileEnum::Device,
                                      "get_default_queue", LocInfo.first);
     }
@@ -1270,7 +1272,7 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
       Stream = StreamStr;
     else {
       if (QueueIndex == -1) {
-        Stream = "dpct::get_default_queue()";
+        Stream = MapNames::getDpctNamespace() + "get_default_queue()";
         requestFeature(HelperFileEnum::Device,
                                        "get_default_queue", FilePath);
       } else
