@@ -12397,11 +12397,11 @@ void RecognizeTypeRule::run(
         QTy->getPointeeType().getUnqualifiedType(), Context);
     report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false,
            PointeeTy + " *",
-           "the Intel(R) DPC++ Compatibility Tool doesn't support this type");
+           "the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type");
     return;
   }
   report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false, TypeName,
-         "the Intel(R) DPC++ Compatibility Tool doesn't support this type");
+         "the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type");
 }
 
 REGISTER_RULE(RecognizeTypeRule)
