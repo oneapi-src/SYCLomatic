@@ -22,6 +22,12 @@ template <typename Policy, typename Iter1, typename Iter2, typename Pred,
           typename T>
 void replace_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p,
                 const T &new_value) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   std::transform(std::forward<Policy>(policy), first, last, mask, first,
                  internal::replace_if_fun<T, Pred>(p, new_value));
 }
@@ -30,12 +36,26 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred, typename T>
 Iter3 replace_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                       Iter3 result, Pred p, const T &new_value) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return std::transform(std::forward<Policy>(policy), first, last, mask, result,
                         internal::replace_if_fun<T, Pred>(p, new_value));
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using oneapi::dpl::make_zip_iterator;
   using policy_type = typename std::decay<Policy>::type;
   using internal::__buffer;
@@ -59,6 +79,14 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred>
 Iter3 remove_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                      Iter3 result, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using oneapi::dpl::make_zip_iterator;
   auto ret_val = std::remove_copy_if(
       std::forward<Policy>(policy), make_zip_iterator(first, mask),
@@ -72,6 +100,12 @@ template <class Policy, class Iter1, class Iter2, class BinaryPred>
 std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
                                Iter1 keys_last, Iter2 values_first,
                                BinaryPred binary_pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::unique(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first, values_first),
@@ -86,6 +120,12 @@ std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
 template <class Policy, class Iter1, class Iter2>
 std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
                                Iter1 keys_last, Iter2 values_first) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using T = typename std::iterator_traits<Iter1>::value_type;
   return unique(std::forward<Policy>(policy), keys_first, keys_last,
                 values_first, std::equal_to<T>());
@@ -97,6 +137,16 @@ std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
                                     Iter1 keys_last, Iter2 values_first,
                                     Iter3 keys_result, Iter4 values_result,
                                     BinaryPred binary_pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::unique_copy(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first, values_first),
@@ -113,6 +163,16 @@ template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4>
 std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
                                     Iter1 keys_last, Iter2 values_first,
                                     Iter3 keys_result, Iter4 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using T = typename std::iterator_traits<Iter1>::value_type;
   auto comp = std::equal_to<T>();
   return unique_copy(std::forward<Policy>(policy), keys_first, keys_last,
@@ -121,6 +181,10 @@ std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
 
 template <typename Policy, typename Iter, typename Pred>
 Iter partition_point(Policy &&policy, Iter first, Iter last, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter>::iterator_category,
+                   std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   if (std::is_partitioned(std::forward<Policy>(policy), first, last, p))
     return std::find_if_not(std::forward<Policy>(policy), first, last, p);
   else
@@ -131,6 +195,14 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred>
 Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
               Iter3 result, Pred pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::copy_if(
       std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, mask),
       oneapi::dpl::make_zip_iterator(last, mask + std::distance(first, last)),
@@ -142,6 +214,12 @@ Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
 template <class Policy, class Iter1, class Iter2, class UnaryOperation>
 Iter2 transform(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
                 UnaryOperation unary_op) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return std::transform(std::forward<Policy>(policy), first, last, result,
                         unary_op);
 }
@@ -150,6 +228,14 @@ template <class Policy, class Iter1, class Iter2, class Iter3,
           class UnaryOperation>
 Iter3 transform(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
                 Iter3 result, UnaryOperation unary_op) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return std::transform(std::forward<Policy>(policy), first1, last1, first2,
                         result, unary_op);
 }
@@ -158,6 +244,12 @@ template <class Policy, class Iter1, class Iter2, class UnaryOperation,
           class Pred>
 Iter2 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
                    UnaryOperation unary_op, Pred pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using T = typename std::iterator_traits<Iter1>::value_type;
   return std::transform(
       std::forward<Policy>(policy), first, last, result,
@@ -168,6 +260,14 @@ template <class Policy, class Iter1, class Iter2, class Iter3,
           class UnaryOperation, class Pred>
 Iter3 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                    Iter3 result, UnaryOperation unary_op, Pred pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using T = typename std::iterator_traits<Iter1>::value_type;
   using Ref1 = typename std::iterator_traits<Iter1>::reference;
   using Ref2 = typename std::iterator_traits<Iter2>::reference;
@@ -181,6 +281,16 @@ template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
 Iter4 transform_if(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
                    Iter3 mask, Iter4 result, BinaryOperation binary_op,
                    Pred pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   const auto n = std::distance(first1, last1);
   using ZipIterator =
       typename oneapi::dpl::zip_iterator<Iter1, Iter2, Iter3, Iter4>;
@@ -200,6 +310,20 @@ std::pair<Iter5, Iter6>
 merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
       Iter2 keys_last2, Iter3 values_first1, Iter4 values_first2,
       Iter5 keys_result, Iter6 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto n1 = std::distance(keys_first1, keys_last1);
   auto n2 = std::distance(keys_first2, keys_last2);
   std::merge(std::forward<Policy>(policy),
@@ -218,6 +342,20 @@ std::pair<Iter5, Iter6>
 merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
       Iter2 keys_last2, Iter3 values_first1, Iter4 values_first2,
       Iter5 keys_result, Iter6 values_result, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto n1 = std::distance(keys_first1, keys_last1);
   auto n2 = std::distance(keys_first2, keys_last2);
   std::merge(std::forward<Policy>(policy),
@@ -232,6 +370,10 @@ merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
 
 template <class Policy, class Iter, class T>
 void iota(Policy &&policy, Iter first, Iter last, T init, T step) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter>::iterator_category,
+                   std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
   std::transform(
       std::forward<Policy>(policy), oneapi::dpl::counting_iterator<DiffSize>(0),
@@ -241,11 +383,19 @@ void iota(Policy &&policy, Iter first, Iter last, T init, T step) {
 
 template <class Policy, class Iter, class T>
 void iota(Policy &&policy, Iter first, Iter last, T init) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter>::iterator_category,
+                   std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   iota(std::forward<Policy>(policy), first, last, init, T(1));
 }
 
 template <class Policy, class Iter>
 void iota(Policy &&policy, Iter first, Iter last) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter>::iterator_category,
+                   std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
   iota(std::forward<Policy>(policy), first, last, DiffSize(0), DiffSize(1));
 }
@@ -253,6 +403,12 @@ void iota(Policy &&policy, Iter first, Iter last) {
 template <class Policy, class Iter1, class Iter2, class Comp>
 void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
           Iter2 values_first, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto first = oneapi::dpl::make_zip_iterator(keys_first, values_first);
   auto last = first + std::distance(keys_first, keys_last);
   std::sort(std::forward<Policy>(policy), first, last,
@@ -262,6 +418,12 @@ void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
 template <class Policy, class Iter1, class Iter2>
 void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
           Iter2 values_first) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   sort(std::forward<Policy>(policy), keys_first, keys_last, values_first,
        internal::__less());
 }
@@ -269,6 +431,12 @@ void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
 template <class Policy, class Iter1, class Iter2, class Comp>
 void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
                  Iter2 values_first, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   std::stable_sort(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first, values_first),
@@ -280,12 +448,22 @@ void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
 template <class Policy, class Iter1, class Iter2>
 void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
                  Iter2 values_first) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   stable_sort(std::forward<Policy>(policy), keys_first, keys_last, values_first,
               internal::__less());
 }
 
 template <class Policy, class Iter, class Operator>
 void for_each_index(Policy &&policy, Iter first, Iter last, Operator unary_op) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter>::iterator_category,
+                   std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
   std::transform(
       std::forward<Policy>(policy), oneapi::dpl::counting_iterator<DiffSize>(0),
@@ -299,6 +477,18 @@ std::pair<Iter4, Iter5>
 set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                  Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                  Iter4 keys_result, Iter5 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -321,6 +511,18 @@ std::pair<Iter4, Iter5>
 set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                  Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                  Iter4 keys_result, Iter5 values_result, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_intersection(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -344,6 +546,20 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                          Iter2 keys_first2, Iter2 keys_last2,
                          Iter3 values_first1, Iter4 values_first2,
                          Iter5 keys_result, Iter6 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_symmetric_difference(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -366,6 +582,20 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                          Iter2 keys_first2, Iter2 keys_last2,
                          Iter3 values_first1, Iter4 values_first2,
                          Iter5 keys_result, Iter6 values_result, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_symmetric_difference(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -387,6 +617,20 @@ std::pair<Iter5, Iter6>
 set_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                Iter4 values_first2, Iter5 keys_result, Iter6 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_difference(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -409,6 +653,20 @@ std::pair<Iter5, Iter6> set_difference(Policy &&policy, Iter1 keys_first1,
                                        Iter2 keys_last2, Iter3 values_first1,
                                        Iter4 values_first2, Iter5 keys_result,
                                        Iter6 values_result, Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_difference(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -430,6 +688,20 @@ internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
 set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
           Iter4 values_first2, Iter5 keys_result, Iter6 values_result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_union(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -452,6 +724,20 @@ set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
           Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
           Iter4 values_first2, Iter5 keys_result, Iter6 values_result,
           Comp comp) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter5>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter6>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::set_union(
       std::forward<Policy>(policy),
       oneapi::dpl::make_zip_iterator(keys_first1, values_first1),
@@ -472,6 +758,16 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
 internal::enable_if_execution_policy<Policy, std::pair<Iter3, Iter4>>
 stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                       Iter3 out_true, Iter4 out_false, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   auto ret_val = std::partition_copy(
       std::forward<Policy>(policy), oneapi::dpl::make_zip_iterator(first, mask),
       oneapi::dpl::make_zip_iterator(last, mask + std::distance(first, last)),
@@ -488,6 +784,14 @@ template <typename Policy, typename Iter1, typename Iter3, typename Iter4,
 internal::enable_if_execution_policy<Policy, std::pair<Iter3, Iter4>>
 stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter3 out_true,
                       Iter4 out_false, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return std::partition_copy(std::forward<Policy>(policy), first, last,
                              out_true, out_false, p);
 }
@@ -497,6 +801,16 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
 internal::enable_if_execution_policy<Policy, std::pair<Iter3, Iter4>>
 partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
                Iter3 out_true, Iter4 out_false, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
+                       std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter4>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return stable_partition_copy(std::forward<Policy>(policy), first, last, mask,
                                out_true, out_false, p);
 }
@@ -504,6 +818,12 @@ partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 internal::enable_if_execution_policy<Policy, Iter1>
 stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   typedef typename std::decay<Policy>::type policy_type;
   internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(
       std::distance(first, last));
@@ -523,6 +843,12 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 internal::enable_if_execution_policy<Policy, Iter1>
 partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
   return stable_partition(std::forward<Policy>(policy), first, last, mask, p);
 }
 

@@ -101,11 +101,14 @@ public:
         _capacity(other.capacity()) {}
 
   template <typename InputIterator>
-  device_vector(
-      InputIterator first,
-      typename std::enable_if<internal::is_iterator<InputIterator>::value &&
-                                  !std::is_pointer<InputIterator>::value,
-                              InputIterator>::type last)
+  device_vector(InputIterator first,
+                typename std::enable_if<
+                    internal::is_iterator<InputIterator>::value &&
+                        !std::is_pointer<InputIterator>::value &&
+                        std::is_same<typename std::iterator_traits<
+                                         InputIterator>::iterator_category,
+                                     std::random_access_iterator_tag>::value,
+                    InputIterator>::type last)
       : _alloc(get_default_queue()) {
     _size = std::distance(first, last);
     _capacity = 2 * _size;
@@ -134,6 +137,23 @@ public:
       std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
                 buf_first, buf_last, begin());
     }
+  }
+
+  template <typename InputIterator>
+  device_vector(InputIterator first,
+                typename std::enable_if<
+                    internal::is_iterator<InputIterator>::value &&
+                        !std::is_pointer<InputIterator>::value &&
+                        !std::is_same<typename std::iterator_traits<
+                                          InputIterator>::iterator_category,
+                                      std::random_access_iterator_tag>::value,
+                    InputIterator>::type last)
+      : _alloc(get_default_queue()), _size(std::distance(first, last)) {
+    _capacity = 2 * _size;
+    _storage = _alloc.allocate(_capacity);
+    std::vector<T> _tmp(first, last);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              _tmp.begin(), _tmp.end(), this->begin());
   }
 
   template <typename OtherAllocator>
@@ -390,16 +410,39 @@ public:
       : _storage(std::move(other._storage)), _size(other.size()) {}
 
   template <typename InputIterator>
-  device_vector(
-      InputIterator first,
-      typename std::enable_if<internal::is_iterator<InputIterator>::value,
-                              InputIterator>::type last)
+  device_vector(InputIterator first,
+                typename std::enable_if<
+                    internal::is_iterator<InputIterator>::value &&
+                        std::is_same<typename std::iterator_traits<
+                                         InputIterator>::iterator_category,
+                                     std::random_access_iterator_tag>::value,
+                    InputIterator>::type last)
       : _storage(alloc_store(std::distance(first, last) * sizeof(T))),
         _size(std::distance(first, last)) {
     auto buf = get_buffer();
     auto dst = oneapi::dpl::begin(buf);
     std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
               first, last, dst);
+  }
+
+  template <typename InputIterator>
+  device_vector(InputIterator first,
+                typename std::enable_if<
+                    internal::is_iterator<InputIterator>::value &&
+                        !std::is_same<typename std::iterator_traits<
+                                          InputIterator>::iterator_category,
+                                      std::random_access_iterator_tag>::value,
+                    InputIterator>::type last)
+      : _storage(alloc_store(std::distance(first, last) * sizeof(T))),
+        _size(std::distance(first, last)) {
+    auto buf = get_buffer();
+    std::vector<T> tmp(first, last);
+    Buffer tmp_buf(tmp);
+    auto start = oneapi::dpl::begin(tmp_buf);
+    auto end = oneapi::dpl::end(tmp_buf);
+    auto dst = oneapi::dpl::begin(buf);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              start, end, dst);
   }
 
   template <typename OtherAllocator>
