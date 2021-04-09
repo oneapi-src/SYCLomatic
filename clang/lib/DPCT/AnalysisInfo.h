@@ -119,6 +119,17 @@ struct EventSyncTypeInfo {
   bool IsAssigned = false;
 };
 
+struct TimeStubTypeInfo {
+  TimeStubTypeInfo(unsigned int Length, std::string StrWithSB, std::string StrWithoutSB)
+      : Length(Length), StrWithSB(StrWithSB), StrWithoutSB(StrWithoutSB) {}
+
+  void buildInfo(std::string FilePath, unsigned int Offset, bool isReplTxtWithSB);
+
+  unsigned int Length;
+  std::string StrWithSB;
+  std::string StrWithoutSB;
+};
+
 // Below four structs are all used for device RNG library API migration.
 // In the origin code, the returned random number vector size is decided when
 // the generate API is called.
@@ -651,6 +662,10 @@ public:
     return EventSyncTypeMap;
   }
 
+  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
+    return TimeStubTypeMap;
+  }
+
   std::unordered_map<std::string, FFTSetStreamAPIInfo> &
   getFFTSetStreamAPIInfoMap() {
     return FFTSetStreamAPIInfoMap;
@@ -736,7 +751,12 @@ public:
     AddOneDplHeaders = Value;
   }
 
+  std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
+    return TimeStubBounds;
+  }
 private:
+  std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
+
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
 
   std::map<
@@ -750,6 +770,8 @@ private:
     static GlobalMap<Obj> NullMap;
     return NullMap;
   }
+
+  bool isReplTxtWithSubmitBarrier(unsigned Offset);
 
   // TODO: implement one of this for each source language.
   bool isInCudaPath();
@@ -770,6 +792,7 @@ private:
   std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
   std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
+  std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
   std::map<unsigned int, FFTExecAPIInfo> FFTExecAPIInfoMap;
   std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
@@ -1057,6 +1080,17 @@ public:
   inline static void setCustomHelperFileName(const std::string &Name) {
     CustomHelperFileName = Name;
   }
+
+  inline static std::set<DPCPPExtensions> getDPCPPExtSetNotPermit() {
+    return DPCPPExtSetNotPermit;
+  }
+  inline static void setDPCPPExtSetNotPermit(
+      const std::vector<DPCPPExtensions> &DPCPPExtensionsVec) {
+    for (auto &Extension : DPCPPExtensionsVec) {
+      DPCPPExtSetNotPermit.insert(Extension);
+    }
+  }
+
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
@@ -1601,6 +1635,35 @@ public:
     }
   }
 
+  void insertTimeStubTypeInfo(
+      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithSB,
+      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB) {
+
+    std::string FilePath = ReplWithSB->getFilePath().str();
+    unsigned int Offset = ReplWithSB->getOffset();
+    unsigned int Length = ReplWithSB->getLength();
+    std::string StrWithSubmitBarrier = ReplWithSB->getReplacementText().str();
+    std::string StrWithoutSubmitBarrier =
+        ReplWithoutSB->getReplacementText().str();
+
+    auto FileInfo = insertFile(FilePath);
+    auto &M = FileInfo->getTimeStubTypeMap();
+    M.insert(
+        std::make_pair(Offset, TimeStubTypeInfo(Length, StrWithSubmitBarrier,
+                                                StrWithoutSubmitBarrier)));
+  }
+
+  void updateTimeStubTypeInfo(SourceLocation BeginLoc, SourceLocation EndLoc) {
+
+    auto LocInfo = getLocInfo(BeginLoc);
+    auto FileInfo = insertFile(LocInfo.first);
+
+    size_t Begin = getLocInfo(BeginLoc).second;
+    size_t End = getLocInfo(EndLoc).second;
+    auto &TimeStubBounds = FileInfo->getTimeStubBounds();
+    TimeStubBounds.push_back(std::make_pair(Begin, End));
+  }
+
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
@@ -2129,6 +2192,7 @@ private:
   static std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
+  static std::set<DPCPPExtensions> DPCPPExtSetNotPermit;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

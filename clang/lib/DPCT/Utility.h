@@ -499,4 +499,5 @@ bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
 void constructUnionFindSetRecursively(
     std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
+bool isDefaultStream(const clang::Expr *StreamArg);
 #endif // DPCT_UTILITY_H

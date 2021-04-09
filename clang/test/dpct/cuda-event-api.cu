@@ -112,6 +112,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
+  // CHECK-NEXT: start = q_ct1.submit_barrier();
   cudaEventRecord(start, 0);
 
   // CHECK: /*
@@ -121,7 +122,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: checkCudaErrors(0);
+  // CHECK-NEXT: checkCudaErrors((start = q_ct1.submit_barrier(), 0));
   checkCudaErrors(cudaEventRecord(start, 0));
 
   // CHECK: if (0)
@@ -132,7 +133,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   checkCudaErrors(0);
+  // CHECK-NEXT:   checkCudaErrors((start = q_ct1.submit_barrier(), 0));
   if (0)
     checkCudaErrors(cudaEventRecord(start, 0));
 
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: checkCudaErrors(0);
+  // CHECK-NEXT: checkCudaErrors((stop = q_ct1.submit_barrier(), 0));
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (1)
@@ -180,7 +181,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   checkCudaErrors(0);
+  // CHECK-NEXT:   checkCudaErrors((stop = q_ct1.submit_barrier(), 0));
   if (1)
     checkCudaErrors(cudaEventRecord(stop, 0));
 
@@ -208,7 +209,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: checkCudaErrors(0);
+  // CHECK-NEXT: checkCudaErrors((stop = q_ct1.submit_barrier(), 0));
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (0)
@@ -219,7 +220,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   checkCudaErrors(0);
+  // CHECK-NEXT:   checkCudaErrors((start = q_ct1.submit_barrier(), 0));
   if (0)
     checkCudaErrors(cudaEventRecord(start, 0));
 
@@ -388,10 +389,10 @@ void foo() {
 
   {
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: int err = 0;
+    // CHECK-NEXT: int err = (start = q_ct1.submit_barrier(), 0);
     cudaError_t err = cudaEventRecord(start, 0);
     // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: err = 0;
+    // CHECK-NEXT: err = (stop = q_ct1.submit_barrier(), 0);
     err = cudaEventRecord(stop, 0);
     if (cudaSuccess != err) {
       printf("%s\n", cudaGetErrorString( err));
@@ -467,10 +468,10 @@ void foo2(Node *n) {
   {
     int errorCode;
     // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: cudaCheck(0);
+    // CHECK: cudaCheck((n->start = q_ct1.submit_barrier(), 0));
     cudaCheck(cudaEventRecord(n->start, 0));
     // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: errorCode = 0;
+    // CHECK: errorCode = (n->start = q_ct1.submit_barrier(), 0);
     errorCode = cudaEventRecord(n->start, 0);
   }
 
@@ -489,10 +490,10 @@ void foo2(Node *n) {
   {
     int errorCode;
     // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: cudaCheck(0);
+    // CHECK: cudaCheck((node.start = q_ct1.submit_barrier(), 0));
     cudaCheck(cudaEventRecord(node.start, 0));
     // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: errorCode = 0;
+    // CHECK: errorCode = (node.start = q_ct1.submit_barrier(), 0);
     errorCode = cudaEventRecord(node.start, 0);
   }
 

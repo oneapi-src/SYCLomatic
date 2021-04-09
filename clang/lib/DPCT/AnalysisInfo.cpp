@@ -119,6 +119,7 @@ std::unordered_map<std::string,
 std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
+std::set<DPCPPExtensions> DpctGlobalInfo::DPCPPExtSetNotPermit;
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -404,6 +405,32 @@ void DpctFileInfo::buildReplacements() {
         addReplacement(R1);
       }
     }
+
+  const auto &TimeStubBounds = getTimeStubBounds();
+    if (TimeStubBounds.empty()) {
+      for (auto &DescInfo : TimeStubTypeMap) {
+      DescInfo.second.buildInfo(FilePath, DescInfo.first,
+                                /*bool isReplTxtWithSB*/ true);
+      }
+    } else {
+      for (auto &DescInfo : TimeStubTypeMap) {
+        bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
+        DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
+      }
+    }
+}
+
+bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
+  bool ReplTxtWithSB = true;
+  for (const auto &Entry : TimeStubBounds) {
+    size_t Begin = Entry.first;
+    size_t End = Entry.second;
+    if (Offset >= Begin && Offset <= End) {
+      ReplTxtWithSB = false;
+      break;
+    }
+  }
+  return ReplTxtWithSB;
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
@@ -2722,6 +2749,18 @@ void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
             GeneratorType + "<dpct_placeholder/*Fix the vec_size manually*/>",
             nullptr));
   }
+}
+
+void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
+                                 bool isReplTxtWithSB) {
+  if (isReplTxtWithSB)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithSB,
+                                         nullptr));
+  else
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
+                                         nullptr));
 }
 
 void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,

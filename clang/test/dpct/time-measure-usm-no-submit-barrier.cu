@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T/time-measure-usm-restricted %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/time-measure-usm-restricted/time-measure-usm-restricted.dp.cpp --match-full-lines %s
+// RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/time-measure-usm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/time-measure-usm-no-submit-barrier/time-measure-usm-no-submit-barrier.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
 #define N 1000
@@ -183,7 +183,6 @@ void foo()
 // CHECK-NEXT:            */
 // CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -216,7 +215,6 @@ void foo()
 // CHECK-NEXT:            */
 // CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -251,7 +249,6 @@ void foo()
 // CHECK-NEXT:            */
 // CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -496,33 +493,4 @@ void ctst_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_ms, sad_calc_start, sad_calc_stop);
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
-}
-
-__global__ void kernel() {}
-void foo_ctst1983() {
-  cudaStream_t stream1;
-  cudaStream_t stream2;
-  cudaStreamCreate(&stream1);
-  cudaStreamCreate(&stream2);
-
-  cudaEvent_t event1, event2;
-  cudaEventCreate(&event1);
-  cudaEventCreate(&event2);
-  int repeat = 2;
-
-  for (int i = 0; i < repeat; i++) {
-    kernel<<<1, 1, 0, stream1>>>();
-// CHECK:    event1_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    event1 = stream1->submit_barrier();
-    cudaEventRecord(event1, stream1);
-    kernel<<<1, 1, 0, stream2>>>();
-
-// CHECK:    event2_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    event2 = stream2->submit_barrier();
-// CHECK-NEXT:    event1.wait_and_throw();
-// CHECK-NEXT:    event2.wait_and_throw();
-    cudaEventRecord(event2, stream2);
-    cudaEventSynchronize(event1);
-    cudaEventSynchronize(event2);
-  }
 }

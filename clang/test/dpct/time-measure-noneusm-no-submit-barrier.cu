@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T/time-measure-usm-none %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/time-measure-usm-none/time-measure-usm-none.dp.cpp --match-full-lines %s
+// RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/time-measure-noneusm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/time-measure-noneusm-no-submit-barrier/time-measure-noneusm-no-submit-barrier.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
 #define N 1000
@@ -98,9 +98,8 @@ void foo_test_1() {
     cudaEventCreate(&stop);
 
 // CHECK:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK:    start = q_ct1.submit_barrier();
 // CHECK-NEXT:        for (int i=0; i<4; i++) {
-// CHECK-NEXT:            q_ct1.submit(
+// CHECK-NEXT:            dpct::get_default_queue().submit(
 // CHECK-NEXT:              [&](sycl::handler &cgh) {
 // CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -109,7 +108,7 @@ void foo_test_1() {
 // CHECK-NEXT:                  });
 // CHECK-NEXT:              });
 // CHECK-NEXT:        }
-// CHECK-NEXT:    dev_ct1.queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord( start, 0 );
         for (int i=0; i<4; i++) {
             kernel_foo<<<1, 1>>>();
@@ -199,7 +198,7 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK((stream[i] = dev_ct1.create_queue(), 0));
+    // CHECK:    CHECK((stream[i] = dpct::get_current_device().create_queue(), 0));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
@@ -222,7 +221,7 @@ void foo_test_3() {
 
   // CHECK: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: CHECK((stop = q_ct1.submit_barrier(), 0));
+  // CHECK-NEXT: CHECK(0);
   // CHECK-NEXT: CHECK(0);
   CHECK(cudaEventRecord(stop, 0));
   CHECK(cudaEventSynchronize(stop));
@@ -335,7 +334,6 @@ void foo()
 // CHECK-NEXT:            */
 // CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -370,7 +368,6 @@ void foo()
 // CHECK-NEXT:             */
 // CHECK-NEXT:             dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:             stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:             stop = q_ct1.submit_barrier();
 // CHECK-NEXT:             t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -406,7 +403,6 @@ void foo()
 // CHECK-NEXT:            */
 // CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -473,7 +469,7 @@ int foo_test_4()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((start = q_ct1.submit_barrier(), 0));
+// CHECK-NEXT:    CHECK(0);
     CHECK(cudaEventRecord(start, 0));
 
     // dispatch job with depth first ordering
@@ -495,15 +491,15 @@ int foo_test_4()
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
 // CHECK:        kernelEvent_ct1_i = std::chrono::steady_clock::now(); 
-// CHECK-NEXT:        CHECK((kernelEvent[i] = streams[i]->submit_barrier(), 0));
-// CHECK-NEXT:        kernelEvent[i] = streams[n_streams - 1]->submit_barrier({kernelEvent[i]});
+// CHECK-NEXT:        CHECK(0);
+// CHECK-NEXT:        kernelEvent[i].wait();
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
 // CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now(); 
-// CHECK-NEXT:    CHECK((stop = q_ct1.submit_barrier(), 0));
+// CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    CHECK(0);
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
@@ -549,7 +545,7 @@ void RunTest()
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
-// CHECK:          q_ct1.submit(
+// CHECK:          dpct::get_default_queue().submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
 // CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
@@ -703,33 +699,4 @@ void ctst_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_ms, sad_calc_start, sad_calc_stop);
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
-}
-
-__global__ void kernel() {}
-void foo_ctst1983() {
-  cudaStream_t stream1;
-  cudaStream_t stream2;
-  cudaStreamCreate(&stream1);
-  cudaStreamCreate(&stream2);
-
-  cudaEvent_t event1, event2;
-  cudaEventCreate(&event1);
-  cudaEventCreate(&event2);
-  int repeat = 2;
-
-  for (int i = 0; i < repeat; i++) {
-    kernel<<<1, 1, 0, stream1>>>();
-// CHECK:    event1_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    event1 = stream1->submit_barrier();
-    cudaEventRecord(event1, stream1);
-    kernel<<<1, 1, 0, stream2>>>();
-
-// CHECK:    event2_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    event2 = stream2->submit_barrier();
-// CHECK-NEXT:    event1.wait_and_throw();
-// CHECK-NEXT:    event2.wait_and_throw();
-    cudaEventRecord(event2, stream2);
-    cudaEventSynchronize(event1);
-    cudaEventSynchronize(event2);
-  }
 }

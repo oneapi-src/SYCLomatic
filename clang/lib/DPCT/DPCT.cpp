@@ -402,6 +402,20 @@ static list<ExplicitNamespace> UseExplicitNamespace(
                                      "Generate code with dpct:: namespace.",
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
+
+// When more dpcpp extensions are implemented, more extension names will be
+// added into the value of option --no-dpcpp-extensions, currently only
+// Enqueued barriers is supported.
+static list<DPCPPExtensions> NoDPCPPExtensions(
+    "no-dpcpp-extensions",
+    llvm::cl::desc(
+        "Comma separated list of DPC++ extensions not to be used in migrated code.\n"
+        "By default, these extensions will be used in migrated code."),
+    llvm::cl::CommaSeparated,
+    values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::submit_barrier),
+                                     "\"Enqueued barriers\" DPC++ extension.",
+                                     false}),
+    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -1217,6 +1231,13 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
+
+  if (NoDPCPPExtensions.getNumOccurrences()) {
+    DpctGlobalInfo::setDPCPPExtSetNotPermit(NoDPCPPExtensions);
+  } else {
+    std::vector<DPCPPExtensions> DefaultDPCPPExtensions = {};
+    DpctGlobalInfo::setDPCPPExtSetNotPermit(DefaultDPCPPExtensions);
+  }
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();

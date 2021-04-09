@@ -9078,6 +9078,11 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
       updateAsyncRange(CE, "cudaEventCreate");
       if (RecordBegin && RecordEnd) {
         processAsyncJob(FD->getAsFunction()->getBody());
+
+        if (!IsKernelInLoopStmt) {
+          DpctGlobalInfo::getInstance().updateTimeStubTypeInfo(
+              RecordBegin->getBeginLoc(), TimeElapsedCE->getEndLoc());
+        }
       }
     }
 
@@ -9255,23 +9260,95 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
        << " = std::chrono::steady_clock::now()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+
+  auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
+  auto StreamName = getStmtSpelling(StreamArg);
+  auto ArgName = getStmtSpelling(CE->getArg(0));
+  bool IsDefaultStream = isDefaultStream(StreamArg);
+  auto IndentLoc = CE->getBeginLoc();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+
   if (IsAssigned) {
-    emplaceTransformation(new ReplaceStmt(CE, false, Name, "0"));
+    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
+            DPCPPExtensions::submit_barrier)) {
+      // submit_barrier is specified in the value of option
+      // --no-dpcpp-extensions.
+      emplaceTransformation(new ReplaceStmt(CE, false, Name, "0"));
+    } else {
+      std::string StmtStr;
+      if (IsDefaultStream) {
+        if (checkWhetherIsDuplicate(CE, false))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+
+        std::string Str =
+            "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.submit_barrier()";
+        StmtStr = ArgName + " = " + Str;
+      } else {
+        std::string Str = StreamName + "->" + "submit_barrier()";
+        StmtStr = ArgName + " = " + Str;
+      }
+      StmtStr = "(" + StmtStr + ", 0)";
+
+      auto ReplWithSubmitBarrier =
+          ReplaceStmt(CE, false, Name, StmtStr).getReplacement(Context);
+      auto ReplWithoutSubmitBarrier =
+          ReplaceStmt(CE, false, Name, "0").getReplacement(Context);
+      DpctGlobalInfo::getInstance().insertTimeStubTypeInfo(
+          ReplWithSubmitBarrier, ReplWithoutSubmitBarrier);
+    }
+
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
     auto OuterStmt = findNearestNonExprNonDeclAncestorStmt(CE);
     Repl << "; ";
-    auto IndentLoc = CE->getBeginLoc();
-    auto &SM = DpctGlobalInfo::getSourceManager();
     if (IndentLoc.isMacroID())
       IndentLoc = SM.getExpansionLoc(IndentLoc);
     Repl << getNL() << getIndent(IndentLoc, SM).str();
-    auto TM = new InsertText(SM.getExpansionLoc(OuterStmt->getBeginLoc()), std::move(Repl.str()));
+    auto TM = new InsertText(SM.getExpansionLoc(OuterStmt->getBeginLoc()),
+                             std::move(Repl.str()));
     TM->setInsertPosition(InsertPositionRight);
     emplaceTransformation(TM);
   } else {
-    auto TM = new ReplaceStmt(CE, false, Name, std::move(Repl.str()));
-    TM->setInsertPosition(InsertPositionRight);
-    emplaceTransformation(TM);
+    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
+            DPCPPExtensions::submit_barrier)) {
+      // submit_barrier is specified in the value of option
+      // --no-dpcpp-extensions.
+      auto TM = new ReplaceStmt(CE, false, Name, std::move(Repl.str()));
+      TM->setInsertPosition(InsertPositionRight);
+      emplaceTransformation(TM);
+    } else {
+      std::string StrWithoutSubmitBarrier = Repl.str();
+      auto ReplWithoutSB = ReplaceStmt(CE, false, Name, StrWithoutSubmitBarrier)
+                               .getReplacement(Context);
+      std::string ReplStr = ";";
+      if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
+        ReplStr += "\\";
+      }
+      if (IsDefaultStream) {
+        if (checkWhetherIsDuplicate(CE, false))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+
+        std::string Str = ArgName + " = {{NEEDREPLACEQ" +
+                          std::to_string(Index) + "}}.submit_barrier()";
+        ReplStr += getNL();
+        ReplStr += getIndent(IndentLoc, SM).str();
+        ReplStr += Str;
+      } else {
+        std::string Str = ArgName + " = " + StreamName + "->submit_barrier()";
+        ReplStr += getNL();
+        ReplStr += getIndent(IndentLoc, SM).str();
+        ReplStr += Str;
+      }
+
+      Repl << ReplStr;
+      auto ReplWithSB =
+          ReplaceStmt(CE, false, Name, Repl.str()).getReplacement(Context);
+      DpctGlobalInfo::getInstance().insertTimeStubTypeInfo(ReplWithSB,
+                                                           ReplWithoutSB);
+    }
   }
 }
 
@@ -9558,7 +9635,13 @@ void EventAPICallRule::handleTimeMeasurement() {
     return;
   }
 
+  // To store the range of code where time measurement takes place.
   processAsyncJob(FuncBody);
+
+  if (!IsKernelInLoopStmt) {
+    DpctGlobalInfo::getInstance().updateTimeStubTypeInfo(
+        RecordBegin->getBeginLoc(), TimeElapsedCE->getEndLoc());
+  }
 }
 
 // To get the redundant parent ParenExpr for \p Call to handle case like
@@ -9742,20 +9825,9 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
     return;
   auto CalleeName = Callee->getName();
   if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
-    auto StreamArg = Call->getArg(Call->getNumArgs() - 1)->IgnoreImpCasts();
-    bool IsDefaultStream = false;
+    auto StreamArg = Call->getArg(Call->getNumArgs() - 1);
+    bool IsDefaultStream = isDefaultStream(StreamArg);
     bool NeedStreamWait = false;
-    // Need queue for default stream or stream 0, 1 and 2
-    if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
-      IsDefaultStream = true;
-    } else if (StreamArg->getStmtClass() == Stmt::IntegerLiteralClass) {
-      auto IL = dyn_cast<IntegerLiteral>(StreamArg);
-      auto V = IL->getValue().getZExtValue();
-      if (V <= 2) // V should be 0, 1 or 2
-        IsDefaultStream = true;
-    } else if (StreamArg->getStmtClass() == Stmt::ArraySubscriptExprClass) {
-      NeedStreamWait = true;
-    }
 
     if (USMLevel == UsmLevel::restricted) {
       // std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
@@ -9974,8 +10046,30 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaStreamWaitEvent") {
+    std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
-    std::string ReplStr = StmtStr1 + ".wait()";
+    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
+            DPCPPExtensions::submit_barrier)) {
+      // submit_barrier is specified in the value of option
+      // --no-dpcpp-extensions.
+      ReplStr = StmtStr1 + ".wait()";
+    } else {
+      auto StreamArg = CE->getArg(0);
+      bool IsDefaultStream = isDefaultStream(StreamArg);
+      std::string StmtStr0;
+      if (IsDefaultStream) {
+        if (checkWhetherIsDuplicate(CE, false))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+
+        StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+      } else {
+        StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
+      }
+      ReplStr =
+          StmtStr1 + " = " + StmtStr0 + "submit_barrier({" + StmtStr1 + "})";
+    }
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
