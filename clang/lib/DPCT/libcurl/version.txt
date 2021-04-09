@@ -1,5 +1,6 @@
 ====================================================================================================================
-*current used  version: curl-7.74.0
+*2021.2 used  version: curl-7.74.0
+*2021.Apirl.9:  update to using : curl-7.76.0
 ====================================================================================================================
 *steps to update libcurl into dpct project***
 ********************************************************************************************************************
@@ -20,3 +21,11 @@
    a. Copy libcurl.a to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/linux
    b. Copy libcurl_a.lib to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/win
 =====================================================================================================================
+
+2021.April.9: 
+Note:
+when do configure:  "--without-libgsasl" is extra added. 
+./configure --prefix=/home/zwang36/libcurl/curl-7.76.0/linux-install --without-ssl --without-ca-fallback --without-libidn2 --without-nghttp2 --without-libidn2 --without-mbedtls --without-zlib --disable-ldap --disable-ldaps  --without-libgsasl
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+=====================================================================================================================
+
