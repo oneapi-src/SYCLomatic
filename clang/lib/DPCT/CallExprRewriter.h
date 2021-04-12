@@ -136,6 +136,25 @@ public:
       DpctGlobalInfo::getInstance().addReplacement(
         T->getReplacement(DpctGlobalInfo::getContext()));
   }
+  std::string getAddressSpace(const clang::Expr *E, std::string MigratedStr) {
+    bool HasAttr = false;
+    bool NeedReport = false;
+    getShareAttrRecursive(E, HasAttr, NeedReport);
+    if (HasAttr && !NeedReport)
+      return "local_space";
+
+    LocalVarAddrSpaceEnum LocalVarCheckResult =
+        LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkIsPrivateVar(E, LocalVarCheckResult);
+    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_CannotDeduce) {
+      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
+      return "global_space";
+    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
+      return "private_space";
+    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
+      return "global_space";
+    }
+  }
 
   bool isNoRewrite() {
     return NoRewrite;

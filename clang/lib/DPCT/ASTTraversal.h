@@ -575,8 +575,6 @@ private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result);
-  void GetShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr, bool &NeedReport);
-  bool IsStmtInStatement(const clang::Stmt *S, const clang::Decl *Root);
 
 };
 

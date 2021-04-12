@@ -20,6 +20,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -2695,6 +2696,283 @@ void constructUnionFindSetRecursively(
     constructUnionFindSetRecursively(FuncInfoPtr);
   }
 }
+
+// To find if device variable \pExpr has __share__ attribute,
+// if it has, HasSharedAttr is set true.
+// if \pExpr is in a if/while/do while/for statement
+// \pNeedReport is set true.
+// To handle six kind of cases:
+// case1: extern __shared__ uint32_t share_array[];
+//        atomicAdd(&share_array[0], 1);
+// case2: extern __shared__ uint32_t share_array[];
+//        uint32_t *p = &share_array[0];
+//        atomicAdd(p, 1);
+// case3: __shared__ uint32_t share_v;
+//        atomicAdd(&share_v, 1);
+// case4: __shared__ uint32_t share_v;
+//        uint32_t *p = &share_v;
+//        atomicAdd(p, 1);
+// case5: extern __shared__ uint32_t share_array[];
+//        atomicAdd(share_array, 1);
+// case6: __shared__ uint32_t share_v;
+//        uint32_t *p;
+//        p = &share_v;
+//        atomicAdd(p, 1);
+void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
+                           bool &NeedReport) {
+  if (!Expr)
+    return;
+
+  if (dyn_cast_or_null<CallExpr>(Expr)) {
+    NeedReport = true;
+    return;
+  }
+
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(Expr)) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+      Expr = UO->getSubExpr();
+    }
+  }
+
+  if (auto BO = dyn_cast_or_null<BinaryOperator>(Expr)) {
+    getShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    getShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
+  }
+
+  if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(Expr)) {
+    Expr = ASE->getBase();
+  }
+
+  if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(Expr)) {
+    Expr = CSCE->getSubExpr();
+  }
+
+  const clang::Expr *AssignedExpr = NULL;
+  const FunctionDecl *FuncDecl = NULL;
+  if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
+          Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
+    if (isa<ParmVarDecl>(DRE->getDecl())) {
+      NeedReport = true;
+      return;
+    }
+
+    if (auto VD = dyn_cast_or_null<VarDecl>(DRE->getDecl())) {
+      if (VD->hasAttr<CUDASharedAttr>()) {
+        HasSharedAttr = true;
+        return;
+      }
+
+      AssignedExpr = VD->getInit();
+      if (FuncDecl = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext())) {
+        std::vector<const DeclRefExpr *> Refs;
+        VarReferencedInFD(FuncDecl->getBody(), VD, Refs);
+        for (auto const &Ref : Refs) {
+          if (Ref == DRE)
+            break;
+
+          if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+            if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+                !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO))
+              AssignedExpr = BO->getRHS();
+          }
+        }
+      }
+    }
+  } else if (auto BO = dyn_cast_or_null<BinaryOperator>(
+                 Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
+
+    getShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    getShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
+  }
+
+  if (AssignedExpr) {
+    // if AssignedExpr in a if/while/do while/for statement,
+    // it is necessary to report a warning message.
+    if (isInCtrlFlowStmt(AssignedExpr, FuncDecl,
+                         dpct::DpctGlobalInfo::getContext())) {
+      NeedReport = true;
+    }
+    getShareAttrRecursive(AssignedExpr, HasSharedAttr, NeedReport);
+  }
+}
+
+void findRelatedDREs(const Expr *E,
+                     std::set<const clang::DeclRefExpr *> &DRESet,
+                     bool HasCallExpr) {
+  if (!E)
+    return;
+
+  if (dyn_cast_or_null<CallExpr>(E)) {
+    HasCallExpr = true;
+    return;
+  }
+
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(E)) {
+    findRelatedDREs(UO->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto BO = dyn_cast_or_null<BinaryOperator>(E)) {
+    findRelatedDREs(BO->getLHS(), DRESet, HasCallExpr);
+    findRelatedDREs(BO->getRHS(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(E)) {
+    findRelatedDREs(ASE->getBase(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(E)) {
+    findRelatedDREs(CSCE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto PE = dyn_cast_or_null<ParenExpr>(E)) {
+    findRelatedDREs(PE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto ICE = dyn_cast_or_null<ImplicitCastExpr>(E)) {
+    findRelatedDREs(ICE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto DRE = dyn_cast_or_null<DeclRefExpr>(E)) {
+    DRESet.insert(DRE);
+    return;
+  }
+}
+
+void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
+  Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (const ParmVarDecl *PVD = dyn_cast_or_null<ParmVarDecl>(DRE->getDecl())) {
+    if (const clang::FunctionDecl *FD =
+            dyn_cast_or_null<FunctionDecl>(PVD->getParentFunctionOrMethod())) {
+      if (FD->hasAttr<CUDAGlobalAttr>()) {
+        Result = LocalVarAddrSpaceEnum::AS_IsGlobal;
+        return;
+      } else if (FD->hasAttr<CUDADeviceAttr>()) {
+        return;
+      }
+    }
+    return;
+  }
+
+  const clang::VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return;
+
+  if (!VD->getType()->isReferenceType() && !VD->getType()->isPointerType()) {
+    // If the type is neither a referecnce nor a pointer, treat it as a local variable,
+    // its address space is private.
+    Result = LocalVarAddrSpaceEnum::AS_IsPrivate;
+    return;
+  }
+
+  const clang::FunctionDecl *FuncDecl =
+      dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FuncDecl)
+    return;
+
+  const clang::CompoundStmt *CS =
+      dyn_cast_or_null<CompoundStmt>(FuncDecl->getBody());
+  if (!CS)
+    return;
+
+  // Using ASTMatcher to find all DRE in current CompoundStmt, if that DRE's declaration
+  // is same as VD, push that DRE into Refs.
+  // The DRE in Refs will be checked in the next step.
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  auto MatchedResults = clang::ast_matchers::match(
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  std::vector<const DeclRefExpr *> Refs;
+  for (auto &Result : MatchedResults) {
+    const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!DRE)
+      continue;
+    if (DRE->getDecl() == VD) {
+      Refs.push_back(DRE);
+    }
+  }
+
+  LocalVarAddrSpaceEnum LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (VD->hasInit()) {
+    LocalVarAddrSpaceEnum InitExprResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkIsPrivateVar(VD->getInit(), InitExprResult);
+    LastAssignmentResult = InitExprResult;
+  }
+  bool CanLastReferenceBeDeduced = false;
+  // Check each DRE before current statement, try to deduce their address space
+  // Currently only check the assignment like "var1 = ExprContainsDRE;"
+  // If the DRE is in control flow statement, then its address cannot be deduced.
+  // Else, call checkIsPrivateVar() to the right hand side Expr's address space.
+  // Finally, using the address space of the last DRE as result.
+  for (auto const &Ref : Refs) {
+    // Break means tool will not check the assignments after the DRE
+    if (Ref == DRE)
+      break;
+
+    if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+      if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
+        if (isInCtrlFlowStmt(BO->getRHS(), FuncDecl,
+                             dpct::DpctGlobalInfo::getContext())) {
+          LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+          CanLastReferenceBeDeduced = false;
+        } else {
+          LocalVarAddrSpaceEnum SubResult =
+              LocalVarAddrSpaceEnum::AS_CannotDeduce;
+          checkIsPrivateVar(BO->getRHS(), SubResult);
+          LastAssignmentResult = SubResult;
+          CanLastReferenceBeDeduced = true;
+        }
+      }
+    } else {
+      CanLastReferenceBeDeduced = false;
+    }
+  }
+
+  if (!CanLastReferenceBeDeduced)
+    LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (LastAssignmentResult == LocalVarAddrSpaceEnum::AS_CannotDeduce)
+    return;
+
+  Result = LastAssignmentResult;
+  return;
+}
+
+// This function will check the address space of the input argument "Expr"
+// Step1: find all DeclRefExpr in the "Expr"
+// Step2: get each DeclRefExpr's address space
+// Step3: merge the resutls
+void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
+  Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  bool HasCallExpr = false;
+  std::set<const clang::DeclRefExpr *> DRESet;
+  findRelatedDREs(Expr, DRESet, HasCallExpr);
+  if (HasCallExpr)
+    return;
+  std::set<LocalVarAddrSpaceEnum> ResultSet;
+  for (const auto &DRE : DRESet) {
+    LocalVarAddrSpaceEnum ThisDREResult =
+        LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkDREIsPrivate(DRE, ThisDREResult);
+    ResultSet.insert(ThisDREResult);
+  }
+
+  if (ResultSet.count(LocalVarAddrSpaceEnum::AS_CannotDeduce))
+    return;
+
+  if (ResultSet.size() == 1) {
+    Result = *ResultSet.begin();
+    return;
+  }
+}
+
+
+
 /// Determine whether a variable represented by DeclRefExpr is unmodified
 /// 1. func(..., T Val(pass by value), ...)
 /// 2. ... = Val

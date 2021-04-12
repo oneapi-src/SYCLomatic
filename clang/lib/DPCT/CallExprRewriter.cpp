@@ -728,8 +728,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "frexp(" << MigratedArg0
        << ", " + MapNames::getClNamespace() + "make_ptr<int, "
-       << MapNames::getClNamespace() +
-              "access::address_space::global_space>("
+       << MapNames::getClNamespace() + "access::address_space::" +
+              getAddressSpace(Call->getArg(1), MigratedArg1) + ">("
        << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
     auto Arg = Call->getArg(0);
@@ -754,12 +754,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
     if (FuncName == "modf")
       OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(1), MigratedArg1) + ">(";
     else
       OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(1), MigratedArg1) + ">(";
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
@@ -791,14 +791,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << "*(" + MigratedArg1 + ")";
     OS << " = " + MapNames::getClNamespace(false, true) + "sincos("
        << MigratedArg0;
+
     if (FuncName == "sincos")
       OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
       OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     auto MigratedArg1 = getMigratedArg(1);
@@ -821,12 +822,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
 
     if (FuncName == "sincospi")
       OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
       OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() +
-                "access::address_space::global_space>(";
+                MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
@@ -874,8 +875,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0 << ", "
        << MigratedArg1
        << ", " + MapNames::getClNamespace() + "make_ptr<int, " +
-              MapNames::getClNamespace() +
-              "access::address_space::global_space>("
+              MapNames::getClNamespace() + "access::address_space::" +
+              getAddressSpace(Call->getArg(2), MigratedArg2) + ">("
        << MigratedArg2 << "))";
   } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
     OS << MapNames::getClNamespace(false, true) + "floor(" << MigratedArg0

@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "clang/AST/Attr.h"
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/ParentMapContext.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -498,6 +500,40 @@ bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
                       clang::SourceLocation EndLoc);
 void constructUnionFindSetRecursively(
     std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
+// Determine if S is a statement inside
+// a if/while/do while/for statement.
+template <typename NodeTy>
+bool isInCtrlFlowStmt(const clang::Stmt *S, const NodeTy *Root,
+                      clang::ASTContext &Context) {
+  auto ParentStmt = getParentStmt(S);
+  if (!ParentStmt)
+    return false;
+
+  auto Parents = Context.getParents(*S);
+
+  if (Parents.size() < 1)
+    return false;
+  const NodeTy *Parent = Parents[0].get<NodeTy>();
+  auto ParentStmtClass = ParentStmt->getStmtClass();
+  bool Ret = ParentStmtClass == clang::Stmt::StmtClass::IfStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::WhileStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::DoStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::ForStmtClass;
+  if (Ret)
+    return true;
+  else if (Parent != Root)
+    return isInCtrlFlowStmt(ParentStmt, Root, Context);
+  else
+    return false;
+}
+void getShareAttrRecursive(const clang::Expr *Expr, bool &HasSharedAttr,
+                           bool &NeedReport);
+enum class LocalVarAddrSpaceEnum {
+  AS_CannotDeduce,
+  AS_IsPrivate,
+  AS_IsGlobal
+};
+void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
