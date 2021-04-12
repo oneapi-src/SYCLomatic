@@ -8,70 +8,22 @@
 
 #ifndef __DPCT_ITERATORS_H__
 #define __DPCT_ITERATORS_H__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/dpl/iterator>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "functional.h"
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|using_std_advance|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 using std::advance;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|using_std_distance|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 using std::distance;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_counting_iterator|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T>
 oneapi::dpl::counting_iterator<T> make_counting_iterator(const T &input) {
   return oneapi::dpl::counting_iterator<T>(input);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|constant_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|using_std_advance
-// DplExtrasIterators|using_std_distance
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename _Tp> class constant_iterator {
 public:
   typedef std::false_type is_hetero;
@@ -156,18 +108,11 @@ private:
   const _Tp __my_value_;
   uint64_t __my_counter_;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_constant_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|constant_iterator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename _Tp>
 constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
   return constant_iterator<_Tp>(__value);
 }
-// DPCT_LABEL_END
 
 } // end namespace dpct
 

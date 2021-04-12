@@ -8,51 +8,16 @@
 
 #ifndef __DPCT_ALGORITHM_H__
 #define __DPCT_ALGORITHM_H__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/numeric>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "functional.h"
 #include "iterators.h"
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|replace_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|replace_if_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred,
           typename T>
 void replace_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p,
@@ -66,13 +31,7 @@ void replace_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p,
   std::transform(std::forward<Policy>(policy), first, last, mask, first,
                  internal::replace_if_fun<T, Pred>(p, new_value));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|replace_copy_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|replace_if_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred, typename T>
 Iter3 replace_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
@@ -88,15 +47,7 @@ Iter3 replace_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   return std::transform(std::forward<Policy>(policy), first, last, mask, result,
                         internal::replace_if_fun<T, Pred>(p, new_value));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|remove_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|__buffer
-// DplExtrasFunctional|rebind_policy
-// DplExtrasFunctional|negate_predicate_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   static_assert(
@@ -123,13 +74,7 @@ Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
       policy);
   return std::copy(policy2, _tmp.get(), std::get<0>(end.base()), first);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|remove_copy_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|negate_predicate_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred>
 Iter3 remove_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
@@ -150,13 +95,7 @@ Iter3 remove_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
       internal::predicate_key_fun<Pred>(p));
   return std::get<0>(ret_val.base());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unique|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class BinaryPred>
 std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
                                Iter1 keys_last, Iter2 values_first,
@@ -191,13 +130,7 @@ std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
   return unique(std::forward<Policy>(policy), keys_first, keys_last,
                 values_first, std::equal_to<T>());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unique_copy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|unique_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class BinaryPred>
 std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
@@ -245,11 +178,7 @@ std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
   return unique_copy(std::forward<Policy>(policy), keys_first, keys_last,
                      values_first, keys_result, values_result, comp);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|partition_point|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename Policy, typename Iter, typename Pred>
 Iter partition_point(Policy &&policy, Iter first, Iter last, Pred p) {
   static_assert(
@@ -261,13 +190,7 @@ Iter partition_point(Policy &&policy, Iter first, Iter last, Pred p) {
   else
     return first;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|copy_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|predicate_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Pred>
 Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
@@ -287,11 +210,7 @@ Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
       internal::predicate_key_fun<Pred>(pred));
   return std::get<0>(ret_val.base());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|transform|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class UnaryOperation>
 Iter2 transform(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
                 UnaryOperation unary_op) {
@@ -320,15 +239,7 @@ Iter3 transform(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
   return std::transform(std::forward<Policy>(policy), first1, last1, first2,
                         result, unary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|transform_if|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|transform_if_fun
-// DplExtrasFunctional|transform_if_mask_fun
-// DplExtrasFunctional|transform_if_zip_mask_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class UnaryOperation,
           class Pred>
 Iter2 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
@@ -392,13 +303,7 @@ Iter4 transform_if(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
                                                                     binary_op));
   return result + n;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|merge|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Iter4, typename Iter5, typename Iter6>
 std::pair<Iter5, Iter6>
@@ -462,13 +367,7 @@ merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
              internal::compare_key_fun<Comp>(comp));
   return std::make_pair(keys_result + n1 + n2, values_result + n1 + n2);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|iota|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|sequence_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter, class T>
 void iota(Policy &&policy, Iter first, Iter last, T init, T step) {
   static_assert(
@@ -500,14 +399,7 @@ void iota(Policy &&policy, Iter first, Iter last) {
   using DiffSize = typename std::iterator_traits<Iter>::difference_type;
   iota(std::forward<Policy>(policy), first, last, DiffSize(0), DiffSize(1));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sort|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DplExtrasFunctional|__less
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Comp>
 void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
           Iter2 values_first, Comp comp) {
@@ -535,14 +427,7 @@ void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
   sort(std::forward<Policy>(policy), keys_first, keys_last, values_first,
        internal::__less());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|stable_sort|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DplExtrasFunctional|__less
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Comp>
 void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
                  Iter2 values_first, Comp comp) {
@@ -572,11 +457,7 @@ void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
   stable_sort(std::forward<Policy>(policy), keys_first, keys_last, values_first,
               internal::__less());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|for_each_index|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class Policy, class Iter, class Operator>
 void for_each_index(Policy &&policy, Iter first, Iter last, Operator unary_op) {
   static_assert(
@@ -589,13 +470,7 @@ void for_each_index(Policy &&policy, Iter first, Iter last, Operator unary_op) {
       oneapi::dpl::counting_iterator<DiffSize>(std::distance(first, last)),
       first, unary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|set_intersection|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5>
 std::pair<Iter4, Iter5>
@@ -663,13 +538,7 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|set_symmetric_difference|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6>
 std::pair<Iter5, Iter6>
@@ -741,13 +610,7 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|set_difference|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6>
 std::pair<Iter5, Iter6>
@@ -818,13 +681,7 @@ std::pair<Iter5, Iter6> set_difference(Policy &&policy, Iter1 keys_first1,
       oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|set_union|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|compare_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6>
 internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
@@ -895,13 +752,7 @@ set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
       oneapi::dpl::make_zip_iterator(keys_result, values_result), ret_val);
   return std::make_pair(keys_result + n1, values_result + n1);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|stable_partition_copy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|predicate_key_fun
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Iter4, typename Pred>
 internal::enable_if_execution_policy<Policy, std::pair<Iter3, Iter4>>
@@ -944,13 +795,7 @@ stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter3 out_true,
   return std::partition_copy(std::forward<Policy>(policy), first, last,
                              out_true, out_false, p);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|partition_copy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasAlgorithm|stable_partition_copy
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Iter4, typename Pred>
 internal::enable_if_execution_policy<Policy, std::pair<Iter3, Iter4>>
@@ -969,14 +814,7 @@ partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   return stable_partition_copy(std::forward<Policy>(policy), first, last, mask,
                                out_true, out_false, p);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|stable_partition|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|predicate_key_fun
-// DplExtrasFunctional|__buffer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 internal::enable_if_execution_policy<Policy, Iter1>
 stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
@@ -1001,13 +839,7 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
                             internal::predicate_key_fun<Pred>(p));
   return std::get<0>(ret_val.base());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|partition|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasAlgorithm|stable_partition
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
 internal::enable_if_execution_policy<Policy, Iter1>
 partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
@@ -1019,7 +851,6 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
       "Iterators passed to algorithms must be random-access iterators.");
   return stable_partition(std::forward<Policy>(policy), first, last, mask, p);
 }
-// DPCT_LABEL_END
 
 } // end namespace dpct
 

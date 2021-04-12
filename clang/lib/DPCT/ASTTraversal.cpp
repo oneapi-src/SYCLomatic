@@ -793,7 +793,9 @@ void IncludesCallbacks::InclusionDirective(
       (FileName.compare(StringRef("cublas.h")) == 0) ||
       (FileName.compare(StringRef("cusolverDn.h")) == 0)) {
     if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-        HelperFilesCustomizationLevel::none) {
+            HelperFilesCustomizationLevel::none ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::all) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_BLAS_Solver);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
@@ -821,7 +823,9 @@ void IncludesCallbacks::InclusionDirective(
   if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
       (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
     if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-        HelperFilesCustomizationLevel::none) {
+            HelperFilesCustomizationLevel::none ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::all) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_SPBLAS);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
@@ -909,7 +913,8 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!DplHeaderInserted) {
-      std::string Replacement = std::string("<dpct/dpl_utils.hpp>");
+      std::string Replacement =
+          std::string("<" + getCustomMainHelperFileName() + "/dpl_utils.hpp>");
       // CTST-2021:
       // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
       // previously added here.  However, due to some unfortunate include
@@ -926,7 +931,7 @@ void IncludesCallbacks::InclusionDirective(
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
       requestFeature(dpct::HelperFileEnum::DplUtils,
-                                           "dummy_function", "");
+                                           "non_local_include_dependency", "");
     } else {
       // Replace the complete include directive with an empty string.
       TransformSet.emplace_back(new ReplaceInclude(
@@ -12710,7 +12715,7 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
     EA.applyAllSubExprRepl();
 
     auto FD = CE->getDirectCallee();
-    if (!FD) {
+    if (FD) {
       std::string Name = FD->getNameInfo().getName().getAsString();
       if (Name == "__brev") {
         requestFeature(HelperFileEnum::Util, "reverse_bits",
@@ -13915,7 +13920,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
     if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
       std::string EnumName = ECD->getName().str();
-      requestHelperFeatureForEnumNames(EnumName, CE);
+      requestHelperFeatureForEnumNames(EnumName, ECD);
       if (MapNames::replaceName(EnumConstantRule::EnumNamesMap, EnumName)) {
         emplaceTransformation(new ReplaceStmt(DRE, EnumName));
       } else {

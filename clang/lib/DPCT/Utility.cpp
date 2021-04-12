@@ -2750,22 +2750,25 @@ void requestFeature(clang::dpct::HelperFileEnum FileID,
 }
 void requestFeature(clang::dpct::HelperFileEnum FileID,
                            std::string HelperFunctionName, const Stmt *Stmt) {
+  if (!Stmt)
+    return;
   requestFeature(FileID, HelperFunctionName, Stmt->getBeginLoc());
 }
 void requestFeature(clang::dpct::HelperFileEnum FileID,
                            std::string HelperFunctionName, const Decl *Decl) {
+  if (!Decl)
+    return;
   requestFeature(FileID, HelperFunctionName, Decl->getBeginLoc());
 }
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
   std::string CopyrightHeader =
-R"Delimiter(//
-// Copyright (C) Intel Corporation
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-// See https://llvm.org/LICENSE.txt for license information.
-//
-//===----------------------------------------------------------------------===//
-)Delimiter";
+    std::string("//") + getNL() +
+    "// Copyright (C) Intel Corporation" + getNL() +
+    "// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception" + getNL() +
+    "// See https://llvm.org/LICENSE.txt for license information." + getNL() +
+    "//" + getNL() +
+    "//===----------------------------------------------------------------------===//" + getNL();
   std::string FileName = MapNames::HelperFileNameMap.find(File)->second;
   std::string FisrtLineBegin = "//==---- " + FileName + " ";
   std::string FisrtLineEnd = "*- C++ -*----------------==//";
@@ -2961,6 +2964,55 @@ void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml) {
   // no warning emitted.
 }
 
+void generateAllHelperFiles() {
+  std::string ToPath = clang::dpct::DpctGlobalInfo::getOutRoot() + "/include";
+  if (!fs::is_directory(ToPath))
+    llvm::sys::fs::create_directory(Twine(ToPath));
+  ToPath = ToPath + "/" + getCustomMainHelperFileName();
+  if (!fs::is_directory(ToPath))
+    llvm::sys::fs::create_directory(Twine(ToPath));
+  if (!fs::is_directory(Twine(ToPath + "/dpl_extras")))
+    llvm::sys::fs::create_directory(Twine(ToPath + "/dpl_extras"));
+
+#define GENERATE_ALL_FILE_CONTENT(FILE_NAME)                                   \
+  {                                                                            \
+    std::ofstream FILE_NAME##File(                                             \
+        ToPath + "/" +                                                         \
+            MapNames::HelperFileNameMap.at(                                    \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+        std::ios::binary);                                                     \
+    FILE_NAME##File << MapNames::FILE_NAME##AllContentStr;                     \
+    FILE_NAME##File.flush();                                                   \
+  }
+#define GENERATE_DPL_EXTRAS_All_FILE_CONTENT(FILE_NAME)                        \
+  {                                                                            \
+    std::ofstream FILE_NAME##File(                                             \
+        ToPath + "/dpl_extras/" +                                              \
+            MapNames::HelperFileNameMap.at(                                    \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+        std::ios::binary);                                                     \
+    FILE_NAME##File << MapNames::FILE_NAME##AllContentStr;                     \
+    FILE_NAME##File.flush();                                                   \
+  }
+  GENERATE_ALL_FILE_CONTENT(Atomic)
+  GENERATE_ALL_FILE_CONTENT(BlasUtils)
+  GENERATE_ALL_FILE_CONTENT(Device)
+  GENERATE_ALL_FILE_CONTENT(Dpct)
+  GENERATE_ALL_FILE_CONTENT(DplUtils)
+  GENERATE_ALL_FILE_CONTENT(Image)
+  GENERATE_ALL_FILE_CONTENT(Kernel)
+  GENERATE_ALL_FILE_CONTENT(Memory)
+  GENERATE_ALL_FILE_CONTENT(Util)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasAlgorithm)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasFunctional)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasIterators)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasMemory)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasNumeric)
+  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasVector)
+#undef GENERATE_ALL_FILE_CONTENT
+#undef GENERATE_DPL_EXTRAS_All_FILE_CONTENT
+}
+
 void generateHelperFunctions() {
   auto getUsedAPINum = []() -> size_t {
     size_t Res = 0;
@@ -2971,9 +3023,10 @@ void generateHelperFunctions() {
     return Res;
   };
 
-  // dpct.hpp is always exsit, so request a dummy_function feature
-  requestFeature(dpct::HelperFileEnum::Dpct,
-                                       "dummy_function", "");
+  // dpct.hpp is always exsit, so request its non_local_include_dependency
+  // feature
+  requestFeature(dpct::HelperFileEnum::Dpct, "non_local_include_dependency",
+                 "");
   // 1. add dependent APIs
   size_t UsedAPINum = getUsedAPINum();
   do {
@@ -3002,6 +3055,11 @@ void generateHelperFunctions() {
   if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
       HelperFilesCustomizationLevel::none)
     return;
+  else if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+           HelperFilesCustomizationLevel::all) {
+    generateAllHelperFiles();
+    return;
+  }
 
   std::vector<clang::dpct::HelperFunc> AtomicFileContent;
   std::vector<clang::dpct::HelperFunc> BlasUtilsFileContent;
@@ -3067,11 +3125,16 @@ void generateHelperFunctions() {
     break;
 
   for (const auto &Item : MapNames::HelperNameContentMap) {
-    if (Item.first.second == "non_local_include_dependency" ||
-        Item.first.second == "local_include_dependency") {
-      // non_local_include_dependency is inserted in step3
+    if (Item.first.second == "local_include_dependency") {
       // local_include_dependency for dpct and dpl_utils is inserted in step3
       // local_include_dependency for others are inserted in getHelperFileContent()
+      continue;
+    } else if (Item.first.second == "non_local_include_dependency") {
+      // non_local_include_dependency for dpct is inserted here
+      // non_local_include_dependency for others is inserted in step3
+      if (Item.first.first == clang::dpct::HelperFileEnum::Dpct) {
+        DpctFileContent.push_back(Item.second);
+      }
       continue;
     } else if (clang::dpct::DpctGlobalInfo::
                    getHelperFilesCustomizationLevel() ==
@@ -3097,7 +3160,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(DplExtrasNumeric)
       UPDATE_FILE(DplExtrasVector)
     default:
-      assert("unknown helper file ID");
+      assert(0 && "unknown helper file ID");
     }
   }
 #undef UPDATE_FILE
@@ -3145,10 +3208,15 @@ void generateHelperFunctions() {
     DplUtilsFileContent.push_back(Item);
   }
 
-  if (!DplUtilsFileContent.empty())
+  if (!DplUtilsFileContent.empty() ||
+      MapNames::HelperNameContentMap
+          .at(std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
+                             "non_local_include_dependency"))
+          .IsCalled) {
     DplUtilsFileContent.push_back(MapNames::HelperNameContentMap.at(
         std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
                        "non_local_include_dependency")));
+  }
 
   DpctFileContent.push_back(
       MapNames::HelperNameContentMap.at(std::make_pair(

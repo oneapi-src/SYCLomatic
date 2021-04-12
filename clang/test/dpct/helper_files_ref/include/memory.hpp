@@ -8,33 +8,8 @@
 
 #ifndef __DPCT_MEMORY_HPP__
 #define __DPCT_MEMORY_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
 #include "device.hpp"
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <CL/sycl.hpp>
 #include <cassert>
 #include <cstdint>
@@ -52,17 +27,9 @@
 #else
 #error "Only support Windows and Linux."
 #endif
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|memcpy_direction|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum memcpy_direction {
   host_to_host,
   host_to_device,
@@ -70,34 +37,18 @@ enum memcpy_direction {
   device_to_device,
   automatic
 };
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|memory_region|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum memory_region {
   global = 0,  // device global memory
   constant,    // device constant memroy
   local,       // device local memory
   shared,      // memory which can be accessed by host and device
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|typedef_byte_t|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 typedef uint8_t byte_t;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|typedef_buffer_t|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|pitched_data|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Pitched 2D/3D memory data.
 class pitched_data {
 public:
@@ -121,15 +72,8 @@ private:
   void *_data;
   size_t _pitch, _x, _y;
 };
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|mem_mgr|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// Memory|typedef_buffer_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 class mem_mgr {
   mem_mgr() {
     // Reserved address space, no real memory allocation happens here.
@@ -250,14 +194,7 @@ private:
     return it;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|memory_traits|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// Memory|memory_region
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
@@ -283,13 +220,7 @@ public:
   using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
   using pointer_t = T *;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_malloc_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
 #ifdef DPCT_USM_LEVEL_NONE
   return mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
@@ -297,27 +228,14 @@ static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
   return cl::sycl::malloc_device(size, q.get_device(), q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_malloc_pitch_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
 static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
                                 cl::sycl::queue &q) {
   pitch = PITCH_DEFAULT_ALIGN(x);
   return dpct_malloc(pitch * y * z, q);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
-// Memory|typedef_byte_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
 ///
 /// \param q The queue in which the operation is done.
@@ -345,14 +263,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
   return q.memset(dev_ptr, value, size);
 #endif // DPCT_USM_LEVEL_NONE
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset_3d_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|pitched_data
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Set \p value to the 3D memory region pointed by \p data in \p q. \p size
 /// specifies the 3D memory size to set.
 ///
@@ -377,14 +288,7 @@ dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
   }
   return event_list;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset_2d_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|pitched_data
-// Memory|dpct_memset_3d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// memset 2D matrix with pitch.
 static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
@@ -392,16 +296,7 @@ dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
   return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
                      cl::sycl::range<3>(x, y, 1));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memcpy_direction
-// Memory|mem_mgr
-// Memory|typedef_byte_t
-// Memory|typedef_buffer_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
                                    const void *from_ptr, size_t size,
                                    memcpy_direction direction) {
@@ -543,14 +438,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
   return q.memcpy(to_ptr, from_ptr, size);
 #endif // DPCT_USM_LEVEL_NONE
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_3d_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
 static inline cl::sycl::vector_class<cl::sycl::event>
@@ -583,14 +471,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
   }
   return event_list;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_2d_3d_pitch_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_3d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// memcpy 2D/3D matrix specified by pitched_data.
 static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
@@ -601,14 +482,7 @@ dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
                      cl::sycl::range<3>(from.get_pitch(), from.get_y(), 1), to_id, from_id,
                      size, direction);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_2d_pitch_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_3d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// memcpy 2D matrix with pitch.
 static inline cl::sycl::vector_class<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
@@ -619,15 +493,8 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
                      cl::sycl::id<3>(0, 0, 0), cl::sycl::id<3>(0, 0, 0),
                      cl::sycl::range<3>(x, y, 1), direction);
 }
-// DPCT_LABEL_END
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|get_buffer_and_offset|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_buffer_t
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the buffer and the offset of a piece of memory pointed to by \p ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
@@ -643,27 +510,14 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
         "NULL pointer argument in get_buffer_and_offset function is invalid");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_buffer_T|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the data pointed from \p ptr as a 1D buffer reinterpreted as type T.
 template <typename T> static cl::sycl::buffer<T> get_buffer(const void *ptr) {
   auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
   return alloc.buffer.reinterpret<T>(
       cl::sycl::range<1>(alloc.size / sizeof(T)));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_buffer_byte_t|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_buffer_t
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the buffer of a piece of memory pointed to by \p ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
@@ -671,14 +525,7 @@ template <typename T> static cl::sycl::buffer<T> get_buffer(const void *ptr) {
 static buffer_t get_buffer(const void *ptr) {
   return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|access_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A wrapper class contains an accessor and an offset.
 template <typename dataT,
           cl::sycl::access_mode accessMode = cl::sycl::access_mode::read_write>
@@ -702,14 +549,7 @@ public:
   /// \returns a device pointer with offset.
   dataT get_raw_pointer() const { return (dataT)(&accessor[0] + offset); }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_access|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the accessor for memory pointed by \p ptr.
 ///
 /// \param ptr Pointer to memory.
@@ -727,14 +567,7 @@ get_access(const void *ptr, cl::sycl::handler &cgh) {
         "NULL pointer argument in get_access function is invalid");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_malloc|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_malloc_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Allocate memory block on the device.
 /// \param num_bytes Number of bytes to allocate.
 /// \param q Queue to execute the allocate task.
@@ -744,13 +577,7 @@ static inline void *dpct_malloc(T num_bytes,
                                 cl::sycl::queue &q = get_default_queue()) {
   return detail::dpct_malloc(static_cast<size_t>(num_bytes), q);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_host_ptr|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_and_offset
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the host pointer from a buffer that is mapped to virtual pointer ptr.
 /// \param ptr Virtual Pointer mapped to device buffer
 /// \returns A host pointer
@@ -761,15 +588,7 @@ template <typename T> static inline T *get_host_ptr(const void *ptr) {
           .get_pointer();
   return (T *)(host_ptr + BufferOffset.second);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_malloc_3d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_malloc_pitch_detail
-// Memory|pitched_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Allocate memory block for 3D array on the device.
 /// \param size Size of of the memory block, in bytes.
 /// \param q Queue to execute the allocate task.
@@ -783,14 +602,7 @@ dpct_malloc(cl::sycl::range<3> size, cl::sycl::queue &q = get_default_queue()) {
   pitch.set_pitch(pitch_size);
   return pitch;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_malloc_2d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_malloc_pitch_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Allocate memory block for 2D array on the device.
 /// \param [out] pitch Aligned size of x in bytes.
 /// \param x Range in dim x.
@@ -801,14 +613,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
                                 cl::sycl::queue &q = get_default_queue()) {
   return detail::dpct_malloc(pitch, x, y, 1, q);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_free|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// free
 /// \param ptr Point to free.
 /// \param q Queue to execute the free task.
@@ -823,15 +628,7 @@ static inline void dpct_free(void *ptr,
 #endif // DPCT_USM_LEVEL_NONE
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
 /// to the address specified by \p to_ptr. The value of \p direction is used to
 /// set the copy direction, it can be \a host_to_host, \a host_to_device,
@@ -849,15 +646,7 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction).wait();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memcpy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Asynchronously copies \p size bytes from the address specified by \p
 /// from_ptr to the address specified by \p to_ptr. The value of \p direction is
 /// used to set the copy direction, it can be \a host_to_host, \a
@@ -875,15 +664,7 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_2d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_2d_pitch_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Synchronously copies 2D matrix specified by \p x and \p y from the address
 /// specified by \p from_ptr to the address specified by \p to_ptr, while \p
 /// from_pitch and \p to_pitch are the range of dim x in bytes of the matrix
@@ -909,15 +690,7 @@ static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
   cl::sycl::event::wait(detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch,
                                             from_pitch, x, y, direction));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memcpy_2d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_2d_pitch_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Asynchronously copies 2D matrix specified by \p x and \p y from the address
 /// specified by \p from_ptr to the address specified by \p to_ptr, while \p
 /// \p from_pitch and \p to_pitch are the range of dim x in bytes of the matrix
@@ -943,15 +716,7 @@ async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
   detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
                       direction);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memcpy_3d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_2d_3d_pitch_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Synchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
 /// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
@@ -975,15 +740,7 @@ static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
   cl::sycl::event::wait(
       detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memcpy_3d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|memcpy_direction
-// Memory|dpct_memcpy_2d_3d_pitch_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Asynchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
 /// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
@@ -1007,14 +764,7 @@ async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
                   cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Synchronously sets \p value to the first \p size bytes starting from \p
 /// dev_ptr. The function will return after the memset operation is completed.
 ///
@@ -1027,14 +777,7 @@ static void dpct_memset(void *dev_ptr, int value, size_t size,
                         cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memset|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Asynchronously sets \p value to the first \p size bytes starting from \p
 /// dev_ptr. The return of the function does NOT guarantee the memset operation
 /// is completed.
@@ -1047,14 +790,7 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset_2d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_2d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
 /// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
 /// dimension, including padding bytes. The function will return after the
@@ -1072,14 +808,7 @@ static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                cl::sycl::queue &q = get_default_queue()) {
   cl::sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memset_2d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_2d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
 /// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
 /// dimension, including padding bytes. The return of the function does NOT
@@ -1097,14 +826,7 @@ static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                      cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_memset_3d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_3d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
 /// specify the setted 3D memory size. The function will return after the
 /// memset operation is completed.
@@ -1119,14 +841,7 @@ static inline void dpct_memset(pitched_data pitch, int val,
                                cl::sycl::queue &q = get_default_queue()) {
   cl::sycl::event::wait(detail::dpct_memset(q, pitch, val, size));
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dpct_memset_3d|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memset_3d_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
 /// specify the setted 3D memory size. The return of the function does NOT
 /// guarantee the memset operation is completed.
@@ -1141,13 +856,7 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
                                      cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, pitch, val, size);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_accessor|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memory_traits
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// dpct accessor used as device function parameter.
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {
@@ -1194,14 +903,8 @@ private:
   pointer_t _data;
   cl::sycl::range<2> _range;
 };
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|device_memory|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|memory_traits
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Device variable with address space of shared, global or constant.
 template <class T, memory_region Memory, size_t Dimension>
 class device_memory {
@@ -1378,27 +1081,14 @@ public:
   }
 #endif // DPCT_USM_LEVEL_NONE
 };
-// DPCT_LABEL_END
 }
 
-// DPCT_LABEL_BEGIN|global_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class T, size_t Dimension>
 using global_memory = detail::device_memory<T, global, Dimension>;
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|constant_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class T, size_t Dimension>
 using constant_memory = detail::device_memory<T, constant, Dimension>;
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|shared_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
-// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

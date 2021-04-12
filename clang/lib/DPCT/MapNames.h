@@ -403,6 +403,22 @@ public:
   static const std::unordered_map<clang::dpct::HelperFileEnum,
                                   std::vector<clang::dpct::HelperFileEnum>>
       HelperFileDependencyMap;
+
+  static const std::string DpctAllContentStr;
+  static const std::string AtomicAllContentStr;
+  static const std::string BlasUtilsAllContentStr;
+  static const std::string DeviceAllContentStr;
+  static const std::string DplUtilsAllContentStr;
+  static const std::string ImageAllContentStr;
+  static const std::string KernelAllContentStr;
+  static const std::string MemoryAllContentStr;
+  static const std::string UtilAllContentStr;
+  static const std::string DplExtrasAlgorithmAllContentStr;
+  static const std::string DplExtrasFunctionalAllContentStr;
+  static const std::string DplExtrasIteratorsAllContentStr;
+  static const std::string DplExtrasMemoryAllContentStr;
+  static const std::string DplExtrasNumericAllContentStr;
+  static const std::string DplExtrasVectorAllContentStr;
 };
 
 class MigrationStatistics {

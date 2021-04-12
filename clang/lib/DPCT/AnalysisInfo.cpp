@@ -36,7 +36,7 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::none;
-std::string DpctGlobalInfo::CustomHelperFileName = "dpct.hpp";
+std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;

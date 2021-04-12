@@ -8,34 +8,7 @@
 
 #ifndef __DPCT_VECTOR_H__
 #define __DPCT_VECTOR_H__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|non_local_include_dependency
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
@@ -46,28 +19,14 @@
 #include <algorithm>
 #include <iterator>
 #include <vector>
-// DPCT_LABEL_END
 
 #include "../device.hpp"
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_BEGIN
-// Device|non_local_include_dependency
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|cl_sycl_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 namespace sycl = cl::sycl;
-// DPCT_LABEL_END
 
 namespace internal {
-// DPCT_LABEL_BEGIN|is_iterator|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename Iter, typename Void = void> // for non-iterators
 struct is_iterator : std::false_type {};
 
@@ -80,14 +39,8 @@ struct is_iterator<
 
 template <typename T> // For pointers
 struct is_iterator<T *> : std::true_type {};
-// DPCT_LABEL_END
 } // end namespace internal
 
-// DPCT_LABEL_BEGIN|device_vector|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifndef DPCT_USM_LEVEL_NONE
 
 template <typename T,
@@ -742,7 +695,6 @@ public:
 };
 
 #endif
-// DPCT_LABEL_END
 
 } // end namespace dpct
 

@@ -567,8 +567,9 @@ public:
     case Time:
       return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
     case MKL_BLAS_Solver:
-        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                            "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+      return insertHeader(
+          HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
     case MKL_BLAS_Solver_Without_Util:
         return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
                             "<oneapi/mkl.hpp>");
@@ -576,8 +577,9 @@ public:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case MKL_SPBLAS:
-        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                            "<oneapi/mkl.hpp>", "<dpct/blas_utils.hpp>");
+      return insertHeader(
+          HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
     case MKL_SPBLAS_Without_Util:
         return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
                             "<oneapi/mkl.hpp>");

@@ -8,32 +8,7 @@
 
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <CL/sycl.hpp>
 #include <algorithm>
 #include <cstring>
@@ -50,18 +25,10 @@
 #define NOMINMAX
 #include <windows.h>
 #endif
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|exception_handler|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// DPC++ default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
@@ -75,11 +42,7 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
     }
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_info|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 class device_info {
 public:
   // get interface
@@ -151,13 +114,7 @@ private:
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_ext|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|exception_handler
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// dpct device extension
 class device_ext : public cl::sycl::device {
 public:
@@ -364,11 +321,7 @@ private:
   std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
   mutable std::mutex m_mutex;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_tid|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 static inline unsigned int get_tid(){
 #if defined(__linux__)
   return syscall(SYS_gettid);
@@ -378,13 +331,7 @@ static inline unsigned int get_tid(){
 #error "Only support Windows and Linux."
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dev_mgr|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_tid
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// device manager
 class dev_mgr {
 public:
@@ -466,64 +413,33 @@ private:
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_default_queue|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Util function to get the defualt queue of current device in
 /// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_current_device|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Util function to get the current device.
 static inline device_ext &get_current_device() {
   return dev_mgr::instance().current_device();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_device|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Util function to get a device by id.
 static inline device_ext &get_device(unsigned int id) {
   return dev_mgr::instance().get_device(id);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_default_context|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Util function to get the context of the default queue of current
 /// device in dpct device manager.
 static inline cl::sycl::context get_default_context() {
   return dpct::get_current_device().get_context();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|cpu_device|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Util function to get a cpu device.
 static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
-// DPCT_LABEL_END
 
 } // namespace dpct
 

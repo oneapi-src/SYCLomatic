@@ -8,6 +8,28 @@
 
 #ifndef __DPCT_KERNEL_HPP__
 #define __DPCT_KERNEL_HPP__
+// DPCT_COMMENT
+// DPCT_COMMENT Example1:
+// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
+// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
+// DPCT_COMMENT // DPCT_CODE
+// DPCT_COMMENT some code
+// DPCT_COMMENT // DPCT_LABEL_END
+// DPCT_COMMENT
+// DPCT_COMMENT Example2:
+// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
+// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
+// DPCT_COMMENT // FileID|FeatureNameRef
+// DPCT_COMMENT [// FileID|FeatureNameRef]
+// DPCT_COMMENT ...
+// DPCT_COMMENT // DPCT_DEPENDENCY_END
+// DPCT_COMMENT // DPCT_CODE
+// DPCT_COMMENT some code
+// DPCT_COMMENT // DPCT_LABEL_END
+// DPCT_COMMENT
+// DPCT_COMMENT For header file including dependency, please use predefined feature name:
+// DPCT_COMMENT   local_include_dependency: dpct helper files
+// DPCT_COMMENT   non_local_include_dependency: other headler files
 
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY

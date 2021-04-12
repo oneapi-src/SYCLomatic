@@ -72,13 +72,6 @@ extern std::string ClangToolOutputMessage;
 namespace dpct {
 extern llvm::cl::OptionCategory DPCTCat;
 void initWarningIDs();
-#if defined(_WIN32)
-#define MAX_PATH_LEN _MAX_PATH
-#define MAX_NAME_LEN _MAX_FNAME
-#else
-#define MAX_PATH_LEN PATH_MAX
-#define MAX_NAME_LEN NAME_MAX
-#endif
 } // namespace dpct
 } // namespace clang
 
@@ -337,22 +330,26 @@ static opt<bool> EnableComments(
     "comments", llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
     cat(DPCTCat), init(false));
 
-static opt<HelperFilesCustomizationLevel> CustomHelperFiles(
-    "custom-helper-files", desc("Customize the helper files.\n"),
+static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
+    "use-custom-helper", desc("Customize the helper header files for migrated code.\n"),
     values(
         llvm::cl::OptionEnumValue{
             "none", int(HelperFilesCustomizationLevel::none),
-            "No customization for helper files. (default)", false},
+            "No customization. (default)", false},
         llvm::cl::OptionEnumValue{
             "file", int(HelperFilesCustomizationLevel::file),
-            "Only generate necessary helper files.", false}),
+            "Limit helper header files to only necessary for the migrated code and place them\n"
+            "                                       to --out-root folder.", false},
+        llvm::cl::OptionEnumValue{
+            "all", int(HelperFilesCustomizationLevel::all),
+            "Generate complete set of helper header files and place them to --out-root folder.", false}),
     init(HelperFilesCustomizationLevel::none), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 
 opt<std::string> CustomHelperFileName(
-    "custom-helper-file-name",
+    "custom-helper-name",
     desc(
-        "Specify the main helper function header file name. Default: dpct"),
+        "Specify the main helper header file name. Default: dpct"),
     init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
 
 bool AsyncHandlerFlag = false;
@@ -1102,6 +1099,9 @@ int runDPCT(int argc, const char **argv) {
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
+  validateCustomHelperFileNameArg(UseCustomHelperFileLevel, CustomHelperFileName,
+                                  dpct::DpctGlobalInfo::getOutRoot());
+
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
 
@@ -1139,7 +1139,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(CustomHelperFiles);
+  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   MapNames::HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";

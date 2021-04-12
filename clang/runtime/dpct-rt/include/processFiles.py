@@ -20,14 +20,16 @@ content_files_name_list = ["Atomic", "BlasUtils", "Device",
 dpl_extras_content_files_name_list = [
     "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector"]
 
+is_os_win = False
+
 def exit_script():
     sys.exit()
 
 def get_file_pathes(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras):
     if (is_dpl_extras):
-        return [os.path.join(cur_file_dir, "dpl_extras/", cont_file + ".h.inc"), os.path.join(runtime_files_dir, "dpl_extras/", cont_file + ".h"), os.path.join(inc_files_dir, "dpl_extras/", cont_file + ".inc")]
+        return [os.path.join(cur_file_dir, "dpl_extras/", cont_file + ".h.inc"), os.path.join(runtime_files_dir, "dpl_extras/", cont_file + ".h"), os.path.join(inc_files_dir, "dpl_extras/", cont_file + ".inc"), os.path.join(inc_files_dir, "dpl_extras/", cont_file + ".all.inc")]
     else:
-        return [os.path.join(cur_file_dir, cont_file + ".hpp.inc"), os.path.join(runtime_files_dir, cont_file + ".hpp"), os.path.join(inc_files_dir, cont_file + ".inc")]
+        return [os.path.join(cur_file_dir, cont_file + ".hpp.inc"), os.path.join(runtime_files_dir, cont_file + ".hpp"), os.path.join(inc_files_dir, cont_file + ".inc"), os.path.join(inc_files_dir, cont_file + ".all.inc")]
 
 def create_dir(inc_files_dir, runtime_files_dir):
     if (not os.path.exists(os.path.join(runtime_files_dir))):
@@ -39,13 +41,20 @@ def create_dir(inc_files_dir, runtime_files_dir):
     if (not os.path.exists(os.path.join(inc_files_dir, "dpl_extras/"))):
         os.makedirs(os.path.join(inc_files_dir, "dpl_extras/"))
 
+def convert_line_end(line):
+    if (is_os_win):
+        line = line.replace(UNIX_LINE_ENDING, WINDOWS_LINE_ENDING)
+    return line
+
 def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, file_dict):
     file_names = get_file_pathes(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras)
     cont_file_handle = io.open(file_names[0], "rb")
     runtime_file_handle = io.open(file_names[1], "w+b")
     inc_file_handle = io.open(file_names[2], "w+b")
+    inc_all_file_handle = io.open(file_names[3], "w+b")
 
     inc_file_lines = []
+    inc_all_file_lines = []
     runtime_file_lines = []
 
     helper_file_enum_name = file_dict[cont_file]
@@ -94,22 +103,28 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                              splited[1] + bytes("\"},", 'utf-8')
             else:
                 if (is_code):
-                    inc_file_lines.append(bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
-                runtime_file_lines.append(line)
+                    inc_file_lines.append(bytes("R\"Delimiter(", 'utf-8') + convert_line_end(line) + bytes(")Delimiter\"\n", 'utf-8'))
+                runtime_file_lines.append(convert_line_end(line))
+                inc_all_file_lines.append(bytes("R\"Delimiter(", 'utf-8') + convert_line_end(line) + bytes(")Delimiter\"\n", 'utf-8'))
 
     inc_file_str = bytes("", 'utf-8')
+    inc_all_file_str = bytes("", 'utf-8')
     runtime_file_str = bytes("", 'utf-8')
     for line in inc_file_lines:
         inc_file_str = inc_file_str + line
     for line in runtime_file_lines:
         runtime_file_str = runtime_file_str + line
+    for line in inc_all_file_lines:
+        inc_all_file_str = inc_all_file_str + line
 
     runtime_file_handle.write(runtime_file_str)
     inc_file_handle.write(inc_file_str)
+    inc_all_file_handle.write(inc_all_file_str)
 
     cont_file_handle.close()
     runtime_file_handle.close()
     inc_file_handle.close()
+    inc_all_file_handle.close()
 
 def main(build_dir):
     content_files_dict = dict(zip(content_files_list, content_files_name_list))
@@ -119,6 +134,9 @@ def main(build_dir):
     runtime_files_dir = os.path.join(build_dir, "tools/clang/runtime/dpct-rt/include")
 
     create_dir(inc_files_dir, runtime_files_dir)
+
+    if (sys.platform == "win32"):
+        is_os_win = True
 
     for cont_file in content_files_list:
         process_a_file(cont_file, inc_files_dir, runtime_files_dir, False, content_files_dict)

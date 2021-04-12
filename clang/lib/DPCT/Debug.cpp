@@ -265,6 +265,19 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
                    "fields of the compilation database are inconsistent:\n" +
                    Message;
     break;
+  case MigrationErrorCustomHelperFileNameContainInvalidChar:
+    StatusString =
+        "Error: Custom helper header file name is invalid. The name can only "
+        "contain digits(0-9), underscore(_) or letters(a-zA-Z).";
+    break;
+  case MigrationErrorCustomHelperFileNameTooLong:
+    StatusString =
+        "Error: Custom helper header file name is too long.";
+    break;
+  case MigrationErrorCustomHelperFileNamePathTooLong:
+    StatusString = "Error: The path resulted from --out-root and --custom-helper-file "
+                   "option values: \"" + Message + "\" is too long.";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

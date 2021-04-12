@@ -8,70 +8,23 @@
 
 #ifndef __DPCT_IMAGE_HPP__
 #define __DPCT_IMAGE_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <CL/sycl.hpp>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|image_channel_data_type|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum class image_channel_data_type {
   signed_int,
   unsigned_int,
   fp,
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 class image_channel;
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 class image_wrapper_base;
-// DPCT_LABEL_END
 namespace detail {
-// DPCT_LABEL_BEGIN|image_trait|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
 /// cl_float4 and cl_half4. The data type of accessors with 8bits/16bits channel
@@ -141,13 +94,7 @@ struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 4>;
   static constexpr int channel_num = 4;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fetch_data|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Functor to fetch data from read result of an image accessor.
 template <class T> struct fetch_data {
   using return_t = typename image_trait<T>::data_t;
@@ -179,11 +126,7 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
                     origin_data.a());
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_image_wrapper_detail_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims);
 
@@ -193,22 +136,12 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 
 /// Create image with channel info and specified dimensions.
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_creator_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Functor to create sycl::image from image_data.
 template <int dimensions> struct image_creator;
-// DPCT_LABEL_END
 
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|image_channel|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image channel info, include channel number, order, data width and type
 class image_channel {
   image_channel_data_type _type = image_channel_data_type::signed_int;
@@ -361,15 +294,7 @@ public:
     _total_size = _channel_size * _channel_num;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
-// Util|make_index_sequence
-// Memory|pitched_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
@@ -442,26 +367,10 @@ public:
     _host_data = nullptr;
   }
 };
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_p_alias|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 using image_matrix_p = image_matrix *;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_type|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum class image_data_type { matrix, linear, pitch, unsupport };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image data info.
 class image_data {
 public:
@@ -543,13 +452,7 @@ private:
   size_t _x, _y, _pitch;
   image_channel _channel;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class sampling_info {
@@ -602,13 +505,7 @@ public:
                              _filtering_mode);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image base class.
 class image_wrapper_base {
   sampling_info _sampling_info;
@@ -699,26 +596,10 @@ public:
   cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
 };
 inline image_wrapper_base::~image_wrapper_base() {}
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_p_alias|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 using image_wrapper_base_p = image_wrapper_base *;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_accessor_ext_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image class, wrapper of cl::sycl::image.
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   cl::sycl::image<dimensions> *_image = nullptr;
@@ -772,13 +653,7 @@ public:
     _image = nullptr;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_accessor_ext|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Wrap sampler and image accessor together.
 template <class T, int dimensions, bool IsImageArray = false>
 class image_accessor_ext {
@@ -877,11 +752,7 @@ public:
         _img_acc[index].read(x, _sampler));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_image_wrapper|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Create image wrapper according to image data and sampling info.
 /// \return Pointer to image wrapper base class.
 /// \param data Image data used to create image wrapper.
@@ -906,15 +777,8 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
   }
   return nullptr;
 }
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|image_creator|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Memory|mem_mgr
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Functor to create sycl::image from image_data
 template <> struct image_creator<1> {
   cl::sycl::image<1> *operator()(image_data data) {
@@ -963,11 +827,7 @@ template <> struct image_creator<3> {
         ->create_image<3>(data.get_channel());
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_image_wrapper_detail|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {
@@ -1021,7 +881,6 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
     return nullptr;
   }
 }
-// DPCT_LABEL_END
 } // namespace detail
 
 } // namespace dpct

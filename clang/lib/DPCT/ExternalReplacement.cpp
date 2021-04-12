@@ -90,9 +90,9 @@ int loadFromYaml(StringRef Input,
         TU.MainHelperFileName !=
             clang::dpct::DpctGlobalInfo::getCustomHelperFileName()) {
       clang::dpct::PrintMsg(
-          "[WARNING] The cunstom helper file name in current migration "
-          "is different from the name in previous migration, you need "
-          "update the previous migrated code.");
+          "Warning: The custom helper header file name in current migration is "
+          "different from the name in previous migration, you need to update "
+          "the previously migrated code.");
     }
     emitDpctVersionWarningIfNeed(TU.DpctVersion);
   }

@@ -3352,6 +3352,53 @@ const std::unordered_map<clang::dpct::HelperFileEnum,
          {clang::dpct::HelperFileEnum::Memory, clang::dpct::HelperFileEnum::Util}},
         {clang::dpct::HelperFileEnum::Memory, {clang::dpct::HelperFileEnum::Device}}};
 
+
+const std::string MapNames::DpctAllContentStr =
+#include "clang/DPCT/dpct.all.inc"
+;
+const std::string MapNames::AtomicAllContentStr =
+#include "clang/DPCT/atomic.all.inc"
+;
+const std::string MapNames::BlasUtilsAllContentStr =
+#include "clang/DPCT/blas_utils.all.inc"
+;
+const std::string MapNames::DeviceAllContentStr =
+#include "clang/DPCT/device.all.inc"
+;
+const std::string MapNames::DplUtilsAllContentStr =
+#include "clang/DPCT/dpl_utils.all.inc"
+;
+const std::string MapNames::ImageAllContentStr =
+#include "clang/DPCT/image.all.inc"
+;
+const std::string MapNames::KernelAllContentStr =
+#include "clang/DPCT/kernel.all.inc"
+;
+const std::string MapNames::MemoryAllContentStr =
+#include "clang/DPCT/memory.all.inc"
+;
+const std::string MapNames::UtilAllContentStr =
+#include "clang/DPCT/util.all.inc"
+;
+const std::string MapNames::DplExtrasAlgorithmAllContentStr =
+#include "clang/DPCT/dpl_extras/algorithm.all.inc"
+;
+const std::string MapNames::DplExtrasFunctionalAllContentStr =
+#include "clang/DPCT/dpl_extras/functional.all.inc"
+;
+const std::string MapNames::DplExtrasIteratorsAllContentStr =
+#include "clang/DPCT/dpl_extras/iterators.all.inc"
+;
+const std::string MapNames::DplExtrasMemoryAllContentStr =
+#include "clang/DPCT/dpl_extras/memory.all.inc"
+;
+const std::string MapNames::DplExtrasNumericAllContentStr =
+#include "clang/DPCT/dpl_extras/numeric.all.inc"
+;
+const std::string MapNames::DplExtrasVectorAllContentStr =
+#include "clang/DPCT/dpl_extras/vector.all.inc"
+;
+
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
