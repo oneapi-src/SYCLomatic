@@ -320,9 +320,10 @@ static opt<bool, true> NoDRYPattern(
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
-                 llvm::cl::desc("Migrates/copies all files from the --in-root directory"
-                                " to the --out-root directory.\n"
-                                "--in-root option should be explicitly specified. Default: off."),
+                 llvm::cl::desc("Migrates/copies all files, except hidden, from the --in-root directory\n"
+                 "to the --out-root directory, if input files are not specified.\n"
+                 "The --in-root directory must be specified for this option to have an effect.\n"
+                 "Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 
 static opt<bool> EnableCTAD(
