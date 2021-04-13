@@ -20,7 +20,7 @@ int main(){
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dlopen(PlaceHolder/*Fix the module file name manually*/, RTLD_LAZY);
     cuModuleLoadData(&M, Data.c_str());
-    //CHECK: F = dlsym(M, (std::string(FunctionName.c_str()) + "_wrapper").c_str());
+    //CHECK: F = (dpct::kernel_functor)dlsym(M, (std::string(FunctionName.c_str()) + "_wrapper").c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());
     //CHECK: dlclose(M);
     cuModuleUnload(M);

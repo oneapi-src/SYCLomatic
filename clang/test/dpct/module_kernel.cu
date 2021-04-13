@@ -4,7 +4,7 @@
 //CHECK: void foo(float* k, float* y, sycl::nd_item<3> item_ct1, uint8_t *dpct_local);
 
 //CHECK: extern "C" {
-//CHECK-NEXT: void foo_wrapper_ct1(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
+//CHECK-NEXT: void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
 //CHECK-NEXT: }
 __global__ void foo(float* k, float* y);
 
@@ -15,7 +15,7 @@ __global__ void foo(float* k, float* y);
 //CHECK-NEXT: }
 
 //CHECK: extern "C" {
-//CHECK-NEXT: void foo_wrapper_ct1(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra){
+//CHECK-NEXT: void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra){
 //CHECK-NEXT: float * k;
 //CHECK-NEXT: float * y;
 //CHECK-NEXT: if(kernelParams){

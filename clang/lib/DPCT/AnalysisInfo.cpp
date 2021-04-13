@@ -1752,7 +1752,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
-    Printer << "void " << FuncName << "_wrapper_ct1("
+    Printer << "void " << FuncName << "_wrapper("
             << MapNames::getClNamespace() << "::queue &queue, const "
             << MapNames::getClNamespace()
             << "::nd_range<3> &nr, unsigned int localMemSize, void "

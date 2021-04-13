@@ -38,7 +38,7 @@ ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
                           ARG("RTLD_LAZY")))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("dlsym", ARG(1), EXTENDSTR(2, "_wrapper")))
+                     CALL("(dpct::kernel_functor)dlsym", ARG(1), EXTENDSTR(2, "_wrapper")))
 
 CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
 
