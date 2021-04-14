@@ -1136,6 +1136,68 @@ DerefExpr DerefExpr::create(const Expr *E) {
   return D;
 }
 
+class DerefStreamExpr {
+  const Expr *E;
+
+  bool isDefaultStream() const {
+    auto Expression = E->IgnoreImpCasts();
+    if (auto Paren = dyn_cast<ParenExpr>(Expression)) {
+      Expression = Paren->getSubExpr()->IgnoreImpCasts();
+    }
+    if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Expression)) {
+      Expression = TypeCast->getSubExpr()->IgnoreImpCasts();
+    }
+    Expr::EvalResult Result;
+    if (!Expression->isValueDependent() &&
+      Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+      auto Val = Result.Val.getInt().getZExtValue();
+      return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
+                      // all migrated to default queue;
+    }
+    Expression->dumpPretty(DpctGlobalInfo::getContext());
+    return false;
+  }
+
+  template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, E, HelperFuncType::DefaultQueue);
+    Stream << "{{NEEDREPLACEQ" << Index << "}}";
+  }
+
+public:
+  template <class StreamT>
+  void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
+    if (isDefaultStream())
+      printDefaultQueue(Stream);
+    else
+      DerefExpr::create(E).printArg(Stream, A);
+  }
+  template <class StreamT> void printMemberBase(StreamT &Stream) const {
+    if (isDefaultStream()) {
+      printDefaultQueue(Stream);
+      Stream << ".";
+    } else {
+      DerefExpr::create(E).printMemberBase(Stream);
+    }
+  }
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (isDefaultStream())
+      printDefaultQueue(Stream);
+    else
+      DerefExpr::create(E).print(Stream);
+  }
+
+  DerefStreamExpr(const Expr *Expression) : E(Expression) {}
+};
+
+std::function<DerefStreamExpr(const CallExpr *)>
+makeDerefStreamExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> DerefStreamExpr {
+    return DerefStreamExpr(C->getArg(Idx));
+  };
+}
+
 std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefExpr {
     return DerefExpr::create(C->getArg(Idx));
@@ -1249,6 +1311,26 @@ makeTemplatedCalleeCreator(std::string CalleeName,
       });
 }
 
+template <BinaryOperatorKind Op, class LValueT, class RValueT>
+std::function<BinaryOperatorPrinter<Op, LValueT, RValueT>(const CallExpr *)>
+makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
+                          std::function<RValueT(const CallExpr *)> R) {
+  return PrinterCreator<BinaryOperatorPrinter<Op, LValueT, RValueT>,
+                        std::function<LValueT(const CallExpr *)>,
+                        std::function<RValueT(const CallExpr *)>>(std::move(L),
+                                                                  std::move(R));
+}
+
+template <class CalleeT, class... CallArgsT>
+std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
+makeCallExprCreator(std::function<CalleeT(const CallExpr *)> Callee,
+  std::function<CallArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<CallExprPrinter<CalleeT, CallArgsT...>,
+                        std::function<CalleeT(const CallExpr *)>,
+                        std::function<CallArgsT(const CallExpr *)>...>(Callee,
+                                                                       Args...);
+}
+
 template <class... CallArgsT>
 std::function<CallExprPrinter<StringRef, CallArgsT...>(const CallExpr *)>
 makeCallExprCreator(std::string Callee,
@@ -1309,15 +1391,15 @@ creatAssignExprRewriterFactory(
 /// Create CallExprRewriterFactory with given argumens.
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
-template <class... CallArgsT>
+template <class CalleeT, class... CallArgsT>
 std::shared_ptr<CallExprRewriterFactoryBase> creatCallExprRewriterFactory(
     const std::string &SourceName,
-    std::function<CallExprPrinter<StringRef, CallArgsT...>(const CallExpr *)>
+    std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
         Args) {
   return std::make_shared<CallExprRewriterFactory<
-      SimpleCallExprRewriter<CallArgsT...>,
-      std::function<CallExprPrinter<StringRef, CallArgsT...>(
-          const CallExpr *)>>>(SourceName, Args);
+      SimpleCallExprRewriter<CalleeT, CallArgsT...>,
+      std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>>>(
+      SourceName, Args);
 }
 
 
@@ -1393,6 +1475,31 @@ createAssignableFactory(
         &&Input,
     T) {
   return createAssignableFactory(std::move(Input));
+}
+
+/// Create RewriterFactoryWithFeatureRequest key-value pair with inner
+/// key-value. Will call requestFeature when used to create CallExprRewriter.
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFileEnum FileID, std::string FeatureName,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RewriterFactoryWithFeatureRequest>(
+          FileID, std::move(FeatureName), Input.second));
+}
+/// Create RewriterFactoryWithFeatureRequest key-value pair with inner
+/// key-value. Will call requestFeature when used to create CallExprRewriter.
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFileEnum FileID, std::string FeatureName,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createFeatureRequestFactory(FileID, std::move(FeatureName),
+                                     std::move(Input));
 }
 
 /// Create ConditonalRewriterFactory key-value pair with two key-value
@@ -1552,10 +1659,14 @@ public:
 };
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
+#define FEATURE_REQUEST_FACTORY(FILEID, NAME, x)                               \
+  createFeatureRequestFactory(FILEID, NAME, x 0),
+#define STREAM(x) makeDerefStreamExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define EXTENDSTR(idx, str) makeExtendStr(idx,str)
+#define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)

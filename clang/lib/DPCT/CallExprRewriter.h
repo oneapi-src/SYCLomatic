@@ -196,6 +196,22 @@ public:
   }
 };
 
+class RewriterFactoryWithFeatureRequest : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  HelperFileEnum FileID;
+  std::string FeatureName;
+
+public:
+  RewriterFactoryWithFeatureRequest(
+      HelperFileEnum FileID, std::string FeatureName,
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    requestFeature(FileID, FeatureName, C);
+    return Inner->create(C);
+  }
+};
+
 /// Base class for rewriting function calls
 class FuncCallExprRewriter : public CallExprRewriter {
 protected:
@@ -621,19 +637,29 @@ public:
             std::forward<CallArgsT>(Args)...) {}
 };
 
-template <class LValueT, class RValueT> class AssignExprPrinter {
+template <BinaryOperatorKind Op, class LValueT, class RValueT>
+class BinaryOperatorPrinter {
   LValueT LVal;
   RValueT RVal;
 
+  static std::string OpStr;
+
 public:
-  AssignExprPrinter(LValueT &&L, RValueT &&R)
+  BinaryOperatorPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, LVal);
-    Stream << " = ";
+    Stream << " " << OpStr << " ";
     dpct::print(Stream, RVal);
   }
 };
+template <BinaryOperatorKind Op, class LValueT, class RValueT>
+std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
+    BinaryOperator::getOpcodeStr(Op).str();
+
+template <class LValueT, class RValueT>
+using AssignExprPrinter =
+    BinaryOperatorPrinter<BinaryOperatorKind::BO_Assign, LValueT, RValueT>;
 
 template <class ArgT> class DeleterCallExprRewriter : public CallExprRewriter {
   ArgT Arg;
@@ -792,17 +818,18 @@ public:
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
 };
 
-template <class... ArgsT>
+template <class CalleeT, class... ArgsT>
 class SimpleCallExprRewriter : public CallExprRewriter {
-  CallExprPrinter<StringRef, ArgsT...> Printer;
+  CallExprPrinter<CalleeT, ArgsT...> Printer;
+
 public:
   SimpleCallExprRewriter(
       const CallExpr *C, StringRef Source,
-      const std::function<CallExprPrinter<StringRef, ArgsT...>(const CallExpr *)>
-          &CallPrinterFunctor)
-      : CallExprRewriter(C, Source), Printer(CallPrinterFunctor(C)){}
+      const std::function<CallExprPrinter<CalleeT, ArgsT...>(const CallExpr *)>
+          &PrinterFunctor)
+      : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
   Optional<std::string> rewrite() override {
-    std::string Result = "";
+    std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer.print(OS);
     return OS.str();

@@ -14753,7 +14753,8 @@ REGISTER_RULE(FFTFunctionCallRule)
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
     return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleUnload",
-                      "cuModuleGetFunction");
+                      "cuModuleGetFunction", "cuLaunchKernel",
+                      "cuModuleGetTexRef");
   };
 
   MF.addMatcher(
@@ -14778,6 +14779,7 @@ void DriverModuleAPIRule::run(
     }
     IsAssigned = true;
   }
+  (void)IsAssigned;
 
   std::string APIName = "";
   if (auto DC = CE->getDirectCallee()) {
