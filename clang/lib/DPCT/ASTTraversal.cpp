@@ -10132,6 +10132,9 @@ void DeviceFunctionDeclRule::run(
   if (!FD || (FD->hasAttr<CUDADeviceAttr>() && FD->hasAttr<CUDAHostAttr>() &&
               DpctGlobalInfo::getRunRound() == 1))
     return;
+  if(FD->isVariadic()){
+    report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
+  }
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;

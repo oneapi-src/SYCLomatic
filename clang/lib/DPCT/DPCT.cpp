@@ -1160,6 +1160,12 @@ int runDPCT(int argc, const char **argv) {
                                   ArgumentInsertPosition::BEGIN));
   }
 #endif
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Xclang", ArgumentInsertPosition::BEGIN));
+
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
   DpctGlobalInfo::setCudaPath(CudaPath);

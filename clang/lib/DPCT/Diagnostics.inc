@@ -176,3 +176,5 @@ DEF_WARNING(MEMORY_ORDER_PERFORMANCE_TUNNING, 1078, "Consider replaceing memory_
 DEF_COMMENT(MEMORY_ORDER_PERFORMANCE_TUNNING, 1078, "Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.")
 DEF_WARNING(MODULE_FILENAME_MANUAL_FIX, 1079, "You need to replace the \"PlaceHolder\" with the file name of the dynamic library.")
 DEF_COMMENT(MODULE_FILENAME_MANUAL_FIX, 1079, "You need to replace the \"PlaceHolder\" with the file name of the dynamic library.")
+DEF_WARNING(DEVICE_VARIADIC_FUNCTION, 1080, "No variadic functions are allowed to be called in a SYCL kernel or any functions called by the kernel. You may need to adjust the code.")
+DEF_COMMENT(DEVICE_VARIADIC_FUNCTION, 1080, "No variadic functions are allowed to be called in a SYCL kernel or any functions called by the kernel. You may need to adjust the code.")
