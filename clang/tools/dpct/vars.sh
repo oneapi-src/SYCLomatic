@@ -1,35 +1,29 @@
-#!/bin/sh "shebang"
+#!/bin/sh
 # shellcheck shell=sh
 
-###############################################################################
-#
-#Copyright 2018 - 2020 Intel Corporation.
-#
-#This software and the related documents are Intel copyrighted materials,
-#and your use of them is governed by the express license under which they
-#were provided to you ("License"). Unless the License provides otherwise,
-#you may not use, modify, copy, publish, distribute, disclose or transmit
-#this software or the related documents without Intel's prior written
-#permission.
-#
-#This software and the related documents are provided as is, with no express
-#or implied warranties, other than those that are expressly stated in the
-#License.
-#
-###############################################################################
+# Copyright Intel Corporation
+# SPDX-License-Identifier: MIT
+# https://opensource.org/licenses/MIT
 
 # ############################################################################
-# Get absolute path to script, when sourced from bash, zsh and ksh shells.
+
+# Get absolute path to this script.
+# Uses `readlink` to remove links and `pwd -P` to turn into an absolute path.
+
 # Usage:
 #   script_dir=$(get_script_path "$script_rel_path")
+#
 # Inputs:
 #   script/relative/pathname/scriptname
+#
 # Outputs:
 #   /script/absolute/pathname
+
 # executing function in a *subshell* to localize vars and effects on `cd`
 get_script_path() (
   script="$1"
   while [ -L "$script" ] ; do
+    # combining next two lines fails in zsh shell
     script_dir=$(command dirname -- "$script")
     script_dir=$(cd "$script_dir" && command pwd -P)
     script="$(readlink "$script")"
@@ -38,63 +32,98 @@ get_script_path() (
        (*) script="$script_dir/$script" ;;
     esac
   done
+  # combining next two lines fails in zsh shell
   script_dir=$(command dirname -- "$script")
   script_dir=$(cd "$script_dir" && command pwd -P)
-  echo "$script_dir"
+  printf "%s" "$script_dir"
 )
+
 # ############################################################################
-usage() {
-  printf "%s\n"   "ERROR: This script must be sourced."
-  printf "%s\n"   "Usage: source $1"
-  return 2 2>/dev/null || exit 2
-}
+
+# Prepend path segment(s) to path-like env vars (PATH, CPATH, etc.).
+
+# prepend_path() avoids dangling ":" that affects some env vars (PATH and CPATH)
+# Usage:
+#   env_var=$(prepend_path "$prepend_to_var" "$existing_env_var")
+#   export env_var
+#
+# Inputs:
+#   $1 == path segment to be prepended to $2
+#   $2 == value of existing path-like environment variable
+
+prepend_path() (
+  path_to_add="$1"
+  path_is_now="$2"
+
+  if [ "" = "${path_is_now}" ] ; then   # avoid dangling ":"
+    printf "%s" "${path_to_add}"
+  else
+    printf "%s" "${path_to_add}:${path_is_now}"
+  fi
+)
+
+# ############################################################################
+
+# Extract the name and location of this sourced script.
+
+# Generally, "ps -o comm=" is limited to a 15 character result, but it works
+# fine for this usage, because we are primarily interested in finding the name
+# of the execution shell, not the name of any calling script.
 
 vars_script_name=""
-
-if [ -n "${ZSH_VERSION:-}" ] ; then     # only executed in zsh
+vars_script_shell="$(ps -p "$$" -o comm=)"
+# ${var:-} needed to pass "set -eu" checks
+if [ -n "${ZSH_VERSION:-}" ] && [ -n "${ZSH_EVAL_CONTEXT:-}" ] ; then     # zsh 5.x and later
+  # shellcheck disable=2249
   case $ZSH_EVAL_CONTEXT in (*:file*) vars_script_name="${(%):-%x}" ;; esac ;
-  if [ -n "$ZSH_EVAL_CONTEXT" ] && [ "" = "$vars_script_name" ] ; then
-    usage "${(%):-%x}" ;
+elif [ -n "${KSH_VERSION:-}" ] ; then                                     # ksh, mksh or lksh
+  if [ "$(set | grep -Fq "KSH_VERSION=.sh.version" ; echo $?)" -eq 0 ] ; then # ksh
+    vars_script_name="${.sh.file}" ;
+  else # mksh or lksh or [lm]ksh masquerading as ksh or sh
+    # force [lm]ksh to issue error msg; which contains this script's path/filename.
+    vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
+    vars_script_name="$(expr "${vars_script_name:-}" : '^.*sh: \(.*\)\[[0-9]*\]:')" ;
   fi
-elif [ -n "${KSH_VERSION:-}" ] ; then   # only executed in ksh or mksh or lksh
-  if [ "$(set | grep KSH_VERSION)" = "KSH_VERSION=.sh.version" ] ; then # ksh
-    if [ "$(cd "$(dirname -- "$0")" && pwd -P)/$(basename -- "$0")" \
-      != "$(cd "$(dirname -- "${.sh.file}")" && pwd -P)/$(basename -- "${.sh.file}")" ] ; then
-      vars_script_name="${.sh.file}" || usage "$0" ;
-    fi
-  else # mksh or lksh detected (also check for [lm]ksh renamed as ksh)
-    _lmksh="$(basename -- "$0")" ;
-    if [ "mksh" = "$_lmksh" ] || [ "lksh" = "$_lmksh" ] || [ "ksh" = "$_lmksh" ] ; then
-      # force [lm]ksh to issue error msg; contains this script's rel/path/filename
-      vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
-      vars_script_name="$(expr "$vars_script_name" : '^.*ksh: \(.*\)\[[0-9]*\]:')" ;
-    fi
+elif [ -n "${BASH_VERSION:-}" ] ; then        # bash
+  # shellcheck disable=2128
+  (return 0 2>/dev/null) && vars_script_name="${BASH_SOURCE}" ;
+elif [ "dash" = "$vars_script_shell" ] ; then # dash
+  # force dash to issue error msg; which contains this script's rel/path/filename.
+  vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
+  vars_script_name="$(expr "${vars_script_name:-}" : '^.*dash: [0-9]*: \(.*\):')" ;
+elif [ "sh" = "$vars_script_shell" ] ; then   # could be dash masquerading as /bin/sh
+  # force a shell error msg; which should contain this script's path/filename
+  # sample error msg shown; assume this file is named "vars.sh"; as required by setvars.sh
+  vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
+  if [ "$(printf "%s" "$vars_script_name" | grep -Eq "sh: [0-9]+: .*vars\.sh: " ; echo $?)" -eq 0 ] ; then # dash as sh
+    vars_script_name="$(expr "${vars_script_name:-}" : '^.*sh: [0-9]*: \(.*\):')" ;
   fi
-elif [ -n "${BASH_VERSION:-}" ] ; then  # only executed in bash
-  (return 0 2>/dev/null) && vars_script_name="${BASH_SOURCE}" || usage "${BASH_SOURCE}"
-else
-  case ${0##*/} in (sh|dash) vars_script_name="" ;; esac
+else  # unrecognized shell or dash being sourced from within a user's script
+  # force a shell error msg; which should contain this script's path/filename
+  # sample error msg shown; assume this file is named "vars.sh"; as required by setvars.sh
+  vars_script_name="$( (echo "${.sh.file}") 2>&1 )" || : ;
+  if [ "$(printf "%s" "$vars_script_name" | grep -Eq "^.+: [0-9]+: .*vars\.sh: " ; echo $?)" -eq 0 ] ; then # dash
+    vars_script_name="$(expr "${vars_script_name:-}" : '^.*: [0-9]*: \(.*\):')" ;
+  else
+    vars_script_name="" ;
+  fi
 fi
 
 if [ "" = "$vars_script_name" ] ; then
-  >&2 echo ":: ERROR: Unable to proceed: no support for sourcing from '[dash|sh]' shell." ;
+  >&2 echo "   ERROR: Unable to proceed: possible causes listed below."
   >&2 echo "   This script must be sourced. Did you execute or source this script?" ;
-  >&2 echo "   Can be caused by sourcing from inside a \"shebang-less\" script." ;
-  >&2 echo "   Can also be caused by sourcing from ZSH version 4.x or older." ;
-  return 1 2>/dev/null || exit 1
+  >&2 echo "   Unrecognized/unsupported shell (supported: bash, zsh, ksh, m/lksh, dash)." ;
+  >&2 echo "   May fail in dash if you rename this script (assumes \"vars.sh\")." ;
+  >&2 echo "   Can be caused by sourcing from ZSH version 4.x or older." ;
+  return 255 2>/dev/null || exit 255
 fi
-
 
 # ############################################################################
+my_script_path=$(get_script_path "${vars_script_name:-}")
+component_root=$(dirname -- "${my_script_path}")
 
 # Export required env vars for dpct package.
-export DPCT_BUNDLE_ROOT=$(dirname -- "$(get_script_path "$vars_script_name")")
 
-if [[ ! -e $DPCT_BUNDLE_ROOT/bin/dpct || \
-      ! -e $DPCT_BUNDLE_ROOT/bin/intercept-build ]]; then
-    printf "[\033[0;31mERROR\033[0m] Cannot find neccessary dpct binary\n"
-    return 1
-fi
-
-export PATH=$DPCT_BUNDLE_ROOT/bin:$PATH
-export CPATH=$DPCT_BUNDLE_ROOT/include:$CPATH
+DPCT_BUNDLE_ROOT=$component_root; export DPCT_BUNDLE_ROOT
+PATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/bin" "${PATH:-}") ; export PATH
+CPATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/include" "${CPATH:-}") ; export CPATH
