@@ -26,7 +26,7 @@
 #include <vector>
 // DPCT_LABEL_END
 
-#include <dpct/device.hpp>
+#include "../device.hpp"
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_BEGIN
 // Device|non_local_include_dependency
