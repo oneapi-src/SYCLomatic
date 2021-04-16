@@ -36,8 +36,8 @@ source $LOC/../../../common.sh $@
 #every syscheck script should set up an ERRORSTATE variable and return it on completion.
 ERRORSTATE=0
 
-if [ -z $(which python) ]; then
-    echo -e "The Intel(R) DPC++ Compatibility Tool requires the python to be installed."
+if [ -z $(which python3) ]; then
+    echo -e "The Intel(R) DPC++ Compatibility Tool requires the python3 to be installed."
     ERRORSTATE=1
 fi
 
