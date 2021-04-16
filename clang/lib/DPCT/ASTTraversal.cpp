@@ -452,6 +452,9 @@ void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
   if (!isInRoot(Loc))
     return;
   SourceLocation MacroLoc = MacroNameTok.getLocation();
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   if (MacroName == "__CUDA_ARCH__" && DpctGlobalInfo::getRunRound() == 0) {
     requestFeature(HelperFileEnum::Dpct, "dpct_compatibility_temp", Loc);
@@ -478,6 +481,9 @@ void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
   if (!isInRoot(Loc))
     return;
   SourceLocation MacroLoc = MacroNameTok.getLocation();
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   if (MacroName == "__CUDA_ARCH__" && DpctGlobalInfo::getRunRound() == 0) {
     requestFeature(HelperFileEnum::Dpct, "dpct_compatibility_temp", Loc);
@@ -503,6 +509,9 @@ void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
 void IncludesCallbacks::Defined(const Token &MacroNameTok,
                                 const MacroDefinition &MD, SourceRange Range) {
   SourceLocation MacroLoc = MacroNameTok.getLocation();
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   if (!isInRoot(MacroLoc))
     return;
