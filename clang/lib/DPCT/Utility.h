@@ -499,43 +499,4 @@ bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
 void constructUnionFindSetRecursively(
     std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
-
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName,
-                    const std::string &UsedFile);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, clang::SourceLocation SL);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const clang::Stmt *Stmt);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const clang::Decl *Decl);
-
-std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File);
-std::pair<std::string, std::string>
-getHeaderGuardPair(const clang::dpct::HelperFileEnum File);
-std::string getHelperFileContent(
-    const clang::dpct::HelperFileEnum File,
-    std::vector<clang::dpct::HelperFunc> ContentVec);
-std::string getDpctVersionStr();
-void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml);
-void generateHelperFunctions();
-
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const std::string File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                  clang::SourceLocation File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const clang::Stmt *File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const clang::Decl *File);
-
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const std::string File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                  clang::SourceLocation File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const clang::Stmt *File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const clang::Decl *File);
-std::string getCustomMainHelperFileName();
 #endif // DPCT_UTILITY_H

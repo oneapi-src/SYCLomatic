@@ -54,8 +54,8 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
                                    MainSrcFilesDigest.begin(),
                                    MainSrcFilesDigest.end());
 
-  clang::dpct::DpctGlobalInfo::updateTUR(TUR);
-  TUR.DpctVersion = getDpctVersionStr();
+  clang::dpct::updateTUR(TUR);
+  TUR.DpctVersion = clang::dpct::getDpctVersionStr();
   TUR.MainHelperFileName =
       clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
   YAMLOut << TUR;
@@ -85,7 +85,7 @@ int loadFromYaml(StringRef Input,
   // Do not return if YAMLIn.error(), we still need set other values.
 
   if (OverwriteHelperFilesInfo) {
-    clang::dpct::DpctGlobalInfo::updateHelperNameContentMap(TU);
+    clang::dpct::updateHelperNameContentMap(TU);
     if (!TU.MainHelperFileName.empty() &&
         TU.MainHelperFileName !=
             clang::dpct::DpctGlobalInfo::getCustomHelperFileName()) {
@@ -94,7 +94,7 @@ int loadFromYaml(StringRef Input,
           "different from the name in previous migration, you need to update "
           "the previously migrated code.");
     }
-    emitDpctVersionWarningIfNeed(TU.DpctVersion);
+    clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
   }
 
   return 0;

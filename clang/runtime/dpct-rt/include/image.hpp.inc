@@ -1,3 +1,6 @@
+// DPCT_LABEL_BEGIN|License|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 //==---- image.hpp --------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) 2018 - 2021 Intel Corporation
@@ -5,6 +8,7 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
+// DPCT_LABEL_END
 
 #ifndef __DPCT_IMAGE_HPP__
 #define __DPCT_IMAGE_HPP__

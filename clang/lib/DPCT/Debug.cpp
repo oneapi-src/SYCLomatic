@@ -281,6 +281,7 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
   case MigrationErrorCustomHelperFileNamePathTooLong:
     StatusString = "Error: The path resulted from --out-root and --custom-helper-file "
                    "option values: \"" + Message + "\" is too long.";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

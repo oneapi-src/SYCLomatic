@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-# See https://llvm.org/LICENSE.txt for license information.
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# Copyright (C) 2021 Intel Corporation. All rights reserved.
+#
+# The information and source code contained herein is the exclusive
+# property of Intel Corporation and may not be disclosed, examined
+# or reproduced in whole or in part without explicit written authorization
+# from the company.
 
 import os
 import sys
@@ -126,7 +129,33 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
     inc_file_handle.close()
     inc_all_file_handle.close()
 
+def check_files():
+    file_handle = io.open(os.path.join(cur_file_dir, "HelperFileNames.inc"), "rb")
+    counter_of_name = 0
+    for line in file_handle:
+        if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
+            counter_of_name = counter_of_name + 1
+    file_handle.close()
+
+    counter_of_file = 0
+    for searching_dir, dir_list, file_list in os.walk(cur_file_dir):
+        counter_of_file = counter_of_file + len(file_list)
+
+    # exclude processFiles.py and HelperFileNames.inc
+    counter_of_file = counter_of_file - 2
+
+    if (counter_of_name == counter_of_file):
+        return True
+
+    print("counter_of_name is: ", counter_of_name, "\n")
+    print("counter_of_file is: ", counter_of_file, "\n")
+    return False
+
 def main(build_dir):
+    if (not check_files()):
+        print("file number is incorrect\n")
+        exit_script()
+
     content_files_dict = dict(zip(content_files_list, content_files_name_list))
     dpl_extras_content_files_dict = dict(zip(dpl_extras_content_files_list, dpl_extras_content_files_name_list))
 

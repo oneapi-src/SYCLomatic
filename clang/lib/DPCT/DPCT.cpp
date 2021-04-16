@@ -15,6 +15,7 @@
 #include "CallExprRewriter.h"
 #include "Checkpoint.h"
 #include "Config.h"
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"

@@ -13,6 +13,7 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "Checkpoint.h"
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
 #include "GAnalytics.h"

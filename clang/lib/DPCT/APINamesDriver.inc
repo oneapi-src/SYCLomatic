@@ -58,7 +58,7 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
-           buildString(MapNames::getClNamespace(), "::", RangeType), 3),       \
+           buildString(MapNames::getClNamespace(), RangeType), 3),       \
        __VA_ARGS__)
 #define NDRANGE_CTOR(Arg0, Arg1)                                               \
   RANGES_CTOR("nd_range", BO(BinaryOperatorKind::BO_Mul, Arg0, Arg1), Arg1)
