@@ -131,29 +131,37 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
 
 def check_files():
     file_handle = io.open(os.path.join(cur_file_dir, "HelperFileNames.inc"), "rb")
-    counter_of_name = 0
+    files_in_inc = []
     for line in file_handle:
         if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
-            counter_of_name = counter_of_name + 1
+            line = line.replace(bytes('HELPERFILE(', 'utf-8'), bytes('', 'utf-8'))
+            line = line.replace(bytes(')', 'utf-8'), bytes('', 'utf-8'))
+            splited = line.split(bytes(',', 'utf-8'))
+            abs_file_path = os.path.join(bytes(cur_file_dir, 'utf-8'), splited[0])
+            files_in_inc.append(os.path.abspath(abs_file_path.decode('utf-8')))
     file_handle.close()
 
-    counter_of_file = 0
+    files_in_current_dir = []
     for searching_dir, dir_list, file_list in os.walk(cur_file_dir):
-        counter_of_file = counter_of_file + len(file_list)
+        for file_name in file_list:
+            if (file_name.endswith(".h.inc") or file_name.endswith(".hpp.inc")):
+                abs_file_path = os.path.join(searching_dir, file_name)
+                files_in_current_dir.append(abs_file_path)
 
-    # exclude processFiles.py and HelperFileNames.inc
-    counter_of_file = counter_of_file - 2
-
-    if (counter_of_name == counter_of_file):
+    set_of_files_in_inc = set(files_in_inc)
+    set_of_files_in_current_dir = set(files_in_current_dir)
+    if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("counter_of_name is: ", counter_of_name, "\n")
-    print("counter_of_file is: ", counter_of_file, "\n")
+    print("Files defined in HelperFileNames.inc and files in current folder are not same. Please update the HelperFileNames.inc file.\n")
+    print("Files defined in HelperFileNames.inc:")
+    print(set_of_files_in_inc)
+    print("Files in current folder:")
+    print(set_of_files_in_current_dir)
     return False
 
 def main(build_dir):
     if (not check_files()):
-        print("file number is incorrect\n")
         exit_script()
 
     content_files_dict = dict(zip(content_files_list, content_files_name_list))
