@@ -92,7 +92,7 @@ int loadFromYaml(StringRef Input,
       clang::dpct::PrintMsg(
           "Warning: The custom helper header file name in current migration is "
           "different from the name in previous migration, you need to update "
-          "the previously migrated code.");
+          "the previously migrated code.\n");
     }
     clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
   }
