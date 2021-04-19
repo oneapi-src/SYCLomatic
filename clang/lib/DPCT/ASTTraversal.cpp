@@ -6305,7 +6305,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasSgemmEx" || FuncName == "cublasCgemmEx") {
-    std::string Replacement = "oneapi::mkl::blas::gemm";
+    std::string Replacement = "oneapi::mkl::blas::column_major::gemm";
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
@@ -6432,7 +6432,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasGemmEx") {
-    std::string Replacement = "oneapi::mkl::blas::gemm";
+    std::string Replacement = "oneapi::mkl::blas::column_major::gemm";
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), Replacement);
