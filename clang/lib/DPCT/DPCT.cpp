@@ -340,10 +340,10 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
         llvm::cl::OptionEnumValue{
             "file", int(HelperFilesCustomizationLevel::file),
             "Limit helper header files to only necessary for the migrated code and place them\n"
-            "                                       to --out-root folder.", false},
+            "                                       in the --out-root folder.", false},
         llvm::cl::OptionEnumValue{
             "all", int(HelperFilesCustomizationLevel::all),
-            "Generate complete set of helper header files and place them to --out-root folder.", false}),
+            "Generate complete set of helper header files and place them in the --out-root folder.", false}),
     init(HelperFilesCustomizationLevel::none), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 
