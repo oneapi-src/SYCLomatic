@@ -219,7 +219,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
                                      std::string &Name, const std::string &OutRoot) {
   if ((Level == HelperFilesCustomizationLevel::none) && (Name != "dpct")) {
-    clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-file\", since "
+    clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
                           "\"--use-custom-helper\" is not specified or "
                           "has \"none\" value.\n");
     Name = "dpct";

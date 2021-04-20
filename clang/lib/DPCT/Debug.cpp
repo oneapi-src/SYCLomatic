@@ -279,7 +279,7 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
         "Error: Custom helper header file name is too long.";
     break;
   case MigrationErrorCustomHelperFileNamePathTooLong:
-    StatusString = "Error: The path resulted from --out-root and --custom-helper-file "
+    StatusString = "Error: The path resulted from --out-root and --custom-helper-name "
                    "option values: \"" + Message + "\" is too long.";
     break;
   default:
