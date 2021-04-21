@@ -46,7 +46,7 @@ static bool isAllSpaceUntilNL(const FormatToken *FormatTok,
   }
   return AllSpaceUntilNL;
 }
-static bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
+bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
                          const SourceManager &SM) {
   auto A = TokA->getStartOfNonWhitespace();
   auto B = TokB->getStartOfNonWhitespace();

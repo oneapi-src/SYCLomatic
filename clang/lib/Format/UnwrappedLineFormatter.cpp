@@ -16,6 +16,10 @@
 
 namespace clang {
 namespace format {
+#ifdef INTEL_CUSTOMIZATION
+bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
+                  const SourceManager &SM);
+#endif
 
 namespace {
 
@@ -169,10 +173,18 @@ StringRef getMatchingNamespaceTokenText(
 
 class LineJoiner {
 public:
+#ifdef INTEL_CUSTOMIZATION
+  LineJoiner(const FormatStyle &Style, const AdditionalKeywords &Keywords,
+             const SmallVectorImpl<AnnotatedLine *> &Lines,
+             const SourceManager &SourceMgr)
+      : Style(Style), Keywords(Keywords), End(Lines.end()), Next(Lines.begin()),
+        AnnotatedLines(Lines), SourceMgr(SourceMgr) {}
+#else
   LineJoiner(const FormatStyle &Style, const AdditionalKeywords &Keywords,
              const SmallVectorImpl<AnnotatedLine *> &Lines)
       : Style(Style), Keywords(Keywords), End(Lines.end()), Next(Lines.begin()),
         AnnotatedLines(Lines) {}
+#endif
 
   /// Returns the next line, merging multiple lines into one if possible.
   const AnnotatedLine *getNextMergedLine(bool DryRun,
@@ -465,6 +477,12 @@ private:
                             unsigned Limit) {
     if (Limit == 0)
       return 0;
+#ifdef INTEL_CUSTOMIZATION
+    if (I[1]->First->is(tok::kw_do)) {
+      if (isInSameLine(I[0]->Last, I[1]->First, SourceMgr))
+        return 1;
+    }
+#endif
     if (I + 2 != E && I[2]->InPPDirective && !I[2]->First->HasUnescapedNewline)
       return 0;
     if (1 + I[1]->Last->TotalLength > Limit)
@@ -756,6 +774,9 @@ private:
 
   SmallVectorImpl<AnnotatedLine *>::const_iterator Next;
   const SmallVectorImpl<AnnotatedLine *> &AnnotatedLines;
+#ifdef INTEL_CUSTOMIZATION
+  const SourceManager &SourceMgr;
+#endif
 };
 
 static void markFinalized(FormatToken *Tok) {
@@ -1111,7 +1132,11 @@ unsigned UnwrappedLineFormatter::format(
     const SmallVectorImpl<AnnotatedLine *> &Lines, bool DryRun,
     int AdditionalIndent, bool FixBadIndentation, unsigned FirstStartColumn,
     unsigned NextStartColumn, unsigned LastStartColumn) {
+#ifdef INTEL_CUSTOMIZATION
+  LineJoiner Joiner(Style, Keywords, Lines, SourceMgr);
+#else
   LineJoiner Joiner(Style, Keywords, Lines);
+#endif
 
   // Try to look up already computed penalty in DryRun-mode.
   std::pair<const SmallVectorImpl<AnnotatedLine *> *, unsigned> CacheKey(
@@ -1174,7 +1199,7 @@ unsigned UnwrappedLineFormatter::format(
 #ifdef INTEL_CUSTOMIZATION
       unsigned NewIndent = 0;
       if ((formatRangeGetter() == FormatRange::all) ||
-          clang::format::BlockLevelFormatFlag) {
+          clang::format::BlockLevelFormatFlag || TheLine.InPPDirective) {
         NewIndent = Indent;
       } else if (TheLine.First) {
         NewIndent = TheLine.First->OriginalColumn;

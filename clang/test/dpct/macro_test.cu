@@ -875,18 +875,16 @@ static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 
 
-//CHECK: #define CBTTA(aa, bb)                                                          \
-//CHECK-NEXT:                      do {                                                                         \
-//CHECK-NEXT:   CALL(aa.attach(bb));                                                       \
-//CHECK-NEXT: } while (0)
+//     CHECK: #define CBTTA(aa, bb) do {                                                     \
+//CHECK-NEXT:     CALL(aa.attach(bb));                                                       \
+//CHECK-NEXT:   } while (0)
 #define CBTTA(aa,bb) do {                 \
   CALL(cudaBindTextureToArray(aa, bb));   \
 } while(0)
 
-//CHECK: #define CBTTA2(aa, bb, cc)                                                          \
-//CHECK-NEXT:                         do {                                                                         \
-//CHECK-NEXT:   CALL(aa.attach(bb, cc));                                                   \
-//CHECK-NEXT: } while (0)
+//     CHECK: #define CBTTA2(aa, bb, cc) do {                                                \
+//CHECK-NEXT:     CALL(aa.attach(bb, cc));                                                   \
+//CHECK-NEXT:   } while (0)
 #define CBTTA2(aa,bb,cc) do {                 \
   CALL(cudaBindTextureToArray(aa, bb, cc));   \
 } while(0)
