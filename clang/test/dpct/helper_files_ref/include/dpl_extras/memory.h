@@ -640,7 +640,7 @@ template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
   return device_pointer<T>(num_elements * sizeof(T));
 }
-device_pointer<void> malloc_device(const std::size_t num_bytes) {
+static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
 template <typename T>
