@@ -70,8 +70,24 @@ printf("<200, \n");
 
 int main() {
 //CHECK: #if defined(DPCT_COMPATIBILITY_TEMP)
-//CHECK-NEXT:     dpct::get_default_queue().submit(
+//CHECK-NEXT:     q_ct1.submit(
 #if defined(__NVCC__)
+  hello<<<1,1>>>();
+#else
+  hello();
+#endif
+
+//CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
+//CHECK-NEXT:     q_ct1.submit(
+  #ifdef __NVCC__
+  hello<<<1,1>>>();
+#else
+  hello();
+#endif
+
+//CHECK: #if DPCT_COMPATIBILITY_TEMP
+//CHECK-NEXT:     q_ct1.submit(
+  #if __NVCC__
   hello<<<1,1>>>();
 #else
   hello();
@@ -95,3 +111,11 @@ int main() {
 #ifdef __CUDA_RUNTIME_H__
 #endif
 
+//CHECK: #if defined(__DPCT_HPP__)
+//CHECK-NEXT:#endif
+//CHECK-NEXT:#if defined(__DPCT_HPP__)
+//CHECK-NEXT:#endif
+#if defined(__DRIVER_TYPES_H__)
+#endif
+#if defined(__CUDA_RUNTIME_H__)
+#endif

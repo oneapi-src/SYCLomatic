@@ -121,6 +121,9 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       Map.insert(Repl->getReplacement(DpctGlobalInfo::getContext()));
       return;
     }
+    if (MacroName == "__CUDACC__" &&
+        !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
+      return;
     TransformSet.emplace_back(Repl);
   }
 }
@@ -579,97 +582,97 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
   if (!Lexer::getRawToken(End, Tok, SM, LangOptions()))
     Size = Size + Tok.getLength();
   std::string E(BP, Size);
-  size_t Pos = 0;
-  const std::string MacroName = "__CUDA_ARCH__";
-  std::string ReplacedMacroName;
-  if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
-    ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
-    requestFeature(HelperFileEnum::Dpct, "dpct_compatibility_temp", Begin);
-  } else {
-    return;
-  }
-  std::size_t Found = E.find(MacroName, Pos);
-  if (Found != std::string::npos) {
-    auto &Map = DpctGlobalInfo::getInstance()
-                    .getCudaArchPPInfoMap()[SM.getFilename(ElifLoc).str()];
-    unsigned Offset = SM.getFileOffset(IfLoc);
-    int NSLoc = -1;
-    if (Map.count(Offset)) {
-      if (IT == IfType::If) {
-        Map[Offset].DT = IfType::If;
-        Map[Offset].IfInfo.DirectiveLoc = Offset;
-        Map[Offset].IfInfo.ConditionLoc = SM.getFileOffset(Begin);
-        Map[Offset].IfInfo.Condition = E;
-        NSLoc = findPoundSign(IfLoc);
-        if(NSLoc == -1) {
-          Map[Offset].IfInfo.NumberSignLoc = UINT_MAX;
+  for (auto &MacroMap : MapNames::MacrosMap) {
+    size_t Pos = 0;
+    std::string MacroName = MacroMap.first;
+    std::string ReplacedMacroName = MacroMap.second;
+
+    std::size_t Found = E.find(MacroName, Pos);
+    if (Found != std::string::npos && MacroName == "__CUDA_ARCH__") {
+      auto &Map = DpctGlobalInfo::getInstance()
+                      .getCudaArchPPInfoMap()[SM.getFilename(ElifLoc).str()];
+      unsigned Offset = SM.getFileOffset(IfLoc);
+      int NSLoc = -1;
+      if (Map.count(Offset)) {
+        if (IT == IfType::If) {
+          Map[Offset].DT = IfType::If;
+          Map[Offset].IfInfo.DirectiveLoc = Offset;
+          Map[Offset].IfInfo.ConditionLoc = SM.getFileOffset(Begin);
+          Map[Offset].IfInfo.Condition = E;
+          NSLoc = findPoundSign(IfLoc);
+          if (NSLoc == -1) {
+            Map[Offset].IfInfo.NumberSignLoc = UINT_MAX;
+          } else {
+            Map[Offset].IfInfo.NumberSignLoc = Offset - NSLoc;
+          }
         } else {
-          Map[Offset].IfInfo.NumberSignLoc = Offset - NSLoc;
+          if (Map[Offset].ElInfo.count(SM.getFileOffset(ElifLoc)))
+            return;
+          DirectiveInfo DI;
+          DI.DirectiveLoc = SM.getFileOffset(ElifLoc);
+          DI.ConditionLoc = SM.getFileOffset(Begin);
+          DI.Condition = E;
+          NSLoc = findPoundSign(IfLoc);
+          if (NSLoc == -1) {
+            DI.NumberSignLoc = UINT_MAX;
+          } else {
+            DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
+          }
+          Map[Offset].ElInfo[SM.getFileOffset(ElifLoc)] = DI;
         }
       } else {
-        if (Map[Offset].ElInfo.count(SM.getFileOffset(ElifLoc)))
-          return;
+        CudaArchPPInfo Info;
         DirectiveInfo DI;
-        DI.DirectiveLoc = SM.getFileOffset(ElifLoc);
-        DI.ConditionLoc = SM.getFileOffset(Begin);
-        DI.Condition = E;
-        NSLoc = findPoundSign(IfLoc);
-        if(NSLoc == -1) {
-          DI.NumberSignLoc = UINT_MAX;
+        if (IT == IfType::If) {
+          DI.DirectiveLoc = Offset;
+          DI.ConditionLoc = SM.getFileOffset(Begin);
+          DI.Condition = E;
+          NSLoc = findPoundSign(IfLoc);
+          if (NSLoc == -1) {
+            DI.NumberSignLoc = UINT_MAX;
+          } else {
+            DI.NumberSignLoc = Offset - NSLoc;
+          }
+          Info.IfInfo = DI;
+          Info.DT = IfType::If;
         } else {
-          DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
+          DI.DirectiveLoc = SM.getFileOffset(ElifLoc);
+          DI.ConditionLoc = SM.getFileOffset(Begin);
+          DI.Condition = E;
+          NSLoc = findPoundSign(IfLoc);
+          if (NSLoc == -1) {
+            DI.NumberSignLoc = UINT_MAX;
+          } else {
+            DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
+          }
+          Info.ElInfo[SM.getFileOffset(ElifLoc)] = DI;
+          Info.DT = IfType::unknow;
         }
-        Map[Offset].ElInfo[SM.getFileOffset(ElifLoc)] = DI;
+        Map[Offset] = Info;
       }
-    } else {
-      CudaArchPPInfo Info;
-      DirectiveInfo DI;
-      if (IT == IfType::If) {
-        DI.DirectiveLoc = Offset;
-        DI.ConditionLoc = SM.getFileOffset(Begin);
-        DI.Condition = E;
-        NSLoc = findPoundSign(IfLoc);
-        if(NSLoc == -1) {
-          DI.NumberSignLoc = UINT_MAX;
-        } else {
-          DI.NumberSignLoc = Offset - NSLoc;
-        }
-        Info.IfInfo = DI;
-        Info.DT = IfType::If;
-      } else {
-        DI.DirectiveLoc = SM.getFileOffset(ElifLoc);
-        DI.ConditionLoc = SM.getFileOffset(Begin);
-        DI.Condition = E;
-        NSLoc = findPoundSign(IfLoc);
-        if(NSLoc == -1) {
-          DI.NumberSignLoc = UINT_MAX;
-        } else {
-          DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
-        }
-        Info.ElInfo[SM.getFileOffset(ElifLoc)] = DI;
-        Info.DT = IfType::unknow;
-      }
-      Map[Offset] = Info;
     }
-  }
-  auto &ReplMap = DpctGlobalInfo::getInstance().getCudaArchMacroReplSet();
-  while (Found != std::string::npos) {
-    // found one, insert replace for it
-    if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
+    auto &ReplMap = DpctGlobalInfo::getInstance().getCudaArchMacroReplSet();
+    while (Found != std::string::npos) {
+      // found one, insert replace for it
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
       auto Repl = std::make_shared<ReplaceInclude>(
           InsertRange, std::move(ReplacedMacroName));
-      ReplMap.insert(Repl->getReplacement(DpctGlobalInfo::getContext()));
-      requestFeature(HelperFileEnum::Dpct, "dpct_compatibility_temp", Begin);
+      if (MacroName == "__CUDA_ARCH__") {
+        ReplMap.insert(Repl->getReplacement(DpctGlobalInfo::getContext()));
+        requestFeature(HelperFileEnum::Dpct, "dpct_compatibility_temp", Begin);
+      } else if (MacroName != "__CUDACC__" ||
+                 DpctGlobalInfo::getMacroDefines().count(MacroName)) {
+        TransformSet.emplace_back(Repl);
+      }
+      // check next
+      Pos = Found + MacroName.length();
+      if ((Pos + MacroName.length()) > Size) {
+        break;
+      }
+      Found = E.find(MacroName, Pos);
     }
-    // check next
-    Pos = Found + MacroName.length();
-    if ((Pos + MacroName.length()) > Size) {
-      break;
-    }
-    Found = E.find(MacroName, Pos);
   }
 }
 void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
