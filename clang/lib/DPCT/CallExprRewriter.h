@@ -146,12 +146,12 @@ public:
     LocalVarAddrSpaceEnum LocalVarCheckResult =
         LocalVarAddrSpaceEnum::AS_CannotDeduce;
     checkIsPrivateVar(E, LocalVarCheckResult);
-    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_CannotDeduce) {
-      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
-      return "global_space";
-    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
+    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
       return "private_space";
     } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
+      return "global_space";
+    } else {
+      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
       return "global_space";
     }
   }

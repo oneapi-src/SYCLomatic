@@ -1233,6 +1233,26 @@ public:
   getParentFunction(const NodeTy *Node) {
     return findAncestor<clang::FunctionDecl>(Node);
   }
+  template <class TargetTy, class NodeTy>
+  static inline const clang::Expr *
+  getChildExprOfTargetAncestor(const NodeTy *N) {
+    if (!N)
+      return nullptr;
+
+    auto &Context = clang::dpct::DpctGlobalInfo::getContext();
+    clang::DynTypedNode PreviousNode = clang::DynTypedNode::create(*N);
+    clang::DynTypedNodeList Parents = Context.getParents(*N);
+    while (!Parents.empty()) {
+      auto &Cur = Parents[0];
+      if (Cur.get<TargetTy>())
+        return PreviousNode.get<clang::Expr>();
+      PreviousNode = Cur;
+      Parents = Context.getParents(Cur);
+    }
+
+    return nullptr;
+  }
+
   template <class StreamTy, class... Args>
   static inline StreamTy &
   printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,

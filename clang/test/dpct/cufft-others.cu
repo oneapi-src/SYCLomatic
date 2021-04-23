@@ -125,10 +125,7 @@ int foo3(cudaStream_t stream) {
   cufftSetStream(plan, stream);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*stream);
+  //CHECK:plan->commit(*stream);
   //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
   //CHECK-NEXT:} else {

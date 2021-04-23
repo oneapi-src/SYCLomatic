@@ -538,4 +538,7 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
 bool isTypeInRoot(const clang::MemberExpr *ME);
+void findAssignments(const clang::DeclaratorDecl *HandleDecl,
+                     const clang::CompoundStmt *CS,
+                     std::vector<const clang::DeclRefExpr *> &Refs);
 #endif // DPCT_UTILITY_H

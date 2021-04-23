@@ -575,7 +575,6 @@ private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result);
-
 };
 
 /// Migration rule for thrust functions

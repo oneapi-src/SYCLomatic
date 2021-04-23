@@ -14802,6 +14802,13 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FEAInfo.PlanHandleDeclBeginOffset = PlanHandleDeclBeginOffset;
     FEAInfo.ExecAPIBeginOffset = ExecAPIBeginOffset;
 
+    // If previous stat is setStream(plan, s), then using "s" as queue and
+    // not emit warning.
+    std::string DefiniteStream;
+    if (isPreviousStmtRelatedSetStream(CE, Index, DefiniteStream)) {
+      FEAInfo.DefiniteStream = DefiniteStream;
+    }
+
     DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
         SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
     return;

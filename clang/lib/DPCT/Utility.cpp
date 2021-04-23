@@ -3051,3 +3051,59 @@ bool isTypeInRoot(const clang::MemberExpr *ME) {
   }
   return IsInRoot;
 }
+
+/// This function will find all assignments to the DRE of \p HandleDecl in
+/// the range of \p CS.
+/// The result is returned by \p Refs.
+void findAssignments(const clang::DeclaratorDecl *HandleDecl,
+                     const clang::CompoundStmt *CS,
+                     std::vector<const clang::DeclRefExpr *> &Refs) {
+  if (!HandleDecl)
+    return;
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  auto MatchedResults = clang::ast_matchers::match(
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+
+  for (auto &Result : MatchedResults) {
+    const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!DRE)
+      continue;
+    if (DRE->getDecl() == HandleDecl) {
+      if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(DRE))) {
+        if (BO->getLHS() == DRE && BO->getOpcode() == BO_Assign) {
+          // case1: handle = another_handle;
+          Refs.push_back(DRE);
+          continue;
+        }
+      }
+
+      auto FunctionCall =
+          clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE);
+      if (!FunctionCall)
+        continue;
+      auto Expr =
+          clang::dpct::DpctGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
+              DRE);
+      if (!Expr)
+        continue;
+
+      const auto FunctionDecl = FunctionCall->getDirectCallee();
+      if (!FunctionDecl)
+        continue;
+
+      for (size_t Idx = 0, ArgNum = FunctionCall->getNumArgs(); Idx < ArgNum;
+           ++Idx) {
+        if (FunctionCall->getArg(Idx) == Expr) {
+          // case2: void foo(handle_t &h);
+          //        foo(handle);
+          if (FunctionDecl->getParamDecl(Idx)->getType()->isReferenceType() ||
+              FunctionDecl->getParamDecl(Idx)->getType()->isPointerType()) {
+            Refs.push_back(DRE);
+            continue;
+          }
+        }
+      }
+    }
+  }
+}
