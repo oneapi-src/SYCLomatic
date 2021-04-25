@@ -500,4 +500,6 @@ void constructUnionFindSetRecursively(
     std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
+const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
+bool isTypeInRoot(const clang::MemberExpr *ME);
 #endif // DPCT_UTILITY_H

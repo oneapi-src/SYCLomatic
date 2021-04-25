@@ -505,6 +505,11 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
+
+    // Skip user-defined type.
+    if (isTypeInRoot(ME))
+      return;
+
     if (*BaseType.rbegin() == '1') {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {

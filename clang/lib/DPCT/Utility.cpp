@@ -2747,3 +2747,29 @@ bool isDefaultStream(const Expr *StreamArg) {
   }
   return IsDefaultStream;
 }
+
+const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
+  const NamedDecl *ND = nullptr;
+  if (!TypePtr)
+    return ND;
+
+  if (TypePtr->isRecordType())
+    ND = TypePtr->castAs<clang::RecordType>()->getDecl();
+  else if (TypePtr->isEnumeralType())
+    ND = TypePtr->castAs<clang::EnumType>()->getDecl();
+  else if (TypePtr->getTypeClass() == clang::Type::Typedef)
+    ND = TypePtr->castAs<clang::TypedefType>()->getDecl();
+
+  return ND;
+}
+
+bool isTypeInRoot(const clang::MemberExpr *ME) {
+  bool IsInRoot = false;
+  if (const auto *ND = getNamedDecl(ME->getBase()->getType().getTypePtr())) {
+    auto Loc = ND->getBeginLoc();
+    auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
+    if (dpct::DpctGlobalInfo::isInRoot(Path, true))
+      IsInRoot = true;
+  }
+  return IsInRoot;
+}

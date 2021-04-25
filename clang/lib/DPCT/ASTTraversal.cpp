@@ -3404,6 +3404,14 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
     if (TL->getBeginLoc().isInvalid())
       return;
 
+    // To skip user-defined type.
+    if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
+      auto Loc = ND->getBeginLoc();
+      auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
+      if (DpctGlobalInfo::isInRoot(Path, true))
+        return;
+    }
+
     auto BeginLoc = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
 
     bool IsInScratchspace = false;
@@ -3592,6 +3600,11 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 }
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
+
+  // To skip user-defined type.
+  if (isTypeInRoot(ME))
+    return;
+
   auto BaseTy = ME->getBase()->getType().getAsString();
   bool isPtr = false;
   // when BaseTy == "struct int1 *", remove " *"
