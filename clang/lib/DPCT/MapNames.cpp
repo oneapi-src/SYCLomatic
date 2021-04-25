@@ -242,7 +242,7 @@ void MapNames::setExplicitNamespaceMap() {
   TypeNamesHelperFeaturesMap = {
       {"cudaDeviceProp", {HelperFileEnum::Device, "device_info"}},
       {"thrust::device_ptr",
-       {HelperFileEnum::DplExtrasMemory, "device_iterator_forward_decl_device_pointer"}},
+       {HelperFileEnum::DplExtrasMemory, "device_pointer_forward_decl"}},
       {"thrust::device_vector",
        {HelperFileEnum::DplExtrasVector, "device_vector"}},
       {"cudaChannelFormatDesc", {HelperFileEnum::Image, "image_channel"}},
@@ -3353,6 +3353,24 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
         {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"}
     };
+
+std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+    MapNames::HelperFileIDMap{
+        {"dpct.hpp", clang::dpct::HelperFileEnum::Dpct},
+        {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
+        {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
+        {"device.hpp", clang::dpct::HelperFileEnum::Device},
+        {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
+        {"image.hpp", clang::dpct::HelperFileEnum::Image},
+        {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
+        {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
+        {"util.hpp", clang::dpct::HelperFileEnum::Util},
+        {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
+        {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
+        {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
+        {"memory.h", clang::dpct::HelperFileEnum::DplExtrasMemory},
+        {"numeric.h", clang::dpct::HelperFileEnum::DplExtrasNumeric},
+        {"vector.h", clang::dpct::HelperFileEnum::DplExtrasVector}};
 
 const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     MapNames::HelperFileHeaderGuardMacroMap{

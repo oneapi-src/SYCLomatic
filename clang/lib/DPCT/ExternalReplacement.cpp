@@ -58,6 +58,11 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
   TUR.MainHelperFileName =
       clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
+  if (clang::dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    TUR.USMLevel = "none";
+  } else {
+    TUR.USMLevel = "restricted";
+  }
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
@@ -85,6 +90,7 @@ int loadFromYaml(StringRef Input,
   // Do not return if YAMLIn.error(), we still need set other values.
 
   if (OverwriteHelperFilesInfo) {
+    clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
     clang::dpct::updateHelperNameContentMap(TU);
     if (!TU.MainHelperFileName.empty() &&
         TU.MainHelperFileName !=
@@ -94,7 +100,11 @@ int loadFromYaml(StringRef Input,
           "different from the name in previous migration, you need to update "
           "the previously migrated code.\n");
     }
-    clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
+    if (TU.USMLevel == "none")
+      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(UsmLevel::none);
+    else if (TU.USMLevel == "restricted")
+      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
+          UsmLevel::restricted);
   }
 
   return 0;

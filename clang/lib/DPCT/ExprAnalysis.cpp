@@ -656,8 +656,13 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   default:
     return;
   }
-  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
+
+  auto Iter = MapNames::TypeNamesHelperFeaturesMap.find(TyName);
+  if (Iter != MapNames::TypeNamesHelperFeaturesMap.end()) {
+    HelperFeatureSet.insert(Iter->second);
     requestHelperFeatureForTypeNames(TyName, SR.getBegin());
+  }
+  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
   }
 }

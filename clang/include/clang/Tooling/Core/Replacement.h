@@ -46,6 +46,7 @@ enum class ConstantFlagType : int {
   Device = 2,
   HostDevice = 3
 };
+enum class HelperFileEnum : unsigned int;
 }
 #endif
 namespace tooling {
@@ -378,6 +379,7 @@ struct HelperFuncForYaml {
       : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles) {}
   bool IsCalled = false;
   std::vector<std::string> CallerSrcFiles;
+  std::string FeatureName;
 };
 #endif
 /// Collection of Replacements generated from a single translation unit.
@@ -388,23 +390,9 @@ struct TranslationUnitReplacements {
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
   std::string DpctVersion = "";
   std::string MainHelperFileName = "";
+  std::string USMLevel = "";
 
-  // The Key of below maps is Feature Name
-  std::map<std::string, HelperFuncForYaml> AtomicHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> BlasUtilsHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DeviceHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DpctHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplUtilsHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> ImageHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> KernelHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> MemoryHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> UtilHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasAlgorithmHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasFunctionalHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasIteratorsHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasMemoryHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasNumericHelperFuncMap;
-  std::map<std::string, HelperFuncForYaml> DplExtrasVectorHelperFuncMap;
+  std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
 #endif
   std::vector<Replacement> Replacements;
 };

@@ -74,6 +74,7 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
 // Memory|dpct_memcpy_detail
+// Memory|dpct_memcpy_2d_pitch_detail
 // Memory|memcpy_direction
 // DPCT_DEPENDENCY_END
 // DPCT_CODE

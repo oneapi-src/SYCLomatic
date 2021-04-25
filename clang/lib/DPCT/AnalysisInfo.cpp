@@ -33,6 +33,7 @@ std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
+UsmLevel DpctGlobalInfo::PreviousMigrationUsmLvl = UsmLevel::restricted;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::none;
@@ -1765,11 +1766,12 @@ void DeviceFunctionInfo::buildInfo() {
 }
 
 std::string DeviceFunctionDecl::getExtraParameters() {
-  return FuncInfo->getExtraParameters(FormatInformation);
+  return FuncInfo->getExtraParameters(FilePath, FormatInformation);
 }
 
 std::string ExplicitInstantiationDecl::getExtraParameters() {
-  return getFuncInfo()->getExtraParameters(InstantiationArgs, getFormatInfo());
+  return getFuncInfo()->getExtraParameters(FilePath, InstantiationArgs,
+                                           getFormatInfo());
 }
 
 inline void DeviceFunctionDeclInModule::insertWrapper() {
@@ -2561,7 +2563,9 @@ std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
   return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam,
                                                  FormatInformation);
 }
-std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam) const {
+std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
+                                          const std::string &Path) const {
+  requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
 }
 
@@ -2650,6 +2654,9 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
   EA.analyze(TL);
   TDSI = EA.getTemplateDependentStringInfo();
 
+  auto SetFromTL = EA.getHelperFeatureSet();
+  HelperFeatureSet.insert(SetFromTL.begin(), SetFromTL.end());
+
   IsTemplate = TL.getTypePtr()->isDependentType();
   updateName();
 }
@@ -2657,6 +2664,8 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
 void CtTypeInfo::updateName(){
 
   BaseNameWithoutQualifiers = TDSI->getSourceString();
+  auto SetFromTTDSI = TDSI->getHelperFeatureSet();
+  HelperFeatureSet.insert(SetFromTTDSI.begin(), SetFromTTDSI.end());
 
   if (isPointer()) {
     BaseNameWithoutQualifiers += ' ';

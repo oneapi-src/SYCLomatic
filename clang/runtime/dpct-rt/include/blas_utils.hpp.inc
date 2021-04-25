@@ -114,6 +114,9 @@ inline typename DataType<T>::T2 get_value(const T *s, cl::sycl::queue &q){
 // Memory|dpct_memcpy_detail
 // BlasUtils|stride_for
 // BlasUtils|mem_free
+// Util|DataType
+// Memory|dpct_memset_detail
+// Memory|get_buffer_T
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the LU factorizations of a batch of general matrices.
@@ -228,6 +231,8 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 // Memory|dpct_memcpy_detail
 // BlasUtils|stride_for
 // BlasUtils|mem_free
+// Util|DataType
+// Memory|get_buffer_T
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Solves a system of linear equations with a batch of LU-factored square
@@ -360,6 +365,10 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
 // Memory|dpct_memcpy_detail
 // BlasUtils|stride_for
 // BlasUtils|mem_free
+// Util|DataType
+// Util|matrix_mem_copy_T
+// Memory|dpct_memset_detail
+// Memory|get_buffer_T
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the inverses of a batch of LU-factored matrices.
@@ -488,6 +497,8 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 // Memory|dpct_memcpy_detail
 // BlasUtils|stride_for
 // BlasUtils|mem_free
+// Util|DataType
+// Memory|get_buffer_T
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the QR factorizations of a batch of general matrices.

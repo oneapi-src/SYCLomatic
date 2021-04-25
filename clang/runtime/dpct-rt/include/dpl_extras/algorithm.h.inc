@@ -329,7 +329,7 @@ Iter3 transform(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
 // DPCT_LABEL_BEGIN|transform_if|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|transform_if_fun
-// DplExtrasFunctional|transform_if_mask_fun
+// DplExtrasFunctional|transform_if_unary_zip_mask_fun
 // DplExtrasFunctional|transform_if_zip_mask_fun
 // DPCT_DEPENDENCY_END
 // DPCT_CODE

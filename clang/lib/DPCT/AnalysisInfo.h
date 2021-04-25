@@ -1060,6 +1060,12 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static UsmLevel getPreviousMigrationUsmLevel() {
+    return PreviousMigrationUsmLvl;
+  }
+  inline static void setPreviousMigrationUsmLevel(UsmLevel UL) {
+    PreviousMigrationUsmLvl = UL;
+  }
   inline static unsigned int getAssumedNDRangeDim() {
     return AssumedNDRangeDim;
   }
@@ -2132,6 +2138,7 @@ private:
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
+  static UsmLevel PreviousMigrationUsmLvl;
   static unsigned int AssumedNDRangeDim;
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
@@ -2306,6 +2313,9 @@ public:
   bool isWritten() const {
     return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
   }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() {
+    return HelperFeatureSet;
+  }
 
 private:
   /// For ConstantArrayType, size in generated code is folded as an integer.
@@ -2371,6 +2381,7 @@ private:
   bool IsTemplate;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
+  std::set<HelperFeatureIDTy> HelperFeatureSet;
 };
 
 // variable info includes name, type and location.
@@ -2395,6 +2406,13 @@ public:
   inline void
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList) {
     Ty = Ty->applyTemplateArguments(TAList);
+  }
+  inline void requestFeatureForSet(const std::string &Path) {
+    if (Ty) {
+      for (const auto &Item : Ty->getHelperFeatureSet()) {
+        requestFeature(Item.first, Item.second, Path);
+      }
+    }
   }
 
 private:
@@ -3043,6 +3061,17 @@ public:
     return Size;
   }
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
+  void requestFeatureForAllVarMaps(const std::string& Path) const {
+    for (const auto& Item : LocalVarMap) {
+      Item.second->requestFeatureForSet(Path);
+    }
+    for (const auto &Item : GlobalVarMap) {
+      Item.second->requestFeatureForSet(Path);
+    }
+    for (const auto &Item : ExternVarMap) {
+      Item.second->requestFeatureForSet(Path);
+    }
+  }
 
   // If want adding the ExtraParam with new line, the second argument should be
   // true, and the third argument is the string of indent, which will occur
@@ -3050,7 +3079,7 @@ public:
   std::string
   getExtraDeclParam(bool HasPreParam, bool HasPostParam,
                     FormatInfo FormatInformation = FormatInfo()) const;
-  std::string getKernelArguments(bool HasPreParam, bool HasPostParam) const;
+  std::string getKernelArguments(bool HasPreParam, bool HasPostParam, const std::string &Path) const;
 
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
     return const_cast<MemVarMap *>(this)->getMap(Scope);
@@ -3630,17 +3659,20 @@ public:
   inline void setBuilt() { IsBuilt = true; }
 
   inline std::string
-  getExtraParameters(FormatInfo FormatInformation = FormatInfo()) {
+  getExtraParameters(const std::string& Path, FormatInfo FormatInformation = FormatInfo()) {
     buildInfo();
+    VarMap.requestFeatureForAllVarMaps(Path);
     return VarMap.getExtraDeclParam(
         NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
   std::string
-  getExtraParameters(const std::vector<TemplateArgumentInfo> &TAList,
+  getExtraParameters(const std::string &Path,
+                     const std::vector<TemplateArgumentInfo> &TAList,
                      FormatInfo FormatInformation = FormatInfo()) {
     MemVarMap TmpVarMap;
     buildInfo();
     TmpVarMap.merge(VarMap, TAList);
+    TmpVarMap.requestFeatureForAllVarMaps(Path);
     return TmpVarMap.getExtraDeclParam(
         NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
@@ -3902,9 +3934,10 @@ public:
       return "";
     }
 
-    return getVarMap().getKernelArguments(
-        getFuncInfo()->NonDefaultParamNum,
-        getFuncInfo()->ParamsNum - getFuncInfo()->NonDefaultParamNum);
+    return getVarMap().getKernelArguments(getFuncInfo()->NonDefaultParamNum,
+                                          getFuncInfo()->ParamsNum -
+                                              getFuncInfo()->NonDefaultParamNum,
+                                          getFilePath());
   }
 
   inline const std::vector<ArgInfo> &getArgsInfo() { return ArgsInfo; }

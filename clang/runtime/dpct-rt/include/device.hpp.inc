@@ -160,6 +160,7 @@ private:
 // DPCT_LABEL_BEGIN|device_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|exception_handler
+// Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct device extension
@@ -387,6 +388,7 @@ static inline unsigned int get_tid(){
 // DPCT_LABEL_BEGIN|dev_mgr|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_tid
+// Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// device manager
@@ -487,6 +489,7 @@ static inline cl::sycl::queue &get_default_queue() {
 // DPCT_LABEL_BEGIN|get_current_device|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr
+// Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get the current device.
@@ -498,6 +501,7 @@ static inline device_ext &get_current_device() {
 // DPCT_LABEL_BEGIN|get_device|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr
+// Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get a device by id.
@@ -509,6 +513,7 @@ static inline device_ext &get_device(unsigned int id) {
 // DPCT_LABEL_BEGIN|get_default_context|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr
+// Device|get_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get the context of the default queue of current
@@ -521,6 +526,7 @@ static inline cl::sycl::context get_default_context() {
 // DPCT_LABEL_BEGIN|cpu_device|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr
+// Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get a cpu device.

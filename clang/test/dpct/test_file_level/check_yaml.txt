@@ -1,0 +1,7 @@
+// CHECK: USMLevel:        restricted
+
+// CHECK:  device_info:
+// CHECK-NEXT:    IsCalled:        true
+// CHECK-NEXT:    CallerSrcFiles:
+// CHECK-NEXT:      - '{{.+}}header.h'
+// CHECK-NEXT:      - '{{.+}}test.cu'

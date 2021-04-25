@@ -13,7 +13,7 @@
 #define DPCT_EXPR_ANALYSIS_H
 
 #include "TextModification.h"
-
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 
 #include "clang/AST/DeclTemplate.h"
@@ -92,6 +92,7 @@ class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
   bool IsDependOnWrittenArgument = false;
+  std::set<HelperFeatureIDTy> HelperFeatureSet;
 
 public:
   TemplateDependentStringInfo() = default;
@@ -114,6 +115,10 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
 
   bool isDependOnWritten() const { return IsDependOnWrittenArgument; }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
+  void setHelperFeatureSet(std::set<HelperFeatureIDTy> Set) {
+    HelperFeatureSet = Set;
+  }
 };
 
 /// Store a expr source string which may need replaced and its replacements
@@ -217,7 +222,9 @@ public:
   }
   inline std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
-    return ReplSet.getTemplateDependentStringInfo();
+    auto Res = ReplSet.getTemplateDependentStringInfo();
+    Res->setHelperFeatureSet(HelperFeatureSet);
+    return Res;
   }
   // This function is not re-enterable, if caller need to check if it returns
   // nullptr, caller need to use temp variable to save the return value, then
@@ -294,6 +301,9 @@ public:
   inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
     auto LocInfo = getOffsetAndLength(E);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+  }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() {
+    return HelperFeatureSet;
   }
 
 private:
@@ -565,6 +575,7 @@ private:
   StringReplacements ReplSet;
   std::string RewritePrefix;
   std::string RewritePostfix;
+  std::set<HelperFeatureIDTy> HelperFeatureSet;
 };
 
 // Analyze pointer allocated by cudaMallocManaged.

@@ -57,7 +57,9 @@ namespace sycl = cl::sycl;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
@@ -69,7 +71,9 @@ template <typename T> class device_pointer;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_reference|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_pointer_forward_decl
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct device_reference {
   using pointer = device_pointer<T>;
@@ -165,6 +169,7 @@ template <typename T> struct device_reference {
 // DPCT_LABEL_BEGIN|swap|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|swap
+// DplExtrasMemory|device_reference
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T>
@@ -198,6 +203,9 @@ struct is_hetero_iterator<
 // DPCT_LABEL_BEGIN|device_iterator_forward_decl_device_pointer|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
+// DplExtrasMemory|is_hetero_iterator
+// DplExtrasMemory|device_iterator
+// Memory|mem_mgr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
@@ -512,7 +520,10 @@ public:
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_iterator|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|is_hetero_iterator
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,

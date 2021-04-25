@@ -593,6 +593,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 // DPCT_DEPENDENCY_BEGIN
 // Memory|memcpy_direction
 // Memory|dpct_memcpy_3d_detail
+// Memory|pitched_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// memcpy 2D/3D matrix specified by pitched_data.
@@ -681,6 +682,7 @@ static buffer_t get_buffer(const void *ptr) {
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
 // Memory|mem_mgr
+// Memory|get_buffer_byte_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// A wrapper class contains an accessor and an offset.
@@ -954,6 +956,7 @@ async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
 // Device|get_default_queue
 // Memory|memcpy_direction
 // Memory|dpct_memcpy_2d_3d_pitch_detail
+// Memory|pitched_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Synchronously copies a subset of a 3D matrix specified by \p to to another
@@ -1204,6 +1207,14 @@ namespace detail {
 // DPCT_LABEL_BEGIN|device_memory|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|memory_traits
+// Memory|dpct_malloc_detail
+// Memory|dpct_free
+// Memory|dpct_accessor
+// Memory|mem_mgr
+// Memory|dpct_memcpy_detail
+// Memory|memcpy_direction
+// Memory|get_buffer_T
+// Memory|get_buffer_byte_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Device variable with address space of shared, global or constant.
@@ -1386,19 +1397,28 @@ public:
 }
 
 // DPCT_LABEL_BEGIN|global_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|memory_region
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class T, size_t Dimension>
 using global_memory = detail::device_memory<T, global, Dimension>;
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|constant_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|memory_region
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class T, size_t Dimension>
 using constant_memory = detail::device_memory<T, constant, Dimension>;
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|shared_memory_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|memory_region
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;

@@ -403,6 +403,8 @@ public:
       HelperNameContentMap;
   static std::unordered_map<clang::dpct::HelperFileEnum, std::string>
       HelperFileNameMap;
+  static std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+      HelperFileIDMap;
   static const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap;
   static const std::unordered_map<

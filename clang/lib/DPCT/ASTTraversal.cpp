@@ -2155,6 +2155,7 @@ void ThrustFunctionRule::thrustFuncMigration(
            NumArgs == 5 ||
        NumArgs > 5)) {
     NewName = MapNames::getDpctNamespace() + ThrustFuncName;
+    requestFeature(HelperFileEnum::DplExtrasAlgorithm, "copy_if", CE);
 
     if (ULExpr)
       emplaceTransformation(new ReplaceToken(
@@ -9674,7 +9675,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
         Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "get_current_device()."
                                  "queues_wait_and_throw();",
                                  nullptr);
-        requestFeature(HelperFileEnum::Device, "dev_mgr", KCall);
+        requestFeature(HelperFileEnum::Device, "get_current_device", KCall);
         requestFeature(HelperFileEnum::Device, "device_ext",
                                        KCall);
       }
@@ -9693,7 +9694,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
         std::string WaitQueue = MapNames::getDpctNamespace() + "get_current_device()."
                                 "queues_wait_and_throw();";
         Events2Wait.push_back(WaitQueue);
-        requestFeature(HelperFileEnum::Device, "dev_mgr",
+        requestFeature(HelperFileEnum::Device, "get_current_device",
                                        KCall);
         requestFeature(HelperFileEnum::Device, "device_ext",
                                        KCall);
@@ -9762,7 +9763,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
           Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "get_current_device()."
                                    "queues_wait_and_throw();",
                                    nullptr);
-          requestFeature(HelperFileEnum::Device, "dev_mgr",
+          requestFeature(HelperFileEnum::Device, "get_current_device",
                                          Call);
           requestFeature(HelperFileEnum::Device, "device_ext",
                                          Call);
@@ -15174,7 +15175,7 @@ void DriverContextAPIRule::run(
     requestFeature(HelperFileEnum::Device, "dev_mgr", CE);
   } else if (APIName == "cuCtxSynchronize") {
     OS << MapNames::getDpctNamespace() + "get_current_device().queues_wait_and_throw()";
-    requestFeature(HelperFileEnum::Device, "dev_mgr", CE);
+    requestFeature(HelperFileEnum::Device, "get_current_device", CE);
     requestFeature(HelperFileEnum::Device, "device_ext", CE);
   }
   if (IsAssigned) {

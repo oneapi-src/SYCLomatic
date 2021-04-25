@@ -322,7 +322,7 @@ private:
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|transform_if_mask_fun|dpct::internal
+// DPCT_LABEL_BEGIN|transform_if_unary_zip_mask_fun|dpct::internal
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 //[pred, op](Ref1 a, Ref2 s) { return pred(s) ? op(a) : a; });

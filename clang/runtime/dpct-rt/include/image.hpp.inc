@@ -61,12 +61,16 @@ enum class image_channel_data_type {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|image_channel_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 class image_channel;
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_wrapper_base_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 class image_wrapper_base;
 // DPCT_LABEL_END
@@ -186,7 +190,11 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|create_image_wrapper_detail_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|create_image_wrapper_detail
+// Image|image_wrapper_base_forward_decl
+// Image|image_channel_forward_decl
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims);
@@ -200,7 +208,9 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|image_creator_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_creator
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Functor to create sycl::image from image_data.
 template <int dimensions> struct image_creator;
@@ -372,6 +382,7 @@ public:
 // Image|image_trait
 // Util|make_index_sequence
 // Memory|pitched_data
+// Image|image_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// 2D or 3D matrix data for image.
@@ -464,6 +475,9 @@ enum class image_data_type { matrix, linear, pitch, unsupport };
 // DPCT_LABEL_BEGIN|image_data|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_matrix
+// Image|image_data_type
+// Image|image_matrix_p_alias
+// Image|image_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image data info.
@@ -611,6 +625,8 @@ public:
 // DPCT_LABEL_BEGIN|image_wrapper_base|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_matrix
+// Image|sampling_info
+// Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image base class.
@@ -713,7 +729,9 @@ using image_wrapper_base_p = image_wrapper_base *;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|image_accessor_ext_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_accessor_ext
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 // DPCT_LABEL_END
@@ -721,6 +739,9 @@ template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 // DPCT_LABEL_BEGIN|image_wrapper|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
+// Image|image_accessor_ext_forward_decl
+// Image|image_creator_forward_decl
+// Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image class, wrapper of cl::sycl::image.
@@ -781,6 +802,7 @@ public:
 // DPCT_LABEL_BEGIN|image_accessor_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
+// Image|fetch_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Wrap sampler and image accessor together.
@@ -884,7 +906,9 @@ public:
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|create_image_wrapper|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|create_image_wrapper_detail_forward_decl
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Create image wrapper according to image data and sampling info.
 /// \return Pointer to image wrapper base class.
@@ -917,6 +941,7 @@ namespace detail {
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
 // Memory|mem_mgr
+// Memory|get_buffer_byte_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Functor to create sycl::image from image_data
