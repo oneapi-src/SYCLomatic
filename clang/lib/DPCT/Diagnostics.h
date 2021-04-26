@@ -325,6 +325,7 @@ public:
 private:
   SourceManagerForWarning() {
     DiagOpts = new DiagnosticOptions();
+    DiagOpts->ShowColors = true;
     DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
     Diagnostics = new DiagnosticsEngine(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
