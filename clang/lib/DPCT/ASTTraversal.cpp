@@ -9830,6 +9830,10 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
     bool IsDefaultStream = isDefaultStream(StreamArg);
     bool NeedStreamWait = false;
 
+    if (StreamArg->IgnoreImpCasts()->getStmtClass() ==
+        Stmt::ArraySubscriptExprClass)
+      NeedStreamWait = true;
+
     if (USMLevel == UsmLevel::restricted) {
       // std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
       std::string EventName;

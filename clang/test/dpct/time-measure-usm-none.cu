@@ -218,12 +218,19 @@ void foo_test_3() {
     // CHECK-NEXT:                          dpct::device_to_host, *(stream[i])), 0));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
-  }
 
-  // CHECK: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+  // CHECK:  }
+  // CHECK-NEXT:    /*
+  // CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT: CHECK((stop = q_ct1.submit_barrier(), 0));
   // CHECK-NEXT: CHECK(0);
+  }
   CHECK(cudaEventRecord(stop, 0));
   CHECK(cudaEventSynchronize(stop));
   float execution_time;
