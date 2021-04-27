@@ -181,7 +181,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -214,7 +214,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -249,7 +249,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();

@@ -226,7 +226,7 @@ void foo_test_3() {
   // CHECK-NEXT:  /*
   // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+  // CHECK: dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT: CHECK((stop = q_ct1.submit_barrier(), 0));
   // CHECK-NEXT: CHECK(0);
@@ -340,7 +340,7 @@ void foo()
 
 // CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -375,7 +375,7 @@ void foo()
 
 // CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:             */
-// CHECK-NEXT:             dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:             dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:             stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:             stop = q_ct1.submit_barrier();
 // CHECK-NEXT:             t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -411,7 +411,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -508,7 +508,7 @@ int foo_test_4()
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
-// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now(); 
 // CHECK-NEXT:    CHECK((stop = q_ct1.submit_barrier(), 0));
 // CHECK-NEXT:    CHECK(0);
@@ -636,7 +636,7 @@ void ctst_1999(void* ref_image, void* cur_image,
                                                   image_height_macroblocks,
                                                   imgRef);
 
-// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_stop);
 
@@ -665,7 +665,7 @@ void ctst_1999(void* ref_image, void* cur_image,
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
                                             image_height_macroblocks);
-// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_8_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_8_stop);
 
@@ -694,7 +694,7 @@ void ctst_1999(void* ref_image, void* cur_image,
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
                                              image_height_macroblocks);
-// CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_16_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_16_stop);
 

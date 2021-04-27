@@ -9789,7 +9789,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
         K->setEvent(ExprAnalysis::ref(EventExpr));
         K->setSync();
       } else {
-        Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "dev_mgr::instance().current_device()."
+        Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "get_current_device()."
                                  "queues_wait_and_throw();",
                                  nullptr);
         requestFeature(HelperFileEnum::Device, "dev_mgr", KCall);
@@ -9808,7 +9808,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
         K->setEvent(ExprAnalysis::ref(EventExpr));
         K->setSync();
       } else {
-        std::string WaitQueue = MapNames::getDpctNamespace() + "dev_mgr::instance().current_device()."
+        std::string WaitQueue = MapNames::getDpctNamespace() + "get_current_device()."
                                 "queues_wait_and_throw();";
         Events2Wait.push_back(WaitQueue);
         requestFeature(HelperFileEnum::Device, "dev_mgr",
@@ -9877,7 +9877,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
             SM.getExpansionLoc(RecordEnd->getBeginLoc()), SyncStmt.str()));
       } else if (!IsDefaultStream) {
         if (NeedStreamWait) {
-          Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "dev_mgr::instance().current_device()."
+          Queues2Wait.emplace_back(MapNames::getDpctNamespace() + "get_current_device()."
                                    "queues_wait_and_throw();",
                                    nullptr);
           requestFeature(HelperFileEnum::Device, "dev_mgr",
@@ -15234,7 +15234,7 @@ void DriverContextAPIRule::run(
        << MapNames::getDpctNamespace() + "dev_mgr::instance().current_device_id()";
     requestFeature(HelperFileEnum::Device, "dev_mgr", CE);
   } else if (APIName == "cuCtxSynchronize") {
-    OS << MapNames::getDpctNamespace() + "dev_mgr::instance().current_device().queues_wait_and_throw()";
+    OS << MapNames::getDpctNamespace() + "get_current_device().queues_wait_and_throw()";
     requestFeature(HelperFileEnum::Device, "dev_mgr", CE);
     requestFeature(HelperFileEnum::Device, "device_ext", CE);
   }

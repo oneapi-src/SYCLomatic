@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:    });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK:  dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+  // CHECK:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT:  elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   cudaEventRecord(stop, 0);

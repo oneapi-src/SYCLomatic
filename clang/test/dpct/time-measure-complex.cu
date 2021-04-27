@@ -182,7 +182,7 @@ int main(int argc, char **argv)
     }
 
     // record stop event
-    // CHECK:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+    // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
     // CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
     // CHECK-NEXT:    elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -410,7 +410,7 @@ int foo_test_2()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK((stop = dpct::get_default_queue().submit_barrier(), 0));
 // CHECK-NEXT:    CHECK(0);
@@ -595,7 +595,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
 // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
@@ -624,7 +624,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
 // CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
