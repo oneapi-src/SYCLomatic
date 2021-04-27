@@ -3693,7 +3693,8 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
 
 void VectorTypeOperatorRule::registerMatcher(MatchFinder &MF) {
   auto vectorTypeOverLoadedOperator = [&]() {
-    return functionDecl(overloadedVectorOperator());
+    return functionDecl(overloadedVectorOperator(),
+                        unless(hasAncestor(cxxRecordDecl())));
   };
 
   // Matches user overloaded operator declaration
