@@ -169,8 +169,8 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
     return Iter->second;
   }
 
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
+  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                            path::begin(LocalChild));
   // LocalRoot is not considered prefix of LocalChild if they are equal.
   bool Ret = Diff.first == path::end(LocalRoot) &&
          Diff.second != path::end(LocalChild);
@@ -221,8 +221,8 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
 #else
 #error Only support windows and Linux.
 #endif
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
+  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                            path::begin(LocalChild));
   bool Ret = Diff.first == path::end(LocalRoot);
   ChildOrSameCache[Key] = Ret;
   return Ret;

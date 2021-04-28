@@ -1651,7 +1651,7 @@ unsigned ContinuationIndenter::reformatRawStringLiteral(
   StringRef OldDelimiter = *getRawStringDelimiter(Current.TokenText);
   StringRef NewDelimiter =
       getCanonicalRawStringDelimiter(Style, RawStringStyle.Language);
-  if (NewDelimiter.empty() || OldDelimiter.empty())
+  if (NewDelimiter.empty())
     NewDelimiter = OldDelimiter;
   // The text of a raw string is between the leading 'R"delimiter(' and the
   // trailing 'delimiter)"'.
@@ -1974,8 +1974,7 @@ ContinuationIndenter::createBreakableToken(const FormatToken &Current,
         switchesFormatting(Current))
       return nullptr;
     return std::make_unique<BreakableLineCommentSection>(
-        Current, StartColumn, Current.OriginalColumn, !Current.Previous,
-        /*InPPDirective=*/false, Encoding, Style);
+        Current, StartColumn, /*InPPDirective=*/false, Encoding, Style);
   }
   return nullptr;
 }
@@ -1993,6 +1992,11 @@ ContinuationIndenter::breakProtrudingToken(const FormatToken &Current,
   if (Current.is(TT_LineComment)) {
     // We don't insert backslashes when breaking line comments.
     ColumnLimit = Style.ColumnLimit;
+  }
+  if (ColumnLimit == 0) {
+    // To make the rest of the function easier set the column limit to the
+    // maximum, if there should be no limit.
+    ColumnLimit = std::numeric_limits<decltype(ColumnLimit)>::max();
   }
   if (Current.UnbreakableTailLength >= ColumnLimit)
     return {0, false};

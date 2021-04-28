@@ -614,22 +614,26 @@ TEST(ValueTracking, GuaranteedToTransferExecutionToSuccessor) {
   StringRef Assembly =
       "declare void @nounwind_readonly(i32*) nounwind readonly "
       "declare void @nounwind_argmemonly(i32*) nounwind argmemonly "
+      "declare void @nounwind_willreturn(i32*) nounwind willreturn "
       "declare void @throws_but_readonly(i32*) readonly "
       "declare void @throws_but_argmemonly(i32*) argmemonly "
-      "declare void @nounwind_willreturn(i32*) nounwind willreturn"
+      "declare void @throws_but_willreturn(i32*) willreturn "
       " "
       "declare void @unknown(i32*) "
       " "
       "define void @f(i32* %p) { "
       "  call void @nounwind_readonly(i32* %p) "
       "  call void @nounwind_argmemonly(i32* %p) "
+      "  call void @nounwind_willreturn(i32* %p)"
       "  call void @throws_but_readonly(i32* %p) "
       "  call void @throws_but_argmemonly(i32* %p) "
+      "  call void @throws_but_willreturn(i32* %p) "
       "  call void @unknown(i32* %p) nounwind readonly "
       "  call void @unknown(i32* %p) nounwind argmemonly "
+      "  call void @unknown(i32* %p) nounwind willreturn "
       "  call void @unknown(i32* %p) readonly "
       "  call void @unknown(i32* %p) argmemonly "
-      "  call void @nounwind_willreturn(i32* %p)"
+      "  call void @unknown(i32* %p) willreturn "
       "  ret void "
       "} ";
 
@@ -643,15 +647,18 @@ TEST(ValueTracking, GuaranteedToTransferExecutionToSuccessor) {
 
   auto &BB = F->getEntryBlock();
   bool ExpectedAnswers[] = {
-      true,  // call void @nounwind_readonly(i32* %p)
-      true,  // call void @nounwind_argmemonly(i32* %p)
+      false, // call void @nounwind_readonly(i32* %p)
+      false, // call void @nounwind_argmemonly(i32* %p)
+      true,  // call void @nounwind_willreturn(i32* %p)
       false, // call void @throws_but_readonly(i32* %p)
       false, // call void @throws_but_argmemonly(i32* %p)
-      true,  // call void @unknown(i32* %p) nounwind readonly
-      true,  // call void @unknown(i32* %p) nounwind argmemonly
+      false, // call void @throws_but_willreturn(i32* %p)
+      false, // call void @unknown(i32* %p) nounwind readonly
+      false, // call void @unknown(i32* %p) nounwind argmemonly
+      true,  // call void @unknown(i32* %p) nounwind willreturn
       false, // call void @unknown(i32* %p) readonly
       false, // call void @unknown(i32* %p) argmemonly
-      true,  // call void @nounwind_willreturn(i32* %p)
+      false, // call void @unknown(i32* %p) willreturn
       false, // ret void
   };
 
@@ -798,9 +805,16 @@ TEST_F(ValueTrackingTest, ComputeNumSignBits_Shuffle_Pointers) {
 }
 
 TEST(ValueTracking, propagatesPoison) {
-  std::string AsmHead = "declare i32 @g(i32)\n"
-                        "define void @f(i32 %x, i32 %y, float %fx, float %fy, "
-                        "i1 %cond, i8* %p) {\n";
+  std::string AsmHead =
+      "declare i32 @g(i32)\n"
+      "declare {i32, i1} @llvm.sadd.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.ssub.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.smul.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.uadd.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.usub.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n"
+      "define void @f(i32 %x, i32 %y, float %fx, float %fy, "
+      "i1 %cond, i8* %p) {\n";
   std::string AsmTail = "  ret void\n}";
   // (propagates poison?, IR instruction)
   SmallVector<std::pair<bool, std::string>, 32> Data = {
@@ -819,7 +833,13 @@ TEST(ValueTracking, propagatesPoison) {
       {true, "urem i32 %x, %y"},
       {true, "sdiv exact i32 %x, %y"},
       {true, "srem i32 %x, %y"},
-      {false, "call i32 @g(i32 %x)"}};
+      {false, "call i32 @g(i32 %x)"},
+      {true, "call {i32, i1} @llvm.sadd.with.overflow.i32(i32 %x, i32 %y)"},
+      {true, "call {i32, i1} @llvm.ssub.with.overflow.i32(i32 %x, i32 %y)"},
+      {true, "call {i32, i1} @llvm.smul.with.overflow.i32(i32 %x, i32 %y)"},
+      {true, "call {i32, i1} @llvm.uadd.with.overflow.i32(i32 %x, i32 %y)"},
+      {true, "call {i32, i1} @llvm.usub.with.overflow.i32(i32 %x, i32 %y)"},
+      {true, "call {i32, i1} @llvm.umul.with.overflow.i32(i32 %x, i32 %y)"}};
 
   std::string AssemblyStr = AsmHead;
   for (auto &Itm : Data)
@@ -985,6 +1005,12 @@ TEST(ValueTracking, canCreatePoisonOrUndef) {
   std::string AsmHead =
       "@s = external dso_local global i32, align 1\n"
       "declare i32 @g(i32)\n"
+      "declare {i32, i1} @llvm.sadd.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.ssub.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.smul.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.uadd.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.usub.with.overflow.i32(i32 %a, i32 %b)\n"
+      "declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n"
       "define void @f(i32 %x, i32 %y, float %fx, float %fy, i1 %cond, "
       "<4 x i32> %vx, <4 x i32> %vx2, <vscale x 4 x i32> %svx, i8* %p) {\n";
   std::string AsmTail = "  ret void\n}";
@@ -1046,7 +1072,19 @@ TEST(ValueTracking, canCreatePoisonOrUndef) {
       {{true, false},
        "ashr <4 x i32> %vx, select (i1 icmp sgt (i32 ptrtoint (i32* @s to "
        "i32), i32 1), <4 x i32> zeroinitializer, <4 x i32> <i32 0, i32 1, i32 "
-       "2, i32 3>)"}};
+       "2, i32 3>)"},
+      {{false, false},
+       "call {i32, i1} @llvm.sadd.with.overflow.i32(i32 %x, i32 %y)"},
+      {{false, false},
+       "call {i32, i1} @llvm.ssub.with.overflow.i32(i32 %x, i32 %y)"},
+      {{false, false},
+       "call {i32, i1} @llvm.smul.with.overflow.i32(i32 %x, i32 %y)"},
+      {{false, false},
+       "call {i32, i1} @llvm.uadd.with.overflow.i32(i32 %x, i32 %y)"},
+      {{false, false},
+       "call {i32, i1} @llvm.usub.with.overflow.i32(i32 %x, i32 %y)"},
+      {{false, false},
+       "call {i32, i1} @llvm.umul.with.overflow.i32(i32 %x, i32 %y)"}};
 
   std::string AssemblyStr = AsmHead;
   for (auto &Itm : Data)

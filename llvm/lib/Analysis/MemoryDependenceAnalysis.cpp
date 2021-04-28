@@ -243,16 +243,6 @@ MemDepResult MemoryDependenceResults::getCallDependencyFrom(
   return MemDepResult::getNonFuncLocal();
 }
 
-static bool isVolatile(Instruction *Inst) {
-  if (auto *LI = dyn_cast<LoadInst>(Inst))
-    return LI->isVolatile();
-  if (auto *SI = dyn_cast<StoreInst>(Inst))
-    return SI->isVolatile();
-  if (auto *AI = dyn_cast<AtomicCmpXchgInst>(Inst))
-    return AI->isVolatile();
-  return false;
-}
-
 MemDepResult MemoryDependenceResults::getPointerDependencyFrom(
     const MemoryLocation &MemLoc, bool isLoad, BasicBlock::iterator ScanIt,
     BasicBlock *BB, Instruction *QueryInst, unsigned *Limit) {
@@ -344,7 +334,9 @@ MemoryDependenceResults::getInvariantGroupPointerDependency(LoadInst *LI,
       // If we hit load/store with the same invariant.group metadata (and the
       // same pointer operand) we can assume that value pointed by pointer
       // operand didn't change.
-      if ((isa<LoadInst>(U) || isa<StoreInst>(U)) &&
+      if ((isa<LoadInst>(U) ||
+           (isa<StoreInst>(U) &&
+            cast<StoreInst>(U)->getPointerOperand() == Ptr)) &&
           U->hasMetadata(LLVMContext::MD_invariant_group))
         ClosestDependency = GetClosestDependency(ClosestDependency, U);
     }
@@ -465,9 +457,9 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
         MemoryLocation Loc;
         /*ModRefInfo MR =*/ GetLocation(II, Loc, TLI);
         AliasResult R = BatchAA.alias(Loc, MemLoc);
-        if (R == NoAlias)
+        if (R == AliasResult::NoAlias)
           continue;
-        if (R == MustAlias)
+        if (R == AliasResult::MustAlias)
           return MemDepResult::getDef(II);
         if (ID == Intrinsic::masked_load)
           continue;
@@ -489,7 +481,7 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
         if (!QueryInst)
           // Original QueryInst *may* be volatile
           return MemDepResult::getClobber(LI);
-        if (isVolatile(QueryInst))
+        if (QueryInst->isVolatile())
           // Ordering required if QueryInst is itself volatile
           return MemDepResult::getClobber(LI);
         // Otherwise, volatile doesn't imply any special ordering
@@ -513,11 +505,11 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
       AliasResult R = BatchAA.alias(LoadLoc, MemLoc);
 
       if (isLoad) {
-        if (R == NoAlias)
+        if (R == AliasResult::NoAlias)
           continue;
 
         // Must aliased loads are defs of each other.
-        if (R == MustAlias)
+        if (R == AliasResult::MustAlias)
           return MemDepResult::getDef(Inst);
 
 #if 0 // FIXME: Temporarily disabled. GVN is cleverly rewriting loads
@@ -527,7 +519,7 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
 
         // If we have a partial alias, then return this as a clobber for the
         // client to handle.
-        if (R == PartialAlias)
+        if (R == AliasResult::PartialAlias)
           return MemDepResult::getClobber(Inst);
 #endif
 
@@ -537,7 +529,7 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
       }
 
       // Stores don't depend on other no-aliased accesses.
-      if (R == NoAlias)
+      if (R == AliasResult::NoAlias)
         continue;
 
       // Stores don't alias loads from read-only memory.
@@ -583,9 +575,9 @@ MemDepResult MemoryDependenceResults::getSimplePointerDependencyFrom(
       // If we found a pointer, check if it could be the same as our pointer.
       AliasResult R = BatchAA.alias(StoreLoc, MemLoc);
 
-      if (R == NoAlias)
+      if (R == AliasResult::NoAlias)
         continue;
-      if (R == MustAlias)
+      if (R == AliasResult::MustAlias)
         return MemDepResult::getDef(Inst);
       if (isInvariantLoad)
         continue;
@@ -752,8 +744,7 @@ MemoryDependenceResults::getNonLocalCallDependency(CallBase *QueryCall) {
   } else {
     // Seed DirtyBlocks with each of the preds of QueryInst's block.
     BasicBlock *QueryBB = QueryCall->getParent();
-    for (BasicBlock *Pred : PredCache.get(QueryBB))
-      DirtyBlocks.push_back(Pred);
+    append_range(DirtyBlocks, PredCache.get(QueryBB));
     ++NumUncacheNonLocal;
   }
 
@@ -767,8 +758,7 @@ MemoryDependenceResults::getNonLocalCallDependency(CallBase *QueryCall) {
 
   // Iterate while we still have blocks to update.
   while (!DirtyBlocks.empty()) {
-    BasicBlock *DirtyBB = DirtyBlocks.back();
-    DirtyBlocks.pop_back();
+    BasicBlock *DirtyBB = DirtyBlocks.pop_back_val();
 
     // Already processed this block?
     if (!Visited.insert(DirtyBB).second)
@@ -838,8 +828,7 @@ MemoryDependenceResults::getNonLocalCallDependency(CallBase *QueryCall) {
 
       // If the block *is* completely transparent to the load, we need to check
       // the predecessors of this block.  Add them to our worklist.
-      for (BasicBlock *Pred : PredCache.get(DirtyBB))
-        DirtyBlocks.push_back(Pred);
+      append_range(DirtyBlocks, PredCache.get(DirtyBB));
     }
   }
 
@@ -883,7 +872,7 @@ void MemoryDependenceResults::getNonLocalPointerDependency(
     }
     return false;
   };
-  if (isVolatile(QueryInst) || isOrdered(QueryInst)) {
+  if (QueryInst->isVolatile() || isOrdered(QueryInst)) {
     Result.push_back(NonLocalDepResult(FromBB, MemDepResult::getUnknown(),
                                        const_cast<Value *>(Loc.Ptr)));
     return;
@@ -1134,9 +1123,6 @@ bool MemoryDependenceResults::getNonLocalPointerDepFromBB(
 
   // If we have valid cached information for exactly the block we are
   // investigating, just return it with no recomputation.
-  // Don't use cached information for invariant loads since it is valid for
-  // non-invariant loads only.
-  //
   // Don't use cached information for invariant loads since it is valid for
   // non-invariant loads only.
   if (!IsIncomplete && !isInvariantLoad &&

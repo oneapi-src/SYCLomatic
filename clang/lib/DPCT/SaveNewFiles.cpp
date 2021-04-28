@@ -155,8 +155,9 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 #error Only support windows and Linux.
 #endif
 
-  auto PathDiff = mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
-                           path::begin(LocalInRoot));
+  auto PathDiff =
+      std::mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
+                    path::begin(LocalInRoot));
   SmallString<512> NewFilePath = StringRef(LocalOutRoot);
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
   FilePath = NewFilePath;

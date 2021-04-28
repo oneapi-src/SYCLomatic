@@ -129,8 +129,7 @@ static void reconnectChildLoops(LoopInfo &LI, Loop *ParentLoop, Loop *NewLoop,
   SmallVector<Loop *, 8> ChildLoops(FirstChild, CandidateLoops.end());
   CandidateLoops.erase(FirstChild, CandidateLoops.end());
 
-  for (auto II = ChildLoops.begin(), IE = ChildLoops.end(); II != IE; ++II) {
-    auto Child = *II;
+  for (Loop *Child : ChildLoops) {
     LLVM_DEBUG(dbgs() << "child loop: " << Child->getHeader()->getName()
                       << "\n");
     // TODO: A child loop whose header is also a header in the current
@@ -320,8 +319,7 @@ static bool FixIrreducibleImpl(Function &F, LoopInfo &LI, DominatorTree &DT) {
   append_range(WorkList, LI);
 
   while (!WorkList.empty()) {
-    auto L = WorkList.back();
-    WorkList.pop_back();
+    auto L = WorkList.pop_back_val();
     LLVM_DEBUG(dbgs() << "visiting loop with header "
                       << L->getHeader()->getName() << "\n");
     Changed |= makeReducible(LI, DT, *L);

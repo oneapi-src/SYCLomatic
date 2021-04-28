@@ -181,11 +181,10 @@ protected:
   _SPIRV_DEF_ENCDEC3(Id, BitWidth, IsSigned)
   void validate() const override {
     SPIRVEntry::validate();
-    assert(BitWidth > 1 &&
-           (BitWidth <= 64 ||
-            (Module->isAllowedToUseExtension(
-                 ExtensionID::SPV_INTEL_arbitrary_precision_integers) &&
-             BitWidth <= 2048)) &&
+    assert((BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
+            BitWidth == 64 ||
+            Module->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_arbitrary_precision_integers)) &&
            "Invalid bit width");
   }
 
@@ -700,18 +699,8 @@ protected:
     Decoder >> Id >> MemberTypeIdVec;
     Module->add(this);
 
-    Decoder.getWordCountAndOpCode();
-    while (!I.eof()) {
-      SPIRVEntry *Entry = Decoder.getEntry();
-      if (Entry != nullptr)
-        Module->add(Entry);
-      if (Entry && Decoder.OpCode == ContinuedOpCode) {
-        auto ContinuedInst = static_cast<ContinuedInstType>(Entry);
-        addContinuedInstruction(ContinuedInst);
-        Decoder.getWordCountAndOpCode();
-      } else {
-        break;
-      }
+    for (SPIRVEntry *E : Decoder.getContinuedInstructions(ContinuedOpCode)) {
+      addContinuedInstruction(static_cast<ContinuedInstType>(E));
     }
   }
 

@@ -154,9 +154,9 @@ class KeyPathAndMacro<string key_path_prefix, string key_path_base,
 
 def EmptyKPM : KeyPathAndMacro<"", "">;
 
-class ImpliedByAnyOf<list<Option> options, code value = "true"> {
-  code ImpliedCheck = !foldl("false", options, accumulator, option,
-                             !strconcat(accumulator, " || ", option.KeyPath));
+class ImpliedByAnyOf<list<string> key_paths, code value = "true"> {
+  code ImpliedCheck = !foldl("false", key_paths, accumulator, key_path,
+                             !strconcat(accumulator, " || ", key_path));
   code ImpliedValue = value;
 }
 
@@ -172,10 +172,10 @@ class MarshallingInfoString<KeyPathAndMacro kpm, code defaultvalue="std::string(
   code Denormalizer = "denormalizeString";
 }
 
-class MarshallingInfoStringInt<KeyPathAndMacro kpm, code defaultvalue="0", code type="unsigned">
+class MarshallingInfoInt<KeyPathAndMacro kpm, code defaultvalue="0", code type="unsigned">
   : MarshallingInfo<kpm, defaultvalue> {
   code Normalizer = "normalizeStringIntegral<"#type#">";
-  code Denormalizer = "denormalizeString";
+  code Denormalizer = "denormalizeString<"#type#">";
 }
 
 class MarshallingInfoStringVector<KeyPathAndMacro kpm>
@@ -211,6 +211,14 @@ class MarshallingInfoBooleanFlag<KeyPathAndMacro kpm, code defaultvalue, code va
   code Denormalizer = "makeBooleanOptionDenormalizer("#value#")";
 }
 
+// Marshalling info for enums. Typically used with `Values`, `NormalizedValues`
+// and `NormalizedValuesScope` mixins.
+class MarshallingInfoEnum<KeyPathAndMacro kpm, code defaultvalue>
+  : MarshallingInfo<kpm, defaultvalue> {
+  code Normalizer = "normalizeSimpleEnum";
+  code Denormalizer = "denormalizeSimpleEnum";
+}
+
 // Mixins for additional marshalling attributes.
 
 class ShouldParseIf<code condition> { code ShouldParse = condition; }
@@ -219,10 +227,6 @@ class Normalizer<code normalizer> { code Normalizer = normalizer; }
 class Denormalizer<code denormalizer> { code Denormalizer = denormalizer; }
 class NormalizedValuesScope<code scope> { code NormalizedValuesScope = scope; }
 class NormalizedValues<list<code> definitions> { list<code> NormalizedValues = definitions; } 
-class AutoNormalizeEnum {
-  code Normalizer = "normalizeSimpleEnum";
-  code Denormalizer = "denormalizeSimpleEnum";
-}
 class ValueMerger<code merger> { code ValueMerger = merger; }
 class ValueExtractor<code extractor> { code ValueExtractor = extractor; }
 

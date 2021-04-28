@@ -498,13 +498,7 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
       elementType.isTriviallyCopyableType(CGF.getContext())) {
     CodeGen::CodeGenModule &CGM = CGF.CGM;
     ConstantEmitter Emitter(CGF);
-    LangAS AS = ArrayQTy.getAddressSpace();
-    if (CGM.getLangOpts().SYCLIsDevice && AS == LangAS::Default) {
-      // SYCL's default AS is 'generic', which can't be used to define constant
-      // initializer data in. It is reasonable to keep it in the same AS
-      // as string literals.
-      AS = CGM.getStringLiteralAddressSpace();
-    }
+    LangAS AS = CGM.GetGlobalVarAddressSpace(/*VarDecl= */ nullptr);
     if (llvm::Constant *C = Emitter.tryEmitForInitializer(E, AS, ArrayQTy)) {
       auto GV = new llvm::GlobalVariable(
           CGM.getModule(), C->getType(),
@@ -907,6 +901,7 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
   case CK_CopyAndAutoreleaseBlockObject:
   case CK_BuiltinFnToFnPtr:
   case CK_ZeroToOCLOpaqueType:
+  case CK_MatrixCast:
 
   case CK_IntToOCLSampler:
   case CK_FloatingToFixedPoint:
@@ -1428,6 +1423,7 @@ static bool castPreservesZero(const CastExpr *CE) {
   case CK_PointerToIntegral:
     // Language extensions.
   case CK_VectorSplat:
+  case CK_MatrixCast:
   case CK_NonAtomicToAtomic:
   case CK_AtomicToNonAtomic:
     return true;
@@ -2062,7 +2058,7 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
               Record->hasTrivialCopyAssignment() ||
               Record->hasTrivialMoveConstructor() ||
               Record->hasTrivialMoveAssignment() ||
-              Record->isUnion()) &&
+              Record->hasAttr<TrivialABIAttr>() || Record->isUnion()) &&
              "Trying to aggregate-copy a type without a trivial copy/move "
              "constructor or assignment operator");
       // Ignore empty classes in C++.

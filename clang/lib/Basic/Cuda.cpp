@@ -77,7 +77,7 @@ CudaArchToStringMap arch_names[] = {
     SM(60), SM(61), SM(62),          // Pascal
     SM(70), SM(72),                  // Volta
     SM(75),                          // Turing
-    SM(80),                          // Ampere
+    SM(80), SM(86),                  // Ampere
     GFX(600),  // gfx600
     GFX(601),  // gfx601
     GFX(602),  // gfx602
@@ -98,6 +98,7 @@ CudaArchToStringMap arch_names[] = {
     GFX(906),  // gfx906
     GFX(908),  // gfx908
     GFX(909),  // gfx909
+    GFX(90a),  // gfx90a
     GFX(90c),  // gfx90c
     GFX(1010), // gfx1010
     GFX(1011), // gfx1011
@@ -170,6 +171,8 @@ CudaVersion MinVersionForCudaArch(CudaArch A) {
     return CudaVersion::CUDA_100;
   case CudaArch::SM_80:
     return CudaVersion::CUDA_110;
+  case CudaArch::SM_86:
+    return CudaVersion::CUDA_111;
   default:
     llvm_unreachable("invalid enum");
   }
@@ -215,12 +218,10 @@ CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
     return CudaVersion::CUDA_102;
   case 110:
     return CudaVersion::CUDA_110;
-#ifdef INTEL_CUSTOMIZATION
   case 111:
     return CudaVersion::CUDA_111;
   case 112:
     return CudaVersion::CUDA_112;
-#endif
   default:
     return CudaVersion::UNKNOWN;
   }

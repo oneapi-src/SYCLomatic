@@ -42,8 +42,7 @@ static bool checkLoopsStructure(const Loop &OuterLoop, const Loop &InnerLoop,
 
 LoopNest::LoopNest(Loop &Root, ScalarEvolution &SE)
     : MaxPerfectDepth(getMaxPerfectDepth(Root, SE)) {
-  for (Loop *L : breadth_first(&Root))
-    Loops.push_back(L);
+  append_range(Loops, breadth_first(&Root));
 }
 
 std::unique_ptr<LoopNest> LoopNest::getLoopNest(Loop &Root,
@@ -211,7 +210,7 @@ const BasicBlock &LoopNest::skipEmptyBlockUntil(const BasicBlock *From,
   assert(From && "Expecting valid From");
   assert(End && "Expecting valid End");
 
-  if (From == End || !From->getSingleSuccessor())
+  if (From == End || !From->getUniqueSuccessor())
     return *From;
 
   auto IsEmpty = [](const BasicBlock *BB) {
@@ -220,12 +219,12 @@ const BasicBlock &LoopNest::skipEmptyBlockUntil(const BasicBlock *From,
 
   // Visited is used to avoid running into an infinite loop.
   SmallPtrSet<const BasicBlock *, 4> Visited;
-  const BasicBlock *BB = From->getSingleSuccessor();
+  const BasicBlock *BB = From->getUniqueSuccessor();
   const BasicBlock *PredBB = BB;
   while (BB && BB != End && IsEmpty(BB) && !Visited.count(BB)) {
     Visited.insert(BB);
     PredBB = BB;
-    BB = BB->getSingleSuccessor();
+    BB = BB->getUniqueSuccessor();
   }
 
   return (BB == End) ? *End : *PredBB;

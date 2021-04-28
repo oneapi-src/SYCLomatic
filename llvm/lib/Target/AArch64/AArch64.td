@@ -147,12 +147,12 @@ def FeatureZCRegMove : SubtargetFeature<"zcm", "HasZeroCycleRegMove", "true",
 def FeatureZCZeroingGP : SubtargetFeature<"zcz-gp", "HasZeroCycleZeroingGP", "true",
                                         "Has zero-cycle zeroing instructions for generic registers">;
 
-def FeatureZCZeroingFP : SubtargetFeature<"zcz-fp", "HasZeroCycleZeroingFP", "true",
-                                        "Has zero-cycle zeroing instructions for FP registers">;
+def FeatureNoZCZeroingFP : SubtargetFeature<"no-zcz-fp", "HasZeroCycleZeroingFP", "false",
+                                        "Has no zero-cycle zeroing instructions for FP registers">;
 
 def FeatureZCZeroing : SubtargetFeature<"zcz", "HasZeroCycleZeroing", "true",
                                         "Has zero-cycle zeroing instructions",
-                                        [FeatureZCZeroingGP, FeatureZCZeroingFP]>;
+                                        [FeatureZCZeroingGP]>;
 
 /// ... but the floating-point version doesn't quite work in rare cases on older
 /// CPUs.
@@ -217,6 +217,10 @@ def FeatureArithmeticBccFusion : SubtargetFeature<
 def FeatureArithmeticCbzFusion : SubtargetFeature<
     "arith-cbz-fusion", "HasArithmeticCbzFusion", "true",
     "CPU fuses arithmetic + cbz/cbnz operations">;
+
+def FeatureCmpBccFusion : SubtargetFeature<
+    "cmp-bcc-fusion", "HasCmpBccFusion", "true",
+    "CPU fuses cmp+bcc operations">;
 
 def FeatureFuseAddress : SubtargetFeature<
     "fuse-address", "HasFuseAddress", "true",
@@ -590,7 +594,9 @@ def ProcA55     : SubtargetFeature<"a55", "ARMProcFamily", "CortexA55",
                                    FeatureFullFP16,
                                    FeatureDotProd,
                                    FeatureRCPC,
-                                   FeaturePerfMon
+                                   FeaturePerfMon,
+                                   FeaturePostRAScheduler,
+                                   FeatureUseAA
                                    ]>;
 
 def ProcA57     : SubtargetFeature<"a57", "ARMProcFamily", "CortexA57",
@@ -615,6 +621,9 @@ def ProcA65     : SubtargetFeature<"a65", "ARMProcFamily", "CortexA65",
                                    FeatureDotProd,
                                    FeatureFPARMv8,
                                    FeatureFullFP16,
+                                   FeatureFuseAddress,
+                                   FeatureFuseAES,
+                                   FeatureFuseLiterals,
                                    FeatureNEON,
                                    FeatureRAS,
                                    FeatureRCPC,
@@ -627,6 +636,7 @@ def ProcA72     : SubtargetFeature<"a72", "ARMProcFamily", "CortexA72",
                                    FeatureCrypto,
                                    FeatureFPARMv8,
                                    FeatureFuseAES,
+                                   FeatureFuseLiterals,
                                    FeatureNEON,
                                    FeaturePerfMon
                                    ]>;
@@ -658,6 +668,7 @@ def ProcA76     : SubtargetFeature<"a76", "ARMProcFamily", "CortexA76",
                                    "Cortex-A76 ARM processors", [
                                     HasV8_2aOps,
                                     FeatureFPARMv8,
+                                    FeatureFuseAES,
                                     FeatureNEON,
                                     FeatureRCPC,
                                     FeatureCrypto,
@@ -669,7 +680,9 @@ def ProcA76     : SubtargetFeature<"a76", "ARMProcFamily", "CortexA76",
 def ProcA77     : SubtargetFeature<"a77", "ARMProcFamily", "CortexA77",
                                    "Cortex-A77 ARM processors", [
                                     HasV8_2aOps,
+                                    FeatureCmpBccFusion,
                                     FeatureFPARMv8,
+                                    FeatureFuseAES,
                                     FeatureNEON, FeatureRCPC,
                                     FeatureCrypto,
                                     FeatureFullFP16,
@@ -680,6 +693,7 @@ def ProcA78 : SubtargetFeature<"cortex-a78", "ARMProcFamily",
                                "CortexA78",
                                "Cortex-A78 ARM processors", [
                                HasV8_2aOps,
+                               FeatureCmpBccFusion,
                                FeatureCrypto,
                                FeatureFPARMv8,
                                FeatureFuseAES,
@@ -696,6 +710,7 @@ def ProcA78C : SubtargetFeature<"cortex-a78c", "ARMProcFamily",
                                 "CortexA78C",
                                 "Cortex-A78C ARM processors", [
                                 HasV8_2aOps,
+                                FeatureCmpBccFusion,
                                 FeatureCrypto,
                                 FeatureDotProd,
                                 FeatureFlagM,
@@ -715,7 +730,7 @@ def ProcR82 : SubtargetFeature<"cortex-r82", "ARMProcFamily",
                                "CortexR82",
                                "Cortex-R82 ARM Processors", [
                                FeaturePostRAScheduler,
-                               // TODO: crypto and FuseAES
+                               FeatureUseAA,
                                // All other features are implied by v8_0r ops:
                                HasV8_0rOps,
                                ]>;
@@ -723,6 +738,7 @@ def ProcR82 : SubtargetFeature<"cortex-r82", "ARMProcFamily",
 def ProcX1 : SubtargetFeature<"cortex-x1", "ARMProcFamily", "CortexX1",
                                   "Cortex-X1 ARM processors", [
                                   HasV8_2aOps,
+                                  FeatureCmpBccFusion,
                                   FeatureCrypto,
                                   FeatureFPARMv8,
                                   FeatureFuseAES,
@@ -899,8 +915,7 @@ def ProcExynosM3 : SubtargetFeature<"exynosm3", "ARMProcFamily", "ExynosM3",
                                      FeatureLSLFast,
                                      FeaturePerfMon,
                                      FeaturePostRAScheduler,
-                                     FeaturePredictableSelectIsExpensive,
-                                     FeatureZCZeroingFP]>;
+                                     FeaturePredictableSelectIsExpensive]>;
 
 def ProcExynosM4 : SubtargetFeature<"exynosm4", "ARMProcFamily", "ExynosM3",
                                     "Samsung Exynos-M4 processors",
@@ -963,6 +978,9 @@ def ProcNeoverseE1 : SubtargetFeature<"neoversee1", "ARMProcFamily",
                                       FeatureNEON,
                                       FeatureRCPC,
                                       FeatureSSBS,
+                                      FeaturePostRAScheduler,
+                                      FeatureUseAA,
+                                      FeatureFuseAES,
                                       ]>;
 
 def ProcNeoverseN1 : SubtargetFeature<"neoversen1", "ARMProcFamily",
@@ -977,6 +995,9 @@ def ProcNeoverseN1 : SubtargetFeature<"neoversen1", "ARMProcFamily",
                                       FeatureRCPC,
                                       FeatureSPE,
                                       FeatureSSBS,
+                                      FeaturePostRAScheduler,
+                                      FeatureUseAA,
+                                      FeatureFuseAES,
                                       ]>;
 
 def ProcNeoverseN2 : SubtargetFeature<"neoversen2", "ARMProcFamily",
@@ -989,7 +1010,12 @@ def ProcNeoverseN2 : SubtargetFeature<"neoversen2", "ARMProcFamily",
                                       FeatureMTE,
                                       FeatureSVE2,
                                       FeatureSVE2BitPerm,
-                                      FeatureTRBE]>;
+                                      FeatureTRBE,
+                                      FeaturePostRAScheduler,
+                                      FeatureUseAA,
+                                      FeatureCrypto,
+                                      FeatureFuseAES,
+                                      ]>;
 
 def ProcNeoverseV1 : SubtargetFeature<"neoversev1", "ARMProcFamily",
                                       "NeoverseV1",
@@ -1006,6 +1032,7 @@ def ProcNeoverseV1 : SubtargetFeature<"neoversev1", "ARMProcFamily",
                                       FeatureNEON,
                                       FeaturePerfMon,
                                       FeaturePostRAScheduler,
+                                      FeatureUseAA,
                                       FeatureRandGen,
                                       FeatureSPE,
                                       FeatureSSBS,

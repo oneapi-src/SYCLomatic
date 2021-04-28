@@ -16,10 +16,15 @@
 
 // If EXPECT_DEATH isn't defined, make it a no-op.
 #ifndef EXPECT_DEATH
+// If ASSERT_DEATH is defined, make EXPECT_DEATH a wrapper to it.
+#ifdef ASSERT_DEATH
+#define EXPECT_DEATH(X, Y) ASSERT_DEATH(([&] { X; }), "")
+#else
 #define EXPECT_DEATH(X, Y)                                                     \
   do {                                                                         \
   } while (0)
-#endif
+#endif // ASSERT_DEATH
+#endif // EXPECT_DEATH
 
 // If EXPECT_STREQ isn't defined, define our own simple one.
 #ifndef EXPECT_STREQ
@@ -27,3 +32,8 @@
 #endif
 
 extern bool UseQuarantine;
+
+#define SCUDO_DEFINE_GTEST_TYPE_NAME(TYPE)                                     \
+  template <> std::string testing::internal::GetTypeName<TYPE>() {             \
+    return #TYPE;                                                              \
+  }

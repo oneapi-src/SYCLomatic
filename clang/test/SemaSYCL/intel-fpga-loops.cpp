@@ -1,31 +1,26 @@
-// RUN: %clang_cc1 -fsycl -fsycl-is-device -fsyntax-only -Wno-sycl-2017-compat -verify -pedantic %s
+// RUN: %clang_cc1 -fsycl-is-device -internal-isystem %S/Inputs -sycl-std=2020 -fsyntax-only -verify -pedantic %s
+
+#include "sycl.hpp"
+
+sycl::queue deviceQueue;
 
 // Test for Intel FPGA loop attributes applied not to a loop
 void foo() {
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'ivdep' attribute cannot be applied to a declaration}}
   [[intel::ivdep]] int a[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
-  [[intel::ivdep(2)]] int b[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'initiation_interval' attribute only applies to 'for', 'while', 'do' statements, and functions}}
   [[intel::initiation_interval(2)]] int c[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'max_concurrency' attribute only applies to 'for', 'while', 'do' statements, and functions}}
   [[intel::max_concurrency(2)]] int d[10];
-
-  int arr[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
-  [[intel::ivdep(arr)]] int e[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
-  [[intel::ivdep(arr, 2)]] int f[10];
-
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'disable_loop_pipelining' attribute only applies to 'for', 'while', 'do' statements, and functions}}
   [[intel::disable_loop_pipelining]] int g[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'loop_coalesce' attribute cannot be applied to a declaration}}
   [[intel::loop_coalesce(2)]] int h[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'max_interleaving' attribute cannot be applied to a declaration}}
   [[intel::max_interleaving(4)]] int i[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'speculated_iterations' attribute cannot be applied to a declaration}}
   [[intel::speculated_iterations(6)]] int j[10];
-  // expected-error@+1 {{intelfpga loop attributes must be applied to for, while, or do statements}}
+  // expected-error@+1 {{'nofusion' attribute cannot be applied to a declaration}}
   [[intel::nofusion]] int k[10];
 }
 
@@ -80,16 +75,16 @@ void boo() {
   // expected-error@+1 {{duplicate argument to 'ivdep'; attribute requires one or both of a safelen and array}}
   [[intel::ivdep(2, 2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'initiation_interval' attribute takes at least 1 argument; attribute ignored}}
+  // expected-error@+1 {{'initiation_interval' attribute takes one argument}}
   [[intel::initiation_interval]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'initiation_interval' attribute takes no more than 1 argument; attribute ignored}}
+  // expected-error@+1 {{'initiation_interval' attribute takes one argument}}
   [[intel::initiation_interval(2, 2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'max_concurrency' attribute takes at least 1 argument; attribute ignored}}
+  // expected-error@+1 {{'max_concurrency' attribute takes one argument}}
   [[intel::max_concurrency]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'max_concurrency' attribute takes no more than 1 argument; attribute ignored}}
+  // expected-error@+1 {{'max_concurrency' attribute takes one argument}}
   [[intel::max_concurrency(2, 2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
@@ -103,25 +98,25 @@ void boo() {
   [[intel::ivdep(2, 3.0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+1 {{'disable_loop_pipelining' attribute takes no more than 0 arguments; attribute ignored}}
+  // expected-error@+1 {{'disable_loop_pipelining' attribute takes no arguments}}
   [[intel::disable_loop_pipelining(0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'loop_coalesce' attribute takes no more than 1 argument; attribute ignored}}
+  // expected-error@+1 {{'loop_coalesce' attribute takes no more than 1 argument}}
   [[intel::loop_coalesce(2, 3)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'max_interleaving' attribute takes at least 1 argument; attribute ignored}}
+  // expected-error@+1 {{'max_interleaving' attribute takes one argument}}
   [[intel::max_interleaving]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'max_interleaving' attribute takes no more than 1 argument; attribute ignored}}
+  // expected-error@+1 {{'max_interleaving' attribute takes one argument}}
   [[intel::max_interleaving(2, 4)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'speculated_iterations' attribute takes at least 1 argument; attribute ignored}}
+  // expected-error@+1 {{'speculated_iterations' attribute takes one argument}}
   [[intel::speculated_iterations]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'speculated_iterations' attribute takes no more than 1 argument; attribute ignored}}
+  // expected-error@+1 {{'speculated_iterations' attribute takes one argument}}
   [[intel::speculated_iterations(1, 2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-warning@+1 {{'nofusion' attribute takes no more than 0 arguments; attribute ignored}}
+  // expected-error@+1 {{'nofusion' attribute takes no arguments}}
   [[intel::nofusion(0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
@@ -318,23 +313,28 @@ void loop_attrs_compatibility() {
   [[intel::disable_loop_pipelining]]
   [[intel::loop_coalesce]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+2 {{'disable_loop_pipelining' and 'max_interleaving' attributes are not compatible}}
+  // expected-error@+3 {{'max_interleaving' and 'disable_loop_pipelining' attributes are not compatible}}
+  // expected-note@+1 {{conflicting attribute is here}}
   [[intel::disable_loop_pipelining]]
   [[intel::max_interleaving(0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+2 {{'speculated_iterations' and 'disable_loop_pipelining' attributes are not compatible}}
+  // expected-error@+3 {{'disable_loop_pipelining' and 'speculated_iterations' attributes are not compatible}}
+  // expected-note@+1 {{conflicting attribute is here}}
   [[intel::speculated_iterations(0)]]
   [[intel::disable_loop_pipelining]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+2 {{'disable_loop_pipelining' and 'max_concurrency' attributes are not compatible}}
+  // expected-error@+3 {{'max_concurrency' and 'disable_loop_pipelining' attributes are not compatible}}
+  // expected-note@+1 {{conflicting attribute is here}}
   [[intel::disable_loop_pipelining]]
   [[intel::max_concurrency(0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+2 {{'initiation_interval' and 'disable_loop_pipelining' attributes are not compatible}}
+  // expected-error@+3 {{'disable_loop_pipelining' and 'initiation_interval' attributes are not compatible}}
+  // expected-note@+1 {{conflicting attribute is here}}
   [[intel::initiation_interval(10)]]
   [[intel::disable_loop_pipelining]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+2 {{'disable_loop_pipelining' and 'ivdep' attributes are not compatible}}
+  // expected-error@+3 {{'ivdep' and 'disable_loop_pipelining' attributes are not compatible}}
+  // expected-note@+1 {{conflicting attribute is here}}
   [[intel::disable_loop_pipelining]]
   [[intel::ivdep]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
@@ -402,27 +402,36 @@ void max_concurrency_dependent() {
       a[i] = 0;
 }
 
-template <typename name, typename Func>
-__attribute__((sycl_kernel)) void kernel_single_task(const Func &kernelFunc) {
-  kernelFunc();
+int main() {
+  deviceQueue.submit([&](sycl::handler &h) {
+    h.single_task<class kernel_function>([]() {
+      foo();
+      foo_deprecated();
+      boo();
+      goo();
+      zoo();
+      loop_attrs_compatibility();
+      ivdep_dependent<4, 2, 1>();
+      //expected-note@-1 +{{in instantiation of function template specialization}}
+      ivdep_dependent<2, 4, -1>();
+      //expected-note@-1 +{{in instantiation of function template specialization}}
+      ii_dependent<2, 4, -1>();
+      //expected-note@-1 +{{in instantiation of function template specialization}}
+      max_concurrency_dependent<1, 4, -2>();
+      //expected-note@-1 +{{in instantiation of function template specialization}}
+    });
+  });
+
+  return 0;
 }
 
-int main() {
-  kernel_single_task<class kernel_function>([]() {
-    foo();
-    foo_deprecated();
-    boo();
-    goo();
-    zoo();
-    loop_attrs_compatibility();
-    ivdep_dependent<4, 2, 1>();
-    //expected-note@-1 +{{in instantiation of function template specialization}}
-    ivdep_dependent<2, 4, -1>();
-    //expected-note@-1 +{{in instantiation of function template specialization}}
-    ii_dependent<2, 4, -1>();
-    //expected-note@-1 +{{in instantiation of function template specialization}}
-    max_concurrency_dependent<1, 4, -2>();
-    //expected-note@-1 +{{in instantiation of function template specialization}}
-  });
-  return 0;
+void parse_order_error() {
+  // We had a bug where we would only look at the first attribute in the group
+  // when trying to determine whether to diagnose the loop attributes on an
+  // incorrect subject. Test that we properly catch this situation.
+  [[clang::nomerge, intel::max_concurrency(1)]] // expected-error {{'max_concurrency' attribute only applies to 'for', 'while', 'do' statements, and functions}}
+  if (1) { parse_order_error(); }               // Recursive call silences unrelated diagnostic about nomerge.
+
+  [[clang::nomerge, intel::max_concurrency(1)]] // OK
+  while (1) { parse_order_error(); }            // Recursive call silences unrelated diagnostic about nomerge.
 }

@@ -68,7 +68,7 @@ public:
   /// \return
   ///     An Status object indicating the success or failure of the
   ///     attach operation.
-  Status AttachWaitProcess(llvm::StringRef process_name);
+  Status AttachWaitProcess(llvm::StringRef process_name, bool include_existing);
 
   // NativeProcessProtocol::NativeDelegate overrides
   void InitializeDelegate(NativeProcessProtocol *process) override;
@@ -167,21 +167,25 @@ protected:
 
   PacketResult Handle_QSaveRegisterState(StringExtractorGDBRemote &packet);
 
-  PacketResult Handle_jTraceStart(StringExtractorGDBRemote &packet);
+  PacketResult Handle_jLLDBTraceSupported(StringExtractorGDBRemote &packet);
 
-  PacketResult Handle_jTraceRead(StringExtractorGDBRemote &packet);
+  PacketResult Handle_jLLDBTraceStart(StringExtractorGDBRemote &packet);
 
-  PacketResult Handle_jTraceStop(StringExtractorGDBRemote &packet);
+  PacketResult Handle_jLLDBTraceStop(StringExtractorGDBRemote &packet);
 
-  PacketResult Handle_jTraceConfigRead(StringExtractorGDBRemote &packet);
+  PacketResult Handle_jLLDBTraceGetState(StringExtractorGDBRemote &packet);
 
-  PacketResult Handle_jLLDBTraceSupportedType(StringExtractorGDBRemote &packet);
+  PacketResult Handle_jLLDBTraceGetBinaryData(StringExtractorGDBRemote &packet);
 
   PacketResult Handle_QRestoreRegisterState(StringExtractorGDBRemote &packet);
 
   PacketResult Handle_vAttach(StringExtractorGDBRemote &packet);
 
   PacketResult Handle_vAttachWait(StringExtractorGDBRemote &packet);
+
+  PacketResult Handle_qVAttachOrWaitSupported(StringExtractorGDBRemote &packet);
+
+  PacketResult Handle_vAttachOrWait(StringExtractorGDBRemote &packet);
 
   PacketResult Handle_D(StringExtractorGDBRemote &packet);
 
@@ -239,6 +243,15 @@ private:
   void StartSTDIOForwarding();
 
   void StopSTDIOForwarding();
+
+  // Read thread-id from packet.  If the thread-id is correct, returns it.
+  // Otherwise, returns the error.
+  //
+  // If allow_all is true, then the pid/tid value of -1 ('all') will be allowed.
+  // In any case, the function assumes that exactly one inferior is being
+  // debugged and rejects pid values that do no match that inferior.
+  llvm::Expected<lldb::tid_t> ReadTid(StringExtractorGDBRemote &packet,
+                                      bool allow_all = false);
 
   // For GDBRemoteCommunicationServerLLGS only
   GDBRemoteCommunicationServerLLGS(const GDBRemoteCommunicationServerLLGS &) =

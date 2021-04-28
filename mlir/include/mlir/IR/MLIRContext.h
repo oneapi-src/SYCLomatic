@@ -17,6 +17,7 @@
 
 namespace mlir {
 class AbstractOperation;
+class DebugActionManager;
 class DiagnosticEngine;
 class Dialect;
 class DialectRegistry;
@@ -36,17 +37,19 @@ class StorageUniquer;
 class MLIRContext {
 public:
   /// Create a new Context.
-  /// The loadAllDialects parameters allows to load all dialects from the global
-  /// registry on Context construction. It is deprecated and will be removed
-  /// soon.
   explicit MLIRContext();
+  explicit MLIRContext(const DialectRegistry &registry);
   ~MLIRContext();
 
   /// Return information about all IR dialects loaded in the context.
   std::vector<Dialect *> getLoadedDialects();
 
   /// Return the dialect registry associated with this context.
-  DialectRegistry &getDialectRegistry();
+  const DialectRegistry &getDialectRegistry();
+
+  /// Append the contents of the given dialect registry to the registry
+  /// associated with this context.
+  void appendDialectRegistry(const DialectRegistry &registry);
 
   /// Return information about all available dialects in the registry in this
   /// context.
@@ -86,6 +89,9 @@ public:
     getOrLoadDialect<Dialect>();
     loadDialect<OtherDialect, MoreDialects...>();
   }
+
+  /// Load all dialects available in the registry in this context.
+  void loadAllAvailableDialects();
 
   /// Get (or create) a dialect for the given derived dialect name.
   /// The dialect will be loaded from the registry if no dialect is found.
@@ -150,6 +156,9 @@ public:
   /// instances. This should not be used directly.
   StorageUniquer &getAttributeUniquer();
 
+  /// Returns the manager of debug actions within the context.
+  DebugActionManager &getDebugActionManager();
+
   /// These APIs are tracking whether the context will be used in a
   /// multithreading environment: this has no effect other than enabling
   /// assertions on misuses of some APIs.
@@ -165,6 +174,12 @@ public:
   /// 'getOrLoadDialect<DialectClass>()'.
   Dialect *getOrLoadDialect(StringRef dialectNamespace, TypeID dialectID,
                             function_ref<std::unique_ptr<Dialect>()> ctor);
+
+  /// Returns a hash of the registry of the context that may be used to give
+  /// a rough indicator of if the state of the context registry has changed. The
+  /// context registry correlates to loaded dialects and their entities
+  /// (attributes, operations, types, etc.).
+  llvm::hash_code getRegistryHash();
 
 private:
   const std::unique_ptr<MLIRContextImpl> impl;

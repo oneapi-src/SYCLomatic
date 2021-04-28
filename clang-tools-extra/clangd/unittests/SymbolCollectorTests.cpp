@@ -1463,9 +1463,6 @@ TEST_F(SymbolCollectorTest, CanonicalSTLHeader) {
       }
       )cpp",
       /*Main=*/"");
-  for (const auto &S : Symbols)
-    llvm::errs() << S.Scope << S.Name << " in " << S.IncludeHeaders.size()
-                 << "\n";
   EXPECT_THAT(
       Symbols,
       UnorderedElementsAre(
@@ -1836,6 +1833,20 @@ TEST_F(SymbolCollectorTest, UndefOfModuleMacro) {
   // We mostly care about not crashing, but verify that we didn't insert garbage
   // about X too.
   EXPECT_THAT(TU.headerSymbols(), Not(Contains(QName("X"))));
+}
+
+TEST_F(SymbolCollectorTest, NoCrashOnObjCMethodCStyleParam) {
+  auto TU = TestTU::withCode(R"objc(
+    @interface Foo
+    - (void)fun:(bool)foo, bool bar;
+    @end
+  )objc");
+  TU.ExtraArgs.push_back("-xobjective-c++");
+
+  TU.build();
+  // We mostly care about not crashing.
+  EXPECT_THAT(TU.headerSymbols(),
+              UnorderedElementsAre(QName("Foo"), QName("Foo::fun:")));
 }
 
 } // namespace

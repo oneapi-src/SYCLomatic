@@ -265,7 +265,7 @@ public:
       clang::DeclContext::lookup_result result = decl_context->lookup(myName);
 
       if (!result.empty()) {
-        clang::NamedDecl *named_decl = result[0];
+        clang::NamedDecl *named_decl = *result.begin();
         if (const RecordDeclType *record_decl =
                 llvm::dyn_cast<RecordDeclType>(named_decl))
           compiler_type.SetCompilerType(
@@ -1220,10 +1220,13 @@ private:
   /// imported types.
   std::unique_ptr<ClangASTSource> m_scratch_ast_source_up;
 
+  // FIXME: GCC 5.x doesn't support enum as map keys.
+  typedef int IsolatedASTKey;
+
   /// Map from IsolatedASTKind to their actual TypeSystemClang instance.
   /// This map is lazily filled with sub-ASTs and should be accessed via
   /// `GetSubAST` (which lazily fills this map).
-  std::unordered_map<IsolatedASTKind, std::unique_ptr<TypeSystemClang>>
+  std::unordered_map<IsolatedASTKey, std::unique_ptr<TypeSystemClang>>
       m_isolated_asts;
 };
 
