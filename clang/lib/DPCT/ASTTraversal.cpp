@@ -5494,7 +5494,7 @@ void DeviceRandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         IsLiteral(CE->getArg(2)), getDrefName(CE->getArg(3)), IndentStr);
   } else {
     const CompoundStmt *CS = findImmediateBlock(CE);
-    if (!CS)
+    if (!CS || !(CS->body_front()))
       return;
 
     SourceLocation DistrInsertLoc =

@@ -2735,10 +2735,11 @@ bool isDefaultStream(const Expr *StreamArg) {
   if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
     IsDefaultStream = true;
   } else if (Arg->getStmtClass() == Stmt::IntegerLiteralClass) {
-    auto IL = dyn_cast<IntegerLiteral>(Arg);
-    auto V = IL->getValue().getZExtValue();
-    if (V <= 2) // V should be 0, 1 or 2
-      IsDefaultStream = true;
+    if (auto IL = dyn_cast<IntegerLiteral>(Arg)) {
+      auto V = IL->getValue().getZExtValue();
+      if (V <= 2) // V should be 0, 1 or 2
+        IsDefaultStream = true;
+    }
   } else if (Arg->getStmtClass() == Expr::GNUNullExprClass) {
     IsDefaultStream = true;
   } else if (Arg->getStmtClass() == Expr::CXXNullPtrLiteralExprClass) {
