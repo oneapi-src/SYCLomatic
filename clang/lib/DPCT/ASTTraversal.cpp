@@ -14548,11 +14548,99 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
+void FFTFunctionCallRule::prepareFEAInfo(std::string IndentStr,
+                                         std::string FuncName,
+                                         std::string FuncPtrName,
+                                         LibraryMigrationLocations Locations,
+                                         LibraryMigrationFlags Flags,
+                                         SourceLocation SL) {
+  dpct::FFTFunctionCallBuilder FFCB(nullptr, IndentStr, FuncName,
+                                    FuncPtrName, Locations, Flags);
+  if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
+      FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
+      FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
+    FFCB.updateExecCallExpr();
+    FFTExecAPIInfo FEAInfo;
+    FFCB.updateFFTExecAPIInfo(FEAInfo);
+    FEAInfo.HandleDeclFileAndOffset = "";
+    FEAInfo.QueueIndex = -1;
+    FEAInfo.CompoundStmtBeginOffset = 0;
+    FEAInfo.PlanHandleDeclBeginOffset = 0;
+    FEAInfo.ExecAPIBeginOffset = 0;
+    DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(SL, FEAInfo);
+  }
+}
+
+void FFTFunctionCallRule::processFunctionPointer(const VarDecl* VD) {
+  std::string FuncName;
+  std::string FuncPtrName;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const UnaryOperator *UO = dyn_cast<UnaryOperator>(VD->getInit());
+  if (!UO)
+    return;
+  const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+  if (!DRE)
+    return;
+  const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
+  if (!FD)
+    return;
+  FuncName = FD->getNameAsString();
+  auto SL = SM.getExpansionLoc(VD->getBeginLoc());
+  std::string Key =
+      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
+  DpctGlobalInfo::updateInitSuffixIndexInRule(
+      DpctGlobalInfo::getSuffixIndexInitValue(Key));
+  FuncPtrName = VD->getNameAsString();
+  if (VD->getStorageDuration() == SD_Static)
+    FuncPtrName = "static " + FuncPtrName;
+
+  LibraryMigrationFlags Flags;
+  Flags.IsAssigned = false;
+  Flags.IsFunctionPointer = true;
+  Flags.IsFunctionPointerAssignment = false;
+  LibraryMigrationStrings ReplaceStrs;
+  LibraryMigrationLocations Locations;
+  initVars(nullptr, VD, nullptr, Flags, ReplaceStrs, Locations);
+
+  prepareFEAInfo(ReplaceStrs.IndentStr, FuncName, FuncPtrName, Locations, Flags,
+                 SL);
+}
+
+void FFTFunctionCallRule::processFunctionPointerAssignment(const BinaryOperator *BO) {
+  std::string FuncName;
+  std::string FuncPtrName;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const UnaryOperator *UO = dyn_cast<UnaryOperator>(BO->getRHS());
+  if (!UO)
+    return;
+  const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+  if (!DRE)
+    return;
+  const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
+  if (!FD)
+    return;
+  FuncName = FD->getNameAsString();
+  auto SL = SM.getExpansionLoc(BO->getBeginLoc());
+  std::string Key =
+      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
+  DpctGlobalInfo::updateInitSuffixIndexInRule(
+      DpctGlobalInfo::getSuffixIndexInitValue(Key));
+
+  LibraryMigrationFlags Flags;
+  Flags.IsAssigned = false;
+  Flags.IsFunctionPointer = false;
+  Flags.IsFunctionPointerAssignment = true;
+  LibraryMigrationStrings ReplaceStrs;
+  LibraryMigrationLocations Locations;
+  initVars(nullptr, nullptr, BO, Flags, ReplaceStrs, Locations);
+
+  prepareFEAInfo(ReplaceStrs.IndentStr, FuncName, FuncPtrName, Locations, Flags,
+                 SL);
+}
+
 void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   bool IsAssigned = false;
-  bool IsFunctionPointer = false;
-  bool IsFunctionPointerAssignment = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   const VarDecl *VD = getNodeAsType<VarDecl>(Result, "FunctionPointerDecl");
   const BinaryOperator *BO =
@@ -14563,9 +14651,11 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (CE) {
       IsAssigned = true;
     } else if (VD) {
-      IsFunctionPointer = true;
+      processFunctionPointer(VD);
+      return;
     } else if (BO) {
-      IsFunctionPointerAssignment = true;
+      processFunctionPointerAssignment(BO);
+      return;
     } else {
       return;
     }
@@ -14576,58 +14666,21 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  if (IsFunctionPointer) {
-    const UnaryOperator *UO = dyn_cast<UnaryOperator>(VD->getInit());
-    if (!UO)
-      return;
-    const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
-    if (!DRE)
-      return;
-    const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
-    if (!FD)
-      return;
-    FuncName = FD->getNameAsString();
-    auto SL = SM.getExpansionLoc(VD->getBeginLoc());
-    std::string Key = SM.getFilename(SL).str() +
-                      std::to_string(SM.getDecomposedLoc(SL).second);
-    DpctGlobalInfo::updateInitSuffixIndexInRule(
-        DpctGlobalInfo::getSuffixIndexInitValue(Key));
-    FuncPtrName = VD->getNameAsString();
-    if (VD->getStorageDuration() == SD_Static)
-      FuncPtrName = "static " + FuncPtrName;
-  } else if (IsFunctionPointerAssignment) {
-    const UnaryOperator *UO = dyn_cast<UnaryOperator>(BO->getRHS());
-    if (!UO)
-      return;
-    const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
-    if (!DRE)
-      return;
-    const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
-    if (!FD)
-      return;
-    FuncName = FD->getNameAsString();
-    auto SL = SM.getExpansionLoc(BO->getBeginLoc());
-    std::string Key = SM.getFilename(SL).str() +
-                      std::to_string(SM.getDecomposedLoc(SL).second);
-    DpctGlobalInfo::updateInitSuffixIndexInRule(
-        DpctGlobalInfo::getSuffixIndexInitValue(Key));
-  } else {
-    if (!CE->getDirectCallee())
-      return;
-    auto SL = SM.getExpansionLoc(CE->getBeginLoc());
-    std::string Key = SM.getFilename(SL).str() +
-                      std::to_string(SM.getDecomposedLoc(SL).second);
-    DpctGlobalInfo::updateInitSuffixIndexInRule(
-        DpctGlobalInfo::getSuffixIndexInitValue(Key));
-    FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  }
+  if (!CE->getDirectCallee())
+    return;
+  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
+  std::string Key =
+      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
+  DpctGlobalInfo::updateInitSuffixIndexInRule(
+      DpctGlobalInfo::getSuffixIndexInitValue(Key));
+  FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   StringRef FuncNameRef(FuncName);
 
   LibraryMigrationFlags Flags;
   Flags.IsAssigned = IsAssigned;
-  Flags.IsFunctionPointer = IsFunctionPointer;
-  Flags.IsFunctionPointerAssignment = IsFunctionPointerAssignment;
+  Flags.IsFunctionPointer = false;
+  Flags.IsFunctionPointerAssignment = false;
   LibraryMigrationStrings ReplaceStrs;
   LibraryMigrationLocations Locations;
   initVars(CE, VD, BO, Flags, ReplaceStrs, Locations);
@@ -14712,37 +14765,34 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     unsigned int CompoundStmtBeginOffset = 0;
     unsigned int PlanHandleDeclBeginOffset = 0;
     unsigned int ExecAPIBeginOffset = 0;
-    if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-      FFCB.updateExecCallExpr();
-    } else {
-      const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-      if (!DD)
-        return;
-      if (checkWhetherIsDuplicate(CE, false))
-        return;
 
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
+    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
+    if (!DD)
+      return;
+    if (checkWhetherIsDuplicate(CE, false))
+      return;
 
-      SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-      FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
-                         std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
+    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, CE, HelperFuncType::DefaultQueue);
 
-      FFCB.updateExecCallExpr(FFTHandleInfoKey);
+    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
+    FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
+                       std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
 
-      const CompoundStmt *CS =
-          findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
-      if (CS) {
-        CompoundStmtBeginOffset =
-            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CS->getBeginLoc()))
-                .second;
-        PlanHandleDeclBeginOffset =
-            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc()))
-                .second;
-        ExecAPIBeginOffset =
-            DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()))
-                .second;
-      }
+    FFCB.updateExecCallExpr(FFTHandleInfoKey);
+
+    const CompoundStmt *CS =
+        findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
+    if (CS) {
+      CompoundStmtBeginOffset =
+          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CS->getBeginLoc()))
+              .second;
+      PlanHandleDeclBeginOffset =
+          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc()))
+              .second;
+      ExecAPIBeginOffset =
+          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()))
+              .second;
     }
 
     SourceLocation TypeBegin;
@@ -14759,15 +14809,8 @@ void FFTFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     FEAInfo.PlanHandleDeclBeginOffset = PlanHandleDeclBeginOffset;
     FEAInfo.ExecAPIBeginOffset = ExecAPIBeginOffset;
 
-    if (Flags.IsFunctionPointer)
-      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
-          SM.getExpansionLoc(VD->getBeginLoc()), FEAInfo);
-    else if (Flags.IsFunctionPointerAssignment)
-      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
-          SM.getExpansionLoc(BO->getBeginLoc()), FEAInfo);
-    else
-      DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
-          SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
+    DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
+        SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
     return;
   }
 }

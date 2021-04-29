@@ -1972,6 +1972,13 @@ public:
   FFTFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+private:
+  void processFunctionPointer(const VarDecl *VD);
+  void processFunctionPointerAssignment(const BinaryOperator *BO);
+  void prepareFEAInfo(std::string IndentStr, std::string FuncName,
+                      std::string FuncPtrName,
+                      LibraryMigrationLocations Locations,
+                      LibraryMigrationFlags Flags, SourceLocation SL);
 
   std::vector<std::string> PrefixStmts;
   std::string IndentStr;
