@@ -308,10 +308,12 @@ private:
 //[pred,op](Ref a){return pred(a) ? op(a) : a; }
 template <typename T, typename Predicate, typename Operator>
 struct transform_if_fun {
-  typedef T result_of;
   transform_if_fun(Predicate _pred, Operator _op) : pred(_pred), op(_op) {}
-  result_of operator()(const T &input) const {
-    return pred(input) ? op(input) : input;
+  template <typename _T>
+  void operator()(_T&& t) const {
+    using std::get;
+    if (pred(get<0>(t)))
+      get<1>(t) = op(get<0>(t));
   }
 
 private:
@@ -325,12 +327,13 @@ private:
 // DPCT_CODE
 //[pred, op](Ref1 a, Ref2 s) { return pred(s) ? op(a) : a; });
 template <typename T, typename Predicate, typename Operator>
-struct transform_if_mask_fun {
-  typedef T result_of;
-  transform_if_mask_fun(Predicate _pred, Operator _op) : pred(_pred), op(_op) {}
-  template <typename M>
-  result_of operator()(const T &input, const M &mask) const {
-    return pred(mask) ? op(input) : input;
+struct transform_if_unary_zip_mask_fun {
+  transform_if_unary_zip_mask_fun(Predicate _pred, Operator _op) : pred(_pred), op(_op) {}
+  template <typename _T>
+  void operator()(_T&& t) const {
+    using std::get;
+    if (pred(get<1>(t)))
+      get<2>(t) = op(get<0>(t));
   }
 
 private:

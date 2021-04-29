@@ -344,9 +344,13 @@ Iter2 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
   using T = typename std::iterator_traits<Iter1>::value_type;
-  return std::transform(
-      std::forward<Policy>(policy), first, last, result,
+  const auto n = std::distance(first, last);
+  std::for_each(
+      std::forward<Policy>(policy),
+      oneapi::dpl::make_zip_iterator(first, result),
+      oneapi::dpl::make_zip_iterator(first, result) + n,
       internal::transform_if_fun<T, Pred, UnaryOperation>(pred, unary_op));
+  return result + n;
 }
 
 template <class Policy, class Iter1, class Iter2, class Iter3,
@@ -364,9 +368,14 @@ Iter3 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   using T = typename std::iterator_traits<Iter1>::value_type;
   using Ref1 = typename std::iterator_traits<Iter1>::reference;
   using Ref2 = typename std::iterator_traits<Iter2>::reference;
-  return std::transform(
-      std::forward<Policy>(policy), first, last, mask, result,
-      internal::transform_if_mask_fun<T, Pred, UnaryOperation>(pred, unary_op));
+  const auto n = std::distance(first, last);
+  std::for_each(
+      std::forward<Policy>(policy),
+      oneapi::dpl::make_zip_iterator(first, mask, result),
+      oneapi::dpl::make_zip_iterator(first, mask, result) + n,
+      internal::transform_if_unary_zip_mask_fun<T, Pred, UnaryOperation>(
+          pred, unary_op));
+  return result + n;
 }
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
