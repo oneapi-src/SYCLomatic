@@ -11521,8 +11521,14 @@ void MemoryMigrationRule::memcpyMigration(
       } else {
         ReplaceStr = AsyncQueue + "->memcpy";
       }
-    } else {
-      handleAsync(C, 4, Result);
+    }
+    else {
+      if (!NameRef.compare("cudaMemcpy")) {
+        handleAsync(C, 4, Result);
+      } else {
+        emplaceTransformation(new InsertAfterStmt(C->getArg(2), ", dpct::automatic"));
+        handleAsync(C, 3, Result);
+      }
     }
   }
 

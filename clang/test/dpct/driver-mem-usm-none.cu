@@ -19,18 +19,18 @@ int main(){
 
     // CHECK: sycl::queue * stream;
     CUstream stream;
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, stream);
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic, *stream);
     cuMemcpyHtoDAsync(f_D, f_A, size, stream);
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, 0);
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic);
     cuMemcpyHtoDAsync(f_D, f_A, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_D, f_A, size);
+    // CHECK: dpct::dpct_memcpy(f_D, f_A, size, dpct::automatic);
     cuMemcpyHtoD(f_D, f_A, size);
 
-    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, stream);
+    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, dpct::automatic, *stream);
     cuMemcpyDtoHAsync(f_A, f_D, size, stream);
-    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, 0);
+    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, dpct::automatic);
     cuMemcpyDtoHAsync(f_A, f_D, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_A, f_D, size);
+    // CHECK: dpct::dpct_memcpy(f_A, f_D, size, dpct::automatic);
     cuMemcpyDtoH(f_A, f_D, size);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
