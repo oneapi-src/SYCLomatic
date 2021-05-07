@@ -1536,8 +1536,11 @@ public:
   }
   std::shared_ptr<tooling::TranslationUnitReplacements>
   getReplInfoFromYAMLSavedInFileInfo(std::string FilePath) {
-    auto FileInfo = insertFile(FilePath);
-    return FileInfo->PreviousTUReplFromYAML;
+    auto FileInfo = findObject(FileMap, FilePath);
+    if (FileInfo)
+      return FileInfo->PreviousTUReplFromYAML;
+    else
+      return nullptr;
   }
 
   void
