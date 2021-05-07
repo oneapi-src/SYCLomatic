@@ -136,7 +136,7 @@ static opt<std::string>
                    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<ReportTypeEnum> ReportType(
-    "report-type", desc("Type of the reports:\n"),
+    "report-type", desc("Specifies type of the report:\n"),
     llvm::cl::values(
         llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
             "Information about API signatures that need migration and the "
