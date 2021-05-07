@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
@@ -32,19 +32,19 @@ int main(int argc, char **argv) {
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_major_version(1);
   deviceProp.major=1;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.get_minor_version();
   int minor = deviceProp.minor;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_minor_version(120);
   deviceProp.minor=120;
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.get_minor_version() / deviceProp.get_major_version();
   int n = deviceProp.minor / deviceProp.major;

@@ -58,7 +58,7 @@ int main(){
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 

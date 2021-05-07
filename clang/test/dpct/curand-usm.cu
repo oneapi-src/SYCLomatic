@@ -205,7 +205,7 @@ private:
 void bar1(){
 
 //CHECK:/*
-//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
 //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull);
@@ -220,7 +220,7 @@ void bar1(){
 
 void bar2(){
 //CHECK:/*
-//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
 //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(), 1243);

@@ -141,7 +141,7 @@ int main() {
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: texDesc21.readMode = cudaReadModeElementType;
   // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);

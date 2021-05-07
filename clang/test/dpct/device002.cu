@@ -21,7 +21,7 @@ cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
 // CHECK: /*
-// CHECK-NEXT:  DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
+// CHECK-NEXT:  DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT: */
 // CHECK-NEXT: /*
 // CHECK-NEXT:  DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated/ discrete GPU devices.
@@ -138,19 +138,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: accessSupported = 0;
 cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: perfRank = 0;
 cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
@@ -158,7 +158,7 @@ cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported,
 
 char pciBusId[80];
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 cudaDeviceGetPCIBusId(pciBusId, 80, 0);
 

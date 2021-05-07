@@ -106,31 +106,31 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // Half2 Comparison Functions
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
@@ -155,7 +155,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h_2 = sycl::log2(h);
   h_2 = hlog2(h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = sycl::rint(h);
@@ -190,7 +190,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h2_2 = sycl::log2(h2);
   h2_2 = h2log2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = sycl::rint(h2);
@@ -2071,166 +2071,166 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hadd_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hfma_sat(h, h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hmul_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hsub_sat(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hadd2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hfma2_sat(h2, h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hmul2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hsub2_sat(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hequ(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hgeu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hgtu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hleu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hltu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hneu(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbeq2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbge2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hble2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hblt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbne2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = cyl_bessel_i1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = erfcinvf(f);
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = erfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = j0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = j1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = jnf(i, f);
 
@@ -2239,15 +2239,15 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normcdff(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
@@ -2257,7 +2257,7 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = rnormf(i, &f);
   // CHECK: f = f*(2<<l);
@@ -2265,46 +2265,46 @@ __global__ void testUnsupported() {
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = y0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = y1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = ynf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = cyl_bessel_i0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = cyl_bessel_i1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = erfcinv(d);
   // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = erfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = j0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = j1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = jn(i, d);
   // CHECK: d = dpct::fast_length((float *)&d, i);
@@ -2314,11 +2314,11 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
   d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = normcdf(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
@@ -2328,7 +2328,7 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = rnorm(i, &d);
   // CHECK: d = d*(2<<l);
@@ -2336,20 +2336,20 @@ __global__ void testUnsupported() {
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = y0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = y1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = yn(i, d);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = __saturatef(f);
 
@@ -2368,35 +2368,35 @@ __global__ void testUnsupported() {
   // CHECK: u = dpct::reverse_bits<unsigned int>(u);
   u = __brev(u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   ull = __brevll(ull);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __byte_perm(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   i = __ffs(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);

@@ -78,7 +78,7 @@ int main() {
 
   void *kernel_func = (void *)&kernel;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, 0);
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);

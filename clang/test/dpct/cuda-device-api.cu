@@ -17,8 +17,8 @@ void foo() {
   void *devPtr;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1029:0: DPC++ currently does not support getting limits on devices. The
-  // CHECK-NEXT: output parameter(s) are set to 0.
+  // CHECK-NEXT: DPCT1029:0: DPC++ currently does not support getting device resource limits.
+  // CHECK-NEXT: The output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: *pValue = 0;
   cudaDeviceGetLimit(pValue, limit);

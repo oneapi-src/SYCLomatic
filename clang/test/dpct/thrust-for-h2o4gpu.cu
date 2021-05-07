@@ -319,7 +319,7 @@ private:
 __global__ void kernel1(){
   int a[10];
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT:  DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT:  */
   thrust::sort(thrust::device, a, a + 9);
 }

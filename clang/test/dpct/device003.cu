@@ -37,19 +37,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(accessSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(perfRank = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));
