@@ -180,3 +180,5 @@ DEF_WARNING(DEVICE_VARIADIC_FUNCTION, 1080, "No variadic functions are allowed t
 DEF_COMMENT(DEVICE_VARIADIC_FUNCTION, 1080, "No variadic functions are allowed to be called in a SYCL kernel or any functions called by the kernel. You may need to adjust the code.")
 DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, "The generated code assumes that \"%0\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
 DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
+DEF_WARNING(KNOWN_UNSUPPORTED_TYPE, 1082, "The type %0 was not migrated, because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.")
+DEF_COMMENT(KNOWN_UNSUPPORTED_TYPE, 1082, "The type {0} was not migrated, because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.")

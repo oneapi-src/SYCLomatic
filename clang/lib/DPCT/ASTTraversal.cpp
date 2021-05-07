@@ -13105,7 +13105,8 @@ void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       typeLoc(anyOf(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                         "cusparseSolvePolicy_t", "CUexternalMemory",
                         "CUexternalSemaphore", "CUgraph", "CUgraphExec",
-                        "CUgraphNode", "CUgraphicsResource"))))),
+                        "CUgraphNode", "CUgraphicsResource", "nvmlReturn_t",
+                        "nvmlDevice_t"))))),
                     loc(pointerType(pointee(qualType(hasDeclaration(
                         namedDecl(hasAnyName("cudaMemcpy3DParms",
                                              "CUDA_ARRAY_DESCRIPTOR")))))))))
@@ -13115,6 +13116,7 @@ void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void RecognizeTypeRule::run(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY();
   const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "typeloc");
   if (!TL)
     return;
@@ -13126,13 +13128,12 @@ void RecognizeTypeRule::run(
   if (!QTy->isTypedefNameType() && QTy->isPointerType()) {
     std::string PointeeTy = DpctGlobalInfo::getTypeName(
         QTy->getPointeeType().getUnqualifiedType(), Context);
-    report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false,
-           PointeeTy + " *",
-           "the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type");
+    report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+           PointeeTy + " *");
     return;
   }
-  report(TL->getBeginLoc(), Diagnostics::UNMIGRATED_TYPE, false, TypeName,
-         "the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type");
+  report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+         TypeName);
 }
 
 REGISTER_RULE(RecognizeTypeRule)
