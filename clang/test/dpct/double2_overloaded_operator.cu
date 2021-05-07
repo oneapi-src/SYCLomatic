@@ -481,7 +481,7 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 // CHECK: void test() {
 // CHECK:   sycl::double2 a;
 // CHECK:   sycl::double2 b;
-// CHECK:   a  = dpct_operator_overloading::operator+=(a , b);
+// CHECK:   dpct_operator_overloading::operator+=(a , b);
 // CHECK:   dpct_operator_overloading::operator-(a);
 // CHECK:   b = a;
 // CHECK: }

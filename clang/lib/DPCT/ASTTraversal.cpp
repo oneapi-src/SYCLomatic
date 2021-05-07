@@ -3686,7 +3686,7 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
   // For assignment operator:
   // a += b
   // =>
-  // a = dpct_operator_overloading::operator+=(a, b)
+  // dpct_operator_overloading::operator+=(a, b)
 
   const std::string OperatorName =
       BinaryOperator::getOpcodeStr(
@@ -3694,14 +3694,6 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
           .str();
 
   std::ostringstream FuncCall;
-
-  if (CE->isAssignmentOp()) {
-    const auto &SM = *Result.SourceManager;
-    const char *Start = SM.getCharacterData(CE->getBeginLoc());
-    const char *End = SM.getCharacterData(CE->getOperatorLoc());
-    const std::string LHSText(Start, End - Start);
-    FuncCall << LHSText << " = ";
-  }
 
   FuncCall << NamespaceName << "::operator" << OperatorName;
 
