@@ -1783,6 +1783,9 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
+#ifdef _WIN32
+    Printer << "__declspec(dllexport) ";
+#endif
     Printer << "void " << FuncName << "_wrapper("
             << MapNames::getClNamespace() << "queue &queue, const "
             << MapNames::getClNamespace()

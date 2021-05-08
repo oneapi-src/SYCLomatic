@@ -1,6 +1,6 @@
-// UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none -out-root %T/module_kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
-// RUN: FileCheck %s --match-full-lines --input-file %T/module_kernel/module_kernel.dp.cpp
+// UNSUPPORTED: -linux-
+// RUN: dpct --format-range=none -out-root %T/module_kernel_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
+// RUN: FileCheck %s --match-full-lines --input-file %T/module_kernel_win/module_kernel_win.dp.cpp
 
 //CHECK: dpct::image_wrapper_base_p tex;
 CUtexref tex;
@@ -8,7 +8,7 @@ CUtexref tex;
 //CHECK: void foo(float* k, float* y, sycl::nd_item<3> item_ct1, uint8_t *dpct_local);
 
 //CHECK: extern "C" {
-//CHECK-NEXT: void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
+//CHECK-NEXT: __declspec(dllexport) void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
 //CHECK-NEXT: }
 __global__ void foo(float* k, float* y);
 
@@ -19,7 +19,7 @@ __global__ void foo(float* k, float* y);
 //CHECK-NEXT: }
 
 //CHECK: extern "C" {
-//CHECK-NEXT: void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra){
+//CHECK-NEXT: __declspec(dllexport) void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra){
 //CHECK-NEXT: float * k;
 //CHECK-NEXT: float * y;
 //CHECK-NEXT: if(kernelParams){
