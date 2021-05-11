@@ -2287,7 +2287,8 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
     ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
     : Global),
   PointerAsArray(false) {
-  if (getType()->isPointer() && getScope() == Global) {
+  if (getType()->isPointer() && getScope() == Global &&
+      DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
     Attr = Device;
     getType()->adjustAsMemType();
     PointerAsArray = true;
@@ -2665,8 +2666,7 @@ void CtTypeInfo::updateName(){
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
   else
-    BaseName = buildString(BaseName, isPointer() ? "" : " ",
-                           BaseNameWithoutQualifiers);
+    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(

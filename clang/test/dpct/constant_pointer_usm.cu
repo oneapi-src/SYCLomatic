@@ -1,9 +1,9 @@
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/constant_pointer_usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer_usm/constant_pointer_usm.dp.cpp
 
-// CHECK: static dpct::global_memory<int, 1> schsfirst;
+// CHECK: static dpct::constant_memory<const int *, 0> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: static dpct::global_memory<sycl::double2, 1> zm;
+// CHECK: static dpct::constant_memory<const sycl::double2 *, 0> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;
@@ -19,11 +19,11 @@ void init() {
   int numschH = 100;
 
   cudaMalloc(&schsfirstD, numschH * sizeof(int));
-  //CHECK: schsfirst.assign(schsfirstD, numschH * sizeof(int));
+  //CHECK: q_ct1.memcpy(schsfirst.get_ptr(), &schsfirstD, sizeof(void *)).wait();
   cudaMemcpyToSymbol(schsfirst, &schsfirstD, sizeof(void *));
 
   cudaMalloc(&zmD, numschH * sizeof(double2));
-  //CHECK: zm.assign(zmD, numschH * sizeof(sycl::double2));
+  //CHECK: q_ct1.memcpy(zm.get_ptr(), &zmD, sizeof(void *)).wait();
   cudaMemcpyToSymbol(zm, &zmD, sizeof(void *));
 
   gpuMain2<<<1, 1>>>();

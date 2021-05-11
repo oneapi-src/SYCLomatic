@@ -11155,7 +11155,6 @@ void MemoryMigrationRule::mallocMigration(
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
 
   if (Name == "cudaMalloc" || Name == "cuMemAlloc_v2") {
-    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
     if (USMLevel == UsmLevel::restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::DefaultQueue);
       if (IsAssigned)
@@ -11169,6 +11168,7 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     } else {
+      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       std::ostringstream OS;
       std::string Type;
       if (IsAssigned)
