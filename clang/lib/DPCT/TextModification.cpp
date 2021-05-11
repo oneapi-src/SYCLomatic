@@ -471,7 +471,8 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   auto &SM = Context.getSourceManager();
-  auto Loc = SM.getSpellingLoc(S->getEndLoc());
+  SourceLocation Loc = getStmtExpansionSourceRange(S).getEnd();
+
   Loc = Loc.getLocWithOffset(
       Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
   if (DoMacroExpansion) {
