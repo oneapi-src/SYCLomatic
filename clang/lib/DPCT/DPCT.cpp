@@ -139,17 +139,12 @@ static opt<ReportTypeEnum> ReportType(
     "report-type", desc("Specifies type of the report:\n"),
     llvm::cl::values(
         llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
-            "Information about API signatures that need migration and the "
-            "number of times\n"
-            "                                    they were encountered. The "
-            "report file name will have .apis suffix added.", false},
+            "Information about API signatures that need migration and the number of times\n"
+            "they were encountered. The report file name will have .apis suffix added.", false},
         llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::stats),
-                  "High level migration statistics: Lines Of Code (LOC) that "
-                  "are migrated to\n"
-                  "                                    DPC++, LOC migrated to "
-                  "DPC++ with helper functions, LOC not needing migration,\n"
-                  "                                    LOC needing migration "
-                  "suffix added. (default)", false},
+                  "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
+                  "DPC++, LOC migrated to DPC++ with helper functions, LOC not needing migration,\n"
+                  "LOC needing migration suffix added. (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
                   "All of the reports.", false}
         #ifdef DPCT_DEBUG_BUILD
@@ -166,11 +161,11 @@ static opt<ReportFormatEnum> ReportFormat(
         llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::csv),
                   "Output is lines of comma separated values. The report file "
                   "name extension will\n"
-                  "                                    be .csv. (default)", false},
+                  "be .csv. (default)", false},
         llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::formatted),
                   "Output is formatted to be easier to read for "
                   "human eyes. Report file name\n"
-                  "                                    extension will be log.",
+                  "extension will be log.",
                   false}),
     llvm::cl::init(ReportFormatEnum::notsetformat), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
@@ -271,8 +266,7 @@ opt<UsmLevel> USMLevel(
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::restricted),
                      "Uses API from DPC++ Explicit and Restricted Unified "
                      "Shared Memory extension\n"
-                     "                                    for memory management"
-                     " migration. (default)", false},
+                     "for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::none),
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.", false}),
@@ -340,7 +334,7 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
         llvm::cl::OptionEnumValue{
             "file", int(HelperFilesCustomizationLevel::file),
             "Limit helper header files to only necessary for the migrated code and place them\n"
-            "                                       in the --out-root folder.", false},
+            "in the --out-root folder.", false},
         llvm::cl::OptionEnumValue{
             "all", int(HelperFilesCustomizationLevel::all),
             "Generate complete set of helper header files and place them in the --out-root folder.", false}),
@@ -350,7 +344,7 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
 opt<std::string> CustomHelperFileName(
     "custom-helper-name",
     desc(
-        "Specify the main helper header file name. Default: dpct"),
+        "Specifies the helper headers folder name and main helper header file name. Default: dpct."),
     init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
 
 bool AsyncHandlerFlag = false;
