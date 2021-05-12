@@ -291,6 +291,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   SmallString<512> OutPath;
 
+  // The variable defined here is assist to merge history records.
+  std::unordered_map<std::string /*FileName*/,
+                     bool /*false:Not processed in current migration*/>
+      MainSrcFileMap;
+
   std::string YamlFile =
       OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
   std::string SrcFile = "MainSrcFiles_placehold";
@@ -305,6 +310,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
         auto &DigestMap = DpctGlobalInfo::getDigestMap();
         DigestMap[FileDigest.first] = FileDigest.second;
+
+        // Mark all the main src files loaded from yaml file are not processed
+        // in current migration.
+        MainSrcFileMap[FileDigest.first] = false;
       }
     }
   }
@@ -402,6 +411,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           mergeAndUniqueReps(Entry.second, PreRepls);
         }
 
+        // Mark current migrating main src file processed.
+        MainSrcFileMap[Entry.first] = true;
+
         for (const auto &Repl : Entry.second) {
           MainSrcFilesRepls.push_back(Repl);
         }
@@ -427,6 +439,25 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     }
 
     generateHelperFunctions();
+
+    // Save history repls to yaml file.
+    auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+    for (const auto &Entry : FileRelpsMap) {
+      if (MainSrcFileMap[Entry.first])
+        continue;
+      for (const auto &Repl : Entry.second) {
+          MainSrcFilesRepls.push_back(Repl);
+      }
+    }
+
+    // Save history main src file and its content md5 hash to yaml file.
+    auto &DigestMap = DpctGlobalInfo::getDigestMap();
+    for (const auto &Entry : DigestMap) {
+      if (!MainSrcFileMap[Entry.first]) {
+        MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+      }
+    }
+
     save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest);
 
     extern bool ProcessAllFlag;
