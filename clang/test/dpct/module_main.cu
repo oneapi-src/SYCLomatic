@@ -11,12 +11,12 @@ int main(){
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: You need to replace the "PlaceHolder" with the file name of the dynamic library.
+    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "Placeholder" with the file path of the dynamic library.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dlopen(PlaceHolder/*Fix the module file name manually*/, RTLD_LAZY);
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: You need to replace the "PlaceHolder" with the file name of the dynamic library.
+    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "Placeholder" with the file path of the dynamic library.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dlopen(PlaceHolder/*Fix the module file name manually*/, RTLD_LAZY);
     cuModuleLoadData(&M, Data.c_str());

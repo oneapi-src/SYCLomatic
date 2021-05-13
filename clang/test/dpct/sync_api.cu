@@ -43,17 +43,17 @@ __global__ void k() {
 
   int p;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::work_group);
   __threadfence_block();
   // CHECK: /*
-  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::device);
   __threadfence();
   // CHECK: /*
-  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replaceing memory_order::acq_rel with memory_order::seq_cst for correctness, if strong memory order restrictions are needed.
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::system);
   __threadfence_system();

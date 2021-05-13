@@ -5,7 +5,7 @@
 #include <cstdio>
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1080:{{[0-9]+}}: No variadic functions are allowed to be called in a SYCL kernel or any functions called by the kernel. You may need to adjust the code.
+// CHECK-NEXT: DPCT1080:{{[0-9]+}}: Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: int variadic_prototype(int pa...){
 __device__ int variadic_prototype(int pa...){

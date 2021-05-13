@@ -144,7 +144,8 @@ static opt<ReportTypeEnum> ReportType(
         llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::stats),
                   "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
                   "DPC++, LOC migrated to DPC++ with helper functions, LOC not needing migration,\n"
-                  "LOC needing migration suffix added. (default)", false},
+                  "LOC needing migration but are not migrated. The report file name has the .stats\n"
+                  "suffix added (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
                   "All of the reports.", false}
         #ifdef DPCT_DEBUG_BUILD
@@ -297,9 +298,8 @@ opt<DPCTFormatStyle>
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
     "no-cl-namespace-inline",
-    llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: "
-                   "off. This option will be ignored if the replacement option "
-                   "--use-explicit-namespace is used.\n"),
+    llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: off. This option will be\n"
+                   "ignored if the replacement option --use-explicit-namespace is used.\n"),
     cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
 
 bool NoDRYPatternFlag = false;
@@ -311,9 +311,8 @@ static opt<bool, true> NoDRYPattern(
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
-                 llvm::cl::desc("Migrates/copies all files, except hidden, from the --in-root directory\n"
-                 "to the --out-root directory, if input files are not specified.\n"
-                 "The --in-root directory must be specified for this option to have an effect.\n"
+                 llvm::cl::desc("Migrates or copies all files, except hidden, from the --in-root directory\n"
+                 "to the --out-root directory. The --in-root option should be explicitly specified.\n"
                  "Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 
@@ -329,25 +328,27 @@ static opt<bool> EnableComments(
     cat(DPCTCat), init(false));
 
 static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
-    "use-custom-helper", desc("Customize the helper header files for migrated code.\n"),
+    "use-custom-helper", desc("Customize the helper header files for migrated code. The values are:\n"),
     values(
         llvm::cl::OptionEnumValue{
             "none", int(HelperFilesCustomizationLevel::none),
-            "No customization. (default)", false},
+            "No customization (default).", false},
         llvm::cl::OptionEnumValue{
             "file", int(HelperFilesCustomizationLevel::file),
-            "Limit helper header files to only necessary for the migrated code and place them\n"
-            "in the --out-root folder.", false},
+            "Limit helper header files to only the necessary files for the migrated code and\n"
+            "place them in the --out-root folder.", false},
         llvm::cl::OptionEnumValue{
             "all", int(HelperFilesCustomizationLevel::all),
-            "Generate complete set of helper header files and place them in the --out-root folder.", false}),
+            "Generate a complete set of helper header files and place them in the --out-root\n"
+            "folder.", false}),
     init(HelperFilesCustomizationLevel::none), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 
 opt<std::string> CustomHelperFileName(
     "custom-helper-name",
     desc(
-        "Specifies the helper headers folder name and main helper header file name. Default: dpct."),
+        "Specifies the helper headers folder name and main helper header file name.\n"
+        "Default: dpct."),
     init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
 
 bool AsyncHandlerFlag = false;
@@ -359,16 +360,16 @@ static opt<bool, true>
 
 static opt<AssumedNDRangeDimEnum> NDRangeDim(
     "assume-nd-range-dim",
-    desc("Provide hint to the tool on dimensionality of nd_range to use in "
-         "generated code.\n"),
+    desc("Provides a hint to the tool on the dimensionality of nd_range to use in generated code.\n"
+         "The values are:\n"),
     values(
         llvm::cl::OptionEnumValue{"1", 1,
-                                  "generate kernel code assuming 1D nd_range, "
-                                  "where possible, and 3D in other cases",
+                                  "Generate kernel code assuming 1D nd_range "
+                                  "where possible, and 3D in other cases.",
                                   false},
         llvm::cl::OptionEnumValue{
             "3", 3,
-            "generate kernel code assuming 3D nd_range, always. (default)",
+            "Generate kernel code assuming 3D nd_range (default).",
             false}),
     init(AssumedNDRangeDimEnum::dim3), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
@@ -376,8 +377,8 @@ static opt<AssumedNDRangeDimEnum> NDRangeDim(
 static list<ExplicitNamespace> UseExplicitNamespace(
     "use-explicit-namespace",
     llvm::cl::desc(
-        "Defines the namespaces to use explicitly in generated code. The value"
-        " is a comma separated list. Default: dpct, sycl.\n"
+        "Defines the namespaces to use explicitly in generated code. The value is a comma\n"
+        "separated list. Default: dpct, sycl.\n"
         "Possible values are:"),
     llvm::cl::CommaSeparated,
     values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::none),
@@ -389,6 +390,9 @@ static list<ExplicitNamespace> UseExplicitNamespace(
                "Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false},
+           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::dpct),
+                                     "Generate code with dpct:: namespace.",
+                                     false},
            llvm::cl::OptionEnumValue{
                "sycl", int(ExplicitNamespace::sycl),
                "Generate code with sycl:: namespace. Cannot be used with cl or "
@@ -396,12 +400,9 @@ static list<ExplicitNamespace> UseExplicitNamespace(
                false},
            llvm::cl::OptionEnumValue{
                "sycl-math", int(ExplicitNamespace::sycl_math),
-               "Generate code with sycl:: namespace applied only for SYCL math "
-               "functions. Cannot be used with cl or sycl values.",
-               false},
-           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::dpct),
-                                     "Generate code with dpct:: namespace.",
-                                     false}),
+               "Generate code with sycl:: namespace, applied only for SYCL math functions.\n"
+               "Cannot be used with cl or sycl values.",
+               false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 // When more dpcpp extensions are implemented, more extension names will be
@@ -414,7 +415,7 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
         "By default, these extensions will be used in migrated code."),
     llvm::cl::CommaSeparated,
     values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::submit_barrier),
-                                     "\"Enqueued barriers\" DPC++ extension.",
+                                     "Enqueued barriers DPC++ extension.",
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 // clang-format on
