@@ -136,7 +136,7 @@ static opt<std::string>
                    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<ReportTypeEnum> ReportType(
-    "report-type", desc("Specifies type of the report:\n"),
+    "report-type", desc("Specifies the type of report. Values are:\n"),
     llvm::cl::values(
         llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
             "Information about API signatures that need migration and the number of times\n"
@@ -296,8 +296,11 @@ opt<DPCTFormatStyle>
 
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
-  "no-cl-namespace-inline", llvm::cl::desc("DEPRECATED: Do not use cl namespace (cl::) inlining. Default: off.\n"),
-  cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
+    "no-cl-namespace-inline",
+    llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: "
+                   "off. This option will be ignored if the replacement option "
+                   "--use-explicit-namespace is used.\n"),
+    cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
 
 bool NoDRYPatternFlag = false;
 static opt<bool, true> NoDRYPattern(
@@ -373,25 +376,29 @@ static opt<AssumedNDRangeDimEnum> NDRangeDim(
 static list<ExplicitNamespace> UseExplicitNamespace(
     "use-explicit-namespace",
     llvm::cl::desc(
-        "Comma separated list of namespaces to use explicitly in generated code."
-        " The\n values are none, cl, sycl, sycl-math, dpct. "
-        "none cannot be used with other \nvalue(s). cl, sycl and sycl-math"
-        " cannot be used together. Default: sycl,dpct."),
+        "Defines the namespaces to use explicitly in generated code. The value"
+        " is a comma separated list. Default: dpct, sycl.\n"
+        "Possible values are:"),
     llvm::cl::CommaSeparated,
     values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::none),
-                                     "Generate code without namespaces.",
+                                     "Generate code without namespaces. Cannot "
+                                     "be used with other values.",
                                      false},
-           llvm::cl::OptionEnumValue{"cl", int(ExplicitNamespace::cl),
-                                     "Generate code with cl::sycl:: namespace.",
-                                     false},
-           llvm::cl::OptionEnumValue{"sycl", int(ExplicitNamespace::sycl),
-                                     "Generate code with sycl:: namespace.",
-                                     false},
-           llvm::cl::OptionEnumValue{"sycl-math",
-                                     int(ExplicitNamespace::sycl_math),
-                                     "Generate code with sycl:: namespace "
-                                     "applied only for SYCL math functions.",
-                                     false},
+           llvm::cl::OptionEnumValue{
+               "cl", int(ExplicitNamespace::cl),
+               "Generate code with cl::sycl:: namespace. Cannot be used with "
+               "sycl or sycl-math values.",
+               false},
+           llvm::cl::OptionEnumValue{
+               "sycl", int(ExplicitNamespace::sycl),
+               "Generate code with sycl:: namespace. Cannot be used with cl or "
+               "sycl-math values.",
+               false},
+           llvm::cl::OptionEnumValue{
+               "sycl-math", int(ExplicitNamespace::sycl_math),
+               "Generate code with sycl:: namespace applied only for SYCL math "
+               "functions. Cannot be used with cl or sycl values.",
+               false},
            llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::dpct),
                                      "Generate code with dpct:: namespace.",
                                      false}),
@@ -1202,9 +1209,8 @@ int runDPCT(int argc, const char **argv) {
     if (UseExplicitNamespace.getNumOccurrences()) {
       DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
       clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated, use "
-          "--use-explicit-namespace. Option --no-cl-namespace-inline"
-          " is ignored as --use-explicit-namespace is used.\n");
+          "Note: Option --no-cl-namespace-inline is deprecated and will be "
+          "ignored. Option --use-explicit-namespace is used instead.\n");
     } else {
       if (ExplicitClNamespace) {
         DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
@@ -1213,8 +1219,8 @@ int runDPCT(int argc, const char **argv) {
         DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
       }
       clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated, use "
-          "--use-explicit-namespace.\n");
+          "Note: Option --no-cl-namespace-inline is deprecated. Use "
+          "--use-explicit-namespace instead.\n");
     }
   } else {
     if (UseExplicitNamespace.getNumOccurrences()) {

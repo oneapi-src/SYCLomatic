@@ -266,8 +266,9 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
                    Message;
     break;
   case MigrationErrorInvalidExplicitNamespace:
-    StatusString = "Error: The input for --use-explicit-namespace is not valid."
-                   " Run 'dpct --help' to see supported options and values.";
+    StatusString =
+        "Error: The input for option --use-explicit-namespace is not valid. "
+        "Run 'dpct --help' to see supported options and values.";
     break;
   case MigrationErrorCustomHelperFileNameContainInvalidChar:
     StatusString =
