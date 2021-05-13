@@ -959,3 +959,14 @@ void foo20() {
   CMC_PROFILING_BEGIN();
   CMC_PROFILING_END(__LINE__);
 }
+
+//CHECK: #define CALLMAX(x) sycl::max(1, (int)(x + 2))
+//CHECK-NEXT: void foo21(){
+//CHECK-NEXT:   int a;
+//CHECK-NEXT:   CALLMAX(a);
+//CHECK-NEXT: }
+#define CALLMAX(x) max(1, x + 2)
+__global__ void foo21(){
+  int a;
+  CALLMAX(a);
+}

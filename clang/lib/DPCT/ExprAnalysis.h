@@ -631,9 +631,12 @@ public:
     initArgumentExpr(Expression);
     auto ExprBeginBeforeAnalyze = getExprBeginSrcLoc();
     analyze();
-    addExtReplacement(std::make_shared<ExtReplacement>(
+    int ReplLength = getExprLength();
+    if (ReplLength > 0) {
+      addExtReplacement(std::make_shared<ExtReplacement>(
         SM, ExprBeginBeforeAnalyze, getExprLength(), getReplacedString(),
         nullptr));
+    }
   }
 
   inline void setCallSpelling(const Expr* E) {
