@@ -80,7 +80,7 @@ int main() {
 
 #define SAFE_CALL(call)                                                   \
   do {                                                                         \
-    int err = call;                                                            \
+    cudaError err = call;                                                            \
   } while (0)
 
 void foo_usm() {

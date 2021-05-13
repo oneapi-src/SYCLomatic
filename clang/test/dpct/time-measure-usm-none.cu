@@ -239,7 +239,7 @@ void foo_test_3() {
 
 #define SAFE_CALL(call)                                                   \
   do {                                                                         \
-    int err = call;                                                            \
+    cudaError err = call;                                                            \
   } while (0)
 
 void foo_usm() {

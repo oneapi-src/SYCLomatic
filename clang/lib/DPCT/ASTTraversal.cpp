@@ -9427,8 +9427,7 @@ void EventAPICallRule::updateAsyncRangRecursive(
     }
 
     // Recursively update range in deeper code structures
-    for (auto It2 = Iter->child_begin(); It2 != Iter->child_end(); ++It2)
-      updateAsyncRangRecursive(*It2, AsyncCE, EventAPIName);
+    updateAsyncRangRecursive(*Iter, AsyncCE, EventAPIName);
   }
 }
 
@@ -9570,6 +9569,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
   if (!Node)
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
+
   for (auto It = Node->child_begin(); It != Node->child_end(); ++It) {
     if (*It == nullptr)
       continue;
@@ -9616,7 +9616,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
 
         auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
         if (FD && !FD->isTemplateInstantiation())
-          handleKernelCalls(Node, dyn_cast<CUDAKernelCallExpr>(*It));
+          handleKernelCalls(FD->getBody(), dyn_cast<CUDAKernelCallExpr>(*It));
         break;
       }
       case Stmt::ExprWithCleanupsClass: {
@@ -9632,7 +9632,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
 
           auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
           if (FD && !FD->isTemplateInstantiation())
-            handleKernelCalls(Node, KCall);
+            handleKernelCalls(FD->getBody(), KCall);
         }
         break;
       }
@@ -9642,9 +9642,7 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
       }
     }
 
-    for (auto It2 = It->child_begin(); It2 != It->child_end(); ++It2) {
-      handleTargetCalls(*It2, *It);
-    }
+    handleTargetCalls(*It, Node);
   }
 }
 
