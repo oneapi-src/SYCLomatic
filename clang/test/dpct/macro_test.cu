@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: cat %s > %T/macro_test.cu
 // RUN: cat %S/macro_test.h > %T/macro_test.h
 // RUN: cd %T
@@ -960,13 +962,17 @@ void foo20() {
   CMC_PROFILING_END(__LINE__);
 }
 
-//CHECK: #define CALLMAX(x) sycl::max(1, (int)(x + 2))
-//CHECK-NEXT: void foo21(){
-//CHECK-NEXT:   int a;
-//CHECK-NEXT:   CALLMAX(a);
-//CHECK-NEXT: }
-#define CALLMAX(x) max(1, x + 2)
+//CHECK: #define CALLSHFLSYNC(x) item_ct1.get_sub_group().shuffle(x, 3 ^ 1);
+#define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
+//CHECK: /*
+//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
+//CHECK-NEXT: sycl::ONEAPI::any_of.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define CALLANYSYNC(x) sycl::ONEAPI::any_of(item_ct1.get_group(), x != 0.0f);
+#define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
+
 __global__ void foo21(){
   int a;
-  CALLMAX(a);
+  CALLSHFLSYNC(a);
+  CALLANYSYNC(a);
 }

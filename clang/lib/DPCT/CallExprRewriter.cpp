@@ -23,6 +23,7 @@ namespace clang {
 namespace dpct {
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
+  Analyzer.setCallSpelling(Call);
   Analyzer.analyze(Call->getArg(Idx));
   return Analyzer.getRewritePrefix() + Analyzer.getRewriteString() +
          Analyzer.getRewritePostfix();
@@ -1106,6 +1107,7 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
           MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
     }
   }
+
   return buildRewriteString();
 }
 
