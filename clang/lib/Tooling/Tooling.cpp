@@ -138,7 +138,7 @@ unsigned int DoGetRunRound(){
 
 void CollectProcessedFile(std::string File){
   if(ProcessedFilePtr){
-    (*ProcessedFilePtr).insert(File);
+    (*ProcessedFilePtr).insert(unifyAbsPathStyle(File));
   }
 }
 
@@ -163,6 +163,19 @@ llvm::raw_ostream &DiagnosticsOS() {
 }
 
 std::string ClangToolOutputMessage = "";
+
+// Unify the abs path style
+std::string unifyAbsPathStyle(std::string AbsPath) {
+  std::string Res = AbsPath;
+#ifdef _WIN64
+  // The begin of the path should be "X:"
+  if (Res.size() >= 2 && llvm::isAlpha(Res[0]) && (Res[1] == ':')) {
+    Res[0] = llvm::toUpper(Res[0]);
+  }
+#endif
+  return Res;
+}
+
 } // namespace tooling
 } // namespace clang
 #if defined(__linux__)

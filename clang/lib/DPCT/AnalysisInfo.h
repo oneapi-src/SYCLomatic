@@ -1311,8 +1311,7 @@ public:
       std::string FileName;
       if (!FileEntry->tryGetRealPathName().empty()) {
         FileName = FileEntry->tryGetRealPathName().str();
-      }
-      else {
+      } else {
         llvm::SmallString<512> FilePathAbs(FileEntry->getName());
         getSourceManager().getFileManager().makeAbsolutePath(FilePathAbs);
         llvm::sys::path::native(FilePathAbs);
@@ -1322,6 +1321,7 @@ public:
         llvm::sys::path::remove_dots(FilePathAbs, true);
         FileName = std::string(FilePathAbs.str());
       }
+      FileName = clang::tooling::unifyAbsPathStyle(FileName);
       return std::make_pair(FileName, LocInfo.second);
     }
     if (IsInvalid)
