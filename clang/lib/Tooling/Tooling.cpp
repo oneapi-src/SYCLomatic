@@ -172,6 +172,10 @@ std::string unifyAbsPathStyle(std::string AbsPath) {
   if (Res.size() >= 2 && llvm::isAlpha(Res[0]) && (Res[1] == ':')) {
     Res[0] = llvm::toUpper(Res[0]);
   }
+  llvm::SmallString<512> FilePathAbs(Res);
+  llvm::sys::path::native(FilePathAbs);
+  llvm::sys::path::remove_dots(FilePathAbs, true);
+  Res = FilePathAbs.str().str();
 #endif
   return Res;
 }
@@ -691,7 +695,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         }
       }
       if(IsModuleFile)
-        ModuleFiles->insert(File.str());
+        ModuleFiles->insert(unifyAbsPathStyle(File.str()));
 
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {
