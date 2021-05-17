@@ -111,9 +111,17 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
   if (OutRoot.empty()) {
     if (!getDefaultOutRoot(OutRoot))
       return false;
-  } else if (!makeCanonical(OutRoot)) {
+  }
+
+  if (!makeCanonical(OutRoot)) {
     return false;
   }
+
+  llvm::SmallString<512> AbsOutRootNative(OutRoot);
+  llvm::sys::path::native(AbsOutRootNative);
+  OutRoot = std::string(AbsOutRootNative.str());
+  OutRoot = clang::tooling::unifyAbsPathStyle(OutRoot);
+
   return true;
 }
 
