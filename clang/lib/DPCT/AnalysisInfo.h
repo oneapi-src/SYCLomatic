@@ -3410,8 +3410,8 @@ public:
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
 
 protected:
+  void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   inline unsigned getBegin() { return BeginLoc; }
   inline const std::string &getFilePath() { return FilePath; }
   void buildInfo();
@@ -3458,6 +3458,7 @@ private:
   const std::string FilePath;
   unsigned BeginLoc;
   unsigned ExtraArgLoc;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
   MemVarMap VarMap;

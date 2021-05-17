@@ -976,7 +976,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
   auto Kernel =
       std::shared_ptr<KernelCallExpr>(new KernelCallExpr(0, FilePath));
   Kernel->Name = FD->getNameAsString();
-  Kernel->FuncInfo = FuncInfo;
+  Kernel->setFuncInfo(FuncInfo);
   Kernel->ExecutionConfig.Config[0] = "";
   Kernel->ExecutionConfig.Config[1] = "";
   Kernel->ExecutionConfig.Config[2] = "localMemSize";
@@ -984,7 +984,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
   Kernel->ExecutionConfig.Config[4] = "nr";
   Kernel->ExecutionConfig.IsDefaultStream = true;
   Kernel->NeedBraces = false;
-  Kernel->FuncInfo->getVarMap().Dim = 3;
+  Kernel->getFuncInfo()->getVarMap().Dim = 3;
   for (auto &Parm : FD->parameters()) {
     Kernel->ArgsInfo.emplace_back(Parm, Kernel.get());
   }
@@ -1477,17 +1477,25 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   return Result + getName(FD);
 }
 
+void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
+  if (FuncInfo && Info && (FuncInfo != Info)) {
+    DiagnosticsUtils::report(getFilePath(), getBegin(),
+                             Warnings::DEVICE_CALL_DIFFERENT, true, false);
+  }
+  FuncInfo = Info;
+}
+
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getNameWithNamespace(CallDecl, Callee);
-    FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
+    setFuncInfo(DeviceFunctionDecl::LinkRedecls(CallDecl));
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments());
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = Unresolved->getName().getAsString();
-    FuncInfo = DeviceFunctionDecl::LinkUnresolved(Unresolved);
+    setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
     buildTemplateArguments(Unresolved->template_arguments());
   } else if (auto DependentScope =
                  dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
@@ -1511,7 +1519,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 
   auto CtorDecl = Ctor->getConstructor();
   Name = getName(CtorDecl);
-  FuncInfo = DeviceFunctionDecl::LinkRedecls(CtorDecl);
+  setFuncInfo(DeviceFunctionDecl::LinkRedecls(CtorDecl));
   deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
 
   SourceLocation InsertLocation;
