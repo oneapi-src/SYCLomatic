@@ -976,3 +976,24 @@ __global__ void foo21(){
   CALLSHFLSYNC(a);
   CALLANYSYNC(a);
 }
+
+
+//CHECK: #define FUNCNAME(x) x
+//CHECK-NEXT: #define PASS(x) x
+//CHECK-NEXT: template <typename T, int X, int Y>
+//CHECK-NEXT: void doo(float f, const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   stream_ct1 << "doo\n";
+//CHECK-NEXT: }
+#define FUNCNAME(x) x
+#define PASS(x) x
+template <typename T, int X, int Y>
+__device__ void doo(float f) {
+  printf("doo\n");
+}
+
+//CHECK: void foo22(const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f, stream_ct1);
+//CHECK-NEXT: }
+__global__ void foo22() {
+  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f);
+}

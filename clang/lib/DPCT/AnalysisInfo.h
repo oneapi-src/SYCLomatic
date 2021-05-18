@@ -2978,7 +2978,8 @@ private:
     auto Range = getArgSourceRange(Arg);
     auto Begin = Range.getBegin();
     auto End = Range.getEnd();
-    if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin)) {
+    if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
+        SM.isMacroArgExpansion(End)) {
       Begin =
           SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
       End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
