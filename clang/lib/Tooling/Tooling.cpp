@@ -138,7 +138,7 @@ unsigned int DoGetRunRound(){
 
 void CollectProcessedFile(std::string File){
   if(ProcessedFilePtr){
-    (*ProcessedFilePtr).insert(unifyAbsPathStyle(File));
+    (*ProcessedFilePtr).insert(File);
   }
 }
 
@@ -164,20 +164,22 @@ llvm::raw_ostream &DiagnosticsOS() {
 
 std::string ClangToolOutputMessage = "";
 
-// Unify the abs path style
-std::string unifyAbsPathStyle(std::string AbsPath) {
-  std::string Res = AbsPath;
+std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #ifdef _WIN64
-  // The begin of the path should be "X:"
-  if (Res.size() >= 2 && llvm::isAlpha(Res[0]) && (Res[1] == ':')) {
-    Res[0] = llvm::toUpper(Res[0]);
-  }
-  llvm::SmallString<512> FilePathAbs(Res);
+  std::string RealFilePath;
+  llvm::SmallString<512> FilePathAbs(File);
   llvm::sys::path::native(FilePathAbs);
   llvm::sys::path::remove_dots(FilePathAbs, true);
-  Res = FilePathAbs.str().str();
+  RealFilePath = FilePathAbs.str().str();
+  auto FE = FM->getFile(File);
+  std::error_code EC = FE.getError();
+  if(!(bool)EC && !FE.get()->tryGetRealPathName().empty()) {
+    RealFilePath = FE.get()->tryGetRealPathName().str();
+  }
+  return RealFilePath;
+#else
+  return File;
 #endif
-  return Res;
 }
 
 } // namespace tooling
@@ -695,7 +697,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         }
       }
       if(IsModuleFile)
-        ModuleFiles->insert(unifyAbsPathStyle(File.str()));
+        ModuleFiles->insert(getRealFilePath(File.str(), Files.get()));
 
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {
@@ -836,7 +838,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         if(StopOnParseErrTooling)
             break;
       } else {
-        CollectProcessedFile(File.str());
+        CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
       }
     }
     //collect the errror counter info.

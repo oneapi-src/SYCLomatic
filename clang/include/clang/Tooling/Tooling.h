@@ -70,7 +70,7 @@ std::set<std::string> GetReProcessFile();
 void SetGetRunRound(std::function<unsigned int()> Func);
 unsigned int DoGetRunRound();
 void SetModuleFiles(std::set<std::string> &MF);
-std::string unifyAbsPathStyle(std::string AbsPath);
+std::string getRealFilePath(std::string File, clang::FileManager *FM);
 } // namespace tooling
 } // namespace clang
 #endif

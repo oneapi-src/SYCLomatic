@@ -1168,13 +1168,14 @@ int runDPCT(int argc, const char **argv) {
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  if (!(SDKVersionMajor == 11 && SDKVersionMinor == 2)) {
+  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
+  (SDKVersionMajor == 11 && SDKVersionMinor == 3)) {
     Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
   } else {
     Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
                                   ArgumentInsertPosition::BEGIN));
   }
 #endif

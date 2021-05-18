@@ -968,8 +968,8 @@ void foo20() {
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
 //CHECK-NEXT: sycl::ONEAPI::any_of.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define CALLANYSYNC(x) sycl::ONEAPI::any_of(item_ct1.get_group(), x != 0.0f);
-#define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
+//CHECK-NEXT: #define CALLANYSYNC(x) sycl::ONEAPI::any_of(item_ct1.get_group(), x != 0.0f);
+#define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
 
 __global__ void foo21(){
   int a;

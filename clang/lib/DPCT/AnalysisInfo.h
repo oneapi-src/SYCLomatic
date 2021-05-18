@@ -1321,7 +1321,6 @@ public:
         llvm::sys::path::remove_dots(FilePathAbs, true);
         FileName = std::string(FilePathAbs.str());
       }
-      FileName = clang::tooling::unifyAbsPathStyle(FileName);
       return std::make_pair(FileName, LocInfo.second);
     }
     if (IsInvalid)

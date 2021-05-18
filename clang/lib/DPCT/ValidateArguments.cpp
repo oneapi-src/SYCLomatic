@@ -120,7 +120,6 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
   llvm::SmallString<512> AbsOutRootNative(OutRoot);
   llvm::sys::path::native(AbsOutRootNative);
   OutRoot = std::string(AbsOutRootNative.str());
-  OutRoot = clang::tooling::unifyAbsPathStyle(OutRoot);
 
   return true;
 }
