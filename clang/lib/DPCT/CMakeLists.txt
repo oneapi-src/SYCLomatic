@@ -22,7 +22,7 @@ set(CONT_FILES
   )
 
 add_custom_target(dpct_helper_headers_and_inc
-  COMMAND python3 ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py ${CMAKE_BINARY_DIR}
+  COMMAND python3 ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
   DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
   )
 

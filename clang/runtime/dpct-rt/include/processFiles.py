@@ -11,6 +11,8 @@ import os
 import sys
 import re
 import io
+import argparse
+from enum import Enum
 
 cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 content_files_list = ["atomic", "blas_utils", "device",
@@ -19,20 +21,135 @@ dpl_extras_content_files_list = [
     "algorithm", "functional", "iterators", "memory", "numeric", "vector"]
 
 content_files_name_list = ["Atomic", "BlasUtils", "Device",
-                      "Dpct", "DplUtils", "Image", "Kernel", "Memory", "Util"]
+                           "Dpct", "DplUtils", "Image", "Kernel", "Memory", "Util"]
 dpl_extras_content_files_name_list = [
     "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector"]
 
 is_os_win = False
 
+stack = []
+input_files_dir = cur_file_dir
+
+class Usm_status_enum(Enum):
+    USM = 1
+    NON_USM = 2
+    COMMON = 3
+
+
+def is_if_DPCT_USM_LEVEL_NONE(line):
+    line = line.strip()
+    if (not (line.startswith(bytes("#ifdef", 'utf-8')) or \
+             line.startswith(bytes("#if", 'utf-8')))):
+        return False
+
+    if (line.startswith(bytes("#ifdef", 'utf-8'))):
+        line = line.replace(bytes("#ifdef", 'utf-8'), bytes("", 'utf-8'))
+    elif (line.startswith(bytes("#if", 'utf-8'))):
+        line = line.replace(bytes("#if", 'utf-8'), bytes("", 'utf-8'))
+
+    line = line.strip()
+    if (line == bytes("DPCT_USM_LEVEL_NONE", 'utf-8')):
+        return True
+    return False
+
+
+def is_ifn_DPCT_USM_LEVEL_NONE(line):
+    line = line.strip()
+    if (not line.startswith(bytes("#ifndef", 'utf-8'))):
+        return False
+
+    line = line.replace(bytes("#ifndef", 'utf-8'), bytes("", 'utf-8'))
+
+    line = line.strip()
+    if (line == bytes("DPCT_USM_LEVEL_NONE", 'utf-8')):
+        return True
+    return False
+
+
+def is_pp_if(line):
+    line = line.strip()
+    if (line.startswith(bytes("#ifndef", 'utf-8')) or \
+        line.startswith(bytes("#ifdef", 'utf-8')) or \
+        line.startswith(bytes("#if", 'utf-8'))):
+        return True
+    return False
+
+
+def is_pp_else(line):
+    line = line.strip()
+    if (line.startswith(bytes("#else", 'utf-8'))):
+        return True
+    return False
+
+
+def is_pp_endif(line):
+    line = line.strip()
+    if (line.startswith(bytes("#endif", 'utf-8'))):
+        return True
+    return False
+
+
+def get_current_usm_status():
+    for i in reversed(stack):
+        if (i == Usm_status_enum.NON_USM):
+            return Usm_status_enum.NON_USM
+        elif (i == Usm_status_enum.USM):
+            return Usm_status_enum.USM
+    return Usm_status_enum.COMMON
+
+
+def update_usm_status(line):
+    need_skip = True
+    if (is_pp_if(line)):
+        if (is_if_DPCT_USM_LEVEL_NONE(line)):
+            stack.append(Usm_status_enum.NON_USM)
+        elif (is_ifn_DPCT_USM_LEVEL_NONE(line)):
+            stack.append(Usm_status_enum.USM)
+        else:
+            stack.append(Usm_status_enum.COMMON)
+            need_skip = False
+    elif (is_pp_else(line)):
+        if (stack[-1] == Usm_status_enum.NON_USM):
+            stack.pop()
+            stack.append(Usm_status_enum.USM)
+        elif (stack[-1] == Usm_status_enum.USM):
+            stack.pop()
+            stack.append(Usm_status_enum.NON_USM)
+        else:
+            need_skip = False
+    elif (is_pp_endif(line)):
+        if (stack[-1] == Usm_status_enum.COMMON):
+            need_skip = False
+        stack.pop()
+    else:
+        need_skip = False
+    return (get_current_usm_status(), need_skip)
+
+
 def exit_script():
     sys.exit()
 
+
 def get_file_pathes(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras):
     if (is_dpl_extras):
-        return [os.path.join(cur_file_dir, "dpl_extras/", cont_file + ".h.inc"), os.path.join(runtime_files_dir, "dpl_extras/", cont_file + ".h"), os.path.join(inc_files_dir, "dpl_extras/", cont_file + ".inc"), os.path.join(inc_files_dir, "dpl_extras/", cont_file + ".all.inc")]
+        cont_file_result = os.path.join(
+            input_files_dir, "dpl_extras/", cont_file + ".h.inc")
+        runtime_files_dir_result = os.path.join(
+            runtime_files_dir, "dpl_extras/", cont_file + ".h")
+        inc_files_dir_result = os.path.join(
+            inc_files_dir, "dpl_extras/", cont_file + ".inc")
+        inc_files_all_dir_result = os.path.join(
+            inc_files_dir, "dpl_extras/", cont_file + ".all.inc")
+        return [cont_file_result, runtime_files_dir_result, inc_files_dir_result, inc_files_all_dir_result]
     else:
-        return [os.path.join(cur_file_dir, cont_file + ".hpp.inc"), os.path.join(runtime_files_dir, cont_file + ".hpp"), os.path.join(inc_files_dir, cont_file + ".inc"), os.path.join(inc_files_dir, cont_file + ".all.inc")]
+        cont_file_result = os.path.join(input_files_dir, cont_file + ".hpp.inc")
+        runtime_files_dir_result = os.path.join(
+            runtime_files_dir, cont_file + ".hpp")
+        inc_files_dir_result = os.path.join(inc_files_dir, cont_file + ".inc")
+        inc_files_all_dir_result = os.path.join(
+            inc_files_dir, cont_file + ".all.inc")
+        return [cont_file_result, runtime_files_dir_result, inc_files_dir_result, inc_files_all_dir_result]
+
 
 def create_dir(inc_files_dir, runtime_files_dir):
     if (not os.path.exists(os.path.join(runtime_files_dir))):
@@ -44,13 +161,15 @@ def create_dir(inc_files_dir, runtime_files_dir):
     if (not os.path.exists(os.path.join(inc_files_dir, "dpl_extras/"))):
         os.makedirs(os.path.join(inc_files_dir, "dpl_extras/"))
 
-def convert_line_end(line):
-    if (is_os_win):
-        line = line.replace(UNIX_LINE_ENDING, WINDOWS_LINE_ENDING)
-    return line
+
+def append_lines(dist_list, src_list):
+    for item in src_list:
+        dist_list.append(item)
+
 
 def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, file_dict):
-    file_names = get_file_pathes(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras)
+    file_names = get_file_pathes(
+        cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras)
     cont_file_handle = io.open(file_names[0], "rb")
     runtime_file_handle = io.open(file_names[1], "w+b")
     inc_file_handle = io.open(file_names[2], "w+b")
@@ -66,23 +185,43 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
 
     Idx = 0
     # All dependency must into single line.
-    # generated code is like: DPCT_DEPENDENCY({clang::dpct::HelperFileEnum::Memory, "dpct_memcpy_detail"},{clang::dpct::HelperFileEnum::Util, "DataType"},)
+    # generated code is like:
+    # DPCT_DEPENDENCY({clang::dpct::HelperFileEnum::Memory, "dpct_memcpy_detail"},{clang::dpct::HelperFileEnum::Util, "DataType"},)
     dependency_line = bytes("", 'utf-8')
     is_dependency = False
     is_code = False
+    have_usm_code = False
+    usm_line = []
+    non_usm_line = []
+    has_code = False
+    usm_status = Usm_status_enum.COMMON
     for line in cont_file_handle:
         if (line.startswith(bytes("// DPCT_LABEL_BEGIN", 'utf-8'))):
             line = line.replace(bytes('//', 'utf-8'), bytes('', 'utf-8'))
             line = line.strip()
             splited = line.split(bytes('|', 'utf-8'))
             content_begin_line = bytes("DPCT_CONTENT_BEGIN(" + helper_file_enum_name + ", \"", 'utf-8') + \
-                                 splited[1] + bytes("\", \"", 'utf-8') + splited[2] + bytes("\", " + \
-                                 str(Idx) + ")\n", 'utf-8')
+                splited[1] + bytes("\", \"", 'utf-8') + splited[2] + bytes("\", " + str(Idx) + ")\n", 'utf-8')
             inc_file_lines.append(content_begin_line)
             Idx = Idx + 1
         elif (line.startswith(bytes("// DPCT_LABEL_END", 'utf-8'))):
+            if (not has_code):
+                inc_file_lines.append(bytes("\"\"\n", 'utf-8'))
+            if (not have_usm_code):
+                inc_file_lines.append(bytes(", \"\", \"\"\n", 'utf-8'))
+            else:
+                inc_file_lines.append(bytes(",\n", 'utf-8'))
+                inc_file_lines.append(
+                    bytes("// =====below is usm code=================\n", 'utf-8'))
+                append_lines(inc_file_lines, usm_line)
+                inc_file_lines.append(bytes(",\n", 'utf-8'))
+                inc_file_lines.append(
+                    bytes("// =====below is none-usm code============\n", 'utf-8'))
+                append_lines(inc_file_lines, non_usm_line)
             inc_file_lines.append(bytes("DPCT_CONTENT_END\n", 'utf-8'))
             is_code = False
+            have_usm_code = False
+            has_code = False
         elif (line.startswith(bytes("// DPCT_DEPENDENCY_BEGIN", 'utf-8'))):
             dependency_line = bytes("DPCT_DEPENDENCY(", 'utf-8')
             is_dependency = True
@@ -95,6 +234,9 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
             inc_file_lines.append(bytes("DPCT_DEPENDENCY()\n", 'utf-8'))
         elif (line.startswith(bytes("// DPCT_CODE", 'utf-8'))):
             is_code = True
+            have_usm_code = False
+            usm_line.clear()
+            non_usm_line.clear()
         elif (line.startswith(bytes("// DPCT_COMMENT", 'utf-8'))):
             continue
         else:
@@ -102,13 +244,32 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 line = line.replace(bytes('//', 'utf-8'), bytes('', 'utf-8'))
                 line = line.strip()
                 splited = line.split(bytes('|', 'utf-8'))
-                dependency_line = dependency_line + bytes("{clang::dpct::HelperFileEnum::", 'utf-8') + splited[0] + bytes(", \"", 'utf-8') + \
-                             splited[1] + bytes("\"},", 'utf-8')
+                dependency_line = dependency_line + bytes("{clang::dpct::HelperFileEnum::", 'utf-8') + \
+                    splited[0] + bytes(", \"", 'utf-8') + splited[1] + bytes("\"},", 'utf-8')
             else:
+                runtime_file_lines.append(line)
+                inc_all_file_lines.append(
+                    bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
                 if (is_code):
-                    inc_file_lines.append(bytes("R\"Delimiter(", 'utf-8') + convert_line_end(line) + bytes(")Delimiter\"\n", 'utf-8'))
-                runtime_file_lines.append(convert_line_end(line))
-                inc_all_file_lines.append(bytes("R\"Delimiter(", 'utf-8') + convert_line_end(line) + bytes(")Delimiter\"\n", 'utf-8'))
+                    has_code = True
+                    inc_file_lines.append(
+                        bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                    usm_status, need_skip = update_usm_status(line)
+                    if (need_skip):
+                        continue
+                    if (usm_status == Usm_status_enum.COMMON):
+                        usm_line.append(
+                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        non_usm_line.append(
+                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                    elif (usm_status == Usm_status_enum.NON_USM):
+                        have_usm_code = True
+                        non_usm_line.append(
+                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                    elif (usm_status == Usm_status_enum.USM):
+                        have_usm_code = True
+                        usm_line.append(
+                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
 
     inc_file_str = bytes("", 'utf-8')
     inc_all_file_str = bytes("", 'utf-8')
@@ -129,20 +290,24 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
     inc_file_handle.close()
     inc_all_file_handle.close()
 
+
 def check_files():
-    file_handle = io.open(os.path.join(cur_file_dir, "HelperFileNames.inc"), "rb")
+    file_handle = io.open(os.path.join(
+        input_files_dir, "HelperFileNames.inc"), "rb")
     files_in_inc = []
     for line in file_handle:
         if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
-            line = line.replace(bytes('HELPERFILE(', 'utf-8'), bytes('', 'utf-8'))
+            line = line.replace(
+                bytes('HELPERFILE(', 'utf-8'), bytes('', 'utf-8'))
             line = line.replace(bytes(')', 'utf-8'), bytes('', 'utf-8'))
             splited = line.split(bytes(',', 'utf-8'))
-            abs_file_path = os.path.join(bytes(cur_file_dir, 'utf-8'), splited[0])
+            abs_file_path = os.path.join(
+                bytes(input_files_dir, 'utf-8'), splited[0])
             files_in_inc.append(os.path.abspath(abs_file_path.decode('utf-8')))
     file_handle.close()
 
     files_in_current_dir = []
-    for searching_dir, dir_list, file_list in os.walk(cur_file_dir):
+    for searching_dir, dir_list, file_list in os.walk(input_files_dir):
         for file_name in file_list:
             if (file_name.endswith(".h.inc") or file_name.endswith(".hpp.inc")):
                 abs_file_path = os.path.join(searching_dir, file_name)
@@ -153,22 +318,63 @@ def check_files():
     if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("Files defined in HelperFileNames.inc and files in current folder are not same. Please update the HelperFileNames.inc file.\n")
-    print("Files defined in HelperFileNames.inc:")
-    print(set_of_files_in_inc)
-    print("Files in current folder:")
-    print(set_of_files_in_current_dir)
+    print("Files defined in HelperFileNames.inc and files in current folder are not same.")
+    print("Please update the HelperFileNames.inc file.\n")
+
+    files_in_inc_but_not_in_dir = set_of_files_in_inc - set_of_files_in_current_dir
+    if (len(files_in_inc_but_not_in_dir) != 0):
+        print("File(s) defined in HelperFileNames.inc but does not occur in the current folder:")
+        print(files_in_inc_but_not_in_dir)
+
+    files_in_dir_but_not_in_inc = set_of_files_in_current_dir - set_of_files_in_inc
+    if (len(files_in_dir_but_not_in_inc) != 0):
+        print("File(s) occurs in the current folder but not defined in HelperFileNames.inc:")
+        print(files_in_dir_but_not_in_inc)
+
     return False
 
-def main(build_dir):
-    if (not check_files()):
+
+def main():
+    if (sys.version_info.major < 3):
+        print("Please use python3.")
         exit_script()
 
-    content_files_dict = dict(zip(content_files_list, content_files_name_list))
-    dpl_extras_content_files_dict = dict(zip(dpl_extras_content_files_list, dpl_extras_content_files_name_list))
+    parser = argparse.ArgumentParser(description="Processing files.")
+    parser.add_argument('--build-dir', action='store', default='',
+                        help='The build directory.')
+    parser.add_argument('--inc-output-dir', action='store', default='',
+                        help='The path of the output inc files. These inc files will be included by src code. Ignored when --build-dir specified.')
+    parser.add_argument('--helper-header-output-dir', action='store', default='',
+                        help='The path of the output runtime files. These files are the final full set helper header files. Ignored when --build-dir specified.')
+    parser.add_argument('--input-inc-dir', action='store', default='',
+                        help='The path of the input *.inc files. Default value is dir where this script at.')
+    args = parser.parse_args()
 
-    inc_files_dir = os.path.join(build_dir, "tools/clang/include/clang/DPCT")
-    runtime_files_dir = os.path.join(build_dir, "tools/clang/runtime/dpct-rt/include")
+    content_files_dict = dict(zip(content_files_list, content_files_name_list))
+    dpl_extras_content_files_dict = dict(
+        zip(dpl_extras_content_files_list, dpl_extras_content_files_name_list))
+
+    inc_files_dir = str()
+    runtime_files_dir = str()
+
+    if (args.build_dir):
+        inc_files_dir = os.path.join(
+            args.build_dir, "tools/clang/include/clang/DPCT")
+        runtime_files_dir = os.path.join(
+            args.build_dir, "tools/clang/runtime/dpct-rt/include")
+    else:
+        if (args.inc_output_dir and args.helper_header_output_dir):
+            inc_files_dir = args.inc_output_dir
+            runtime_files_dir = args.helper_header_output_dir
+        else:
+            print("Error: inc-output-dir or helper-header-output-dir is empty.")
+            exit_script()
+
+    if (args.input_inc_dir):
+        input_files_dir = args.input_inc_dir
+
+    if (not check_files()):
+        exit_script()
 
     create_dir(inc_files_dir, runtime_files_dir)
 
@@ -176,9 +382,13 @@ def main(build_dir):
         is_os_win = True
 
     for cont_file in content_files_list:
-        process_a_file(cont_file, inc_files_dir, runtime_files_dir, False, content_files_dict)
+        process_a_file(cont_file, inc_files_dir,
+                       runtime_files_dir, False, content_files_dict)
     for cont_file in dpl_extras_content_files_list:
-        process_a_file(cont_file, inc_files_dir, runtime_files_dir, True, dpl_extras_content_files_dict)
+        process_a_file(cont_file, inc_files_dir, runtime_files_dir,
+                       True, dpl_extras_content_files_dict)
+    print("[Note] DPCT *.inc files are generated successfully!")
+
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main()

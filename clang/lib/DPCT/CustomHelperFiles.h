@@ -40,6 +40,8 @@ struct HelperFunc {
   std::vector<HelperFeatureIDTy>
       Dependency;   // some features which this feature depends on
   std::string Code; // the code of this feature
+  std::string USMCode; // the code of this feature
+  std::string NonUSMCode; // the code of this feature
 };
 
 void requestFeature(clang::dpct::HelperFileEnum FileID,

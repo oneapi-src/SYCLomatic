@@ -126,6 +126,23 @@ void addDependencyIncludeDirectives(
   ContentVec.push_back(Content);
 }
 
+std::string getCode(const HelperFunc &Item) {
+  if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+      HelperFilesCustomizationLevel::file) {
+    return Item.Code;
+  } else {
+    // API level
+    if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      if (!Item.USMCode.empty())
+        return Item.USMCode;
+    } else {
+      if (!Item.NonUSMCode.empty())
+        return Item.NonUSMCode;
+    }
+    return Item.Code;
+  }
+}
+
 std::string
 getHelperFileContent(const clang::dpct::HelperFileEnum File,
                      std::vector<clang::dpct::HelperFunc> ContentVec) {
@@ -163,7 +180,7 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
       }
       CurrentNamespace = "";
-      std::string Code = Item.Code;
+      std::string Code = getCode(Item);
       replaceEndOfLine(Code);
       ContentStr = ContentStr + Code + getNL();
     } else if (Item.Namespace == "dpct") {
@@ -176,7 +193,7 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
       }
       CurrentNamespace = "dpct";
-      std::string Code = Item.Code;
+      std::string Code = getCode(Item);
       replaceEndOfLine(Code);
       ContentStr = ContentStr + Code + getNL();
     } else if (Item.Namespace == "dpct::detail") {
@@ -188,7 +205,7 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
       }
       CurrentNamespace = "dpct::detail";
-      std::string Code = Item.Code;
+      std::string Code = getCode(Item);
       replaceEndOfLine(Code);
       ContentStr = ContentStr + Code + getNL();
     } else if (Item.Namespace == "dpct::internal") {
@@ -200,7 +217,7 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "namespace internal {" + getNL() + getNL();
       }
       CurrentNamespace = "dpct::internal";
-      std::string Code = Item.Code;
+      std::string Code = getCode(Item);
       replaceEndOfLine(Code);
       ContentStr = ContentStr + Code + getNL();
     }
@@ -274,7 +291,7 @@ void generateAllHelperFiles() {
     FILE_NAME##File << Code;                                                   \
     FILE_NAME##File.flush();                                                   \
   }
-#define GENERATE_DPL_EXTRAS_All_FILE_CONTENT(FILE_NAME)                        \
+#define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(FILE_NAME)                        \
   {                                                                            \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
@@ -295,14 +312,14 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(Kernel)
   GENERATE_ALL_FILE_CONTENT(Memory)
   GENERATE_ALL_FILE_CONTENT(Util)
-  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasAlgorithm)
-      GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasFunctional)
-          GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasIterators)
-              GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasMemory)
-                  GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasNumeric)
-                      GENERATE_DPL_EXTRAS_All_FILE_CONTENT(DplExtrasVector)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector)
 #undef GENERATE_ALL_FILE_CONTENT
-#undef GENERATE_DPL_EXTRAS_All_FILE_CONTENT
+#undef GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT
 }
 
 void generateHelperFunctions() {
@@ -414,7 +431,15 @@ void generateHelperFunctions() {
 
 #define UPDATE_FILE(FILENAME)                                                  \
   case clang::dpct::HelperFileEnum::FILENAME:                                  \
-    FILENAME##FileContent.push_back(Item.second);                              \
+    if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==     \
+        HelperFilesCustomizationLevel::file) {                                 \
+      FILENAME##FileContent.push_back(Item.second);                            \
+    } else if (clang::dpct::DpctGlobalInfo::                                   \
+                   getHelperFilesCustomizationLevel() ==                       \
+               HelperFilesCustomizationLevel::api) {                           \
+      if (Item.second.IsCalled)                                                \
+        FILENAME##FileContent.push_back(Item.second);                          \
+    }                                                                          \
     break;
 
   for (const auto &Item : MapNames::HelperNameContentMap) {
@@ -430,12 +455,12 @@ void generateHelperFunctions() {
         DpctFileContent.push_back(Item.second);
       }
       continue;
+    } else if (Item.first.second == "License") {
+      continue;
     } else if (clang::dpct::DpctGlobalInfo::
                    getHelperFilesCustomizationLevel() ==
                HelperFilesCustomizationLevel::file) {
       if (!FileUsedFlagVec[size_t(Item.first.first)])
-        continue;
-      if (Item.first.second == "License")
         continue;
     }
 
