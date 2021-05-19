@@ -2679,8 +2679,11 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     const TemplateSpecializationTypeLoc TSL) {
 
   for (unsigned i = 0; i < TSL.getNumArgs(); ++i) {
+    auto ArgLoc = TSL.getArgLoc(i);
+    if (ArgLoc.getArgument().getKind() != TemplateArgument::Type)
+      continue;
     auto UTL =
-        TSL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+        ArgLoc.getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
 
     if (UTL.getTypeLocClass() == clang::TypeLoc::Elaborated) {
       auto ETC = UTL.getAs<ElaboratedTypeLoc>();
