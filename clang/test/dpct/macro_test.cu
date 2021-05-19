@@ -997,3 +997,14 @@ __device__ void doo(float f) {
 __global__ void foo22() {
   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f);
 }
+
+//CHECK: static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
+//CHECK-NEXT: foo23(void)
+//CHECK-NEXT: {
+//CHECK-NEXT:     __builtin_ia32_emms();
+//CHECK-NEXT: }
+static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
+foo23(void)
+{
+  __builtin_ia32_emms();
+}

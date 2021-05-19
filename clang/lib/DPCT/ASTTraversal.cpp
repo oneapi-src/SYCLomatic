@@ -1738,12 +1738,9 @@ void FuncAttrsRule::runRule(const MatchFinder::MatchResult &Result) {
   for (auto A : FA) {
     if (A->getKind() == attr::AlwaysInline) {
       // directly used
-      auto Loc = SM->getExpansionLoc(A->getLocation());
-      if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
-        emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
-      // if is used in another macro
-      Loc = SM->getSpellingLoc(
-          SM->getImmediateExpansionRange(A->getLocation()).getBegin());
+      auto Loc =
+          getDefinitionRange(A->getRange().getBegin(), A->getRange().getEnd())
+              .getBegin();
       if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
         emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
       requestFeature(HelperFileEnum::Dpct,
