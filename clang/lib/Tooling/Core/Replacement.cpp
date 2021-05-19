@@ -608,7 +608,7 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
 #endif
 
 JMP_BUF CPApplyReps;
-int CheckPointStageCore=0;
+int CheckPointStageCore=0 /*CHECKPOINT_UNKNOWN*/;
 #endif
 
 namespace clang {
@@ -624,7 +624,7 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #endif
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
 #ifdef INTEL_CUSTOMIZATION
-    CheckPointStageCore = 4;
+    CheckPointStageCore = 5 /*CHECKPOINT_WRITE_OUT*/;
     int Ret=SETJMP(CPApplyReps);
     if(Ret != 0) {
        //skip the a replacement, as meet fatal error when apply the replacement.
@@ -650,7 +650,7 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
   }
 #ifdef INTEL_CUSTOMIZATION
   //tag the checkpoint is invalid now.
-  CheckPointStageCore = 0;
+  CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif
   return Result;
 }

@@ -198,7 +198,7 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 
 JMP_BUF CPFileEnter;
 bool EnableErrorRecover=true;
-int CheckPointStage=0;
+int CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 bool CurFileMeetErr=false;
 bool StopOnParseErrTooling=false;
 std::string InRootTooling;
@@ -621,7 +621,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //enter point for the file processing.
-    CheckPointStage = 1;
+    CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
     CurFileMeetErr= false;
     //clear error# counter
     CurFileParseErrCnt=0;
@@ -1026,7 +1026,7 @@ int ClangTool::run(ToolAction *Action) {
   }
 
   // exit point for the file processing.
-  CheckPointStage = 0;
+  CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif
   if (!InitialWorkingDir.empty()) {
     if (auto EC =
