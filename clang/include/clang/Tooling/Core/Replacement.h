@@ -46,6 +46,7 @@ enum class ConstantFlagType : int {
   Device = 2,
   HostDevice = 3
 };
+enum class HelperFileEnum : unsigned int;
 }
 #endif
 namespace tooling {
@@ -371,12 +372,27 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite);
 llvm::Expected<std::string> applyAllReplacements(StringRef Code,
                                                  const Replacements &Replaces);
 
+#ifdef INTEL_CUSTOMIZATION
+struct HelperFuncForYaml {
+  HelperFuncForYaml() : IsCalled(false), CallerSrcFiles({}) {}
+  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles)
+      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles) {}
+  bool IsCalled = false;
+  std::vector<std::string> CallerSrcFiles;
+  std::string FeatureName;
+};
+#endif
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
 #ifdef INTEL_CUSTOMIZATION
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
+  std::string DpctVersion = "";
+  std::string MainHelperFileName = "";
+  std::string USMLevel = "";
+
+  std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
 #endif
   std::vector<Replacement> Replacements;
 };

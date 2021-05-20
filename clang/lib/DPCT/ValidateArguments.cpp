@@ -111,9 +111,16 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
   if (OutRoot.empty()) {
     if (!getDefaultOutRoot(OutRoot))
       return false;
-  } else if (!makeCanonical(OutRoot)) {
+  }
+
+  if (!makeCanonical(OutRoot)) {
     return false;
   }
+
+  llvm::SmallString<512> AbsOutRootNative(OutRoot);
+  llvm::sys::path::native(AbsOutRootNative);
+  OutRoot = std::string(AbsOutRootNative.str());
+
   return true;
 }
 
@@ -214,4 +221,37 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
   }
 
   return Success;
+}
+
+void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
+                                     std::string &Name, const std::string &OutRoot) {
+  if ((Level == HelperFilesCustomizationLevel::none) && (Name != "dpct")) {
+    clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
+                          "\"--use-custom-helper\" is not specified or "
+                          "has \"none\" value.\n");
+    Name = "dpct";
+    return;
+  }
+
+  std::string FileName = Name + ".hpp";
+  if (FileName.size() >= MAX_NAME_LEN) {
+    clang::dpct::DebugInfo::ShowStatus(
+        MigrationErrorCustomHelperFileNameTooLong);
+    dpctExit(MigrationErrorCustomHelperFileNameTooLong);
+  }
+
+  std::string FilePath = OutRoot + "/include/" + Name + "/" + FileName;
+  if (FilePath.size() >= MAX_PATH_LEN) {
+    clang::dpct::DebugInfo::ShowStatus(
+        MigrationErrorCustomHelperFileNamePathTooLong, FilePath);
+    dpctExit(MigrationErrorCustomHelperFileNamePathTooLong);
+  }
+
+  for (size_t Idx = 0, End = Name.size(); Idx < End; Idx++) {
+    if ((!isdigit(Name[Idx])) && (!isalpha(Name[Idx])) && (Name[Idx] != '_')) {
+      clang::dpct::DebugInfo::ShowStatus(
+          MigrationErrorCustomHelperFileNameContainInvalidChar);
+      dpctExit(MigrationErrorCustomHelperFileNameContainInvalidChar);
+    }
+  }
 }

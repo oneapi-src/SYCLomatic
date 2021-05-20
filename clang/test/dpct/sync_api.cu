@@ -42,8 +42,21 @@ __global__ void k() {
   TB(blk);
 
   int p;
-  // CHECK: item_ct1.mem_fence();
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::work_group);
   __threadfence_block();
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::device);
+  __threadfence();
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::system);
+  __threadfence_system();
   // CHECK: item_ct1.barrier();
   // CHECK-NEXT: sycl::ONEAPI::all_of(item_ct1.get_group(), p);
   __syncthreads_and(p);

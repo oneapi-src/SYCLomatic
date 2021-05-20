@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
 
     //CHECK: {
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<float>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: float *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<float>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: float *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<float>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, (float*)&C_f, lda, (float*)&B_f, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
     //CHECK-NEXT: std::thread mem_free_thread(dpct::detail::mem_free, *cusolverH, ws_vec_ct{{[0-9]+}}, event_ct{{[0-9]+}});
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<double>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: double *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<double>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: double *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<double>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, (double*)&C_d, lda, (double*)&B_d, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
     //CHECK-NEXT: std::thread mem_free_thread(dpct::detail::mem_free, *cusolverH, ws_vec_ct{{[0-9]+}}, event_ct{{[0-9]+}});
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<float>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: std::complex<float> *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<std::complex<float>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: std::complex<float> *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<std::complex<float>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, (std::complex<float>*)&C_c, lda, (std::complex<float>*)&B_c, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
     //CHECK-NEXT: std::thread mem_free_thread(dpct::detail::mem_free, *cusolverH, ws_vec_ct{{[0-9]+}}, event_ct{{[0-9]+}});
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<double>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: std::complex<double> *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<std::complex<double>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: std::complex<double> *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<std::complex<double>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, (std::complex<double>*)&C_z, lda, (std::complex<double>*)&B_z, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
     //CHECK-NEXT: std::thread mem_free_thread(dpct::detail::mem_free, *cusolverH, ws_vec_ct{{[0-9]+}}, event_ct{{[0-9]+}});
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
     //CHECK: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<float>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: float *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<float>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: float *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<float>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, (float*)&A_f, lda, &result_temp_pointer6, (float*)&B_f, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
@@ -189,8 +189,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<double>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: double *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<double>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: double *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<double>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, (double*)&A_d, lda, &result_temp_pointer6, (double*)&B_d, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
@@ -200,8 +200,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<float>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: std::complex<float> *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<std::complex<float>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: std::complex<float> *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<std::complex<float>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, (std::complex<float>*)&A_c, lda, &result_temp_pointer6, (std::complex<float>*)&B_c, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};
@@ -211,8 +211,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: {
     //CHECK-NEXT: int64_t result_temp_pointer6;
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<double>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
-    //CHECK-NEXT: std::complex<double> *scratchpad_ct{{[0-9]+}} = cl::sycl::malloc_device<std::complex<double>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
-    //CHECK-NEXT: cl::sycl::event event_ct{{[0-9]+}};
+    //CHECK-NEXT: std::complex<double> *scratchpad_ct{{[0-9]+}} = sycl::malloc_device<std::complex<double>>(scratchpad_size_ct{{[0-9]+}}, **cusolverH);
+    //CHECK-NEXT: sycl::event event_ct{{[0-9]+}};
     //CHECK-NEXT: event_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, (std::complex<double>*)&A_z, lda, &result_temp_pointer6, (std::complex<double>*)&B_z, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
     //CHECK-NEXT:  *&devIpiv = result_temp_pointer6;
     //CHECK-NEXT: std::vector<void *> ws_vec_ct{{[0-9]+}}{scratchpad_ct{{[0-9]+}}};

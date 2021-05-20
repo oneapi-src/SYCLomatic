@@ -265,8 +265,9 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
 #else
-  // To avoid SIGABRT, ignore `Replaces`, just return `Rs`.
-  return Rs;
+  // `Rs` is from yaml file, `Replaces` is from current migration.
+  // To avoid SIGABRT, ignore `Rs`, just return `*Replaces.begin()`.
+  return *this;
 #endif
 #else
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
@@ -607,7 +608,7 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
 #endif
 
 JMP_BUF CPApplyReps;
-int CheckPointStageCore=0;
+int CheckPointStageCore=0 /*CHECKPOINT_UNKNOWN*/;
 #endif
 
 namespace clang {
@@ -623,7 +624,7 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #endif
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
 #ifdef INTEL_CUSTOMIZATION
-    CheckPointStageCore = 4;
+    CheckPointStageCore = 5 /*CHECKPOINT_WRITE_OUT*/;
     int Ret=SETJMP(CPApplyReps);
     if(Ret != 0) {
        //skip the a replacement, as meet fatal error when apply the replacement.
@@ -631,14 +632,25 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
     }
 #endif
     if (I->isApplicable()) {
+#ifdef INTEL_CUSTOMIZATION
+      try {
+#endif
       Result = I->apply(Rewrite) && Result;
+#ifdef INTEL_CUSTOMIZATION
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "tries to recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
+#endif
     } else {
       Result = false;
     }
   }
 #ifdef INTEL_CUSTOMIZATION
   //tag the checkpoint is invalid now.
-  CheckPointStageCore = 0;
+  CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif
   return Result;
 }

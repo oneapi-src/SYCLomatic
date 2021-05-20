@@ -846,7 +846,7 @@ void testCommas_in_global_memory() {
   cudaStream_t stream;
   int deviceID = 0;
   // CHECK:/*
-  // CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT:*/
   cudaMemPrefetchAsync (a, 100, deviceID, stream);
 
@@ -1039,25 +1039,25 @@ void foobar() {
   cudaMemoryAdvise advice;
   int device;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaMemAdvise(devPtr, count, advice, device);
   cudaMemAdvise(devPtr, count, advice, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: checkError(cudaMemAdvise(devPtr, count, advice, device));
   checkError(cudaMemAdvise(devPtr, count, advice, device));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, advice, device);
   errorCode = cudaMemAdvise(devPtr, count, advice, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
@@ -1066,7 +1066,7 @@ void foobar() {
   cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
@@ -1075,7 +1075,7 @@ void foobar() {
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.

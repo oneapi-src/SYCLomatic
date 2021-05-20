@@ -80,7 +80,7 @@ int main() {
 
 #define SAFE_CALL(call)                                                   \
   do {                                                                         \
-    int err = call;                                                            \
+    cudaError err = call;                                                            \
   } while (0)
 
 void foo_usm() {
@@ -181,8 +181,9 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -213,8 +214,9 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -247,8 +249,9 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:            stop = q_ct1.submit_barrier();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
@@ -493,4 +496,33 @@ void ctst_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_ms, sad_calc_start, sad_calc_stop);
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
+}
+
+__global__ void kernel() {}
+void foo_ctst1983() {
+  cudaStream_t stream1;
+  cudaStream_t stream2;
+  cudaStreamCreate(&stream1);
+  cudaStreamCreate(&stream2);
+
+  cudaEvent_t event1, event2;
+  cudaEventCreate(&event1);
+  cudaEventCreate(&event2);
+  int repeat = 2;
+
+  for (int i = 0; i < repeat; i++) {
+    kernel<<<1, 1, 0, stream1>>>();
+// CHECK:    event1_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    event1 = stream1->submit_barrier();
+    cudaEventRecord(event1, stream1);
+    kernel<<<1, 1, 0, stream2>>>();
+
+// CHECK:    event2_ct1 = std::chrono::steady_clock::now();
+// CHECK-NEXT:    event2 = stream2->submit_barrier();
+// CHECK-NEXT:    event1.wait_and_throw();
+// CHECK-NEXT:    event2.wait_and_throw();
+    cudaEventRecord(event2, stream2);
+    cudaEventSynchronize(event1);
+    cudaEventSynchronize(event2);
+  }
 }

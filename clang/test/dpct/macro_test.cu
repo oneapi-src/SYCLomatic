@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: cat %s > %T/macro_test.cu
 // RUN: cat %S/macro_test.h > %T/macro_test.h
 // RUN: cd %T
@@ -817,7 +819,7 @@ __global__ void foo16() {
     CALL(CALL(CALL(JJJ)));
 }
 
-// Macro issue here will fix in issue jira
+// [Todo] Macro issue here will fix in issue jira
 void foo17(){
   size_t result1, result2;
   int size = 32;
@@ -826,4 +828,183 @@ void foo17(){
   CALL(CUDA_MEMCPY3D cpy2);
   CUdeviceptr f_D = 0;
   CALL(cuMemAlloc(&f_D, size));
+}
+
+//CHECK: #define CONCATE(name) cuda##name
+//CHECK-NEXT: typedef sycl::queue *stream_t2;
+//CHECK-NEXT: typedef sycl::event event_t2;
+#define CONCATE(name) cuda##name
+typedef CONCATE(Stream_t) stream_t2;
+typedef CONCATE(Event_t) event_t2;
+
+//CHECK: void foo18() {
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:   sycl::event event;
+//CHECK-NEXT:   event.wait_and_throw();
+//CHECK-NEXT:   stream_t2 *stream;
+//CHECK-NEXT:   stream_t2 stream2;
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   unsigned int flags;
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   int priority;
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
+//CHECK-NEXT:   dev_ct1.destroy_queue(stream2);
+//CHECK-NEXT: }
+void foo18(){
+  cudaEvent_t event;
+  CONCATE(EventSynchronize)(event);
+  stream_t2 *stream;
+  stream_t2 stream2;
+  CONCATE(StreamCreate)(stream);
+  unsigned int flags;
+  CONCATE(StreamCreateWithFlags)(stream, flags);
+  int priority;
+  CONCATE(StreamCreateWithPriority)(stream, flags, priority);
+  CONCATE(StreamDestroy)(stream2);
+}
+
+// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
+// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
+// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+static const int streamDefault2 = cudaStreamDefault;
+static const int streamDefault = CALL(CONCATE(StreamDefault));
+static const int streamNonBlocking = CONCATE(StreamNonBlocking);
+
+
+//     CHECK: #define CBTTA(aa, bb) do {                                                     \
+//CHECK-NEXT:     CALL(aa.attach(bb));                                                       \
+//CHECK-NEXT:   } while (0)
+#define CBTTA(aa,bb) do {                 \
+  CALL(cudaBindTextureToArray(aa, bb));   \
+} while(0)
+
+//     CHECK: #define CBTTA2(aa, bb, cc) do {                                                \
+//CHECK-NEXT:     CALL(aa.attach(bb, cc));                                                   \
+//CHECK-NEXT:   } while (0)
+#define CBTTA2(aa,bb,cc) do {                 \
+  CALL(cudaBindTextureToArray(aa, bb, cc));   \
+} while(0)
+
+//CHECK: void foo19(){
+//CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
+//CHECK-NEXT:   dpct::image_matrix_p a42;
+//CHECK-NEXT:   CBTTA(tex42,a42);
+//CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
+//CHECK-NEXT: }
+void foo19(){
+  static texture<float4, 2> tex42;
+  cudaArray_t a42;
+  CBTTA(tex42,a42);
+  CBTTA2(tex42,a42,tex42.channelDesc);
+}
+
+//     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
+//CHECK-NEXT:  sycl::event start;                                                           \
+//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
+//CHECK-NEXT:  sycl::event stop;                                                            \
+//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
+//CHECK-NEXT:  if (CMC_profile)                                                             \
+//CHECK-NEXT:  {                                                                            \
+//CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
+//CHECK-NEXT:  start = q_ct1.submit_barrier();                         \
+//CHECK-NEXT:  }
+#define CMC_PROFILING_BEGIN()                                                                                      \
+  cudaEvent_t start;                                                                                               \
+  cudaEvent_t stop;                                                                                                \
+  if (CMC_profile)                                                                                                 \
+  {                                                                                                                \
+    cudaEventCreate(&start);                                                                                       \
+    cudaEventCreate(&stop);                                                                                        \
+    cudaGetLastError();                                                                                            \
+    cudaEventRecord(start);                                                                                        \
+  }
+
+
+//     CHECK:#define CMC_PROFILING_END(lineno)                                              \
+//CHECK-NEXT:  if (CMC_profile)                                                             \
+//CHECK-NEXT:  {                                                                            \
+//CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
+//CHECK-NEXT:    stop = q_ct1.submit_barrier();                         \
+//CHECK-NEXT:    stop.wait_and_throw();                                                     \
+//CHECK-NEXT:    float time = 0.0f;                                                         \
+//CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
+//CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:  }                                                                            \
+//CHECK-NEXT:  int error = 0;
+#define CMC_PROFILING_END(lineno)                                                                          \
+  if (CMC_profile)                                                                                         \
+  {                                                                                                        \
+    cudaEventRecord(stop);                                                                                 \
+    cudaEventSynchronize(stop);                                                                            \
+    float time = 0.0f;                                                                                     \
+    cudaEventElapsedTime(&time, start, stop);                                                              \
+    cudaEventDestroy(start);                                                                               \
+    cudaEventDestroy(stop);                                                                                \
+  }                                                                                                        \
+  cudaError_t error = cudaGetLastError();                                                                  \
+  if (error)                                                                                               \
+  {                                                                                                        \
+    printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC line %d!!!\n", \
+           cudaGetErrorString(error),                                                                      \
+           lineno);                                                                                        \
+    exit(1);                                                                                               \
+  }
+
+void foo20() {
+  bool CMC_profile = true;
+  CMC_PROFILING_BEGIN();
+  CMC_PROFILING_END(__LINE__);
+}
+
+//CHECK: #define CALLSHFLSYNC(x) item_ct1.get_sub_group().shuffle(x, 3 ^ 1);
+#define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
+//CHECK: /*
+//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
+//CHECK-NEXT: sycl::ONEAPI::any_of.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define CALLANYSYNC(x) sycl::ONEAPI::any_of(item_ct1.get_group(), x != 0.0f);
+#define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
+
+__global__ void foo21(){
+  int a;
+  CALLSHFLSYNC(a);
+  CALLANYSYNC(a);
+}
+
+
+//CHECK: #define FUNCNAME(x) x
+//CHECK-NEXT: #define PASS(x) x
+//CHECK-NEXT: template <typename T, int X, int Y>
+//CHECK-NEXT: void doo(float f, const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   stream_ct1 << "doo\n";
+//CHECK-NEXT: }
+#define FUNCNAME(x) x
+#define PASS(x) x
+template <typename T, int X, int Y>
+__device__ void doo(float f) {
+  printf("doo\n");
+}
+
+//CHECK: void foo22(const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f, stream_ct1);
+//CHECK-NEXT: }
+__global__ void foo22() {
+  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f);
+}
+
+//CHECK: static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
+//CHECK-NEXT: foo23(void)
+//CHECK-NEXT: {
+//CHECK-NEXT:     __builtin_ia32_emms();
+//CHECK-NEXT: }
+static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
+foo23(void)
+{
+  __builtin_ia32_emms();
 }

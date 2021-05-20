@@ -91,73 +91,49 @@ void runTest() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const T *)karg1);
-  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg1_acc_ct0((const T *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const T *karg2_ct1 = (const T *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, T>(karg1_ct0, karg2_ct1, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr<class TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const T *)karg1);
-  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg3_buf_ct1 = dpct::get_buffer_and_offset(karg3);
-  // CHECK-NEXT:   size_t karg3_offset_ct1 = karg3_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg3_acc_ct1 = karg3_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg1_acc_ct0((const T *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<T *> karg3_acc_ct1(karg3, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           T *karg3_ct1 = (T *)(&karg3_acc_ct1[0] + karg3_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_ct0, karg3_ct1, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg3_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg3);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg4_buf_ct0 = dpct::get_buffer_and_offset(karg4);
-  // CHECK-NEXT:   size_t karg4_offset_ct0 = karg4_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg5_buf_ct1 = dpct::get_buffer_and_offset(karg5);
-  // CHECK-NEXT:   size_t karg5_offset_ct1 = karg5_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg4_acc_ct0 = karg4_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg5_acc_ct1 = karg5_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const TestTemplate<T> *> karg4_acc_ct0(karg4, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<TT *> karg5_acc_ct1(karg5, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const TestTemplate<T> *karg4_ct0 = (const TestTemplate<T> *)(&karg4_acc_ct0[0] + karg4_offset_ct0);
-  // CHECK-NEXT:           TT *karg5_ct1 = (TT *)(&karg5_acc_ct1[0] + karg5_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_ct0, karg5_ct1, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_acc_ct0.get_raw_pointer(), karg5_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<T, ktarg, TestTemplate<T> ><<<griddim, threaddim>>>(karg4, karg5);
 
   T karg1T, karg2T;
@@ -221,25 +197,17 @@ int main() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const LA *)karg1);
-  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const LA *> karg1_acc_ct0((const LA *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<const LA *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const LA *karg1_ct0 = (const LA *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const LA *karg2_ct1 = (const LA *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, LA>(karg1_ct0, karg2_ct1, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
+  // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr<class TestName, ktarg, LA>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<class TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
 
   LA karg1LA, karg2LA;
@@ -281,8 +249,8 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::range<2> bbb_range_ct1(8, 0);
 // CHECK-EMPTY:
-// CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0), cgh);
-// CHECK-NEXT:      sycl::accessor<double, 2, sycl::access::mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
+// CHECK-NEXT:      sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0), cgh);
+// CHECK-NEXT:      sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),

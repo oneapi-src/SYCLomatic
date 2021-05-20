@@ -63,6 +63,14 @@ void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
 void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
                           FileProcessType FileProcessHandle);
+void SetProcessedFile(std::set<std::string> &ProcessedFile);
+void SetReProcessFile(std::set<std::string> &ReProcessFile);
+void CollectProcessedFile(std::string File);
+std::set<std::string> GetReProcessFile();
+void SetGetRunRound(std::function<unsigned int()> Func);
+unsigned int DoGetRunRound();
+void SetModuleFiles(std::set<std::string> &MF);
+std::string getRealFilePath(std::string File, clang::FileManager *FM);
 } // namespace tooling
 } // namespace clang
 #endif

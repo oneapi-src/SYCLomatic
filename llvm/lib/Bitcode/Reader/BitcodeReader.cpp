@@ -968,13 +968,17 @@ static FunctionSummary::FFlags getDecodedFFlags(uint64_t RawFlags) {
   return Flags;
 }
 
-/// Decode the flags for GlobalValue in the summary.
+// Decode the flags for GlobalValue in the summary. The bits for each attribute:
+//
+// linkage: [0,4), notEligibleToImport: 4, live: 5, local: 6, canAutoHide: 7,
+// visibility: [8, 10).
 static GlobalValueSummary::GVFlags getDecodedGVSummaryFlags(uint64_t RawFlags,
                                                             uint64_t Version) {
   // Summary were not emitted before LLVM 3.9, we don't need to upgrade Linkage
   // like getDecodedLinkage() above. Any future change to the linkage enum and
   // to getDecodedLinkage() will need to be taken into account here as above.
   auto Linkage = GlobalValue::LinkageTypes(RawFlags & 0xF); // 4 bits
+  auto Visibility = GlobalValue::VisibilityTypes((RawFlags >> 8) & 3); // 2 bits
   RawFlags = RawFlags >> 4;
   bool NotEligibleToImport = (RawFlags & 0x1) || Version < 3;
   // The Live flag wasn't introduced until version 3. For dead stripping
@@ -984,7 +988,8 @@ static GlobalValueSummary::GVFlags getDecodedGVSummaryFlags(uint64_t RawFlags,
   bool Local = (RawFlags & 0x4);
   bool AutoHide = (RawFlags & 0x8);
 
-  return GlobalValueSummary::GVFlags(Linkage, NotEligibleToImport, Live, Local, AutoHide);
+  return GlobalValueSummary::GVFlags(Linkage, Visibility, NotEligibleToImport,
+                                     Live, Local, AutoHide);
 }
 
 // Decode the flags for GlobalVariable in the summary
@@ -1521,6 +1526,8 @@ static Attribute::AttrKind getAttrFromCode(uint64_t Code) {
     return Attribute::SwiftSelf;
   case bitc::ATTR_KIND_UW_TABLE:
     return Attribute::UWTable;
+  case bitc::ATTR_KIND_VSCALE_RANGE:
+    return Attribute::VScaleRange;
   case bitc::ATTR_KIND_WILLRETURN:
     return Attribute::WillReturn;
   case bitc::ATTR_KIND_WRITEONLY:
@@ -1617,6 +1624,8 @@ Error BitcodeReader::parseAttributeGroupBlock() {
             B.addByValAttr(nullptr);
           else if (Kind == Attribute::StructRet)
             B.addStructRetAttr(nullptr);
+          else if (Kind == Attribute::InAlloca)
+            B.addInAllocaAttr(nullptr);
 
           B.addAttribute(Kind);
         } else if (Record[i] == 1) { // Integer attribute
@@ -1633,6 +1642,8 @@ Error BitcodeReader::parseAttributeGroupBlock() {
             B.addDereferenceableOrNullAttr(Record[++i]);
           else if (Kind == Attribute::AllocSize)
             B.addAllocSizeAttrFromRawRepr(Record[++i]);
+          else if (Kind == Attribute::VScaleRange)
+            B.addVScaleRangeAttrFromRawRepr(Record[++i]);
         } else if (Record[i] == 3 || Record[i] == 4) { // String attribute
           bool HasValue = (Record[i++] == 4);
           SmallString<64> KindStr;
@@ -1666,6 +1677,8 @@ Error BitcodeReader::parseAttributeGroupBlock() {
             B.addByRefAttr(getTypeByID(Record[++i]));
           } else if (Kind == Attribute::Preallocated) {
             B.addPreallocatedAttr(getTypeByID(Record[++i]));
+          } else if (Kind == Attribute::InAlloca) {
+            B.addInAllocaAttr(HasType ? getTypeByID(Record[++i]) : nullptr);
           }
         }
       }
@@ -2883,6 +2896,20 @@ Error BitcodeReader::parseConstants() {
       V = BlockAddress::get(Fn, BB);
       break;
     }
+    case bitc::CST_CODE_DSO_LOCAL_EQUIVALENT: {
+      if (Record.size() < 2)
+        return error("Invalid record");
+      Type *GVTy = getTypeByID(Record[0]);
+      if (!GVTy)
+        return error("Invalid record");
+      GlobalValue *GV = dyn_cast_or_null<GlobalValue>(
+          ValueList.getConstantFwdRef(Record[1], GVTy));
+      if (!GV)
+        return error("Invalid record");
+
+      V = DSOLocalEquivalent::get(GV);
+      break;
+    }
     }
 
     assert(V->getType() == flattenPointerTypes(CurFullTy) &&
@@ -2933,8 +2960,7 @@ Error BitcodeReader::parseUseLists() {
       if (RecordLength < 3)
         // Records should have at least an ID and two indexes.
         return error("Invalid record");
-      unsigned ID = Record.back();
-      Record.pop_back();
+      unsigned ID = Record.pop_back_val();
 
       Value *V;
       if (IsBB) {
@@ -3306,7 +3332,8 @@ Error BitcodeReader::parseFunctionRecord(ArrayRef<uint64_t> Record) {
   // argument's pointee type. There should be no opaque pointers where the byval
   // type is implicit.
   for (unsigned i = 0; i != Func->arg_size(); ++i) {
-    for (Attribute::AttrKind Kind : {Attribute::ByVal, Attribute::StructRet}) {
+    for (Attribute::AttrKind Kind : {Attribute::ByVal, Attribute::StructRet,
+                                     Attribute::InAlloca}) {
       if (!Func->hasParamAttribute(i, Kind))
         continue;
 
@@ -3314,10 +3341,21 @@ Error BitcodeReader::parseFunctionRecord(ArrayRef<uint64_t> Record) {
 
       Type *PTy = cast<FunctionType>(FullFTy)->getParamType(i);
       Type *PtrEltTy = getPointerElementFlatType(PTy);
-      Attribute NewAttr =
-          Kind == Attribute::ByVal
-              ? Attribute::getWithByValType(Context, PtrEltTy)
-              : Attribute::getWithStructRetType(Context, PtrEltTy);
+      Attribute NewAttr;
+      switch (Kind) {
+      case Attribute::ByVal:
+        NewAttr = Attribute::getWithByValType(Context, PtrEltTy);
+        break;
+      case Attribute::StructRet:
+        NewAttr = Attribute::getWithStructRetType(Context, PtrEltTy);
+        break;
+      case Attribute::InAlloca:
+        NewAttr = Attribute::getWithInAllocaType(Context, PtrEltTy);
+        break;
+      default:
+        llvm_unreachable("not an upgraded type attribute");
+      }
+
       Func->addParamAttr(i, NewAttr);
     }
   }
@@ -3783,17 +3821,29 @@ Error BitcodeReader::typeCheckLoadStoreInst(Type *ValType, Type *PtrType) {
 void BitcodeReader::propagateByValSRetTypes(CallBase *CB,
                                             ArrayRef<Type *> ArgsFullTys) {
   for (unsigned i = 0; i != CB->arg_size(); ++i) {
-    for (Attribute::AttrKind Kind : {Attribute::ByVal, Attribute::StructRet}) {
+    for (Attribute::AttrKind Kind : {Attribute::ByVal, Attribute::StructRet,
+                                     Attribute::InAlloca}) {
       if (!CB->paramHasAttr(i, Kind))
         continue;
 
       CB->removeParamAttr(i, Kind);
 
       Type *PtrEltTy = getPointerElementFlatType(ArgsFullTys[i]);
-      Attribute NewAttr =
-          Kind == Attribute::ByVal
-              ? Attribute::getWithByValType(Context, PtrEltTy)
-              : Attribute::getWithStructRetType(Context, PtrEltTy);
+      Attribute NewAttr;
+      switch (Kind) {
+      case Attribute::ByVal:
+        NewAttr = Attribute::getWithByValType(Context, PtrEltTy);
+        break;
+      case Attribute::StructRet:
+        NewAttr = Attribute::getWithStructRetType(Context, PtrEltTy);
+        break;
+      case Attribute::InAlloca:
+        NewAttr = Attribute::getWithInAllocaType(Context, PtrEltTy);
+        break;
+      default:
+        llvm_unreachable("not an upgraded type attribute");
+      }
+
       CB->addParamAttr(i, NewAttr);
     }
   }
@@ -5081,7 +5131,7 @@ Error BitcodeReader::parseFunctionBody(Function *F) {
     }
     case bitc::FUNC_CODE_INST_CMPXCHG: {
       // CMPXCHG: [ptrty, ptr, cmp, val, vol, success_ordering, synchscope,
-      // failure_ordering, weak]
+      // failure_ordering, weak, align?]
       const size_t NumRecords = Record.size();
       unsigned OpNum = 0;
       Value *Ptr = nullptr;
@@ -5096,9 +5146,13 @@ Error BitcodeReader::parseFunctionBody(Function *F) {
         return error("Invalid record");
 
       Value *Val = nullptr;
-      if (popValue(Record, OpNum, NextValueNo, Cmp->getType(), Val) ||
-          NumRecords < OpNum + 3 || NumRecords > OpNum + 5)
+      if (popValue(Record, OpNum, NextValueNo, Cmp->getType(), Val))
         return error("Invalid record");
+
+      if (NumRecords < OpNum + 3 || NumRecords > OpNum + 6)
+        return error("Invalid record");
+
+      const bool IsVol = Record[OpNum];
 
       const AtomicOrdering SuccessOrdering =
           getDecodedOrdering(Record[OpNum + 1]);
@@ -5114,42 +5168,77 @@ Error BitcodeReader::parseFunctionBody(Function *F) {
       const AtomicOrdering FailureOrdering =
           getDecodedOrdering(Record[OpNum + 3]);
 
-      const Align Alignment(
-          TheModule->getDataLayout().getTypeStoreSize(Cmp->getType()));
+      const bool IsWeak = Record[OpNum + 4];
 
-      I = new AtomicCmpXchgInst(Ptr, Cmp, Val, Alignment, SuccessOrdering,
+      MaybeAlign Alignment;
+
+      if (NumRecords == (OpNum + 6)) {
+        if (Error Err = parseAlignmentValue(Record[OpNum + 5], Alignment))
+          return Err;
+      }
+      if (!Alignment)
+        Alignment =
+            Align(TheModule->getDataLayout().getTypeStoreSize(Cmp->getType()));
+
+      I = new AtomicCmpXchgInst(Ptr, Cmp, Val, *Alignment, SuccessOrdering,
                                 FailureOrdering, SSID);
       FullTy = StructType::get(Context, {FullTy, Type::getInt1Ty(Context)});
-      cast<AtomicCmpXchgInst>(I)->setVolatile(Record[OpNum]);
-      cast<AtomicCmpXchgInst>(I)->setWeak(Record[OpNum + 4]);
+      cast<AtomicCmpXchgInst>(I)->setVolatile(IsVol);
+      cast<AtomicCmpXchgInst>(I)->setWeak(IsWeak);
 
       InstructionList.push_back(I);
       break;
     }
     case bitc::FUNC_CODE_INST_ATOMICRMW: {
-      // ATOMICRMW:[ptrty, ptr, val, op, vol, ordering, ssid]
+      // ATOMICRMW:[ptrty, ptr, val, op, vol, ordering, ssid, align?]
+      const size_t NumRecords = Record.size();
       unsigned OpNum = 0;
-      Value *Ptr, *Val;
-      if (getValueTypePair(Record, OpNum, NextValueNo, Ptr, &FullTy) ||
-          !isa<PointerType>(Ptr->getType()) ||
-          popValue(Record, OpNum, NextValueNo,
-                   getPointerElementFlatType(FullTy), Val) ||
-          OpNum + 4 != Record.size())
+
+      Value *Ptr = nullptr;
+      if (getValueTypePair(Record, OpNum, NextValueNo, Ptr, &FullTy))
         return error("Invalid record");
-      AtomicRMWInst::BinOp Operation = getDecodedRMWOperation(Record[OpNum]);
+
+      if (!isa<PointerType>(Ptr->getType()))
+        return error("Invalid record");
+
+      Value *Val = nullptr;
+      if (popValue(Record, OpNum, NextValueNo,
+                   getPointerElementFlatType(FullTy), Val))
+        return error("Invalid record");
+
+      if (!(NumRecords == (OpNum + 4) || NumRecords == (OpNum + 5)))
+        return error("Invalid record");
+
+      const AtomicRMWInst::BinOp Operation =
+          getDecodedRMWOperation(Record[OpNum]);
       if (Operation < AtomicRMWInst::FIRST_BINOP ||
           Operation > AtomicRMWInst::LAST_BINOP)
         return error("Invalid record");
-      AtomicOrdering Ordering = getDecodedOrdering(Record[OpNum + 2]);
+
+      const bool IsVol = Record[OpNum + 1];
+
+      const AtomicOrdering Ordering = getDecodedOrdering(Record[OpNum + 2]);
       if (Ordering == AtomicOrdering::NotAtomic ||
           Ordering == AtomicOrdering::Unordered)
         return error("Invalid record");
-      SyncScope::ID SSID = getDecodedSyncScopeID(Record[OpNum + 3]);
-      Align Alignment(
-          TheModule->getDataLayout().getTypeStoreSize(Val->getType()));
-      I = new AtomicRMWInst(Operation, Ptr, Val, Alignment, Ordering, SSID);
+
+      const SyncScope::ID SSID = getDecodedSyncScopeID(Record[OpNum + 3]);
+
+      MaybeAlign Alignment;
+
+      if (NumRecords == (OpNum + 5)) {
+        if (Error Err = parseAlignmentValue(Record[OpNum + 4], Alignment))
+          return Err;
+      }
+
+      if (!Alignment)
+        Alignment =
+            Align(TheModule->getDataLayout().getTypeStoreSize(Val->getType()));
+
+      I = new AtomicRMWInst(Operation, Ptr, Val, *Alignment, Ordering, SSID);
       FullTy = getPointerElementFlatType(FullTy);
-      cast<AtomicRMWInst>(I)->setVolatile(Record[OpNum+1]);
+      cast<AtomicRMWInst>(I)->setVolatile(IsVol);
+
       InstructionList.push_back(I);
       break;
     }
@@ -6802,7 +6891,7 @@ static Expected<bool> getEnableSplitLTOUnitFlag(BitstreamCursor &Stream,
     case bitc::FS_FLAGS: { // [flags]
       uint64_t Flags = Record[0];
       // Scan flags.
-      assert(Flags <= 0x3f && "Unexpected bits in flag");
+      assert(Flags <= 0x7f && "Unexpected bits in flag");
 
       return Flags & 0x8;
     }

@@ -481,7 +481,7 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 // CHECK: void test() {
 // CHECK:   sycl::double2 a;
 // CHECK:   sycl::double2 b;
-// CHECK:   a  = dpct_operator_overloading::operator+=(a , b);
+// CHECK:   dpct_operator_overloading::operator+=(a , b);
 // CHECK:   dpct_operator_overloading::operator-(a);
 // CHECK:   b = a;
 // CHECK: }
@@ -493,3 +493,30 @@ void test() {
   b = a;
 }
 
+//CHECK: template<typename T> class A{
+//CHECK-NEXT: public:
+//CHECK-NEXT:   A operator-(const T b) const
+//CHECK-NEXT:   {
+//CHECK-NEXT:     return *this;
+//CHECK-NEXT:   };
+//CHECK-NEXT: };
+template<typename T> class A{
+public:
+  A operator-(const T b) const
+  {
+    return *this;
+  };
+};
+
+//CHECK: typedef A<sycl::int2> A2;
+//CHECK-NEXT: void foo(){
+//CHECK-NEXT:   sycl::int2 i2;
+//CHECK-NEXT:   A2 a;
+//CHECK-NEXT:   a - i2;
+//CHECK-NEXT: }
+typedef A<int2> A2;
+void foo(){
+  int2 i2;
+  A2 a;
+  a - i2;
+}

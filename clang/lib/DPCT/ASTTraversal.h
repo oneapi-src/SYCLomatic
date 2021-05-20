@@ -19,6 +19,7 @@
 #include "TextModification.h"
 #include "Utility.h"
 #include "LibraryAPIMigration.h"
+#include "Checkpoint.h"
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
@@ -79,7 +80,7 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   void ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange);
+  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT, SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
   void Endif(SourceLocation Loc, SourceLocation IfLoc) override;
@@ -88,10 +89,13 @@ public:
                    FileID PrevFID = FileID()) override;
   void If(SourceLocation Loc, SourceRange ConditionRange,
           ConditionValueKind ConditionValue) override;
+  void Else(SourceLocation Loc, SourceLocation IfLoc) override;
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
-
+  bool isInRoot(SourceLocation Loc);
+  // Find the "#" before a preprocessing directive, return -1 if have some false
+  int findPoundSign(SourceLocation DirectiveStart);
 private:
   /// e.g. "__launch_bounds(32, 32)  void foo()"
   /// Result is "void foo()"
@@ -377,6 +381,18 @@ public:
   void insertIncludeFile(SourceLocation SL, std::set<std::string> &HeaderFilter,
                          std::string &&InsertText);
 
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
+    CHECKPOINT_ASTMATCHER_RUN_ENTRY();
+    try {
+      static_cast<T *>(this)->runRule(Result);
+    } catch (std::exception &e) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "the migration rule causing error and continues migration.\n";
+      llvm::errs() << FaultMsg;
+    }
+    return;
+  }
 protected:
   void emplaceTransformation(TextModification *TM) {
     if (TM) {
@@ -538,7 +554,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 private:
   bool renameBuiltinName(StringRef BuiltinName, std::string &NewName);
 };
@@ -549,7 +565,7 @@ class AlignAttrsRule : public NamedMigrationRule<AlignAttrsRule> {
 public:
   AlignAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for function attributes.
@@ -558,7 +574,7 @@ class FuncAttrsRule : public NamedMigrationRule<FuncAttrsRule> {
 public:
   FuncAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for atomic functions.
@@ -566,15 +582,12 @@ class AtomicFunctionRule : public NamedMigrationRule<AtomicFunctionRule> {
 public:
   AtomicFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result);
-  void GetShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr, bool &NeedReport);
-  bool IsStmtInStatement(const clang::Stmt *S, const clang::Decl *Root);
-
 };
 
 /// Migration rule for thrust functions
@@ -582,7 +595,7 @@ class ThrustFunctionRule : public NamedMigrationRule<ThrustFunctionRule> {
 public:
   ThrustFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   std::set<SourceLocation> SortULExpr;
@@ -596,7 +609,7 @@ class ThrustCtorExprRule : public NamedMigrationRule<ThrustCtorExprRule> {
 public:
   ThrustCtorExprRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void replacePlaceHolderExpr(const CXXConstructExpr *CE);
@@ -607,7 +620,7 @@ class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
 public:
   TypeInDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   struct TypeLocHash {
@@ -648,7 +661,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for vector type member access
@@ -659,7 +672,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 public:
   void renameMemberField(const MemberExpr *ME);
@@ -674,7 +687,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void MigrateOverloadedOperatorDecl(
@@ -693,7 +706,7 @@ class VectorTypeCtorRule : public NamedMigrationRule<VectorTypeCtorRule> {
 public:
   VectorTypeCtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   std::string getReplaceTypeName(const std::string &TypeName);
@@ -708,7 +721,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile, "Dim3MemberFieldsRule");
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for dim3 types member fields replacements.
@@ -716,7 +729,7 @@ class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
 public:
   Dim3MemberFieldsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void FieldsRename(const ast_matchers::MatchFinder::MatchResult &Result,
@@ -728,7 +741,7 @@ class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:
   ReturnTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for removing of error hanlding if-stmt
@@ -739,7 +752,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for adding try-catch for host APIs calls
@@ -750,7 +763,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void insertTryCatch(const FunctionDecl *FD);
 };
 
@@ -759,7 +772,7 @@ class DevicePropVarRule : public NamedMigrationRule<DevicePropVarRule> {
 public:
   DevicePropVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 public:
   static const std::map<std::string, std::string> PropNamesMap;
@@ -770,10 +783,12 @@ class EnumConstantRule : public NamedMigrationRule<EnumConstantRule> {
 public:
   EnumConstantRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleComputeMode(std::string EnumName, const DeclRefExpr *E);
 
   static std::map<std::string, std::string> EnumNamesMap;
+  static std::map<std::string, HelperFeatureIDTy>
+      EnumNamesHelperFeaturesMap;
 };
 
 /// Migration rule for Error enums constants.
@@ -781,7 +796,7 @@ class ErrorConstantsRule : public NamedMigrationRule<ErrorConstantsRule> {
 public:
   ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class ManualMigrateEnumsRule
@@ -791,7 +806,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for FFT enums.
@@ -799,7 +814,7 @@ class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
 public:
   FFTEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for BLAS enums.
@@ -807,7 +822,7 @@ class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:
   BLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for RANDOM enums.
@@ -815,7 +830,7 @@ class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
 public:
   RandomEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for spBLAS enums.
@@ -823,7 +838,7 @@ class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
 public:
   SPBLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for BLAS function calls.
@@ -831,7 +846,7 @@ class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
   BLASFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
 
@@ -883,13 +898,13 @@ public:
                std::string &PrefixInsertStr,
                std::string &SuffixInsertStr, const std::string &IndentStr) {
     auto getIfStmtStr = [=](const std::string Ptr) -> std::string {
-      return "if(" + MapNames::getClNamespace() + "::get_pointer_type(" + Ptr +
+      return "if(" + MapNames::getClNamespace() + "get_pointer_type(" + Ptr +
              ", " + CallExprArguReplVec[0] +
              "->get_context())!=" + MapNames::getClNamespace() +
-             "::usm::alloc::device && " + MapNames::getClNamespace() +
-             "::get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
+             "usm::alloc::device && " + MapNames::getClNamespace() +
+             "get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
              "->get_context())!=" + MapNames::getClNamespace() +
-             "::usm::alloc::shared) {";
+             "usm::alloc::shared) {";
     };
 
     if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2" ||
@@ -907,9 +922,9 @@ public:
               std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
         Prefix = Prefix + Type + "* " + Var + " = " +
                  ExprAnalysis::ref(CE->getArg(Idx)) + ";" + getNL() + IndentStr;
-        if (Type == MapNames::getClNamespace() + "::float2")
+        if (Type == MapNames::getClNamespace() + "float2")
           CallExprArguReplVec[Idx] = "(std::complex<float>*)" + Var;
-        else if (Type == MapNames::getClNamespace() + "::double2")
+        else if (Type == MapNames::getClNamespace() + "double2")
           CallExprArguReplVec[Idx] = "(std::complex<double>*)" + Var;
         else
           CallExprArguReplVec[Idx] = Var;
@@ -919,11 +934,15 @@ public:
         if (Size == "1")
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
-        else
-          Suffix = Suffix + getNL() + IndentStr +
-                   "  dpct::get_default_queue().memcpy(" +
+        else {
+          Suffix = Suffix + getNL() + IndentStr + "  " +
+                   MapNames::getDpctNamespace() +
+                   "get_default_queue().memcpy(" +
                    ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
                    ", sizeof(" + Type + ")*" + Size + ").wait();";
+          requestFeature(HelperFileEnum::Device,
+                                         "get_default_queue", CE);
+        }
       };
 
       if (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
@@ -935,10 +954,13 @@ public:
         declareTempArgs(X1Ptr, "x1_ct", Type, 3);
         declareTempArgs(ParamPtr, "param_ct", Type, 5);
 
+        requestFeature(HelperFileEnum::Device,
+                                       "get_default_queue", CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
-                 "::malloc_shared<" + Type +
-                 ">(8, dpct::get_default_queue());" + getNL() + IndentStr;
+                 "malloc_shared<" + Type + ">(8, " +
+                 MapNames::getDpctNamespace() + "get_default_queue());" +
+                 getNL() + IndentStr;
         Prefix = Prefix + "  " + D2Ptr + " = " + D1Ptr + " + 1;" + getNL() +
                  IndentStr;
         Prefix = Prefix + "  " + X1Ptr + " = " + D1Ptr + " + 2;" + getNL() +
@@ -962,8 +984,8 @@ public:
         copyBack(ParamPtr, "5", Type, 5);
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
-                 MapNames::getClNamespace() + "::free(" + D1Ptr +
-                 ", dpct::get_default_queue());";
+                 MapNames::getClNamespace() + "free(" + D1Ptr + ", " +
+                 MapNames::getDpctNamespace() + "get_default_queue());";
         Suffix = Suffix + getNL() + IndentStr + "}";
       } else {
         // cublasSrotg_v2, cublasDrotg_v2, cublasCrotg_v2 or cublasZrotg_v2
@@ -975,10 +997,10 @@ public:
           Type = "double";
           RealType = "double";
         } else if (FuncName == "cublasCrotg_v2") {
-          Type = MapNames::getClNamespace() + "::float2";
+          Type = MapNames::getClNamespace() + "float2";
           RealType = "float";
         } else {
-          Type = MapNames::getClNamespace() + "::double2";
+          Type = MapNames::getClNamespace() + "double2";
           RealType = "double";
         }
 
@@ -988,11 +1010,14 @@ public:
         declareTempArgs(CPtr, "c_ct", RealType, 3);
         declareTempArgs(SPtr, "s_ct", Type, 4);
 
+        requestFeature(HelperFileEnum::Device,
+                                       "get_default_queue", CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
-                   "::malloc_shared<" + Type +
-                   ">(4, dpct::get_default_queue());" + getNL() + IndentStr;
+                   "malloc_shared<" + Type + ">(4, " +
+                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
           Prefix = Prefix + "  " + CPtr + " = " + APtr + " + 2;" + getNL() +
@@ -1001,11 +1026,13 @@ public:
                    IndentStr;
         } else {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
-                   "::malloc_shared<" + Type +
-                   ">(3, dpct::get_default_queue());" + getNL() + IndentStr;
+                   "malloc_shared<" + Type + ">(3, " +
+                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   getNL() + IndentStr;
           Prefix = Prefix + "  " + CPtr + " = " + MapNames::getClNamespace() +
-                   "::malloc_shared<" + RealType +
-                   ">(1, dpct::get_default_queue());" + getNL() + IndentStr;
+                   "malloc_shared<" + RealType + ">(1, " +
+                   MapNames::getDpctNamespace() +
+                   "get_default_queue());" + getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
           Prefix = Prefix + "  " + SPtr + " = " + APtr + " + 2;" + getNL() +
@@ -1030,12 +1057,12 @@ public:
         copyBack(SPtr, "1", Type, 4);
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
-                 MapNames::getClNamespace() + "::free(" + APtr +
-                 ", dpct::get_default_queue());";
+                 MapNames::getClNamespace() + "free(" + APtr + ", " +
+                 MapNames::getDpctNamespace() + "get_default_queue());";
         if (FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2") {
           Suffix = Suffix + getNL() + IndentStr + "  " +
-                   MapNames::getClNamespace() + "::free(" + CPtr +
-                   ", dpct::get_default_queue());";
+                   MapNames::getClNamespace() + "free(" + CPtr + ", " +
+                   MapNames::getDpctNamespace() + "get_default_queue());";
         }
         Suffix = Suffix + getNL() + IndentStr + "}";
       }
@@ -1053,11 +1080,11 @@ public:
 
       std::string OriginType;
       if (Type == "std::complex<float>") {
-        OriginType = MapNames::getClNamespace() + "::float2";
+        OriginType = MapNames::getClNamespace() + "float2";
         CallExprArguReplVec[ArgIndex] =
             "(std::complex<float>*)" + ResultTempPtr;
       } else if (Type == "std::complex<double>") {
-        OriginType = MapNames::getClNamespace() + "::double2";
+        OriginType = MapNames::getClNamespace() + "double2";
         CallExprArguReplVec[ArgIndex] =
             "(std::complex<double>*)" + ResultTempPtr;
       } else {
@@ -1067,28 +1094,22 @@ public:
 
       std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
 
-      PrefixInsertStr =
-          OriginType + "* " + ResultTempPtr + " = " + EA.getReplacedString() + ";" +
-          getNL() + IndentStr +
-          IfStmtStr +
-          getNL() + IndentStr +
-          "  " + ResultTempPtr + " = " + MapNames::getClNamespace() +
-          "::malloc_shared<" + OriginType + ">(1, dpct::get_default_queue());" +
-          getNL() + IndentStr +
-          "}" +
-          getNL() + IndentStr + PrefixInsertStr;
+      requestFeature(HelperFileEnum::Device,
+                                     "get_default_queue", CE);
+      PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
+                        EA.getReplacedString() + ";" + getNL() + IndentStr +
+                        IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
+                        " = " + MapNames::getClNamespace() + "malloc_shared<" +
+                        OriginType + ">(1, " + MapNames::getDpctNamespace() +
+                        "get_default_queue());" + getNL() + IndentStr + "}" +
+                        getNL() + IndentStr + PrefixInsertStr;
       SuffixInsertStr =
-          getNL() + IndentStr +
-          IfStmtStr +
-          getNL() + IndentStr +
-          "  " + CallExprArguReplVec[0] + "->wait();"+
-          getNL() + IndentStr +
-          "  " + getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
-          getNL() + IndentStr +
-          "  " + MapNames::getClNamespace() + "::free(" + ResultTempPtr +
-          ", dpct::get_default_queue());" +
-          getNL() + IndentStr +
-          "}" + SuffixInsertStr;
+          getNL() + IndentStr + IfStmtStr + getNL() + IndentStr + "  " +
+          CallExprArguReplVec[0] + "->wait();" + getNL() + IndentStr + "  " +
+          getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
+          getNL() + IndentStr + "  " + MapNames::getClNamespace() + "free(" +
+          ResultTempPtr + ", " + MapNames::getDpctNamespace() +
+          "get_default_queue());" + getNL() + IndentStr + "}" + SuffixInsertStr;
     }
   }
 
@@ -1105,8 +1126,8 @@ public:
         std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
 
     PrefixInsertStr = PrefixInsertStr + "auto " + BufferName +
-                      " = sycl::buffer<" + Type + ">(" +
-                      MapNames::getClNamespace() + "::range<1>(1));" + getNL() +
+                      " = " + MapNames::getClNamespace() + "buffer<" + Type + ">(" +
+                      MapNames::getClNamespace() + "range<1>(1));" + getNL() +
                       IndentStr;
     std::string PointerStr = ExprAnalysis::ref(CE->getArg(ArgIndex));
 
@@ -1114,16 +1135,19 @@ public:
         (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") &&
         (ArgIndex == 5);
 
+    requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+                                   CE);
     SyncAPIBufferAssignmentInThenBlock.emplace_back(
-        BufferName + " = dpct::get_buffer<" + Type + ">(" + PointerStr + ");");
-        SyncAPIBufferAssignmentInElseBlock.emplace_back(
-            BufferName + " = " + MapNames::getClNamespace() + "::buffer<" +
-            Type + ">(" +
-            ((Type == "std::complex<float>" || Type == "std::complex<double>")
-                 ? std::string("(" + Type + "*)")
-                 : "") +
-            PointerStr + ", " + MapNames::getClNamespace() + "::range<1>(" +
-            (IsTheLastArgOfRotmg ? "5" : "1") + "));");
+        BufferName + " = " + MapNames::getDpctNamespace() + "get_buffer<" +
+        Type + ">(" + PointerStr + ");");
+    SyncAPIBufferAssignmentInElseBlock.emplace_back(
+        BufferName + " = " + MapNames::getClNamespace() + "buffer<" + Type +
+        ">(" +
+        ((Type == "std::complex<float>" || Type == "std::complex<double>")
+             ? std::string("(" + Type + "*)")
+             : "") +
+        PointerStr + ", " + MapNames::getClNamespace() + "range<1>(" +
+        (IsTheLastArgOfRotmg ? "5" : "1") + "));");
 
     return BufferName;
   }
@@ -1140,13 +1164,14 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
-      std::string IfStmtStr =
-          "if (dpct::detail::mem_mgr::instance().is_device_ptr(" + PointerStr +
-          ")) {" + getNL() + IndentStr +
-          getBlockStr(SyncAPIBufferAssignmentInThenBlock) + "} else {" +
-          getNL() + IndentStr +
-          getBlockStr(SyncAPIBufferAssignmentInElseBlock) + "}" + getNL() +
-          IndentStr;
+      requestFeature(HelperFileEnum::Memory, "mem_mgr", CE);
+      std::string IfStmtStr = "if (" + MapNames::getDpctNamespace(true) +
+                              "detail::mem_mgr::instance().is_device_ptr(" +
+                              PointerStr + ")) {" + getNL() + IndentStr +
+                              getBlockStr(SyncAPIBufferAssignmentInThenBlock) +
+                              "} else {" + getNL() + IndentStr +
+                              getBlockStr(SyncAPIBufferAssignmentInElseBlock) +
+                              "}" + getNL() + IndentStr;
 
       PrefixInsertStr = PrefixInsertStr + IfStmtStr;
     };
@@ -1261,7 +1286,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for device Random function calls.
@@ -1272,7 +1297,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for spBLAS function calls.
@@ -1283,7 +1308,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for SOLVER enums.
@@ -1291,7 +1316,7 @@ class SOLVEREnumsRule : public NamedMigrationRule<SOLVEREnumsRule> {
 public:
   SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for SOLVER function calls.
@@ -1302,7 +1327,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
 
@@ -1322,15 +1347,56 @@ class FunctionCallRule : public NamedMigrationRule<FunctionCallRule> {
 public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  std::string findValueofAttrVar(const Expr* AttrArg, const CallExpr* CE);
 };
 
+class EventAPICallRule;
+class EventQueryTraversal {
+  EventAPICallRule *Rule;
+  ASTContext &Context;
+
+  bool QueryCallUsed = false;
+
+  using ResultTy = std::vector<std::pair<const Stmt *, TextModification *>>;
+
+  const VarDecl *getAssignTarget(const CallExpr *);
+
+  bool checkVarDecl(const VarDecl *, const FunctionDecl *);
+  bool isEventQuery(const CallExpr *);
+  std::string getReplacedEnumValue(const DeclRefExpr *);
+
+  TextModification *buildCallReplacement(const CallExpr *);
+
+  bool traverseFunction(const FunctionDecl *, const VarDecl *);
+  bool traverseStmt(const Stmt *, const VarDecl *, ResultTy &);
+  bool traverseAssignRhs(const Expr *, ResultTy &);
+  bool traverseEqualStmt(const Stmt *, const VarDecl *, ResultTy &);
+
+  void handleDirectEqualStmt(const DeclRefExpr*, const CallExpr*);
+
+  bool startFromStmt(const Stmt *, const std::function<const VarDecl *()> &);
+
+public:
+  EventQueryTraversal(EventAPICallRule *R)
+      : Rule(R), Context(DpctGlobalInfo::getContext()) {}
+  bool startFromQuery(const CallExpr *);
+  bool startFromEnumRef(const DeclRefExpr *);
+  bool startFromTypeLoc(TypeLoc TL);
+};
 /// Migration rule for event API calls
 class EventAPICallRule : public NamedMigrationRule<EventAPICallRule> {
 public:
-  EventAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  EventAPICallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+    CurrentRule = this;
+  }
+  ~EventAPICallRule() {
+    if (CurrentRule == this)
+      CurrentRule = nullptr;
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleEventRecord(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result,
                          bool IsAssigned);
@@ -1342,6 +1408,8 @@ public:
   void handleOrdinaryCalls(const CallExpr *Call);
   bool IsEventArgArraySubscriptExpr(const Expr *E);
   const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
+
+  static EventQueryTraversal getEventQueryTraversal();
 
 private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
@@ -1393,6 +1461,12 @@ private:
   // To check whether kernel calll needs wait between RecordBeginLoc and
   // RecordEndLoc
   bool IsKernelSync = false;
+
+  std::map<const Stmt *, bool> ExprCache;
+  std::map<const VarDecl *, bool> VarDeclCache;
+
+  friend class EventQueryTraversal;
+  static EventAPICallRule *CurrentRule;
 };
 
 /// Migration rule for stream API calls
@@ -1400,7 +1474,7 @@ class StreamAPICallRule : public NamedMigrationRule<StreamAPICallRule> {
 public:
   StreamAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for kernel API calls
@@ -1413,21 +1487,21 @@ public:
                     "SharedMemVarRule, ConstantMemVarRule, DeviceMemVarRule");
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void
   removeTrailingSemicolon(const CallExpr *KCall,
                           const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for device function calls
-class DeviceFunctionCallRule
-    : public NamedMigrationRule<DeviceFunctionCallRule> {
+class DeviceFunctionDeclRule
+    : public NamedMigrationRule<DeviceFunctionDeclRule> {
 public:
-  DeviceFunctionCallRule() {
+  DeviceFunctionDeclRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 // clang-format off
@@ -1459,7 +1533,7 @@ class GlibcMemoryAPIRule : public NamedMigrationRule<GlibcMemoryAPIRule> {
 public:
   GlibcMemoryAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   template <typename T> const T *getAncestor(const Stmt *CE);
@@ -1473,7 +1547,7 @@ class MemVarRule : public NamedMigrationRule<MemVarRule> {
 public:
   MemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void processDeref(const Stmt *S, ASTContext &Context);
@@ -1510,7 +1584,7 @@ class MemoryMigrationRule : public NamedMigrationRule<MemoryMigrationRule> {
 public:
   MemoryMigrationRule();
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
@@ -1614,7 +1688,7 @@ private:
   void insertZeroOffset(const CallExpr *C, size_t InsertArgIndex) {
     static std::string InsertedText =
         buildString(MapNames::getClNamespace(),
-                    "::", DpctGlobalInfo::getCtadClass("id", 3), "(0, 0, 0), ");
+                    DpctGlobalInfo::getCtadClass("id", 3), "(0, 0, 0), ");
     if (C->getNumArgs() > InsertArgIndex)
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
@@ -1624,7 +1698,7 @@ private:
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   static inline std::string getCtadType(StringRef BaseTypeName) {
     return buildString(DpctGlobalInfo::getCtadClass(
-        buildString(MapNames::getClNamespace(), "::", BaseTypeName), 3));
+        buildString(MapNames::getClNamespace(), BaseTypeName), 3));
   }
   template <class... Args>
   void emplaceParamDecl(const VarDecl *VD, StringRef ParamType,
@@ -1695,14 +1769,14 @@ public:
 
   MemoryDataTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CMemoryAPIRule : public NamedMigrationRule<CMemoryAPIRule> {
 public:
   CMemoryAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Name all unnamed types.
@@ -1710,7 +1784,7 @@ class UnnamedTypesRule : public NamedMigrationRule<UnnamedTypesRule> {
 public:
   UnnamedTypesRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Guess original code indent width.
@@ -1718,7 +1792,7 @@ class GuessIndentWidthRule : public NamedMigrationRule<GuessIndentWidthRule> {
 public:
   GuessIndentWidthRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration for math functions
@@ -1726,7 +1800,7 @@ class MathFunctionsRule : public NamedMigrationRule<MathFunctionsRule> {
 public:
   MathFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleExceptionalFunctions(
       const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result);
   void
@@ -1747,7 +1821,7 @@ class WarpFunctionsRule : public NamedMigrationRule<WarpFunctionsRule> {
 public:
   WarpFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for replacing __syncthreads() function call.
@@ -1757,7 +1831,7 @@ class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
   SyncThreadsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migrate Function Attributes to Sycl kernel info, defined in
@@ -1770,7 +1844,7 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   static const std::map<std::string, std::string> AttributesNamesMap;
 };
@@ -1781,14 +1855,22 @@ public:
   RecognizeAPINameRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   const std::string GetFunctionSignature(const FunctionDecl *Func);
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+/// RecognizeTypeRule to emit warning message for known unsupported type
+class RecognizeTypeRule : public NamedMigrationRule<RecognizeTypeRule> {
+public:
+  RecognizeTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class TextureMemberSetRule : public NamedMigrationRule<TextureMemberSetRule> {
 public:
   TextureMemberSetRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void removeRange(SourceRange R);
 };
 
@@ -1815,7 +1897,7 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
 public:
   TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   static const MapNames::MapTy TextureMemberNames;
 
@@ -1863,28 +1945,28 @@ class CXXNewExprRule : public NamedMigrationRule<CXXNewExprRule> {
 public:
   CXXNewExprRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class NamespaceRule : public NamedMigrationRule<NamespaceRule> {
 public:
   NamespaceRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class RemoveBaseClassRule : public NamedMigrationRule<RemoveBaseClassRule> {
 public:
   RemoveBaseClassRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class ThrustVarRule : public NamedMigrationRule<ThrustVarRule> {
 public:
   ThrustVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class PreDefinedStreamHandleRule
@@ -1894,15 +1976,21 @@ public:
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
 public:
   FFTFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+private:
+  void processFunctionPointer(const VarDecl *VD);
+  void processFunctionPointerAssignment(const BinaryOperator *BO);
+  void prepareFEAInfo(std::string IndentStr, std::string FuncName,
+                      std::string FuncPtrName,
+                      LibraryMigrationLocations Locations,
+                      LibraryMigrationFlags Flags, SourceLocation SL);
   std::vector<std::string> PrefixStmts;
   std::string IndentStr;
   std::string CallExprRepl;
@@ -1912,21 +2000,35 @@ class AsmRule : public NamedMigrationRule<AsmRule> {
 public:
   AsmRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
+public:
+  DriverModuleAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DriverDeviceAPIRule : public NamedMigrationRule<DriverDeviceAPIRule> {
 public:
   DriverDeviceAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DriverContextAPIRule : public NamedMigrationRule<DriverContextAPIRule> {
 public:
   DriverContextAPIRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class CudaArchMacroRule : public NamedMigrationRule<CudaArchMacroRule> {
+public:
+  CudaArchMacroRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 #define REGISTER_RULE(TYPE_NAME)                                               \

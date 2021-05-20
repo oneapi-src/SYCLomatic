@@ -8,10 +8,10 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_WARP("__all", "sycl::ONEAPI::all_of")
-ENTRY_WARP("__all_sync", "sycl::ONEAPI::all_of")
-ENTRY_WARP("__any", "sycl::ONEAPI::any_of")
-ENTRY_WARP("__any_sync", "sycl::ONEAPI::any_of")
+ENTRY_WARP("__all", MapNames::getClNamespace() + "ONEAPI::all_of")
+ENTRY_WARP("__all_sync", MapNames::getClNamespace() + "ONEAPI::all_of")
+ENTRY_WARP("__any", MapNames::getClNamespace() + "ONEAPI::any_of")
+ENTRY_WARP("__any_sync", MapNames::getClNamespace() + "ONEAPI::any_of")
 ENTRY_WARP("__shfl", "shuffle")
 ENTRY_WARP("__shfl_sync", "shuffle")
 ENTRY_WARP("__shfl_up", "shuffle_up")

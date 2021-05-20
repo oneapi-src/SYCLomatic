@@ -122,9 +122,13 @@ protected:
   /// other when on the same line.  Defaults to ';'
   const char *SeparatorString;
 
-  /// This indicates the comment character used by the assembler.  Defaults to
+  /// This indicates the comment string used by the assembler.  Defaults to
   /// "#"
   StringRef CommentString;
+
+  /// This indicates whether the comment string is only accepted as a comment
+  /// at the beginning of statements. Defaults to false.
+  bool RestrictCommentStringToStartOfStatement = false;
 
   /// This is appended to emitted labels.  Defaults to ":"
   const char *LabelSuffix;
@@ -388,6 +392,14 @@ protected:
   /// absolute difference.
   bool DwarfFDESymbolsUseAbsDiff = false;
 
+  /// True if the target supports generating the DWARF line table through using
+  /// the .loc/.file directives. Defaults to true.
+  bool UsesDwarfFileAndLocDirectives = true;
+
+  /// True if the target needs the DWARF section length in the header (if any)
+  /// of the DWARF section in the assembly file. Defaults to true.
+  bool DwarfSectionSizeRequired = true;
+
   /// True if dwarf register numbers are printed instead of symbolic register
   /// names in .cfi_* directives.  Defaults to false.
   bool DwarfRegNumForCFI = false;
@@ -405,6 +417,12 @@ protected:
   std::vector<MCCFIInstruction> InitialFrameState;
 
   //===--- Integrated Assembler Information ----------------------------===//
+
+  // Generated object files can use all ELF features supported by GNU ld of
+  // this binutils version and later. INT_MAX means all features can be used,
+  // regardless of GNU ld support. The default value is referenced by
+  // clang/Driver/Options.td.
+  std::pair<int, int> BinutilsVersion = {2, 26};
 
   /// Should we use the integrated assembler?
   /// The integrated assembler should be enabled by default (by the
@@ -430,6 +448,9 @@ protected:
   // If true, then the lexer and expression parser will support %neg(),
   // %hi(), and similar unary operators.
   bool HasMipsExpressions = false;
+
+  // If true, use Motorola-style integers in Assembly (ex. $0ac).
+  bool UseMotorolaIntegers = false;
 
   // If true, emit function descriptor symbol on AIX.
   bool NeedsFunctionDescriptors = false;
@@ -543,6 +564,9 @@ public:
   unsigned getCommentColumn() const { return 40; }
 
   StringRef getCommentString() const { return CommentString; }
+  bool getRestrictCommentStringToStartOfStatement() const {
+    return RestrictCommentStringToStartOfStatement;
+  }
   const char *getLabelSuffix() const { return LabelSuffix; }
 
   bool useAssignmentForEHBegin() const { return UseAssignmentForEHBegin; }
@@ -667,14 +691,30 @@ public:
     return SupportsExtendedDwarfLocDirective;
   }
 
+  bool usesDwarfFileAndLocDirectives() const {
+    return UsesDwarfFileAndLocDirectives;
+  }
+
+  bool needsDwarfSectionSizeInHeader() const {
+    return DwarfSectionSizeRequired;
+  }
+
   void addInitialFrameState(const MCCFIInstruction &Inst);
 
   const std::vector<MCCFIInstruction> &getInitialFrameState() const {
     return InitialFrameState;
   }
 
+  void setBinutilsVersion(std::pair<int, int> Value) {
+    BinutilsVersion = Value;
+  }
+
   /// Return true if assembly (inline or otherwise) should be parsed.
   bool useIntegratedAssembler() const { return UseIntegratedAssembler; }
+
+  bool binutilsIsAtLeast(int Major, int Minor) const {
+    return BinutilsVersion >= std::make_pair(Major, Minor);
+  }
 
   /// Set whether assembly (inline or otherwise) should be parsed.
   virtual void setUseIntegratedAssembler(bool Value) {
@@ -703,6 +743,7 @@ public:
   void setRelaxELFRelocations(bool V) { RelaxELFRelocations = V; }
   bool hasMipsExpressions() const { return HasMipsExpressions; }
   bool needsFunctionDescriptors() const { return NeedsFunctionDescriptors; }
+  bool shouldUseMotorolaIntegers() const { return UseMotorolaIntegers; }
 };
 
 } // end namespace llvm

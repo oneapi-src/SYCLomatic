@@ -20,6 +20,11 @@
 #include <string>
 
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
+#ifdef INTEL_CUSTOMIZATION
+LLVM_YAML_IS_STRING_MAP(clang::tooling::HelperFuncForYaml)
+using FeatureOfFileMapTy = std::map<std::string/*feature name*/, clang::tooling::HelperFuncForYaml>;
+LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
+#endif
 
 namespace llvm {
 namespace yaml {
@@ -144,6 +149,39 @@ template <> struct MappingTraits<std::pair<std::string, std::string>> {
     Io.mapRequired("Digest", Keys->Digest);
   }
 };
+
+template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
+  struct NormalizedHelperFuncForYaml {
+    NormalizedHelperFuncForYaml(const IO &)
+        : IsCalled(false), CallerSrcFiles({}), FeatureName("") {}
+
+    NormalizedHelperFuncForYaml(const IO &,
+                               const clang::tooling::HelperFuncForYaml &HFFY)
+        : IsCalled(HFFY.IsCalled), CallerSrcFiles(HFFY.CallerSrcFiles),
+          FeatureName(HFFY.FeatureName) {}
+
+    clang::tooling::HelperFuncForYaml denormalize(const IO &) {
+      clang::tooling::HelperFuncForYaml HFFY;
+      HFFY.IsCalled = IsCalled;
+      HFFY.CallerSrcFiles = CallerSrcFiles;
+      HFFY.FeatureName = FeatureName;
+      return HFFY;
+    }
+
+    bool IsCalled = false;
+    std::vector<std::string> CallerSrcFiles;
+    std::string FeatureName;
+  };
+
+  static void mapping(IO &Io, clang::tooling::HelperFuncForYaml &HFFY) {
+    MappingNormalization<NormalizedHelperFuncForYaml,
+                         clang::tooling::HelperFuncForYaml>
+        Keys(Io, HFFY);
+    Io.mapRequired("IsCalled", Keys->IsCalled);
+    Io.mapRequired("CallerSrcFiles", Keys->CallerSrcFiles);
+    Io.mapRequired("FeatureName", Keys->FeatureName);
+  }
+};
 #endif
 
 
@@ -156,6 +194,10 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapRequired("Replacements", Doc.Replacements);
 #ifdef INTEL_CUSTOMIZATION
     Io.mapRequired("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
+    Io.mapRequired("DpctVersion", Doc.DpctVersion);
+    Io.mapRequired("MainHelperFileName", Doc.MainHelperFileName);
+    Io.mapRequired("USMLevel", Doc.USMLevel);
+    Io.mapRequired("FeatureMap", Doc.FeatureMap);
 #endif
   }
 };

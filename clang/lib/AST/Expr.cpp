@@ -117,7 +117,8 @@ const Expr *Expr::skipRValueSubobjectAdjustments(
           BO->getRHS()->getType()->getAs<MemberPointerType>();
         Adjustments.push_back(SubobjectAdjustment(MPT, BO->getRHS()));
         continue;
-      } else if (BO->getOpcode() == BO_Comma) {
+      }
+      if (BO->getOpcode() == BO_Comma) {
         CommaLHSs.push_back(BO->getLHS());
         E = BO->getRHS();
         continue;
@@ -659,8 +660,8 @@ std::string PredefinedExpr::ComputeName(IdentKind IK, const Decl *CurrentDecl) {
         if (!Buffer.empty() && Buffer.front() == '\01')
           return std::string(Buffer.substr(1));
         return std::string(Buffer.str());
-      } else
-        return std::string(ND->getIdentifier()->getName());
+      }
+      return std::string(ND->getIdentifier()->getName());
     }
     return "";
   }
@@ -1463,8 +1464,15 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
     if (isa<CXXPseudoDestructorExpr>(Callee->IgnoreParens()))
       return Ctx.VoidTy;
 
+    if (isa<UnresolvedMemberExpr>(Callee->IgnoreParens()))
+      return Ctx.DependentTy;
+
     // This should never be overloaded and so should never return null.
     CalleeType = Expr::findBoundMemberType(Callee);
+    assert(!CalleeType.isNull());
+  } else if (CalleeType->isDependentType() ||
+             CalleeType->isSpecificPlaceholderType(BuiltinType::Overload)) {
+    return Ctx.DependentTy;
   }
 
   const FunctionType *FnType = CalleeType->castAs<FunctionType>();
@@ -1780,6 +1788,7 @@ bool CastExpr::CastConsistency() const {
   case CK_FixedPointCast:
   case CK_FixedPointToIntegral:
   case CK_IntegralToFixedPoint:
+  case CK_MatrixCast:
     assert(!getType()->isBooleanType() && "unheralded conversion to bool");
     goto CheckNoBasePath;
 
@@ -3773,7 +3782,7 @@ Expr::isNullPointerConstant(ASTContext &Ctx,
     const IntegerLiteral *Lit = dyn_cast<IntegerLiteral>(this);
     if (Lit && !Lit->getValue())
       return NPCK_ZeroLiteral;
-    else if (!Ctx.getLangOpts().MSVCCompat || !isCXX98IntegralConstantExpr(Ctx))
+    if (!Ctx.getLangOpts().MSVCCompat || !isCXX98IntegralConstantExpr(Ctx))
       return NPCK_NotNull;
   } else {
     // If we have an integer constant expression, we need to *evaluate* it and
@@ -4202,9 +4211,8 @@ GenericSelectionExpr::CreateEmpty(const ASTContext &Context,
 IdentifierInfo *DesignatedInitExpr::Designator::getFieldName() const {
   assert(Kind == FieldDesignator && "Only valid on a field designator");
   if (Field.NameOrField & 0x01)
-    return reinterpret_cast<IdentifierInfo *>(Field.NameOrField&~0x01);
-  else
-    return getField()->getIdentifier();
+    return reinterpret_cast<IdentifierInfo *>(Field.NameOrField & ~0x01);
+  return getField()->getIdentifier();
 }
 
 DesignatedInitExpr::DesignatedInitExpr(const ASTContext &C, QualType Ty,
@@ -4322,7 +4330,8 @@ void DesignatedInitExpr::ExpandDesignator(const ASTContext &C, unsigned Idx,
                        Designators + Idx);
     --NumNewDesignators;
     return;
-  } else if (NumNewDesignators == 1) {
+  }
+  if (NumNewDesignators == 1) {
     Designators[Idx] = *First;
     return;
   }

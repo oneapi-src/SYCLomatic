@@ -88,18 +88,15 @@ MCRegister getSCSPReg() { return RISCV::X18; }
 namespace RISCVFeatures {
 
 void validate(const Triple &TT, const FeatureBitset &FeatureBits) {
+  if (TT.isArch64Bit() && !FeatureBits[RISCV::Feature64Bit])
+    report_fatal_error("RV64 target requires an RV64 CPU");
+  if (!TT.isArch64Bit() && FeatureBits[RISCV::Feature64Bit])
+    report_fatal_error("RV32 target requires an RV32 CPU");
   if (TT.isArch64Bit() && FeatureBits[RISCV::FeatureRV32E])
     report_fatal_error("RV32E can't be enabled for an RV64 target");
 }
 
 } // namespace RISCVFeatures
-
-namespace RISCVVPseudosTable {
-
-#define GET_RISCVVPseudosTable_IMPL
-#include "RISCVGenSearchableTables.inc"
-
-} // namespace RISCVVPseudosTable
 
 void RISCVVType::printVType(unsigned VType, raw_ostream &OS) {
   RISCVVSEW VSEW = getVSEW(VType);

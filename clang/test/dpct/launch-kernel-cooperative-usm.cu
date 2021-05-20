@@ -66,8 +66,8 @@ int main() {
 
   // CHECK: stream->submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
-  // CHECK-NEXT:    sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(16), cgh);
+  // CHECK-NEXT:    sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
+  // CHECK-NEXT:    sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(16), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
@@ -82,7 +82,7 @@ int main() {
   void *kernel_func = (void *)&kernel;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, 0);
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);

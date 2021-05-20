@@ -12,7 +12,7 @@ void foo() {
   const int B = 32;
   int grid_size, block_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:0: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:0: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   cudaOccupancyMaxPotentialBlockSize(&grid_size, &block_size, &wg_private_local_kernel, B * sizeof(uint32_t));
 

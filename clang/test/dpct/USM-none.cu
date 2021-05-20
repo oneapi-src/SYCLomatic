@@ -93,7 +93,7 @@ void foo() {
   cudaFreeHost(h_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   cudaHostGetDevicePointer(&d_A, h_A, 0);
 

@@ -15,6 +15,14 @@
 #include <string>
 #include <vector>
 
+#if defined(_WIN32)
+#define MAX_PATH_LEN _MAX_PATH
+#define MAX_NAME_LEN _MAX_FNAME
+#else
+#define MAX_PATH_LEN PATH_MAX
+#define MAX_NAME_LEN NAME_MAX
+#endif
+
 /// The enum that specifies the level of Unified Shared Memory, only
 /// two levels are supported currrently.
 /// none:       uses helper functions from DPCT header files for memory
@@ -26,8 +34,11 @@ enum class UsmLevel { none, restricted };
 enum class OutputVerbosityLev { silent, normal, detailed, diagnostics };
 enum class DPCTFormatStyle { llvm, google, custom };
 enum class ReportFormatEnum { notsetformat, csv, formatted };
+enum class HelperFilesCustomizationLevel { none, file, all };
 enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
-
+enum class AssumedNDRangeDimEnum : unsigned int { dim1 = 1, dim3 = 3 };
+enum class ExplicitNamespace {none, cl, sycl, sycl_math, dpct};
+enum class DPCPPExtensions{submit_barrier};
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
@@ -48,4 +59,8 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 ///  1: Path is empty, option SDK include path is not used
 /// -1: Path is invaild
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
+
+void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
+                                     std::string &Name,
+                                     const std::string &OutRoot);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

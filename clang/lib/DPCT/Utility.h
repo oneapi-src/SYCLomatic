@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "clang/AST/Attr.h"
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/ParentMapContext.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -57,6 +59,9 @@ class DynTypedNode;
 
 namespace dpct{
 enum class FFTTypeEnum;
+class DeviceFunctionInfo;
+enum class HelperFileEnum : unsigned int;
+struct HelperFunc;
 } // namespace dpct
 
 namespace tooling {
@@ -103,6 +108,22 @@ bool isCanonical(llvm::StringRef Path);
 
 extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 extern std::unordered_map<std::string, bool> ChildPathCache;
+extern std::unordered_map<std::string, bool> IsDirectoryCache;
+
+/// Check \param FilePath is whether a directory path
+/// \param [in] FilePath is a file path.
+/// \return true: directory path, false: not directory path.
+inline bool isDirectory(const std::string &FilePath) {
+  const auto &Key = FilePath;
+  auto Iter = IsDirectoryCache.find(Key);
+  if (Iter != IsDirectoryCache.end()) {
+    return Iter->second;
+  } else {
+    auto Ret = llvm::sys::fs::is_directory(FilePath);
+    IsDirectoryCache[Key] = Ret;
+    return Ret;
+  }
+}
 
 /// Check \param Child is whether the child path of \param RootAbs
 /// \param [in] RootAbs An absolute path as reference.
@@ -150,8 +171,8 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
     return Iter->second;
   }
 
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
+  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                            path::begin(LocalChild));
   // LocalRoot is not considered prefix of LocalChild if they are equal.
   bool Ret = Diff.first == path::end(LocalRoot) &&
          Diff.second != path::end(LocalChild);
@@ -195,15 +216,16 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
 
 #if defined(_WIN64)
   std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
+  std::string LocalChild =
+      InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
 #elif defined(__linux__)
   std::string LocalRoot = RootAbs.c_str();
   std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
 #else
 #error Only support windows and Linux.
 #endif
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
+  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                            path::begin(LocalChild));
   bool Ret = Diff.first == path::end(LocalRoot);
   ChildOrSameCache[Key] = Ret;
   return Ret;
@@ -473,4 +495,51 @@ bool isLocInSameMacroArg(clang::SourceLocation Begin,
 const clang::CompoundStmt *
 findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(
     const clang::CallExpr *CE);
+bool isInMacroDefinition(clang::SourceLocation BeginLoc,
+                         clang::SourceLocation EndLoc);
+bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
+                      clang::SourceLocation EndLoc);
+void constructUnionFindSetRecursively(
+    std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
+// Determine if S is a statement inside
+// a if/while/do while/for statement.
+template <typename NodeTy>
+bool isInCtrlFlowStmt(const clang::Stmt *S, const NodeTy *Root,
+                      clang::ASTContext &Context) {
+  auto ParentStmt = getParentStmt(S);
+  if (!ParentStmt)
+    return false;
+
+  auto Parents = Context.getParents(*S);
+
+  if (Parents.size() < 1)
+    return false;
+  const NodeTy *Parent = Parents[0].get<NodeTy>();
+  auto ParentStmtClass = ParentStmt->getStmtClass();
+  bool Ret = ParentStmtClass == clang::Stmt::StmtClass::IfStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::WhileStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::DoStmtClass ||
+             ParentStmtClass == clang::Stmt::StmtClass::ForStmtClass;
+  if (Ret)
+    return true;
+  else if (Parent != Root)
+    return isInCtrlFlowStmt(ParentStmt, Root, Context);
+  else
+    return false;
+}
+void getShareAttrRecursive(const clang::Expr *Expr, bool &HasSharedAttr,
+                           bool &NeedReport);
+enum class LocalVarAddrSpaceEnum {
+  AS_CannotDeduce,
+  AS_IsPrivate,
+  AS_IsGlobal
+};
+void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
+bool isModifiedRef(const clang::DeclRefExpr *DRE);
+bool isDefaultStream(const clang::Expr *StreamArg);
+const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
+bool isTypeInRoot(const clang::MemberExpr *ME);
+void findAssignments(const clang::DeclaratorDecl *HandleDecl,
+                     const clang::CompoundStmt *CS,
+                     std::vector<const clang::DeclRefExpr *> &Refs);
 #endif // DPCT_UTILITY_H

@@ -12,13 +12,17 @@
 #ifndef DPCT_MAPNAMES_H
 #define DPCT_MAPNAMES_H
 
+#include "CustomHelperFiles.h"
 #include "Utility.h"
+#include "ValidateArguments.h"
 #include <map>
 #include <set>
 
 namespace clang {
 namespace dpct {
   enum class KernelArgType;
+  enum class HelperFileEnum : unsigned int;
+  struct HelperFunc;
 }
 }
 
@@ -35,11 +39,17 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 /// Record mapping between names
 class MapNames {
-  static std::string ClNamespace;
+  static std::vector<std::string> ClNamespace;
+  static std::vector<std::string> DpctNamespace;
 public:
-  static void setClNamespace(bool enable);
-
-  static std::string getClNamespace();
+  static void setExplicitNamespaceMap();
+// KeepNamespace = true for funtion or type that need avoid ambiguous.
+// Example: sycl::exception <--> std::exception
+// IsMathFunc = true for namespace before math functions.
+// Example: sycl::exp
+  static std::string getClNamespace(bool KeepNamespace = false,
+                                           bool IsMathFunc = false);
+  static std::string getDpctNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -309,22 +319,27 @@ public:
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
+  static std::map<std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+      TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
-  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+  static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static ThrustMapTy ThrustFuncNamesMap;
-  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+  static std::map<std::string,
+                  std::pair<clang::dpct::HelperFileEnum, std::string>>
+      ThrustFuncNamesHelperFeaturesMap;
+  static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
-  static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+  static std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BatchedBLASFuncReplInfoMap;
 
   static const std::set<std::string> MustSyncBLASFunc;
@@ -334,17 +349,17 @@ public:
   static const std::map<std::string, std::map<int, std::string>>
       MaySyncBLASFuncWithMultiArgs;
 
-  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+  static std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASGemmExTypeInfoMap;
 
-  static const std::map<std::string, MapNames::BLASGemmExTypeInfo>
+  static std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASTGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
       SOLVERFuncReplInfoMap;
 
-  static const MapTy ITFName;
+  static MapTy ITFName;
   static const MapTy RandomEngineTypeMap;
   static const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
       RandomGenerateFuncReplInfoMap;
@@ -376,9 +391,44 @@ public:
 
   static const MapNames::MapTy MemberNamesMap;
   static const MapNames::SetTy HostAllocSet;
-  static const MapNames::MapTy MathRewriterMap;
+  static MapNames::MapTy MathRewriterMap;
 
-  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
+  static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
+  static const MapNames::SetTy PredefinedStreamName;
+
+
+
+  static std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
+                  clang::dpct::HelperFunc>
+      HelperNameContentMap;
+  static std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+      HelperFileNameMap;
+  static std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+      HelperFileIDMap;
+  static const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileHeaderGuardMacroMap;
+  static const std::unordered_map<
+      std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+      TextureAPIHelperFeaturesMap;
+  static const std::unordered_map<clang::dpct::HelperFileEnum,
+                                  std::vector<clang::dpct::HelperFileEnum>>
+      HelperFileDependencyMap;
+
+  static const std::string DpctAllContentStr;
+  static const std::string AtomicAllContentStr;
+  static const std::string BlasUtilsAllContentStr;
+  static const std::string DeviceAllContentStr;
+  static const std::string DplUtilsAllContentStr;
+  static const std::string ImageAllContentStr;
+  static const std::string KernelAllContentStr;
+  static const std::string MemoryAllContentStr;
+  static const std::string UtilAllContentStr;
+  static const std::string DplExtrasAlgorithmAllContentStr;
+  static const std::string DplExtrasFunctionalAllContentStr;
+  static const std::string DplExtrasIteratorsAllContentStr;
+  static const std::string DplExtrasMemoryAllContentStr;
+  static const std::string DplExtrasNumericAllContentStr;
+  static const std::string DplExtrasVectorAllContentStr;
 };
 
 class MigrationStatistics {

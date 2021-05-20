@@ -30,7 +30,8 @@ int mergeExternalReps(std::string InRootSrcFilePath,
                       std::string OutRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
 int loadFromYaml(llvm::StringRef Input,
-                 clang::tooling::TranslationUnitReplacements &TU);
+                 clang::tooling::TranslationUnitReplacements &TU,
+                 bool OverwriteHelpFilesSet);
 int save2Yaml(llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
               const std::vector<clang::tooling::Replacement> &Replaces,
               const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest);

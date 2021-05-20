@@ -89,44 +89,44 @@
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
-; CHECK-NEXT:     Size: 95
+; CHECK-NEXT:     Size: 91
 ; CHECK-NEXT:     Offset: 759
 ; CHECK-NEXT:     Name: linking
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 9
-; CHECK-NEXT:     Offset: 868
+; CHECK-NEXT:     Offset: 864
 ; CHECK-NEXT:     Name: reloc.DATA
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 61
-; CHECK-NEXT:     Offset: 894
+; CHECK-NEXT:     Offset: 890
 ; CHECK-NEXT:     Name: reloc..debug_info
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 6
-; CHECK-NEXT:     Offset: 979
+; CHECK-NEXT:     Offset: 975
 ; CHECK-NEXT:     Name: reloc..debug_pubnames
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 6
-; CHECK-NEXT:     Offset: 1013
+; CHECK-NEXT:     Offset: 1009
 ; CHECK-NEXT:     Name: reloc..debug_pubtypes
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 6
-; CHECK-NEXT:     Offset: 1047
+; CHECK-NEXT:     Offset: 1043
 ; CHECK-NEXT:     Name: reloc..debug_line
 ; CHECK-NEXT:   }
 ; CHECK-NEXT:   Section {
 ; CHECK-NEXT:     Type: CUSTOM (0x0)
 ; CHECK-NEXT:     Size: 77
-; CHECK-NEXT:     Offset: 1077
+; CHECK-NEXT:     Offset: 1073
 ; CHECK-NEXT:     Name: producers
 ; CHECK-NEXT:   }
 ; CHECK-NEXT: ]
@@ -238,16 +238,6 @@
 ; CHECK-NEXT:     ]
 ; CHECK-NEXT:     ElementIndex: 0xC
 ; CHECK-NEXT:   }
-; CHECK-NEXT:   Symbol {
-; CHECK-NEXT:     Name: __indirect_function_table
-; CHECK-NEXT:     Type: TABLE (0x5)
-; CHECK-NEXT:     Flags [ (0x90)
-; CHECK-NEXT:       NO_STRIP (0x80)
-; CHECK-NEXT:       UNDEFINED (0x10)
-; CHECK-NEXT:     ]
-; CHECK-NEXT:     ImportModule: env
-; CHECK-NEXT:     ElementIndex: 0x0
-; CHECK-NEXT:   }
 ; CHECK-NEXT: ]
 
 ; generated from the following C code using: clang --target=wasm64 -g -O0 -S -emit-llvm test.c
@@ -285,10 +275,10 @@ attributes #0 = { noinline nounwind optnone "correctly-rounded-divide-sqrt-fp-ma
 !5 = !{!0, !6}
 !6 = !DIGlobalVariableExpression(var: !7, expr: !DIExpression())
 !7 = distinct !DIGlobalVariable(name: "ptr2", scope: !2, file: !3, line: 5, type: !8, isLocal: false, isDefinition: true)
-!8 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !9, size: 32)
+!8 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !9, size: 64)
 !9 = !DISubroutineType(types: !10)
 !10 = !{null}
-!11 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !12, size: 32)
+!11 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !12, size: 64)
 !12 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !13 = !{i32 2, !"Dwarf Version", i32 4}
 !14 = !{i32 2, !"Debug Info Version", i32 3}

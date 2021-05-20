@@ -389,6 +389,7 @@ struct FFTExecAPIInfo {
   unsigned int CompoundStmtBeginOffset = 0;
   unsigned int PlanHandleDeclBeginOffset = 0;
   unsigned int ExecAPIBeginOffset = 0;
+  std::string DefiniteStream = "";
 
   // Input info by Plan API (from handle info)
   std::string InputDistance;
@@ -415,6 +416,10 @@ struct FFTExecAPIInfo {
                           // && !IsFunctionPointer && !IsFunctionPointerAssignment
                           // && (handle->dir == unknown || handle->dir == uninitialized)
 };
+
+bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall,
+                                    int Index,
+                                    std::string &StreamStr);
 
 } // namespace dpct
 } // namespace clang

@@ -1,4 +1,5 @@
 ; RUN: llc -filetype=obj %s -o - | llvm-readobj --symbols - | FileCheck %s
+; RUN: llc -filetype=obj %s -mattr=+reference-types -o - | llvm-readobj --symbols - | FileCheck --check-prefix=REF %s
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
 target triple = "wasm32-unknown-unknown-wasm"
@@ -41,14 +42,45 @@ define i8* @func() {
 ; CHECK-NEXT:     ]
 ; CHECK-NEXT:     ElementIndex: 0x0
 ; CHECK-NEXT:   }
-; CHECK-NEXT:   Symbol {
-; CHECK-NEXT:     Name: __indirect_function_table
-; CHECK-NEXT:     Type: TABLE (0x5)
-; CHECK-NEXT:     Flags [ (0x90)
-; CHECK-NEXT:       NO_STRIP (0x80)
-; CHECK-NEXT:       UNDEFINED (0x10)
-; CHECK-NEXT:     ]
-; CHECK-NEXT:     ImportModule: env
-; CHECK-NEXT:     ElementIndex: 0x0
-; CHECK-NEXT:   }
 ; CHECK-NEXT: ]
+
+; REF:      Symbols [
+; REF-NEXT:   Symbol {
+; REF-NEXT:     Name: func
+; REF-NEXT:     Type: FUNCTION (0x0)
+; REF-NEXT:     Flags [ (0x0)
+; REF-NEXT:     ]
+; REF-NEXT:     ElementIndex: 0x0
+; REF-NEXT:   }
+; REF-NEXT:   Symbol {
+; REF-NEXT:     Name: bar2
+; REF-NEXT:     Type: FUNCTION (0x0)
+; REF-NEXT:     Flags [ (0x0)
+; REF-NEXT:     ]
+; REF-NEXT:     ElementIndex: 0x0
+; REF-NEXT:   }
+; REF-NEXT:   Symbol {
+; REF-NEXT:     Name: foo
+; REF-NEXT:     Type: FUNCTION (0x0)
+; REF-NEXT:     Flags [ (0x0)
+; REF-NEXT:     ]
+; REF-NEXT:     ElementIndex: 0x0
+; REF-NEXT:   }
+; REF-NEXT:   Symbol {
+; REF-NEXT:     Name: bar
+; REF-NEXT:     Type: FUNCTION (0x0)
+; REF-NEXT:     Flags [ (0x0)
+; REF-NEXT:     ]
+; REF-NEXT:     ElementIndex: 0x0
+; REF-NEXT:   }
+; REF-NEXT:   Symbol {
+; REF-NEXT:     Name: __indirect_function_table
+; REF-NEXT:     Type: TABLE (0x5)
+; REF-NEXT:     Flags [ (0x90)
+; REF-NEXT:       NO_STRIP (0x80)
+; REF-NEXT:       UNDEFINED (0x10)
+; REF-NEXT:     ]
+; REF-NEXT:     ImportModule: env
+; REF-NEXT:     ElementIndex: 0x0
+; REF-NEXT:   }
+; REF-NEXT: ]

@@ -538,9 +538,12 @@ void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
     if (!AllowedInit &&
         (VD->hasAttr<CUDADeviceAttr>() || VD->hasAttr<CUDAConstantAttr>())) {
       auto *Init = VD->getInit();
+      // isConstantInitializer cannot be called with dependent value, therefore
+      // we skip checking dependent value here. This is OK since
+      // checkAllowedCUDAInitializer is called again when the template is
+      // instantiated.
       AllowedInit =
-          ((VD->getType()->isDependentType() || Init->isValueDependent()) &&
-           VD->isConstexpr()) ||
+          VD->getType()->isDependentType() || Init->isValueDependent() ||
           Init->isConstantInitializer(Context,
                                       VD->getType()->isReferenceType());
     }
@@ -674,7 +677,8 @@ Sema::SemaDiagnosticBuilder Sema::CUDADiagIfDeviceCode(SourceLocation Loc,
     }
   }();
   return SemaDiagnosticBuilder(DiagKind, Loc, DiagID,
-                               dyn_cast<FunctionDecl>(CurContext), *this);
+                               dyn_cast<FunctionDecl>(CurContext), *this,
+                               DeviceDiagnosticReason::CudaDevice);
 }
 
 Sema::SemaDiagnosticBuilder Sema::CUDADiagIfHostCode(SourceLocation Loc,
@@ -703,7 +707,8 @@ Sema::SemaDiagnosticBuilder Sema::CUDADiagIfHostCode(SourceLocation Loc,
     }
   }();
   return SemaDiagnosticBuilder(DiagKind, Loc, DiagID,
-                               dyn_cast<FunctionDecl>(CurContext), *this);
+                               dyn_cast<FunctionDecl>(CurContext), *this,
+                               DeviceDiagnosticReason::CudaHost);
 }
 
 bool Sema::CheckCUDACall(SourceLocation Loc, FunctionDecl *Callee) {
@@ -719,7 +724,13 @@ bool Sema::CheckCUDACall(SourceLocation Loc, FunctionDecl *Callee) {
   FunctionDecl *Caller = dyn_cast<FunctionDecl>(CurContext);
   if (!Caller)
     return true;
-
+#ifdef INTEL_CUSTOMIZATION
+  CUDAFunctionTarget CallerTarget = IdentifyCUDATarget(Caller);
+  CUDAFunctionTarget CalleeTarget = IdentifyCUDATarget(Callee);
+  if(CallerTarget == CFT_HostDevice && CalleeTarget == CFT_Device){
+    return true;
+  }
+#endif // INTEL_CUSTOMIZATION
   // If the caller is known-emitted, mark the callee as known-emitted.
   // Otherwise, mark the call in our call graph so we can traverse it later.
   bool CallerKnownEmitted =
@@ -751,12 +762,14 @@ bool Sema::CheckCUDACall(SourceLocation Loc, FunctionDecl *Callee) {
   if (!LocsWithCUDACallDiags.insert({Caller, Loc}).second)
     return true;
 
-  SemaDiagnosticBuilder(DiagKind, Loc, diag::err_ref_bad_target, Caller, *this)
+  SemaDiagnosticBuilder(DiagKind, Loc, diag::err_ref_bad_target, Caller, *this,
+                        DeviceDiagnosticReason::CudaAll)
       << IdentifyCUDATarget(Callee) << /*function*/ 0 << Callee
       << IdentifyCUDATarget(Caller);
   if (!Callee->getBuiltinID())
     SemaDiagnosticBuilder(DiagKind, Callee->getLocation(),
-                          diag::note_previous_decl, Caller, *this)
+                          diag::note_previous_decl, Caller, *this,
+                          DeviceDiagnosticReason::CudaAll)
         << Callee;
   return DiagKind != SemaDiagnosticBuilder::K_Immediate &&
          DiagKind != SemaDiagnosticBuilder::K_ImmediateWithCallStack;
@@ -799,11 +812,13 @@ void Sema::CUDACheckLambdaCapture(CXXMethodDecl *Callee,
   auto DiagKind = SemaDiagnosticBuilder::K_Deferred;
   if (Capture.isVariableCapture()) {
     SemaDiagnosticBuilder(DiagKind, Capture.getLocation(),
-                          diag::err_capture_bad_target, Callee, *this)
+                          diag::err_capture_bad_target, Callee, *this,
+                          DeviceDiagnosticReason::CudaAll)
         << Capture.getVariable();
   } else if (Capture.isThisCapture()) {
     SemaDiagnosticBuilder(DiagKind, Capture.getLocation(),
-                          diag::err_capture_bad_target_this_ptr, Callee, *this);
+                          diag::err_capture_bad_target_this_ptr, Callee, *this,
+                          DeviceDiagnosticReason::CudaAll);
   }
   return;
 }

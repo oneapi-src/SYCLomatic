@@ -47,10 +47,10 @@ int main(){
   // CHECK: CUDA_SAFE_CALL((ctx2 = dpct::dev_mgr::instance().current_device_id(), 0));
   CUDA_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
-  // CHECK: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
+  // CHECK: dpct::get_current_device().queues_wait_and_throw();
   cuCtxSynchronize();
 
-  // CHECK: CUDA_SAFE_CALL((dpct::dev_mgr::instance().current_device().queues_wait_and_throw(), 0));
+  // CHECK: CUDA_SAFE_CALL((dpct::get_current_device().queues_wait_and_throw(), 0));
   CUDA_SAFE_CALL(cuCtxSynchronize());
 
   // CHECK: /*

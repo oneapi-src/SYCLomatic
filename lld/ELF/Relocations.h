@@ -78,6 +78,7 @@ enum RelExpr {
   // of a relocation type, there are some relocations whose semantics are
   // unique to a target. Such relocation are marked with R_<TARGET_NAME>.
   R_AARCH64_GOT_PAGE_PC,
+  R_AARCH64_GOT_PAGE,
   R_AARCH64_PAGE_PC,
   R_AARCH64_RELAX_TLS_GD_TO_IE_PAGE_PC,
   R_AARCH64_TLSDESC_PAGE,
@@ -147,8 +148,8 @@ private:
   void mergeThunks(ArrayRef<OutputSection *> outputSections);
 
   ThunkSection *getISDThunkSec(OutputSection *os, InputSection *isec,
-                               InputSectionDescription *isd, uint32_t type,
-                               uint64_t src);
+                               InputSectionDescription *isd,
+                               const Relocation &rel, uint64_t src);
 
   ThunkSection *getISThunkSec(InputSection *isec);
 

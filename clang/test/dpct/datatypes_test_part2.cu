@@ -1553,16 +1553,10 @@ __device__ void foo_t(){
 }
 
 {
-// Disscussed with Andy that
-// this case does not happen in real code,
-// so it is not migrated currently.
-// TODO: 
-// We will process it, when it happens in real application's code.
-
-// CHECK: #define T8_52 cublasStatus
-// CHECK-NEXT: #define T8_53 cublasStatus *
-// CHECK-NEXT: #define T8_54 cublasStatus &
-// CHECK-NEXT: #define T8_55 cublasStatus &&
+// CHECK: #define T8_52 int
+// CHECK-NEXT: #define T8_53 int *
+// CHECK-NEXT: #define T8_54 int &
+// CHECK-NEXT: #define T8_55 int &&
 // CHECK-NEXT:     T8_52 a1;
 // CHECK-NEXT:     T8_53 a2;
 // CHECK-NEXT:     T8_54 a3=a1;

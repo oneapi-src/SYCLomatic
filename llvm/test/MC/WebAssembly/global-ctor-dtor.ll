@@ -25,7 +25,7 @@ declare void @func3()
 ; CHECK-NEXT:         Field:           __linear_memory
 ; CHECK-NEXT:         Kind:            MEMORY
 ; CHECK-NEXT:         Memory:
-; CHECK-NEXT:           Initial:         0x1
+; CHECK-NEXT:           Minimum:         0x1
 ; CHECK-NEXT:       - Module:          env
 ; CHECK-NEXT:         Field:           func3
 ; CHECK-NEXT:         Kind:            FUNCTION
@@ -53,7 +53,7 @@ declare void @func3()
 ; CHECK-NEXT:           Index:           0
 ; CHECK-NEXT:           ElemType:        FUNCREF
 ; CHECK-NEXT:           Limits:
-; CHECK-NEXT:             Initial:         0x2
+; CHECK-NEXT:             Minimum:         0x2
 ; CHECK-NEXT:   - Type:            FUNCTION
 ; CHECK-NEXT:     FunctionTypes:   [ 0, 1, 0, 1 ]
 ; CHECK-NEXT:   - Type:            ELEM
@@ -170,11 +170,6 @@ declare void @func3()
 ; CHECK-NEXT:         Name:            func0
 ; CHECK-NEXT:         Flags:           [ UNDEFINED ]
 ; CHECK-NEXT:         Function:        4
-; CHECK-NEXT:       - Index:           11
-; CHECK-NEXT:         Kind:            TABLE
-; CHECK-NEXT:         Name:            __indirect_function_table
-; CHECK-NEXT:         Flags:           [ UNDEFINED, NO_STRIP ]
-; CHECK-NEXT:         Table:           0
 ; CHECK-NEXT:     SegmentInfo:
 ; CHECK-NEXT:       - Index:           0
 ; CHECK-NEXT:         Name:            .data.global1

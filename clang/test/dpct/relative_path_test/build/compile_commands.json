@@ -1,0 +1,7 @@
+[
+    {
+        "command": "nvcc -c -o ./kernel.cu.o -D__CUDACC__=1 ../src/kernel.cu",
+        "directory": ".",
+        "file": "../src/kernel.cu"
+    },
+]

@@ -17,7 +17,7 @@
 
 #include "TextModification.h"
 #include "Utility.h"
-
+#include "clang/Rewrite/Core/RewriteBuffer.h"
 namespace clang {
 namespace dpct {
 class DpctFileInfo;
@@ -41,10 +41,11 @@ class ExtReplacements {
   };
 
 public:
-  ExtReplacements(DpctFileInfo *FileInfo);
-
+  ExtReplacements(std::string FilePath);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
+  std::string processV();
+  std::string processR(unsigned int Index);
 
   inline bool empty() { return ReplMap.empty(); }
 
@@ -55,14 +56,15 @@ public:
     return ReplMap;
   }
 
+  void postProcess();
 private:
   using ReplIterator =
       std::multimap<unsigned, std::shared_ptr<ExtReplacement>>::iterator;
 
 private:
-  bool isInvalid(std::shared_ptr<ExtReplacement> Repl);
+  bool isInvalid(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo);
   // Check if the Repl is same as source code
-  bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl);
+  bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo);
   inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
     if (isAlive(Repl))
       // If a replacement in the same pair is alive, merge it anyway.
@@ -116,16 +118,16 @@ private:
 
   std::vector<std::shared_ptr<ExtReplacement>> mergeReplsAtSameOffset();
 
-  void buildOriginCodeReplacements();
+  void buildOriginCodeReplacements(std::shared_ptr<DpctFileInfo> FileInfo);
 
   // Remove comments in the source code.
   void removeCommentsInSrcCode(StringRef SrcCode, std::string &Result,
                                bool &BlockComment);
 
   std::shared_ptr<ExtReplacement>
-  buildOriginCodeReplacement(const SourceLineRange &LineRange);
+  buildOriginCodeReplacement(const SourceLineRange &LineRange, std::shared_ptr<DpctFileInfo> FileInfo);
 
-  bool isEndWithSlash(unsigned LineNumber);
+  bool isEndWithSlash(unsigned LineNumber, std::shared_ptr<DpctFileInfo> FileInfo);
   size_t findCR(StringRef Line);
 
   // Mark a replacement as dead.
@@ -151,9 +153,9 @@ private:
 
   bool getStrReplacingPlaceholder(HelperFuncType HelperFuncType, int Index,
                                   std::string &Text);
-
-  const std::string &FilePath;
-  DpctFileInfo *FileInfo;
+  void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
+  void processCudaArchMacro();
+  std::string FilePath;
   ///<Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
   ///<PairID, PairStatus>

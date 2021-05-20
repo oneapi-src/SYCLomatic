@@ -26,7 +26,7 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 // CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK: dpct::global_memory<int, 1> const_ptr;
+// CHECK: dpct::constant_memory<int *, 0> const_ptr;
 __constant__ int *const_ptr;
 
 // CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
@@ -45,7 +45,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
-// CHECK-NEXT:              float *const_angle, int *const_ptr) {
+// CHECK-NEXT:              float *const_angle, int * const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   for (int loop = 0; loop < 360; loop++)
     h_array[loop] = acos(-1.0f) * loop / 180.0f;
 
-  // CHECK:   const_ptr.assign(d_int, sizeof(int) * size);
+  // CHECK:   q_ct1.memcpy(const_ptr.get_ptr(), &d_int, sizeof(int *)).wait();
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, const_ptr_ptr_ct1);
+  // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, *const_ptr_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   simple_kernel<<<size / 64, 64>>>(d_array);

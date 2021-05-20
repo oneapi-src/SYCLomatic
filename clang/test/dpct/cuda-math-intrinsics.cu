@@ -106,31 +106,31 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // Half2 Comparison Functions
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
@@ -155,7 +155,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h_2 = sycl::log2(h);
   h_2 = hlog2(h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = sycl::rint(h);
@@ -190,7 +190,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h2_2 = sycl::log2(h2);
   h2_2 = h2log2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = sycl::rint(h2);
@@ -427,9 +427,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fmod((double)i, d1);
   d2 = fmod(i, d1);
 
-  // CHECK: d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = frexp(d0, &i);
-  // CHECK: d2 = sycl::frexp((double)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::frexp((double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = frexp(i, &i);
 
   // CHECK: d2 = sycl::hypot(d0, d1);
@@ -526,13 +526,13 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::remainder((double)i, d1);
   d2 = remainder(i, d1);
 
-  // CHECK: d2 = sycl::remquo(d0, d1, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
@@ -1040,9 +1040,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::fmod((float)i, f1);
   f2 = fmodf(i, f1);
 
-  // CHECK: f2 = sycl::frexp(f0, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::frexp(f0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = frexpf(f0, &i);
-  // CHECK: f2 = sycl::frexp((float)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::frexp((float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = frexpf(i, &i);
 
   // CHECK: f2 = sycl::hypot(f0, f1);
@@ -1150,13 +1150,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::remainder((float)i, f1);
   f2 = remainderf(i, f1);
 
-  // CHECK: f2 = sycl::remquo(f0, f1, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = remquof(f0, f1, &i);
-  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = remquof(i, i, &i);
-  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = remquof(f0, i, &i);
-  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   f2 = remquof(i, f1, &i);
 
   // CHECK: f2 = sycl::rint(f0);
@@ -2071,166 +2071,166 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hadd_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hfma_sat(h, h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hmul_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hsub_sat(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hadd2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hfma2_sat(h2, h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hmul2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hsub2_sat(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hequ(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hgeu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hgtu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hleu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hltu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hneu(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbeq2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbge2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hble2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hblt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbne2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   b = __hbneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   __hneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = cyl_bessel_i1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = erfcinvf(f);
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = erfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = j0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = j1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = jnf(i, f);
 
@@ -2239,15 +2239,15 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normcdff(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
@@ -2257,7 +2257,7 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = rnormf(i, &f);
   // CHECK: f = f*(2<<l);
@@ -2265,46 +2265,46 @@ __global__ void testUnsupported() {
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = y0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = y1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = ynf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = cyl_bessel_i0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = cyl_bessel_i1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = erfcinv(d);
   // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = erfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = j0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = j1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = jn(i, d);
   // CHECK: d = dpct::fast_length((float *)&d, i);
@@ -2314,11 +2314,11 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
   d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = normcdf(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
@@ -2328,7 +2328,7 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = rnorm(i, &d);
   // CHECK: d = d*(2<<l);
@@ -2336,20 +2336,20 @@ __global__ void testUnsupported() {
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = y0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = y1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   d = yn(i, d);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   f = __saturatef(f);
 
@@ -2368,35 +2368,35 @@ __global__ void testUnsupported() {
   // CHECK: u = dpct::reverse_bits<unsigned int>(u);
   u = __brev(u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   ull = __brevll(ull);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __byte_perm(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   i = __ffs(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
@@ -2444,13 +2444,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::private_space>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -2858,11 +2858,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2870,7 +2870,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2879,11 +2879,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2891,7 +2891,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2928,11 +2928,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2940,7 +2940,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2949,11 +2949,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2961,7 +2961,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2998,11 +2998,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3010,7 +3010,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3019,11 +3019,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::global_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3031,7 +3031,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3492,3 +3492,47 @@ int test_log() {
   log_log(true, "MJ", "23");
 }
 
+__device__ void bar1(double *d) {
+  int i;
+  double d1;
+  double &d2 = *d;
+
+  // CHECK: DPCT1081:{{[0-9]+}}: The generated code assumes that "&d2" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
+  // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  sincos(i, &d1, &d2);
+}
+
+__device__ void bar1(double *d, bool flag) {
+  int i;
+  double d1;
+  double d2;
+  double *d2_p;
+  d2_p = &d2;
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  //CHECK-NEXT:if (flag) {
+  //CHECK-NEXT:  d2_p = d + 2;
+  //CHECK-NEXT:}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(d2_p));
+  //CHECK-NEXT:d2_p = &d2;
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  sincos(i, &d1, d2_p);
+  if (flag) {
+    d2_p = d + 2;
+  }
+  sincos(i, &d1, d2_p);
+  d2_p = &d2;
+  sincos(i, &d1, d2_p);
+}

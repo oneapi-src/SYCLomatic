@@ -1,0 +1,7 @@
+//CHECK:NOTE: This is an incremental migration. Previous version of the tool used: 9999.2.0, current version: 2021.3.0.
+//CHECK-NEXT:NOTE: The helper API "a_new_feature1" used in the previous migration was added in Intel(R) DPC++ Compatibility Tool 9999.2.0 and is not available in Intel(R) DPC++ Compatibility Tool 2021.3.0 used for the current migration. Migrate all files with the same version of the tool or update migrated files manually.
+//CHECK-NEXT:File(s) used "a_new_feature1" in the previous migration:
+//CHECK-NEXT:/file/path/file1.cu
+//CHECK-NEXT:NOTE: The helper API "a_new_feature2" used in the previous migration was added in Intel(R) DPC++ Compatibility Tool 9999.2.0 and is not available in Intel(R) DPC++ Compatibility Tool 2021.3.0 used for the current migration. Migrate all files with the same version of the tool or update migrated files manually.
+//CHECK-NEXT:File(s) used "a_new_feature2" in the previous migration:
+//CHECK-NEXT:/file/path/file2.cu

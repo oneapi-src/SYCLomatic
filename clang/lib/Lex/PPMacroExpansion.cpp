@@ -57,7 +57,9 @@
 #include <utility>
 
 using namespace clang;
-
+namespace clang {
+  extern std::function<unsigned int()> GetRunRound;
+}
 MacroDirective *
 Preprocessor::getLocalMacroDirectiveHistory(const IdentifierInfo *II) const {
   if (!II->hadMacroDefinition())
@@ -170,7 +172,8 @@ ModuleMacro *Preprocessor::addModuleMacro(Module *Mod, IdentifierInfo *II,
   return MM;
 }
 
-ModuleMacro *Preprocessor::getModuleMacro(Module *Mod, IdentifierInfo *II) {
+ModuleMacro *Preprocessor::getModuleMacro(Module *Mod,
+                                          const IdentifierInfo *II) {
   llvm::FoldingSetNodeID ID;
   ModuleMacro::Profile(ID, Mod, II);
 
@@ -1862,7 +1865,10 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
 #ifdef INTEL_CUSTOMIZATION
   // Treat __CUDA_ARCH__ as 600 in code
   } else if (II->getName() == "__CUDA_ARCH__") {
-    OS << 600;
+    if(GetRunRound() == 0)
+      OS << 600;
+    else
+      OS << 0;
     Tok.setKind(tok::numeric_constant);
 #endif
   } else {

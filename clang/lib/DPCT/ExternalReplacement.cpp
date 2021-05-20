@@ -38,7 +38,8 @@ using clang::tooling::Replacements;
 
 int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
               const std::vector<clang::tooling::Replacement> &Replaces,
-              const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
+              const std::vector<std::pair<std::string, std::string>>
+                  &MainSrcFilesDigest) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
@@ -53,6 +54,15 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
                                    MainSrcFilesDigest.begin(),
                                    MainSrcFilesDigest.end());
 
+  clang::dpct::updateTUR(TUR);
+  TUR.DpctVersion = clang::dpct::getDpctVersionStr();
+  TUR.MainHelperFileName =
+      clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
+  if (clang::dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    TUR.USMLevel = "none";
+  } else {
+    TUR.USMLevel = "restricted";
+  }
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
@@ -64,7 +74,8 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
 }
 
 int loadFromYaml(StringRef Input,
-                 clang::tooling::TranslationUnitReplacements &TU) {
+                 clang::tooling::TranslationUnitReplacements &TU,
+                 bool OverwriteHelperFilesInfo) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input);
   if (!Buffer) {
@@ -75,10 +86,27 @@ int loadFromYaml(StringRef Input,
 
   llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
   YAMLIn >> TU;
-  if (YAMLIn.error()) {
-    // File doesn't appear to be a header change description. Ignore it.
-    return -1;
+
+  // Do not return if YAMLIn.error(), we still need set other values.
+
+  if (OverwriteHelperFilesInfo) {
+    clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
+    clang::dpct::updateHelperNameContentMap(TU);
+    if (!TU.MainHelperFileName.empty() &&
+        TU.MainHelperFileName !=
+            clang::dpct::DpctGlobalInfo::getCustomHelperFileName()) {
+      clang::dpct::PrintMsg(
+          "Warning: The custom helper header file name in current migration is "
+          "different from the name in previous migration, you need to update "
+          "the previously migrated code.\n");
+    }
+    if (TU.USMLevel == "none")
+      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(UsmLevel::none);
+    else if (TU.USMLevel == "restricted")
+      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
+          UsmLevel::restricted);
   }
+
   return 0;
 }
 

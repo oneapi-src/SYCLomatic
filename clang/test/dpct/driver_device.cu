@@ -58,7 +58,7 @@ int main(){
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 
@@ -90,6 +90,14 @@ int main(){
 
   // CHECK: CUDA_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
   CUDA_SAFE_CALL(cuDeviceGetCount(&result1));
+
+  char name[100];
+
+  // CHECK: memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90);
+  cuDeviceGetName(name, 90, device);
+
+  // CHECK: CUDA_SAFE_CALL((memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90), 0));
+  CUDA_SAFE_CALL(cuDeviceGetName(name, 90, device));
 
   return 0;
 }

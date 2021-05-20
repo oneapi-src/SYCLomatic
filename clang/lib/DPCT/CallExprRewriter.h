@@ -99,7 +99,6 @@ protected:
   // Call is guaranteed not to be nullptr
   const CallExpr *Call;
   StringRef SourceCalleeName;
-  ArgumentAnalysis Analyzer;
 
 protected:
   // All instances of the subclasses can only be constructed by corresponding
@@ -109,6 +108,7 @@ protected:
       : Call(Call), SourceCalleeName(SourceCalleeName) {}
   bool NoRewrite = false;
 public:
+  ArgumentAnalysis Analyzer;
   virtual ~CallExprRewriter() {}
 
   /// This function should be overwrited to implement call expression rewriting.
@@ -135,6 +135,25 @@ public:
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
         T->getReplacement(DpctGlobalInfo::getContext()));
+  }
+  std::string getAddressSpace(const clang::Expr *E, std::string MigratedStr) {
+    bool HasAttr = false;
+    bool NeedReport = false;
+    getShareAttrRecursive(E, HasAttr, NeedReport);
+    if (HasAttr && !NeedReport)
+      return "local_space";
+
+    LocalVarAddrSpaceEnum LocalVarCheckResult =
+        LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkIsPrivateVar(E, LocalVarCheckResult);
+    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
+      return "private_space";
+    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
+      return "global_space";
+    } else {
+      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
+      return "global_space";
+    }
   }
 
   bool isNoRewrite() {
@@ -193,6 +212,22 @@ public:
       : Inner(InnerFactory) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+  }
+};
+
+class RewriterFactoryWithFeatureRequest : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  HelperFileEnum FileID;
+  std::string FeatureName;
+
+public:
+  RewriterFactoryWithFeatureRequest(
+      HelperFileEnum FileID, std::string FeatureName,
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    requestFeature(FileID, FeatureName, C);
+    return Inner->create(C);
   }
 };
 
@@ -343,7 +378,7 @@ protected:
 /// The rewriter for migrating warp functions
 class WarpFunctionRewriter : public FuncCallExprRewriter {
 private:
-  static const std::map<std::string, std::string> WarpFunctionsMap;
+  static std::map<std::string, std::string> WarpFunctionsMap;
   void reportNoMaskWarning() {
     report(Diagnostics::MASK_UNSUPPORTED, false, TargetCalleeName);
   }
@@ -360,6 +395,7 @@ protected:
   std::string getNewFuncName();
 
   friend WarpFunctionRewriterFactory;
+  friend MapNames;
 };
 
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
@@ -385,6 +421,15 @@ void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
   Stream << EA.getRewritePrefix() << EA.getReplacedString()
          << EA.getRewritePostfix();
 }
+
+template <class StreamT>
+void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<const CallExpr*, const Expr*> P) {
+  AA.setCallSpelling(P.first);
+  AA.analyze(P.second);
+  Stream << AA.getRewritePrefix() << AA.getRewriteString()
+    << AA.getRewritePostfix();
+}
+
 template <class StreamT>
 void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
   std::unique_ptr<ParensPrinter<StreamT>> Paren;
@@ -396,6 +441,20 @@ void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
 template <class StreamT> void printWithParens(StreamT &Stream, const Expr *E) {
   ExprAnalysis EA;
   printWithParens(Stream, EA, E);
+}
+
+template <class StreamT>
+void printWithParens(StreamT &Stream, ArgumentAnalysis &AA, std::pair<const CallExpr*, const Expr*> P) {
+  std::unique_ptr<ParensPrinter<StreamT>> Paren;
+  P.second = P.second->IgnoreImplicitAsWritten();
+  if (needExtraParens(P.second))
+    Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+  print(Stream, AA, P);
+}
+
+template <class StreamT> void printWithParens(StreamT &Stream, std::pair<const CallExpr*, const Expr*> P) {
+  ArgumentAnalysis AA;
+  printWithParens(Stream, AA, P);
 }
 
 template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
@@ -430,6 +489,7 @@ public:
     print(Stream, EA, true);
     printMemberOp(Stream, !AddrOfRemoved);
   }
+
   template <class StreamT> void print(StreamT &Stream) const {
     ExprAnalysis EA;
     print(Stream, EA, false);
@@ -461,6 +521,13 @@ public:
   void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
     dpct::print(Stream, A, E);
   }
+
+  template <class StreamT>
+  void printArg(std::false_type, StreamT &Stream,
+                std::pair<const CallExpr *, const Expr *> P) const {
+    dpct::print(Stream, A, P);
+  }
+
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream, DerefExpr Arg) const {
     Arg.printArg(Stream, A);
@@ -512,6 +579,12 @@ public:
     Base::print(Stream);
   }
 };
+
+template <class StreamT>
+void printBase(StreamT &Stream, std::pair<const CallExpr*, const Expr*> P, bool IsArrow) {
+  printWithParens(Stream, P);
+  printMemberOp(Stream, IsArrow);
+}
 
 template <class StreamT>
 void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
@@ -584,19 +657,29 @@ public:
             std::forward<CallArgsT>(Args)...) {}
 };
 
-template <class LValueT, class RValueT> class AssignExprPrinter {
+template <BinaryOperatorKind Op, class LValueT, class RValueT>
+class BinaryOperatorPrinter {
   LValueT LVal;
   RValueT RVal;
 
+  static std::string OpStr;
+
 public:
-  AssignExprPrinter(LValueT &&L, RValueT &&R)
+  BinaryOperatorPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, LVal);
-    Stream << " = ";
+    Stream << " " << OpStr << " ";
     dpct::print(Stream, RVal);
   }
 };
+template <BinaryOperatorKind Op, class LValueT, class RValueT>
+std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
+    BinaryOperator::getOpcodeStr(Op).str();
+
+template <class LValueT, class RValueT>
+using AssignExprPrinter =
+    BinaryOperatorPrinter<BinaryOperatorKind::BO_Assign, LValueT, RValueT>;
 
 template <class ArgT> class DeleterCallExprRewriter : public CallExprRewriter {
   ArgT Arg;
@@ -753,6 +836,24 @@ public:
       const std::function<ArgsT(const CallExpr *)> &... ArgsCreator)
       : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
+};
+
+template <class CalleeT, class... ArgsT>
+class SimpleCallExprRewriter : public CallExprRewriter {
+  CallExprPrinter<CalleeT, ArgsT...> Printer;
+
+public:
+  SimpleCallExprRewriter(
+      const CallExpr *C, StringRef Source,
+      const std::function<CallExprPrinter<CalleeT, ArgsT...>(const CallExpr *)>
+          &PrinterFunctor)
+      : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
+  Optional<std::string> rewrite() override {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    Printer.print(OS);
+    return OS.str();
+  }
 };
 
 template <class LValueT, class RValueT>

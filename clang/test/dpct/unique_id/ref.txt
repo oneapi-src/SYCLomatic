@@ -1,0 +1,2 @@
+//CHECK:{{(.+)}}DPCT1054:0: The type of variable temp is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.{{(.*)}}
+//CHECK:{{(.+)}}DPCT1054:1: The type of variable temp2 is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.{{(.*)}}

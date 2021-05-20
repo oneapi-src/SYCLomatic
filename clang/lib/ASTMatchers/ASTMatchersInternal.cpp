@@ -529,65 +529,65 @@ public:
   PatternSet(ArrayRef<std::string> Names) {
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
-      #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
       Patterns.push_back({Name, Name.startswith("::"), true});
-      #else
+#else
       Patterns.push_back({Name, Name.startswith("::")});
-      #endif
+#endif
   }
 
   /// Consumes the name suffix from each pattern in the set and removes the ones
   /// that didn't match.
   /// Return true if there are still any patterns left.
   bool consumeNameSuffix(StringRef NodeName, bool CanSkip) {
-    #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bool IsEmpty=true;
-    #endif
+#endif
     for (size_t I = 0; I < Patterns.size();) {
-      #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
       if (!Patterns[I].IsValid) {
         I++;
         continue;
       }
-      #endif
+#endif
       if (::clang::ast_matchers::internal::consumeNameSuffix(Patterns[I].P,
                                                              NodeName) ||
           CanSkip) {
         ++I;
-        #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
         IsEmpty = false;
-        #endif
+#endif
       } else {
-        #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
         Patterns[I].IsValid = false;
         I++;
-        #else
+#else
         Patterns.erase(Patterns.begin() + I);
         #endif
       }
     }
-    #ifdef INTEL_CUSTOMIZATION
+ #ifdef INTEL_CUSTOMIZATION
     return !IsEmpty;
-    #else
+ #else
     return !Patterns.empty();
-    #endif
+ #endif
   }
 
   /// Check if any of the patterns are a match.
   /// A match will be a pattern that was fully consumed, that also matches the
   /// 'fully qualified' requirement.
   bool foundMatch(bool AllowFullyQualified) const {
-    #ifdef INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
       return Pattern.IsValid && Pattern.P.empty() &&
              (AllowFullyQualified || !Pattern.IsFullyQualified);
     });
-    #else
+#else
     return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
       return Pattern.P.empty() &&
              (AllowFullyQualified || !Pattern.IsFullyQualified);
     });
-    #endif
+#endif
   }
 
 private:
@@ -599,11 +599,13 @@ private:
     #endif
   };
 
-  #ifdef INTEL_CUSTOMIZATION
-  llvm::SmallVector<Pattern, 1024> Patterns;
-  #else
+#ifdef INTEL_CUSTOMIZATION
+  // Enlarge the pre-alloced size of memory to reduce the overhead of
+  // temporarily expanding memory.
+  llvm::SmallVector<Pattern, 8192> Patterns;
+#else
   llvm::SmallVector<Pattern, 8> Patterns;
-  #endif
+#endif
 };
 
 } // namespace
@@ -771,7 +773,8 @@ const internal::VariadicDynCastAllOfMatcher<Decl, TypeAliasDecl> typeAliasDecl;
 const internal::VariadicDynCastAllOfMatcher<Decl, TypeAliasTemplateDecl>
     typeAliasTemplateDecl;
 const internal::VariadicAllOfMatcher<Decl> decl;
-const internal::VariadicAllOfMatcher<DecompositionDecl> decompositionDecl;
+const internal::VariadicDynCastAllOfMatcher<Decl, DecompositionDecl> decompositionDecl;
+const internal::VariadicDynCastAllOfMatcher<Decl, BindingDecl> bindingDecl;
 const internal::VariadicDynCastAllOfMatcher<Decl, LinkageSpecDecl>
     linkageSpecDecl;
 const internal::VariadicDynCastAllOfMatcher<Decl, NamedDecl> namedDecl;
@@ -794,6 +797,7 @@ const internal::VariadicDynCastAllOfMatcher<Decl, DeclaratorDecl>
 const internal::VariadicDynCastAllOfMatcher<Decl, ParmVarDecl> parmVarDecl;
 const internal::VariadicDynCastAllOfMatcher<Decl, AccessSpecDecl>
     accessSpecDecl;
+const internal::VariadicAllOfMatcher<CXXBaseSpecifier> cxxBaseSpecifier;
 const internal::VariadicAllOfMatcher<CXXCtorInitializer> cxxCtorInitializer;
 const internal::VariadicAllOfMatcher<TemplateArgument> templateArgument;
 const internal::VariadicAllOfMatcher<TemplateArgumentLoc> templateArgumentLoc;
@@ -921,6 +925,7 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, WhileStmt> whileStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, DoStmt> doStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, BreakStmt> breakStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ContinueStmt> continueStmt;
+const internal::VariadicDynCastAllOfMatcher<Stmt, CoreturnStmt> coreturnStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ReturnStmt> returnStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, GotoStmt> gotoStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, LabelStmt> labelStmt;
@@ -953,6 +958,12 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, CompoundLiteralExpr>
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXNullPtrLiteralExpr>
     cxxNullPtrLiteralExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ChooseExpr> chooseExpr;
+const internal::VariadicDynCastAllOfMatcher<Stmt, CoawaitExpr>
+    coawaitExpr;
+const internal::VariadicDynCastAllOfMatcher<Stmt, DependentCoawaitExpr>
+    dependentCoawaitExpr;
+const internal::VariadicDynCastAllOfMatcher<Stmt, CoyieldExpr>
+    coyieldExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, GNUNullExpr> gnuNullExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, GenericSelectionExpr>
     genericSelectionExpr;
@@ -963,6 +974,7 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, BinaryOperator>
 const internal::MapAnyOfMatcher<BinaryOperator, CXXOperatorCallExpr,
                                 CXXRewrittenBinaryOperator>
     binaryOperation;
+const internal::MapAnyOfMatcher<CallExpr, CXXConstructExpr> invocation;
 const internal::VariadicDynCastAllOfMatcher<Stmt, UnaryOperator> unaryOperator;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ConditionalOperator>
     conditionalOperator;

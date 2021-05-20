@@ -51,10 +51,14 @@ IGNORED_FLAGS = {
     '-march': 1,
     '--cuda': 0,
     '-cuda': 0,
-    '--cubin': 0,
-    '-cubin': 0,
-    '--ptx' : 0,
-    '-ptx' : 0,
+
+    # --cubin/-cubin, --ptx/-ptx are kept in compilation database, which are
+    # used for driver API migration.
+    #'--cubin': 0,
+    #'-cubin': 0,
+    #'--ptx' : 0,
+    #'-ptx' : 0,
+
     '--device-c': 0,
     '-dc': 0,
     '--device-w': 0,

@@ -4,13 +4,13 @@ if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set( LLVMGenXIntrinsics_GIT_REPO
          https://github.com/intel/vc-intrinsics.git )
-    set( LLVMGENXIntrinsics_GIT_TAG 91f3df2cd87a7b9706df32046c34fe8d07ecf854)
+    set( LLVMGENXIntrinsics_GIT_TAG b831d10e49e1fb8fcd92b5b50e2cdc8f9cb6277b)
     if( INTEL_CUSTOMIZATION )
       if( DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "" )
         set( LLVMGenXIntrinsics_GIT_REPO
              $ENV{ICS_GIT_MIRROR}/dpd_icl-vc-intrinsics.git )
         STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO "${LLVMGenXIntrinsics_GIT_REPO}")
-        set( LLVMGENXIntrinsics_GIT_TAG 4143fa153a471c4d54969a10bca472a53088f556)
+	#set( LLVMGENXIntrinsics_GIT_TAG 4143fa153a471c4d54969a10bca472a53088f556)
       endif()
     endif(INTEL_CUSTOMIZATION)
 
@@ -47,6 +47,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   LowerESIMD.cpp
   LowerESIMDVLoadVStore.cpp
   LowerESIMDVecArg.cpp
+  LowerWGLocalMemory.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${LLVM_MAIN_INCLUDE_DIR}/llvm/SYCLLowerIR

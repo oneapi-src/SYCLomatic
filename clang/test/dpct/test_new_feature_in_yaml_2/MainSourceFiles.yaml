@@ -1,0 +1,23 @@
+---
+MainSourceFile:  MainSrcFiles_placehold
+Replacements:
+MainSourceFilesDigest:
+  - MainSourceFile:  'test.cu'
+    Digest:          45ec44d5b25c847e8bd699bf4b306856
+DpctVersion:     2021.2.0
+MainHelperFileName: dpct
+USMLevel:        restricted
+FeatureMap:
+  device.hpp:
+    removed_feature1:
+      IsCalled:        true
+      CallerSrcFiles:
+        - '/file/path/file1.cu'
+      FeatureName:     'a_removed_feature1'
+  removedfile.hpp:
+    new_feature2:
+      IsCalled:        true
+      CallerSrcFiles:
+        - '/file/path/file2.cu'
+      FeatureName:     'a_removed_feature2'
+...

@@ -343,6 +343,7 @@ static void SetupDefaultClangDiagnostics(CompilerInstance &compiler) {
   const std::vector<const char *> groupsToIgnore = {
       "unused-value",
       "odr",
+      "unused-getter-return-value",
   };
   for (const char *group : groupsToIgnore) {
     compiler.getDiagnostics().setSeverityForGroup(
@@ -1073,8 +1074,8 @@ ClangExpressionParser::ParseInternal(DiagnosticManager &diagnostic_manager,
       if (file.Write(expr_text, bytes_written).Success()) {
         if (bytes_written == expr_text_len) {
           file.Close();
-          if (auto fileEntry =
-                  m_compiler->getFileManager().getFile(result_path)) {
+          if (auto fileEntry = m_compiler->getFileManager().getOptionalFileRef(
+                  result_path)) {
             source_mgr.setMainFileID(source_mgr.createFileID(
                 *fileEntry,
                 SourceLocation(), SrcMgr::C_User));

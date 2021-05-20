@@ -15,9 +15,12 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "SaveNewFiles.h"
+#include "Config.h"
+#include "ASTTraversal.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -27,6 +30,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
+#include <fstream>
 
 using namespace llvm;
 using namespace clang;
@@ -38,7 +42,7 @@ namespace fs = llvm::sys::fs;
 bool IsUsingDefaultOutRoot = false;
 
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
-  if (llvm::sys::fs::is_directory(DefaultOutRoot)) {
+  if (isDirectory(DefaultOutRoot)) {
     std::error_code EC;
     llvm::sys::fs::directory_iterator Iter(DefaultOutRoot, EC);
     if ((bool)EC)
@@ -1229,7 +1233,7 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
       PointerName + "_buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }
@@ -1249,7 +1253,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }
@@ -1883,10 +1887,9 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
 
 std::string getHashStrFromLoc(SourceLocation Loc) {
   auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
-  std::stringstream CombinedStr;
-  CombinedStr << std::hex
-              << std::hash<std::string>()(dpct::buildString(R.first, R.second));
-  return CombinedStr.str();
+  std::string Ret = std::to_string(
+      std::hash<std::string>()(dpct::buildString(R.first, R.second)));
+  return Ret;
 }
 
 bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
@@ -2547,6 +2550,8 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
         LatestCS = dyn_cast<CompoundStmt>(Parent);
       } else if (Parent->getStmtClass() == Stmt::StmtClass::DoStmtClass) {
         const DoStmt *DS = dyn_cast<DoStmt>(Parent);
+        if (!DS)
+          break;
         const Expr *Cond = DS->getCond();
         Expr::EvalResult ER;
         if (!Cond->isTypeDependent() && !Cond->isValueDependent() &&
@@ -2576,3 +2581,528 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   return LatestCS;
 }
 
+bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  auto Range = getDefinitionRange(BeginLoc, EndLoc);
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(Range.getBegin()));
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    return false;
+  }
+  return true;
+}
+
+bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    getCombinedStrFromLoc(BeginLoc));
+  auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    getCombinedStrFromLoc(EndLoc));
+  // If any of begin/end is not in the macro or the begin is not the 1st token
+  // or the end is not the last macro
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItEnd == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItBegin->second->TokenIndex != 0 ||
+      ItEnd->second->TokenIndex != ItEnd->second->NumTokens - 1) {
+    return true;
+  }
+  return false;
+}
+
+// This function will construct some union-find sets when tranverse the
+// call-graph of device/global funtions.
+// E.g.,
+// g1->d1->d2
+// g2->d3->d2
+//
+// This function will be called for each gloabl function.
+// 1st, visit g1, check its child d1, d1 is not visited, so set d1's parent ptr
+// value to g1's head (current is g1 itself).
+// Now the set becomes to:
+// g1<-d1
+// 2nd, visit d1, check its child d2, d2 is not visited, so set d2's parent ptr
+// value to d1's head (current is g1).
+// Now the set becomes to:
+// g1<-d1
+//  |<-d2
+// 3nd, visit d2, it does not have child, so return.
+// 4th, visit g2, check its child d3, d3 is not visited, so set d3's parent ptr
+// value to g2's head (current is g2 itself).
+// Now the set becomes to:
+// g1<-d1  g2<-d3
+//  |<-d2
+// 5th, visit d3, check its child d2, d2 is visited, so set d3's head node's
+// parent ptr value to d2's head.
+// Now the set becomes to:
+// g1<-d1
+//  |<-d2
+//  |<-g2<-d3
+//
+// Finally, all nodes can be represented by their head node. If we want to
+// change or get the field value of a node, we need to change or get the field
+// value of the node's head. In this function, we will change or get the field
+// "Dim" (the value is used in the dimension of nd_item/nd_range).
+// In this example, there is only one head node g1.
+void constructUnionFindSetRecursively(
+    std::shared_ptr<dpct::DeviceFunctionInfo> DFIPtr) {
+  if (!DFIPtr)
+    return;
+
+  if (DFIPtr->ConstructGraphVisited)
+    return;
+
+  auto CallExprMap = DFIPtr->getCallExprMap();
+  DFIPtr->ConstructGraphVisited = true;
+
+  dpct::MemVarMap *CurHead = dpct::MemVarMap::getHead(&(DFIPtr->getVarMap()));
+  if (!CurHead)
+    return;
+
+  std::vector<std::shared_ptr<dpct::DeviceFunctionInfo>> RelatedDFI;
+  for (auto &Item : CallExprMap) {
+    auto FuncInfoPtr = Item.second->getFuncInfo();
+    if (!FuncInfoPtr)
+      continue;
+    RelatedDFI.push_back(FuncInfoPtr);
+  }
+  auto RelatedDFIFromSpellingLoc =
+      dpct::DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);
+  RelatedDFI.insert(RelatedDFI.end(), RelatedDFIFromSpellingLoc.begin(),
+                    RelatedDFIFromSpellingLoc.end());
+
+  for (auto &FuncInfoPtr : RelatedDFI) {
+    if (!FuncInfoPtr)
+      continue;
+    if (FuncInfoPtr == DFIPtr)
+      continue;
+    if (FuncInfoPtr->getVarMap().hasItem() && DFIPtr->getVarMap().hasItem()) {
+      dpct::MemVarMap *HeadOfTheChild =
+          dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
+      if (!HeadOfTheChild)
+        continue;
+      if (FuncInfoPtr->ConstructGraphVisited) {
+        // Update dim
+        HeadOfTheChild->Dim = std::max(HeadOfTheChild->Dim, CurHead->Dim);
+        // Update head node
+        CurHead->Parent = HeadOfTheChild;
+        CurHead = CurHead->Parent;
+      } else {
+        // Update dim
+        CurHead->Dim = std::max(CurHead->Dim, HeadOfTheChild->Dim);
+        // Update head node
+        HeadOfTheChild->Parent = CurHead;
+      }
+    }
+
+    constructUnionFindSetRecursively(FuncInfoPtr);
+  }
+}
+
+// To find if device variable \pExpr has __share__ attribute,
+// if it has, HasSharedAttr is set true.
+// if \pExpr is in a if/while/do while/for statement
+// \pNeedReport is set true.
+// To handle six kind of cases:
+// case1: extern __shared__ uint32_t share_array[];
+//        atomicAdd(&share_array[0], 1);
+// case2: extern __shared__ uint32_t share_array[];
+//        uint32_t *p = &share_array[0];
+//        atomicAdd(p, 1);
+// case3: __shared__ uint32_t share_v;
+//        atomicAdd(&share_v, 1);
+// case4: __shared__ uint32_t share_v;
+//        uint32_t *p = &share_v;
+//        atomicAdd(p, 1);
+// case5: extern __shared__ uint32_t share_array[];
+//        atomicAdd(share_array, 1);
+// case6: __shared__ uint32_t share_v;
+//        uint32_t *p;
+//        p = &share_v;
+//        atomicAdd(p, 1);
+void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
+                           bool &NeedReport) {
+  if (!Expr)
+    return;
+
+  if (dyn_cast_or_null<CallExpr>(Expr)) {
+    NeedReport = true;
+    return;
+  }
+
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(Expr)) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+      Expr = UO->getSubExpr();
+    }
+  }
+
+  if (auto BO = dyn_cast_or_null<BinaryOperator>(Expr)) {
+    getShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    getShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
+  }
+
+  if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(Expr)) {
+    Expr = ASE->getBase();
+  }
+
+  if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(Expr)) {
+    Expr = CSCE->getSubExpr();
+  }
+
+  const clang::Expr *AssignedExpr = NULL;
+  const FunctionDecl *FuncDecl = NULL;
+  if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
+          Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
+    if (isa<ParmVarDecl>(DRE->getDecl())) {
+      NeedReport = true;
+      return;
+    }
+
+    if (auto VD = dyn_cast_or_null<VarDecl>(DRE->getDecl())) {
+      if (VD->hasAttr<CUDASharedAttr>()) {
+        HasSharedAttr = true;
+        return;
+      }
+
+      AssignedExpr = VD->getInit();
+      if (FuncDecl = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext())) {
+        std::vector<const DeclRefExpr *> Refs;
+        VarReferencedInFD(FuncDecl->getBody(), VD, Refs);
+        for (auto const &Ref : Refs) {
+          if (Ref == DRE)
+            break;
+
+          if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+            if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+                !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO))
+              AssignedExpr = BO->getRHS();
+          }
+        }
+      }
+    }
+  } else if (auto BO = dyn_cast_or_null<BinaryOperator>(
+                 Expr->IgnoreImplicitAsWritten()->IgnoreParens())) {
+
+    getShareAttrRecursive(BO->getLHS(), HasSharedAttr, NeedReport);
+    getShareAttrRecursive(BO->getRHS(), HasSharedAttr, NeedReport);
+  }
+
+  if (AssignedExpr) {
+    // if AssignedExpr in a if/while/do while/for statement,
+    // it is necessary to report a warning message.
+    if (isInCtrlFlowStmt(AssignedExpr, FuncDecl,
+                         dpct::DpctGlobalInfo::getContext())) {
+      NeedReport = true;
+    }
+    getShareAttrRecursive(AssignedExpr, HasSharedAttr, NeedReport);
+  }
+}
+
+void findRelatedDREs(const Expr *E,
+                     std::set<const clang::DeclRefExpr *> &DRESet,
+                     bool HasCallExpr) {
+  if (!E)
+    return;
+
+  if (dyn_cast_or_null<CallExpr>(E)) {
+    HasCallExpr = true;
+    return;
+  }
+
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(E)) {
+    findRelatedDREs(UO->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto BO = dyn_cast_or_null<BinaryOperator>(E)) {
+    findRelatedDREs(BO->getLHS(), DRESet, HasCallExpr);
+    findRelatedDREs(BO->getRHS(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(E)) {
+    findRelatedDREs(ASE->getBase(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(E)) {
+    findRelatedDREs(CSCE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto PE = dyn_cast_or_null<ParenExpr>(E)) {
+    findRelatedDREs(PE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto ICE = dyn_cast_or_null<ImplicitCastExpr>(E)) {
+    findRelatedDREs(ICE->getSubExpr(), DRESet, HasCallExpr);
+    return;
+  }
+
+  if (auto DRE = dyn_cast_or_null<DeclRefExpr>(E)) {
+    DRESet.insert(DRE);
+    return;
+  }
+}
+
+void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
+  Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (const ParmVarDecl *PVD = dyn_cast_or_null<ParmVarDecl>(DRE->getDecl())) {
+    if (const clang::FunctionDecl *FD =
+            dyn_cast_or_null<FunctionDecl>(PVD->getParentFunctionOrMethod())) {
+      if (FD->hasAttr<CUDAGlobalAttr>()) {
+        Result = LocalVarAddrSpaceEnum::AS_IsGlobal;
+        return;
+      } else if (FD->hasAttr<CUDADeviceAttr>()) {
+        return;
+      }
+    }
+    return;
+  }
+
+  const clang::VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return;
+
+  if (!VD->getType()->isReferenceType() && !VD->getType()->isPointerType()) {
+    // If the type is neither a referecnce nor a pointer, treat it as a local variable,
+    // its address space is private.
+    Result = LocalVarAddrSpaceEnum::AS_IsPrivate;
+    return;
+  }
+
+  const clang::FunctionDecl *FuncDecl =
+      dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FuncDecl)
+    return;
+
+  const clang::CompoundStmt *CS =
+      dyn_cast_or_null<CompoundStmt>(FuncDecl->getBody());
+  if (!CS)
+    return;
+
+  // Using ASTMatcher to find all DRE in current CompoundStmt, if that DRE's declaration
+  // is same as VD, push that DRE into Refs.
+  // The DRE in Refs will be checked in the next step.
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  auto MatchedResults = clang::ast_matchers::match(
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  std::vector<const DeclRefExpr *> Refs;
+  for (auto &Result : MatchedResults) {
+    const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!DRE)
+      continue;
+    if (DRE->getDecl() == VD) {
+      Refs.push_back(DRE);
+    }
+  }
+
+  LocalVarAddrSpaceEnum LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (VD->hasInit()) {
+    LocalVarAddrSpaceEnum InitExprResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkIsPrivateVar(VD->getInit(), InitExprResult);
+    LastAssignmentResult = InitExprResult;
+  }
+  bool CanLastReferenceBeDeduced = false;
+  // Check each DRE before current statement, try to deduce their address space
+  // Currently only check the assignment like "var1 = ExprContainsDRE;"
+  // If the DRE is in control flow statement, then its address cannot be deduced.
+  // Else, call checkIsPrivateVar() to the right hand side Expr's address space.
+  // Finally, using the address space of the last DRE as result.
+  for (auto const &Ref : Refs) {
+    // Break means tool will not check the assignments after the DRE
+    if (Ref == DRE)
+      break;
+
+    if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+      if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
+        if (isInCtrlFlowStmt(BO->getRHS(), FuncDecl,
+                             dpct::DpctGlobalInfo::getContext())) {
+          LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+          CanLastReferenceBeDeduced = false;
+        } else {
+          LocalVarAddrSpaceEnum SubResult =
+              LocalVarAddrSpaceEnum::AS_CannotDeduce;
+          checkIsPrivateVar(BO->getRHS(), SubResult);
+          LastAssignmentResult = SubResult;
+          CanLastReferenceBeDeduced = true;
+        }
+      }
+    } else {
+      CanLastReferenceBeDeduced = false;
+    }
+  }
+
+  if (!CanLastReferenceBeDeduced)
+    LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  if (LastAssignmentResult == LocalVarAddrSpaceEnum::AS_CannotDeduce)
+    return;
+
+  Result = LastAssignmentResult;
+  return;
+}
+
+// This function will check the address space of the input argument "Expr"
+// Step1: find all DeclRefExpr in the "Expr"
+// Step2: get each DeclRefExpr's address space
+// Step3: merge the resutls
+void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
+  Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  bool HasCallExpr = false;
+  std::set<const clang::DeclRefExpr *> DRESet;
+  findRelatedDREs(Expr, DRESet, HasCallExpr);
+  if (HasCallExpr)
+    return;
+  std::set<LocalVarAddrSpaceEnum> ResultSet;
+  for (const auto &DRE : DRESet) {
+    LocalVarAddrSpaceEnum ThisDREResult =
+        LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    checkDREIsPrivate(DRE, ThisDREResult);
+    ResultSet.insert(ThisDREResult);
+  }
+
+  if (ResultSet.count(LocalVarAddrSpaceEnum::AS_CannotDeduce))
+    return;
+
+  if (ResultSet.size() == 1) {
+    Result = *ResultSet.begin();
+    return;
+  }
+}
+
+
+
+/// Determine whether a variable represented by DeclRefExpr is unmodified
+/// 1. func(..., T Val(pass by value), ...)
+/// 2. ... = Val
+/// The varibale is unmodified in above two cases
+/// \param [in] DRE Input DeclRefExpr
+/// \returns If variable not modified, return false
+bool isModifiedRef(const clang::DeclRefExpr *DRE) {
+  auto &CT = dpct::DpctGlobalInfo::getContext();
+  const clang::Stmt *P = CT.getParents(*DRE)[0].get<ImplicitCastExpr>();
+  if (!P) {
+    P = DRE;
+  }
+  if (auto CE = CT.getParents(*P)[0].get<CallExpr>()) {
+    int index, ArgNum = CE->getNumArgs();
+    for (index = 0; index < ArgNum; index++) {
+      if (CE->getArg(index)->IgnoreImplicit() == DRE)
+        break;
+    }
+    if (index == ArgNum)
+      return true;
+    if (auto CalleeDecl = CE->getDirectCallee()) {
+      auto ParaDecl = CalleeDecl->getParamDecl(index);
+      if (ParaDecl && !ParaDecl->getType()->isReferenceType()) {
+        return false;
+      }
+    }
+  } else if (auto BO = CT.getParents(*P)[0].get<BinaryOperator>()) {
+    if (BO->getRHS()->IgnoreImplicit() == DRE)
+      return false;
+  }
+  return true;
+}
+
+bool isDefaultStream(const Expr *StreamArg) {
+  auto Arg = StreamArg->IgnoreImpCasts();
+  bool IsDefaultStream = false;
+  // Need queue for default stream or stream 0, 1 and 2
+  if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+    IsDefaultStream = true;
+  } else if (Arg->getStmtClass() == Stmt::IntegerLiteralClass) {
+    if (auto IL = dyn_cast<IntegerLiteral>(Arg)) {
+      auto V = IL->getValue().getZExtValue();
+      if (V <= 2) // V should be 0, 1 or 2
+        IsDefaultStream = true;
+    }
+  } else if (Arg->getStmtClass() == Expr::GNUNullExprClass) {
+    IsDefaultStream = true;
+  } else if (Arg->getStmtClass() == Expr::CXXNullPtrLiteralExprClass) {
+    IsDefaultStream = true;
+  }
+  return IsDefaultStream;
+}
+
+const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
+  const NamedDecl *ND = nullptr;
+  if (!TypePtr)
+    return ND;
+
+  if (TypePtr->isRecordType())
+    ND = TypePtr->castAs<clang::RecordType>()->getDecl();
+  else if (TypePtr->isEnumeralType())
+    ND = TypePtr->castAs<clang::EnumType>()->getDecl();
+  else if (TypePtr->getTypeClass() == clang::Type::Typedef)
+    ND = TypePtr->castAs<clang::TypedefType>()->getDecl();
+
+  return ND;
+}
+
+bool isTypeInRoot(const clang::MemberExpr *ME) {
+  bool IsInRoot = false;
+  if (const auto *ND = getNamedDecl(ME->getBase()->getType().getTypePtr())) {
+    auto Loc = ND->getBeginLoc();
+    auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
+    if (dpct::DpctGlobalInfo::isInRoot(Path, true))
+      IsInRoot = true;
+  }
+  return IsInRoot;
+}
+
+/// This function will find all assignments to the DRE of \p HandleDecl in
+/// the range of \p CS.
+/// The result is returned by \p Refs.
+void findAssignments(const clang::DeclaratorDecl *HandleDecl,
+                     const clang::CompoundStmt *CS,
+                     std::vector<const clang::DeclRefExpr *> &Refs) {
+  if (!HandleDecl)
+    return;
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  auto MatchedResults = clang::ast_matchers::match(
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+
+  for (auto &Result : MatchedResults) {
+    const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!DRE)
+      continue;
+    if (DRE->getDecl() == HandleDecl) {
+      if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(DRE))) {
+        if (BO->getLHS() == DRE && BO->getOpcode() == BO_Assign) {
+          // case1: handle = another_handle;
+          Refs.push_back(DRE);
+          continue;
+        }
+      }
+
+      auto FunctionCall =
+          clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE);
+      if (!FunctionCall)
+        continue;
+      auto Expr =
+          clang::dpct::DpctGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
+              DRE);
+      if (!Expr)
+        continue;
+
+      const auto FunctionDecl = FunctionCall->getDirectCallee();
+      if (!FunctionDecl)
+        continue;
+
+      for (size_t Idx = 0, ArgNum = FunctionCall->getNumArgs(); Idx < ArgNum;
+           ++Idx) {
+        if (FunctionCall->getArg(Idx) == Expr) {
+          // case2: void foo(handle_t &h);
+          //        foo(handle);
+          if (FunctionDecl->getParamDecl(Idx)->getType()->isReferenceType() ||
+              FunctionDecl->getParamDecl(Idx)->getType()->isPointerType()) {
+            Refs.push_back(DRE);
+            continue;
+          }
+        }
+      }
+    }
+  }
+}

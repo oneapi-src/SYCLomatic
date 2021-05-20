@@ -10,10 +10,7 @@ void foo1() {
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, s);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
+  //CHECK:plan->commit(*s);
   //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
   //CHECK-NEXT:} else {
@@ -334,3 +331,96 @@ void foo10(bool flag) {
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef cufftCheck
+
+void foo11(bool flag) {
+  cufftHandle plan;
+  float2* iodata;
+  cudaStream_t s;
+
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  if (flag)
+    cufftSetStream(plan, s);
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:}
+  cufftExecR2C(plan, (float*)iodata, iodata);
+}
+
+void foo12(cufftHandle plan2) {
+  cufftHandle plan;
+  float2* iodata;
+  cudaStream_t s;
+
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  cufftSetStream(plan, s);
+  plan = plan2;
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(*s);
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:}
+  cufftExecR2C(plan, (float*)iodata, iodata);
+}
+
+void changeHandle(cufftHandle &p);
+
+void foo13() {
+  cufftHandle plan;
+  float2* iodata;
+  cudaStream_t s;
+
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  cufftSetStream(plan, s);
+  changeHandle(plan);
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(*s);
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:}
+  cufftExecR2C(plan, (float*)iodata, iodata);
+}
+
+void foo14() {
+  cufftHandle plan;
+  float2* iodata;
+  cudaStream_t s;
+
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+
+  cufftSetStream(plan, s);
+  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftCreate was removed, because the function call is redundant in DPC++.
+  cufftCreate(&plan);
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(*s);
+  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
+  //CHECK-NEXT:} else {
+  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:}
+  cufftExecR2C(plan, (float*)iodata, iodata);
+  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftDestroy was removed, because the function call is redundant in DPC++.
+  cutttDestroy(plan);
+}

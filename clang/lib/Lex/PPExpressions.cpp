@@ -41,7 +41,9 @@ using namespace clang;
 #if INTEL_CUSTOMIZATION
 namespace clang {
 inline bool isInRootNull(SourceLocation) { return false; }
+inline unsigned int getRunRound() { return 0; }
 std::function<bool(SourceLocation)> IsInRootFunc = isInRootNull;
+std::function<unsigned int()> GetRunRound = getRunRound;
 } // namespace clang
 #endif // INTEL_CUSTOMIZATION
 
@@ -148,7 +150,7 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle is as
   // defined.
   if (!Result.Val && II->getName() == "__CUDA_ARCH__" &&
-      IsInRootFunc(PeekTok.getLocation())) {
+      IsInRootFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
     Result.Val = true;
   }
 #endif // INTEL_CUSTOMIZATION
@@ -343,6 +345,14 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       else
         PP.Diag(PeekTok, diag::ext_c99_longlong);
     }
+
+    // 'z/uz' literals are a C++2b feature.
+    if (Literal.isSizeT)
+      PP.Diag(PeekTok, PP.getLangOpts().CPlusPlus
+                           ? PP.getLangOpts().CPlusPlus2b
+                                 ? diag::warn_cxx20_compat_size_t_suffix
+                                 : diag::ext_cxx2b_size_t_suffix
+                           : diag::err_cxx2b_size_t_suffix);
 
     // Parse the integer literal into Result.
     if (Literal.GetIntegerValue(Result.Val)) {

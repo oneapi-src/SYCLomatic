@@ -1,19 +1,18 @@
-#%Module#######################################################################
-#
-#Copyright 2020 Intel Corporation.
-#
-#This software and the related documents are Intel copyrighted materials,
-#and your use of them is governed by the express license under which they
-#were provided to you ("License"). Unless the License provides otherwise,
-#you may not use, modify, copy, publish, distribute, disclose or transmit
-#this software or the related documents without Intel's prior written
-#permission.
-#
-#This software and the related documents are provided as is, with no express
-#or implied warranties, other than those that are expressly stated in the
-#License.
-#
-###############################################################################
+#%Module1.0###################################################################
+# Copyright (c) Intel Corporation
+# SPDX-License-Identifier: MIT
+# https://opensource.org/licenses/MIT
+
+# Why all the directory and filename boilerplate code? It is needed in order
+# to properly remove symbolic links used in assembly of the modulefiles
+# folder as well as those found within the oneAPI installation folders.
+# Without it many modulefiles will fail to work as expected.
+
+# IMPORTANT: quotes around "$variables" and "[expressions]" are there
+# to insure that paths/filenames which include spaces are handled properly.
+
+# This modulefile requires Environment Modules 4.1 or later.
+# Type `module --version` to determine the current installed version.
 
 set min_tcl_ver 8.4
 if { $tcl_version < $min_tcl_ver } {
@@ -54,9 +53,9 @@ set componentname "[file tail "$componentroot"]"
 # get oneAPI top-level root folder
 set oneapiroot "[file dirname "$componentroot"]"
 
-# disallow loading multiple copies of 64-bit and 32-bit versions of modulefile
-# first assemble 64-bit and 32-bit name pairs for this modulefile
-# then specify conflict for each (assumes "name" and "name32" pattern)
+# disallow loading multiple versions of this modulefile
+# disallow loading multiple architectures of this modulefile
+# if only 64-bit architecture exists the test still works
 set mname32 $modulefilename
 set mname64 [string trimright $mname32 "32"]
 if { [string equal "$mname32" "$mname64"] } {
@@ -70,9 +69,11 @@ if { [ module-info mode load ] } {
     puts stderr "Loading $modulefilename version $modulefilever"
 }
 
-# On remove print component name and version being removed
+# On `module unload` print component module name and version being removed
+# Include `module list` message only if this modulefile loads dependent modules
 if { [ module-info mode ] == "unload" || [ module-info mode ] == "remove" } {
     puts stderr "Removing $modulefilename version $modulefilever"
+    puts stderr "Use `module list` to view any remaining dependent modules."
 }
 
 
@@ -81,6 +82,7 @@ if { [ module-info mode ] == "unload" || [ module-info mode ] == "remove" } {
 module-whatis "Configure for Intel(R) DPC++ Compatibility Tool."
 
 set dpct_root "$componentroot/$modulefilever"
+setenv DPCT_BUNDLE_ROOT "$dpct_root"
 
 # CPATH
 prepend-path CPATH "$dpct_root/include"

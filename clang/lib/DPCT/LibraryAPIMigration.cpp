@@ -17,6 +17,7 @@
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/LangOptions.h"
 
 namespace clang {
@@ -31,16 +32,22 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
   if (!HandleVar)
     return;
 
-  SourceLocation TypeBeginLoc =
-      HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-  if (TypeBeginLoc.isMacroID()) {
-    auto SpellingLocation = SM.getSpellingLoc(TypeBeginLoc);
-    if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
-      TypeBeginLoc = SM.getExpansionLoc(TypeBeginLoc);
-    } else {
-      TypeBeginLoc = SpellingLocation;
-    }
+  if (HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc().isInvalid()) {
+    return;
   }
+
+  auto TypeBeginLoc =
+      getDefinitionRange(
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getEndLoc())
+          .getBegin();
+  // WA for concatinated macro token
+  if (SM.isWrittenInScratchSpace(SM.getSpellingLoc(
+          HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc()))) {
+    TypeBeginLoc = SM.getExpansionLoc(
+        HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
+  }
+
   unsigned int TypeLength = Lexer::MeasureTokenLength(
       TypeBeginLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
 
@@ -102,9 +109,17 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
           PointerName + "_buf_ct" +
           std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
     }
+    if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
+      requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+                                     Locations.FuncPtrDeclBegin);
+    } else {
+      requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+                                     Locations.PrefixInsertLoc);
+    }
 
-    BufferDecl = "auto " + ArgsList[Idx] + " = dpct::get_buffer<" + TypeStr +
-                 ">(" + PointerName + ");";
+    BufferDecl = "auto " + ArgsList[Idx] + " = " +
+                 MapNames::getDpctNamespace() + "get_buffer<" + TypeStr + ">(" +
+                 PointerName + ");";
     PrefixStmts.emplace_back(BufferDecl);
   } else {
     if ((Idx == 1 && (FuncName[9] == 'C' || FuncName[9] == 'Z')) ||
@@ -124,9 +139,9 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
 
   auto getType = [=](const char C) -> std::string {
     if (C == 'Z')
-      return MapNames::getClNamespace() + "::double2";
+      return MapNames::getClNamespace() + "double2";
     else if (C == 'C')
-      return MapNames::getClNamespace() + "::float2";
+      return MapNames::getClNamespace() + "float2";
     else if (C == 'D')
       return "double";
     else
@@ -191,10 +206,13 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
                                  Diagnostics::CHECK_RELATED_QUEUE, false,
                                  false)) {
       PrefixStmts.push_back("/*");
-      PrefixStmts.push_back(DiagnosticsUtils::getWarningText(
-          Diagnostics::CHECK_RELATED_QUEUE, "dpct::get_default_queue()"));
+      PrefixStmts.push_back(DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+          Diagnostics::CHECK_RELATED_QUEUE));
       PrefixStmts.push_back("*/");
-      PrefixStmts.push_back("desc->commit(dpct::get_default_queue());");
+      PrefixStmts.push_back("desc->commit(" + MapNames::getDpctNamespace() +
+                            "get_default_queue());");
+      requestFeature(HelperFileEnum::Device,
+                                     "get_default_queue", LocInfo.first);
     }
   }
   PrefixStmts.emplace_back("if ((void *)" + OriginalInputPtr + " == (void *)" +
@@ -1251,23 +1269,31 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
 
   if (!Flags.IsFunctionPointer && !Flags.IsFunctionPointerAssignment) {
     std::string Stream;
-    if (!StreamStr.empty())
-      Stream = StreamStr;
-    else {
-      if (QueueIndex == -1)
-        Stream = "dpct::get_default_queue()";
-      else
-        Stream = "{{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}}";
+
+    if (!DefiniteStream.empty()) {
+      Stream = DefiniteStream;
+    } else {
+      if (!StreamStr.empty())
+        Stream = StreamStr;
+      else {
+        if (QueueIndex == -1) {
+          Stream = MapNames::getDpctNamespace() + "get_default_queue()";
+          requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+        } else
+          Stream = "{{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}}";
+      }
+
+      if (DiagnosticsUtils::report(FilePath, InsertOffsets.first,
+                                   Diagnostics::CHECK_RELATED_QUEUE, false,
+                                   false, Stream)) {
+        ResetAndCommitStmts.push_back("/*");
+        ResetAndCommitStmts.push_back(
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::CHECK_RELATED_QUEUE));
+        ResetAndCommitStmts.push_back("*/");
+      }
     }
 
-    if (DiagnosticsUtils::report(FilePath, InsertOffsets.first,
-                                 Diagnostics::CHECK_RELATED_QUEUE, false, false,
-                                 Stream)) {
-      ResetAndCommitStmts.push_back("/*");
-      ResetAndCommitStmts.push_back(DiagnosticsUtils::getWarningText(
-          Diagnostics::CHECK_RELATED_QUEUE));
-      ResetAndCommitStmts.push_back("*/");
-    }
     ResetAndCommitStmts.emplace_back(DescStr + "->commit(" + Stream + ");");
   }
   PrefixStmts.insert(PrefixStmts.begin(), ResetAndCommitStmts.begin(),
@@ -1436,6 +1462,106 @@ void replacementText(
     DpctGlobalInfo::getInstance().addReplacement(ReplaceRepl);
     DpctGlobalInfo::getInstance().addReplacement(InsertAfterRepl);
   }
+}
+
+/// This function will check the statemates before \p ExecCall.
+/// If there is no flow control statements between previous cufftSetStream()
+/// call and current cufftExec() call, this funcion will return true and
+/// \p StreamStr will be set as the value in cufftSetStream().
+/// Else, this funcion will return false.
+bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall,
+                                    int Index,
+                                    std::string &StreamStr) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const CompoundStmt *CS =
+      dyn_cast_or_null<CompoundStmt>(getParentStmt(ExecCall));
+  if (!CS)
+    return false;
+
+  // Step 1: Find all cufftSetStream() call in current CompoundStmt
+  auto SetStreamCallMatcher = ast_matchers::findAll(
+      ast_matchers::callExpr(ast_matchers::callee(ast_matchers::functionDecl(
+                                 ast_matchers::hasName("cufftSetStream"))))
+          .bind("FunctionCall"));
+  auto MatchedResults = ast_matchers::match(SetStreamCallMatcher, *CS,
+                                            DpctGlobalInfo::getContext());
+  std::vector<const CallExpr *> Calls;
+  for (auto &Result : MatchedResults) {
+    const CallExpr *Call = Result.getNodeAs<CallExpr>("FunctionCall");
+    if (!Call)
+      continue;
+    Calls.push_back(Call);
+  }
+
+  // Step 2: Find all assignment of the handle var of ExecCall in current CompoundStmt
+  const auto HandleDecl = getHandleVar(ExecCall->getArg(0));
+  std::vector<const DeclRefExpr *> Refs;
+  findAssignments(HandleDecl, CS, Refs);
+
+  if (Refs.empty())
+    return false;
+
+  // Step 3: Check the cufftSetStream() just before current cufftExec() call
+  unsigned int ExecCallOffset =
+      SM.getExpansionLoc(ExecCall->getBeginLoc()).getRawEncoding();
+  const CallExpr *LastSetStreamCall = nullptr;
+  bool IsLastSetStreamCallDetermined = false;
+
+  for (std::vector<const CallExpr *>::reverse_iterator Iter = Calls.rbegin();
+       Iter != Calls.rend(); ++Iter) {
+    const auto Call = *Iter;
+
+    if (SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding() >
+        ExecCallOffset)
+      continue;
+
+    // The handle of these two APIs must be same
+    if (getHandleVar(Call->getArg(0)) &&
+        (getHandleVar(Call->getArg(0)) == HandleDecl)) {
+      LastSetStreamCall = Call;
+      // If cufftSetStream() is in control flow statements, then need emit
+      // warning
+      if (isInCtrlFlowStmt(Call, CS, DpctGlobalInfo::getContext())) {
+        IsLastSetStreamCallDetermined = false;
+      } else {
+        bool NewHandleVarAssigned = false;
+        for (const auto &Ref : Refs) {
+          unsigned int RefOffset =
+              SM.getExpansionLoc(Ref->getBeginLoc()).getRawEncoding();
+          unsigned int SetStreamCallOffset =
+              SM.getExpansionLoc(Call->getEndLoc()).getRawEncoding();
+          if (RefOffset < ExecCallOffset && RefOffset > SetStreamCallOffset) {
+            NewHandleVarAssigned = true;
+            break;
+          }
+        }
+        if (NewHandleVarAssigned)
+          IsLastSetStreamCallDetermined = false;
+        else
+          IsLastSetStreamCallDetermined = true;
+      }
+    } else {
+      IsLastSetStreamCallDetermined = false;
+    }
+    break;
+  }
+
+  if (!IsLastSetStreamCallDetermined || !LastSetStreamCall)
+    return false;
+
+  // Step4: using the stream which is set in the last cufftSetStream()
+  if (isDefaultStream(LastSetStreamCall->getArg(1))) {
+    if (Index == -1) {
+      StreamStr = MapNames::getDpctNamespace() + "get_default_queue()";
+      requestFeature(HelperFileEnum::Device, "get_default_queue", ExecCall);
+    } else {
+      StreamStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    }
+  } else {
+    StreamStr = "*" + ExprAnalysis::ref(LastSetStreamCall->getArg(1));
+  }
+
+  return true;
 }
 
 } // namespace dpct

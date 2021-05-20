@@ -13,7 +13,7 @@
 #define DPCT_EXPR_ANALYSIS_H
 
 #include "TextModification.h"
-
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 
 #include "clang/AST/DeclTemplate.h"
@@ -92,6 +92,7 @@ class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
   bool IsDependOnWrittenArgument = false;
+  std::set<HelperFeatureIDTy> HelperFeatureSet;
 
 public:
   TemplateDependentStringInfo() = default;
@@ -114,6 +115,10 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
 
   bool isDependOnWritten() const { return IsDependOnWrittenArgument; }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
+  void setHelperFeatureSet(std::set<HelperFeatureIDTy> Set) {
+    HelperFeatureSet = Set;
+  }
 };
 
 /// Store a expr source string which may need replaced and its replacements
@@ -217,7 +222,9 @@ public:
   }
   inline std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
-    return ReplSet.getTemplateDependentStringInfo();
+    auto Res = ReplSet.getTemplateDependentStringInfo();
+    Res->setHelperFeatureSet(HelperFeatureSet);
+    return Res;
   }
   // This function is not re-enterable, if caller need to check if it returns
   // nullptr, caller need to use temp variable to save the return value, then
@@ -290,11 +297,14 @@ public:
   }
 
   void applyAllSubExprRepl();
- // Replace a sub template arg
- inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
-   auto LocInfo = getOffsetAndLength(E);
-   addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
- }
+  // Replace a sub template arg
+  inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
+    auto LocInfo = getOffsetAndLength(E);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
+  }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() {
+    return HelperFeatureSet;
+  }
 
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
@@ -565,6 +575,7 @@ private:
   StringReplacements ReplSet;
   std::string RewritePrefix;
   std::string RewritePostfix;
+  std::set<HelperFeatureIDTy> HelperFeatureSet;
 };
 
 // Analyze pointer allocated by cudaMallocManaged.
@@ -631,9 +642,12 @@ public:
     initArgumentExpr(Expression);
     auto ExprBeginBeforeAnalyze = getExprBeginSrcLoc();
     analyze();
-    addExtReplacement(std::make_shared<ExtReplacement>(
+    int ReplLength = getExprLength();
+    if (ReplLength > 0) {
+      addExtReplacement(std::make_shared<ExtReplacement>(
         SM, ExprBeginBeforeAnalyze, getExprLength(), getReplacedString(),
         nullptr));
+    }
   }
 
   inline void setCallSpelling(const Expr* E) {
@@ -664,11 +678,11 @@ protected:
 
 private:
   static const std::string &getDefaultArgument(const Expr *E);
-
-  using DefaultArgMapTy = std::map<const Expr *, std::string>;
-  static DefaultArgMapTy DefaultArgMap;
   SourceLocation CallSpellingBegin;
   SourceLocation CallSpellingEnd;
+  using DefaultArgMapTy = std::map<const Expr *, std::string>;
+  static DefaultArgMapTy DefaultArgMap;
+
 };
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {
@@ -723,6 +737,7 @@ private:
     return KCA.getReplacedString();
   }
   int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
+  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
 
 protected:
   void dispatch(const Stmt *Expression) override;
@@ -735,6 +750,8 @@ public:
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }
   inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
+  unsigned int Dim = 3;
+  bool IsTryToUseOneDimension = false;
 };
 
 /// Analyzes the side effects of an expression while doing basic expression analysis

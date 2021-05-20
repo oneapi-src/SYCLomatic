@@ -50,8 +50,10 @@ void foo_4() {
   cudaEvent_t *kernelEvent = (cudaEvent_t *)malloc(n_streams * sizeof(cudaEvent_t));
 }
 
+inline void free(){}
 
 void foo_5() {
   // CHECK:   delete[] kernelEvent;
    free(kernelEvent);
+   free();
 }

@@ -60,7 +60,7 @@ int main() {
     // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
     // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
     // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: oneapi::mkl::blas::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
@@ -78,8 +78,8 @@ int main() {
     // CHECK-NEXT: } else {
     // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT: }
-    // CHECK-NEXT: oneapi::mkl::blas::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
-    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
@@ -92,7 +92,7 @@ int main() {
     //CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
     //CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
     //CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-    //CHECK-NEXT: oneapi::mkl::blas::gemmt(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, trans1==0 ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
+    //CHECK-NEXT: oneapi::mkl::blas::column_major::gemmt(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, trans1==0 ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::nontrans, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     //CHECK-NEXT: }());
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
@@ -105,7 +105,7 @@ int main() {
     // CHECK-NEXT: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
     // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
     // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: oneapi::mkl::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_C_S_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
@@ -130,7 +130,7 @@ int main() {
     // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
     // CHECK-NEXT:auto d_B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_B_C);
     // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:oneapi::mkl::blas::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_C, *handle), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_C, *handle), d_C_C_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(&alpha_C, *handle), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_C, *handle), d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
@@ -147,8 +147,8 @@ int main() {
     // CHECK-NEXT:} else {
     // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT:}
-    // CHECK-NEXT:oneapi::mkl::blas::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
-    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
@@ -160,7 +160,7 @@ int main() {
     // CHECK-NEXT:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, *handle);
     // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
     // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:oneapi::mkl::blas::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, dpct::get_value(&alpha_C, *handle), d_A_C_buf_ct{{[0-9]+}}, N, d_C_C_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, dpct::get_value(&alpha_C, *handle), d_A_C_buf_ct{{[0-9]+}}, N, d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
@@ -177,8 +177,8 @@ int main() {
 
 
     float * __restrict__ d_data;
-    //CHECK:oneapi::mkl::rng::philox4x32x10* rng;
-    //CHECK-NEXT:curandErrCheck((rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_default_queue(), 1337ull), 0));
+    //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+    //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/
@@ -194,7 +194,7 @@ int main() {
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((delete rng, 0));
+    //CHECK-NEXT:curandErrCheck((rng.reset(), 0));
     curandGenerator_t rng;
     curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_DEFAULT));
     curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));

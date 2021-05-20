@@ -1,0 +1,7 @@
+[
+    {
+        "command": "c++ -c -o ./test.o ../src/test.cpp",
+        "directory": ".",
+        "file": "../src/test.cpp"
+    }
+]

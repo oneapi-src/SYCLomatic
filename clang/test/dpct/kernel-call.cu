@@ -128,25 +128,17 @@ int main() {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
-  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:  q_ct1.submit(
+  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:      dpct::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
+  // CHECK-NEXT:      dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
-  // CHECK-NEXT:           testKernelPtr(karg1_ct0, karg2_ct1, karg3, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
-  // CHECK-NEXT: }
+  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
+  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:          testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
+  // CHECK-NEXT:        });
+  // CHECK-NEXT:    });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 
   int karg1int = 1;
@@ -172,25 +164,18 @@ int main() {
   struct KernelPointer {
     const int *arg1, *arg2;
   } args;
-  // CHECK: {
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> args_arg1_buf_ct0 = dpct::get_buffer_and_offset(args.arg1);
-  // CHECK-NEXT:  size_t args_arg1_offset_ct0 = args_arg1_buf_ct0.second;
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> args_arg2_buf_ct1 = dpct::get_buffer_and_offset(args.arg2);
-  // CHECK-NEXT:  size_t args_arg2_offset_ct1 = args_arg2_buf_ct1.second;
-  // CHECK-NEXT:  q_ct1.submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      auto args_arg1_acc_ct0 = args_arg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:      auto args_arg2_acc_ct1 = args_arg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::access_wrapper<const int *> args_arg1_acc_ct0(args.arg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<const int *> args_arg2_acc_ct1(args.arg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 1)),
-  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:          const int *args_arg1_ct0 = (const int *)(&args_arg1_acc_ct0[0] + args_arg1_offset_ct0);
-  // CHECK-NEXT:          const int *args_arg2_ct1 = (const int *)(&args_arg2_acc_ct1[0] + args_arg2_offset_ct1);
-  // CHECK-NEXT:          testKernelPtr(args_arg1_ct0, args_arg2_ct1, karg3int, item_ct1);
-  // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
-  // CHECK-NEXT:}
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 1)),
+  // CHECK-NEXT:       [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         testKernelPtr(args_arg1_acc_ct0.get_raw_pointer(), args_arg2_acc_ct1.get_raw_pointer(), karg3int, item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
 
   // CHECK:   q_ct1.submit(
@@ -325,21 +310,16 @@ __global__ void foo_kernel3(int *d) {
 }
 //CHECK:void run_foo(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  if (1)
-//CHECK-NEXT:    {
-//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(&g_a[0]);
-//CHECK-NEXT:      size_t g_a_offset_ct0 = g_a_buf_ct0.second;
-//CHECK-NEXT:      dpct::get_default_queue().submit(
-//CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(&g_a[0], cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
-//CHECK-NEXT:              foo_kernel3(g_a_ct0);
-//CHECK-NEXT:            });
-//CHECK-NEXT:        });
-//CHECK-NEXT:    }
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            foo_kernel3(g_a_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
 //CHECK-NEXT:}
 void run_foo(dim3 c, dim3 d) {
   if (1)
@@ -349,40 +329,30 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:  if (1)
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
-//CHECK-NEXT:  */
-//CHECK-NEXT:    {
-//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(g_a);
-//CHECK-NEXT:      size_t g_a_offset_ct0 = g_a_buf_ct0.second;
-//CHECK-NEXT:      q_ct1.submit(
-//CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:    /*
+//CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+//CHECK-NEXT:    */
+//CHECK-NEXT:    q_ct1.submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(c * d, d),
-//CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
-//CHECK-NEXT:              foo_kernel3(g_a_ct0);
-//CHECK-NEXT:            });
-//CHECK-NEXT:        });
-//CHECK-NEXT:    }
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(c * d, d),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            foo_kernel3(g_a_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
 //CHECK-NEXT:  else
-//CHECK-NEXT:    {
-//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(g_a);
-//CHECK-NEXT:      size_t g_a_offset_ct0 = g_a_buf_ct0.second;
-//CHECK-NEXT:      q_ct1.submit(
-//CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:    q_ct1.submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
-//CHECK-NEXT:              foo_kernel3(g_a_ct0);
-//CHECK-NEXT:            });
-//CHECK-NEXT:        });
-//CHECK-NEXT:    }
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            foo_kernel3(g_a_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
 //CHECK-NEXT:}
 void run_foo2(dim3 c, dim3 d) {
   if (1)
@@ -392,24 +362,19 @@ void run_foo2(dim3 c, dim3 d) {
 }
 //CHECK:void run_foo3(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  for (;;)
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
-//CHECK-NEXT:  */
-//CHECK-NEXT:    {
-//CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(g_a);
-//CHECK-NEXT:      size_t g_a_offset_ct0 = g_a_buf_ct0.second;
-//CHECK-NEXT:      dpct::get_default_queue().submit(
-//CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:    /*
+//CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+//CHECK-NEXT:    */
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(c * d, d),
-//CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:              int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
-//CHECK-NEXT:              foo_kernel3(g_a_ct0);
-//CHECK-NEXT:            });
-//CHECK-NEXT:        });
-//CHECK-NEXT:    }
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(c * d, d),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            foo_kernel3(g_a_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
 //CHECK-NEXT:}
 void run_foo3(dim3 c, dim3 d) {
   for (;;)
@@ -417,21 +382,16 @@ void run_foo3(dim3 c, dim3 d) {
 }
 //CHECK:void run_foo4(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT: while (1)
-//CHECK-NEXT:   {
-//CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> g_a_buf_ct0 = dpct::get_buffer_and_offset(g_a);
-//CHECK-NEXT:     size_t g_a_offset_ct0 = g_a_buf_ct0.second;
-//CHECK-NEXT:     dpct::get_default_queue().submit(
-//CHECK-NEXT:       [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:          auto g_a_acc_ct0 = g_a_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:   dpct::get_default_queue().submit(
+//CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:       dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:           cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:             int *g_a_ct0 = (int *)(&g_a_acc_ct0[0] + g_a_offset_ct0);
-//CHECK-NEXT:             foo_kernel3(g_a_ct0);
-//CHECK-NEXT:           });
-//CHECK-NEXT:       });
-//CHECK-NEXT:   }
+//CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:         cl::sycl::nd_range<3>(c, cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:           foo_kernel3(g_a_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:         });
+//CHECK-NEXT:     });
 //CHECK-NEXT:}
 void run_foo4(dim3 c, dim3 d) {
  while (1)
@@ -446,22 +406,17 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo5 () {
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result_buf_ct0 = dpct::get_buffer_and_offset(result.get_ptr());
-//CHECK-NEXT:    size_t result_offset_ct0 = result_buf_ct0.second;
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
-//CHECK-NEXT:        auto result_acc_ct0 = result_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      dpct::access_wrapper<float *> result_acc_ct0(result.get_ptr(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            float *result_ct0 = (float *)(&result_acc_ct0[0] + result_offset_ct0);
-//CHECK-NEXT:            my_kernel(result_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result[10]);
 //CHECK-NEXT:}
  __managed__ float result[32];
@@ -477,22 +432,17 @@ int run_foo5 () {
 
 //CHECK:dpct::shared_memory<float, 1> result2(32);
 //CHECK-NEXT:int run_foo6 () {
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result2_buf_ct0 = dpct::get_buffer_and_offset(result2.get_ptr());
-//CHECK-NEXT:    size_t result2_offset_ct0 = result2_buf_ct0.second;
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
-//CHECK-NEXT:        auto result2_acc_ct0 = result2_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      dpct::access_wrapper<float *> result2_acc_ct0(result2.get_ptr(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            float *result2_ct0 = (float *)(&result2_acc_ct0[0] + result2_offset_ct0);
-//CHECK-NEXT:            my_kernel(result2_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result2[10]);
 //CHECK-NEXT:}
  __managed__ float result2[32];
@@ -503,22 +453,17 @@ int run_foo6 () {
 
 //CHECK:dpct::shared_memory<float, 0> result3;
 //CHECK-NEXT:int run_foo7 () {
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result3_buf_ct0 = dpct::get_buffer_and_offset(result3.get_ptr());
-//CHECK-NEXT:    size_t result3_offset_ct0 = result3_buf_ct0.second;
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
-//CHECK-NEXT:        auto result3_acc_ct0 = result3_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      cl::sycl::accessor<float, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:      dpct::access_wrapper<float *> result3_acc_ct0(result3.get_ptr(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            float *result3_ct0 = (float *)(&result3_acc_ct0[0] + result3_offset_ct0);
-//CHECK-NEXT:            my_kernel(result3_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result3[0]);
 //CHECK-NEXT:}
 __managed__ float result3;
@@ -536,23 +481,18 @@ int run_foo7 () {
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo8() {
 //CHECK-NEXT:  in[0] = 42;
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> out_buf_ct1 = dpct::get_buffer_and_offset(out.get_ptr());
-//CHECK-NEXT:    size_t out_offset_ct1 = out_buf_ct1.second;
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        auto out_acc_ct1 = out_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      dpct::access_wrapper<float *> out_acc_ct1(out.get_ptr(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        auto in_ct0 = in[0];
+//CHECK-NEXT:      auto in_ct0 = in[0];
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            float *out_ct1 = (float *)(&out_acc_ct1[0] + out_offset_ct1);
-//CHECK-NEXT:            my_kernel2(in_ct0, out_ct1, item_ct1);
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          my_kernel2(in_ct0, out_acc_ct1.get_raw_pointer(), item_ct1);
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", out[0]);
 //CHECK-NEXT:}
 
@@ -611,36 +551,26 @@ __global__ void k(int *p){}
 //CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:  std::vector<A> vec(10);
 //CHECK-NEXT:  A aa;
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> aa_get_pointer_buf_ct0 = dpct::get_buffer_and_offset(aa.get_pointer());
-//CHECK-NEXT:    size_t aa_get_pointer_offset_ct0 = aa_get_pointer_buf_ct0.second;
-//CHECK-NEXT:    q_ct1.submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        auto aa_get_pointer_acc_ct0 = aa_get_pointer_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:  q_ct1.submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      dpct::access_wrapper<int *> aa_get_pointer_acc_ct0(aa.get_pointer(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            int *aa_get_pointer_ct0 = (int *)(&aa_get_pointer_acc_ct0[0] + aa_get_pointer_offset_ct0);
-//CHECK-NEXT:            k(aa_get_pointer_ct0);
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
-//CHECK-NEXT:  {
-//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> vec_get_pointer_buf_ct0 = dpct::get_buffer_and_offset(vec[2].get_pointer());
-//CHECK-NEXT:    size_t vec_get_pointer_offset_ct0 = vec_get_pointer_buf_ct0.second;
-//CHECK-NEXT:    q_ct1.submit(
-//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:        auto vec_get_pointer_acc_ct0 = vec_get_pointer_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          k(aa_get_pointer_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:  q_ct1.submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      dpct::access_wrapper<int *> vec_get_pointer_acc_ct0(vec[2].get_pointer(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:            int *vec_get_pointer_ct0 = (int *)(&vec_get_pointer_acc_ct0[0] + vec_get_pointer_offset_ct0);
-//CHECK-NEXT:            k(vec_get_pointer_ct0);
-//CHECK-NEXT:          });
-//CHECK-NEXT:      });
-//CHECK-NEXT:  }
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          k(vec_get_pointer_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
 //CHECK-NEXT:}
 int run_foo9() {
   std::vector<A> vec(10);
@@ -655,7 +585,7 @@ int run_foo9() {
 //CHECK-NEXT:int run_foo10() {
 //CHECK-NEXT: dpct::get_default_queue().submit(
 //CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:     cl::sycl::accessor<float *, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> afn_s_acc_ct1(cl::sycl::range<1>(3), cgh);
+//CHECK-NEXT:     cl::sycl::accessor<float *, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> afn_s_acc_ct1(cl::sycl::range<1>(3), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -719,9 +649,9 @@ __global__ void kernel_ctor() {
 void test_ctor() {
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:     cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
-  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s2_acc_ct1(cgh);
-  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<int, 1, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s1_acc_ct1(cl::sycl::range<1>(10), cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s2_acc_ct1(cgh);
+  // CHECK-NEXT:     cl::sycl::accessor<float, 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -751,11 +681,11 @@ void test_ctor() {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct1. Adjust the code to make the type_ct1 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct1)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -800,11 +730,11 @@ void foo11() {
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp is declared in device function with the name UnionType. Adjust the code to make the UnionType declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(UnionType)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(UnionType)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp_ct1_acc_ct1(cgh);
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1054:{{[0-9]+}}: The type of variable temp2 is declared in device function with the name type_ct2. Adjust the code to make the type_ct2 declaration visible at the accessor declaration point.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct2)], 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
+//CHECK-NEXT:      cl::sycl::accessor<uint8_t[sizeof(type_ct2)], 0, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> temp2_ct1_acc_ct1(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
@@ -844,24 +774,19 @@ int run_foo12() {
   static const int ee = ci;
   static constexpr int ff = ci;
   static const int gg = i;
-  //CHECK:{
-  //CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> bb_buf_ct1 = dpct::get_buffer_and_offset(bb);
-  //CHECK-NEXT:  size_t bb_offset_ct1 = bb_buf_ct1.second;
-  //CHECK-NEXT:  dpct::get_default_queue().submit(
-  //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto bb_acc_ct1 = bb_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //CHECK:  dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
+  //CHECK-NEXT:    dpct::access_wrapper<int *> bb_acc_ct1(bb, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:      auto aa_ct0 = aa;
-  //CHECK-NEXT:      auto gg_ct6 = gg;
+  //CHECK-NEXT:    auto aa_ct0 = aa;
+  //CHECK-NEXT:    auto gg_ct6 = gg;
   //CHECK-EMPTY:
-  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
-  //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:          int *bb_ct1 = (int *)(&bb_acc_ct1[0] + bb_offset_ct1);
-  //CHECK-NEXT:          my_kernel4(aa_ct0, bb_ct1, cc, dd, ee, ff, gg_ct6);
-  //CHECK-NEXT:        });
-  //CHECK-NEXT:    });
-  //CHECK-NEXT:}
+  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        my_kernel4(aa_ct0, bb_acc_ct1.get_raw_pointer(), cc, dd, ee, ff, gg_ct6);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
   my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }
 

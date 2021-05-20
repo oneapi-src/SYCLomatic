@@ -25,8 +25,8 @@ int main(){
   //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:int s1;
   //CHECK-NEXT:int s2;
-  //CHECK-NEXT:oneapi::mkl::rng::philox4x32x10 *rng;
-  //CHECK-NEXT:rng = new oneapi::mkl::rng::philox4x32x10(q_ct1, 1337ull);
+  //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+  //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(q_ct1, 1337ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed,
   //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -157,8 +157,8 @@ int main(){
   //CHECK-NEXT:if (0) {}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:oneapi::mkl::rng::sobol *rng2;
-  //CHECK-NEXT:rng2 = new oneapi::mkl::rng::sobol(q_ct1, 1111);
+  //CHECK:std::shared_ptr<oneapi::mkl::rng::sobol> rng2;
+  //CHECK-NEXT:rng2 = std::make_shared<oneapi::mkl::rng::sobol>(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
   //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -181,12 +181,12 @@ int main(){
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
-  //CHECK:delete rng;
+  //CHECK:rng.reset();
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (delete rng, 0);
+  //CHECK-NEXT:s1 = (rng.reset(), 0);
   curandDestroyGenerator(rng);
   s1 = curandDestroyGenerator(rng);
 }
@@ -199,17 +199,18 @@ curandStatus foo2();
 //CHECK:class A{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  A(){
-//CHECK-NEXT:    rng = new oneapi::mkl::rng::sobol(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:    rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                    1243);
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was
 //CHECK-NEXT:    removed, because the function call is redundant in DPC++.
 //CHECK-NEXT:    */
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~A(){
-//CHECK-NEXT:    delete rng;
+//CHECK-NEXT:    rng.reset();
 //CHECK-NEXT:  }
      //CHECK:private:
-//CHECK-NEXT:  oneapi::mkl::rng::sobol *rng;
+//CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng;
 //CHECK-NEXT:};
 class A{
 public:
@@ -228,10 +229,12 @@ private:
 
 void bar1(){
 //CHECK:/*
-//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
+//CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:oneapi::mkl::rng::philox4x32x10 *rng;
-//CHECK-NEXT:rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_default_queue(), 1337ull);
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
+//CHECK-NEXT:    dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed,
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -244,10 +247,12 @@ void bar1(){
 
 void bar2(){
 //CHECK:/*
-//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
+//CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:oneapi::mkl::rng::sobol *rng;
-//CHECK-NEXT:rng = new oneapi::mkl::rng::sobol(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -266,8 +271,8 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 }
 
 void bar3(){
-//CHECK:oneapi::mkl::rng::philox4x32x10 *rng;
-//CHECK-NEXT:curandErrCheck((rng = new oneapi::mkl::rng::philox4x32x10(
+//CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+//CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
 //CHECK-NEXT:                    dpct::get_default_queue(), 1337ull),
 //CHECK-NEXT:                0));
 //CHECK-NEXT:/*
@@ -289,7 +294,7 @@ void bar3(){
 //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 //CHECK-NEXT:may need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((delete rng, 0));
+//CHECK-NEXT:curandErrCheck((rng.reset(), 0));
   curandGenerator_t rng;
   curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10));
   curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));
@@ -304,8 +309,9 @@ void bar4(){
 //CHECK-NEXT:oneapi::mkl::rng::sobol generator with user-defined direction numbers to use
 //CHECK-NEXT:it as Scrambled Sobol generator.
 //CHECK-NEXT:*/
-//CHECK-NEXT:oneapi::mkl::rng::sobol *rng;
-//CHECK-NEXT:rng = new oneapi::mkl::rng::sobol(dpct::get_default_queue(), 1243);
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -338,8 +344,9 @@ void bar5(){
 //CHECK:int bar6() try {
 //CHECK-NEXT:  oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:  float *d_data;
-//CHECK-NEXT:  oneapi::mkl::rng::sobol *rng2;
-//CHECK-NEXT:  rng2 = new oneapi::mkl::rng::sobol(dpct::get_default_queue(), 1111);
+//CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng2;
+//CHECK-NEXT:  rng2 = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                   1111);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
 //CHECK-NEXT:  because the function call is redundant in DPC++.

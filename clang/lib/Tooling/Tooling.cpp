@@ -76,6 +76,10 @@ static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
+static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<std::string> *ProcessedFilePtr = nullptr;
+static std::function<unsigned int()> GetRunRoundPtr;
+static std::set<std::string> *ModuleFiles = nullptr;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -113,11 +117,43 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
+void SetProcessedFile(std::set<std::string> &ProcessedFile){
+  ProcessedFilePtr = &ProcessedFile;
+}
+
+void SetReProcessFile(std::set<std::string> &ReProcessFile){
+  ReProcessFilePtr = &ReProcessFile;
+}
+
+void SetGetRunRound(std::function<unsigned int()> Func){
+  GetRunRoundPtr = Func;
+}
+
+unsigned int DoGetRunRound(){
+  if(GetRunRoundPtr){
+    return GetRunRoundPtr();
+  }
+  return 0;
+}
+
+void CollectProcessedFile(std::string File){
+  if(ProcessedFilePtr){
+    (*ProcessedFilePtr).insert(File);
+  }
+}
+
+std::set<std::string> GetReProcessFile(){
+  if(ReProcessFilePtr){
+    return *ReProcessFilePtr;
+  }
+  return std::set<std::string>();
+}
+
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-
+void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -127,6 +163,25 @@ llvm::raw_ostream &DiagnosticsOS() {
 }
 
 std::string ClangToolOutputMessage = "";
+
+std::string getRealFilePath(std::string File, clang::FileManager *FM){
+#ifdef _WIN64
+  std::string RealFilePath;
+  llvm::SmallString<512> FilePathAbs(File);
+  llvm::sys::path::native(FilePathAbs);
+  llvm::sys::path::remove_dots(FilePathAbs, true);
+  RealFilePath = FilePathAbs.str().str();
+  auto FE = FM->getFile(File);
+  std::error_code EC = FE.getError();
+  if(!(bool)EC && !FE.get()->tryGetRealPathName().empty()) {
+    RealFilePath = FE.get()->tryGetRealPathName().str();
+  }
+  return RealFilePath;
+#else
+  return File;
+#endif
+}
+
 } // namespace tooling
 } // namespace clang
 #if defined(__linux__)
@@ -143,7 +198,7 @@ std::string ClangToolOutputMessage = "";
 
 JMP_BUF CPFileEnter;
 bool EnableErrorRecover=true;
-int CheckPointStage=0;
+int CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 bool CurFileMeetErr=false;
 bool StopOnParseErrTooling=false;
 std::string InRootTooling;
@@ -436,10 +491,14 @@ bool ToolInvocation::run() {
   TextDiagnosticPrinter DiagnosticPrinter(
       llvm::errs(), &*DiagOpts);
   DiagnosticsEngine Diagnostics(
-    IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
-    DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
-
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
 #endif
+
+  // Although `Diagnostics` are used only for command-line parsing, the custom
+  // `DiagConsumer` might expect a `SourceManager` to be present.
+  SourceManager SrcMgr(Diagnostics, *Files);
+  Diagnostics.setSourceManager(&SrcMgr);
 
   const std::unique_ptr<driver::Driver> Driver(
       newDriver(&Diagnostics, BinaryName, &Files->getVirtualFileSystem()));
@@ -548,8 +607,9 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
       return;
 
   // If there's no override in place add our resource dir.
-  Args.push_back("-resource-dir=" +
-                 CompilerInvocation::GetResourcesPath(Argv0, MainAddr));
+  Args = getInsertArgumentAdjuster(
+      ("-resource-dir=" + CompilerInvocation::GetResourcesPath(Argv0, MainAddr))
+          .c_str())(Args, "");
 }
 
 #ifdef INTEL_CUSTOMIZATION
@@ -561,7 +621,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //enter point for the file processing.
-    CheckPointStage = 1;
+    CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
     CurFileMeetErr= false;
     //clear error# counter
     CurFileParseErrCnt=0;
@@ -582,6 +642,9 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     //
     // FIXME: Make the compilation database interface more explicit about the
     // requirements to the order of invocation of its members.
+#ifdef INTEL_CUSTOMIZATION
+    try {
+#endif
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
@@ -617,6 +680,25 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
                 llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+
+      /// TODO: When supporting Driver API migration, dpct needs to migrate the
+      ///       source file(s) which is built by --cubin/--ptx option as module
+      ///       file(s).
+
+      // To remove --cubin/--ptx option from command line is to
+      // avoid parsing error msgs like: "error: unknown argument: '-ptx'" or
+      // "error: unknown argument: '-cubin'".
+      bool IsModuleFile = false;
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx" ||
+            CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
+          CommandLine.erase(CommandLine.begin() + Index--);
+          IsModuleFile = true;
+        }
+      }
+      if(IsModuleFile)
+        ModuleFiles->insert(getRealFilePath(File.str(), Files.get()));
+
       std::string Filename = CompileCommand.Filename;
       if(!llvm::sys::path::is_absolute(Filename)) {
           // To convert the relative path to absolute path.
@@ -755,10 +837,20 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         ProcessingFailed = true;
         if(StopOnParseErrTooling)
             break;
+      } else {
+        CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
       }
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
+#ifdef INTEL_CUSTOMIZATION
+    } catch (std::exception &e) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "the current file and continues migration.\n";
+      llvm::errs() << FaultMsg;
+    }
+#endif
     return 0;
 }
 #endif
@@ -782,6 +874,9 @@ int ClangTool::run(ToolAction *Action) {
   // Compute all absolute paths before we run any actions, as those will change
   // the working directory.
   std::vector<std::string> AbsolutePaths;
+#ifdef INTEL_CUSTOMIZATION
+  if(DoGetRunRound() == 0) {
+#endif
   AbsolutePaths.reserve(SourcePaths.size());
   for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
@@ -809,6 +904,10 @@ int ClangTool::run(ToolAction *Action) {
           "provided in command line.\n";
       DoPrintHandle(Msg, false);
     }
+  }
+  } else {
+     for (auto &File : GetReProcessFile())
+       AbsolutePaths.push_back(File);
   }
 #endif
   // Remember the working directory in case we need to restore it.
@@ -907,7 +1006,7 @@ int ClangTool::run(ToolAction *Action) {
   // if input file(s) is not specified in command line, and the process-all
   // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
-  if(SourcePaths.size() == 0 ) {
+  if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
     std::vector<std::string> FilesNotProcessed;
 
     // To traverse all the files in the directory specified by
@@ -915,7 +1014,7 @@ int ClangTool::run(ToolAction *Action) {
     // calling proccessFiles() into FilesNotProcessed, and copies the rest
     // files to the output directory.
     DoFileProcessHandle(FilesNotProcessed);
-    for (auto Entry : FilesNotProcessed) {
+    for (auto &Entry : FilesNotProcessed) {
       auto File = llvm::StringRef(Entry);
       int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
                               Action);
@@ -927,7 +1026,7 @@ int ClangTool::run(ToolAction *Action) {
   }
 
   // exit point for the file processing.
-  CheckPointStage = 0;
+  CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif
   if (!InitialWorkingDir.empty()) {
     if (auto EC =

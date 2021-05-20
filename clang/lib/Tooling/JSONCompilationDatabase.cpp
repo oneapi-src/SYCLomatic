@@ -198,7 +198,7 @@ JSONCompilationDatabase::loadFromFile(StringRef FilePath,
                                       JSONCommandLineSyntax Syntax) {
   // Don't mmap: if we're a long-lived process, the build system may overwrite.
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> DatabaseBuffer =
-      llvm::MemoryBuffer::getFile(FilePath, /*FileSize=*/-1,
+      llvm::MemoryBuffer::getFile(FilePath, /*IsText=*/false,
                                   /*RequiresNullTerminator=*/true,
                                   /*IsVolatile=*/true);
   if (std::error_code Result = DatabaseBuffer.getError()) {
@@ -445,6 +445,9 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
       SmallString<128> AbsolutePath(
           Directory->getValue(DirectoryStorage));
       llvm::sys::path::append(AbsolutePath, FileName);
+#ifdef INTEL_CUSTOMIZATION
+      llvm::sys::fs::make_absolute(AbsolutePath);
+#endif
       llvm::sys::path::remove_dots(AbsolutePath, /*remove_dot_dot=*/ true);
       llvm::sys::path::native(AbsolutePath, NativeFilePath);
     } else {

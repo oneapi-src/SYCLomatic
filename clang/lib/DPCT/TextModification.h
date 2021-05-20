@@ -270,6 +270,14 @@ class ReplaceStmt : public TextModification {
   // redundant trailing semicolons and spaces in the same line
   bool IsCleanup = true;
 
+  // Since getReplacement() is a const function and IsMacroRemoved is assigned
+  // in it, IsMacroRemoved is declaraed as "mutable".
+  // In getReplacement(), if the callexpr spelling is in macro define and it is
+  // outermost, this callexpr will be removed in macro definitation and this
+  // flag will be true. Then in removeStmtWithCleanups() function, the call of
+  // this macro will be removed also.
+  mutable bool IsMacroRemoved = false;
+
 public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&... S)

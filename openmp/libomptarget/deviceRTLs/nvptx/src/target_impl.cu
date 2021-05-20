@@ -11,112 +11,67 @@
 //===----------------------------------------------------------------------===//
 #pragma omp declare target
 
-#include "target_impl.h"
 #include "common/debug.h"
+#include "target_impl.h"
+#include "target_interface.h"
 
-#include <cuda.h>
-
-// Forward declaration of CUDA primitives which will be evetually transformed
-// into LLVM intrinsics.
-extern "C" {
-unsigned int __activemask();
-unsigned int __ballot(unsigned);
-// The default argument here is based on NVIDIA's website
-// https://developer.nvidia.com/blog/using-cuda-warp-level-primitives/
-int __shfl_sync(unsigned mask, int val, int src_line, int width = WARPSIZE);
-int __shfl(int val, int src_line, int width = WARPSIZE);
-int __shfl_down(int var, unsigned detla, int width);
-int __shfl_down_sync(unsigned mask, int var, unsigned detla, int width);
-void __syncwarp(int mask);
-void __threadfence();
-void __threadfence_block();
-void __threadfence_system();
-}
-
-DEVICE void __kmpc_impl_unpack(uint64_t val, uint32_t &lo, uint32_t &hi) {
+EXTERN void __kmpc_impl_unpack(uint64_t val, uint32_t &lo, uint32_t &hi) {
   asm volatile("mov.b64 {%0,%1}, %2;" : "=r"(lo), "=r"(hi) : "l"(val));
 }
 
-DEVICE uint64_t __kmpc_impl_pack(uint32_t lo, uint32_t hi) {
+EXTERN uint64_t __kmpc_impl_pack(uint32_t lo, uint32_t hi) {
   uint64_t val;
   asm volatile("mov.b64 %0, {%1,%2};" : "=l"(val) : "r"(lo), "r"(hi));
   return val;
 }
 
-DEVICE __kmpc_impl_lanemask_t __kmpc_impl_lanemask_lt() {
+EXTERN __kmpc_impl_lanemask_t __kmpc_impl_lanemask_lt() {
   __kmpc_impl_lanemask_t res;
   asm("mov.u32 %0, %%lanemask_lt;" : "=r"(res));
   return res;
 }
 
-DEVICE __kmpc_impl_lanemask_t __kmpc_impl_lanemask_gt() {
+EXTERN __kmpc_impl_lanemask_t __kmpc_impl_lanemask_gt() {
   __kmpc_impl_lanemask_t res;
   asm("mov.u32 %0, %%lanemask_gt;" : "=r"(res));
   return res;
 }
 
-DEVICE uint32_t __kmpc_impl_smid() {
+EXTERN uint32_t __kmpc_impl_smid() {
   uint32_t id;
   asm("mov.u32 %0, %%smid;" : "=r"(id));
   return id;
 }
 
-DEVICE double __kmpc_impl_get_wtick() {
+EXTERN double __kmpc_impl_get_wtick() {
   // Timer precision is 1ns
   return ((double)1E-9);
 }
 
-DEVICE double __kmpc_impl_get_wtime() {
+EXTERN double __kmpc_impl_get_wtime() {
   unsigned long long nsecs;
   asm("mov.u64  %0, %%globaltimer;" : "=l"(nsecs));
   return (double)nsecs * __kmpc_impl_get_wtick();
 }
 
-// In Cuda 9.0, __ballot(1) from Cuda 8.0 is replaced with __activemask().
-DEVICE __kmpc_impl_lanemask_t __kmpc_impl_activemask() {
-#if CUDA_VERSION >= 9000
-  return __activemask();
-#else
-  return __ballot(1);
-#endif
+EXTERN __kmpc_impl_lanemask_t __kmpc_impl_activemask() {
+  unsigned int Mask;
+  asm volatile("activemask.b32 %0;" : "=r"(Mask));
+  return Mask;
 }
 
-// In Cuda 9.0, the *_sync() version takes an extra argument 'mask'.
-DEVICE int32_t __kmpc_impl_shfl_sync(__kmpc_impl_lanemask_t Mask, int32_t Var,
-                                     int32_t SrcLane) {
-#if CUDA_VERSION >= 9000
-  return __shfl_sync(Mask, Var, SrcLane);
-#else
-  return __shfl(Var, SrcLane);
-#endif // CUDA_VERSION
-}
+EXTERN void __kmpc_impl_syncthreads() { __syncthreads(); }
 
-DEVICE int32_t __kmpc_impl_shfl_down_sync(__kmpc_impl_lanemask_t Mask,
-                                          int32_t Var, uint32_t Delta,
-                                          int32_t Width) {
-#if CUDA_VERSION >= 9000
-  return __shfl_down_sync(Mask, Var, Delta, Width);
-#else
-  return __shfl_down(Var, Delta, Width);
-#endif // CUDA_VERSION
-}
-
-DEVICE void __kmpc_impl_syncthreads() { __syncthreads(); }
-
-DEVICE void __kmpc_impl_syncwarp(__kmpc_impl_lanemask_t Mask) {
-#if CUDA_VERSION >= 9000
-  __syncwarp(Mask);
-#else
-  // In Cuda < 9.0 no need to sync threads in warps.
-#endif // CUDA_VERSION
+EXTERN void __kmpc_impl_syncwarp(__kmpc_impl_lanemask_t Mask) {
+  __nvvm_bar_warp_sync(Mask);
 }
 
 // NVPTX specific kernel initialization
-DEVICE void __kmpc_impl_target_init() { /* nvptx needs no extra setup */
+EXTERN void __kmpc_impl_target_init() { /* nvptx needs no extra setup */
 }
 
 // Barrier until num_threads arrive.
-DEVICE void __kmpc_impl_named_sync(uint32_t num_threads) {
+EXTERN void __kmpc_impl_named_sync(uint32_t num_threads) {
   // The named barrier for active parallel threads of a team in an L1 parallel
   // region to synchronize with each other.
   int barrier = 1;
@@ -126,68 +81,70 @@ DEVICE void __kmpc_impl_named_sync(uint32_t num_threads) {
                : "memory");
 }
 
-DEVICE void __kmpc_impl_threadfence() { __threadfence(); }
-DEVICE void __kmpc_impl_threadfence_block() { __threadfence_block(); }
-DEVICE void __kmpc_impl_threadfence_system() { __threadfence_system(); }
+EXTERN void __kmpc_impl_threadfence() { __nvvm_membar_gl(); }
+EXTERN void __kmpc_impl_threadfence_block() { __nvvm_membar_cta(); }
+EXTERN void __kmpc_impl_threadfence_system() { __nvvm_membar_sys(); }
 
 // Calls to the NVPTX layer (assuming 1D layout)
-DEVICE int GetThreadIdInBlock() { return __nvvm_read_ptx_sreg_tid_x(); }
-DEVICE int GetBlockIdInKernel() { return __nvvm_read_ptx_sreg_ctaid_x(); }
-DEVICE int GetNumberOfBlocksInKernel() {
+EXTERN int GetThreadIdInBlock() { return __nvvm_read_ptx_sreg_tid_x(); }
+EXTERN int GetBlockIdInKernel() { return __nvvm_read_ptx_sreg_ctaid_x(); }
+EXTERN int GetNumberOfBlocksInKernel() {
   return __nvvm_read_ptx_sreg_nctaid_x();
 }
-DEVICE int GetNumberOfThreadsInBlock() { return __nvvm_read_ptx_sreg_ntid_x(); }
-DEVICE unsigned GetWarpId() { return GetThreadIdInBlock() / WARPSIZE; }
-DEVICE unsigned GetLaneId() { return GetThreadIdInBlock() & (WARPSIZE - 1); }
+EXTERN int GetNumberOfThreadsInBlock() { return __nvvm_read_ptx_sreg_ntid_x(); }
+EXTERN unsigned GetWarpId() { return GetThreadIdInBlock() / WARPSIZE; }
+EXTERN unsigned GetWarpSize() { return WARPSIZE; }
+EXTERN unsigned GetLaneId() { return GetThreadIdInBlock() & (WARPSIZE - 1); }
 
-// Forward declaration of atomics. Although they're template functions, we
-// already have definitions for different types in CUDA internal headers with
-// the right mangled names.
-template <typename T> DEVICE T atomicAdd(T *address, T val);
-template <typename T> DEVICE T atomicInc(T *address, T val);
-template <typename T> DEVICE T atomicMax(T *address, T val);
-template <typename T> DEVICE T atomicExch(T *address, T val);
-template <typename T> DEVICE T atomicCAS(T *address, T compare, T val);
-
-DEVICE uint32_t __kmpc_atomic_add(uint32_t *Address, uint32_t Val) {
-  return atomicAdd(Address, Val);
+// Atomics
+uint32_t __kmpc_atomic_add(uint32_t *Address, uint32_t Val) {
+  return __atomic_fetch_add(Address, Val, __ATOMIC_SEQ_CST);
 }
-DEVICE uint32_t __kmpc_atomic_inc(uint32_t *Address, uint32_t Val) {
-  return atomicInc(Address, Val);
-}
-DEVICE uint32_t __kmpc_atomic_max(uint32_t *Address, uint32_t Val) {
-  return atomicMax(Address, Val);
-}
-DEVICE uint32_t __kmpc_atomic_exchange(uint32_t *Address, uint32_t Val) {
-  return atomicExch(Address, Val);
-}
-DEVICE uint32_t __kmpc_atomic_cas(uint32_t *Address, uint32_t Compare,
-                                  uint32_t Val) {
-  return atomicCAS(Address, Compare, Val);
+uint32_t __kmpc_atomic_inc(uint32_t *Address, uint32_t Val) {
+  return __nvvm_atom_inc_gen_ui(Address, Val);
 }
 
-DEVICE unsigned long long __kmpc_atomic_exchange(unsigned long long *Address,
-                                                 unsigned long long Val) {
-  return atomicExch(Address, Val);
+uint32_t __kmpc_atomic_max(uint32_t *Address, uint32_t Val) {
+  return __atomic_fetch_max(Address, Val, __ATOMIC_SEQ_CST);
 }
-DEVICE unsigned long long __kmpc_atomic_add(unsigned long long *Address,
-                                            unsigned long long Val) {
-  return atomicAdd(Address, Val);
+
+uint32_t __kmpc_atomic_exchange(uint32_t *Address, uint32_t Val) {
+  uint32_t R;
+  __atomic_exchange(Address, &Val, &R, __ATOMIC_SEQ_CST);
+  return R;
+}
+
+uint32_t __kmpc_atomic_cas(uint32_t *Address, uint32_t Compare, uint32_t Val) {
+  (void)__atomic_compare_exchange(Address, &Compare, &Val, false,
+                                  __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  return Compare;
+}
+
+unsigned long long __kmpc_atomic_exchange(unsigned long long *Address,
+                                          unsigned long long Val) {
+  unsigned long long R;
+  __atomic_exchange(Address, &Val, &R, __ATOMIC_SEQ_CST);
+  return R;
+}
+
+unsigned long long __kmpc_atomic_add(unsigned long long *Address,
+                                     unsigned long long Val) {
+  return __atomic_fetch_add(Address, Val, __ATOMIC_SEQ_CST);
 }
 
 #define __OMP_SPIN 1000
 #define UNSET 0u
 #define SET 1u
 
-DEVICE void __kmpc_impl_init_lock(omp_lock_t *lock) {
+EXTERN void __kmpc_impl_init_lock(omp_lock_t *lock) {
   __kmpc_impl_unset_lock(lock);
 }
 
-DEVICE void __kmpc_impl_destroy_lock(omp_lock_t *lock) {
+EXTERN void __kmpc_impl_destroy_lock(omp_lock_t *lock) {
   __kmpc_impl_unset_lock(lock);
 }
 
-DEVICE void __kmpc_impl_set_lock(omp_lock_t *lock) {
+EXTERN void __kmpc_impl_set_lock(omp_lock_t *lock) {
   // TODO: not sure spinning is a good idea here..
   while (__kmpc_atomic_cas(lock, UNSET, SET) != UNSET) {
     int32_t start = __nvvm_read_ptx_sreg_clock();
@@ -202,15 +159,15 @@ DEVICE void __kmpc_impl_set_lock(omp_lock_t *lock) {
   } // wait for 0 to be the read value
 }
 
-DEVICE void __kmpc_impl_unset_lock(omp_lock_t *lock) {
+EXTERN void __kmpc_impl_unset_lock(omp_lock_t *lock) {
   (void)__kmpc_atomic_exchange(lock, UNSET);
 }
 
-DEVICE int __kmpc_impl_test_lock(omp_lock_t *lock) {
+EXTERN int __kmpc_impl_test_lock(omp_lock_t *lock) {
   return __kmpc_atomic_add(lock, 0u);
 }
 
-DEVICE void *__kmpc_impl_malloc(size_t x) { return malloc(x); }
-DEVICE void __kmpc_impl_free(void *x) { free(x); }
+EXTERN void *__kmpc_impl_malloc(size_t x) { return malloc(x); }
+EXTERN void __kmpc_impl_free(void *x) { free(x); }
 
 #pragma omp end declare target

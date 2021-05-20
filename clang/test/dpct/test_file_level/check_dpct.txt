@@ -1,0 +1,10 @@
+//CHECK:#ifndef __DPCT_HPP__
+//CHECK-NEXT:#define __DPCT_HPP__
+//CHECK-EMPTY:
+//CHECK-NEXT:#include <CL/sycl.hpp>
+//CHECK-NEXT:#include <iostream>
+//CHECK-NEXT:#include <limits.h>
+//CHECK-EMPTY:
+//CHECK-NEXT:#include "device.hpp"
+//CHECK-EMPTY:
+//CHECK-NEXT:#if defined(_MSC_VER)

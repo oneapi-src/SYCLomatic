@@ -38,7 +38,7 @@ template<class T> __global__ void template_kernel4() {
 
 template<class T1, class T2, size_t S> void template_host() {
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, T1>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<T2, T1>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -47,7 +47,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel1<T2, T1><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, int>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<T2, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -56,7 +56,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel2<T2><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T1, T1>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(S), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<T1, T1>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(S), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -65,7 +65,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel3<T1, S><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, float>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<T2, float>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -77,7 +77,7 @@ template<class T1, class T2, size_t S> void template_host() {
 
 int main() {
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float4, int>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<sycl::float4, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -86,7 +86,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel1<float4, int><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, int>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -95,7 +95,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel2<float2><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, sycl::float2>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, sycl::float2>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -104,7 +104,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel3<float2, 3><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, float>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, float>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -135,8 +135,8 @@ void foo() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access_mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access_mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -147,8 +147,8 @@ void foo() {
   k<<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access_mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access_mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -159,8 +159,8 @@ void foo() {
   k<int><<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<float, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access_mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<float, 0, sycl::access_mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -172,8 +172,8 @@ void foo() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access_mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<double, 0, sycl::access_mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -184,8 +184,8 @@ void foo() {
   k<T3><<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
-  // CHECK-NEXT:     sycl::accessor<T4, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access_mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
+  // CHECK-NEXT:     sycl::accessor<T4, 0, sycl::access_mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -220,7 +220,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     typedef_1 *d_c;
     using_1 *d_d;
 
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -228,7 +228,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ptr(d_a, (T1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ptr<<<1,1>>>(d_a);
-    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -236,7 +236,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ptr(d_b, (int *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ptr<<<1,1>>>(d_b);
-    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -244,7 +244,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ptr(d_c, (typedef_1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ptr<<<1,1>>>(d_c);
-    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -258,7 +258,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     typedef_1 r_c;
     using_1 r_d;
 
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -266,7 +266,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ref(r_a, (T1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ref<<<1,1>>>(r_a);
-    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -274,7 +274,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ref(r_b, (int *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ref<<<1,1>>>(r_b);
-    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -282,7 +282,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_ref(r_c, (typedef_1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_ref<<<1,1>>>(r_c);
-    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -295,7 +295,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     int a_b[10][20];
     typedef_1 a_c[10][20];
     using_1 a_d[10][20];
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -303,7 +303,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_array(a_a, (T1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_array<<<1,1>>>(a_a);
-    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -311,7 +311,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_array(a_b, (int *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_array<<<1,1>>>(a_b);
-    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK:  sycl::accessor<typedef_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -319,7 +319,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_array(a_c, (typedef_1 *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_array<<<1,1>>>(a_c);
-    // CHECK:  sycl::accessor<using_1, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+    // CHECK:  sycl::accessor<using_1, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -335,8 +335,8 @@ template<class T1, class T2, size_t S> void implicit_host() {
     TemplateClass<int, T2> c_d;
     TemplateClass<int, double> c_e;
 
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -344,8 +344,8 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_class(c_a, (T1 *)a1_acc_ct1.get_pointer(), (T2 *)a2_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_class<<<1,1>>>(c_a);
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -353,8 +353,8 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_class(c_b, (T1 *)a1_acc_ct1.get_pointer(), (T2 *)a2_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_class<<<1,1>>>(c_b);
-    // CHECK:  sycl::accessor<T1, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-    // CHECK-NEXT:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<T1, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -362,8 +362,8 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_class(c_c, (T1 *)a1_acc_ct1.get_pointer(), (int *)a2_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_class<<<1,1>>>(c_c);
-    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<T2, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -371,8 +371,8 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_class(c_d, (int *)a1_acc_ct1.get_pointer(), (T2 *)a2_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_class<<<1,1>>>(c_d);
-    // CHECK:  sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-    // CHECK-NEXT:  sycl::accessor<double, 1, sycl::access::mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK-NEXT:  sycl::accessor<double, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -384,7 +384,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     using typedef_2 = std::complex<double>;
     std::complex<int> *h_cpx;
     typedef_2 *h_cpx_2;
-    // CHECK:  sycl::accessor<std::complex<int>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<std::complex<int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -392,7 +392,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
     // CHECK-NEXT:      kernel_dependent(h_cpx, (std::complex<int> *)a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     kernel_dependent<<<1,1>>>(h_cpx);
-    // CHECK:  sycl::accessor<std::complex<double>, 1, sycl::access::mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::accessor<std::complex<double>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

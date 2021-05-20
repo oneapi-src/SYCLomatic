@@ -67,7 +67,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   const SourceManager &SM = Context.getSourceManager();
-  auto Range = getStmtExpansionSourceRange(TheStmt);
+  auto Range = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
   SourceLocation Begin(Range.getBegin()), End(Range.getEnd());
 
   // If ReplaceStmt replaces calls to compatibility APIs, record the
@@ -90,6 +90,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       ReplacementString.empty()) {
       // Remove the callexpr spelling in macro define if it is outermost
       if (isOuterMostMacro(TheStmt)) {
+        IsMacroRemoved = true;
         auto RangeDef = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
         auto BeginDef = RangeDef.getBegin();
         auto EndDef = RangeDef.getEnd();
@@ -114,7 +115,6 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       }
     }
 
-
     auto CallExprLength =
         SM.getCharacterData(End) - SM.getCharacterData(Begin) +
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
@@ -136,8 +136,14 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    auto R = std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
-                                              this);
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto LastTokenLength =
+        Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
+    auto CallExprLength = SM.getDecomposedLoc(End).second -
+                          SM.getDecomposedLoc(Begin).second +
+                          LastTokenLength;
+    auto R = std::make_shared<ExtReplacement>(
+        SM, Begin, CallExprLength, ReplacementString, this);
     R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
     R->setInsertPosition(InsertPos);
     return R;
@@ -154,14 +160,22 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
     return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
                                             this);
 
-  SourceLocation Begin(TheStmt->getBeginLoc()), Endt(TheStmt->getEndLoc());
-  SourceLocation End(Lexer::getLocForEndOfToken(Endt, 0, SM, LangOptions()));
+  SourceLocation Begin(TheStmt->getBeginLoc()), End(TheStmt->getEndLoc());
+  End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
   SourceLocation LocBeforeStmt;
   const char *PosBeforeStmt;
   const char *LastLFPos;
   if (IsProcessMacro) {
-    Begin = SM.getExpansionLoc(Begin);
-    End = SM.getExpansionLoc(End);
+    if (IsMacroRemoved) {
+      Begin = SM.getExpansionLoc(Begin);
+      End = SM.getExpansionLoc(End);
+    } else {
+      auto Range =
+          getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
+      Begin = Range.getBegin();
+      End = Range.getEnd();
+      End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+    }
     LocBeforeStmt = Begin.getLocWithOffset(-1);
     PosBeforeStmt = SM.getCharacterData(LocBeforeStmt);
     LastLFPos = PosBeforeStmt;
@@ -204,6 +218,11 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
   Optional<Token> TokSharedPtr;
   if (IsProcessMacro) {
     PostStmtLoc = End;
+    if (End.getRawEncoding() == 0) {
+      // End is inside the macro definition
+      return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                              this);
+    }
     TokSharedPtr =
         Lexer::findNextToken(End.getLocWithOffset(-1), SM, LangOptions());
   } else {
@@ -218,8 +237,16 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
       auto PostSemiLoc = Tok.getLocation().getLocWithOffset(1);
       auto PostSemiPos = SM.getCharacterData(PostSemiLoc);
       const char *EndPos = PostSemiPos;
+
       while (isspace(*EndPos) && *EndPos != '\n')
         ++EndPos;
+
+      if (isInMacroDefinition(TheStmt->getBeginLoc(), TheStmt->getEndLoc()) &&
+          *EndPos == '\\') {
+        ++EndPos;
+        while (isspace(*EndPos) && *EndPos != '\n')
+          ++EndPos;
+      }
 
       auto ReplaceBeginPos = SM.getCharacterData(PostStmtLoc);
       if (*EndPos == '\n') {
@@ -444,7 +471,8 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   auto &SM = Context.getSourceManager();
-  auto Loc = SM.getSpellingLoc(S->getEndLoc());
+  SourceLocation Loc = getStmtExpansionSourceRange(S).getEnd();
+
   Loc = Loc.getLocWithOffset(
       Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
   if (DoMacroExpansion) {

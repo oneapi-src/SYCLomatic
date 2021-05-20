@@ -13,6 +13,7 @@
 #include "AnalysisInfo.h"
 #include "Debug.h"
 #include "ExternalReplacement.h"
+#include "Checkpoint.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -93,7 +94,6 @@ static bool formatFile(StringRef FileName,
   FSO.WorkingDir = ".";
   clang::FileManager FM(FSO, nullptr);
   clang::SourceManager SM(Diagnostics, FM, false);
-
   clang::Rewriter Rewrite(SM, clang::LangOptions());
   if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
     std::vector<clang::tooling::Range> AllLineRanges;
@@ -155,8 +155,9 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 #error Only support windows and Linux.
 #endif
 
-  auto PathDiff = mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
-                           path::begin(LocalInRoot));
+  auto PathDiff =
+      std::mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
+                    path::begin(LocalInRoot));
   SmallString<512> NewFilePath = StringRef(LocalOutRoot);
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
   FilePath = NewFilePath;
@@ -189,6 +190,11 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     auto FilePath = Iter->path();
+
+    // Skip output directory if it is in the in-root directory.
+    if(isChildOrSamePath(OutRoot.str(), FilePath))
+      continue;
+
     bool IsHidden = false;
     for (path::const_iterator PI = path::begin(FilePath),
                               PE = path::end(FilePath);
@@ -272,7 +278,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                  StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   using namespace clang;
-  ProcessStatus status = MigrationSucceeded;
+  volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -285,13 +291,18 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   SmallString<512> OutPath;
 
+  // The variable defined here is assist to merge history records.
+  std::unordered_map<std::string /*FileName*/,
+                     bool /*false:Not processed in current migration*/>
+      MainSrcFileMap;
+
   std::string YamlFile =
       OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
   std::string SrcFile = "MainSrcFiles_placehold";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
 
   if (llvm::sys::fs::exists(YamlFile)) {
-    if (loadFromYaml(YamlFile, *PreTU) == 0) {
+    if (loadFromYaml(YamlFile, *PreTU, true) == 0) {
       for (const auto &Repl : PreTU->Replacements) {
         auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
         FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
@@ -299,6 +310,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
         auto &DigestMap = DpctGlobalInfo::getDigestMap();
         DigestMap[FileDigest.first] = FileDigest.second;
+
+        // Mark all the main src files loaded from yaml file are not processed
+        // in current migration.
+        MainSrcFileMap[FileDigest.first] = false;
       }
     }
   }
@@ -396,6 +411,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           mergeAndUniqueReps(Entry.second, PreRepls);
         }
 
+        // Mark current migrating main src file processed.
+        MainSrcFileMap[Entry.first] = true;
+
         for (const auto &Repl : Entry.second) {
           MainSrcFilesRepls.push_back(Repl);
         }
@@ -418,6 +436,26 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
               Tool.getFiles().getFile(Entry.first).get(),
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
+    }
+
+    generateHelperFunctions();
+
+    // Save history repls to yaml file.
+    auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+    for (const auto &Entry : FileRelpsMap) {
+      if (MainSrcFileMap[Entry.first])
+        continue;
+      for (const auto &Repl : Entry.second) {
+          MainSrcFilesRepls.push_back(Repl);
+      }
+    }
+
+    // Save history main src file and its content md5 hash to yaml file.
+    auto &DigestMap = DpctGlobalInfo::getDigestMap();
+    for (const auto &Entry : DigestMap) {
+      if (!MainSrcFileMap[Entry.first]) {
+        MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+      }
     }
 
     save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest);
@@ -461,40 +499,55 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
     PrintMsg(ReportMsg);
 
-    if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
-      clang::format::setFormatRangeGetterHandler(
-          clang::dpct::DpctGlobalInfo::getFormatRange);
-      bool FormatResult = true;
-      for (auto Iter : FileRangesMap) {
-        clang::tooling::Replacements FormatChanges;
-        FormatResult =
-            formatFile(Iter.first, Iter.second, FormatChanges) && FormatResult;
+    int RetJmp = 0;
+    CHECKPOINT_FORMATTING_CODE_ENTRY(RetJmp);
+    if (RetJmp == 0) {
+      try {
+        if (DpctGlobalInfo::getFormatRange() !=
+            clang::format::FormatRange::none) {
+          clang::format::setFormatRangeGetterHandler(
+              clang::dpct::DpctGlobalInfo::getFormatRange);
+          bool FormatResult = true;
+          for (auto Iter : FileRangesMap) {
+            clang::tooling::Replacements FormatChanges;
+            FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
+                           FormatResult;
 
-        // If range is "all", one file only need to be formated once.
-        if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all)
-          continue;
+            // If range is "all", one file only need to be formated once.
+            if (DpctGlobalInfo::getFormatRange() ==
+                clang::format::FormatRange::all)
+              continue;
 
-        auto BlockLevelFormatIter =
-            FileBlockLevelFormatRangesMap.find(Iter.first);
-        if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
-          clang::format::BlockLevelFormatFlag = true;
+            auto BlockLevelFormatIter =
+                FileBlockLevelFormatRangesMap.find(Iter.first);
+            if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
+              clang::format::BlockLevelFormatFlag = true;
 
-          std::vector<clang::tooling::Range>
-              BlockLevelFormatRangeAfterFisrtFormat = calculateUpdatedRanges(
-                  FormatChanges, BlockLevelFormatIter->second);
-          FormatResult = formatFile(BlockLevelFormatIter->first,
-                                    BlockLevelFormatRangeAfterFisrtFormat,
-                                    FormatChanges) &&
-                         FormatResult;
+              std::vector<clang::tooling::Range>
+                  BlockLevelFormatRangeAfterFisrtFormat =
+                      calculateUpdatedRanges(FormatChanges,
+                                             BlockLevelFormatIter->second);
+              FormatResult = formatFile(BlockLevelFormatIter->first,
+                                        BlockLevelFormatRangeAfterFisrtFormat,
+                                        FormatChanges) &&
+                             FormatResult;
 
-          clang::format::BlockLevelFormatFlag = false;
+              clang::format::BlockLevelFormatFlag = false;
+            }
+          }
+          if (!FormatResult) {
+            PrintMsg("[Warning] Error happened while formatting. Generating "
+                     "unformatted code.\n");
+          }
         }
-      }
-      if (!FormatResult) {
-        PrintMsg("[Warning] Error happened while formatting. Generating "
-                 "unformatted code.\n");
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "skips formatting the code and continues migration.\n";
+        llvm::errs() << FaultMsg;
       }
     }
+    CHECKPOINT_FORMATTING_CODE_EXIT();
   }
 
   // The necessary header files which have no no replacements will be copied to
@@ -576,7 +629,7 @@ void loadYAMLIntoFileInfo(std::string Path) {
   std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
-    if (loadFromYaml(std::move(YamlFilePath), *PreTU) == 0) {
+    if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
       DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(OriginPath,
                                                                      PreTU);
     }

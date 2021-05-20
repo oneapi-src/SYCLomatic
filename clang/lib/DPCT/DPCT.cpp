@@ -15,6 +15,7 @@
 #include "CallExprRewriter.h"
 #include "Checkpoint.h"
 #include "Config.h"
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"
@@ -72,13 +73,6 @@ extern std::string ClangToolOutputMessage;
 namespace dpct {
 extern llvm::cl::OptionCategory DPCTCat;
 void initWarningIDs();
-#if defined(_WIN32)
-#define MAX_PATH_LEN _MAX_PATH
-#define MAX_NAME_LEN _MAX_FNAME
-#else
-#define MAX_PATH_LEN PATH_MAX
-#define MAX_NAME_LEN NAME_MAX
-#endif
 } // namespace dpct
 } // namespace clang
 
@@ -142,20 +136,16 @@ static opt<std::string>
                    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<ReportTypeEnum> ReportType(
-    "report-type", desc("Comma separated list of report types."),
+    "report-type", desc("Specifies the type of report. Values are:\n"),
     llvm::cl::values(
         llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
-            "Information about API signatures that need migration and the "
-            "number of times\n"
-            "                                    they were encountered. The "
-            "report file name will have .apis suffix added.", false},
+            "Information about API signatures that need migration and the number of times\n"
+            "they were encountered. The report file name will have .apis suffix added.", false},
         llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::stats),
-                  "High level migration statistics: Lines Of Code (LOC) that "
-                  "are migrated to\n"
-                  "                                    DPC++, LOC migrated to "
-                  "DPC++ with helper functions, LOC not needing migration,\n"
-                  "                                    LOC needing migration "
-                  "suffix added. (default)", false},
+                  "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
+                  "DPC++, LOC migrated to DPC++ with helper functions, LOC not needing migration,\n"
+                  "LOC needing migration but are not migrated. The report file name has the .stats\n"
+                  "suffix added (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
                   "All of the reports.", false}
         #ifdef DPCT_DEBUG_BUILD
@@ -172,11 +162,11 @@ static opt<ReportFormatEnum> ReportFormat(
         llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::csv),
                   "Output is lines of comma separated values. The report file "
                   "name extension will\n"
-                  "                                    be .csv. (default)", false},
+                  "be .csv. (default)", false},
         llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::formatted),
                   "Output is formatted to be easier to read for "
                   "human eyes. Report file name\n"
-                  "                                    extension will be log.",
+                  "extension will be log.",
                   false}),
     llvm::cl::init(ReportFormatEnum::notsetformat), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
@@ -277,8 +267,7 @@ opt<UsmLevel> USMLevel(
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::restricted),
                      "Uses API from DPC++ Explicit and Restricted Unified "
                      "Shared Memory extension\n"
-                     "                                    for memory management"
-                     " migration. (default)", false},
+                     "for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::none),
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.", false}),
@@ -308,8 +297,10 @@ opt<DPCTFormatStyle>
 
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
-  "no-cl-namespace-inline", llvm::cl::desc("Do not use cl namespace (cl::) inlining. Default: off.\n"),
-  cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
+    "no-cl-namespace-inline",
+    llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: off. This option will be\n"
+                   "ignored if the replacement option --use-explicit-namespace is used.\n"),
+    cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
 
 bool NoDRYPatternFlag = false;
 static opt<bool, true> NoDRYPattern(
@@ -320,9 +311,9 @@ static opt<bool, true> NoDRYPattern(
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
-                 llvm::cl::desc("Migrates/copies all files from the --in-root directory"
-                                " to the --out-root directory.\n"
-                                "--in-root option should be explicitly specified. Default: off."),
+                 llvm::cl::desc("Migrates or copies all files, except hidden, from the --in-root directory\n"
+                 "to the --out-root directory. The --in-root option should be explicitly specified.\n"
+                 "Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 
 static opt<bool> EnableCTAD(
@@ -336,12 +327,97 @@ static opt<bool> EnableComments(
     "comments", llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
     cat(DPCTCat), init(false));
 
+static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
+    "use-custom-helper", desc("Customize the helper header files for migrated code. The values are:\n"),
+    values(
+        llvm::cl::OptionEnumValue{
+            "none", int(HelperFilesCustomizationLevel::none),
+            "No customization (default).", false},
+        llvm::cl::OptionEnumValue{
+            "file", int(HelperFilesCustomizationLevel::file),
+            "Limit helper header files to only the necessary files for the migrated code and\n"
+            "place them in the --out-root folder.", false},
+        llvm::cl::OptionEnumValue{
+            "all", int(HelperFilesCustomizationLevel::all),
+            "Generate a complete set of helper header files and place them in the --out-root\n"
+            "folder.", false}),
+    init(HelperFilesCustomizationLevel::none), value_desc("value"),
+    cat(DPCTCat), llvm::cl::Optional);
+
+opt<std::string> CustomHelperFileName(
+    "custom-helper-name",
+    desc(
+        "Specifies the helper headers folder name and main helper header file name.\n"
+        "Default: dpct."),
+    init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
+
 bool AsyncHandlerFlag = false;
 static opt<bool, true>
     AsyncHandler("always-use-async-handler",
                  llvm::cl::desc("Always create the cl::sycl::queue with an async "
                                 "exception handler. Default: off."),
                  cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
+
+static opt<AssumedNDRangeDimEnum> NDRangeDim(
+    "assume-nd-range-dim",
+    desc("Provides a hint to the tool on the dimensionality of nd_range to use in generated code.\n"
+         "The values are:\n"),
+    values(
+        llvm::cl::OptionEnumValue{"1", 1,
+                                  "Generate kernel code assuming 1D nd_range "
+                                  "where possible, and 3D in other cases.",
+                                  false},
+        llvm::cl::OptionEnumValue{
+            "3", 3,
+            "Generate kernel code assuming 3D nd_range (default).",
+            false}),
+    init(AssumedNDRangeDimEnum::dim3), value_desc("value"), cat(DPCTCat),
+    llvm::cl::Optional);
+
+static list<ExplicitNamespace> UseExplicitNamespace(
+    "use-explicit-namespace",
+    llvm::cl::desc(
+        "Defines the namespaces to use explicitly in generated code. The value is a comma\n"
+        "separated list. Default: dpct, sycl.\n"
+        "Possible values are:"),
+    llvm::cl::CommaSeparated,
+    values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::none),
+                                     "Generate code without namespaces. Cannot "
+                                     "be used with other values.",
+                                     false},
+           llvm::cl::OptionEnumValue{
+               "cl", int(ExplicitNamespace::cl),
+               "Generate code with cl::sycl:: namespace. Cannot be used with "
+               "sycl or sycl-math values.",
+               false},
+           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::dpct),
+                                     "Generate code with dpct:: namespace.",
+                                     false},
+           llvm::cl::OptionEnumValue{
+               "sycl", int(ExplicitNamespace::sycl),
+               "Generate code with sycl:: namespace. Cannot be used with cl or "
+               "sycl-math values.",
+               false},
+           llvm::cl::OptionEnumValue{
+               "sycl-math", int(ExplicitNamespace::sycl_math),
+               "Generate code with sycl:: namespace, applied only for SYCL math functions.\n"
+               "Cannot be used with cl or sycl values.",
+               false}),
+    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
+
+// When more dpcpp extensions are implemented, more extension names will be
+// added into the value of option --no-dpcpp-extensions, currently only
+// Enqueued barriers is supported.
+static list<DPCPPExtensions> NoDPCPPExtensions(
+    "no-dpcpp-extensions",
+    llvm::cl::desc(
+        "Comma separated list of DPC++ extensions not to be used in migrated code.\n"
+        "By default, these extensions will be used in migrated code."),
+    llvm::cl::CommaSeparated,
+    values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::submit_barrier),
+                                     "Enqueued barriers DPC++ extension.",
+                                     false}),
+    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -350,11 +426,13 @@ std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
+std::unordered_map<std::string, bool> IsDirectoryCache;
 int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
 JMP_BUF CPFileASTMaterEnter;
 JMP_BUF CPRepPostprocessEnter;
+JMP_BUF CPFormatCodeEnter;
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -428,7 +506,8 @@ public:
       auto Repl = I->getReplacement(Context);
 
       // When processing __constant__ between two executions, tool may set the
-      // replacement from TextModification as nullptr to ignore this replacement.
+      // replacement from TextModification as nullptr to ignore this
+      // replacement.
       if (Repl == nullptr)
         continue;
 
@@ -547,7 +626,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
 
-  if(!CudaIncludePath.empty()) {
+  if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -557,7 +636,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       DebugInfo::ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if(!CudaIncludeDetector.isSupportedVersionAvailable()) {
+  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
     DebugInfo::ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
     dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
@@ -651,7 +730,7 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
   size_t Count = 0;
   for (const auto &Elem : LOCStaticsMap) {
     // Skip invalid file path.
-    if(!llvm::sys::fs::exists(Elem.first))
+    if (!llvm::sys::fs::exists(Elem.first))
       continue;
     unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
     unsigned TransToAPI = Elem.second[0];
@@ -886,6 +965,7 @@ int runDPCT(int argc, const char **argv) {
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
+  clang::tooling::SetModuleFiles(dpct::DpctGlobalInfo::getModuleFiles());
 #ifdef _WIN32
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);
@@ -1064,6 +1144,9 @@ int runDPCT(int argc, const char **argv) {
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
+  validateCustomHelperFileNameArg(UseCustomHelperFileLevel, CustomHelperFileName,
+                                  dpct::DpctGlobalInfo::getOutRoot());
+
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
 
@@ -1085,69 +1168,139 @@ int runDPCT(int argc, const char **argv) {
   SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                ArgumentInsertPosition::BEGIN));
+  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
+  (SDKVersionMajor == 11 && SDKVersionMinor == 3)) {
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
+                                  ArgumentInsertPosition::BEGIN));
+  } else {
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
+                                  ArgumentInsertPosition::BEGIN));
+  }
 #endif
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Xclang", ArgumentInsertPosition::BEGIN));
+
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
+  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
+  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
+  MapNames::HelperFileNameMap[HelperFileEnum::Dpct] =
+      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setAssumedNDRangeDim(
+      (NDRangeDim == AssumedNDRangeDimEnum::dim1) ? 1 : 3);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
-  MapNames::setClNamespace(ExplicitClNamespace);
+  std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
+      ExplicitNamespace::sycl, ExplicitNamespace::dpct};
+  if (NoClNamespaceInline.getNumOccurrences()) {
+    if (UseExplicitNamespace.getNumOccurrences()) {
+      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+      clang::dpct::PrintMsg(
+          "Note: Option --no-cl-namespace-inline is deprecated and will be "
+          "ignored. Option --use-explicit-namespace is used instead.\n");
+    } else {
+      if (ExplicitClNamespace) {
+        DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
+            ExplicitNamespace::cl, ExplicitNamespace::dpct});
+      } else {
+        DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
+      }
+      clang::dpct::PrintMsg(
+          "Note: Option --no-cl-namespace-inline is deprecated. Use "
+          "--use-explicit-namespace instead.\n");
+    }
+  } else {
+    if (UseExplicitNamespace.getNumOccurrences()) {
+      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+    } else {
+      DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
+    }
+  }
+
+  MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
+
+  if (NoDPCPPExtensions.getNumOccurrences()) {
+    DpctGlobalInfo::setDPCPPExtSetNotPermit(NoDPCPPExtensions);
+  } else {
+    std::vector<DPCPPExtensions> DefaultDPCPPExtensions = {};
+    DpctGlobalInfo::setDPCPPExtSetNotPermit(DefaultDPCPPExtensions);
+  }
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }
-
-  DPCTActionFactory Factory(Tool.getReplacements());
-
-  if(ProcessAllFlag) {
-    clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
-  }
-
-  int RunResult = Tool.run(&Factory);
-  if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
-    DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
-                          ClangToolOutputMessage);
-    return MigrationErrorCannotAccessDirInDatabase;
-  } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
-    DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
-                          ClangToolOutputMessage);
-    return MigrationErrorInconsistentFileInDatabase;
-  }
-
-  if (RunResult && StopOnParseErr) {
-    DumpOutputFile();
-    if (RunResult == 1) {
-      DebugInfo::ShowStatus(MigrationErrorFileParseError);
-      return MigrationErrorFileParseError;
-    } else {
-      // When RunResult equals to 2, it means no error but some files are
-      // skipped due to missing compile commands.
-      // And clang::tooling::ReFactoryTool will emit error message.
-      return MigrationSKIPForMissingCompileCommand;
+  auto &Global = DpctGlobalInfo::getInstance();
+  int RunCount = 0;
+  do {
+    if (RunCount == 1) {
+      // Currently, we just need maximum two parse
+      DpctGlobalInfo::setNeedRunAgain(false);
+      DpctGlobalInfo::getInstance().resetInfo();
+      DeviceFunctionDecl::reset();
     }
-  }
+    DpctGlobalInfo::setRunRound(RunCount++);
+    DPCTActionFactory Factory(Tool.getReplacements());
 
-  int RetJmp = 0;
-  CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-  if (RetJmp == 0) {
-    auto &Global = DpctGlobalInfo::getInstance();
-    Global.buildReplacements();
-    Global.emplaceReplacements(Tool.getReplacements());
-  }
-  CHECKPOINT_ReplacementPostProcess_EXIT();
+    if (ProcessAllFlag) {
+      clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
+    }
+
+    int RunResult = Tool.run(&Factory);
+    if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
+      DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
+                            ClangToolOutputMessage);
+      return MigrationErrorCannotAccessDirInDatabase;
+    } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
+      DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
+                            ClangToolOutputMessage);
+      return MigrationErrorInconsistentFileInDatabase;
+    }
+
+    if (RunResult && StopOnParseErr) {
+      DumpOutputFile();
+      if (RunResult == 1) {
+        DebugInfo::ShowStatus(MigrationErrorFileParseError);
+        return MigrationErrorFileParseError;
+      } else {
+        // When RunResult equals to 2, it means no error but some files are
+        // skipped due to missing compile commands.
+        // And clang::tooling::ReFactoryTool will emit error message.
+        return MigrationSKIPForMissingCompileCommand;
+      }
+    }
+
+    int RetJmp = 0;
+    CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
+    if (RetJmp == 0) {
+      try {
+        Global.buildReplacements();
+        Global.postProcess();
+        Global.emplaceReplacements(Tool.getReplacements());
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "tries to recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
+    }
+    CHECKPOINT_ReplacementPostProcess_EXIT();
+  } while (DpctGlobalInfo::isNeedRunAgain());
 
   if (GenReport) {
     // report: apis, stats, all, diags
