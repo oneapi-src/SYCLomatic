@@ -2534,6 +2534,7 @@ bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
   }
   return false;
 }
+
 const CompoundStmt *
 findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   const CompoundStmt *LatestCS = nullptr;

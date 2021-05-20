@@ -811,10 +811,6 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-<<<<<<< HEAD
-
-=======
->>>>>>> syclct
   // Key is the begin location offset of the CompoundStmt and the begin location
   // offset of the plan handle VarDecl/FieldDecl.
   // Value is the stream name.
@@ -830,12 +826,7 @@ private:
   // If we can evaluate the value of "CXXBoolLiteralExpr" is always true, then
   // the #1 will be used as key.
   std::unordered_map<std::string, FFTSetStreamAPIInfo> FFTSetStreamAPIInfoMap;
-<<<<<<< HEAD
-
-  ExtReplacements Repls;
-=======
   std::shared_ptr<ExtReplacements> Repls;
->>>>>>> syclct
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
 
@@ -1979,8 +1970,6 @@ public:
   }
   static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
     return FFTHandleInfoMap;
-<<<<<<< HEAD
-=======
   }
 
   static unsigned int getCudaBuiltinXDFIIndexThenInc() {
@@ -2055,7 +2044,6 @@ public:
       }
     }
     return Res;
->>>>>>> syclct
   }
 
 private:
@@ -2212,8 +2200,6 @@ private:
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
-<<<<<<< HEAD
-=======
   static unsigned int CudaBuiltinXDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaBuiltinXDFIMap;
@@ -2267,7 +2253,6 @@ public:
     printName(D, OS);
     return OS.str();
   }
->>>>>>> syclct
 };
 
 class TemplateArgumentInfo;
