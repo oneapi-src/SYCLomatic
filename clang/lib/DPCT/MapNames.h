@@ -20,11 +20,11 @@
 
 namespace clang {
 namespace dpct {
-  enum class KernelArgType;
-  enum class HelperFileEnum : unsigned int;
-  struct HelperFunc;
-}
-}
+enum class KernelArgType;
+enum class HelperFileEnum : unsigned int;
+struct HelperFunc;
+} // namespace dpct
+} // namespace clang
 
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
@@ -41,14 +41,15 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 class MapNames {
   static std::vector<std::string> ClNamespace;
   static std::vector<std::string> DpctNamespace;
+
 public:
   static void setExplicitNamespaceMap();
-// KeepNamespace = true for funtion or type that need avoid ambiguous.
-// Example: sycl::exception <--> std::exception
-// IsMathFunc = true for namespace before math functions.
-// Example: sycl::exp
+  // KeepNamespace = true for funtion or type that need avoid ambiguous.
+  // Example: sycl::exception <--> std::exception
+  // IsMathFunc = true for namespace before math functions.
+  // Example: sycl::exp
   static std::string getClNamespace(bool KeepNamespace = false,
-                                           bool IsMathFunc = false);
+                                    bool IsMathFunc = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {
@@ -91,7 +92,7 @@ public:
     };
 
     static SOLVERFuncReplInfo
-      migrateReturnAndRedundant(bool q2d, std::vector<int> ri, std::string s) {
+    migrateReturnAndRedundant(bool q2d, std::vector<int> ri, std::string s) {
       MapNames::SOLVERFuncReplInfo repl;
       repl.ReturnValue = true;
       repl.RedundantIndexInfo = ri;
@@ -147,11 +148,11 @@ public:
       return repl;
     };
 
-    static SOLVERFuncReplInfo
-      migrateReturnRedundantAndMissed(bool q2d,
-        std::vector<int> ri, std::vector<int> mafl, std::vector<int> mai,
-        std::vector<bool> mab, std::vector<std::string> mat,
-        std::vector<std::string> man, std::string s) {
+    static SOLVERFuncReplInfo migrateReturnRedundantAndMissed(
+        bool q2d, std::vector<int> ri, std::vector<int> mafl,
+        std::vector<int> mai, std::vector<bool> mab,
+        std::vector<std::string> mat, std::vector<std::string> man,
+        std::string s) {
       MapNames::SOLVERFuncReplInfo repl;
       repl.ReturnValue = q2d;
       repl.RedundantIndexInfo = ri;
@@ -164,9 +165,11 @@ public:
       return repl;
     };
 
-    static SOLVERFuncReplInfo
-      migrateBufferAndCast(std::vector<int> bi, std::vector<std::string> bt,
-        std::vector<int> ci, std::vector<std::string> ct, std::string s) {
+    static SOLVERFuncReplInfo migrateBufferAndCast(std::vector<int> bi,
+                                                   std::vector<std::string> bt,
+                                                   std::vector<int> ci,
+                                                   std::vector<std::string> ct,
+                                                   std::string s) {
       MapNames::SOLVERFuncReplInfo repl;
       repl.BufferIndexInfo = bi;
       repl.BufferTypeInfo = bt;
@@ -191,7 +194,8 @@ public:
 
     static SOLVERFuncReplInfo migrateBufferRedundantAndWS(
         std::vector<int> bi, std::vector<std::string> bt, std::vector<int> ri,
-        std::vector<int> wsi, std::vector<int> wss, std::string wsn, std::string s) {
+        std::vector<int> wsi, std::vector<int> wss, std::string wsn,
+        std::string s) {
       MapNames::SOLVERFuncReplInfo repl;
       repl.BufferIndexInfo = bi;
       repl.BufferTypeInfo = bt;
@@ -223,7 +227,7 @@ public:
     };
 
     static SOLVERFuncReplInfo
-      migrateReturnRedundantAndCast(bool q2d, std::vector<int> ri,
+    migrateReturnRedundantAndCast(bool q2d, std::vector<int> ri,
                                   std::vector<int> ci,
                                   std::vector<std::string> ct, std::string s) {
       MapNames::SOLVERFuncReplInfo repl;
@@ -245,7 +249,7 @@ public:
     std::vector<std::string> CastTypeInfo;
 
     std::vector<int> MissedArgumentFinalLocation;
-    std::vector<int> MissedArgumentInsertBefore; //index of original argument
+    std::vector<int> MissedArgumentInsertBefore; // index of original argument
     std::vector<bool> MissedArgumentIsBuffer;
     std::vector<std::string> MissedArgumentType;
     std::vector<std::string> MissedArgumentName;
@@ -319,14 +323,14 @@ public:
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
-  static std::map<std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+  static std::map<std::string,
+                  std::pair<clang::dpct::HelperFileEnum, std::string>>
       TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
-  static std::map<std::string, MapNames::BLASFuncReplInfo>
-      BLASFuncReplInfoMap;
+  static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
@@ -396,8 +400,6 @@ public:
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
   static const MapNames::SetTy PredefinedStreamName;
 
-
-
   static std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
                   clang::dpct::HelperFunc>
       HelperNameContentMap;
@@ -406,7 +408,7 @@ public:
   static std::unordered_map<std::string, clang::dpct::HelperFileEnum>
       HelperFileIDMap;
   static const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
-    HelperFileHeaderGuardMacroMap;
+      HelperFileHeaderGuardMacroMap;
   static const std::unordered_map<
       std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
       TextureAPIHelperFeaturesMap;

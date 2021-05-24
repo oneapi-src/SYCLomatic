@@ -37,8 +37,8 @@ enum class ReportFormatEnum { notsetformat, csv, formatted };
 enum class HelperFilesCustomizationLevel { none, file, all };
 enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
 enum class AssumedNDRangeDimEnum : unsigned int { dim1 = 1, dim3 = 3 };
-enum class ExplicitNamespace {none, cl, sycl, sycl_math, dpct};
-enum class DPCPPExtensions{submit_barrier};
+enum class ExplicitNamespace { none, cl, sycl, sycl_math, dpct };
+enum class DPCPPExtensions { submit_barrier };
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
@@ -50,9 +50,10 @@ bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
 /// -1: fail for InRoot not valid or there is file SourceFiles not in InRoot
 /// -2: fail for there is file in SourceFiles without extension
 int validatePaths(const std::string &InRoot,
-                   const std::vector<std::string> &SourceFiles);
+                  const std::vector<std::string> &SourceFiles);
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-        std::string &RFile, bool& ROnly, bool &GenReport, std::string &DVerbose);
+                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &DVerbose);
 
 /// Retrun value:
 ///  0: Path is valid

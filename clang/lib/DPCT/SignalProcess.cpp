@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#include "Checkpoint.h"
 #include "SignalProcess.h"
+#include "Checkpoint.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
 
@@ -42,60 +42,61 @@ static const std::string SigDescription(const int &Signo) {
 }
 #endif
 extern uint64_t CurFileSigErrCnt;
-void recoverCheckpoint(int Signo){
+void recoverCheckpoint(int Signo) {
   CurFileSigErrCnt++;
-  if( EnableErrorRecover && Signo == SIGSEGV) {
-      if(CheckPointStage==CHECKPOINT_PROCESSING_FILE) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "skips the current file and continues migration.\n";
-        PrintReportOnFault(FaultMsg);
-        if(!CurFileMeetErr) {
-          FatalErrorCnt++;
-          CurFileMeetErr=true;
-        }
-        LONGJMP(CPFileEnter, 1);
-      } else if(CheckPointStage==CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "skips the migration rule causing error and continues migration.\n";
-        PrintReportOnFault(FaultMsg);
-        if(!CurFileMeetErr) {
-          FatalErrorCnt++;
-          CurFileMeetErr=true;
-        }
-        LONGJMP(CPFileASTMaterEnter, 1);
-      } else if(CheckPointStage==CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "tries to recover and write the migration result.\n";
-        PrintReportOnFault(FaultMsg);
-        if(!CurFileMeetErr) {
-          FatalErrorCnt++;
-          CurFileMeetErr=true;
-        }
-        LONGJMP(CPRepPostprocessEnter, 1);
-      } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "skips formatting the code and continues migration.\n";
-        PrintReportOnFault(FaultMsg);
-        if (!CurFileMeetErr) {
-          FatalErrorCnt++;
-          CurFileMeetErr = true;
-        }
-        LONGJMP(CPFormatCodeEnter, 1);
-      } else if (CheckPointStageCore==CHECKPOINT_WRITE_OUT) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "tries to recover and write the migration result.\n";
-        PrintReportOnFault(FaultMsg);
-        if (!CurFileMeetErr) {
-          FatalErrorCnt++;
-          CurFileMeetErr = true;
-        }
-        LONGJMP(CPApplyReps, 1);
+  if (EnableErrorRecover && Signo == SIGSEGV) {
+    if (CheckPointStage == CHECKPOINT_PROCESSING_FILE) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips the current file and continues migration.\n";
+      PrintReportOnFault(FaultMsg);
+      if (!CurFileMeetErr) {
+        FatalErrorCnt++;
+        CurFileMeetErr = true;
       }
+      LONGJMP(CPFileEnter, 1);
+    } else if (CheckPointStage == CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips the migration rule causing error and continues migration.\n";
+      PrintReportOnFault(FaultMsg);
+      if (!CurFileMeetErr) {
+        FatalErrorCnt++;
+        CurFileMeetErr = true;
+      }
+      LONGJMP(CPFileASTMaterEnter, 1);
+    } else if (CheckPointStage ==
+               CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+          "tries to recover and write the migration result.\n";
+      PrintReportOnFault(FaultMsg);
+      if (!CurFileMeetErr) {
+        FatalErrorCnt++;
+        CurFileMeetErr = true;
+      }
+      LONGJMP(CPRepPostprocessEnter, 1);
+    } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips formatting the code and continues migration.\n";
+      PrintReportOnFault(FaultMsg);
+      if (!CurFileMeetErr) {
+        FatalErrorCnt++;
+        CurFileMeetErr = true;
+      }
+      LONGJMP(CPFormatCodeEnter, 1);
+    } else if (CheckPointStageCore == CHECKPOINT_WRITE_OUT) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+          "tries to recover and write the migration result.\n";
+      PrintReportOnFault(FaultMsg);
+      if (!CurFileMeetErr) {
+        FatalErrorCnt++;
+        CurFileMeetErr = true;
+      }
+      LONGJMP(CPApplyReps, 1);
+    }
   }
 }
 
@@ -119,14 +120,12 @@ static void SetSignalHandler(void (*Handler)(int)) {
 
 #include "llvm/Support/Windows/WindowsSupport.h"
 
-static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
-{
-  switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
-  {
-    case STATUS_ACCESS_VIOLATION:
-        recoverCheckpoint(SIGSEGV);
-    default:
-       return EXCEPTION_CONTINUE_EXECUTION;
+static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
+  switch (ExceptionInfo->ExceptionRecord->ExceptionCode) {
+  case STATUS_ACCESS_VIOLATION:
+    recoverCheckpoint(SIGSEGV);
+  default:
+    return EXCEPTION_CONTINUE_EXECUTION;
   }
   llvm_unreachable("Handled the crash, should have longjmp'ed out of here");
 }
@@ -135,7 +134,7 @@ static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
 // The reason use exception handler: in windows there is no function have
 //    siglongjmp/sigprocmask.
 // The reason use singal hander: keep same output msg in both win and linux.
-static void SetHandler(){
+static void SetHandler() {
   ::AddVectoredExceptionHandler(1, ExceptionHandler);
   SetSignalHandler(FaultHandler);
 }
@@ -189,7 +188,7 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 #endif
 
 void InstallSignalHandle(void) {
-#if  defined(__linux__)
+#if defined(__linux__)
   SetHandler(FaultHandler);
 #elif defined(_WIN64)
   SetHandler();

@@ -11,9 +11,9 @@
 
 #include "SaveNewFiles.h"
 #include "AnalysisInfo.h"
+#include "Checkpoint.h"
 #include "Debug.h"
 #include "ExternalReplacement.h"
-#include "Checkpoint.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -87,8 +87,7 @@ static bool formatFile(StringRef FileName,
   clang::TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
   clang::DiagnosticsEngine Diagnostics(
       IntrusiveRefCntPtr<clang::DiagnosticIDs>(new clang::DiagnosticIDs()),
-      &*DiagOpts,
-      &DiagnosticPrinter, false);
+      &*DiagOpts, &DiagnosticPrinter, false);
 
   clang::FileSystemOptions FSO;
   FSO.WorkingDir = ".";
@@ -150,7 +149,8 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   std::string LocalFilePath =
       FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath).str();
   std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot.str();
-  std::string LocalOutRoot = OutRootAbsValid ? OutRootAbs.c_str() : OutRoot.str();
+  std::string LocalOutRoot =
+      OutRootAbsValid ? OutRootAbs.c_str() : OutRoot.str();
 #else
 #error Only support windows and Linux.
 #endif
@@ -162,7 +162,6 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
   FilePath = NewFilePath;
 }
-
 
 static void rewriteFileName(SmallString<512> &FilePath) {
   SourceProcessType FileType = GetSourceFileType(FilePath.str());
@@ -183,16 +182,15 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
   for (fs::recursive_directory_iterator Iter(Twine(InRoot), EC), End;
        Iter != End; Iter.increment(EC)) {
     if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.str()) +
-          " fail: " + EC.message() + "\n";
+      std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
+                           " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
 
     auto FilePath = Iter->path();
 
     // Skip output directory if it is in the in-root directory.
-    if(isChildOrSamePath(OutRoot.str(), FilePath))
+    if (isChildOrSamePath(OutRoot.str(), FilePath))
       continue;
 
     bool IsHidden = false;
@@ -336,15 +334,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
     for (auto &Entry : GroupResult) {
-      OutPath = StringRef(
-          DpctGlobalInfo::removeSymlinks(Rewrite.getSourceMgr().getFileManager(), Entry.first));
+      OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
+          Rewrite.getSourceMgr().getFileManager(), Entry.first));
       makeCanonical(OutPath);
       bool HasRealReplacements = true;
       auto Repls = Entry.second;
 
       if (Repls.size() == 1) {
         auto Repl = *Repls.begin();
-        if(Repl.getLength() == 0 && Repl.getReplacementText().empty())
+        if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
           HasRealReplacements = false;
       }
       auto Find = IncludeFileMap.find(OutPath.c_str());
@@ -383,7 +381,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // For headfile, as it can be included from differnt file, it need
       // merge the migration triggered by each including.
       // For mainfile, as it can be compiled or preprocessed with different
-      // macro defined, it aslo need merge the migration triggered by each command.
+      // macro defined, it aslo need merge the migration triggered by each
+      // command.
       SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (TypeCppHeader | TypeCudaHeader)) {
         mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
@@ -391,7 +390,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
         MainSrcFilesDigest.push_back(
-        std::make_pair(Entry.first, Hash->digest().c_str()));
+            std::make_pair(Entry.first, Hash->digest().c_str()));
 
         bool IsMainSrcFileChanged = false;
         std::string FilePath = Entry.first;
@@ -406,7 +405,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
         auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
         auto Iter = FileRelpsMap.find(Entry.first);
-        if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged ) {
+        if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged) {
           const auto &PreRepls = Iter->second;
           mergeAndUniqueReps(Entry.second, PreRepls);
         }
@@ -446,7 +445,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       if (MainSrcFileMap[Entry.first])
         continue;
       for (const auto &Repl : Entry.second) {
-          MainSrcFilesRepls.push_back(Repl);
+        MainSrcFilesRepls.push_back(Repl);
       }
     }
 
@@ -469,29 +468,32 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       ProcessedFileNumber = GroupResult.size();
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
-                            " file(s) in -in-root folder \"" + InRoot.str() + "\"";
+                            " file(s) in -in-root folder \"" + InRoot.str() +
+                            "\"";
     std::string ErrorFileMsg;
-    int ErrNum=0;
-    for (const auto& KV : ErrorCnt) {
-      if(KV.second!=0) {
+    int ErrNum = 0;
+    for (const auto &KV : ErrorCnt) {
+      if (KV.second != 0) {
         ErrNum++;
         ErrorFileMsg += "  " + KV.first + ": ";
-        if(KV.second & 0xffffffff) {
-           ErrorFileMsg += std::to_string(KV.second & 0xffffffff) + " parsing error(s)";
+        if (KV.second & 0xffffffff) {
+          ErrorFileMsg +=
+              std::to_string(KV.second & 0xffffffff) + " parsing error(s)";
         }
-        if((KV.second & 0xffffffff) && ((KV.second>>32) & 0xffffffff))
-            ErrorFileMsg += ", ";
-        if((KV.second>>32) & 0xffffffff) {
-            ErrorFileMsg += std::to_string((KV.second>>32) & 0xffffffff) + " segmentation fault(s) ";
+        if ((KV.second & 0xffffffff) && ((KV.second >> 32) & 0xffffffff))
+          ErrorFileMsg += ", ";
+        if ((KV.second >> 32) & 0xffffffff) {
+          ErrorFileMsg += std::to_string((KV.second >> 32) & 0xffffffff) +
+                          " segmentation fault(s) ";
         }
         ErrorFileMsg += "\n";
       }
     }
-    if(ErrNum) {
-        ReportMsg += ", " + std::to_string(ErrNum) + " file(s) with error(s):\n";
-        ReportMsg +=ErrorFileMsg;
+    if (ErrNum) {
+      ReportMsg += ", " + std::to_string(ErrNum) + " file(s) with error(s):\n";
+      ReportMsg += ErrorFileMsg;
     } else {
-        ReportMsg +="\n";
+      ReportMsg += "\n";
     }
 
     ReportMsg += "\n";
@@ -562,7 +564,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       SourceProcessType FileType = GetSourceFileType(FilePath.str());
       if (FileType & TypeCudaHeader) {
         path::replace_extension(FilePath, "dp.hpp");
-      } else if(FileType & TypeCudaSource) {
+      } else if (FileType & TypeCudaSource) {
         path::replace_extension(FilePath, "dp.cpp");
       }
 
@@ -617,8 +619,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
 
-  SourceFilePath = StringRef(DpctGlobalInfo::removeSymlinks(
-      DpctGlobalInfo::getFileManager(), Path));
+  SourceFilePath = StringRef(
+      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
   makeCanonical(SourceFilePath);
 
   std::string OriginPath = SourceFilePath.str().str();

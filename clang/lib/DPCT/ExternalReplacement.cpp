@@ -13,8 +13,8 @@
 //   -load replacement from external(disk file)
 //   -merage replacement in current migration with previous migration.
 
-#include "Utility.h"
 #include "AnalysisInfo.h"
+#include "Utility.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -110,8 +110,9 @@ int loadFromYaml(StringRef Input,
   return 0;
 }
 
-void mergeAndUniqueReps(Replacements &Replaces,
-                        const std::vector<clang::tooling::Replacement> &PreRepls) {
+void mergeAndUniqueReps(
+    Replacements &Replaces,
+    const std::vector<clang::tooling::Replacement> &PreRepls) {
 
   bool DupFlag = false;
   for (const auto &OldR : PreRepls) {
@@ -157,9 +158,11 @@ int mergeExternalReps(std::string InRootSrcFilePath,
 
   llvm::errs() << "Saved new version of " << YamlFile << " file\n";
 
-  std::vector<clang::tooling::Replacement> Repls(Replaces.begin(), Replaces.end());
+  std::vector<clang::tooling::Replacement> Repls(Replaces.begin(),
+                                                 Replaces.end());
 
   std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
-  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls, MainSrcFilesDigest);
+  save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls,
+            MainSrcFilesDigest);
   return 0;
 }

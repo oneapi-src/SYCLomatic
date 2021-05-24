@@ -63,7 +63,7 @@ enum VerboseLevel {
 };
 
 #ifdef DPCT_DEBUG_BUILD // Debug build
-#define dpct_unreachable(message)                                            \
+#define dpct_unreachable(message)                                              \
   do {                                                                         \
     DebugInfo::ShowStatus();                                                   \
     llvm::dbgs() << message << "\n";                                           \
@@ -71,7 +71,7 @@ enum VerboseLevel {
     abort();                                                                   \
   } while (false)
 #else // Release build
-#define dpct_unreachable(message)                                            \
+#define dpct_unreachable(message)                                              \
   do {                                                                         \
   } while (false)
 #endif // Release build

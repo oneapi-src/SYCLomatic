@@ -25,13 +25,13 @@
 #include <utility>
 #include <vector>
 
-#include "clang/AST/Attr.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/ParentMapContext.h"
+#include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-#include "clang/Frontend/CompilerInstance.h"
 namespace path = llvm::sys::path;
 
 namespace llvm {
@@ -57,7 +57,7 @@ class Token;
 class LangOptions;
 class DynTypedNode;
 
-namespace dpct{
+namespace dpct {
 enum class FFTTypeEnum;
 class DeviceFunctionInfo;
 enum class HelperFileEnum : unsigned int;
@@ -141,7 +141,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
 
   if (IsChildAbs) {
     auto &RealPath = RealPathCache[Child];
-    if(!RealPath.empty()){
+    if (!RealPath.empty()) {
       ChildAbs = RealPath;
     } else {
       EC = llvm::sys::fs::real_path(Child, ChildAbs);
@@ -175,7 +175,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
                             path::begin(LocalChild));
   // LocalRoot is not considered prefix of LocalChild if they are equal.
   bool Ret = Diff.first == path::end(LocalRoot) &&
-         Diff.second != path::end(LocalChild);
+             Diff.second != path::end(LocalChild);
   ChildPathCache[Key] = Ret;
   return Ret;
 }
@@ -203,7 +203,7 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   bool InChildAbsValid = true;
 
   auto &RealPath = RealPathCache[Child];
-  if(!RealPath.empty()){
+  if (!RealPath.empty()) {
     ChildAbs = RealPath;
   } else {
     EC = llvm::sys::fs::real_path(Child, ChildAbs);
@@ -253,7 +253,6 @@ clang::SourceRange getSpellingSourceRange(clang::SourceLocation L1,
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E);
-
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -359,8 +358,7 @@ bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
                             const clang::Stmt *S);
 unsigned int getLenIncludingTrailingSpaces(clang::SourceRange Range,
                                            const clang::SourceManager &SM);
-std::vector<const clang::Stmt *>
-getConditionNode(clang::DynTypedNode Node);
+std::vector<const clang::Stmt *> getConditionNode(clang::DynTypedNode Node);
 std::vector<const clang::Stmt *> getConditionExpr(clang::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::CallExpr *CE,
                               std::string &OriginStmtType,
@@ -377,7 +375,7 @@ std::string getBufferNameAndDeclStr(const clang::Expr *Arg,
                                     const std::string &IndentStr,
                                     std::string &BufferDecl);
 void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
-                         std::vector<const clang::DeclRefExpr *> &Result);
+                       std::vector<const clang::DeclRefExpr *> &Result);
 int getLengthOfSpacesToEndl(const char *CharData);
 
 template <class StreamTy>
@@ -386,7 +384,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum) {
 }
 template <class StreamTy, class FirstArg, class... RestArgs>
 StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
-                                FirstArg &&First, RestArgs &&... Rest) {
+                                FirstArg &&First, RestArgs &&...Rest) {
   if (PrintingArgsNum) {
     Stream << std::forward<FirstArg>(First);
     if (--PrintingArgsNum) {
@@ -398,7 +396,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
   return Stream;
 }
 template <class StreamTy, class... Args>
-StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
+StreamTy &printArguments(StreamTy &Stream, Args &&...Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
@@ -413,7 +411,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Replaces);
 std::vector<clang::tooling::Range>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
-                const std::vector<clang::tooling::Range> &Ranges);
+                       const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
 
@@ -426,18 +424,14 @@ bool isSameLocation(const clang::SourceLocation L1,
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
     const std::shared_ptr<clang::DynTypedNode> Parent);
-enum ExprSpellingStatus {
-  NoType = 0,
-  IsDefine = 1,
-  IsExpansion = 2
-};
+enum ExprSpellingStatus { NoType = 0, IsDefine = 1, IsExpansion = 2 };
 bool isLocationStraddle(clang::SourceLocation Begin, clang::SourceLocation End);
 bool isExprStraddle(const clang::Stmt *S);
 std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
 getSiblingDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,
-                                      std::string TypeName);
+                              std::string TypeName);
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
 bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
                                  const std::string &TypeStr);
@@ -446,8 +440,9 @@ bool isInReturnStmt(const clang::Expr *E,
 std::string getHashStrFromLoc(clang::SourceLocation Loc);
 const clang::FunctionDecl *getFunctionDecl(const clang::Stmt *S);
 const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
-bool IsTypeChangedToPointer(const clang::DeclRefExpr * DRE);
-clang::SourceLocation getBeginLocOfPreviousEmptyMacro(clang::SourceLocation Loc);
+bool IsTypeChangedToPointer(const clang::DeclRefExpr *DRE);
+clang::SourceLocation
+getBeginLocOfPreviousEmptyMacro(clang::SourceLocation Loc);
 clang::SourceLocation getEndLocOfFollowingEmptyMacro(clang::SourceLocation Loc);
 
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
@@ -474,11 +469,12 @@ bool isIncludedFile(const std::string &CurrentFile,
 clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
 
-/// For types like curandState, the template argument of the migrated type cannot be
-/// decided at this time. It is known after AST traversal. So here we need use
-/// placeholder and replace the placeholder in ExtReplacements::emplaceIntoReplSet
+/// For types like curandState, the template argument of the migrated type
+/// cannot be decided at this time. It is known after AST traversal. So here we
+/// need use placeholder and replace the placeholder in
+/// ExtReplacements::emplaceIntoReplSet
 std::string getFinalCastTypeNameStr(std::string CastTypeName);
-bool isLexicallyInLocalScope(const clang::Decl*);
+bool isLexicallyInLocalScope(const clang::Decl *);
 const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
 clang::SourceLocation
@@ -529,11 +525,7 @@ bool isInCtrlFlowStmt(const clang::Stmt *S, const NodeTy *Root,
 }
 void getShareAttrRecursive(const clang::Expr *Expr, bool &HasSharedAttr,
                            bool &NeedReport);
-enum class LocalVarAddrSpaceEnum {
-  AS_CannotDeduce,
-  AS_IsPrivate,
-  AS_IsGlobal
-};
+enum class LocalVarAddrSpaceEnum { AS_CannotDeduce, AS_IsPrivate, AS_IsGlobal };
 void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);

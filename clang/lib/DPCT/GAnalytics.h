@@ -8,10 +8,9 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-#ifndef  __GA_ANALYTICS_H__
+#ifndef __GA_ANALYTICS_H__
 #define __GA_ANALYTICS_H__
 
 int GAnalytics(const std::string Data);
 
 #endif
-

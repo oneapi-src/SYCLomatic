@@ -16,14 +16,14 @@
 #include <setjmp.h>
 
 #if defined(__linux__)
-#define JMP_BUF   sigjmp_buf
-#define SETJMP(x)       sigsetjmp(x, 1)
-#define LONGJMP      siglongjmp
+#define JMP_BUF sigjmp_buf
+#define SETJMP(x) sigsetjmp(x, 1)
+#define LONGJMP siglongjmp
 
 #else
-#define JMP_BUF   jmp_buf
-#define SETJMP(x)       setjmp(x)
-#define LONGJMP      longjmp
+#define JMP_BUF jmp_buf
+#define SETJMP(x) setjmp(x)
+#define LONGJMP longjmp
 #endif
 
 extern bool EnableErrorRecover;
@@ -58,40 +58,43 @@ enum {
   CHECKPOINT_WRITE_OUT = 5,
 };
 
-class AstCPStageMaintainer{
-  public:
-    ~AstCPStageMaintainer(){
-      CheckPointStage=CHECKPOINT_PROCESSING_FILE;
-    }
+class AstCPStageMaintainer {
+public:
+  ~AstCPStageMaintainer() { CheckPointStage = CHECKPOINT_PROCESSING_FILE; }
 };
 
-#define CHECKPOINT_ASTMATCHER_RUN_ENTRY() AstCPStageMaintainer ACPSM; \
-	CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()
+#define CHECKPOINT_ASTMATCHER_RUN_ENTRY()                                      \
+  AstCPStageMaintainer ACPSM;                                                  \
+  CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()
 
-#define CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()  do{\
-  if(EnableErrorRecover){\
-    int SetJmpRet=SETJMP(CPFileASTMaterEnter);\
-    CheckPointStage = CHECKPOINT_PROCESSING_FILE_ASTMATCHER;\
-    if(SetJmpRet != 0) {\
-      return;\
-    }\
-  }\
-}while(0);
-#define CHECKPOINT_ASTMATCHER_RUN_EXIT()  do{\
-  if(EnableErrorRecover)\
-    CheckPointStage = CHECKPOINT_PROCESSING_FILE;\
-}while(0);
+#define CHECKPOINT_ASTMATCHER_RUN_ENTRY_INTERNAL()                             \
+  do {                                                                         \
+    if (EnableErrorRecover) {                                                  \
+      int SetJmpRet = SETJMP(CPFileASTMaterEnter);                             \
+      CheckPointStage = CHECKPOINT_PROCESSING_FILE_ASTMATCHER;                 \
+      if (SetJmpRet != 0) {                                                    \
+        return;                                                                \
+      }                                                                        \
+    }                                                                          \
+  } while (0);
+#define CHECKPOINT_ASTMATCHER_RUN_EXIT()                                       \
+  do {                                                                         \
+    if (EnableErrorRecover)                                                    \
+      CheckPointStage = CHECKPOINT_PROCESSING_FILE;                            \
+  } while (0);
 
-#define CHECKPOINT_ReplacementPostProcess_ENTRY(Ret)  do{\
-  if(EnableErrorRecover){\
-    Ret=SETJMP(CPRepPostprocessEnter);\
-    CheckPointStage = CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS;\
-   }\
-}while(0);
-#define CHECKPOINT_ReplacementPostProcess_EXIT()  do{\
-  if(EnableErrorRecover)\
-    CheckPointStage = CHECKPOINT_UNKNOWN;\
-}while(0);
+#define CHECKPOINT_ReplacementPostProcess_ENTRY(Ret)                           \
+  do {                                                                         \
+    if (EnableErrorRecover) {                                                  \
+      Ret = SETJMP(CPRepPostprocessEnter);                                     \
+      CheckPointStage = CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS;         \
+    }                                                                          \
+  } while (0);
+#define CHECKPOINT_ReplacementPostProcess_EXIT()                               \
+  do {                                                                         \
+    if (EnableErrorRecover)                                                    \
+      CheckPointStage = CHECKPOINT_UNKNOWN;                                    \
+  } while (0);
 
 #define CHECKPOINT_FORMATTING_CODE_ENTRY(Ret)                                  \
   do {                                                                         \
@@ -105,7 +108,5 @@ class AstCPStageMaintainer{
     if (EnableErrorRecover)                                                    \
       CheckPointStage = CHECKPOINT_UNKNOWN;                                    \
   } while (0);
-
-
 
 #endif // DPCT_CHECKPOINT_H

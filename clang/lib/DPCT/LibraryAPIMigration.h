@@ -335,13 +335,15 @@ void replacementLocation(const LibraryMigrationLocations Locations,
                          unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
                          std::pair<unsigned int, unsigned int> &InsertOffsets,
                          std::string &FilePath);
-void replacementText(LibraryMigrationFlags Flags, const std::string PrePrefixStmt,
-                 const std::vector<std::string> PrefixStmts,
-                 const std::vector<std::string> SuffixStmts,
-                 std::string CallExprRepl, const std::string IndentStr,
-                 const std::string FilePath, const unsigned int ReplaceOffset,
-                 const unsigned int ReplaceLen,
-                 const std::pair<unsigned int, unsigned int> InsertOffsets);
+void replacementText(LibraryMigrationFlags Flags,
+                     const std::string PrePrefixStmt,
+                     const std::vector<std::string> PrefixStmts,
+                     const std::vector<std::string> SuffixStmts,
+                     std::string CallExprRepl, const std::string IndentStr,
+                     const std::string FilePath,
+                     const unsigned int ReplaceOffset,
+                     const unsigned int ReplaceLen,
+                     const std::pair<unsigned int, unsigned int> InsertOffsets);
 
 struct FFTDescriptorTypeInfo {
   FFTDescriptorTypeInfo(unsigned int Length) : Length(Length) {}
@@ -355,7 +357,6 @@ struct FFTDescriptorTypeInfo {
   // from function name. So this type replacement and warning can be skipped.
   bool SkipGeneration = false;
 };
-
 
 struct FFTExecAPIInfo {
 
@@ -411,14 +412,14 @@ struct FFTExecAPIInfo {
   // inembed/onembed/input_dis/output_dis may be not accessable here, you may
   // need manully fix the code.
   std::vector<std::string> ResetAndCommitStmts; // These stmts should be added
-                             // at the begin of PrefixStmts
-  bool NeedReset = false; // MayNeedReset(from handle info) && IsComplexDomain
-                          // && !IsFunctionPointer && !IsFunctionPointerAssignment
-                          // && (handle->dir == unknown || handle->dir == uninitialized)
+                                                // at the begin of PrefixStmts
+  bool NeedReset =
+      false; // MayNeedReset(from handle info) && IsComplexDomain
+             // && !IsFunctionPointer && !IsFunctionPointerAssignment
+             // && (handle->dir == unknown || handle->dir == uninitialized)
 };
 
-bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall,
-                                    int Index,
+bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                     std::string &StreamStr);
 
 } // namespace dpct

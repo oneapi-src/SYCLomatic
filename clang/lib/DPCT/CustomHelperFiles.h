@@ -15,9 +15,9 @@
 #include "clang/AST/Decl.h"
 #include "clang/Tooling/Core/Replacement.h"
 
-#include <string>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace clang {
@@ -34,10 +34,11 @@ using HelperFeatureIDTy = std::pair<HelperFileEnum, std::string>;
 
 struct HelperFunc {
   std::string Namespace; // the namespace of this helper function feature
-  int PositionIdx = -1; // the position of this helper function feature
+  int PositionIdx = -1;  // the position of this helper function feature
   bool IsCalled = false; // has this feature be called
   std::set<std::string> CallerSrcFiles; // files have called this feature
-  std::vector<HelperFeatureIDTy> Dependency; // some features which this feature depends on
+  std::vector<HelperFeatureIDTy>
+      Dependency;   // some features which this feature depends on
   std::string Code; // the code of this feature
 };
 
@@ -54,36 +55,35 @@ void requestFeature(clang::dpct::HelperFileEnum FileID,
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File);
 std::pair<std::string, std::string>
 getHeaderGuardPair(const clang::dpct::HelperFileEnum File);
-std::string getHelperFileContent(
-    const clang::dpct::HelperFileEnum File,
-    std::vector<clang::dpct::HelperFunc> ContentVec);
+std::string
+getHelperFileContent(const clang::dpct::HelperFileEnum File,
+                     std::vector<clang::dpct::HelperFunc> ContentVec);
 std::string getDpctVersionStr();
 void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml);
 void generateHelperFunctions();
 
 void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const std::string File);
+                                      const std::string File);
 void requestHelperFeatureForEnumNames(const std::string Name,
-                                  clang::SourceLocation File);
+                                      clang::SourceLocation File);
 void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const clang::Stmt *File);
+                                      const clang::Stmt *File);
 void requestHelperFeatureForEnumNames(const std::string Name,
-                                  const clang::Decl *File);
+                                      const clang::Decl *File);
 
 void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const std::string File);
+                                      const std::string File);
 void requestHelperFeatureForTypeNames(const std::string Name,
-                                  clang::SourceLocation File);
+                                      clang::SourceLocation File);
 void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const clang::Stmt *File);
+                                      const clang::Stmt *File);
 void requestHelperFeatureForTypeNames(const std::string Name,
-                                  const clang::Decl *File);
+                                      const clang::Decl *File);
 std::string getCustomMainHelperFileName();
 
 void updateHelperNameContentMap(
-      const clang::tooling::TranslationUnitReplacements &TUR);
-void updateTUR(
-      clang::tooling::TranslationUnitReplacements &TUR);
+    const clang::tooling::TranslationUnitReplacements &TUR);
+void updateTUR(clang::tooling::TranslationUnitReplacements &TUR);
 
 void replaceEndOfLine(std::string &StrNeedProcess);
 } // namespace dpct

@@ -19,10 +19,10 @@
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(std::string FilePath)
-    : FilePath(FilePath) {}
+ExtReplacements::ExtReplacements(std::string FilePath) : FilePath(FilePath) {}
 
-bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo) {
+bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl,
+                                std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!Repl)
     return true;
   if (Repl->getFilePath().empty() || Repl->getFilePath() != FilePath)
@@ -40,7 +40,8 @@ bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl, std::share
   }
   return isReplRedundant(Repl, FileInfo);
 }
-bool ExtReplacements::isReplRedundant(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo) {
+bool ExtReplacements::isReplRedundant(std::shared_ptr<ExtReplacement> Repl,
+                                      std::shared_ptr<DpctFileInfo> FileInfo) {
   std::string &FileContent = FileInfo->getFileContent();
   if (FileContent.empty())
     return true;
@@ -149,7 +150,8 @@ size_t ExtReplacements::findCR(StringRef Line) {
   return Pos;
 }
 
-bool ExtReplacements::isEndWithSlash(unsigned LineNumber, std::shared_ptr<DpctFileInfo> FileInfo) {
+bool ExtReplacements::isEndWithSlash(unsigned LineNumber,
+                                     std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!LineNumber)
     return false;
   auto Line = FileInfo->getLineString(LineNumber);
@@ -159,8 +161,8 @@ bool ExtReplacements::isEndWithSlash(unsigned LineNumber, std::shared_ptr<DpctFi
   return Line[--CRPos] == '\\';
 }
 
-std::shared_ptr<ExtReplacement>
-ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange, std::shared_ptr<DpctFileInfo> FileInfo) {
+std::shared_ptr<ExtReplacement> ExtReplacements::buildOriginCodeReplacement(
+    const SourceLineRange &LineRange, std::shared_ptr<DpctFileInfo> FileInfo) {
   if (!LineRange.SrcBeginLine)
     return std::shared_ptr<ExtReplacement>();
   std::string Text = "/* DPCT_ORIG ";
@@ -169,8 +171,8 @@ ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange, st
        ++Line)
     removeCommentsInSrcCode(FileInfo->getLineString(Line), Text, BlockComment);
 
-  std::string Suffix =
-      std::string(isEndWithSlash(LineRange.SrcBeginLine - 1, FileInfo) ? "*/ \\" : "*/");
+  std::string Suffix = std::string(
+      isEndWithSlash(LineRange.SrcBeginLine - 1, FileInfo) ? "*/ \\" : "*/");
   Text.insert(findCR(Text), Suffix);
   auto R = std ::make_shared<ExtReplacement>(FilePath, LineRange.SrcBeginOffset,
                                              0, std::move(Text), nullptr);
@@ -178,7 +180,8 @@ ExtReplacements::buildOriginCodeReplacement(const SourceLineRange &LineRange, st
   return R;
 }
 
-void ExtReplacements::buildOriginCodeReplacements(std::shared_ptr<DpctFileInfo> FileInfo) {
+void ExtReplacements::buildOriginCodeReplacements(
+    std::shared_ptr<DpctFileInfo> FileInfo) {
   SourceLineRange LineRange, ReplLineRange;
   for (auto &R : ReplMap) {
     auto &Repl = R.second;
@@ -195,8 +198,6 @@ void ExtReplacements::buildOriginCodeReplacements(std::shared_ptr<DpctFileInfo> 
   if (LineRange.SrcBeginLine)
     addReplacement(buildOriginCodeReplacement(LineRange, FileInfo));
 }
-
-
 
 std::vector<std::shared_ptr<ExtReplacement>>
 ExtReplacements::mergeReplsAtSameOffset() {
@@ -217,9 +218,11 @@ ExtReplacements::mergeReplsAtSameOffset() {
     auto &Repl = R.second;
     if (Repl->getLength()) {
       Replace = mergeAtSameOffset(Replace, Repl);
-    } else if (Repl->getInsertPosition()==InsertPosition::InsertPositionAlwaysLeft){
+    } else if (Repl->getInsertPosition() ==
+               InsertPosition::InsertPositionAlwaysLeft) {
       InsertLeft = mergeAtSameOffset(InsertLeft, Repl);
-    } else if (Repl->getInsertPosition() == InsertPosition::InsertPositionRight) {
+    } else if (Repl->getInsertPosition() ==
+               InsertPosition::InsertPositionRight) {
       InsertRight = mergeAtSameOffset(InsertRight, Repl);
     } else {
       Insert = mergeAtSameOffset(Insert, Repl);
@@ -242,7 +245,7 @@ std::shared_ptr<ExtReplacement> ExtReplacements::filterOverlappedReplacement(
     return std::shared_ptr<ExtReplacement>();
   if ((Repl->getOffset() < PrevEnd) && !Repl->getReplacementText().empty()) {
     llvm::dbgs() << "Replacement Conflict.\nAbandon replacement: "
-              << Repl->toString() << "\n";
+                 << Repl->toString() << "\n";
     return std::shared_ptr<ExtReplacement>();
   }
 
@@ -264,7 +267,7 @@ void ExtReplacements::markAsAlive(std::shared_ptr<ExtReplacement> Repl) {
 }
 
 bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
-                               ReplIterator Begin, ReplIterator End) {
+                                   ReplIterator Begin, ReplIterator End) {
   while (Begin != End) {
     if (*(Begin->second) == *Repl)
       return true;
@@ -278,13 +281,13 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl, FileInfo))
     return;
   if (Repl->getLength()) {
-    if(Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded())
       FileInfo->insertHeader(SYCL);
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
-    if(Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded())
       FileInfo->insertHeader(SYCL);
     markAsAlive(Repl);
   } else {
@@ -305,12 +308,10 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   if (DpctGlobalInfo::getDeviceChangedFlag() ||
       !DpctGlobalInfo::getUsingDRYPattern()) {
     if (HFT == HelperFuncType::DefaultQueue) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_default_queue", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
     } else if (HFT == HelperFuncType::CurrentDevice) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_current_device", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
     }
     return true;
@@ -323,7 +324,7 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   auto TempVariableDeclCounterIter =
       DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
   if (TempVariableDeclCounterIter ==
-        DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
     return false;
   }
 
@@ -337,13 +338,11 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   // >=2        >=2          dev_ct1             q_ct1
   if (HFT == HelperFuncType::DefaultQueue) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_default_queue", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else if (TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_default_queue", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else {
@@ -352,14 +351,12 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
     }
   } else if (HFT == HelperFuncType::CurrentDevice) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_current_device", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else if (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
                TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFileEnum::Device,
-                                     "get_current_device", FilePath);
+      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else {
@@ -390,7 +387,7 @@ std::string ExtReplacements::processR(unsigned int Index) {
   return Res;
 }
 
-void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet){
+void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
   std::vector<std::shared_ptr<clang::dpct::ExtReplacement>> ReplsList =
       mergeReplsAtSameOffset();
   unsigned PrevEnd = 0;
@@ -614,7 +611,8 @@ void ExtReplacements::processCudaArchMacro() {
     }
   }
 }
-void ExtReplacements::buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo) {
+void ExtReplacements::buildCudaArchHostFunc(
+    std::shared_ptr<DpctFileInfo> FileInfo) {
   std::vector<std::shared_ptr<ExtReplacement>> ReplsList =
       mergeReplsAtSameOffset();
   std::vector<std::shared_ptr<ExtReplacement>> ProcessedReplList;
@@ -634,18 +632,19 @@ void ExtReplacements::buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileIn
   auto &HDFCIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncCallInfoMap();
   // process call
   for (auto &Call : HDFCIMap) {
-    if(!PostfixMap.count(Call.first)){
+    if (!PostfixMap.count(Call.first)) {
       PostfixMap[Call.first] = "_host_ct" + std::to_string(id++);
     }
     if (Call.second.first != FilePath || !HDFDIMap.count(Call.first))
       continue;
     unsigned Offset = Call.second.second;
-    auto R =
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, PostfixMap[Call.first], nullptr);
+    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0,
+                                              PostfixMap[Call.first], nullptr);
     ExtraRepl.emplace_back(R);
   }
-  auto GenerateHostCode = [&ProcessedReplList, &ExtraRepl,
-                           &FileInfo](HostDeviceFuncInfo &Info, PostfixMapTy &PMap, std::string FuncName) {
+  auto GenerateHostCode = [&ProcessedReplList, &ExtraRepl, &FileInfo](
+                              HostDeviceFuncInfo &Info, PostfixMapTy &PMap,
+                              std::string FuncName) {
     unsigned int Pos, Len;
     std::string OriginText = Info.FuncContentCache;
     StringRef SR(OriginText);
@@ -717,8 +716,7 @@ void ExtReplacements::postProcess() {
         } else {
           unsigned int Index =
               std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
-          NewReplText =
-              NewReplText + processR(Index);
+          NewReplText = NewReplText + processR(Index);
         }
         MatchedSuffix = std::string(MRes.suffix());
         OriginReplText = MatchedSuffix;
@@ -741,8 +739,7 @@ void ExtReplacements::postProcess() {
           // queue
           NewReplText = NewReplText + MapNames::getDpctNamespace() +
                         "get_default_queue()";
-          requestFeature(HelperFileEnum::Device,
-                                         "get_default_queue", FilePath);
+          requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
         } else {
           std::string Text;
           if (getStrReplacingPlaceholder(HFT, Index, Text)) {

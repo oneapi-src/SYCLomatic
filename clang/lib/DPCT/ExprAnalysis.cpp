@@ -100,8 +100,7 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
     return std::pair<SourceLocation, size_t>(Loc, SrcLength);
   Loc = SM.getSpellingLoc(Loc);
   return std::pair<SourceLocation, size_t>(
-      Loc,
-      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      Loc, Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
 }
 
 std::pair<SourceLocation, size_t>
@@ -117,16 +116,16 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation BeginLoc,
   return getSpellingOffsetAndLength(BeginLoc);
 }
 
-std::pair<SourceLocation, size_t> ExprAnalysis::getSpellingOffsetAndLength(const Expr *E) {
+std::pair<SourceLocation, size_t>
+ExprAnalysis::getSpellingOffsetAndLength(const Expr *E) {
   auto ResultRange = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
-  auto LastTokenLength =
-    Lexer::MeasureTokenLength(ResultRange.getEnd(), SM, Context.getLangOpts());
+  auto LastTokenLength = Lexer::MeasureTokenLength(ResultRange.getEnd(), SM,
+                                                   Context.getLangOpts());
   return std::pair<SourceLocation, size_t>(
       ResultRange.getBegin(), SM.getCharacterData(ResultRange.getEnd()) -
                                   SM.getCharacterData(ResultRange.getBegin()) +
                                   LastTokenLength);
 }
-
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
   if (Loc.isInvalid())
@@ -152,7 +151,8 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
       bool IsSameMacroArgExpansion = false;
       auto BeginImmSpelling = getImmSpellingLocRecursive(BeginLoc);
       auto EndImmSpelling = getImmSpellingLocRecursive(EndLoc);
-      if (isSameLocation(SM.getExpansionLoc(BeginImmSpelling), SM.getExpansionLoc(EndImmSpelling))) {
+      if (isSameLocation(SM.getExpansionLoc(BeginImmSpelling),
+                         SM.getExpansionLoc(EndImmSpelling))) {
         IsSameFuncLikeMacro = true;
         if (isSameLocation(SM.getImmediateExpansionRange(BeginLoc).getBegin(),
                            SM.getImmediateExpansionRange(EndLoc).getBegin())) {
@@ -182,10 +182,9 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
         EndLoc = getImmSpellingLocRecursive(EndLoc);
       }
       auto ItBegin =
-        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-          getCombinedStrFromLoc(SM.getSpellingLoc(BeginLoc)));
-      auto ItEnd =
-        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+              getCombinedStrFromLoc(SM.getSpellingLoc(BeginLoc)));
+      auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
           getCombinedStrFromLoc(SM.getSpellingLoc(EndLoc)));
       if (isSameLocation(SM.getExpansionLoc(BeginLoc),
                          SM.getExpansionLoc(EndLoc)) &&
@@ -200,14 +199,14 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
         BeginLoc = SM.getExpansionLoc(BeginLoc);
         EndLoc = SM.getExpansionLoc(EndLoc);
       } else {
-        // 1. only one of Begin/End is MacroArgExpansion and the other one is Body MacroID
-        // ex: #define TYPE_PTR(T) T*
-        // 2. Both Begin/End are body MacroID and Begin/end are not in the same Macro def
-        // ex: #define TYPE int2
+        // 1. only one of Begin/End is MacroArgExpansion and the other one is
+        // Body MacroID ex: #define TYPE_PTR(T) T*
+        // 2. Both Begin/End are body MacroID and Begin/end are not in the same
+        // Macro def ex: #define TYPE int2
         //     #define PTR *
         //     #define TYPE_PTR TYPE PTR
         std::tie(BeginLoc, EndLoc) =
-          getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
+            getTheLastCompleteImmediateRange(BeginLoc, EndLoc);
       }
     }
 
@@ -227,8 +226,7 @@ std::pair<size_t, size_t>
 ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
-      std::make_shared<DynTypedNode>(
-          DynTypedNode::create(*Parent));
+      std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
   if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
@@ -258,16 +256,16 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     if (SM.isMacroArgExpansion(E->getBeginLoc())) {
       BeginLoc = SM.getSpellingLoc(
-        SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+          SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
       EndLoc = SM.getSpellingLoc(
-        SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-    }
-    else {
+          SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+    } else {
       BeginLoc =
-        SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
+          SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
       EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
       if (isExprStraddle(E)) {
-        auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(), E->getEndLoc());
+        auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
+                                                            E->getEndLoc());
         BeginLoc = SM.getImmediateSpellingLoc(Range.first);
         EndLoc = SM.getImmediateSpellingLoc(Range.second);
       }
@@ -299,19 +297,19 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
   RewritePrefix =
-    std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
+      std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
   // Get the token end of EndLocWithoutPostfix and EndLoc for correct
   // RewritePostfix
   EndLocWithoutPostfix =
-    EndLocWithoutPostfix.getLocWithOffset(Lexer::MeasureTokenLength(
-      EndLocWithoutPostfix, SM,
-      dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      EndLocWithoutPostfix.getLocWithOffset(Lexer::MeasureTokenLength(
+          EndLocWithoutPostfix, SM,
+          dpct::DpctGlobalInfo::getContext().getLangOpts()));
   EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
       EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
 
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
-    RewritePostfixLength);
+                               RewritePostfixLength);
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
@@ -418,8 +416,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                   3)
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3)
         << "(";
     ArgumentAnalysis A;
     std::string ArgStr = "";
@@ -442,8 +439,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
     if (Ctor->getParenOrBraceRange().isInvalid() && isOuterMostMacro(Ctor)) {
       return addReplacement(
           SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
-          ArgsString);
+          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(), ArgsString);
     }
     addReplacement(Ctor, ArgsString);
   }
@@ -537,7 +533,8 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   if (Cast->getCastKind() == CastKind::CK_ConstructorConversion) {
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) == "dim3")
+    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) ==
+        "dim3")
       return dispatch(Cast->getSubExpr());
   }
   analyzeType(Cast->getTypeInfoAsWritten(), Cast);
@@ -553,7 +550,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       MapNames::TextureAPIHelperFeaturesMap.find(RefString);
   if (HelperFeatureIter != MapNames::TextureAPIHelperFeaturesMap.end()) {
     requestFeature(HelperFeatureIter->second.first,
-                                   HelperFeatureIter->second.second, CE);
+                   HelperFeatureIter->second.second, CE);
   }
 
   // If the callee requires rewrite, get the rewriter
@@ -570,22 +567,23 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
         addExtReplacement(std::make_shared<ExtReplacement>(
-            SM, SM.getSpellingLoc(CE->getBeginLoc()),
-            getCalleeName(CE).size(), ResultStr, nullptr));
+            SM, SM.getSpellingLoc(CE->getBeginLoc()), getCalleeName(CE).size(),
+            ResultStr, nullptr));
         Rewriter->Analyzer.applyAllSubExprRepl();
       }
     } else {
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        auto LocStr = getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
-        auto &FCIMMR = dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+        auto LocStr =
+            getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+        auto &FCIMMR =
+            dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
-          FCIMMR.find(LocStr)->second.compare(ResultStr) &&
-          !isExprStraddle(CE)) {
+            FCIMMR.find(LocStr)->second.compare(ResultStr) &&
+            !isExprStraddle(CE)) {
           Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
-            false, RefString);
-        }
-        else {
+                           false, RefString);
+        } else {
           FCIMMR[LocStr] = ResultStr;
           addReplacement(CE, ResultStr);
           Rewriter->Analyzer.applyAllSubExprRepl();
@@ -597,7 +595,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee does not need rewrite, analyze the args
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
-
 }
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
@@ -740,7 +737,8 @@ void ManagedPointerAnalysis::initAnalysisScope() {
             QT = QT->getPointeeType();
             if (!QT->isPointerType() && !QT->isArrayType() &&
                 !QT->isStructureOrClassType()) {
-              if(CPointerScope = dyn_cast<CXXRecordDecl>(CPointer->getParent()))
+              if (CPointerScope =
+                      dyn_cast<CXXRecordDecl>(CPointer->getParent()))
                 Trackable = true;
             }
           }
@@ -753,7 +751,7 @@ void ManagedPointerAnalysis::initAnalysisScope() {
           QT = QT->getPointeeType();
           if (!QT->isPointerType() && !QT->isArrayType() &&
               !QT->isStructureOrClassType()) {
-            if(PointerScope = findImmediateBlock(Pointer))
+            if (PointerScope = findImmediateBlock(Pointer))
               Trackable = true;
           }
         }
@@ -770,25 +768,25 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
       dispatch(PointerScope);
     else if (CPointerScope)
       dispatch(CPointerScope);
-    else{
+    else {
       return;
     }
     if (ReAssigned) {
       DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
-                               PointerName, PointerTempType);
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               false, PointerName, PointerTempType);
     } else if (Transfered) {
       DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
-                               PointerName, PointerTempType);
+                               Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                               false, PointerName, PointerTempType);
       addRepl();
     } else {
       addRepl();
     }
   } else {
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                             Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true, false,
-                             PointerName, PointerTempType);
+                             Diagnostics::VIRTUAL_POINTER_HOST_ACCESS, true,
+                             false, PointerName, PointerTempType);
   }
 }
 void ManagedPointerAnalysis::buildCallExprRepl() {
@@ -839,7 +837,8 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
     OS << ", 0)";
     auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                             Diagnostics::NOERROR_RETURN_COMMA_OP, false, false);
+                             Diagnostics::NOERROR_RETURN_COMMA_OP, false,
+                             false);
   }
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
@@ -897,7 +896,7 @@ void ManagedPointerAnalysis::analyzeExpr(const Stmt *S) {
   UK = UK_TEMP;
 }
 void ManagedPointerAnalysis::analyzeExpr(const CXXRecordDecl *CRD) {
-  if(auto CXXDecl = dyn_cast<CXXRecordDecl>(CRD)) {
+  if (auto CXXDecl = dyn_cast<CXXRecordDecl>(CRD)) {
     for (auto *MT : CXXDecl->methods()) {
       if (MT->hasBody()) {
         UK = NoUse;
@@ -941,7 +940,7 @@ void ManagedPointerAnalysis::analyzeExpr(const CallExpr *CE) {
     APIName = CalleeDecl->getNameAsString();
   } else {
     if (auto ULExpr = dyn_cast<UnresolvedLookupExpr>(*CE->child_begin())) {
-      for(auto D = ULExpr->decls_begin(); D != ULExpr->decls_end(); D++){
+      for (auto D = ULExpr->decls_begin(); D != ULExpr->decls_end(); D++) {
         auto Decl = D.getDecl();
         InCuda = InCuda & isInCudaPath(Decl);
         APIName = Decl->getNameAsString();
@@ -981,8 +980,7 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
       ExprAnalysis EA(SubE);
       EA.analyze();
       std::string Rep = EA.getReplacedString();
-      requestFeature(HelperFileEnum::Memory, "get_host_ptr",
-                                     Call);
+      requestFeature(HelperFileEnum::Memory, "get_host_ptr", Call);
       if (SubE->IgnoreImplicitAsWritten()->getStmtClass() ==
           Stmt::ParenExprClass) {
         Repl.push_back(
@@ -1033,8 +1031,7 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
                     std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                                 PointerTempType + ">(" + PointerName + ")")});
-    requestFeature(HelperFileEnum::Memory, "get_host_ptr",
-                                   Call);
+    requestFeature(HelperFileEnum::Memory, "get_host_ptr", Call);
   }
 }
 void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
@@ -1079,7 +1076,7 @@ void KernelArgumentAnalysis::analyzeExpr(
   if (Arg->isImplicitAccess()) {
     IsRedeclareRequired = true;
   } else {
-    if(Arg->isArrow())
+    if (Arg->isArrow())
       IsRedeclareRequired = true;
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
@@ -1212,8 +1209,7 @@ void KernelConfigAnalysis::analyzeExpr(
   if (ArgIndex < 2) {
     std::string CDSMEString;
     llvm::raw_string_ostream OS(CDSMEString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                   3);
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3);
     OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
     OS.flush();
     addReplacement(CDSME, CDSMEString);
@@ -1346,15 +1342,13 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                         DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
         Dim = 1;
-        addReplacement(
-            buildString(DpctGlobalInfo::getCtadClass(
-                            MapNames::getClNamespace() + "range", 1),
-                        "(", getReplacedString(), ")"));
+        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
+                                       MapNames::getClNamespace() + "range", 1),
+                                   "(", getReplacedString(), ")"));
       } else {
-        addReplacement(
-            buildString(DpctGlobalInfo::getCtadClass(
-                            MapNames::getClNamespace() + "range", 3),
-                        "(1, 1, ", getReplacedString(), ")"));
+        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
+                                       MapNames::getClNamespace() + "range", 3),
+                                   "(1, 1, ", getReplacedString(), ")"));
       }
 
       Reversed = true;
@@ -1394,47 +1388,50 @@ std::string ArgumentAnalysis::getRewriteString() {
   return SRs.getReplacedString();
 }
 
-std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling(const Expr* E) {
+std::pair<SourceLocation, SourceLocation>
+ArgumentAnalysis::getLocInCallSpelling(const Expr *E) {
   auto BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
   auto EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
   auto LastTokenLength =
-    Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+      Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
   EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-  if (E->getBeginLoc().isMacroID() && !isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
+  if (E->getBeginLoc().isMacroID() &&
+      !isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
     // Try getImmediateSpellingLoc
     // e.g. M1(call(M2))
     BeginCandidate = SM.getImmediateSpellingLoc(E->getBeginLoc());
     if (BeginCandidate.isMacroID()) {
-      BeginCandidate =
-        SM.getExpansionLoc(BeginCandidate);
+      BeginCandidate = SM.getExpansionLoc(BeginCandidate);
     }
     if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
       // Try getImmediateExpansionRange
       // e.g. #define M1(x) call(x)
       BeginCandidate = E->getBeginLoc();
-      while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
+      while (
+          SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
         BeginCandidate = SM.getImmediateSpellingLoc(BeginCandidate);
       }
-      BeginCandidate =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(BeginCandidate).getBegin());
+      BeginCandidate = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(BeginCandidate).getBegin());
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-        BeginCandidate =
-          SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+        BeginCandidate = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
         if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
           // Multi-Level funclike special process
           // e.g.
           // #define M1(x) call1(x)
           // #define M2(y) call2(y)
           // M1(M2(3))
-          BeginCandidate = getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
+          BeginCandidate =
+              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
           if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
             if (!isExprStraddle(E)) {
               // Default use SpellingLoc
               // e.g. M1(call(targetExpr))
               BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
-            }
-            else {
-              BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
+            } else {
+              BeginCandidate =
+                  SM.getExpansionRange(E->getSourceRange()).getBegin();
             }
           }
         }
@@ -1443,14 +1440,15 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
   }
 
   // Similar to get begin loc, but need to add last token length
-  if (E->getEndLoc().isMacroID() && !isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
+  if (E->getEndLoc().isMacroID() &&
+      !isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
     // Try ImmediateSpelling
     EndCandidate = SM.getImmediateSpellingLoc(E->getEndLoc());
     if (EndCandidate.isMacroID()) {
       EndCandidate = SM.getImmediateExpansionRange(EndCandidate).getEnd();
     }
     auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+        Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
     EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
     if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
       // Try ImmediateExpansion
@@ -1458,31 +1456,31 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
       while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(EndCandidate))) {
         EndCandidate = SM.getImmediateSpellingLoc(EndCandidate);
       }
-      EndCandidate =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(EndCandidate).getEnd());
+      EndCandidate = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(EndCandidate).getEnd());
       auto LastTokenLength =
-        Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+          Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
       if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-        EndCandidate =
-          SM.getSpellingLoc(SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+        EndCandidate = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
         auto LastTokenLength =
-          Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+            Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
         EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
         if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-          EndCandidate = getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
-          auto LastTokenLength =
-            Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+          EndCandidate =
+              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
+          auto LastTokenLength = Lexer::MeasureTokenLength(
+              EndCandidate, SM, Context.getLangOpts());
           EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
           if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
             if (!isExprStraddle(E)) {
               // Default use SpellingLoc
               EndCandidate = SM.getSpellingLoc(E->getEndLoc());
-              auto LastTokenLength =
-                Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+              auto LastTokenLength = Lexer::MeasureTokenLength(
+                  EndCandidate, SM, Context.getLangOpts());
               EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-            }
-            else {
+            } else {
               EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
             }
           }
@@ -1490,7 +1488,8 @@ std::pair<SourceLocation, SourceLocation> ArgumentAnalysis::getLocInCallSpelling
       }
     }
   }
-  return std::pair<SourceLocation, SourceLocation>(BeginCandidate, EndCandidate);
+  return std::pair<SourceLocation, SourceLocation>(BeginCandidate,
+                                                   EndCandidate);
 }
 
 void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
@@ -1508,7 +1507,7 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
   case Stmt::ParenExprClass:
   case Stmt::ConditionalOperatorClass:
   case Stmt::MemberExprClass:
-      break;
+    break;
   default:
     HasSideEffects = true;
   }

@@ -9,15 +9,14 @@
 //
 //===-----------------------------------------------------------------===//
 
-
-#include "clang/AST/Attr.h"
-#include "clang/AST/Expr.h"
-#include "clang/Basic/LangOptions.h"
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "clang/AST/Attr.h"
+#include "clang/AST/Expr.h"
+#include "clang/Basic/LangOptions.h"
 
 namespace clang {
 namespace dpct {
@@ -126,7 +125,7 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   auto NewFuncName = getNewFuncName();
 
-  if(NewFuncName == SourceCalleeName)
+  if (NewFuncName == SourceCalleeName)
     return {};
 
   setTargetCalleeName(NewFuncName);
@@ -174,7 +173,8 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
 /// 3) Functions whose calling functions are augmented with __device__
 ///    or __global__ attributes are treated as device functions;
 /// 4) Other functions are treated as host functions.
-///    eg. "__host__ __device__ fabs()" falls in 4) if fabs is not called in device or kernel
+///    eg. "__host__ __device__ fabs()" falls in 4) if fabs is not called in
+///    device or kernel
 std::string MathFuncNameRewriter::getNewFuncName() {
   auto FD = Call->getDirectCallee();
   std::string NewFuncName;
@@ -235,8 +235,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       if (SourceCalleeName == "__clz" || SourceCalleeName == "__clzll") {
         LangOptions LO;
         auto Arg = Call->getArg(0);
-        std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-            PrintingPolicy(LO));
+        std::string ArgT =
+            Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
         auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
         auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
         if (SourceCalleeName == "__clz") {
@@ -255,16 +255,18 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           }
         }
       } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
-                 SourceCalleeName == "__umul24" || SourceCalleeName == "umul24" ||
-                 SourceCalleeName == "__mulhi" || SourceCalleeName == "__hadd") {
+                 SourceCalleeName == "__umul24" ||
+                 SourceCalleeName == "umul24" ||
+                 SourceCalleeName == "__mulhi" ||
+                 SourceCalleeName == "__hadd") {
         std::string ParamType = "int";
         if (SourceCalleeName == "__umul24" || SourceCalleeName == "umul24")
           ParamType = "unsigned int";
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i)->IgnoreImpCasts();
-          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-              PrintingPolicy(LO));
+          std::string ArgT =
+              Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
           auto ArgExpr = Arg->getStmtClass();
           if (ArgExpr == Stmt::PseudoObjectExprClass) {
             // The type of (blockDim/blockIdx/threadIdx/gridDim).(x/y/z) is
@@ -273,7 +275,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             // integers, so it is necessary to convert the migrated type to
             // int or unsigned int.
             if (isTargetPseudoObjectExpr(Arg))
-                RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
+              RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
           } else {
             auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
             auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
@@ -282,7 +284,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               if (DRE || IL || FL)
                 RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
               else
-                RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+                RewriteArgList[i] =
+                    "(" + ParamType + ")(" + RewriteArgList[i] + ")";
             }
           }
         }
@@ -295,8 +298,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           if (SourceCalleeName == "ldexpf" && i == 1)
             continue;
           auto Arg = Call->getArg(i);
-          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-              PrintingPolicy(LO));
+          std::string ArgT =
+              Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
@@ -314,7 +317,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             if (DRE || IL)
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
             else
-              RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+              RewriteArgList[i] =
+                  "(" + ParamType + ")(" + RewriteArgList[i] + ")";
           } else if (ParamType == "int" || ParamType == "unsigned int") {
             if (DRE || IL)
               RewriteArgList[i] = "(float)" + RewriteArgList[i];
@@ -329,8 +333,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           if (SourceCalleeName == "ldexp" && i == 1)
             continue;
           auto Arg = Call->getArg(i);
-          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-              PrintingPolicy(LO));
+          std::string ArgT =
+              Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
@@ -346,7 +350,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             if (DRE || IL)
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
             else
-              RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+              RewriteArgList[i] =
+                  "(" + ParamType + ")(" + RewriteArgList[i] + ")";
           } else if (ParamType == "int" || ParamType == "unsigned int") {
             if (DRE || IL)
               RewriteArgList[i] = "(double)" + RewriteArgList[i];
@@ -462,15 +467,15 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               }
               auto GetType = [=]() -> std::string {
                 std::string TypeName;
-                  if (UnsignedTypedefType) {
-                    if (auto TND = UnsignedTypedefType->getDecl())
-                      TypeName = TND->getNameAsString();
-                    else
-                      TypeName = UnsignedType->getNameAsCString(PP);
-                  } else {
+                if (UnsignedTypedefType) {
+                  if (auto TND = UnsignedTypedefType->getDecl())
+                    TypeName = TND->getNameAsString();
+                  else
                     TypeName = UnsignedType->getNameAsCString(PP);
-                  }
-                  return TypeName;
+                } else {
+                  TypeName = UnsignedType->getNameAsCString(PP);
+                }
+                return TypeName;
               };
               switch (UnsignedKind) {
               case BuiltinType::ULongLong:
@@ -591,26 +596,26 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
   } else if (FuncName == "__high2half") {
     OS << MigratedArg0 << "[0]";
   } else if (FuncName == "__high2half2") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0
-       << "[0], " << MigratedArg0 << "[0]}";
+    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
+       << MigratedArg0 << "[0]}";
   } else if (FuncName == "__highs2half2") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0
-       << "[0], " << MigratedArg1 << "[0]}";
+    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
+       << MigratedArg1 << "[0]}";
   } else if (FuncName == "__low2float") {
     OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half") {
     OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half2") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0
-       << "[1], " << MigratedArg0 << "[1]}";
+    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
+       << MigratedArg0 << "[1]}";
   } else if (FuncName == "__lowhigh2highlow") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0
-       << "[1], " << MigratedArg0 << "[0]}";
+    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
+       << MigratedArg0 << "[0]}";
   } else if (FuncName == "__lows2half2") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0
-       << "[1], " << MigratedArg1 << "[1]}";
+    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
+       << MigratedArg1 << "[1]}";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
@@ -697,7 +702,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     return Base::rewrite();
 
   // Do need to report warnings for pow migration
-  if (SourceCalleeName != "pow" && SourceCalleeName != "powf"&&
+  if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
       SourceCalleeName != "__powf")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
@@ -813,12 +818,10 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
        << MigratedArg0;
     if (FuncName == "sincospi") {
       OS << " * DPCT_PI";
-      requestFeature(HelperFileEnum::Dpct,
-                                     "dpct_pi", Call);
+      requestFeature(HelperFileEnum::Dpct, "dpct_pi", Call);
     } else {
       OS << " * DPCT_PI_F";
-      requestFeature(HelperFileEnum::Dpct,
-                                     "dpct_pi_f", Call);
+      requestFeature(HelperFileEnum::Dpct, "dpct_pi_f", Call);
     }
 
     if (FuncName == "sincospi")
@@ -873,8 +876,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       }
     }
     auto MigratedArg2 = getMigratedArg(2);
-    OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0 << ", "
-       << MigratedArg1
+    OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0
+       << ", " << MigratedArg1
        << ", " + MapNames::getClNamespace() + "make_ptr<int, " +
               MapNames::getClNamespace() + "access::address_space::" +
               getAddressSpace(Call->getArg(2), MigratedArg2) + ">("
@@ -884,8 +887,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
        << " + 0.5)";
   } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "1 / " + MapNames::getClNamespace(false, true) + "hypot(" << MigratedArg0
-       << ", " << MigratedArg1 << ")";
+    OS << "1 / " + MapNames::getClNamespace(false, true) + "hypot("
+       << MigratedArg0 << ", " << MigratedArg1 << ")";
   } else if (SourceCalleeName == "pow" || SourceCalleeName == "powf" ||
              SourceCalleeName == "__powf") {
     RewriteArgList = getMigratedArgs();
@@ -920,7 +923,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
     // pow(x, 2.0) ==> x * x, if x is an expression that has no side effects.
     // pow(x, 2.0f) ==> x * x, if x is an expression that has no side effects.
-    bool IsExponentTwo= false;
+    bool IsExponentTwo = false;
     if (IL1) {
       if (IL1->getValue().getZExtValue() == 2)
         IsExponentTwo = true;
@@ -928,7 +931,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       auto &SM = DpctGlobalInfo::getSourceManager();
       if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
         auto B = SM.getCharacterData(FL1->getBeginLoc());
-        auto E = SM.getCharacterData(Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
+        auto E = SM.getCharacterData(
+            Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
         std::string Exponent(B, E);
         if (Exponent == "2.0" || Exponent == "2.0f")
           IsExponentTwo = true;
@@ -960,47 +964,54 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     }
     return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
-    OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*" << MigratedArg0 << ")*"
-       << TargetCalleeName << "(" << MigratedArg0 << ")";
+    OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
+       << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
+       << ")";
   } else if (FuncName == "norm3d" || FuncName == "norm3df") {
-    OS << TargetCalleeName << "("<< MapNames::getClNamespace() << "float3(" << MigratedArg0 << ", "
-       << getMigratedArg(1) << ", " << getMigratedArg(2) << "))";
+    OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
+       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
+       << "))";
   } else if (FuncName == "norm4d" || FuncName == "norm4df") {
-    OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4(" << MigratedArg0 << ", "
-       << getMigratedArg(1) << ", " << getMigratedArg(2) << ", "
-       << getMigratedArg(3) << "))";
+    OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
+       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
+       << ", " << getMigratedArg(3) << "))";
   } else if (FuncName == "rcbrt" || FuncName == "rcbrtf") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip((float)" << TargetCalleeName << "(" << getMigratedArg(0) << "))";
+    OS << MapNames::getClNamespace(false, true) << "native::recip((float)"
+       << TargetCalleeName << "(" << getMigratedArg(0) << "))";
   } else if (FuncName == "rnorm3d" || FuncName == "rnorm3df") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip(" << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
+    OS << MapNames::getClNamespace(false, true) << "native::recip("
+       << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
        << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
        << ")))";
   } else if (FuncName == "rnorm4d" || FuncName == "rnorm4df") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip(" << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
+    OS << MapNames::getClNamespace(false, true) << "native::recip("
+       << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
        << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
        << ", " << getMigratedArg(3) << ")))";
   } else if (FuncName == "scalbln" || FuncName == "scalblnf" ||
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
-    requestFeature(HelperFileEnum::Util, "cast_double_to_int",
-                                   Call);
-    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0 << ")";
+    requestFeature(HelperFileEnum::Util, "cast_double_to_int", Call);
+    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
+       << ")";
   } else if (FuncName == "__double2loint") {
-    requestFeature(HelperFileEnum::Util, "cast_double_to_int",
-                                   Call);
-    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0 << ", false)";
+    requestFeature(HelperFileEnum::Util, "cast_double_to_int", Call);
+    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
+       << ", false)";
   } else if (FuncName == "__hiloint2double") {
-    requestFeature(HelperFileEnum::Util, "cast_ints_to_double",
-                                   Call);
-    OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0 << ", " << getMigratedArg(1) << ")";
+    requestFeature(HelperFileEnum::Util, "cast_ints_to_double", Call);
+    OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
+       << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
-       << ")" << "+" << getMigratedArg(2);
+       << ")"
+       << "+" << getMigratedArg(2);
   } else if (FuncName == "__drcp_rd" || FuncName == "__drcp_rn" ||
              FuncName == "__drcp_ru" || FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(PrintingPolicy(LangOptions()));
+    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
+        PrintingPolicy(LangOptions()));
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
     OS << TargetCalleeName;
@@ -1010,7 +1021,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       else
         OS << "((float)(" << MigratedArg0 << "))";
     } else {
-        OS << "(" << MigratedArg0 << ")";
+      OS << "(" << MigratedArg0 << ")";
     }
   } else if (FuncName == "norm") {
     Expr::EvalResult ER;
@@ -1024,28 +1035,28 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
         OS << TargetCalleeName << "((float)" << MigratedArg1 << "[0])";
         break;
       case 2:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float2(" << MigratedArg1
-           << "[0], " << MigratedArg1 << "[1]))";
+        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float2("
+           << MigratedArg1 << "[0], " << MigratedArg1 << "[1]))";
         break;
       case 3:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3(" << MigratedArg1
-           << "[0], " << MigratedArg1 << "[1], " << MigratedArg1 << "[2]))";
+        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
+           << MigratedArg1 << "[0], " << MigratedArg1 << "[1], " << MigratedArg1
+           << "[2]))";
         break;
       case 4:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4(" << MigratedArg1
-           << "[0], " << MigratedArg1 << "[1], " << MigratedArg1 << "[2], "
-           << MigratedArg1 << "[3]))";
+        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
+           << MigratedArg1 << "[0], " << MigratedArg1 << "[1], " << MigratedArg1
+           << "[2], " << MigratedArg1 << "[3]))";
         break;
       default:
-        requestFeature(HelperFileEnum::Util, "fast_length",
-                                       Call);
-        OS << MapNames::getDpctNamespace() << "fast_length(" << "(float *)" << getMigratedArg(1) << ", "
-           << MigratedArg0 << ")";
+        requestFeature(HelperFileEnum::Util, "fast_length", Call);
+        OS << MapNames::getDpctNamespace() << "fast_length("
+           << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
       }
     } else {
       requestFeature(HelperFileEnum::Util, "fast_length", Call);
-      OS << MapNames::getDpctNamespace() << "fast_length(" << "(float *)" << getMigratedArg(1) << ", "
-         << MigratedArg0 << ")";
+      OS << MapNames::getDpctNamespace() << "fast_length("
+         << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }
   }
 
@@ -1083,12 +1094,14 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
     setTargetCalleeName(SourceCalleeName.str());
   } else {
     if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
-      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() + ".get_group()");
+      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
+                                  ".get_group()");
       RewriteArgList.emplace_back(getMigratedArg(0));
     } else if (SourceCalleeName == "__all_sync" ||
                SourceCalleeName == "__any_sync") {
       reportNoMaskWarning();
-      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() + ".get_group()");
+      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
+                                  ".get_group()");
       RewriteArgList.emplace_back(getMigratedArg(1));
       setTargetCalleeName(
           MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
@@ -1096,29 +1109,30 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
       reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(1));
       RewriteArgList.emplace_back(getMigratedArg(2));
-      setTargetCalleeName(buildString(
-          DpctGlobalInfo::getItemName(), ".get_sub_group().",
-          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
+      setTargetCalleeName(
+          buildString(DpctGlobalInfo::getItemName(), ".get_sub_group().",
+                      MapNames::findReplacedName(WarpFunctionsMap,
+                                                 SourceCalleeName.str())));
     } else {
       RewriteArgList.emplace_back(getMigratedArg(0));
       RewriteArgList.emplace_back(getMigratedArg(1));
-      setTargetCalleeName(buildString(
-          DpctGlobalInfo::getItemName(), ".get_sub_group().",
-          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
+      setTargetCalleeName(
+          buildString(DpctGlobalInfo::getItemName(), ".get_sub_group().",
+                      MapNames::findReplacedName(WarpFunctionsMap,
+                                                 SourceCalleeName.str())));
     }
   }
 
   return buildRewriteString();
 }
 
-const Expr*getDereferencedExpr(const Expr*E) {
+const Expr *getDereferencedExpr(const Expr *E) {
   E = E->IgnoreImplicitAsWritten();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == clang::UO_AddrOf) {
       return UO->getSubExpr()->IgnoreImplicitAsWritten();
     }
-  }
-  else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
     if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
       return COCE->getArg(0)->IgnoreImplicitAsWritten();
     }
@@ -1152,7 +1166,7 @@ class DerefStreamExpr {
     }
     Expr::EvalResult Result;
     if (!Expression->isValueDependent() &&
-      Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+        Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
       auto Val = Result.Val.getInt().getZExtValue();
       return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                       // all migrated to default queue;
@@ -1211,7 +1225,8 @@ std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
 }
 
-std::function<const StringRef (const CallExpr *)> makeCallArgCreator(std::string Str) {
+std::function<const StringRef(const CallExpr *)>
+makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
@@ -1327,7 +1342,7 @@ makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
 template <class CalleeT, class... CallArgsT>
 std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
 makeCallExprCreator(std::function<CalleeT(const CallExpr *)> Callee,
-  std::function<CallArgsT(const CallExpr *)>... Args) {
+                    std::function<CallArgsT(const CallExpr *)>... Args) {
   return PrinterCreator<CallExprPrinter<CalleeT, CallArgsT...>,
                         std::function<CalleeT(const CallExpr *)>,
                         std::function<CallArgsT(const CallExpr *)>...>(Callee,
@@ -1352,14 +1367,12 @@ makeNewExprCreator(std::string TypeName,
                                                                    Args...);
 }
 
-bool isCallAssigned(const CallExpr *C) {
-  return isAssigned(C);
-}
+bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
 
 template <class... StmtPrinters>
 std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       isCallAssigned,
       std::make_shared<AssignableRewriterFactory>(
@@ -1378,14 +1391,14 @@ std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
 /// \p LValueCreator use to get lhs from original call expr.
 /// \p RValueCreator use to get rhs from original call expr.
 template <class LValue, class RValue>
-std::shared_ptr<CallExprRewriterFactoryBase>
-creatAssignExprRewriterFactory(
+std::shared_ptr<CallExprRewriterFactoryBase> creatAssignExprRewriterFactory(
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
-  return std::make_shared<CallExprRewriterFactory<AssignExprRewriter<LValue, RValue>,
-                                 std::function<LValue(const CallExpr *)>,
-                                 std::function<RValue(const CallExpr *)>>>(
+  return std::make_shared<
+      CallExprRewriterFactory<AssignExprRewriter<LValue, RValue>,
+                              std::function<LValue(const CallExpr *)>,
+                              std::function<RValue(const CallExpr *)>>>(
       SourceName,
       std::forward<std::function<LValue(const CallExpr *)>>(LValueCreator),
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
@@ -1404,7 +1417,6 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatCallExprRewriterFactory(
       std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>>>(
       SourceName, Args);
 }
-
 
 /// Create TemplatedCallExprRewriterFactory with given argumens.
 /// \p SourceName the source callee name of original call expr.
@@ -1557,15 +1569,15 @@ std::function<bool(const CallExpr *)> makePointerChecker(unsigned Idx) {
 /// \p StartIdx is represent the first availbe argument's index.
 /// For cudaBindTexture and cudaBindTexture2D, it is 1.
 /// For  cudaBindTextureToArray, it is 0.
-/// The first predicate will check the \p StartIdx 'th argument whether is pointer.
-/// If it is true, the call expr will be migrated to member call expr.
-/// e.g.: cudaBindTexture(0, &tex, data, &desc, size) -> tex.attach(data, size, desc)
-/// with template arguments: <1, 2>.
-/// Else will check the second predicate:
+/// The first predicate will check the \p StartIdx 'th argument whether is
+/// pointer. If it is true, the call expr will be migrated to member call expr.
+/// e.g.: cudaBindTexture(0, &tex, data, &desc, size) -> tex.attach(data, size,
+/// desc) with template arguments: <1, 2>. Else will check the second predicate:
 /// If \p Start + 2 'th argument's type whether is cudaChannelFormatDesc.
 /// If it is true, e.g.: cudaBindTexture(0, tex, data, desc, size) ->
 /// tex.attach(data, size, desc).
-/// Else, e.g.: cudaBindTexture(0, tex, data, size) ->tex.attach(data, size, desc).
+/// Else, e.g.: cudaBindTexture(0, tex, data, size) ->tex.attach(data, size,
+/// desc).
 template <size_t StartIdx, size_t... Idx>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createBindTextureRewriterFactory(const std::string &Source) {
@@ -1611,13 +1623,12 @@ void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {
 }
 
 /// Create rewriter factory for texture reader APIs.
-/// Predicate: check the first arg if is pointer and set texture info with corresponding
-/// data.
-/// Migrate the call expr to an assign expr if Pred result is true;
-/// e.g.: tex1D(&u, tex, 1.0f) -> u = tex.read(1.0f)
-/// Migrate the call expr to an assign expr if Pred result is false;
-/// e.g.: tex1D(tex, 1.0f) -> tex.read(1.0f)
-/// The template arguments is the member call arguments' index in original call expr.
+/// Predicate: check the first arg if is pointer and set texture info with
+/// corresponding data. Migrate the call expr to an assign expr if Pred result
+/// is true; e.g.: tex1D(&u, tex, 1.0f) -> u = tex.read(1.0f) Migrate the call
+/// expr to an assign expr if Pred result is false; e.g.: tex1D(tex, 1.0f) ->
+/// tex.read(1.0f) The template arguments is the member call arguments' index in
+/// original call expr.
 template <size_t... Idx>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
@@ -1635,9 +1646,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
       Pred,
       creatAssignExprRewriterFactory(
           Source, makeDerefExprCreator(0),
-          makeMemberCallCreator(makeCallArgCreator(1),
-                                              false, "read",
-                                              makeCallArgCreator(Idx + 1)...)),
+          makeMemberCallCreator(makeCallArgCreator(1), false, "read",
+                                makeCallArgCreator(Idx + 1)...)),
       createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0), false,
                                           "read", makeCallArgCreator(Idx)...));
 }
@@ -1645,7 +1655,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 template <class... MsgArgs>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
-                               MsgArgs &&... Args) {
+                               MsgArgs &&...Args) {
   return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
       Source, MsgID, std::forward<MsgArgs>(Args)...);
 }
@@ -1668,7 +1678,7 @@ public:
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
-#define EXTENDSTR(idx, str) makeExtendStr(idx,str)
+#define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
@@ -1679,10 +1689,10 @@ public:
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
-  { FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__) },
+  {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
-#define CALL_FACTORY_ENTRY(FuncName, C)                                   \
+#define CALL_FACTORY_ENTRY(FuncName, C)                                        \
   {FuncName, creatCallExprRewriterFactory(FuncName, C)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
@@ -1727,7 +1737,8 @@ public:
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
 #define NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)              \
-  REWRITER_FACTORY_ENTRY(FuncName, NoRewriteFuncNameRewriterFactory, RewriterName)
+  REWRITER_FACTORY_ENTRY(FuncName, NoRewriteFuncNameRewriterFactory,           \
+                         RewriterName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
   REWRITER_FACTORY_ENTRY(FuncName, MathSimulatedRewriterFactory, RewriterName)
 #define MATH_TYPECAST_FACTORY_ENTRY(FuncName)                                  \
@@ -1788,8 +1799,8 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-#include "APINamesTexture.inc"
 #include "APINamesDriver.inc"
+#include "APINamesTexture.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

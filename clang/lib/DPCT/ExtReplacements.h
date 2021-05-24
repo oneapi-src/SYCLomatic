@@ -57,25 +57,28 @@ public:
   }
 
   void postProcess();
+
 private:
   using ReplIterator =
       std::multimap<unsigned, std::shared_ptr<ExtReplacement>>::iterator;
 
 private:
-  bool isInvalid(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo);
+  bool isInvalid(std::shared_ptr<ExtReplacement> Repl,
+                 std::shared_ptr<DpctFileInfo> FileInfo);
   // Check if the Repl is same as source code
-  bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl, std::shared_ptr<DpctFileInfo> FileInfo);
+  bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl,
+                       std::shared_ptr<DpctFileInfo> FileInfo);
   inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
     if (isAlive(Repl))
       // If a replacement in the same pair is alive, merge it anyway.
       return true;
     // Check if it is duplicate replacement.
     return !isDuplicated(Repl, ReplMap.lower_bound(Repl->getOffset()),
-                     ReplMap.upper_bound(Repl->getOffset()));
+                         ReplMap.upper_bound(Repl->getOffset()));
   }
 
   bool isDuplicated(std::shared_ptr<ExtReplacement> Repl, ReplIterator Begin,
-                ReplIterator End);
+                    ReplIterator End);
 
   std::shared_ptr<ExtReplacement> inline mergeAtSameOffset(
       std::shared_ptr<ExtReplacement> First,
@@ -125,9 +128,11 @@ private:
                                bool &BlockComment);
 
   std::shared_ptr<ExtReplacement>
-  buildOriginCodeReplacement(const SourceLineRange &LineRange, std::shared_ptr<DpctFileInfo> FileInfo);
+  buildOriginCodeReplacement(const SourceLineRange &LineRange,
+                             std::shared_ptr<DpctFileInfo> FileInfo);
 
-  bool isEndWithSlash(unsigned LineNumber, std::shared_ptr<DpctFileInfo> FileInfo);
+  bool isEndWithSlash(unsigned LineNumber,
+                      std::shared_ptr<DpctFileInfo> FileInfo);
   size_t findCR(StringRef Line);
 
   // Mark a replacement as dead.
@@ -156,9 +161,9 @@ private:
   void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
   void processCudaArchMacro();
   std::string FilePath;
-  ///<Offset, ExtReplacement>
+  ///< Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
-  ///<PairID, PairStatus>
+  ///< PairID, PairStatus>
   std::map<unsigned, std::shared_ptr<PairReplsStatus>> PairReplsMap;
 
   const static StringRef NullStr;

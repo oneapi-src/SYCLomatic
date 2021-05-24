@@ -10,13 +10,13 @@
 //===---------------------------------------------------------------===//
 
 #include "Utility.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "Config.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "SaveNewFiles.h"
-#include "Config.h"
-#include "ASTTraversal.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/ExprCXX.h"
@@ -162,10 +162,10 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
     // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
     // and SM.getSpellingLoc will return the macro definition in this case.
     while (BeginLoc.isMacroID() &&
-      !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
+           !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
       auto ISL = SM.getImmediateSpellingLoc(BeginLoc);
       if (!dpct::DpctGlobalInfo::isInRoot(
-        SM.getFilename(SM.getExpansionLoc(ISL)).str()))
+              SM.getFilename(SM.getExpansionLoc(ISL)).str()))
         break;
       BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
       EndLoc = SM.getImmediateSpellingLoc(EndLoc);
@@ -179,12 +179,12 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   SourceLocation BeginLoc, EndLoc;
   auto Range = getRangeInsideFuncLikeMacro(S);
   if (Range.getBegin().isMacroID() && Range.getEnd().isMacroID() &&
-    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
-      SM.getExpansionRange(Range.getBegin()).getEnd(),
-      SM.getSpellingLoc(Range.getBegin())) &&
-    isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
-      SM.getExpansionRange(Range.getBegin()).getEnd(),
-      SM.getSpellingLoc(Range.getEnd()))) {
+      isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+                SM.getExpansionRange(Range.getBegin()).getEnd(),
+                SM.getSpellingLoc(Range.getBegin())) &&
+      isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+                SM.getExpansionRange(Range.getBegin()).getEnd(),
+                SM.getSpellingLoc(Range.getEnd()))) {
     // MACRO(callExpr())
     BeginLoc = SM.getSpellingLoc(Range.getBegin());
     EndLoc = SM.getSpellingLoc(Range.getEnd());
@@ -201,7 +201,7 @@ size_t calculateExpansionLevel(const SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ExpanLoc = Loc;
   size_t Count = 0;
-  while(ExpanLoc.isMacroID()) {
+  while (ExpanLoc.isMacroID()) {
     Count++;
     ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getBegin();
   }
@@ -420,7 +420,7 @@ const clang::CompoundStmt *findImmediateBlock(const ValueDecl *D) {
     auto BD = static_cast<const FunctionDecl *>(D->getDeclContext());
     CS = dyn_cast<CompoundStmt>(BD->getBody());
   }
-  if(!CS)
+  if (!CS)
     return nullptr;
   // Worklist
   std::deque<const CompoundStmt *> WL;
@@ -585,8 +585,7 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
 
 // Find the ancestor DeclStmt node
 // Assumes: E != nullptr
-const DynTypedNode
-getAncestorDeclStmtNode(const clang::Expr *E) {
+const DynTypedNode getAncestorDeclStmtNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode ParentNode;
@@ -619,8 +618,7 @@ getParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
 }
 
 const std::shared_ptr<clang::DynTypedNode>
-getNonImplicitCastParentNode(
-    const std::shared_ptr<clang::DynTypedNode> N) {
+getNonImplicitCastParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
@@ -651,13 +649,10 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
 
 // Find the nearest non-Expr non-Decl ancestor node of Expr E
 // Assumes: E != nullptr
-const DynTypedNode
-findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
+const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  DynTypedNode LastNode =
-                                    DynTypedNode::create(*E),
-                                ParentNode;
+  DynTypedNode LastNode = DynTypedNode::create(*E), ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||
@@ -1233,8 +1228,9 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
       PointerName + "_buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
-               ">(" + PointerName + ");" + getNL() + IndentStr;
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() +
+               "get_buffer<" + TypeAsStr + ">(" + PointerName + ");" + getNL() +
+               IndentStr;
   return BufferTempName;
 }
 /// This function used in BLAS and Random migration. It generates the buffer
@@ -1253,8 +1249,9 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() + "get_buffer<" + TypeAsStr +
-               ">(" + PointerName + ");" + getNL() + IndentStr;
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() +
+               "get_buffer<" + TypeAsStr + ">(" + PointerName + ");" + getNL() +
+               IndentStr;
   return BufferTempName;
 }
 
@@ -1387,9 +1384,9 @@ calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
   return calculateRangesWithFlag(Repls, FormatFlags);
 }
 
-/// Calculate the ranges of the input \p Repls which has set BlockLevelFormatFlags.
-/// \param Repls Replacements with lambda flags.
-/// \return The result ranges.
+/// Calculate the ranges of the input \p Repls which has set
+/// BlockLevelFormatFlags. \param Repls Replacements with lambda flags. \return
+/// The result ranges.
 std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Repls) {
   std::vector<bool> BlockLevelFormatFlags;
@@ -1411,7 +1408,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
 /// \return The result ranges.
 std::vector<clang::tooling::Range>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
-                const std::vector<clang::tooling::Range> &Ranges) {
+                       const std::vector<clang::tooling::Range> &Ranges) {
   std::vector<clang::tooling::Range> Result;
   for (auto R : Ranges) {
     unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
@@ -1483,8 +1480,7 @@ bool isOuterMostMacro(const Stmt *E) {
   E->printPretty(StreamE, nullptr, CT.getPrintingPolicy());
   StreamE.flush();
   std::shared_ptr<DynTypedNode> P =
-      std::make_shared<DynTypedNode>(
-          DynTypedNode::create(*E));
+      std::make_shared<DynTypedNode>(DynTypedNode::create(*E));
   // Find a parent stmt whose preprocessing result is different from
   // ExpandedExpr Since some parent is not writable.(is not shown in the
   // preprocessing result), a while loop is required to find the first writable
@@ -1512,9 +1508,9 @@ bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
   return true;
 }
 
-bool isInsideFunctionLikeMacro(
-    const SourceLocation BeginLoc, const SourceLocation EndLoc,
-    const std::shared_ptr<DynTypedNode> Parent) {
+bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
+                               const SourceLocation EndLoc,
+                               const std::shared_ptr<DynTypedNode> Parent) {
 
   if (!BeginLoc.isMacroID() || !EndLoc.isMacroID()) {
     return false;
@@ -1529,7 +1525,6 @@ bool isInsideFunctionLikeMacro(
   if (!isSameLocation(ExpansionBegin, ExpansionEnd)) {
     return false;
   }
-
 
   // Since SM.getExpansionLoc() will always return the range of the outer-most
   // macro. If the expanded location of the parent stmt and E are the same, E is
@@ -1574,7 +1569,7 @@ bool isInsideFunctionLikeMacro(
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
   auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(ImmediateExpansionBegin));
+      getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
@@ -1586,7 +1581,7 @@ bool isInsideFunctionLikeMacro(
 
   // ExpansionBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(ImmediateExpansionBegin));
+      getCombinedStrFromLoc(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
@@ -1598,7 +1593,7 @@ bool isInsideFunctionLikeMacro(
 
   // SpellingBegin & ExpansionEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(ImmediateSpellingBegin));
+      getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
@@ -1610,7 +1605,7 @@ bool isInsideFunctionLikeMacro(
 
   // SpellingBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(ImmediateSpellingBegin));
+      getCombinedStrFromLoc(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
@@ -1628,11 +1623,11 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto SpellingBegin = SM.getSpellingLoc(BeginLoc);
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(SpellingBegin));
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          getCombinedStrFromLoc(SpellingBegin));
   auto ItSpellingEnd =
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(SpellingEnd));
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+          getCombinedStrFromLoc(SpellingEnd));
 
   if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
       (BeginLoc.isFileID() && EndLoc.isMacroID())) {
@@ -1646,24 +1641,24 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
     auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
     auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
     if (DLExpanBegin.first != DLExpanEnd.first ||
-      DLExpanBegin.second != DLExpanEnd.second) {
+        DLExpanBegin.second != DLExpanEnd.second) {
       return true;
     }
   }
 
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-    ItSpellingEnd ==
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+      ItSpellingEnd ==
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return false;
   }
 
   // If only one of begin and end is in macro define, straddle
   if (ItSpellingBegin ==
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
-    ItSpellingEnd ==
-    dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItSpellingEnd ==
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return true;
   }
 
@@ -2004,12 +1999,11 @@ bool isPredefinedStreamHandle(const Expr *E) {
     }
   } else if (dyn_cast<GNUNullExpr>(E->IgnoreImplicit()) ||
              dyn_cast<CXXNullPtrLiteralExpr>(E->IgnoreImplicit())) {
-      // default stream can be used as NULL, __null, nullptr
-      return true;
+    // default stream can be used as NULL, __null, nullptr
+    return true;
   }
   return false;
 }
-
 
 // Get the range of an Expr in the largest(the outermost) macro definition
 // e.g.
@@ -2024,12 +2018,13 @@ bool isPredefinedStreamHandle(const Expr *E) {
 // Return std::pair(line 2 "2", line 2 "3")
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
-  const clang::SourceLocation End) {
+                                       const clang::SourceLocation End) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ResultBegin = Begin;
   auto ResultEnd = End;
 
-  // Keep calling getImmediateExpansionRange until the next location is not macro
+  // Keep calling getImmediateExpansionRange until the next location is not
+  // macro
   if (ResultBegin.isMacroID()) {
     while (SM.getImmediateExpansionRange(ResultBegin).getBegin().isMacroID()) {
       ResultBegin = SM.getImmediateExpansionRange(ResultBegin).getBegin();
@@ -2041,9 +2036,8 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
     }
   }
   return std::pair<clang::SourceLocation, clang::SourceLocation>(ResultBegin,
-    ResultEnd);
+                                                                 ResultEnd);
 }
-
 
 // To remove the correct kernel range, DPCT need to find the Begin/End pair in
 // which the Begin/End are at the same macro define. e.g.
@@ -2060,9 +2054,9 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
 // and Line1 ")". This function will calculate the macro expansion level of the
 // begin and end location.
 // The macro expansion level of Line 2 "t" is 3. (Line4 -> Line3 -> Line2)
-// The macro expansion level of Line1 ")" is 4. (Line4 -> Line3 -> Line2 -> Line1)
-// And this function will perform a while loop to find
-// the lowest common ancestor of the begin and end.
+// The macro expansion level of Line1 ")" is 4. (Line4 -> Line3 -> Line2 ->
+// Line1) And this function will perform a while loop to find the lowest common
+// ancestor of the begin and end.
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
                                  clang::SourceLocation EndLoc) {
@@ -2194,13 +2188,14 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
 
 bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile) {
-  auto CurrentFileInfo = dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
+  auto CurrentFileInfo =
+      dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
   auto CheckingFileInfo =
-    dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
+      dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
 
   std::deque<std::shared_ptr<dpct::DpctFileInfo>> Q(
-    CurrentFileInfo->getIncludedFilesInfoSet().begin(),
-    CurrentFileInfo->getIncludedFilesInfoSet().end());
+      CurrentFileInfo->getIncludedFilesInfoSet().begin(),
+      CurrentFileInfo->getIncludedFilesInfoSet().end());
 
   std::unordered_set<std::shared_ptr<dpct::DpctFileInfo>> InsertedFile;
   InsertedFile = CurrentFileInfo->getIncludedFilesInfoSet();
@@ -2212,8 +2207,8 @@ bool isIncludedFile(const std::string &CurrentFile,
     } else if (Q.front() == CheckingFileInfo) {
       return true;
     } else {
-      for(auto IncludeFile : Q.front()->getIncludedFilesInfoSet()){
-        if(InsertedFile.find(IncludeFile) == InsertedFile.end()){
+      for (auto IncludeFile : Q.front()->getIncludedFilesInfoSet()) {
+        if (InsertedFile.find(IncludeFile) == InsertedFile.end()) {
           Q.insert(Q.end(), IncludeFile);
           InsertedFile.insert(IncludeFile);
         }
@@ -2229,7 +2224,7 @@ std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
   return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }
 
-std::string getFinalCastTypeNameStr(std::string CastTypeName){
+std::string getFinalCastTypeNameStr(std::string CastTypeName) {
   // Since curandState and other state types have same prefix (e.g.,
   // curandStateXORWOW_t), we need choose a result which matches longest.
   std::map<size_t /*replaced length*/,
@@ -2430,7 +2425,6 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
   return false;
 }
 
-
 llvm::StringRef getCalleeName(const CallExpr *CE) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   const char *Start = SM.getCharacterData(
@@ -2498,8 +2492,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
     return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 
-  std::tie(Begin, End) =
-    getTheLastCompleteImmediateRange(Begin, End);
+  std::tie(Begin, End) = getTheLastCompleteImmediateRange(Begin, End);
 
   return SourceRange(Begin, End);
 }
@@ -2513,10 +2506,8 @@ bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
   if (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
     // Check if begin/end are the same macro arg, so use getBegin() for
     // both loc
-    Begin =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-    End =
-        SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getBegin());
+    Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+    End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getBegin());
     auto ItMatchBegin =
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(Begin));
@@ -2594,9 +2585,9 @@ bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
 bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(BeginLoc));
+      getCombinedStrFromLoc(BeginLoc));
   auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(EndLoc));
+      getCombinedStrFromLoc(EndLoc));
   // If any of begin/end is not in the macro or the begin is not the 1st token
   // or the end is not the last macro
   if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
@@ -2864,8 +2855,8 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
     return;
 
   if (!VD->getType()->isReferenceType() && !VD->getType()->isPointerType()) {
-    // If the type is neither a referecnce nor a pointer, treat it as a local variable,
-    // its address space is private.
+    // If the type is neither a referecnce nor a pointer, treat it as a local
+    // variable, its address space is private.
     Result = LocalVarAddrSpaceEnum::AS_IsPrivate;
     return;
   }
@@ -2880,9 +2871,9 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
   if (!CS)
     return;
 
-  // Using ASTMatcher to find all DRE in current CompoundStmt, if that DRE's declaration
-  // is same as VD, push that DRE into Refs.
-  // The DRE in Refs will be checked in the next step.
+  // Using ASTMatcher to find all DRE in current CompoundStmt, if that DRE's
+  // declaration is same as VD, push that DRE into Refs. The DRE in Refs will be
+  // checked in the next step.
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("VarReference"));
   auto MatchedResults = clang::ast_matchers::match(
@@ -2897,18 +2888,20 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
     }
   }
 
-  LocalVarAddrSpaceEnum LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  LocalVarAddrSpaceEnum LastAssignmentResult =
+      LocalVarAddrSpaceEnum::AS_CannotDeduce;
   if (VD->hasInit()) {
-    LocalVarAddrSpaceEnum InitExprResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
+    LocalVarAddrSpaceEnum InitExprResult =
+        LocalVarAddrSpaceEnum::AS_CannotDeduce;
     checkIsPrivateVar(VD->getInit(), InitExprResult);
     LastAssignmentResult = InitExprResult;
   }
   bool CanLastReferenceBeDeduced = false;
   // Check each DRE before current statement, try to deduce their address space
   // Currently only check the assignment like "var1 = ExprContainsDRE;"
-  // If the DRE is in control flow statement, then its address cannot be deduced.
-  // Else, call checkIsPrivateVar() to the right hand side Expr's address space.
-  // Finally, using the address space of the last DRE as result.
+  // If the DRE is in control flow statement, then its address cannot be
+  // deduced. Else, call checkIsPrivateVar() to the right hand side Expr's
+  // address space. Finally, using the address space of the last DRE as result.
   for (auto const &Ref : Refs) {
     // Break means tool will not check the assignments after the DRE
     if (Ref == DRE)
@@ -2970,8 +2963,6 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
     return;
   }
 }
-
-
 
 /// Determine whether a variable represented by DeclRefExpr is unmodified
 /// 1. func(..., T Val(pass by value), ...)

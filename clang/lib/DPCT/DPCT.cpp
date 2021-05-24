@@ -1144,7 +1144,8 @@ int runDPCT(int argc, const char **argv) {
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
-  validateCustomHelperFileNameArg(UseCustomHelperFileLevel, CustomHelperFileName,
+  validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
+                                  CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());
 
   Tool.appendArgumentsAdjuster(
@@ -1169,7 +1170,7 @@ int runDPCT(int argc, const char **argv) {
 
 #ifdef _WIN32
   if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
-  (SDKVersionMajor == 11 && SDKVersionMinor == 3)) {
+      (SDKVersionMajor == 11 && SDKVersionMinor == 3)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
@@ -1182,8 +1183,8 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
 
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "-Xclang", ArgumentInsertPosition::BEGIN));
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);

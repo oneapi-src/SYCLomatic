@@ -27,8 +27,8 @@ class TextModification;
 using TransformSetTy = std::vector<std::shared_ptr<TextModification>>;
 
 class ReplaceInclude;
-using IncludeMapSetTy = std::map<std::string,
-      std::vector<std::unique_ptr<ReplaceInclude>>>;
+using IncludeMapSetTy =
+    std::map<std::string, std::vector<std::unique_ptr<ReplaceInclude>>>;
 
 enum InsertPosition {
   InsertPositionAlwaysLeft = 0,
@@ -124,9 +124,7 @@ public:
   }
 
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
-  inline void setSYCLHeaderNeeded(bool Val) {
-    SYCLHeaderNeeded = Val;
-  }
+  inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
 private:
   InsertPosition InsertPos = InsertPositionLeft;
@@ -154,6 +152,7 @@ public:
 
   static const std::unordered_map<int, std::string> TMNameMap;
   InsertPosition InsertPos = InsertPosition::InsertPositionLeft;
+
 public:
   TextModification(TMID _TMID) : ID(_TMID), Key(Any), ParentRuleID(0) {}
   TextModification(TMID _TMID, Group _Key)
@@ -196,11 +195,13 @@ public:
   // Each replacement should be processed by the first formatting (except the
   // NotFormatFlag is ture). But because each line's indent is kept as same as
   // the original code's indent, if the migration is one line => multi lines,
-  // the indent may be strange. So we do a second time format for these replacement,
-  // using unified IndentWidth to do the format.
-  // Currently, the replacement need second format are: kernel calls, warnings
-  // and some library APIs migraion.
-  void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
+  // the indent may be strange. So we do a second time format for these
+  // replacement, using unified IndentWidth to do the format. Currently, the
+  // replacement need second format are: kernel calls, warnings and some library
+  // APIs migraion.
+  void setBlockLevelFormatFlag(bool Flag = true) {
+    BlockLevelFormatFlag = Flag;
+  }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
 
 private:
@@ -209,7 +210,8 @@ private:
   const char *ParentRuleID;
   unsigned PairID = 0;
   bool BlockLevelFormatFlag = false;
-  //below members are used for process __constant__ macro used in host and device
+  // below members are used for process __constant__ macro used in host and
+  // device
   unsigned int LineBeginOffset = 0;
   bool IgnoreTM = false;
   dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
@@ -280,14 +282,14 @@ class ReplaceStmt : public TextModification {
 
 public:
   template <class... Args>
-  ReplaceStmt(const Stmt *E, Args &&... S)
+  ReplaceStmt(const Stmt *E, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsReplaceCompatibilityAPI(false), IsProcessMacro(false),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
-              std::string OrigAPIName, Args &&... S)
+              std::string OrigAPIName, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
         OrigAPIName(OrigAPIName), IsProcessMacro(false),
@@ -295,7 +297,7 @@ public:
 
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
-              std::string OrigAPIName, bool IsNeedProcessMacro, Args &&... S)
+              std::string OrigAPIName, bool IsNeedProcessMacro, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
         OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
@@ -304,14 +306,14 @@ public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
               std::string OrigAPIName, bool IsNeedProcessMacro,
-              bool IsNeedCleanup, Args &&... S)
+              bool IsNeedCleanup, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
         OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
         ReplacementString(std::forward<Args>(S)...), IsCleanup(IsNeedCleanup) {}
 
   template <class... Args>
-  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
+  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&...S)
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
     IsCleanup = false;
@@ -330,9 +332,10 @@ public:
 class ReplaceDecl : public TextModification {
   const Decl *TheDecl;
   std::string ReplacementString;
+
 public:
   template <class... Args>
-  ReplaceDecl(const Decl *E, Args &&... S)
+  ReplaceDecl(const Decl *E, Args &&...S)
       : TextModification(TMID::ReplaceDecl), TheDecl(E),
         ReplacementString(std::forward<Args>(S)...) {}
 
@@ -524,7 +527,8 @@ class ReplaceInclude : public TextModification {
   bool RemoveTrailingSpaces;
 
 public:
-  ReplaceInclude(CharSourceRange Range, std::string &&T, bool RemoveTrailingSpaces = false)
+  ReplaceInclude(CharSourceRange Range, std::string &&T,
+                 bool RemoveTrailingSpaces = false)
       : TextModification(TMID::ReplaceInclude), Range(Range), T(T),
         RemoveTrailingSpaces(RemoveTrailingSpaces) {}
 

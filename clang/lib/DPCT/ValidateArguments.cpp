@@ -11,8 +11,8 @@
 
 #include "ValidateArguments.h"
 #include "Debug.h"
-#include "Utility.h"
 #include "SaveNewFiles.h"
+#include "Utility.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -128,7 +128,7 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
 //
 // TODO: Produce diagnostics with llvm machinery
 int validatePaths(const std::string &InRoot,
-                   const std::vector<std::string> &SourceFiles) {
+                  const std::vector<std::string> &SourceFiles) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   int Ok = 0;
   for (const auto &FilePath : SourceFiles) {
@@ -203,7 +203,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
     if (RFile.empty()) {
       RFile = "stdout";
     }
-    #ifdef DPCT_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     // check the report diags content value.
     if (DVerbose.empty()) {
       clang::dpct::VerboseLevel = clang::dpct::VerboseLow;
@@ -217,14 +217,15 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
           << "error value provided in option: -report-diags-content, use "
              "[pass|transformation].\n\n";
     }
-    #endif
+#endif
   }
 
   return Success;
 }
 
 void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
-                                     std::string &Name, const std::string &OutRoot) {
+                                     std::string &Name,
+                                     const std::string &OutRoot) {
   if ((Level == HelperFilesCustomizationLevel::none) && (Name != "dpct")) {
     clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
                           "\"--use-custom-helper\" is not specified or "

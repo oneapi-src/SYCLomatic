@@ -12,9 +12,9 @@
 #ifndef DPCT_EXPR_ANALYSIS_H
 #define DPCT_EXPR_ANALYSIS_H
 
-#include "TextModification.h"
 #include "CustomHelperFiles.h"
 #include "Debug.h"
+#include "TextModification.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
@@ -182,13 +182,9 @@ private:
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
-  inline std::string getRewritePrefix() {
-    return RewritePrefix;
-  }
+  inline std::string getRewritePrefix() { return RewritePrefix; }
 
-  inline std::string getRewritePostfix() {
-    return RewritePostfix;
-  }
+  inline std::string getRewritePostfix() { return RewritePostfix; }
 
   static std::string ref(const Expr *Expression) {
     ExprAnalysis EA(Expression);
@@ -249,12 +245,12 @@ public:
         Repl++;
         continue;
       } else if ((*Repl)->getOffset() <= NewRepl->getOffset() &&
-        (*Repl)->getOffset() + (*Repl)->getLength() >=
-        NewRepl->getOffset() + NewRepl->getLength()) {
+                 (*Repl)->getOffset() + (*Repl)->getLength() >=
+                     NewRepl->getOffset() + NewRepl->getLength()) {
         return;
       } else if ((*Repl)->getOffset() >= NewRepl->getOffset() &&
-        (*Repl)->getOffset() + (*Repl)->getLength() <=
-        NewRepl->getOffset() + NewRepl->getLength()) {
+                 (*Repl)->getOffset() + (*Repl)->getLength() <=
+                     NewRepl->getOffset() + NewRepl->getLength()) {
         SubExprRepl.erase(Repl);
         if (Repl == SubExprRepl.end()) {
           break;
@@ -302,9 +298,7 @@ public:
     auto LocInfo = getOffsetAndLength(E);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
   }
-  std::set<HelperFeatureIDTy> getHelperFeatureSet() {
-    return HelperFeatureSet;
-  }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
 
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
@@ -322,7 +316,7 @@ protected:
     }
   }
 
-  template<class T> void analyzeTemplateSpecializationType(const T &TL) {
+  template <class T> void analyzeTemplateSpecializationType(const T &TL) {
     for (size_t i = 0; i < TL.getNumArgs(); ++i)
       analyzeTemplateArgument(TL.getArgLoc(i));
   }
@@ -331,9 +325,10 @@ protected:
   void initExpression(const Expr *Expression);
   void initSourceRange(const SourceRange &Range);
 
-  std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(SourceLocation Begin,
-    SourceLocation End);
-  std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(SourceLocation SL);
+  std::pair<SourceLocation, size_t>
+  getSpellingOffsetAndLength(SourceLocation Begin, SourceLocation End);
+  std::pair<SourceLocation, size_t>
+  getSpellingOffsetAndLength(SourceLocation SL);
   std::pair<SourceLocation, size_t> getSpellingOffsetAndLength(const Expr *);
 
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
@@ -412,7 +407,7 @@ protected:
       // If the spelling location is inside the parent range, add string
       // replacement. The String replacement will be add to ExtReplacement other
       // where.
-      //addExtReplacement(std::make_shared<ExtReplacement>(
+      // addExtReplacement(std::make_shared<ExtReplacement>(
       //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
       auto LocInfo = getOffsetAndLength(Begin, End);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
@@ -420,7 +415,7 @@ protected:
   }
 
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
-    unsigned TemplateIndex) {
+                             unsigned TemplateIndex) {
     auto LocInfo = getOffsetAndLength(Begin, End);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
   }
@@ -435,27 +430,29 @@ protected:
     if (LocInfo.first > 0 && LocInfo.first + LocInfo.second < SrcLength) {
       auto SpellingLocInfo = getSpellingOffsetAndLength(Begin, End);
       if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
-        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
-        SM.getDecomposedLoc(SpellingLocInfo.first).second +
-        SpellingLocInfo.second >
-        SrcBegin + SrcLength) {
-        // If the spelling location is not in the parent range, add ExtReplacement
+          SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+          SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                  SpellingLocInfo.second >
+              SrcBegin + SrcLength) {
+        // If the spelling location is not in the parent range, add
+        // ExtReplacement
         addExtReplacement(std::make_shared<ExtReplacement>(
-          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+            SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
       } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
-        SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
-        SM.getDecomposedLoc(SpellingLocInfo.first).second +
-        SpellingLocInfo.second ==
-        SrcBegin + SrcLength) {
+                 SM.getDecomposedLoc(SpellingLocInfo.first).second ==
+                     SrcBegin &&
+                 SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                         SpellingLocInfo.second ==
+                     SrcBegin + SrcLength) {
         // If the spelling location is the same as the parent range, add both
         addExtReplacement(std::make_shared<ExtReplacement>(
-          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+            SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
         addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
       } else {
         // If the spelling location is inside the parent range, add string
-        // replacement. The String replacement will be add to ExtReplacement other
-        // where.
-        //addExtReplacement(std::make_shared<ExtReplacement>(
+        // replacement. The String replacement will be add to ExtReplacement
+        // other where.
+        // addExtReplacement(std::make_shared<ExtReplacement>(
         //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
         addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
       }
@@ -463,7 +460,7 @@ protected:
   }
 
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
-    const Expr *P, unsigned TemplateIndex) {
+                             const Expr *P, unsigned TemplateIndex) {
     if (!P)
       return addReplacement(Begin, End, std::move(TemplateIndex));
     auto LocInfo = getOffsetAndLength(Begin, End, P);
@@ -535,7 +532,6 @@ protected:
     dispatch(ASE->getBase());
     dispatch(ASE->getIdx());
   }
-
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
@@ -628,10 +624,11 @@ class ArgumentAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
   ArgumentAnalysis() {}
-  ArgumentAnalysis(bool IsInMacroDefine) { this->IsInMacroDefine = IsInMacroDefine; }
+  ArgumentAnalysis(bool IsInMacroDefine) {
+    this->IsInMacroDefine = IsInMacroDefine;
+  }
   // Special init is needed for argument expression.
-  ArgumentAnalysis(const Expr *Arg, bool IsInMacroDefine)
-      : Base(nullptr) {
+  ArgumentAnalysis(const Expr *Arg, bool IsInMacroDefine) : Base(nullptr) {
     this->IsInMacroDefine = IsInMacroDefine;
     initArgumentExpr(Arg);
   }
@@ -645,12 +642,12 @@ public:
     int ReplLength = getExprLength();
     if (ReplLength > 0) {
       addExtReplacement(std::make_shared<ExtReplacement>(
-        SM, ExprBeginBeforeAnalyze, getExprLength(), getReplacedString(),
-        nullptr));
+          SM, ExprBeginBeforeAnalyze, getExprLength(), getReplacedString(),
+          nullptr));
     }
   }
 
-  inline void setCallSpelling(const Expr* E) {
+  inline void setCallSpelling(const Expr *E) {
     auto LocInfo = getSpellingOffsetAndLength(E);
     CallSpellingBegin = LocInfo.first;
     CallSpellingEnd = CallSpellingBegin.getLocWithOffset(LocInfo.second);
@@ -658,7 +655,7 @@ public:
 
   std::string getRewriteString();
 
-  std::pair<SourceLocation, SourceLocation> getLocInCallSpelling(const Expr* E);
+  std::pair<SourceLocation, SourceLocation> getLocInCallSpelling(const Expr *E);
 
 protected:
   // Ignore the constructor when it's argument expression, it is copy/move
@@ -682,7 +679,6 @@ private:
   SourceLocation CallSpellingEnd;
   using DefaultArgMapTy = std::map<const Expr *, std::string>;
   static DefaultArgMapTy DefaultArgMap;
-
 };
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {
@@ -754,13 +750,12 @@ public:
   bool IsTryToUseOneDimension = false;
 };
 
-/// Analyzes the side effects of an expression while doing basic expression analysis
+/// Analyzes the side effects of an expression while doing basic expression
+/// analysis
 class SideEffectsAnalysis : public ExprAnalysis {
 public:
   explicit SideEffectsAnalysis(const Expr *E) : ExprAnalysis(E) {}
-  inline bool hasSideEffects() {
-    return HasSideEffects;
-  }
+  inline bool hasSideEffects() { return HasSideEffects; }
 
 protected:
   void dispatch(const Stmt *Expression) override;

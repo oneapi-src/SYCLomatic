@@ -43,10 +43,14 @@ MapNames::MapTy MapNames::MathRewriterMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
-std::map<std::string, MapNames::BLASFuncComplexReplInfo> MapNames::BatchedBLASFuncReplInfoMap;
-std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncWrapperReplInfoMap;
-std::map<std::string, MapNames::BLASGemmExTypeInfo> MapNames::BLASGemmExTypeInfoMap;
-std::map<std::string, MapNames::BLASGemmExTypeInfo> MapNames::BLASTGemmExTypeInfoMap;
+std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+    MapNames::BatchedBLASFuncReplInfoMap;
+std::map<std::string, MapNames::BLASFuncReplInfo>
+    MapNames::BLASFuncWrapperReplInfoMap;
+std::map<std::string, MapNames::BLASGemmExTypeInfo>
+    MapNames::BLASGemmExTypeInfoMap;
+std::map<std::string, MapNames::BLASGemmExTypeInfo>
+    MapNames::BLASTGemmExTypeInfoMap;
 std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap;
 
 void MapNames::setExplicitNamespaceMap() {
@@ -75,9 +79,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUresult", "int"},
       {"CUcontext", "int"},
 #ifdef _WIN32
-      {"CUmodule","HMODULE"},
+      {"CUmodule", "HMODULE"},
 #else
-      {"CUmodule","void *"},
+      {"CUmodule", "void *"},
 #endif
       {"CUfunction", getDpctNamespace() + "kernel_functor"},
       {"dim3", getClNamespace() + "range<3>"},
@@ -165,7 +169,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSolveAnalysisInfo_t", "int"},
       {"thrust::device_ptr", getDpctNamespace() + "device_pointer"},
       {"thrust::device_vector", getDpctNamespace() + "device_vector"},
-      {"thrust::device_malloc_allocator", getClNamespace() + "buffer_allocator"},
+      {"thrust::device_malloc_allocator",
+       getClNamespace() + "buffer_allocator"},
       {"thrust::maximum", "oneapi::dpl::maximum"},
       {"thrust::multiplies", "std::multiplies"},
       {"thrust::plus", "std::plus"},
@@ -339,8 +344,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CU_AD_FORMAT_HALF", getClNamespace() + "image_channel_type::fp16"},
       {"CU_AD_FORMAT_FLOAT", getClNamespace() + "image_channel_type::fp32"},
       // enum CUaddress_mode_enum
-      {"CU_TR_ADDRESS_MODE_WRAP",
-       getClNamespace() + "addressing_mode::repeat"},
+      {"CU_TR_ADDRESS_MODE_WRAP", getClNamespace() + "addressing_mode::repeat"},
       {"CU_TR_ADDRESS_MODE_CLAMP",
        getClNamespace() + "addressing_mode::clamp_to_edge"},
       {"CU_TR_ADDRESS_MODE_MIRROR",
@@ -348,10 +352,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"CU_TR_ADDRESS_MODE_BORDER",
        getClNamespace() + "addressing_mode::clamp"},
       // enum CUfilter_mode_enum
-      {"CU_TR_FILTER_MODE_POINT",
-       getClNamespace() + "filtering_mode::nearest"},
-      {"CU_TR_FILTER_MODE_LINEAR",
-       getClNamespace() + "filtering_mode::linear"},
+      {"CU_TR_FILTER_MODE_POINT", getClNamespace() + "filtering_mode::nearest"},
+      {"CU_TR_FILTER_MODE_LINEAR", getClNamespace() + "filtering_mode::linear"},
       // enum CUresourcetype_enum
       {"CU_RESOURCE_TYPE_ARRAY",
        getDpctNamespace() + "image_data_type::matrix"},
@@ -362,7 +364,7 @@ void MapNames::setExplicitNamespaceMap() {
       // ...
   };
 
-    // Enum constants name to helper feature mapping.
+  // Enum constants name to helper feature mapping.
   EnumConstantRule::EnumNamesHelperFeaturesMap = {
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost", {HelperFileEnum::Memory, "memcpy_direction"}},
@@ -379,8 +381,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaChannelFormatKindFloat",
        {HelperFileEnum::Image, "image_channel_data_type"}},
       // enum Resource Type
-      {"cudaResourceTypeArray",
-       {HelperFileEnum::Image, "image_data_type"}},
+      {"cudaResourceTypeArray", {HelperFileEnum::Image, "image_data_type"}},
       {"cudaResourceTypeLinear", {HelperFileEnum::Image, "image_data_type"}},
       {"cudaResourceTypePitch2D", {HelperFileEnum::Image, "image_data_type"}},
       // enum CUresourcetype_enum
@@ -488,7 +489,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDdot_v2",
        {std::vector<int>{2, 4, 6}, std::vector<int>{},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::dot"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::dot"}},
       {"cublasSnrm2_v2",
        {std::vector<int>{2, 4}, std::vector<int>{},
         std::vector<std::string>{"float", "float"}, std::vector<int>{}, -1, -1,
@@ -508,11 +510,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSrotg_v2",
        {std::vector<int>{1, 2, 3, 4}, std::vector<int>{},
         std::vector<std::string>{"float", "float", "float", "float"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::rotg"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::rotg"}},
       {"cublasDrotg_v2",
        {std::vector<int>{1, 2, 3, 4}, std::vector<int>{},
         std::vector<std::string>{"double", "double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::rotg"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::rotg"}},
       {"cublasSrotm_v2",
        {std::vector<int>{2, 4, 6}, std::vector<int>{},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -520,15 +524,18 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDrotm_v2",
        {std::vector<int>{2, 4, 6}, std::vector<int>{},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::rotm"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::rotm"}},
       {"cublasSrotmg_v2",
        {std::vector<int>{1, 2, 3, 5}, std::vector<int>{4},
         std::vector<std::string>{"float", "float", "float", "float"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::rotmg"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::rotmg"}},
       {"cublasDrotmg_v2",
        {std::vector<int>{1, 2, 3, 5}, std::vector<int>{4},
         std::vector<std::string>{"double", "double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::rotmg"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::rotmg"}},
       {"cublasSscal_v2",
        {std::vector<int>{3}, std::vector<int>{2},
         std::vector<std::string>{"float"}, std::vector<int>{}, -1, -1, -1,
@@ -549,19 +556,23 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSgbmv_v2",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+        std::vector<int>{1}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gbmv"}},
       {"cublasDgbmv_v2",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+        std::vector<int>{1}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gbmv"}},
       {"cublasSgemv_v2",
        {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+        std::vector<int>{1}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemv"}},
       {"cublasDgemv_v2",
        {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+        std::vector<int>{1}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemv"}},
       {"cublasSger_v2",
        {std::vector<int>{4, 6, 8}, std::vector<int>{3},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -569,7 +580,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDger_v2",
        {std::vector<int>{4, 6, 8}, std::vector<int>{3},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::ger"}},
+        std::vector<int>{}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::ger"}},
       {"cublasSsbmv_v2",
        {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -577,7 +589,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDsbmv_v2",
        {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::sbmv"}},
+        std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::sbmv"}},
       {"cublasSspmv_v2",
        {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -585,7 +598,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDspmv_v2",
        {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::spmv"}},
+        std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::spmv"}},
       {"cublasSspr_v2",
        {std::vector<int>{4, 6}, std::vector<int>{3},
         std::vector<std::string>{"float", "float"}, std::vector<int>{}, 1, -1,
@@ -601,7 +615,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDspr2_v2",
        {std::vector<int>{4, 6, 8}, std::vector<int>{3},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::spr2"}},
+        std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::spr2"}},
       {"cublasSsymv_v2",
        {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -609,7 +624,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDsymv_v2",
        {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::symv"}},
+        std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::symv"}},
       {"cublasSsyr_v2",
        {std::vector<int>{4, 6}, std::vector<int>{3},
         std::vector<std::string>{"float", "float"}, std::vector<int>{}, 1, -1,
@@ -625,7 +641,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDsyr2_v2",
        {std::vector<int>{4, 6, 8}, std::vector<int>{3},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::syr2"}},
+        std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::syr2"}},
       {"cublasStbmv_v2",
        {std::vector<int>{6, 8}, std::vector<int>{},
         std::vector<std::string>{"float", "float"}, std::vector<int>{2}, 1, -1,
@@ -680,29 +697,35 @@ void MapNames::setExplicitNamespaceMap() {
         std::vector<std::string>{getClNamespace() + "half",
                                  getClNamespace() + "half",
                                  getClNamespace() + "half"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm"}},
       {"cublasSgemm_v2",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm"}},
       {"cublasDgemm_v2",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm"}},
       {"cublasHgemmStridedBatched",
        {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
         std::vector<std::string>{getClNamespace() + "half",
                                  getClNamespace() + "half",
                                  getClNamespace() + "half"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasSgemmStridedBatched",
        {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasDgemmStridedBatched",
        {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasSsymm_v2",
        {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
         std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
@@ -722,11 +745,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSsyr2k_v2",
        {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+        std::vector<int>{2}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::syr2k"}},
       {"cublasDsyr2k_v2",
        {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+        std::vector<int>{2}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::syr2k"}},
       {"cublasStrsm_v2",
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"float", "float"}, std::vector<int>{3}, 2, 1,
@@ -738,11 +763,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSsyrkx",
        {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
         std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::gemmt"}},
+        std::vector<int>{2}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemmt"}},
       {"cublasDsyrkx",
        {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
         std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::gemmt"}},
+        std::vector<int>{2}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemmt"}},
       // Needn't declare bufferB ,but need copy the data ptrB points to
       // where ptrC points.
       {"cublasStrmm_v2",
@@ -831,7 +858,8 @@ void MapNames::setExplicitNamespaceMap() {
                                  getClNamespace() + "half"},
         std::vector<std::string>{getClNamespace() + "half",
                                  getClNamespace() + "half"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasSgemmBatched",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"float", "float", "float"},
@@ -847,14 +875,16 @@ void MapNames::setExplicitNamespaceMap() {
         std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                  "std::complex<float>"},
         std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasZgemmBatched",
        {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
         std::vector<std::string>{"std::complex<double>", "std::complex<double>",
                                  "std::complex<double>"},
         std::vector<std::string>{"std::complex<double>",
                                  "std::complex<double>"},
-        std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+        std::vector<int>{1, 2}, -1, -1, -1,
+        "oneapi::mkl::blas::column_major::gemm_batch"}},
       {"cublasStrsmBatched",
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"float", "float"},
@@ -892,37 +922,27 @@ void MapNames::setExplicitNamespaceMap() {
   // CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
   BLASGemmExTypeInfoMap = {
       {"2:2:2",
-       {getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half"}},
+       {getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half"}},
       {"64:2:2",
-       {getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half"}},
+       {getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half"}},
       {"0:2:2",
-       {"float", getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
+       {"float", getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half",
         getClNamespace() + "half"}},
       {"68:2:2",
-       {"float", getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
+       {"float", getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half",
         getClNamespace() + "half"}},
       {"0:2:0",
-       {"float", "float", getClNamespace() + "half",
-        getClNamespace() + "half", "float", "float"}},
+       {"float", "float", getClNamespace() + "half", getClNamespace() + "half",
+        "float", "float"}},
       {"68:2:0",
-       {"float", "float", getClNamespace() + "half",
-        getClNamespace() + "half", "float", "float"}},
+       {"float", "float", getClNamespace() + "half", getClNamespace() + "half",
+        "float", "float"}},
       {"0:0:0", {"float", "float", "float", "float", "float", "float"}},
       {"68:0:0", {"float", "float", "float", "float", "float", "float"}},
       {"1:1:1", {"double", "double", "double", "double", "double", "double"}},
@@ -938,14 +958,12 @@ void MapNames::setExplicitNamespaceMap() {
 
   BLASTGemmExTypeInfoMap = {
       {"2:2",
-       {"float", getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
-        getClNamespace() + "half",
+       {"float", getClNamespace() + "half", getClNamespace() + "half",
+        getClNamespace() + "half", getClNamespace() + "half",
         getClNamespace() + "half"}},
       {"2:0",
-       {"float", "float", getClNamespace() + "half",
-        getClNamespace() + "half", "float", "float"}},
+       {"float", "float", getClNamespace() + "half", getClNamespace() + "half",
+        "float", "float"}},
       {"0:0", {"float", "float", "float", "float", "float", "float"}},
       {"4:4",
        {"std::complex<float>", "std::complex<float>",
@@ -997,21 +1015,25 @@ void MapNames::setExplicitNamespaceMap() {
 }
 
 // Supported vector types
-const MapNames::SetTy MapNames::SupportedVectorTypes{ SUPPORTEDVECTORTYPENAMES };
+const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
 
 const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
-  {"char1", 1},      {"char2", 2},       {"char3", 4},       {"char4", 4},
-  {"uchar1", 1},     {"uchar2", 2},      {"uchar3", 4},      {"uchar4", 4},
-  {"short1", 2},     {"short2", 4},      {"short3", 8},      {"short4", 8},
-  {"ushort1", 2},    {"ushort2", 4},     {"ushort3", 8},     {"ushort4", 8},
-  {"int1", 4},       {"int2", 8},        {"int3", 16},       {"int4", 16},
-  {"uint1", 4},      {"uint2", 8},       {"uint3", 16},      {"uint4", 16},
-  {"long1", 8},      {"long2", 16},      {"long3", 32},      {"long4", 32},
-  {"ulong1", 8},     {"ulong2", 16},     {"ulong3", 32},     {"ulong4", 32},
-  {"longlong1", 8},  {"longlong2", 16},  {"longlong3", 32},  {"longlong4", 32},
-  {"ulonglong1", 8}, {"ulonglong2", 16}, {"ulonglong3", 32}, {"ulonglong4", 32},
-  {"float1", 4},     {"float2", 8},      {"float3", 16},     {"float4", 16},
-  {"double1", 8},    {"double2", 16},    {"double3", 32},    {"double4", 32}};
+    {"char1", 1},       {"char2", 2},       {"char3", 4},
+    {"char4", 4},       {"uchar1", 1},      {"uchar2", 2},
+    {"uchar3", 4},      {"uchar4", 4},      {"short1", 2},
+    {"short2", 4},      {"short3", 8},      {"short4", 8},
+    {"ushort1", 2},     {"ushort2", 4},     {"ushort3", 8},
+    {"ushort4", 8},     {"int1", 4},        {"int2", 8},
+    {"int3", 16},       {"int4", 16},       {"uint1", 4},
+    {"uint2", 8},       {"uint3", 16},      {"uint4", 16},
+    {"long1", 8},       {"long2", 16},      {"long3", 32},
+    {"long4", 32},      {"ulong1", 8},      {"ulong2", 16},
+    {"ulong3", 32},     {"ulong4", 32},     {"longlong1", 8},
+    {"longlong2", 16},  {"longlong3", 32},  {"longlong4", 32},
+    {"ulonglong1", 8},  {"ulonglong2", 16}, {"ulonglong3", 32},
+    {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
+    {"float3", 16},     {"float4", 16},     {"double1", 8},
+    {"double2", 16},    {"double3", 32},    {"double4", 32}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::Stream, 208},
@@ -1069,7 +1091,8 @@ const MapNames::MapTy MapNames::BLASEnumsMap{
 const MapNames::MapTy MapNames::SPBLASEnumsMap{
     {"CUSPARSE_OPERATION_NON_TRANSPOSE", "oneapi::mkl::transpose::nontrans"},
     {"CUSPARSE_OPERATION_TRANSPOSE", "oneapi::mkl::transpose::trans"},
-    {"CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE", "oneapi::mkl::transpose::conjtrans"},
+    {"CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE",
+     "oneapi::mkl::transpose::conjtrans"},
     {"CUSPARSE_FILL_MODE_LOWER", "oneapi::mkl::uplo::lower"},
     {"CUSPARSE_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
     {"CUSPARSE_DIAG_TYPE_NON_UNIT", "oneapi::mkl::diag::nonunit"},
@@ -1244,7 +1267,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+          std::vector<int>{1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gbmv"}},
         {"cublasZgbmv_v2",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<double>",
@@ -1252,14 +1276,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+          std::vector<int>{1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gbmv"}},
         {"cublasCgemv_v2",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+          std::vector<int>{1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemv"}},
         {"cublasZgemv_v2",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<double>",
@@ -1267,7 +1293,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+          std::vector<int>{1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemv"}},
         {"cublasCgeru_v2",
          {std::vector<int>{4, 6, 8}, std::vector<int>{3},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -1372,7 +1399,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hemv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hemv"}},
         {"cublasZhemv_v2",
          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
           std::vector<std::string>{"std::complex<double>",
@@ -1380,14 +1408,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hemv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hemv"}},
         {"cublasChbmv_v2",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hbmv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hbmv"}},
         {"cublasZhbmv_v2",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<double>",
@@ -1395,14 +1425,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hbmv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hbmv"}},
         {"cublasChpmv_v2",
          {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hpmv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hpmv"}},
         {"cublasZhpmv_v2",
          {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
           std::vector<std::string>{"std::complex<double>",
@@ -1410,7 +1442,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1, "oneapi::mkl::blas::column_major::hpmv"}},
+          std::vector<int>{}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::hpmv"}},
         {"cublasCher_v2",
          {std::vector<int>{4, 6}, std::vector<int>{3},
           std::vector<std::string>{"std::complex<float>",
@@ -1468,7 +1501,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasZgemm_v2",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<double>",
@@ -1476,14 +1510,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasCgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasZgemm3m",
          {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
           std::vector<std::string>{"std::complex<double>",
@@ -1491,14 +1527,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasCgemmStridedBatched",
          {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm_batch"}},
         {"cublasZgemmStridedBatched",
          {std::vector<int>{7, 10, 14}, std::vector<int>{6, 13},
           std::vector<std::string>{"std::complex<double>",
@@ -1506,14 +1544,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1, 2}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm_batch"}},
         {"cublasCsymm_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 2, 1, -1, "oneapi::mkl::blas::column_major::symm"}},
+          std::vector<int>{}, 2, 1, -1,
+          "oneapi::mkl::blas::column_major::symm"}},
         {"cublasZsymm_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
@@ -1521,28 +1561,32 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 2, 1, -1, "oneapi::mkl::blas::column_major::symm"}},
+          std::vector<int>{}, 2, 1, -1,
+          "oneapi::mkl::blas::column_major::symm"}},
         {"cublasCsyrk_v2",
          {std::vector<int>{6, 9}, std::vector<int>{5, 8},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syrk"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::syrk"}},
         {"cublasZsyrk_v2",
          {std::vector<int>{6, 9}, std::vector<int>{5, 8},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syrk"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::syrk"}},
         {"cublasCsyr2k_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::syr2k"}},
         {"cublasZsyr2k_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
@@ -1550,7 +1594,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::syr2k"}},
         {"cublasCtrsm_v2",
          {std::vector<int>{8, 10}, std::vector<int>{7},
           std::vector<std::string>{"std::complex<float>",
@@ -1569,7 +1614,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 2, 1, -1, "oneapi::mkl::blas::column_major::hemm"}},
+          std::vector<int>{}, 2, 1, -1,
+          "oneapi::mkl::blas::column_major::hemm"}},
         {"cublasZhemm_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
@@ -1577,7 +1623,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 2, 1, -1, "oneapi::mkl::blas::column_major::hemm"}},
+          std::vector<int>{}, 2, 1, -1,
+          "oneapi::mkl::blas::column_major::hemm"}},
         {"cublasCherk_v2",
          {std::vector<int>{6, 9}, std::vector<int>{5, 8},
           std::vector<std::string>{"std::complex<float>",
@@ -1595,14 +1642,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>", "float"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::her2k"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::her2k"}},
         {"cublasZher2k_v2",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>",
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>", "double"},
-          std::vector<int>{2}, 1, -1, -1, "oneapi::mkl::blas::column_major::her2k"}},
+          std::vector<int>{2}, 1, -1, -1,
+          "oneapi::mkl::blas::column_major::her2k"}},
         // Needn't declare bufferB ,but need copy the data ptrB points to
         // where ptrC points.
         {"cublasCtrmm_v2",
@@ -1735,11 +1784,13 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
         {"cublasSscal",
          {std::vector<int>{2}, std::vector<int>{},
           std::vector<std::string>{"float"}, std::vector<std::string>{},
-          std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::scal"}},
+          std::vector<int>{}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::scal"}},
         {"cublasDscal",
          {std::vector<int>{2}, std::vector<int>{},
           std::vector<std::string>{"double"}, std::vector<std::string>{},
-          std::vector<int>{}, -1, -1, -1, "oneapi::mkl::blas::column_major::scal"}},
+          std::vector<int>{}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::scal"}},
         {"cublasSswap",
          {std::vector<int>{1, 3}, std::vector<int>{},
           std::vector<std::string>{"float", "float"},
@@ -2114,7 +2165,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{0}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+          std::vector<int>{0}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gbmv"}},
         {"cublasZgbmv",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
@@ -2122,14 +2174,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{0}, -1, -1, -1, "oneapi::mkl::blas::column_major::gbmv"}},
+          std::vector<int>{0}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gbmv"}},
         {"cublasCgemv",
          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{0}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+          std::vector<int>{0}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemv"}},
         {"cublasZgemv",
          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
           std::vector<std::string>{"std::complex<double>",
@@ -2137,7 +2191,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{0}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemv"}},
+          std::vector<int>{0}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemv"}},
         {"cublasCgeru",
          {std::vector<int>{3, 5, 7}, std::vector<int>{2},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -2242,7 +2297,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hemv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hemv"}},
         {"cublasZhemv",
          {std::vector<int>{3, 5, 8}, std::vector<int>{2, 7},
           std::vector<std::string>{"std::complex<double>",
@@ -2250,14 +2306,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hemv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hemv"}},
         {"cublasChbmv",
          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hbmv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hbmv"}},
         {"cublasZhbmv",
          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
           std::vector<std::string>{"std::complex<double>",
@@ -2265,14 +2323,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hbmv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hbmv"}},
         {"cublasChpmv",
          {std::vector<int>{3, 4, 7}, std::vector<int>{2, 6},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hpmv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hpmv"}},
         {"cublasZhpmv",
          {std::vector<int>{3, 4, 7}, std::vector<int>{2, 6},
           std::vector<std::string>{"std::complex<double>",
@@ -2280,7 +2340,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 0, -1, -1, "oneapi::mkl::blas::column_major::hpmv"}},
+          std::vector<int>{}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::hpmv"}},
         {"cublasCher",
          {std::vector<int>{3, 5}, std::vector<int>{},
           std::vector<std::string>{"std::complex<float>",
@@ -2338,7 +2399,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{0, 1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{0, 1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasZgemm",
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"std::complex<double>",
@@ -2346,21 +2408,24 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{0, 1}, -1, -1, -1, "oneapi::mkl::blas::column_major::gemm"}},
+          std::vector<int>{0, 1}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::gemm"}},
         {"cublasCsyrk",
          {std::vector<int>{5, 8}, std::vector<int>{4, 7},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1}, 0, -1, -1, "oneapi::mkl::blas::column_major::syrk"}},
+          std::vector<int>{1}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::syrk"}},
         {"cublasZsyrk",
          {std::vector<int>{5, 8}, std::vector<int>{4, 7},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1}, 0, -1, -1, "oneapi::mkl::blas::column_major::syrk"}},
+          std::vector<int>{1}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::syrk"}},
         {"cublasCherk",
          {std::vector<int>{5, 8}, std::vector<int>{},
           std::vector<std::string>{"std::complex<float>",
@@ -2379,7 +2444,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{1}, 0, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+          std::vector<int>{1}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::syr2k"}},
         {"cublasZsyr2k",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<double>",
@@ -2387,7 +2453,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{1}, 0, -1, -1, "oneapi::mkl::blas::column_major::syr2k"}},
+          std::vector<int>{1}, 0, -1, -1,
+          "oneapi::mkl::blas::column_major::syr2k"}},
         {"cublasCher2k",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
@@ -2407,7 +2474,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 1, 0, -1, "oneapi::mkl::blas::column_major::symm"}},
+          std::vector<int>{}, 1, 0, -1,
+          "oneapi::mkl::blas::column_major::symm"}},
         {"cublasZsymm",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<double>",
@@ -2415,14 +2483,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 1, 0, -1, "oneapi::mkl::blas::column_major::symm"}},
+          std::vector<int>{}, 1, 0, -1,
+          "oneapi::mkl::blas::column_major::symm"}},
         {"cublasChemm",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<float>", "std::complex<float>",
                                    "std::complex<float>"},
           std::vector<std::string>{"std::complex<float>",
                                    "std::complex<float>"},
-          std::vector<int>{}, 1, 0, -1, "oneapi::mkl::blas::column_major::hemm"}},
+          std::vector<int>{}, 1, 0, -1,
+          "oneapi::mkl::blas::column_major::hemm"}},
         {"cublasZhemm",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
           std::vector<std::string>{"std::complex<double>",
@@ -2430,7 +2500,8 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>",
                                    "std::complex<double>"},
-          std::vector<int>{}, 1, 0, -1, "oneapi::mkl::blas::column_major::hemm"}},
+          std::vector<int>{}, 1, 0, -1,
+          "oneapi::mkl::blas::column_major::hemm"}},
         {"cublasCtrsm",
          {std::vector<int>{7, 9}, std::vector<int>{6},
           std::vector<std::string>{"std::complex<float>",
@@ -2513,11 +2584,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCpotrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::potrf_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::potrf_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZpotrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::potrf_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::potrf_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSgetrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
@@ -2529,14 +2602,17 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCgetrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZgetrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSgeqrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
-             true, std::vector<int>{3, 5}, "oneapi::mkl::lapack::geqrf_scratchpad_size<float>")},
+             true, std::vector<int>{3, 5},
+             "oneapi::mkl::lapack::geqrf_scratchpad_size<float>")},
         {"cusolverDnDgeqrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
@@ -2544,11 +2620,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCgeqrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZgeqrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSormqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
@@ -2560,11 +2638,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCunmqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
-             "oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZunmqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
-             "oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSorgqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{4, 6, 7},
@@ -2576,11 +2656,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCungqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{4, 6, 7},
-             "oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZungqr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{4, 6, 7},
-             "oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSsytrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6, 7, 8},
@@ -2592,11 +2674,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnChetrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6, 7, 8},
-             "oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZhetrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6, 7, 8},
-             "oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSsytrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
              true, std::vector<int>{2, 4}, std::vector<int>{1},
@@ -2617,46 +2701,46 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{1}, std::vector<bool>{false},
              std::vector<std::string>{"oneapi::mkl::uplo"},
              std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZsytrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
              true, std::vector<int>{2, 4}, std::vector<int>{1},
              std::vector<int>{1}, std::vector<bool>{false},
              std::vector<std::string>{"oneapi::mkl::uplo"},
              std::vector<std::string>{"uplo_ct_mkl_upper_lower"},
-             "oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
-             true, std::vector<int>{3},
-             std::vector<int>{3},
+             true, std::vector<int>{3}, std::vector<int>{3},
              std::vector<int>{3}, std::vector<bool>{false},
              std::vector<std::string>{"std::int64_t"},
              std::vector<std::string>{"lda_ct"},
              "oneapi::mkl::lapack::gebrd_scratchpad_size<float>")},
         {"cusolverDnDgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
-             true, std::vector<int>{3},
-             std::vector<int>{3},
+             true, std::vector<int>{3}, std::vector<int>{3},
              std::vector<int>{3}, std::vector<bool>{false},
              std::vector<std::string>{"std::int64_t"},
              std::vector<std::string>{"lda_ct"},
              "oneapi::mkl::lapack::gebrd_scratchpad_size<double>")},
         {"cusolverDnCgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
-             true, std::vector<int>{3},
-             std::vector<int>{3},
+             true, std::vector<int>{3}, std::vector<int>{3},
              std::vector<int>{3}, std::vector<bool>{false},
              std::vector<std::string>{"std::int64_t"},
              std::vector<std::string>{"lda_ct"},
-             "oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndMissed(
-             true, std::vector<int>{3},
-             std::vector<int>{3},
+             true, std::vector<int>{3}, std::vector<int>{3},
              std::vector<int>{3}, std::vector<bool>{false},
              std::vector<std::string>{"std::int64_t"},
              std::vector<std::string>{"lda_ct"},
-             "oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSorgbr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
              true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
@@ -2671,12 +2755,14 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
              true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
              std::vector<std::string>{"oneapi::mkl::generate"},
-             "oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZungbr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnRedundantAndCast(
              true, std::vector<int>{5, 7, 8}, std::vector<int>{1},
              std::vector<std::string>{"oneapi::mkl::generate"},
-             "oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSormtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
@@ -2688,11 +2774,13 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCunmtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
-             "oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZunmtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{6, 8, 9, 11},
-             "oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSorgtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6},
@@ -2704,17 +2792,20 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCungtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6},
-             "oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZungtr_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5, 6},
-             "oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSgesvd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
              true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
              std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
              std::vector<int>{1, 1}, std::vector<bool>{false, false},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
              "oneapi::mkl::lapack::gesvd_scratchpad_size<float>")},
         {"cusolverDnDgesvd_bufferSize",
@@ -2722,7 +2813,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
              std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
              std::vector<int>{1, 1}, std::vector<bool>{false, false},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
              "oneapi::mkl::lapack::gesvd_scratchpad_size<double>")},
         {"cusolverDnCgesvd_bufferSize",
@@ -2730,17 +2822,21 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
              std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
              std::vector<int>{1, 1}, std::vector<bool>{false, false},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZgesvd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnCopyRedundantAndMissed(
              true, std::vector<int>{3}, std::vector<int>{1, 1, 2},
              std::vector<int>{3, 3, 3}, std::vector<int>{1, 2},
              std::vector<int>{1, 1}, std::vector<bool>{false, false},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt"},
-             "oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSpotri_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
@@ -2752,28 +2848,33 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnCpotri_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>")},
+             "oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>"
+             ">")},
         {"cusolverDnZpotri_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateReturnAndRedundant(
              true, std::vector<int>{3, 5},
-             "oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>")},
+             "oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>"
+             ">")},
         {"cusolverDnSpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5}, std::vector<std::string>{"float", "float"},
              std::vector<int>{7}, "oneapi::mkl::lapack::potrf")},
         {"cusolverDnDpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
-             std::vector<int>{3, 5}, std::vector<std::string>{"double", "double"},
-             std::vector<int>{7}, "oneapi::mkl::lapack::potrf")},
+             std::vector<int>{3, 5},
+             std::vector<std::string>{"double", "double"}, std::vector<int>{7},
+             "oneapi::mkl::lapack::potrf")},
         {"cusolverDnCpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5},
-             std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+             std::vector<std::string>{"std::complex<float>",
+                                      "std::complex<float>"},
              std::vector<int>{7}, "oneapi::mkl::lapack::potrf")},
         {"cusolverDnZpotrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5},
-             std::vector<std::string>{"std::complex<double>", "std::complex<double>"},
+             std::vector<std::string>{"std::complex<double>",
+                                      "std::complex<double>"},
              std::vector<int>{7}, "oneapi::mkl::lapack::potrf")},
         {"cusolverDnSpotrs",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndWS(
@@ -2900,30 +3001,26 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6},
              std::vector<std::string>{"float", "float", "float", "int"},
-             std::vector<int>{8},
-             "oneapi::mkl::lapack::geqrf")},
+             std::vector<int>{8}, "oneapi::mkl::lapack::geqrf")},
         {"cusolverDnDgeqrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6},
              std::vector<std::string>{"double", "double", "double", "int"},
-             std::vector<int>{8},
-             "oneapi::mkl::lapack::geqrf")},
+             std::vector<int>{8}, "oneapi::mkl::lapack::geqrf")},
         {"cusolverDnCgeqrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
                                       "std::complex<float>", "int"},
-             std::vector<int>{8},
-             "oneapi::mkl::lapack::geqrf")},
+             std::vector<int>{8}, "oneapi::mkl::lapack::geqrf")},
         {"cusolverDnZgeqrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
                                       "std::complex<double>", "int"},
-             std::vector<int>{8},
-             "oneapi::mkl::lapack::geqrf")},
+             std::vector<int>{8}, "oneapi::mkl::lapack::geqrf")},
         {"cusolverDnSormqr",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{6, 8, 9, 11},
@@ -2957,30 +3054,26 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{4, 6, 7},
              std::vector<std::string>{"float", "float", "float"},
-             std::vector<int>{9},
-             "oneapi::mkl::lapack::orgqr")},
+             std::vector<int>{9}, "oneapi::mkl::lapack::orgqr")},
         {"cusolverDnDorgqr",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{4, 6, 7},
              std::vector<std::string>{"double", "double", "double"},
-             std::vector<int>{9},
-             "oneapi::mkl::lapack::orgqr")},
+             std::vector<int>{9}, "oneapi::mkl::lapack::orgqr")},
         {"cusolverDnCungqr",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<float>",
                                       "std::complex<float>",
                                       "std::complex<float>"},
-             std::vector<int>{9},
-             "oneapi::mkl::lapack::ungqr")},
+             std::vector<int>{9}, "oneapi::mkl::lapack::ungqr")},
         {"cusolverDnZungqr",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{4, 6, 7},
              std::vector<std::string>{"std::complex<double>",
                                       "std::complex<double>",
                                       "std::complex<double>"},
-             std::vector<int>{9},
-             "oneapi::mkl::lapack::ungqr")},
+             std::vector<int>{9}, "oneapi::mkl::lapack::ungqr")},
         {"cusolverDnSsytrf",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6},
@@ -3035,13 +3128,15 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{5, 7, 8},
              std::vector<std::string>{"float", "float", "float"},
              std::vector<int>{10}, std::vector<int>{1},
-             std::vector<std::string>{"oneapi::mkl::generate"}, "oneapi::mkl::lapack::orgbr")},
+             std::vector<std::string>{"oneapi::mkl::generate"},
+             "oneapi::mkl::lapack::orgbr")},
         {"cusolverDnDorgbr",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8},
              std::vector<std::string>{"double", "double", "double"},
              std::vector<int>{10}, std::vector<int>{1},
-             std::vector<std::string>{"oneapi::mkl::generate"}, "oneapi::mkl::lapack::orgbr")},
+             std::vector<std::string>{"oneapi::mkl::generate"},
+             "oneapi::mkl::lapack::orgbr")},
         {"cusolverDnCungbr",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8},
@@ -3049,7 +3144,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                                       "std::complex<float>",
                                       "std::complex<float>"},
              std::vector<int>{10}, std::vector<int>{1},
-             std::vector<std::string>{"oneapi::mkl::generate"}, "oneapi::mkl::lapack::ungbr")},
+             std::vector<std::string>{"oneapi::mkl::generate"},
+             "oneapi::mkl::lapack::ungbr")},
         {"cusolverDnZungbr",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8},
@@ -3057,33 +3153,34 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                                       "std::complex<double>",
                                       "std::complex<double>"},
              std::vector<int>{10}, std::vector<int>{1},
-             std::vector<std::string>{"oneapi::mkl::generate"}, "oneapi::mkl::lapack::ungbr")},
+             std::vector<std::string>{"oneapi::mkl::generate"},
+             "oneapi::mkl::lapack::ungbr")},
         {"cusolverDnSsytrd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"float", "float", "float", "float",
-                                      "float"}, std::vector<int>{10},
-             "oneapi::mkl::lapack::sytrd")},
+                                      "float"},
+             std::vector<int>{10}, "oneapi::mkl::lapack::sytrd")},
         {"cusolverDnDsytrd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"double", "double", "double", "double",
-                                      "double"}, std::vector<int>{10},
-             "oneapi::mkl::lapack::sytrd")},
+                                      "double"},
+             std::vector<int>{10}, "oneapi::mkl::lapack::sytrd")},
         {"cusolverDnChetrd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"std::complex<float>", "float", "float",
                                       "std::complex<float>",
-                                      "std::complex<float>"}, std::vector<int>{10},
-             "oneapi::mkl::lapack::hetrd")},
+                                      "std::complex<float>"},
+             std::vector<int>{10}, "oneapi::mkl::lapack::hetrd")},
         {"cusolverDnZhetrd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{3, 5, 6, 7, 8},
              std::vector<std::string>{"std::complex<double>", "double",
                                       "double", "std::complex<double>",
-                                      "std::complex<double>"}, std::vector<int>{10},
-             "oneapi::mkl::lapack::hetrd")},
+                                      "std::complex<double>"},
+             std::vector<int>{10}, "oneapi::mkl::lapack::hetrd")},
         {"cusolverDnSormtr",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndRedundant(
              std::vector<int>{6, 8, 9, 11},
@@ -3138,7 +3235,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"float", "float", "float", "float",
                                       "float"},
              std::vector<int>{14, 15}, std::vector<int>{1, 2},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              "oneapi::mkl::lapack::gesvd")},
         {"cusolverDnDgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
@@ -3146,26 +3244,28 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"double", "double", "double", "double",
                                       "double"},
              std::vector<int>{14, 15}, std::vector<int>{1, 2},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              "oneapi::mkl::lapack::gesvd")},
         {"cusolverDnCgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8, 10, 12},
              std::vector<std::string>{
                  "std::complex<float>", "float", "std::complex<float>",
-                 "std::complex<float>", "std::complex<float>"}, std::vector<int>{14, 15},
-             std::vector<int>{1, 2},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+                 "std::complex<float>", "std::complex<float>"},
+             std::vector<int>{14, 15}, std::vector<int>{1, 2},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              "oneapi::mkl::lapack::gesvd")},
         {"cusolverDnZgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8, 10, 12},
-             std::vector<std::string>{"std::complex<double>", "double",
-                                      "std::complex<double>",
-                                      "std::complex<double>",
-                                      "std::complex<double>"},std::vector<int>{14, 15},
-             std::vector<int>{1, 2},
-             std::vector<std::string>{"oneapi::mkl::jobsvd", "oneapi::mkl::jobsvd"},
+             std::vector<std::string>{
+                 "std::complex<double>", "double", "std::complex<double>",
+                 "std::complex<double>", "std::complex<double>"},
+             std::vector<int>{14, 15}, std::vector<int>{1, 2},
+             std::vector<std::string>{"oneapi::mkl::jobsvd",
+                                      "oneapi::mkl::jobsvd"},
              "oneapi::mkl::lapack::gesvd")},
     };
 
@@ -3195,17 +3295,22 @@ const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
 
 const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
     MapNames::RandomGenerateFuncReplInfoMap{
-        {"curandGenerate", {"uint32_t", "oneapi::mkl::rng::uniform_bits", "uint32_t"}},
+        {"curandGenerate",
+         {"uint32_t", "oneapi::mkl::rng::uniform_bits", "uint32_t"}},
         {"curandGenerateLongLong",
          {"uint64_t", "oneapi::mkl::rng::uniform_bits", "uint64_t"}},
-        {"curandGenerateLogNormal", {"float", "oneapi::mkl::rng::lognormal", "float"}},
+        {"curandGenerateLogNormal",
+         {"float", "oneapi::mkl::rng::lognormal", "float"}},
         {"curandGenerateLogNormalDouble",
          {"double", "oneapi::mkl::rng::lognormal", "double"}},
-        {"curandGenerateNormal", {"float", "oneapi::mkl::rng::gaussian", "float"}},
+        {"curandGenerateNormal",
+         {"float", "oneapi::mkl::rng::gaussian", "float"}},
         {"curandGenerateNormalDouble",
          {"double", "oneapi::mkl::rng::gaussian", "double"}},
-        {"curandGeneratePoisson", {"int32_t", "oneapi::mkl::rng::poisson", "int32_t"}},
-        {"curandGenerateUniform", {"float", "oneapi::mkl::rng::uniform", "float"}},
+        {"curandGeneratePoisson",
+         {"int32_t", "oneapi::mkl::rng::poisson", "int32_t"}},
+        {"curandGenerateUniform",
+         {"float", "oneapi::mkl::rng::uniform", "float"}},
         {"curandGenerateUniformDouble",
          {"double", "oneapi::mkl::rng::uniform", "double"}},
     };
@@ -3266,7 +3371,7 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"Width", "x"},
     {"Height", "y"},
     {"flags", "coordinate_normalization_mode"},
-  };
+};
 
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
@@ -3292,44 +3397,43 @@ const MapNames::MapTy MapNames::MemberNamesMap{
     // ...
 };
 
-const MapNames::SetTy MapNames::HostAllocSet {
-    "cudaHostAllocDefault",
-    "cudaHostAllocMapped",
-    "cudaHostAllocPortable",
-    "cudaHostAllocWriteCombined",
-    "CU_MEMHOSTALLOC_PORTABLE",
-    "CU_MEMHOSTALLOC_DEVICEMAP",
-    "CU_MEMHOSTALLOC_WRITECOMBINED"
-};
+const MapNames::SetTy MapNames::HostAllocSet{
+    "cudaHostAllocDefault",         "cudaHostAllocMapped",
+    "cudaHostAllocPortable",        "cudaHostAllocWriteCombined",
+    "CU_MEMHOSTALLOC_PORTABLE",     "CU_MEMHOSTALLOC_DEVICEMAP",
+    "CU_MEMHOSTALLOC_WRITECOMBINED"};
 
 // Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };
 
-std::map<
-    std::pair<clang::dpct::HelperFileEnum /*FileID*/, std::string /*Feature Name*/>,
+std::map<std::pair<clang::dpct::HelperFileEnum /*FileID*/,
+                   std::string /*Feature Name*/>,
          clang::dpct::HelperFunc>
     MapNames::HelperNameContentMap{
 #define DPCT_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
-    {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
+  {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
 #define DPCT_DEPENDENCY(...) {__VA_ARGS__},
-#define DPCT_CONTENT_END }},
+#define DPCT_CONTENT_END                                                       \
+  }                                                                            \
+  }                                                                            \
+  ,
 #include "clang/DPCT/atomic.inc"
 #include "clang/DPCT/blas_utils.inc"
 #include "clang/DPCT/device.inc"
 #include "clang/DPCT/dpct.inc"
-#include "clang/DPCT/dpl_utils.inc"
-#include "clang/DPCT/image.inc"
-#include "clang/DPCT/kernel.inc"
-#include "clang/DPCT/memory.inc"
-#include "clang/DPCT/util.inc"
 #include "clang/DPCT/dpl_extras/algorithm.inc"
 #include "clang/DPCT/dpl_extras/functional.inc"
 #include "clang/DPCT/dpl_extras/iterators.inc"
 #include "clang/DPCT/dpl_extras/memory.inc"
 #include "clang/DPCT/dpl_extras/numeric.inc"
 #include "clang/DPCT/dpl_extras/vector.inc"
+#include "clang/DPCT/dpl_utils.inc"
+#include "clang/DPCT/image.inc"
+#include "clang/DPCT/kernel.inc"
+#include "clang/DPCT/memory.inc"
+#include "clang/DPCT/util.inc"
 #undef DPCT_CONTENT_BEGIN
 #undef DPCT_DEPENDENCY
 #undef DPCT_CONTENT_END
@@ -3351,8 +3455,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
         {clang::dpct::HelperFileEnum::DplExtrasMemory, "memory.h"},
         {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"}
-    };
+        {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"}};
 
 std::unordered_map<std::string, clang::dpct::HelperFileEnum>
     MapNames::HelperFileIDMap{
@@ -3394,7 +3497,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasVector, "__DPCT_VECTOR_H__"}};
 
 const std::unordered_map<std::string, clang::dpct::HelperFeatureIDTy>
-    MapNames::TextureAPIHelperFeaturesMap {
+    MapNames::TextureAPIHelperFeaturesMap{
         {"cudaCreateChannelDesc",
          {clang::dpct::HelperFileEnum::Image, "image_channel"}},
         {"cudaCreateChannelDescHalf",
@@ -3424,64 +3527,64 @@ const std::unordered_map<std::string, clang::dpct::HelperFeatureIDTy>
         {"cuTexRefSetFilterMode",
          {clang::dpct::HelperFileEnum::Image, "sampling_info"}},
         {"cuTexRefSetFormat",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}}
-};
+         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}}};
 
 const std::unordered_map<clang::dpct::HelperFileEnum,
                          std::vector<clang::dpct::HelperFileEnum>>
-    MapNames::HelperFileDependencyMap{
-        {clang::dpct::HelperFileEnum::BlasUtils,
-         {clang::dpct::HelperFileEnum::Memory, clang::dpct::HelperFileEnum::Util}},
-        {clang::dpct::HelperFileEnum::Image,
-         {clang::dpct::HelperFileEnum::Memory, clang::dpct::HelperFileEnum::Util}},
-        {clang::dpct::HelperFileEnum::Memory, {clang::dpct::HelperFileEnum::Device}}};
-
+    MapNames::HelperFileDependencyMap{{clang::dpct::HelperFileEnum::BlasUtils,
+                                       {clang::dpct::HelperFileEnum::Memory,
+                                        clang::dpct::HelperFileEnum::Util}},
+                                      {clang::dpct::HelperFileEnum::Image,
+                                       {clang::dpct::HelperFileEnum::Memory,
+                                        clang::dpct::HelperFileEnum::Util}},
+                                      {clang::dpct::HelperFileEnum::Memory,
+                                       {clang::dpct::HelperFileEnum::Device}}};
 
 const std::string MapNames::DpctAllContentStr =
 #include "clang/DPCT/dpct.all.inc"
-;
+    ;
 const std::string MapNames::AtomicAllContentStr =
 #include "clang/DPCT/atomic.all.inc"
-;
+    ;
 const std::string MapNames::BlasUtilsAllContentStr =
 #include "clang/DPCT/blas_utils.all.inc"
-;
+    ;
 const std::string MapNames::DeviceAllContentStr =
 #include "clang/DPCT/device.all.inc"
-;
+    ;
 const std::string MapNames::DplUtilsAllContentStr =
 #include "clang/DPCT/dpl_utils.all.inc"
-;
+    ;
 const std::string MapNames::ImageAllContentStr =
 #include "clang/DPCT/image.all.inc"
-;
+    ;
 const std::string MapNames::KernelAllContentStr =
 #include "clang/DPCT/kernel.all.inc"
-;
+    ;
 const std::string MapNames::MemoryAllContentStr =
 #include "clang/DPCT/memory.all.inc"
-;
+    ;
 const std::string MapNames::UtilAllContentStr =
 #include "clang/DPCT/util.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasFunctionalAllContentStr =
 #include "clang/DPCT/dpl_extras/functional.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasIteratorsAllContentStr =
 #include "clang/DPCT/dpl_extras/iterators.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasMemoryAllContentStr =
 #include "clang/DPCT/dpl_extras/memory.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasNumericAllContentStr =
 #include "clang/DPCT/dpl_extras/numeric.all.inc"
-;
+    ;
 const std::string MapNames::DplExtrasVectorAllContentStr =
 #include "clang/DPCT/dpl_extras/vector.all.inc"
-;
+    ;
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
@@ -3490,9 +3593,9 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
-#include "APINames_cuSPARSE.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
+#include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #undef ENTRY
@@ -3552,11 +3655,14 @@ const MapNames::MapTy MemoryDataTypeRule::MemberNames{
     {"Height", "y"},
     {"Format", "channel_type"},
     {"NumChannels", "channel_num"},
-    {"dstPitch", "to_data"},    {"srcPitch", "from_data"},
-    {"dstDevice", "to_data"},   {"dstHost", "to_data"},
-    {"srcDevice", "from_data"}, {"srcHost", "from_data"},
-    {"dstHeight", "to_data"},   {"srcHeight", "from_data"}
-};
+    {"dstPitch", "to_data"},
+    {"srcPitch", "from_data"},
+    {"dstDevice", "to_data"},
+    {"dstHost", "to_data"},
+    {"srcDevice", "from_data"},
+    {"srcHost", "from_data"},
+    {"dstHeight", "to_data"},
+    {"srcHeight", "from_data"}};
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberToSetter{
     {"dstPitch", "set_pitch"},   {"dstHeight", "set_y"},
@@ -3573,8 +3679,5 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
 
 const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault",
-    "cudaStreamNonBlocking",
-    "cudaStreamLegacy",
-    "cudaStreamPerThread"
-};
+    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
+    "cudaStreamPerThread"};

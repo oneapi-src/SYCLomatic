@@ -32,7 +32,7 @@ bool checkDuplicated(const std::string &FileAndLine,
   }
   return false;
 }
-}
+} // namespace DiagnosticsUtils
 
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;

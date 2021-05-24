@@ -12,14 +12,14 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
+#include "CustomHelperFiles.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "Utility.h"
-#include "ValidateArguments.h"
 #include "LibraryAPIMigration.h"
 #include "SaveNewFiles.h"
-#include "CustomHelperFiles.h"
+#include "Utility.h"
+#include "ValidateArguments.h"
 #include <bitset>
 #include <unordered_set>
 #include <vector>
@@ -28,8 +28,8 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/AST/ParentMapContext.h"
 #include "clang/AST/Mangle.h"
+#include "clang/AST/ParentMapContext.h"
 
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -120,10 +120,12 @@ struct EventSyncTypeInfo {
 };
 
 struct TimeStubTypeInfo {
-  TimeStubTypeInfo(unsigned int Length, std::string StrWithSB, std::string StrWithoutSB)
+  TimeStubTypeInfo(unsigned int Length, std::string StrWithSB,
+                   std::string StrWithoutSB)
       : Length(Length), StrWithSB(StrWithSB), StrWithoutSB(StrWithoutSB) {}
 
-  void buildInfo(std::string FilePath, unsigned int Offset, bool isReplTxtWithSB);
+  void buildInfo(std::string FilePath, unsigned int Offset,
+                 bool isReplTxtWithSB);
 
   unsigned int Length;
   std::string StrWithSB;
@@ -218,7 +220,7 @@ struct BuiltinVarInfo {
 
 struct CGBlockInfo {
   CGBlockInfo(unsigned int Len, std::vector<std::string> Vars,
-                 std::shared_ptr<DeviceFunctionInfo> DFI)
+              std::shared_ptr<DeviceFunctionInfo> DFI)
       : Len(Len), Vars(Vars), DFI(DFI) {}
   void buildInfo(std::string FilePath, unsigned int Offset, unsigned int Dim);
 
@@ -238,7 +240,7 @@ struct FormatInfo {
   bool IsFirstArg = false;
 };
 
-struct HostDeviceFuncInfo{
+struct HostDeviceFuncInfo {
   unsigned FuncStartOffset;
   unsigned FuncEndOffset;
   unsigned FuncNameOffset;
@@ -286,7 +288,7 @@ public:
       : FormatInformation(FormatInformation), ColumnLimit(ColumnLimit) {}
 
   ParameterStream &operator<<(const std::string &InputParamStr) {
-    if (InputParamStr.size()==0) {
+    if (InputParamStr.size() == 0) {
       return *this;
     }
 
@@ -309,23 +311,21 @@ public:
       return *this;
     }
 
-    // parameters will be inserted in one line unless the line length > column limit.
+    // parameters will be inserted in one line unless the line length > column
+    // limit.
     if (FormatInformation.CurrentLength + 2 + (int)InputParamStr.size() <=
         ColumnLimit) {
       Str = Str + ", " + InputParamStr;
-      FormatInformation.CurrentLength = FormatInformation.CurrentLength + 2 +
-                                        InputParamStr.size();
+      FormatInformation.CurrentLength =
+          FormatInformation.CurrentLength + 2 + InputParamStr.size();
       return *this;
     } else {
       Str = Str + std::string(",") + getNL() +
-                                   FormatInformation.NewLineIndentStr +
-                                   InputParamStr;
+            FormatInformation.NewLineIndentStr + InputParamStr;
       FormatInformation.CurrentLength =
           FormatInformation.NewLineIndentLength + InputParamStr.size();
       return *this;
     }
-
-
   }
   ParameterStream &operator<<(int InputInt) {
     return *this << std::to_string(InputInt);
@@ -355,12 +355,12 @@ template <class T> inline void merge(T &Master, const T &Branch) {
 }
 
 template <class... Arguments>
-inline void appendString(llvm::raw_string_ostream &OS, Arguments &&... Args) {
+inline void appendString(llvm::raw_string_ostream &OS, Arguments &&...Args) {
   std::initializer_list<int>{(OS << std::forward<Arguments>(Args), 0)...};
 }
 
 template <class... Arguments>
-inline std::string buildString(Arguments &&... Args) {
+inline std::string buildString(Arguments &&...Args) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   appendString(OS, std::forward<Arguments>(Args)...);
@@ -381,7 +381,7 @@ template <class MapType,
           class... Args>
 inline typename MapType::mapped_type
 insertObject(MapType &Map, const typename MapType::key_type &Key,
-             Args &&... InitArgs) {
+             Args &&...InitArgs) {
   auto &Obj = Map[Key];
   if (!Obj)
     Obj = std::make_shared<ObjectType>(Key, std::forward<Args>(InitArgs)...);
@@ -436,7 +436,8 @@ enum UsingType {
 class DpctFileInfo {
 public:
   DpctFileInfo(const std::string &FilePathIn)
-      : Repls(std::make_shared<ExtReplacements>(FilePathIn)), FilePath(FilePathIn) {
+      : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
+        FilePath(FilePathIn) {
     buildLinesInfo();
   }
   template <class Obj> std::shared_ptr<Obj> findNode(unsigned Offset) {
@@ -447,7 +448,7 @@ public:
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
   }
   template <class Obj, class MappedT, class... Args>
-  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&... Arguments) {
+  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&...Arguments) {
     return insertObject<GlobalMap<MappedT>, Obj>(
         getMap<MappedT>(), Offset, FilePath, std::forward<Args>(Arguments)...);
   }
@@ -507,7 +508,7 @@ public:
     HeaderInsertedBitMap[HeaderType::Algorithm] = B;
   }
 
- void setTimeHeaderInserted(bool B = true) {
+  void setTimeHeaderInserted(bool B = true) {
     HeaderInsertedBitMap[HeaderType::Time] = B;
   }
 
@@ -554,8 +555,8 @@ public:
           HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
     case MKL_BLAS_Solver_Without_Util:
-        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                            "<oneapi/mkl.hpp>");
+      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
@@ -564,24 +565,21 @@ public:
           HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
     case MKL_SPBLAS_Without_Util:
-        return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
-                            "<oneapi/mkl.hpp>");
+      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
     case MKL_FFT:
       return insertHeader(HeaderType::MKL_FFT, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
     case Numeric:
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
-        "<numeric>");
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<numeric>");
     case Chrono:
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
-        "<chrono>");
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<chrono>");
     case DL:
 #ifdef _WIN32
       return insertHeader(HeaderType::Numeric, LastIncludeOffset,
-        "<libloaderapi.h>");
+                          "<libloaderapi.h>");
 #else
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
-        "<dlfcn.h>");
+      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<dlfcn.h>");
 #endif
     }
   }
@@ -646,7 +644,9 @@ public:
   }
 
   std::map<unsigned int, HostRandomEngineTypeInfo> &
-  getHostRandomEngineTypeMap() { return HostRandomEngineTypeMap; }
+  getHostRandomEngineTypeMap() {
+    return HostRandomEngineTypeMap;
+  }
 
   std::map<unsigned int, FFTDescriptorTypeInfo> &getFFTDescriptorTypeMap() {
     return FFTDescriptorTypeMap;
@@ -747,13 +747,12 @@ public:
     return EventMallocFreeMap;
   }
 
-  void setAddOneDplHeaders(bool Value) {
-    AddOneDplHeaders = Value;
-  }
+  void setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
 
   std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
     return TimeStubBounds;
   }
+
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
 
@@ -888,10 +887,10 @@ public:
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInRoot, int TokenIndex) {
-      auto LocInfoBegin = DpctGlobalInfo::getLocInfo(
-          MI->getReplacementToken(0).getLocation());
+      auto LocInfoBegin =
+          DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
       auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
-        MI->getReplacementToken(MI->getNumTokens() - 1).getLocation());
+          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation());
       Name = ID->getName().str();
       NumTokens = MI->getNumTokens();
       FilePath = LocInfoBegin.first;
@@ -928,8 +927,7 @@ public:
                                     std::string FilePathStr) {
     // Get rid of symlinks
     SmallString<4096> NoSymlinks = StringRef("");
-    auto Dir = FM.getDirectory(
-        llvm::sys::path::parent_path(FilePathStr));
+    auto Dir = FM.getDirectory(llvm::sys::path::parent_path(FilePathStr));
     if (Dir) {
       StringRef DirName = FM.getCanonicalName(*Dir);
       StringRef FileName = llvm::sys::path::filename(FilePathStr);
@@ -1101,10 +1099,13 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
-  inline static std::set<ExplicitNamespace> getExplicitNamespaceSet() { return ExplicitNamespaceSet; }
-  inline static void setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec) {
+  inline static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
+    return ExplicitNamespaceSet;
+  }
+  inline static void
+  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec) {
     size_t NamespaceVecSize = NamespacesVec.size();
-    if(!NamespaceVecSize || NamespaceVecSize > 2) {
+    if (!NamespaceVecSize || NamespaceVecSize > 2) {
       DebugInfo::ShowStatus(MigrationErrorInvalidExplicitNamespace);
       dpctExit(MigrationErrorInvalidExplicitNamespace);
     }
@@ -1151,9 +1152,9 @@ public:
     return DeviceRNGReturnNumSet;
   }
 
-  // This set collects all the host RNG engine type from the generator create API.
-  // If the size of this set is 1, then we can use this engine type
-  // in all generator types. Otherwise, a placeholder will be inserted.
+  // This set collects all the host RNG engine type from the generator create
+  // API. If the size of this set is 1, then we can use this engine type in all
+  // generator types. Otherwise, a placeholder will be inserted.
   inline static std::unordered_set<std::string> &getHostRNGEngineTypeSet() {
     return HostRNGEngineTypeSet;
   }
@@ -1195,8 +1196,7 @@ public:
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
   findAncestor(const NodeTy *N,
-               const std::function<bool(const DynTypedNode &)>
-                   &Condition) {
+               const std::function<bool(const DynTypedNode &)> &Condition) {
     if (!N)
       return nullptr;
 
@@ -1214,7 +1214,7 @@ public:
 
   template <class NodeTy>
   static inline bool checkSpecificBO(const NodeTy *Node,
-                                          const BinaryOperator *BO) {
+                                     const BinaryOperator *BO) {
     return findAncestor<BinaryOperator>(
         Node, [&](const DynTypedNode &Cur) -> bool {
           return Cur.get<BinaryOperator>() == BO;
@@ -1223,16 +1223,14 @@ public:
 
   template <class TargetTy, class NodeTy>
   static const TargetTy *findAncestor(const NodeTy *Node) {
-    return findAncestor<TargetTy>(
-        Node, [&](const DynTypedNode &Cur) -> bool {
-          return Cur.get<TargetTy>();
-        });
+    return findAncestor<TargetTy>(Node, [&](const DynTypedNode &Cur) -> bool {
+      return Cur.get<TargetTy>();
+    });
   }
   template <class TargetTy, class NodeTy>
   static const TargetTy *findParent(const NodeTy *Node) {
     return findAncestor<TargetTy>(
-        Node,
-        [](const DynTypedNode &Cur) -> bool { return true; });
+        Node, [](const DynTypedNode &Cur) -> bool { return true; });
   }
   template <class NodeTy>
   inline static const clang::FunctionDecl *
@@ -1262,7 +1260,7 @@ public:
   template <class StreamTy, class... Args>
   static inline StreamTy &
   printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,
-                 StringRef ClassName, Args &&... Arguments) {
+                 StringRef ClassName, Args &&...Arguments) {
     Stream << ClassName;
     if (!DpctGlobalInfo::isCtadEnabled()) {
       printArguments(Stream << "<", std::forward<Args>(Arguments)...) << ">";
@@ -1275,12 +1273,12 @@ public:
   }
   template <class StreamTy, class... Args>
   static inline StreamTy &printCtadClass(StreamTy &Stream, StringRef ClassName,
-                                         Args &&... Arguments) {
+                                         Args &&...Arguments) {
     return printCtadClass(Stream, 0, ClassName,
                           std::forward<Args>(Arguments)...);
   }
   template <class... Args>
-  static inline std::string getCtadClass(Args &&... Arguments) {
+  static inline std::string getCtadClass(Args &&...Arguments) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     return printCtadClass(OS, std::forward<Args>(Arguments)...).str();
@@ -1302,7 +1300,7 @@ public:
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
 
     if (SM->isMacroArgExpansion(Loc)) {
-        LocInfo = SM->getDecomposedLoc(SM->getSpellingLoc(Loc));
+      LocInfo = SM->getDecomposedLoc(SM->getSpellingLoc(Loc));
     }
 
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
@@ -1399,12 +1397,12 @@ public:
             LocInfo.second, FTL, Attrs, Specialization, TAList);
   }
 
-  std::shared_ptr<DeviceFunctionDecl> insertDeviceFunctionDeclInModule(
-    const FunctionDecl *FD) {
+  std::shared_ptr<DeviceFunctionDecl>
+  insertDeviceFunctionDeclInModule(const FunctionDecl *FD) {
     auto LocInfo = getLocInfo(FD);
     return insertFile(LocInfo.first)
-      ->insertNode<DeviceFunctionDeclInModule, DeviceFunctionDecl>(
-        LocInfo.second, FD);
+        ->insertNode<DeviceFunctionDeclInModule, DeviceFunctionDecl>(
+            LocInfo.second, FD);
   }
 
   // Build kernel and device function declaration replacements and store
@@ -1417,9 +1415,9 @@ public:
       // Construct a union-find set for all the instances of MemVarMap in
       // DeviceFunctionInfo. During the tranversal of the call-graph, do union
       // operation if caller and callee both need item variable, then after the
-      // tranversal, all MemVarMap instance which need item are devided into some
-      // groups. Among different groups, there is no call relationship.
-      // If kernel-call is 3D, then set its head's dim to 3D. When generating
+      // tranversal, all MemVarMap instance which need item are devided into
+      // some groups. Among different groups, there is no call relationship. If
+      // kernel-call is 3D, then set its head's dim to 3D. When generating
       // replacements, find current nodes' head to decide to use which dim.
 
       // Below three for-loop cannot be merged.
@@ -1474,14 +1472,15 @@ public:
       }
     }
   }
-  void cacheFileRepl(std::string FilePath, std::shared_ptr<ExtReplacements> Repl){
-      FileReplCache[FilePath] = Repl;
+  void cacheFileRepl(std::string FilePath,
+                     std::shared_ptr<ExtReplacements> Repl) {
+    FileReplCache[FilePath] = Repl;
   }
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
-    if(DpctGlobalInfo::isNeedRunAgain())
+    if (DpctGlobalInfo::isNeedRunAgain())
       return;
-    for(auto &FileRepl : FileReplCache){
+    for (auto &FileRepl : FileReplCache) {
       FileRepl.second->emplaceIntoReplSet(ReplSets[FileRepl.first]);
     }
   }
@@ -1499,8 +1498,8 @@ public:
     auto FileInfo = insertFile(LocInfo.first);
     auto &M = FileInfo->getHostRandomEngineTypeMap();
     if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(LocInfo.second,
-                              HostRandomEngineTypeInfo(Length)));
+      M.insert(
+          std::make_pair(LocInfo.second, HostRandomEngineTypeInfo(Length)));
     }
   }
 
@@ -1512,33 +1511,29 @@ public:
       M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
     }
   }
-  void insertHostDeviceFuncCallInfo(std::string &&FuncName, std::pair<std::string, unsigned int> &&Info){
+  void
+  insertHostDeviceFuncCallInfo(std::string &&FuncName,
+                               std::pair<std::string, unsigned int> &&Info) {
     HostDeviceFCallIMap.emplace(std::move(FuncName), std::move(Info));
   }
-  void insertHostDeviceFuncDefInfo(std::string &&FuncName, std::pair<std::string, HostDeviceFuncInfo> &&Info){
+  void insertHostDeviceFuncDefInfo(
+      std::string &&FuncName,
+      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
     HostDeviceFDefIMap.emplace(std::move(FuncName), std::move(Info));
   }
-  void insertHostDeviceFuncDeclInfo(std::string &&FuncName, std::pair<std::string, HostDeviceFuncInfo> &&Info){
+  void insertHostDeviceFuncDeclInfo(
+      std::string &&FuncName,
+      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
     HostDeviceFDeclIMap.emplace(std::move(FuncName), std::move(Info));
   }
-  CudaArchPPMap &getCudaArchPPInfoMap(){
-    return CAPPInfoMap;
-  }
-  HDCallMap &getHostDeviceFuncCallInfoMap(){
-    return HostDeviceFCallIMap;
-  }
-  HDDefMap &getHostDeviceFuncDefInfoMap(){
-    return HostDeviceFDefIMap;
-  }
-  HDDeclMap &getHostDeviceFuncDeclInfoMap(){
-    return HostDeviceFDeclIMap;
-  }
+  CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
+  HDCallMap &getHostDeviceFuncCallInfoMap() { return HostDeviceFCallIMap; }
+  HDDefMap &getHostDeviceFuncDefInfoMap() { return HostDeviceFDefIMap; }
+  HDDeclMap &getHostDeviceFuncDeclInfoMap() { return HostDeviceFDeclIMap; }
   std::set<std::shared_ptr<ExtReplacement>> &getCudaArchMacroReplSet() {
     return CudaArchMacroRepl;
   }
-  CudaArchDefMap &getCudaArchDefinedMap() {
-    return CudaArchDefinedMap;
-  }
+  CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
   void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
   void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
@@ -1603,9 +1598,10 @@ public:
   }
 
   std::string insertHostRandomDistrInfo(SourceLocation DistrInsetLoc,
-                                 std::string DistrType, std::string ValueType,
-                                 std::string DistrArg,
-                                 std::string DistrIndentStr) {
+                                        std::string DistrType,
+                                        std::string ValueType,
+                                        std::string DistrArg,
+                                        std::string DistrIndentStr) {
     auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
     auto FileInfo = insertFile(DistrInsetLocInfo.first);
     auto &M = FileInfo->getHostRandomDistrMap();
@@ -1746,13 +1742,13 @@ public:
   }
 
   void insertAtomicInfo(std::string HashStr, SourceLocation SL,
-                       std::string FuncName) {
+                        std::string FuncName) {
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &M = FileInfo->getAtomicMap();
     if (M.find(HashStr) == M.end()) {
-      M.insert(std::make_pair(
-          HashStr, std::make_tuple(LocInfo.second, FuncName, true)));
+      M.insert(std::make_pair(HashStr,
+                              std::make_tuple(LocInfo.second, FuncName, true)));
     }
   }
 
@@ -1888,8 +1884,10 @@ public:
   }
   static std::string getYamlFileName() { return YamlFileName; }
 
-  static std::set<std::string> &getGlobalVarNameSet() { return GlobalVarNameSet; }
-  static void removeVarNameInGlobalVarNameSet(const std::string& VarName) {
+  static std::set<std::string> &getGlobalVarNameSet() {
+    return GlobalVarNameSet;
+  }
+  static void removeVarNameInGlobalVarNameSet(const std::string &VarName) {
     auto Iter = getGlobalVarNameSet().find(VarName);
     if (Iter != getGlobalVarNameSet().end()) {
       getGlobalVarNameSet().erase(Iter);
@@ -1907,7 +1905,7 @@ public:
     return Res;
   }
   static std::unordered_map<std::string, TempVariableDeclCounter> &
-      getTempVariableDeclCounterMap(){
+  getTempVariableDeclCounterMap() {
     return TempVariableDeclCounterMap;
   }
   static std::unordered_set<std::string> &getTempVariableHandledSet() {
@@ -1977,8 +1975,9 @@ public:
     ++CudaBuiltinXDFIIndex;
     return Res;
   }
-  static void insertCudaBuiltinXDFIMap(unsigned int Index,
-                                       std::shared_ptr<DeviceFunctionInfo> Ptr) {
+  static void
+  insertCudaBuiltinXDFIMap(unsigned int Index,
+                           std::shared_ptr<DeviceFunctionInfo> Ptr) {
     CudaBuiltinXDFIMap.insert(std::make_pair(Index, Ptr));
   }
   static std::shared_ptr<DeviceFunctionInfo>
@@ -1989,18 +1988,17 @@ public:
     return nullptr;
   }
 
-  static std::set<std::string> &getModuleFiles() {
-    return ModuleFiles;
-  }
+  static std::set<std::string> &getModuleFiles() { return ModuleFiles; }
 
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
   static void setRunRound(unsigned int Round) { RunRound = Round; }
   static unsigned int getRunRound() { return RunRound; }
-  static void setNeedRunAgain(bool NRA){ NeedRunAgain = NRA; }
+  static void setNeedRunAgain(bool NRA) { NeedRunAgain = NRA; }
   static bool isNeedRunAgain() { return NeedRunAgain; }
-  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> &getFileReplCache(){
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> &
+  getFileReplCache() {
     return FileReplCache;
   }
   void resetInfo();
@@ -2102,7 +2100,7 @@ private:
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
     // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
     auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
+        getCombinedStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
@@ -2154,7 +2152,7 @@ private:
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
-  static FileManager   *FM;
+  static FileManager *FM;
   static bool KeepOriginCode;
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
@@ -2209,7 +2207,8 @@ private:
   static HDDeclMap HostDeviceFDeclIMap;
   static CudaArchDefMap CudaArchDefinedMap;
   static std::set<std::shared_ptr<ExtReplacement>> CudaArchMacroRepl;
-  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>> FileReplCache;
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
+      FileReplCache;
   static std::set<std::string> ReProcessFile;
   static std::set<std::string> ProcessedFile;
   static bool NeedRunAgain;
@@ -2247,7 +2246,7 @@ public:
       : G(Ctx), PP(Ctx.getPrintingPolicy()) {
     PP.PrintCanonicalTypes = true;
   }
-  std::string getName(const FunctionDecl*D) {
+  std::string getName(const FunctionDecl *D) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     printName(D, OS);
@@ -2312,9 +2311,7 @@ public:
   bool isWritten() const {
     return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
   }
-  std::set<HelperFeatureIDTy> getHelperFeatureSet() {
-    return HelperFeatureSet;
-  }
+  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
 
 private:
   /// For ConstantArrayType, size in generated code is folded as an integer.
@@ -2458,9 +2455,7 @@ public:
   bool isIgnore() { return IsIgnored; }
   bool isStatic() { return IsStatic; }
 
-  inline void setName(std::string NewName) {
-    NewConstVarName  = NewName;
-  }
+  inline void setName(std::string NewName) { NewConstVarName = NewName; }
 
   inline unsigned int getNewConstVarOffset() { return NewConstVarOffset; }
   inline unsigned int getNewConstVarLength() { return NewConstVarLength; }
@@ -2515,9 +2510,9 @@ public:
   inline std::string getRangeClass() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    return DpctGlobalInfo::printCtadClass(
-               OS, MapNames::getClNamespace() + "range",
-               getType()->getDimension())
+    return DpctGlobalInfo::printCtadClass(OS,
+                                          MapNames::getClNamespace() + "range",
+                                          getType()->getDimension())
         .str();
   }
   std::string getRangeDecl(const std::string &MemSize) {
@@ -2615,8 +2610,7 @@ private:
   }
   const std::string &getMemoryAttr();
   std::string getDpctAccessorType() {
-    requestFeature(HelperFileEnum::Memory, "dpct_accessor",
-                                   getFilePath());
+    requestFeature(HelperFileEnum::Memory, "dpct_accessor", getFilePath());
     auto Type = getType();
     return buildString(MapNames::getDpctNamespace(true), "accessor<",
                        getAccessorDataType(), ", ", getMemoryAttr(), ", ",
@@ -2702,11 +2696,9 @@ public:
     if (IsArray)
       --Dimension;
   }
-  std::string getDataType(){
-    return DataType;
-  }
+  std::string getDataType() { return DataType; }
   ParameterStream &printType(ParameterStream &PS,
-                               const std::string &TemplateName) {
+                             const std::string &TemplateName) {
     PS << TemplateName << "<" << DataType << ", " << Dimension;
     if (IsArray)
       PS << ", true";
@@ -2748,7 +2740,7 @@ protected:
       : TextureInfo(LocInfo.second, LocInfo.first.str(), Name) {}
 
   ParameterStream &getDecl(ParameterStream &PS,
-                             const std::string &TemplateDeclName) {
+                           const std::string &TemplateDeclName) {
     return Type->printType(PS, MapNames::getDpctNamespace() + TemplateDeclName)
            << " " << Name;
   }
@@ -2766,7 +2758,7 @@ public:
               TemplateList[1].getAsIntegral().getExtValue());
     } else {
       auto TST = VD->getType()->getAs<TemplateSpecializationType>();
-      if(TST) {
+      if (TST) {
         auto Arg0 = TST->getArg(0);
         auto Arg1 = TST->getArg(1);
 
@@ -2776,7 +2768,8 @@ public:
             DataTy = ET->getNamedType();
           Expr::EvalResult ER;
           if (!Arg1.getAsExpr()->isValueDependent() &&
-              Arg1.getAsExpr()->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+              Arg1.getAsExpr()->EvaluateAsInt(ER,
+                                              DpctGlobalInfo::getContext())) {
             int64_t Value = ER.Val.getInt().getExtValue();
             setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
           }
@@ -2817,17 +2810,14 @@ public:
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
 
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
-                                   FilePath);
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
     return getDecl(PS, "image_accessor_ext");
   }
-  inline ParameterStream &getFuncArg(ParameterStream &PS) {
-    return PS << Name;
-  }
+  inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
-                                   FilePath);
-    getType()->printType(OS, MapNames::getDpctNamespace() + "image_accessor_ext");
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
+    getType()->printType(OS,
+                         MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
     return OS;
   }
@@ -2867,8 +2857,7 @@ public:
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
-    requestFeature(HelperFileEnum::Image, "image_wrapper",
-                                   FilePath);
+    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
     return PS.Str;
   }
   std::string getSamplerDecl() override {
@@ -2878,8 +2867,7 @@ public:
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext",
-                                   FilePath);
+    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
     ParameterStream PS;
     Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
     return PS.Str;
@@ -2908,8 +2896,7 @@ public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl() override {
-    requestFeature(HelperFileEnum::Image, "image_wrapper",
-                                   FilePath);
+    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
@@ -2994,13 +2981,11 @@ private:
     }
   }
 
-  template <class T>
-  SourceRange getArgSourceRange(const T &Arg) {
+  template <class T> SourceRange getArgSourceRange(const T &Arg) {
     return Arg.getSourceRange();
   }
 
-  template <class T>
-  SourceRange getArgSourceRange(const T *Arg) {
+  template <class T> SourceRange getArgSourceRange(const T *Arg) {
     return Arg->getSourceRange();
   }
 
@@ -3061,8 +3046,8 @@ public:
     return Size;
   }
   std::string getExtraCallArguments(bool HasPreParam, bool HasPostParam) const;
-  void requestFeatureForAllVarMaps(const std::string& Path) const {
-    for (const auto& Item : LocalVarMap) {
+  void requestFeatureForAllVarMaps(const std::string &Path) const {
+    for (const auto &Item : LocalVarMap) {
       Item.second->requestFeatureForSet(Path);
     }
     for (const auto &Item : GlobalVarMap) {
@@ -3079,7 +3064,8 @@ public:
   std::string
   getExtraDeclParam(bool HasPreParam, bool HasPostParam,
                     FormatInfo FormatInformation = FormatInfo()) const;
-  std::string getKernelArguments(bool HasPreParam, bool HasPostParam, const std::string &Path) const;
+  std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
+                                 const std::string &Path) const;
 
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
     return const_cast<MemVarMap *>(this)->getMap(Scope);
@@ -3183,7 +3169,8 @@ private:
   }
 
   template <CallOrDecl COD>
-  inline std::string getArgumentsOrParameters(int PreParams, int PostParams,
+  inline std::string
+  getArgumentsOrParameters(int PreParams, int PostParams,
                            FormatInfo FormatInformation = FormatInfo()) const {
     ParameterStream PS;
     if (PreParams != 0)
@@ -3235,9 +3222,9 @@ private:
       return V->getKernelArg(PS);
     }
   };
-  inline void
-  getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
-                                  int PostParams) const;
+  inline void getArgumentsOrParametersForDecl(ParameterStream &PS,
+                                              int PreParams,
+                                              int PostParams) const;
 
   bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
@@ -3256,8 +3243,8 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
     NDItem = "nd_item<1>";
   }
 
-  std::string ItemParamDecl = MapNames::getClNamespace() + NDItem + " " +
-                                     DpctGlobalInfo::getItemName();
+  std::string ItemParamDecl =
+      MapNames::getClNamespace() + NDItem + " " + DpctGlobalInfo::getItemName();
   return PS << ItemParamDecl;
 }
 
@@ -3270,8 +3257,9 @@ MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   return PS << StreamParamDecl;
 }
 
-inline void MemVarMap::getArgumentsOrParametersForDecl(
-    ParameterStream &PS, int PreParams, int PostParams) const {
+inline void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
+                                                       int PreParams,
+                                                       int PostParams) const {
   if (hasItem()) {
     getItem<MemVarMap::DeclParameter>(PS);
   }
@@ -3303,7 +3291,7 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
   ParameterStream PS;
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     PS = ParameterStream(FormatInformation,
-                       DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
+                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
   } else {
     PS = ParameterStream(FormatInformation, 80);
   }
@@ -3417,11 +3405,9 @@ private:
     }
   }
 
-  std::string getNameWithNamespace(const FunctionDecl* FD, const Expr* Callee);
+  std::string getNameWithNamespace(const FunctionDecl *FD, const Expr *Callee);
 
-  template <class CallT>
-  void
-  buildTextureObjectArgsInfo(const CallT*C) {
+  template <class CallT> void buildTextureObjectArgsInfo(const CallT *C) {
     auto Args = C->arguments();
     auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
     auto ArgsNum = std::distance(Args.begin(), Args.end());
@@ -3600,19 +3586,20 @@ class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
   std::vector<std::pair<std::string, std::string>> &getParametersInfo() {
     return ParametersInfo;
   }
+
 public:
   DeviceFunctionDeclInModule(unsigned Offset, const std::string &FilePathIn,
-    const FunctionTypeLoc &FTL,
-    const ParsedAttributes &Attrs,
-    const FunctionDecl *FD)
-    : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, FD) {
+                             const FunctionTypeLoc &FTL,
+                             const ParsedAttributes &Attrs,
+                             const FunctionDecl *FD)
+      : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, FD) {
     buildParameterInfo(FD);
     buildWrapperInfo(FD);
     buildCallInfo(FD);
   }
-  DeviceFunctionDeclInModule(unsigned Offset,
-    const std::string &FilePathIn,
-    const FunctionDecl *FD) : DeviceFunctionDecl(Offset, FilePathIn, FD) {
+  DeviceFunctionDeclInModule(unsigned Offset, const std::string &FilePathIn,
+                             const FunctionDecl *FD)
+      : DeviceFunctionDecl(Offset, FilePathIn, FD) {
     buildParameterInfo(FD);
     buildWrapperInfo(FD);
     buildCallInfo(FD);
@@ -3659,7 +3646,8 @@ public:
   inline void setBuilt() { IsBuilt = true; }
 
   inline std::string
-  getExtraParameters(const std::string& Path, FormatInfo FormatInformation = FormatInfo()) {
+  getExtraParameters(const std::string &Path,
+                     FormatInfo FormatInformation = FormatInfo()) {
     buildInfo();
     VarMap.requestFeatureForAllVarMaps(Path);
     return VarMap.getExtraDeclParam(
@@ -3720,7 +3708,7 @@ public:
 
   public:
     Block(KernelPrinter &Printer, bool WithBrackets)
-      : Printer(Printer), WithBrackets(WithBrackets) {
+        : Printer(Printer), WithBrackets(WithBrackets) {
       if (WithBrackets)
         Printer.line("{");
       Printer.incIndent();
@@ -3734,8 +3722,8 @@ public:
 
 public:
   KernelPrinter(const std::string &NL, const std::string &Indent,
-    llvm::raw_string_ostream &OS)
-    : NL(NL), Indent(Indent), Stream(OS) {}
+                llvm::raw_string_ostream &OS)
+      : NL(NL), Indent(Indent), Stream(OS) {}
   std::unique_ptr<Block> block(bool WithBrackets = false) {
     return std::make_unique<Block>(*this, WithBrackets);
   }
@@ -3743,7 +3731,7 @@ public:
     Stream << S;
     return *this;
   }
-  template <class... Args> KernelPrinter &line(Args &&... Arguments) {
+  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
     appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
     return *this;
   }
@@ -3763,7 +3751,7 @@ public:
   std::string str() {
     auto Result = Stream.str();
     return Result.substr(Indent.length(),
-      Result.length() - Indent.length() - NL.length());
+                         Result.length() - Indent.length() - NL.length());
   }
 };
 
@@ -3773,11 +3761,11 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
-private:
 
+private:
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
-            int Index, KernelCallExpr* BASE)
+            int Index, KernelCallExpr *BASE)
         : IsPointer(false), IsRedeclareRequired(false),
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
@@ -3856,13 +3844,13 @@ private:
     }
 
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
-      : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
-      IsUsedAsLvalueAfterMalloc(true),
-      TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
-        IsPointer),
-      TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
-      IdString(PVD->getName().str() + "_"),
-      Index(PVD->getFunctionScopeIndex()) {
+        : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
+          IsUsedAsLvalueAfterMalloc(true),
+          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+                       IsPointer),
+          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+          IdString(PVD->getName().str() + "_"),
+          Index(PVD->getFunctionScopeIndex()) {
       auto ArgName = PVD->getNameAsString();
       ArgString = ArgName;
 
@@ -3954,14 +3942,15 @@ public:
   static std::shared_ptr<KernelCallExpr>
   buildFromCudaLaunchKernel(const std::pair<std::string, unsigned> &LocInfo,
                             const CallExpr *);
-  static std::shared_ptr<KernelCallExpr> buildForWrapper(std::string,
-    const FunctionDecl *, std::shared_ptr<DeviceFunctionInfo>);
+  static std::shared_ptr<KernelCallExpr>
+  buildForWrapper(std::string, const FunctionDecl *,
+                  std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
 
 private:
   KernelCallExpr(unsigned Offset, const std::string &FilePath)
-    : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
+      : CallFunctionExpr(Offset, FilePath, nullptr), IsSync(false) {}
   void buildArgsInfoFromArgsArray(const FunctionDecl *FD,
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE) {
@@ -3989,7 +3978,7 @@ private:
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
   void buildNeedBracesInfo(const CallExpr *KernelCall);
-  void buildLocationInfo(const CallExpr*KernelCall);
+  void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>
   void buildExecutionConfig(const ArgsRange &ConfigArgs);
 
@@ -4018,7 +4007,7 @@ private:
   // true, if migrated DPC++ code block need extra { }
   bool NeedBraces = true;
   struct {
-    std::string Config[5] = { "", "", "", "0", "" };
+    std::string Config[5] = {"", "", "", "0", ""};
     std::string &GroupSize = Config[0];
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
@@ -4034,7 +4023,6 @@ private:
 
   std::string Event;
   bool IsSync;
-
 
   class {
   public:
@@ -4207,23 +4195,24 @@ public:
   std::string getEngineType() { return TypeReplacement; }
   void setIsRealCreate(bool IRC) { IsRealCreate = IRC; };
   bool getIsRealCreate() { return IsRealCreate; };
+
 private:
-  std::string SeedExpr;     // Replaced Seed variable string
-  std::string DimExpr;      // Replaced Dimension variable string
-  bool IsQuasiEngine; // If origin code used a quasirandom number generator,
-                      // this flag need be set as true.
+  std::string SeedExpr; // Replaced Seed variable string
+  std::string DimExpr;  // Replaced Dimension variable string
+  bool IsQuasiEngine;   // If origin code used a quasirandom number generator,
+                        // this flag need be set as true.
   std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
   std::vector<std::string>
-      CreateCallFilePath; // Where the curandCreateGenerator API is called.
+      CreateCallFilePath;  // Where the curandCreateGenerator API is called.
   unsigned int TypeLength; // The length of the curandGenerator_t handle type.
-  std::vector <unsigned int>
+  std::vector<unsigned int>
       CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
-  std::vector <unsigned int>
+  std::vector<unsigned int>
       CreateAPILength; // The length of the begin of curandCreateGenerator API.
-  std::vector <std::string> CreateAPIQueueName;
-  std::string TypeReplacement;      // The replcaement string of the type of
-                                    // curandGenerator_t handle.
-  std::string DeclaratorDeclName;   // Name of declarator declaration.
+  std::vector<std::string> CreateAPIQueueName;
+  std::string TypeReplacement;    // The replcaement string of the type of
+                                  // curandGenerator_t handle.
+  std::string DeclaratorDeclName; // Name of declarator declaration.
   unsigned int DeclaratorDeclTypeBeginOffset;
   unsigned int DeclaratorDeclEndOffset;
   bool IsUnsupportEngine = true;
@@ -4256,11 +4245,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::dpct)) {
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::dpct)) {
       RSO << "using namespace dpct;" << getNL();
     }
-    if(!DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::sycl) &&
-      !DpctGlobalInfo::getExplicitNamespaceSet().count(ExplicitNamespace::cl)) {
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::sycl) &&
+        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::cl)) {
       RSO << "using namespace sycl;" << getNL();
     }
     insertHeader(std::move(RSO.str()), Offset);
@@ -4271,7 +4263,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
 /// located. If there is no CompoundStmt of FunctionDecl out of \S, return
 /// nullptr.
 /// Caller should make sure that /S is not nullptr.
-template<typename T>
+template <typename T>
 inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
   auto &Context = DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
@@ -4295,7 +4287,7 @@ inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
   return nullptr;
 }
 
-template<typename T>
+template <typename T>
 inline DpctGlobalInfo::HelperFuncReplInfo
 generateHelperFuncReplInfo(const T *S) {
   DpctGlobalInfo::HelperFuncReplInfo Info;
@@ -4319,9 +4311,8 @@ generateHelperFuncReplInfo(const T *S) {
   Info.IsLocationValid = true;
   Info.DeclLocFile =
       DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
-  Info.DeclLocOffset = DpctGlobalInfo::getSourceManager()
-                           .getDecomposedLoc(EndOfLBrace)
-                           .second;
+  Info.DeclLocOffset =
+      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
   return Info;
 }
 
@@ -4368,14 +4359,12 @@ bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
 // (0,1) to (0,>=2) and (1,1) to (1,>=2) need add both declaration
 // (>=2,1) to (>=2,>=2) need add queue declaration
 template <typename T>
-inline void buildTempVariableMap(int Index, const T *S,
-                                 HelperFuncType HFT) {
+inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   if (checkWhetherIsDuplicate(S)) {
     return;
   }
 
-  DpctGlobalInfo::HelperFuncReplInfo HFInfo =
-      generateHelperFuncReplInfo(S);
+  DpctGlobalInfo::HelperFuncReplInfo HFInfo = generateHelperFuncReplInfo(S);
 
   if (!HFInfo.IsLocationValid)
     return;
@@ -4408,9 +4397,8 @@ inline void buildTempVariableMap(int Index, const T *S,
                 std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                  HFInfo.DeclLocOffset, 0,
                                                  DevDecl, nullptr));
-            requestFeature(HelperFileEnum::Device,
-                                           "get_current_device",
-                                           HFInfo.DeclLocFile);
+            requestFeature(HelperFileEnum::Device, "get_current_device",
+                           HFInfo.DeclLocFile);
           }
         }
         if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4418,10 +4406,10 @@ inline void buildTempVariableMap(int Index, const T *S,
           DpctGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(
                   HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
-          requestFeature(
-              HelperFileEnum::Device, "get_current_device", HFInfo.DeclLocFile);
-          requestFeature(
-              HelperFileEnum::Device, "device_ext", HFInfo.DeclLocFile);
+          requestFeature(HelperFileEnum::Device, "get_current_device",
+                         HFInfo.DeclLocFile);
+          requestFeature(HelperFileEnum::Device, "device_ext",
+                         HFInfo.DeclLocFile);
         }
       }
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
@@ -4434,8 +4422,8 @@ inline void buildTempVariableMap(int Index, const T *S,
               std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                HFInfo.DeclLocOffset, 0, DevDecl,
                                                nullptr));
-          requestFeature(
-              HelperFileEnum::Device, "get_current_device", HFInfo.DeclLocFile);
+          requestFeature(HelperFileEnum::Device, "get_current_device",
+                         HFInfo.DeclLocFile);
         }
       }
       Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;

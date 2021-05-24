@@ -12,8 +12,8 @@
 #include "TextModification.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Utility.h"
 #include "Diagnostics.h"
+#include "Utility.h"
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
@@ -35,8 +35,8 @@ static std::unordered_set<std::string> DuplicateFilterSYCL;
 // When a Compatibility API replacement and a non-API replacement happen in
 // the same line, only the LOC of Compatibility API is accumulated.
 void recordMigrationInfo(const ASTContext &Context, const SourceLocation &SL,
-                           bool IsCompatibilityAPI = false,
-                           std::string APIName = "") {
+                         bool IsCompatibilityAPI = false,
+                         std::string APIName = "") {
   const SourceManager &SM = Context.getSourceManager();
   if (SL.isValid()) {
     const SourceLocation FileLoc = SM.getFileLoc(SL);
@@ -87,18 +87,19 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     }
 
     if (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
-      ReplacementString.empty()) {
+        ReplacementString.empty()) {
       // Remove the callexpr spelling in macro define if it is outermost
       if (isOuterMostMacro(TheStmt)) {
         IsMacroRemoved = true;
-        auto RangeDef = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
+        auto RangeDef =
+            getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
         auto BeginDef = RangeDef.getBegin();
         auto EndDef = RangeDef.getEnd();
         auto CallExprLength =
-          SM.getCharacterData(EndDef) - SM.getCharacterData(BeginDef) +
-          Lexer::MeasureTokenLength(EndDef, SM, Context.getLangOpts());
+            SM.getCharacterData(EndDef) - SM.getCharacterData(BeginDef) +
+            Lexer::MeasureTokenLength(EndDef, SM, Context.getLangOpts());
         auto R = std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
-            ReplacementString, this);
+                                                  ReplacementString, this);
         R->setInsertPosition(InsertPos);
         DpctGlobalInfo::getInstance().addReplacement(R);
         // Emit warning message at the Exapnasion Location
@@ -110,7 +111,8 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
           auto LocInfo = DpctGlobalInfo::getLocInfo(
               SM.getExpansionLoc(TheStmt->getBeginLoc()));
           DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                                   Diagnostics::MACRO_REMOVED, true, false, MacroName);
+                                   Diagnostics::MACRO_REMOVED, true, false,
+                                   MacroName);
         }
       }
     }
@@ -140,10 +142,9 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     auto LastTokenLength =
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     auto CallExprLength = SM.getDecomposedLoc(End).second -
-                          SM.getDecomposedLoc(Begin).second +
-                          LastTokenLength;
-    auto R = std::make_shared<ExtReplacement>(
-        SM, Begin, CallExprLength, ReplacementString, this);
+                          SM.getDecomposedLoc(Begin).second + LastTokenLength;
+    auto R = std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
+                                              ReplacementString, this);
     R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
     R->setInsertPosition(InsertPos);
     return R;
@@ -296,7 +297,6 @@ ReplaceDecl::getReplacement(const ASTContext &Context) const {
                                           this);
 }
 
-
 std::shared_ptr<ExtReplacement>
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
@@ -385,7 +385,8 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   while (Data != ';')
     Data = DataAfter[++repLength];
   recordMigrationInfo(Context, SR.getBegin());
-  // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be destructed
+  // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be
+  // destructed
   ReplaceMap.erase(D->getBeginLoc().getRawEncoding());
   auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(), SR.getBegin(), ++repLength, T, this);
@@ -481,7 +482,8 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
       // If current macro is inside another macro or is a macro arg
       // we can only modify the spelling part
       // BeginLoc is more accurate than EndLoc
-      if (S->getBeginLoc().isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(S->getBeginLoc())) {
+      if (S->getBeginLoc().isMacroID() &&
+          !SM.isAtStartOfImmediateMacroExpansion(S->getBeginLoc())) {
         TokenBegin = SM.getSpellingLoc(S->getEndLoc());
       }
       auto Len = Lexer::MeasureTokenLength(TokenBegin, SM, LangOptions());
@@ -552,8 +554,8 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
     std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, Range);
     return std::make_shared<ExtReplacement>(FilePath, Offset, Length, T, this);
   }
-  // Also remove the trailing spaces to the next new line char if the replacement
-  // is empty.
+  // Also remove the trailing spaces to the next new line char if the
+  // replacement is empty.
   if (RemoveTrailingSpaces && T.empty()) {
     auto EndLoc = Range.getEnd();
     auto CharData = DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
@@ -590,7 +592,8 @@ void ReplaceDim3Ctor::setRange() {
       return;
     }
     if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-      auto results = getTheOneBeforeLastImmediateExapansion(S->getBeginLoc(), S->getEndLoc());
+      auto results = getTheOneBeforeLastImmediateExapansion(S->getBeginLoc(),
+                                                            S->getEndLoc());
       auto Begin = SM.getImmediateSpellingLoc(results.first);
       auto End = SM.getImmediateSpellingLoc(results.second);
       if (SM.isMacroArgExpansion(S->getBeginLoc())) {
@@ -598,8 +601,7 @@ void ReplaceDim3Ctor::setRange() {
         End = SM.getImmediateSpellingLoc(S->getEndLoc());
       }
       CSR = CharSourceRange::getTokenRange(Begin, End);
-    }
-    else {
+    } else {
       CSR = CharSourceRange::getTokenRange(S->getSourceRange());
     }
   }
@@ -656,8 +658,7 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
     OS.flush();
     if (Ctor->getParenOrBraceRange().isInvalid()) {
       // dim3 = a;
-      ReplacedString =
-          "(" + ReplacedString + ")";
+      ReplacedString = "(" + ReplacedString + ")";
     }
     return ReplacedString;
   } else {
@@ -733,8 +734,7 @@ SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
     if (InitLoc.isValid() && (*Init)->isWritten()) {
       // Try to insert before ":"
       int i = 0;
-      auto Data =
-          DpctGlobalInfo::getSourceManager().getCharacterData(InitLoc);
+      auto Data = DpctGlobalInfo::getSourceManager().getCharacterData(InitLoc);
       while (Data[i] != ':')
         --i;
       return InitLoc.getLocWithOffset(i);
@@ -903,7 +903,8 @@ void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
-  if(!DD) return;
+  if (!DD)
+    return;
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, DD->getBeginLoc(), Context, PrintDetail);
   DD->print(OS, PrintingPolicy(Context.getLangOpts()));

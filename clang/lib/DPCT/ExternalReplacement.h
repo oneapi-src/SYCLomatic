@@ -12,8 +12,8 @@
 #ifndef __EXTERNAL_REPLACEMENT_H__
 #define __EXTERNAL_REPLACEMENT_H__
 
-#include <map>
 #include "llvm/ADT/StringRef.h"
+#include <map>
 
 namespace llvm {
 class StringRef;
@@ -23,7 +23,7 @@ namespace clang {
 namespace tooling {
 class RefactoringTool;
 class Replacements;
-}
+} // namespace tooling
 } // namespace clang
 
 int mergeExternalReps(std::string InRootSrcFilePath,
@@ -32,10 +32,12 @@ int mergeExternalReps(std::string InRootSrcFilePath,
 int loadFromYaml(llvm::StringRef Input,
                  clang::tooling::TranslationUnitReplacements &TU,
                  bool OverwriteHelpFilesSet);
-int save2Yaml(llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
-              const std::vector<clang::tooling::Replacement> &Replaces,
-              const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest);
-void mergeAndUniqueReps(clang::tooling::Replacements &Replaces,
-                        const std::vector<clang::tooling::Replacement> &PreRepls);
+int save2Yaml(
+    llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
+    const std::vector<clang::tooling::Replacement> &Replaces,
+    const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest);
+void mergeAndUniqueReps(
+    clang::tooling::Replacements &Replaces,
+    const std::vector<clang::tooling::Replacement> &PreRepls);
 
 #endif

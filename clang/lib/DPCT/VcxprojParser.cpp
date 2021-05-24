@@ -17,10 +17,14 @@ std::map<std::string, std::vector<std::string>> OptionsMap;
 std::map<std::string, std::string> VariablesMap;
 
 std::set<std::string> MacroDefinedSet;
-std::map<std::string/*Compiler+":"+FilePath*/, std::set<std::string/*macro defined*/>> MacroDefinedSetMap;
+std::map<std::string /*Compiler+":"+FilePath*/,
+         std::set<std::string /*macro defined*/>>
+    MacroDefinedSetMap;
 
 std::set<std::string /*include dir path*/> DirIncludedSet;
-std::map<std::string/*Compiler+":"+FilePath*/, std::set<std::string/*include dir path*/>> DirIncludedSetMap;
+std::map<std::string /*Compiler+":"+FilePath*/,
+         std::set<std::string /*include dir path*/>>
+    DirIncludedSetMap;
 
 std::map<std::string /*compiler*/, std::vector<std::string> /*source file*/>
     FilesSet;

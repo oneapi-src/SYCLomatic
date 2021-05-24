@@ -16,5 +16,4 @@
 #define DPCT_VERSION_MINOR "3"
 #define DPCT_VERSION_PATCH "0"
 
-
 #endif

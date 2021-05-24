@@ -31,9 +31,6 @@ int GAnalytics(std::string Data) {
   return 0;
 }
 
-#ifdef  GA_STANDALONE_TEST
-int main(int argc, const char *argv[]) {
-    GAnalytics();
-}
+#ifdef GA_STANDALONE_TEST
+int main(int argc, const char *argv[]) { GAnalytics(); }
 #endif
-

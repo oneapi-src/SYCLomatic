@@ -9,4 +9,4 @@
 //
 //===-----------------------------------------------------------------===//
 #define GAHELPER_NS_BEGIN namespace gahelper1 {
-#define GAHELPER_NS_END   }
+#define GAHELPER_NS_END }

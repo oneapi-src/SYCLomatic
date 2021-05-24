@@ -112,9 +112,9 @@ static void printReplacementsDebugImpl(const TransformSetTy &TS,
   for (const auto &Pair : NameCountMap) {
     auto &ID = Pair.first;
     auto &Numbers = Pair.second;
-    DpctDiags() << "# of replacement <" << TextModification::TMNameMap.at((int)ID)
-                << ">: " << Numbers << " (" << Numbers << "/" << NumRepls
-                << ")\n";
+    DpctDiags() << "# of replacement <"
+                << TextModification::TMNameMap.at((int)ID) << ">: " << Numbers
+                << " (" << Numbers << "/" << NumRepls << ")\n";
   }
 }
 
@@ -172,7 +172,8 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
     StatusString = "An error has occurred during migration";
     break;
   case MigrationSaveOutFail:
-    StatusString = "Error: Unable to save the output to the specified directory";
+    StatusString =
+        "Error: Unable to save the output to the specified directory";
     break;
   case MigrationErrorInvalidCudaIncludePath:
     StatusString = "Error: Path for CUDA header files specified by "
@@ -195,7 +196,8 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
     StatusString = "Error: The path for --in-root is not valid";
     break;
   case MigrationErrorInvalidReportArgs:
-    StatusString = "Error: The value(s) provided for report option(s) is incorrect.";
+    StatusString =
+        "Error: The value(s) provided for report option(s) is incorrect.";
     break;
   case MigrationErrorInvalidWarningID:
     StatusString = "Error: Invalid warning ID or range; "
@@ -237,7 +239,8 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
                    "character are allowed";
     break;
   case MigrationErrorPrefixTooLong:
-    StatusString = "Error: Prefix is too long; should be less than 128 characters";
+    StatusString =
+        "Error: Prefix is too long; should be less than 128 characters";
     break;
   case MigrationErrorNoFileTypeAvail:
     StatusString = "Error: File Type not available for input file";
@@ -259,7 +262,7 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Cannot access directory \"" + Message +
                    "\" from the compilation database, check if the directory "
                    "exists and can be accessed by the tool.";
-          break;
+    break;
   case MigrationErrorInconsistentFileInDatabase:
     StatusString = "Error: The file name(s) in the \"command\" and \"file\" "
                    "fields of the compilation database are inconsistent:\n" +
@@ -276,12 +279,13 @@ void DebugInfo::ShowStatus(int Status, std::string Message) {
         "contain digits(0-9), underscore(_) or letters(a-zA-Z).";
     break;
   case MigrationErrorCustomHelperFileNameTooLong:
-    StatusString =
-        "Error: Custom helper header file name is too long.";
+    StatusString = "Error: Custom helper header file name is too long.";
     break;
   case MigrationErrorCustomHelperFileNamePathTooLong:
-    StatusString = "Error: The path resulted from --out-root and --custom-helper-name "
-                   "option values: \"" + Message + "\" is too long.";
+    StatusString =
+        "Error: The path resulted from --out-root and --custom-helper-name "
+        "option values: \"" +
+        Message + "\" is too long.";
     break;
   default:
     DpctLog() << "Unknown error\n";

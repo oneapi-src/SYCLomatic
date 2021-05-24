@@ -11,16 +11,16 @@
 
 #include "AnalysisInfo.h"
 #include "Debug.h"
+#include "Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "Utility.h"
-#include "Diagnostics.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Tooling/Tooling.h"
+#include <algorithm>
 #include <deque>
 #include <fstream>
-#include <algorithm>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
@@ -50,18 +50,22 @@ bool DpctGlobalInfo::EnableComments = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
-FileManager   *DpctGlobalInfo::FM = nullptr;
+FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
-std::tuple<unsigned int, std::string, SourceRange> DpctGlobalInfo::LastMacroRecord =
-  std::make_tuple<unsigned int, std::string, SourceRange>(0, "", SourceRange());
+std::tuple<unsigned int, std::string, SourceRange>
+    DpctGlobalInfo::LastMacroRecord =
+        std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
+                                                                SourceRange());
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
-std::vector<std::pair<std::string, size_t>> DpctGlobalInfo::ConditionalCompilationLoc;
+std::vector<std::pair<std::string, size_t>>
+    DpctGlobalInfo::ConditionalCompilationLoc;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
     DpctGlobalInfo::MacroTokenToMacroDefineLoc;
-std::map<std::string, std::string> DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
+std::map<std::string, std::string>
+    DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
@@ -91,9 +95,9 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo> DpctGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo>
-    DpctGlobalInfo::FFTHandleInfoMap;
+std::unordered_map<std::string, FFTExecAPIInfo>
+    DpctGlobalInfo::FFTExecAPIInfoMap;
+std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaBuiltinXDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaBuiltinXDFIMap;
@@ -158,8 +162,6 @@ void DpctGlobalInfo::resetInfo() {
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
 }
-
-
 
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
@@ -265,14 +267,14 @@ void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
 }
-void DpctFileInfo::postProcess(){
-  if(!isInRoot())
+void DpctFileInfo::postProcess() {
+  if (!isInRoot())
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
-  if(!Repls->empty()){
+  if (!Repls->empty()) {
     Repls->postProcess();
-    if(DpctGlobalInfo::getRunRound() == 0){
+    if (DpctGlobalInfo::getRunRound() == 0) {
       DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
     }
   }
@@ -282,7 +284,7 @@ void DpctFileInfo::buildReplacements() {
   if (!isInRoot())
     return;
 
-  if(FilePath.empty())
+  if (FilePath.empty())
     return;
   // Traver all the global variables stored one by one to check if its name is
   // same with normal global variable's name in host side, if the one is found,
@@ -398,27 +400,27 @@ void DpctFileInfo::buildReplacements() {
 
   const auto &EventMallocFreeMap = getEventMallocFreeMap();
   for (const auto &Entry : EventMallocFreeMap) {
-      auto &Pair = Entry.second;
-      for (auto &R0 : Pair.first) {
-        addReplacement(R0);
-      }
-      for (auto &R1 : Pair.second) {
-        addReplacement(R1);
-      }
+    auto &Pair = Entry.second;
+    for (auto &R0 : Pair.first) {
+      addReplacement(R0);
     }
+    for (auto &R1 : Pair.second) {
+      addReplacement(R1);
+    }
+  }
 
   const auto &TimeStubBounds = getTimeStubBounds();
-    if (TimeStubBounds.empty()) {
-      for (auto &DescInfo : TimeStubTypeMap) {
+  if (TimeStubBounds.empty()) {
+    for (auto &DescInfo : TimeStubTypeMap) {
       DescInfo.second.buildInfo(FilePath, DescInfo.first,
                                 /*bool isReplTxtWithSB*/ true);
-      }
-    } else {
-      for (auto &DescInfo : TimeStubTypeMap) {
-        bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
-        DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
-      }
     }
+  } else {
+    for (auto &DescInfo : TimeStubTypeMap) {
+      bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
+      DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
+    }
+  }
 }
 
 bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
@@ -435,7 +437,7 @@ bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
 }
 
 void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
-  if(!Repls->empty())
+  if (!Repls->empty())
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
@@ -500,8 +502,6 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 
-
-
 template <class ArgsRange>
 void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
   int Idx = 0;
@@ -522,7 +522,8 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true, false);
+                                 Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
+                                 false);
     }
     ++Idx;
   }
@@ -545,7 +546,6 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
       ++Idx;
     }
   }
-
 
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
@@ -703,8 +703,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
 
       if (Arg.IsUsedAsLvalueAfterMalloc) {
-        requestFeature(HelperFileEnum::Memory, "access_wrapper",
-                                       getFilePath());
+        requestFeature(HelperFileEnum::Memory, "access_wrapper", getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
             Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
@@ -712,8 +711,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs +=
             buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
       } else {
-        requestFeature(HelperFileEnum::Memory, "get_access",
-                                       getFilePath());
+        requestFeature(HelperFileEnum::Memory, "get_access", getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(
             buildString("auto ", Arg.getIdStringWithSuffix("acc"),
                         " = " + MapNames::getDpctNamespace() + "get_access(",
@@ -774,8 +772,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   }
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
     Printer << "(" << ExecutionConfig.Stream << ")";
-  }
-  else {
+  } else {
     Printer << ExecutionConfig.Stream;
   }
   if (isDefaultStream())
@@ -807,8 +804,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
         LocInfo.LocHash,
         (hasTemplateArgs() ? (", " + getTemplateArguments(false, true)) : ""),
         ">>(");
-    requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda",
-                                   getFilePath());
+    requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda", getFilePath());
   } else {
     Printer.line("cgh.parallel_for(");
   }
@@ -929,7 +925,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<std::string, unsigned> &LocInfo, const CallExpr *CE) {
   auto LaunchFD = CE->getDirectCallee();
   if (!LaunchFD || (LaunchFD->getName() != "cudaLaunchKernel" &&
-      LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
+                    LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
     return std::shared_ptr<KernelCallExpr>();
   }
   if (auto Callee = getAddressedRef(CE->getArg(0))) {
@@ -1057,7 +1053,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
 
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    getCombinedStrFromLoc(CalleeSpelling));
+      getCombinedStrFromLoc(CalleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
   }
@@ -1535,7 +1531,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
     if (Unresolved->getNumDecls())
       deduceTemplateArguments(CE, Unresolved->decls_begin().getDecl(),
-		  TemplateArgs);
+                              TemplateArgs);
   }
 
   if (HasImplicitArg) {
@@ -1657,10 +1653,8 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
       continue;
     if (WithScalarWrapped && (!TA.isType() && !TA.isNull())) {
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
-      requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda",
-                                     FilePath);
-    }
-    else
+      requestFeature(HelperFileEnum::Dpct, "dpct_named_lambda", FilePath);
+    } else
       appendString(OS, TA.getString(), ", ");
   }
   OS.flush();
@@ -1707,8 +1701,8 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
   EA.analyze(TL);
   if (EA.hasReplacement()) {
     DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
-        nullptr));
+        std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
+                                         nullptr));
   }
 }
 
@@ -1788,9 +1782,8 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
 #ifdef _WIN32
     Printer << "__declspec(dllexport) ";
 #endif
-    Printer << "void " << FuncName << "_wrapper("
-            << MapNames::getClNamespace() << "queue &queue, const "
-            << MapNames::getClNamespace()
+    Printer << "void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
+            << "queue &queue, const " << MapNames::getClNamespace()
             << "nd_range<3> &nr, unsigned int localMemSize, void "
                "**kernelParams, void **extra)";
     if (HasBody) {
@@ -1798,17 +1791,18 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-        for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
-          It++) {
+        for (auto It = getParametersInfo().begin();
+             It != getParametersInfo().end(); It++) {
           Printer.line(It->first + " " + It->second + ";");
         }
         Printer.line("if(kernelParams){");
         {
           auto IfBlock = Printer.block();
           auto Counter = 0;
-          for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
-            It++) {
-            Printer.line(It->second + " = (" + It->first +")kernelParams[" + std::to_string(Counter) + "];");
+          for (auto It = getParametersInfo().begin();
+               It != getParametersInfo().end(); It++) {
+            Printer.line(It->second + " = (" + It->first + ")kernelParams[" +
+                         std::to_string(Counter) + "];");
             Counter += 1;
           }
         }
@@ -1816,9 +1810,10 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
         {
           auto ElseBlock = Printer.block();
           std::string ExtraOffsetStr = "sizeof(void*)";
-          for (auto It = getParametersInfo().begin(); It != getParametersInfo().end();
-            It++) {
-            Printer.line(It->second + " = (" + It->first + ")(extra + " + ExtraOffsetStr + ");");
+          for (auto It = getParametersInfo().begin();
+               It != getParametersInfo().end(); It++) {
+            Printer.line(It->second + " = (" + It->first + ")(extra + " +
+                         ExtraOffsetStr + ");");
             ExtraOffsetStr += " + sizeof(" + It->first + ")";
           }
         }
@@ -1827,8 +1822,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
         Printer.line(Kernel->getReplacement());
       }
       Printer.line("}");
-    }
-    else {
+    } else {
       Printer << ";";
       Printer.newLine();
     }
@@ -1836,8 +1830,8 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
 
   Printer << "}";
 
-  auto Repl = std::make_shared<ExtReplacement>(
-    FilePath, DeclEnd, 0, WrapperStr, nullptr);
+  auto Repl = std::make_shared<ExtReplacement>(FilePath, DeclEnd, 0, WrapperStr,
+                                               nullptr);
   Repl->setBlockLevelFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 }
@@ -1893,13 +1887,14 @@ void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
   FuncName = FD->getNameAsString();
   // FD has relative large range, which is likely to be straddle,
   // getDefinitionRange may not work as good as getExpansionRange
-  auto EndLoc = SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
-  auto LastTokenLen = Lexer::MeasureTokenLength(EndLoc, SM,
-    dpct::DpctGlobalInfo::getContext().getLangOpts());
+  auto EndLoc =
+      SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
+  auto LastTokenLen = Lexer::MeasureTokenLength(
+      EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
   EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
   if (!HasBody) {
-    LastTokenLen = Lexer::MeasureTokenLength(EndLoc, SM,
-      dpct::DpctGlobalInfo::getContext().getLangOpts());
+    LastTokenLen = Lexer::MeasureTokenLength(
+        EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
     EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
   }
   DeclEnd = SM.getFileOffset(EndLoc);
@@ -1970,9 +1965,9 @@ bool isInSameLine(SourceLocation First, SourceLocation Second,
 }
 
 unsigned calculateCudaAttrLength(const AttributeCommonInfo &A,
-  SourceLocation AlignLocation,
-  const SourceManager &SM,
-  const LangOptions &LO) {
+                                 SourceLocation AlignLocation,
+                                 const SourceManager &SM,
+                                 const LangOptions &LO) {
   std::string Expected;
   switch (A.getParsedKind()) {
   case AttributeCommonInfo::AT_CUDAGlobal:
@@ -1993,10 +1988,10 @@ unsigned calculateCudaAttrLength(const AttributeCommonInfo &A,
     return 0;
   auto Length = Lexer::MeasureTokenLength(Begin, SM, LO);
   if (Expected.compare(0, std::string::npos, SM.getCharacterData(Begin),
-    Length))
+                       Length))
     return 0;
   return getLenIncludingTrailingSpaces(
-    SourceRange(Begin, Begin.getLocWithOffset(Length)), SM);
+      SourceRange(Begin, Begin.getLocWithOffset(Length)), SM);
 }
 
 template <class IteratorT>
@@ -2114,12 +2109,10 @@ SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
 
     if (SM.isAtEndOfImmediateMacroExpansion(InsertLoc.getLocWithOffset(
             Lexer::MeasureTokenLength(SM.getSpellingLoc(InsertLoc), SM, LO)))) {
-      /// If InsertLoc is at the end of macro definition, continue find immediate
-      /// expansion.
-      /// example:
-      /// #define BBB int bbb
-      /// #define CALL foo(int aaa, BBB)
-      /// The insert location should be at the end of BBB instead of the end of bbb.
+      /// If InsertLoc is at the end of macro definition, continue find
+      /// immediate expansion. example: #define BBB int bbb #define CALL foo(int
+      /// aaa, BBB) The insert location should be at the end of BBB instead of
+      /// the end of bbb.
       InsertLoc = SM.getImmediateExpansionRange(InsertLoc).getBegin();
     } else if (SM.isMacroArgExpansion(InsertLoc)) {
       /// If is macro argument, continue find if argument is macro or written
@@ -2146,7 +2139,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto&LO = DpctGlobalInfo::getContext().getLangOpts();
+  auto &LO = DpctGlobalInfo::getContext().getLangOpts();
   if (NonDefaultParamNum) {
     InsertLocation = FTL.getParam(NonDefaultParamNum - 1)->getEndLoc();
   } else {
@@ -2169,15 +2162,15 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   Token TokOfHash;
   if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
     auto ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
-      getHashStrFromLoc(TokOfHash.getEndLoc()));
+        getHashStrFromLoc(TokOfHash.getEndLoc()));
     while (ItIf != DpctGlobalInfo::getEndifLocationOfIfdef().end()) {
       InsertLocation = Lexer::getLocForEndOfToken(ItIf->second, 0, SM, LO);
       InsertLocation = Lexer::GetBeginningOfToken(
-        Lexer::findNextToken(InsertLocation, SM, LO)->getLocation(), SM, LO);
+          Lexer::findNextToken(InsertLocation, SM, LO)->getLocation(), SM, LO);
       if (Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true))
         break;
       ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
-        getHashStrFromLoc(TokOfHash.getEndLoc()));
+          getHashStrFromLoc(TokOfHash.getEndLoc()));
     }
   }
 
@@ -2192,7 +2185,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   if (FTL.getNumParams() == 0) {
     Token Tok;
     if (!Lexer::getRawToken(InsertLocation, Tok, SM, LO, true) &&
-      Tok.is(tok::raw_identifier) && Tok.getRawIdentifier() == "void") {
+        Tok.is(tok::raw_identifier) && Tok.getRawIdentifier() == "void") {
       ReplaceLength = Tok.getLength();
     }
   }
@@ -2235,8 +2228,7 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
   std::shared_ptr<DeviceFunctionDecl> D;
   if (isModuleFunction(FD)) {
     D = DpctGlobalInfo::getInstance().insertDeviceFunctionDeclInModule(FD);
-  }
-  else {
+  } else {
     D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
   }
   if (Info) {
@@ -2277,18 +2269,18 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
     break;
   default:
     DpctDiags() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
-      << ND->getDeclKindName() << "\n";
+                << ND->getDeclKindName() << "\n";
     return;
   }
 }
 
 MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
-    const VarDecl *Var)
-  : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
-  Scope(isLexicallyInLocalScope(Var)
-    ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
-    : Global),
-  PointerAsArray(false) {
+                       const VarDecl *Var)
+    : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
+      Scope(isLexicallyInLocalScope(Var)
+                ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
+                : Global),
+      PointerAsArray(false) {
   if (getType()->isPointer() && getScope() == Global &&
       DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
     Attr = Device;
@@ -2332,15 +2324,13 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
           auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
           if (Iter != AnonymousTypeDeclStmtMap.end()) {
             LocalTypeName = "type_ct" + std::to_string(Iter->second);
-          }
-          else {
+          } else {
             LocalTypeName =
-              "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
+                "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
             AnonymousTypeDeclStmtMap.insert(
-              std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
           }
-        }
-        else if (DS2) {
+        } else if (DS2) {
           DeclStmtOfVarType = DS2;
         }
       }
@@ -2357,8 +2347,7 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
-  if (auto Func =
-          DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
+  if (auto Func = DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
     if (Func->getTemplateSpecializationKind() ==
             TSK_ExplicitInstantiationDefinition ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
@@ -2393,15 +2382,15 @@ MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    requestFeature(HelperFileEnum::Memory,
-                                   "global_memory_alias", getFilePath());
+    requestFeature(HelperFileEnum::Memory, "global_memory_alias",
+                   getFilePath());
     static std::string DeviceMemory =
         MapNames::getDpctNamespace() + "global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
-    requestFeature(HelperFileEnum::Memory,
-                                   "constant_memory_alias", getFilePath());
+    requestFeature(HelperFileEnum::Memory, "constant_memory_alias",
+                   getFilePath());
     static std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
     return getMemoryType(ConstantMemory, getType());
@@ -2417,8 +2406,8 @@ std::string MemVarInfo::getMemoryType() {
   }
   case clang::dpct::MemVarInfo::Managed: {
 
-    requestFeature(HelperFileEnum::Memory,
-                                   "shared_memory_alias", getFilePath());
+    requestFeature(HelperFileEnum::Memory, "shared_memory_alias",
+                   getFilePath());
 
     static std::string ManagedMemory =
         MapNames::getDpctNamespace() + "shared_memory";
@@ -2432,8 +2421,7 @@ std::string MemVarInfo::getMemoryType() {
 }
 
 const std::string &MemVarInfo::getMemoryAttr() {
-  requestFeature(HelperFileEnum::Memory, "memory_region",
-                                 getFilePath());
+  requestFeature(HelperFileEnum::Memory, "memory_region", getFilePath());
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
     static std::string DeviceMemory = MapNames::getDpctNamespace() + "device";
@@ -2496,21 +2484,22 @@ std::string MemVarInfo::getDeclarationReplacement() {
 }
 
 void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
-                                             StmtList &AccList, StmtList &PtrList){
+                                             StmtList &AccList,
+                                             StmtList &PtrList) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   if (isShared()) {
     auto Dimension = getType()->getDimension();
-    OS << MapNames::getClNamespace() + "accessor<"
-       << getAccessorDataType() << ", " << Dimension
+    OS << MapNames::getClNamespace() + "accessor<" << getAccessorDataType()
+       << ", " << Dimension
        << ", " + MapNames::getClNamespace() + "access_mode::read_write, " +
-          MapNames::getClNamespace() + "access::target::local> "
+              MapNames::getClNamespace() + "access::target::local> "
        << getAccessorName() << "(";
     if (Dimension > 1) {
       OS << getRangeName() << ", ";
     } else if (Dimension == 1) {
-      OS << getRangeClass()
-         << getType()->getRangeArgument(ExternMemSize, false) << ", ";
+      OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
+         << ", ";
     }
     OS << "cgh);";
     StmtWithWarning AccDecl(OS.str());
@@ -2555,7 +2544,8 @@ void MemVarMap::removeDuplicateVar() {
   dpct::removeDuplicateVar(TextureMap, VarNames);
 }
 
-std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
+std::string MemVarMap::getExtraCallArguments(bool HasPreParam,
+                                             bool HasPostParam) const {
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }
 std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
@@ -2661,7 +2651,7 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
   updateName();
 }
 
-void CtTypeInfo::updateName(){
+void CtTypeInfo::updateName() {
 
   BaseNameWithoutQualifiers = TDSI->getSourceString();
   auto SetFromTTDSI = TDSI->getHelperFeatureSet();
@@ -2720,24 +2710,26 @@ void RandomEngineInfo::buildInfo() {
     return;
 
   if (TypeReplacement.empty()) {
-    TypeReplacement= "dpct_placeholder/*Fix the engine type manually*/";
+    TypeReplacement = "dpct_placeholder/*Fix the engine type manually*/";
     for (unsigned int i = 0; i < CreateAPINum; ++i)
       DiagnosticsUtils::report(CreateCallFilePath[i], CreateAPIBegin[i],
-                               Diagnostics::UNDEDUCED_TYPE, true, false, "RNG engine");
+                               Diagnostics::UNDEDUCED_TYPE, true, false,
+                               "RNG engine");
   }
 
   for (unsigned int i = 0; i < CreateAPINum; ++i) {
-    auto QueueStrFromStream = CreateAPIQueueName[i] == "" ? QueueStr : CreateAPIQueueName[i];
-    std::string Repl = GeneratorName + " = std::make_shared<" + TypeReplacement + ">(" +
-      QueueStrFromStream + ", " + (IsQuasiEngine ? DimExpr : SeedExpr) +
-      ")";
+    auto QueueStrFromStream =
+        CreateAPIQueueName[i] == "" ? QueueStr : CreateAPIQueueName[i];
+    std::string Repl = GeneratorName + " = std::make_shared<" +
+                       TypeReplacement + ">(" + QueueStrFromStream + ", " +
+                       (IsQuasiEngine ? DimExpr : SeedExpr) + ")";
     if (IsAssigned) {
       Repl = "(" + Repl + ", 0)";
     }
     DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(CreateCallFilePath[i],
-        CreateAPIBegin[i], CreateAPILength[i],
-        Repl, nullptr));
+        std::make_shared<ExtReplacement>(CreateCallFilePath[i],
+                                         CreateAPIBegin[i], CreateAPILength[i],
+                                         Repl, nullptr));
   }
 }
 
@@ -2813,8 +2805,8 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
 
 void DeviceRandomGenerateAPIInfo::buildInfo(std::string FilePath,
                                             unsigned int Offset) {
-  std::string ReplStr =
-      "oneapi::mkl::rng::device::generate(" + DistrName + ", " + RNGStateName + ")";
+  std::string ReplStr = "oneapi::mkl::rng::device::generate(" + DistrName +
+                        ", " + RNGStateName + ")";
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Length, ReplStr, nullptr));
 }
@@ -2850,7 +2842,8 @@ void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
-            "std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/>", nullptr));
+            "std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/>",
+            nullptr));
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
                              true, false, "RNG engine");
   }
@@ -2885,13 +2878,13 @@ void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
 }
 
 void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
-                                    unsigned int ID) {
+                               unsigned int ID) {
   std::string R = Repl + std::to_string(ID) + ")";
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Len, R, nullptr));
+  DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
 }
 void CGBlockInfo::buildInfo(std::string FilePath, unsigned int Offset,
-                               unsigned int Dim) {
+                            unsigned int Dim) {
   std::string ReplStr =
       MapNames::getClNamespace() + "group<" + std::to_string(Dim) + "> ";
 

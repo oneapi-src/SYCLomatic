@@ -11,9 +11,9 @@
 
 #include "LibraryAPIMigration.h"
 #include "AnalysisInfo.h"
+#include "Diagnostics.h"
 #include "MapNames.h"
 #include "Utility.h"
-#include "Diagnostics.h"
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
@@ -111,10 +111,10 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
     }
     if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       requestFeature(HelperFileEnum::Memory, "get_buffer_T",
-                                     Locations.FuncPtrDeclBegin);
+                     Locations.FuncPtrDeclBegin);
     } else {
       requestFeature(HelperFileEnum::Memory, "get_buffer_T",
-                                     Locations.PrefixInsertLoc);
+                     Locations.PrefixInsertLoc);
     }
 
     BufferDecl = "auto " + ArgsList[Idx] + " = " +
@@ -175,7 +175,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       Iter->second.SkipGeneration = true;
     }
 
-  std::string WrapperBegin;
+    std::string WrapperBegin;
     if (Flags.IsFunctionPointer)
       WrapperBegin = "auto " + FuncPtrName +
                      " = [](std::shared_ptr<oneapi::mkl::dft::descriptor<" +
@@ -211,8 +211,8 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       PrefixStmts.push_back("*/");
       PrefixStmts.push_back("desc->commit(" + MapNames::getDpctNamespace() +
                             "get_default_queue());");
-      requestFeature(HelperFileEnum::Device,
-                                     "get_default_queue", LocInfo.first);
+      requestFeature(HelperFileEnum::Device, "get_default_queue",
+                     LocInfo.first);
     }
   }
   PrefixStmts.emplace_back("if ((void *)" + OriginalInputPtr + " == (void *)" +
@@ -506,9 +506,9 @@ void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
   if (!PrecAndDomainStr.empty())
     DpctGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
 
-  FPAInfo.addInfo(PrecAndDomainStr, FFTType, ArgsList,
-                  ArgsListAddRequiredParen, IndentStr, FuncName, Flags, Rank,
-                  getDescrMemberCallPrefix(), getDescr());
+  FPAInfo.addInfo(PrecAndDomainStr, FFTType, ArgsList, ArgsListAddRequiredParen,
+                  IndentStr, FuncName, Flags, Rank, getDescrMemberCallPrefix(),
+                  getDescr());
 }
 
 void FFTFunctionCallBuilder::updateExecCallExpr(std::string FFTHandleInfoKey) {
@@ -718,8 +718,8 @@ void FFTPlanAPIInfo::setValueFor1DBatched() {
                              ArgsList[1] + ");");
   } else if (FFTType == FFTTypeEnum::Unknown) {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
-                             Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "'FWD_DISTANCE' and 'BWD_DISTANCE'");
+                             Diagnostics::UNDEDUCED_PARAM, true, false,
+                             "FFT type", "'FWD_DISTANCE' and 'BWD_DISTANCE'");
   }
 
   SuffixStmts.emplace_back(
@@ -952,8 +952,8 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
     }
   } else {
     DiagnosticsUtils::report(FilePath, InsertOffsets.first,
-                             Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "'FWD_DISTANCE' and 'BWD_DISTANCE'");
+                             Diagnostics::UNDEDUCED_PARAM, true, false,
+                             "FFT type", "'FWD_DISTANCE' and 'BWD_DISTANCE'");
   }
 
   SuffixStmts.emplace_back(SetStr +
@@ -1068,9 +1068,9 @@ FFTPlanAPIInfo::update1D2D3DCommitPrefix(std::vector<std::string> Dims) {
         SetStr + "(oneapi::mkl::dft::config_param::INPUT_STRIDES, " +
         InputStrideName + ");");
   } else if (FFTType == FFTTypeEnum::Unknown) {
-    DiagnosticsUtils::report(FilePath, InsertOffsets.first,
-                             Diagnostics::UNDEDUCED_PARAM, true, false, "FFT type",
-                             "'INPUT_STRIDES' and 'OUTPUT_STRIDES'");
+    DiagnosticsUtils::report(
+        FilePath, InsertOffsets.first, Diagnostics::UNDEDUCED_PARAM, true,
+        false, "FFT type", "'INPUT_STRIDES' and 'OUTPUT_STRIDES'");
   }
   return ResultStmts;
 }
@@ -1335,12 +1335,11 @@ void FFTExecAPIInfo::buildInfo() {
 // Need be called in the buildInfo()
 void replacementText(
     LibraryMigrationFlags Flags, const std::string PrePrefixStmt,
-                 const std::vector<std::string> PrefixStmts,
-                 const std::vector<std::string> SuffixStmts,
-                 std::string CallExprRepl, const std::string IndentStr,
-                 const std::string FilePath, const unsigned int ReplaceOffset,
-                 const unsigned int ReplaceLen,
-                 const std::pair<unsigned int, unsigned int> InsertOffsets) {
+    const std::vector<std::string> PrefixStmts,
+    const std::vector<std::string> SuffixStmts, std::string CallExprRepl,
+    const std::string IndentStr, const std::string FilePath,
+    const unsigned int ReplaceOffset, const unsigned int ReplaceLen,
+    const std::pair<unsigned int, unsigned int> InsertOffsets) {
   LibraryAPIStmts OutPrefixStmts;
   LibraryAPIStmts OutSuffixStmts;
   std::string OutRepl;
@@ -1469,8 +1468,7 @@ void replacementText(
 /// call and current cufftExec() call, this funcion will return true and
 /// \p StreamStr will be set as the value in cufftSetStream().
 /// Else, this funcion will return false.
-bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall,
-                                    int Index,
+bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                     std::string &StreamStr) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   const CompoundStmt *CS =
@@ -1493,7 +1491,8 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall,
     Calls.push_back(Call);
   }
 
-  // Step 2: Find all assignment of the handle var of ExecCall in current CompoundStmt
+  // Step 2: Find all assignment of the handle var of ExecCall in current
+  // CompoundStmt
   const auto HandleDecl = getHandleVar(ExecCall->getArg(0));
   std::vector<const DeclRefExpr *> Refs;
   findAssignments(HandleDecl, CS, Refs);
