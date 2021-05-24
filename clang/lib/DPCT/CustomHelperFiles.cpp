@@ -723,53 +723,94 @@ VersionCmpResult compareToolVersion(std::string VersionInYaml) {
 }
 
 void emitHelperFeatureChangeWarning(
+    VersionCmpResult CompareResult, std::string PreviousMigrationToolVersion,
+    const std::map<std::string, std::set<std::string>>
+        &APINameCallerSrcFilesMap) {
+  if (CompareResult == VersionCmpResult::VCR_CMP_FAILED ||
+      CompareResult == VersionCmpResult::VCR_VERSION_SAME) {
+    return;
+  }
+
+  for (const auto &Item : APINameCallerSrcFilesMap) {
+    std::string APIName = Item.first;
+    std::string Text = "";
+    if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_OLDER) {
+      Text = "NOTE: The helper API \"" + APIName +
+             "\" used in the previous migration was added in Intel(R) DPC++ "
+             "Compatibility Tool " +
+             PreviousMigrationToolVersion +
+             " and is not available in Intel(R) DPC++ Compatibility Tool " +
+             getDpctVersionStr() +
+             " used for the current migration. Migrate all files with the same "
+             "version of the tool or update migrated files manually.\n";
+    } else {
+      // CompareResult == VersionCmpResult::VCR_CURRENT_IS_NEWER
+      Text = "NOTE: The helper API \"" + APIName +
+             "\" used in the previous migration was removed in "
+             "Intel(R) DPC++ Compatibility Tool " +
+             getDpctVersionStr() +
+             ". Migrate all files with the same version of the tool "
+             "or update migrated files manually.\n";
+    }
+    Text =
+        Text + "File(s) used \"" + APIName + "\" in the previous migration:\n";
+    for (const auto &File : Item.second) {
+      Text = Text + File + "\n";
+    }
+    clang::dpct::PrintMsg(Text);
+  }
+}
+
+void collectInfo(
     std::pair<std::string, clang::tooling::HelperFuncForYaml> Feature,
-    std::string PreviousMigrationToolVersion) {
+    VersionCmpResult CompareResult,
+    std::map<std::string, std::set<std::string>> &APINameCallerSrcFilesMap) {
   if (Feature.second.CallerSrcFiles.empty() ||
       Feature.second.CallerSrcFiles[0].empty()) {
     return;
   }
 
-  std::string FeatureName = Feature.second.FeatureName;
-  if (FeatureName.empty())
-    return;
+  std::string APIName = Feature.second.APIName;
+  if (APIName.empty()) {
+    if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_NEWER) {
+      // This code path is for case:
+      // Previous migration tool is 2021.3 and an API in 2021.3 is removed
+      // in current version.
 
-  VersionCmpResult CompareResult =
-      compareToolVersion(PreviousMigrationToolVersion);
-  if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_OLDER) {
-    std::string Text =
-        "NOTE: The helper API \"" + FeatureName +
-        "\" used in the previous migration was added in Intel(R) DPC++ "
-        "Compatibility Tool " +
-        PreviousMigrationToolVersion +
-        " and is not available in Intel(R) DPC++ Compatibility Tool " +
-        getDpctVersionStr() +
-        " used for the current migration. Migrate all files with the same "
-        "version of the tool or update migrated files manually.\n";
-    clang::dpct::PrintMsg(Text);
-  } else if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_NEWER) {
-    std::string Text = "NOTE: The helper API \"" + FeatureName +
-                       "\" used in the previous migration was removed in "
-                       "Intel(R) DPC++ Compatibility Tool " +
-                       getDpctVersionStr() +
-                       ". Migrate all files with the same version of the tool "
-                       "or update migrated files manually.\n";
-    clang::dpct::PrintMsg(Text);
+      // Currently, no API removed, so return directly.
+      return;
+      // In the future, if there is an API removed, below code should be
+      // enabled:
+      // auto FeatureID = std::make_pair(File, Feature.first);
+      // auto Iter = MapNames::RemovedFeatureMap.find(FeatureID);
+      // if (Iter == MapNames::RemovedFeatureMap.end()) {
+      //   return;
+      // } else {
+      //   APIName = Iter->second;
+      // }
+    } else {
+      // VCR_CURRENT_IS_OLDER || VCR_VERSION_SAME || VCR_CMP_FAILED
+      return;
+    }
+  }
+
+  auto Iter = APINameCallerSrcFilesMap.find(APIName);
+  if (Iter == APINameCallerSrcFilesMap.end()) {
+    std::set<std::string> FilesSet;
+    FilesSet.insert(Feature.second.CallerSrcFiles.begin(),
+                    Feature.second.CallerSrcFiles.end());
+    APINameCallerSrcFilesMap.insert(std::make_pair(APIName, FilesSet));
   } else {
-    return;
+    Iter->second.insert(Feature.second.CallerSrcFiles.begin(),
+                        Feature.second.CallerSrcFiles.end());
   }
-
-  std::string RelatedFiles =
-      "File(s) used \"" + FeatureName + "\" in the previous migration:\n";
-  for (const auto &File : Feature.second.CallerSrcFiles) {
-    RelatedFiles = RelatedFiles + File + "\n";
-  }
-  clang::dpct::PrintMsg(RelatedFiles);
 }
 
 // update MapNames::HelperNameContentMap from TUR
 void updateHelperNameContentMap(
     const clang::tooling::TranslationUnitReplacements &TUR) {
+  std::map<std::string, std::set<std::string>> APINameCallerSrcFilesMap;
+  VersionCmpResult CompareResult = compareToolVersion(TUR.DpctVersion);
 
   for (auto &FileFeatureMap : TUR.FeatureMap) {
     auto Iter = MapNames::HelperFileIDMap.find(FileFeatureMap.first);
@@ -788,17 +829,19 @@ void updateHelperNameContentMap(
           }
         } else {
           // Feature added/removed, need emit warning
-          emitHelperFeatureChangeWarning(FeatureFromYaml, TUR.DpctVersion);
+          collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
         }
       }
     } else {
       // New helper file added, need emit warning
       for (auto &FeatureFromYaml : FileFeatureMap.second) {
-        // Feature added/removed, need emit warning
-        emitHelperFeatureChangeWarning(FeatureFromYaml, TUR.DpctVersion);
+        // Feature added, need emit warning
+        collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
       }
     }
   }
+  emitHelperFeatureChangeWarning(CompareResult, TUR.DpctVersion,
+                                 APINameCallerSrcFilesMap);
 }
 
 // update TUR from MapNames::HelperNameContentMap
@@ -813,6 +856,17 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
       for (auto CallerFileName : Entry.second.CallerSrcFiles) {
         TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.push_back(
             CallerFileName);
+      }
+
+      // If this feature can be found in the map, then save the API name (from
+      // the map) into yaml file; otherwise save the feature name into yaml
+      // file
+      auto Iter = MapNames::FeatureNameToAPINameMap.find(Entry.first);
+      if (Iter != MapNames::FeatureNameToAPINameMap.end()) {
+        TUR.FeatureMap[FileName][Entry.first.second].APIName = Iter->second;
+      } else {
+        TUR.FeatureMap[FileName][Entry.first.second].APIName =
+            Entry.first.second;
       }
     }
   }

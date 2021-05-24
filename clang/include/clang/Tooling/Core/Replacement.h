@@ -379,7 +379,7 @@ struct HelperFuncForYaml {
       : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles) {}
   bool IsCalled = false;
   std::vector<std::string> CallerSrcFiles;
-  std::string FeatureName;
+  std::string APIName;
 };
 #endif
 /// Collection of Replacements generated from a single translation unit.

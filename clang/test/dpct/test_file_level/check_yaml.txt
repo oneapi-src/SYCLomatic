@@ -1,7 +1,13 @@
-// CHECK: USMLevel:        restricted
+// CHECK: USMLevel:        none
 
 // CHECK:  device_info:
 // CHECK-NEXT:    IsCalled:        true
 // CHECK-NEXT:    CallerSrcFiles:
 // CHECK-NEXT:      - '{{.+}}header.h'
 // CHECK-NEXT:      - '{{.+}}test.cu'
+
+// CHECK:    dpct_malloc_detail:
+// CHECK-NEXT:      IsCalled:        true
+// CHECK-NEXT:      CallerSrcFiles:
+// CHECK-NEXT:        - '{{.+}}test.cu'
+// CHECK-NEXT:      FeatureName:     dpct_malloc

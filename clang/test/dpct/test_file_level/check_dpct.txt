@@ -6,5 +6,6 @@
 //CHECK-NEXT:#include <limits.h>
 //CHECK-EMPTY:
 //CHECK-NEXT:#include "device.hpp"
+//CHECK-NEXT:#include "memory.hpp"
 //CHECK-EMPTY:
 //CHECK-NEXT:#if defined(_MSC_VER)

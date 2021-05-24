@@ -25,9 +25,12 @@ namespace dpct {
 
 enum class HelperFileEnum : unsigned int {
 #define HELPERFILE(PATH, UNIQUE_ENUM) UNIQUE_ENUM,
+#define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)
 #include "../../runtime/dpct-rt/include/HelperFileNames.inc"
+#undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
   HelperFileEnumTypeSize,
+  Unknown,
 };
 
 using HelperFeatureIDTy = std::pair<HelperFileEnum, std::string>;

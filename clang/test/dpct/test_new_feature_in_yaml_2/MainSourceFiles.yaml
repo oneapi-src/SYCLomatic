@@ -14,6 +14,11 @@ FeatureMap:
       CallerSrcFiles:
         - '/file/path/file1.cu'
       FeatureName:     'a_removed_feature1'
+    removed_feature3:
+      IsCalled:        true
+      CallerSrcFiles:
+        - '/file/path/file3.cu'
+      FeatureName:     'a_removed_feature1'
   removedfile.hpp:
     new_feature2:
       IsCalled:        true

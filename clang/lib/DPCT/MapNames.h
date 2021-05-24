@@ -431,6 +431,10 @@ public:
   static const std::string DplExtrasMemoryAllContentStr;
   static const std::string DplExtrasNumericAllContentStr;
   static const std::string DplExtrasVectorAllContentStr;
+
+  static const std::map<
+      std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
+      FeatureNameToAPINameMap;
 };
 
 class MigrationStatistics {

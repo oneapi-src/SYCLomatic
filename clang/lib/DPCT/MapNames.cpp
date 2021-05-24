@@ -3586,6 +3586,17 @@ const std::string MapNames::DplExtrasVectorAllContentStr =
 #include "clang/DPCT/dpl_extras/vector.all.inc"
     ;
 
+const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
+    MapNames::FeatureNameToAPINameMap = {
+#define HELPERFILE(PATH, UNIQUE_ENUM)
+#define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)              \
+  {{clang::dpct::HelperFileEnum::File, FeatureName}, APIName},
+#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
+#undef HELPER_FEATURE_MAP_TO_APINAME
+#undef HELPERFILE
+};
+
+
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},

@@ -14,6 +14,11 @@ FeatureMap:
       CallerSrcFiles:
         - '/file/path/file1.cu'
       FeatureName:     'a_new_feature1'
+    new_feature3:
+      IsCalled:        true
+      CallerSrcFiles:
+        - '/file/path/file3.cu'
+      FeatureName:     'a_new_feature1'
   newfile.hpp:
     new_feature2:
       IsCalled:        true
