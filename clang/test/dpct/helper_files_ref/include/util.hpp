@@ -213,6 +213,23 @@ template <typename T> inline T reverse_bits(T a) {
   return a;
 }
 
+/// \param [in] a The first value contains 4 bytes
+/// \param [in] b The second value contains 4 bytes
+/// \param [in] s The selector value, only lower 16bit used
+/// \returns the permutation result of 4 bytes selected in the way
+/// specified by \p s from \p a and \p b
+inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
+                                       unsigned int s) {
+
+  unsigned int ret;
+  ret =
+      ((((unsigned long)b << 32 | a) >> (s & 0x7) * 8) & 0xff) |
+      (((((unsigned long)b << 32 | a) >> ((s >> 4) & 0x7) * 8) & 0xff) << 8) |
+      (((((unsigned long)b << 32 | a) >> ((s >> 8) & 0x7) * 8) & 0xff) << 16) |
+      (((((unsigned long)b << 32 | a) >> ((s >> 12) & 0x7) * 8) & 0xff) << 24);
+  return ret;
+}
+
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__

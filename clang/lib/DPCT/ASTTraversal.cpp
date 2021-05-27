@@ -12687,6 +12687,8 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
         requestFeature(HelperFileEnum::Util, "vectorized_min", CE);
       } else if (Name == "__vcmpgtu2") {
         requestFeature(HelperFileEnum::Util, "vectorized_isgreater", CE);
+      } else if (Name == "__byte_perm") {
+        requestFeature(HelperFileEnum::Util, "byte_level_permute", CE);
       }
     }
   }
