@@ -354,6 +354,35 @@ void mysort(Itr Beg, Itr End){
   thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
   thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
 }
+
+
+typedef cudaStream_t FooType;
+template <typename T> class Container {
+
+public:
+  Container(FooType stream) { m_Stream = stream; };
+  FooType getStream() const { return m_Stream; }
+
+  FooType m_Stream;
+};
+
+struct my_math {
+  __host__ __device__ int operator()(int &r) { return r + 1; }
+};
+
+template <typename InputType, typename OutputType>
+void myfunction(const std::shared_ptr<const Container<InputType>> &inImageData,
+                int *dev_a, int *dev_b) {
+  // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*inImageData->getStream()), dev_a, dev_a + 10, dev_b, my_math());
+  thrust::transform(thrust::cuda::par.on(inImageData->getStream()), dev_a, dev_a + 10, dev_b, my_math());
+}
+
+template <typename InputType, typename OutputType>
+void myfunction2(FooType stream, int *dev_a, int *dev_b) {
+  // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*stream), dev_a, dev_a + 10, dev_b, my_math());
+  thrust::transform(thrust::cuda::par.on(stream), dev_a, dev_a + 10, dev_b, my_math());
+}
+
 int main(void){
   thrust::host_vector<int> h_vec(10);
   thrust::device_vector<int> d_vec(10);

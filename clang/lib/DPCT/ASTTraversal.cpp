@@ -2072,9 +2072,20 @@ void ThrustFunctionRule::thrustFuncMigration(
   auto NewName = ReplInfo->second.ReplName;
 
   bool hasExecutionPolicy =
-      (ArgT == "ExecutionPolicy") ||
-      (ArgT.find("execution_policy_base") != std::string::npos);
+      ArgT.find("execution_policy_base") != std::string::npos;
   bool PolicyProcessed = false;
+
+  if (ThrustFuncName == "transform" || ThrustFuncName == "copy_if") {
+    if (NumArgs == 6) {
+      hasExecutionPolicy = true;
+    } else if (NumArgs == 5) {
+      std::string FirstArgType = CE->getArg(0)->getType().getAsString();
+      std::string SecondArgType = CE->getArg(1)->getType().getAsString();
+      if (FirstArgType != SecondArgType)
+        hasExecutionPolicy = true;
+    }
+  }
+
   if (ThrustFuncName == "sort") {
     auto ExprLoc = SM.getSpellingLoc(CE->getBeginLoc());
     if (SortULExpr.count(ExprLoc) != 0)
@@ -2093,31 +2104,33 @@ void ThrustFunctionRule::thrustFuncMigration(
   }
   // To migrate "thrust::cuda::par.on" that appears in CE' first arg to
   // "oneapi::dpl::execution::make_device_policy".
-  const CXXMemberCallExpr *MCE = nullptr;
+  const CallExpr *Call = nullptr;
   if (hasExecutionPolicy) {
     if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(0))) {
       if (const auto *MT =
               dyn_cast<MaterializeTemporaryExpr>(ICE->getSubExpr())) {
         if (auto SubICE = dyn_cast<ImplicitCastExpr>(MT->getSubExpr())) {
-          MCE = dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr());
+          Call = dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr());
         }
       }
+    } else if (const auto *SubCE = dyn_cast<CallExpr>(CE->getArg(0))) {
+      Call = SubCE;
     } else {
-      MCE = dyn_cast<CXXMemberCallExpr>(CE->getArg(0));
+      Call = dyn_cast<CXXMemberCallExpr>(CE->getArg(0));
     }
   }
 
-  if (MCE) {
-    auto StreamArg = MCE->getArg(0);
+  if (Call) {
+    auto StreamArg = Call->getArg(0);
     std::ostringstream OS;
-    if (const auto *ME = dyn_cast<MemberExpr>(MCE->getCallee())) {
+    if (const auto *ME = dyn_cast<MemberExpr>(Call->getCallee())) {
       auto BaseName =
           DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
       if (BaseName == "thrust::cuda_cub::par_t") {
         OS << "oneapi::dpl::execution::make_device_policy(";
         printDerefOp(OS, StreamArg);
         OS << ")";
-        emplaceTransformation(new ReplaceStmt(MCE, OS.str()));
+        emplaceTransformation(new ReplaceStmt(Call, OS.str()));
         PolicyProcessed = true;
       }
     }
@@ -2131,16 +2144,14 @@ void ThrustFunctionRule::thrustFuncMigration(
       if (ThrustFuncName == "sort") {
         report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
-      } else if (ArgT.find("execution_policy_base") != std::string::npos) {
+      } else if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
       }
     }
   }
 
-  if (ArgT != "ExecutionPolicy" && ThrustFuncName == "copy_if" &&
-      (ArgT.find("execution_policy_base") == std::string::npos &&
-           NumArgs == 5 ||
-       NumArgs > 5)) {
+  if (ThrustFuncName == "copy_if" &&
+      (!hasExecutionPolicy && NumArgs == 5 || NumArgs > 5)) {
     NewName = MapNames::getDpctNamespace() + ThrustFuncName;
     requestFeature(HelperFileEnum::DplExtrasAlgorithm, "copy_if", CE);
 
@@ -3528,9 +3539,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
