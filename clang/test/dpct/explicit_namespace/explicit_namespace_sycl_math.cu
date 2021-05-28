@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_sycl_math %S/explicit_namespace_sycl_math.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=sycl-math --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/explicit_namespace_sycl_math/explicit_namespace_sycl_math.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
 // CHECK-NEXT: using namespace sycl;

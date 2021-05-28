@@ -13,7 +13,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_gcc/compile_by_gcc_lin.c.dp.cpp
 // RUN: rm -rf %T/compile_by_gcc
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 

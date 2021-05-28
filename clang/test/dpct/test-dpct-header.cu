@@ -10,7 +10,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header.inc %S/inc/header.inc
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header2.INC %S/inc/header2.INC
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "inc/header.h"
 #include "inc/header.h"

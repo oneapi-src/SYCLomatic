@@ -534,7 +534,8 @@ public:
   void insertHeader(HeaderType Type) {
     switch (Type) {
     case SYCL:
-      return insertHeader(HeaderType::SYCL, FirstIncludeOffset, "<CL/sycl.hpp>",
+      return insertHeader(HeaderType::SYCL, FirstIncludeOffset,
+                          "<sycl/sycl.hpp>",
                           "<" + getCustomMainHelperFileName() + "/" +
                               getCustomMainHelperFileName() + ".hpp>");
     case Math:

@@ -2,7 +2,7 @@
 // RUN: cd %T
 // RUN: dpct --no-cl-namespace-inline --usm-level=none -out-root %T/cublas-lambda cublas-lambda.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-lambda/cublas-lambda.dp.cpp --match-full-lines cublas-lambda.cu
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK: #include <oneapi/mkl.hpp>

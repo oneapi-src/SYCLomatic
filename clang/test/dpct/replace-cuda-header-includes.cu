@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/replace-cuda-header-includes %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace-cuda-header-includes/replace-cuda-header-includes.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "test-header.dp.hpp"
 // CHECK: // First function

@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device-usm/curand-device-usm.dp.cpp --match-full-lines %s
 
-//CHECK: #include <CL/sycl.hpp>
+//CHECK: #include <sycl/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
 //CHECK-NEXT: #include <oneapi/mkl.hpp>
 //CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
