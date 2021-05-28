@@ -426,9 +426,9 @@ template <class StreamT> void print(StreamT &Stream, const Expr *E) {
 template <class StreamT> void print(StreamT &Stream, StringRef Str) {
   Stream << Str;
 }
-template <class StreamT>
-void print(StreamT &Stream, ExprAnalysis &EA, StringRef Str) {
-  print(Stream, Str);
+template <class StreamT, class T>
+void print(StreamT &Stream, ExprAnalysis &EA, const T &Val) {
+  print(Stream, Val);
 }
 template <class StreamT> void print(StreamT &Stream, const std::string &Str) {
   Stream << Str;
@@ -926,6 +926,17 @@ public:
                      const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<AssignExprPrinter<LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+class SubGroupPrinter {
+  const CallExpr *Call;
+
+public:
+  SubGroupPrinter(const CallExpr *C) : Call(C) {}
+  static SubGroupPrinter create(const CallExpr*C) { return SubGroupPrinter(C); }
+  template <class StreamT> void print(StreamT &Stream) const {
+    DpctGlobalInfo::printSubGroup(Stream, Call);
+  }
 };
 
 template <class... MsgArgs>

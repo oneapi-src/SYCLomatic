@@ -9,7 +9,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: void kernel(sycl::nd_item<3> item_ct1, const sycl::stream &stream_ct1) {
+// CHECK: void kernel(const sycl::stream &stream_ct1) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1087:{{[0-9]+}}: DPC++ currently does not support across group synchronization, you can specify "--use-experimental-features=nd_range_barrier" to use dpct helper funcation nd_range_barrier to migrate grid.sync().
 // CHECK-NEXT:  */
@@ -34,7 +34,7 @@ int main() {
 // CHECK-NEXT:      cgh.parallel_for(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          kernel(item_ct1, stream_ct1);
+// CHECK-NEXT:          kernel(stream_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
   kernel<<<2, 2>>>();

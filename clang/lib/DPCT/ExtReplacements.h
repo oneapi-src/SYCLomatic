@@ -44,8 +44,6 @@ public:
   ExtReplacements(std::string FilePath);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
-  std::string processV();
-  std::string processR(unsigned int Index);
 
   inline bool empty() { return ReplMap.empty(); }
 
@@ -156,10 +154,9 @@ private:
     return false;
   }
 
-  bool getStrReplacingPlaceholder(HelperFuncType HelperFuncType, int Index,
-                                  std::string &Text);
   void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
   void processCudaArchMacro();
+
   std::string FilePath;
   ///< Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;

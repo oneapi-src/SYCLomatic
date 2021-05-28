@@ -124,11 +124,110 @@ std::unordered_map<std::string,
 std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
-std::set<DPCPPExtensions> DpctGlobalInfo::DPCPPExtSetNotPermit;
+unsigned DpctGlobalInfo::ExtensionFlag = static_cast<unsigned>(-1);
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
+
+class FreeQueriesInfo {
+public:
+  enum FreeQueriesKind {
+    NdItem = 0,
+    Group,
+    SubGroup,
+    End,
+  };
+  static constexpr char FreeQueriesRegexCh = 'F';
+
+private:
+  static constexpr unsigned KindBits = 4;
+  static constexpr unsigned KindMask = (1 << KindBits) - 1;
+  static constexpr unsigned MacroShiftBits = KindBits;
+  static constexpr unsigned MacroMask = 1 << MacroShiftBits;
+  static constexpr unsigned IndexShiftBits = MacroShiftBits + 1;
+
+private:
+  struct FreeQueriesNames {
+    std::string NonFreeQueriesName;
+    std::string FreeQueriesFuncName;
+    std::string ExtraVariableName;
+  };
+  struct MacroInfo {
+    std::string FilePath;
+    unsigned Offset;
+    unsigned Dimension = 0;
+    std::vector<unsigned> Infos;
+  };
+  static std::vector<std::shared_ptr<FreeQueriesInfo>> InfoList;
+  static std::vector<std::shared_ptr<MacroInfo>> MacroInfos;
+
+  std::string FilePath;
+  unsigned ExtraDeclLoc;
+  unsigned Counter[FreeQueriesKind::End] = { 0 };
+  std::string Indent;
+  std::string NL;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  unsigned Dimension = 3;
+  std::set<unsigned> Refs;
+  unsigned Idx;
+
+  static const FreeQueriesNames&getNames(FreeQueriesKind);
+  static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
+  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
+                                           FreeQueriesKind K,
+                                           unsigned Dimension) {
+    OS << getNames(K).FreeQueriesFuncName;
+    if (K != FreeQueriesKind::SubGroup) {
+      OS << '<';
+      if (Dimension) {
+        OS << Dimension;
+      } else {
+        OS << "Placeholder /* Fix the dimension manually */";
+      }
+      OS << '>';
+    }
+    OS << "()";
+  }
+  static FreeQueriesKind getKind(unsigned Num) {
+    return static_cast<FreeQueriesKind>(Num & KindMask);
+  }
+  static unsigned getIndex(unsigned Num) { return Num >> IndexShiftBits; }
+  static bool isMacro(unsigned Num) { return Num & MacroMask; }
+  static unsigned getRegexNum(unsigned Idx, bool IsMacro,
+                              FreeQueriesKind Kind) {
+    return static_cast<unsigned>((Idx << IndexShiftBits) |
+                                 (IsMacro * MacroMask) | (Kind & KindMask));
+  }
+
+  void emplaceExtraDecl();
+  void printImmediateText(llvm::raw_ostream &, const Stmt *, FreeQueriesKind);
+  std::string getReplaceString(FreeQueriesKind K);
+
+public:
+  static void printImmediateText(llvm::raw_ostream &, const Stmt *,
+    const FunctionDecl *, FreeQueriesKind);
+  static void buildInfo() {
+    for (auto &Info : InfoList)
+      Info->emplaceExtraDecl();
+    unsigned I = 0;
+    for (auto &Info : MacroInfos) {
+      Info->Dimension = InfoList[Info->Infos.front()]->Dimension;
+      for (auto Idx : Info->Infos) {
+        if (Info->Dimension != InfoList[Idx]->Dimension) {
+          Info->Dimension = 0;
+          DiagnosticsUtils::report(Info->FilePath, Info->Offset,
+                                   Diagnostics::FREE_QUERIES_DIMENSION, true,
+                                   false);
+          break;
+        }
+      }
+    }
+  }
+  static std::string getReplaceString(unsigned Num);
+
+  FreeQueriesInfo() = default;
+};
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -334,14 +433,6 @@ void DpctFileInfo::buildReplacements() {
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
     }
   }
-  // Below loop will add replacement for this_thread_block API
-  for (auto &Info : CGBlockInfoMap) {
-    auto Ptr = MemVarMap::getHeadWithoutPathCompression(
-        &(Info.second.DFI->getVarMap()));
-    if (Ptr) {
-      Info.second.buildInfo(FilePath, Info.first, Ptr->Dim);
-    }
-  }
 
   // Below four maps are used for device RNG API migration
   for (auto &StateTypeInfo : DeviceRandomStateTypeMap)
@@ -426,6 +517,8 @@ void DpctFileInfo::buildReplacements() {
       DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
     }
   }
+
+  FreeQueriesInfo::buildInfo();
 }
 
 bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
@@ -483,19 +576,6 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   if (Iter == M.end()) {
     BuiltinVarInfo BVI(Len, Repl, DFI);
     M.insert(std::make_pair(LocInfo.second, BVI));
-  }
-}
-
-void DpctGlobalInfo::insertCGBlockInfo(
-    SourceLocation SL, unsigned int Len, std::vector<std::string> Vars,
-    std::shared_ptr<DeviceFunctionInfo> DFI) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getCGBlockInfoMap();
-  auto Iter = M.find(LocInfo.second);
-  if (Iter == M.end()) {
-    CGBlockInfo CGBI(Len, Vars, DFI);
-    M.insert(std::make_pair(LocInfo.second, CGBI));
   }
 }
 
@@ -879,8 +959,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   }
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
-    Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
-                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
+    Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
+                 getItemName(), ") ", SubGroupSizeAttr, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap())) &&
@@ -902,7 +982,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
-                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
+                 getItemName(), ") ", SubGroupSizeAttr, " {");
   } else {
     DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 3)
@@ -919,7 +999,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
-                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
+                 getItemName(), ") ", SubGroupSizeAttr, " {");
   }
 
   if (getVarMap().hasSync()) {
@@ -2656,9 +2736,8 @@ void removeDuplicateVar(GlobalMap<T> &VarMap,
   }
 }
 void MemVarMap::removeDuplicateVar() {
-  std::unordered_set<std::string> VarNames{DpctGlobalInfo::getItemName(),
-                                           DpctGlobalInfo::getStreamName(),
-                                           DpctGlobalInfo::getSyncName()};
+  std::unordered_set<std::string> VarNames{getItemName(),
+                                           DpctGlobalInfo::getStreamName()};
   dpct::removeDuplicateVar(GlobalVarMap, VarNames);
   dpct::removeDuplicateVar(LocalVarMap, VarNames);
   dpct::removeDuplicateVar(ExternVarMap, VarNames);
@@ -3007,23 +3086,343 @@ void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
   DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
 }
-void CGBlockInfo::buildInfo(std::string FilePath, unsigned int Offset,
-                            unsigned int Dim) {
-  std::string ReplStr =
-      MapNames::getClNamespace() + "group<" + std::to_string(Dim) + "> ";
-
-  for (size_t i = 0; i < Vars.size(); ++i) {
-    if (i != 0)
-      ReplStr += ", ";
-    ReplStr += Vars[i];
-    ReplStr += " = ";
-    ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
-  }
-  ReplStr += ";";
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Len, ReplStr, nullptr));
-}
 
 bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }
+
+std::vector<std::shared_ptr<FreeQueriesInfo>> FreeQueriesInfo::InfoList;
+std::vector<std::shared_ptr<FreeQueriesInfo::MacroInfo>> FreeQueriesInfo::MacroInfos;
+
+const FreeQueriesInfo::FreeQueriesNames &
+FreeQueriesInfo::getNames(FreeQueriesKind K) {
+  static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
+      {getItemName(), 
+       MapNames::getClNamespace() + "this_nd_item", getItemName()},
+      {getItemName() + ".get_group()", 
+       MapNames::getClNamespace() + "this_group", "group" + getCTFixedSuffix()},
+      {getItemName() + ".get_sub_group()",
+       MapNames::getClNamespace() + "ONEAPI::this_sub_group",
+       "sub_group" + getCTFixedSuffix()},
+  };
+  return Names[K];
+}
+
+std::shared_ptr<FreeQueriesInfo>
+FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
+  if (!FD)
+    return std::shared_ptr<FreeQueriesInfo>();
+
+  if (!FD->doesThisDeclarationHaveABody())
+    return std::shared_ptr<FreeQueriesInfo>();
+
+  if (auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody())) {
+    auto ExtraDeclLoc = CS->body_front()->getBeginLoc();
+    auto LocInfo = DpctGlobalInfo::getLocInfo(ExtraDeclLoc);
+    auto Iter = std::find_if(InfoList.begin(), InfoList.end(),
+                             [&](const std::shared_ptr<FreeQueriesInfo> &Info) {
+                               return Info->FilePath == LocInfo.first &&
+                                      Info->ExtraDeclLoc == LocInfo.second;
+                             });
+    if (Iter != InfoList.end())
+      return *Iter;
+
+    auto Info = std::make_shared<FreeQueriesInfo>();
+    Info->FilePath = std::move(LocInfo.first);
+    Info->ExtraDeclLoc = LocInfo.second;
+    Info->Idx = InfoList.size();
+    Info->FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
+    Info->Indent = getIndent(ExtraDeclLoc, DpctGlobalInfo::getSourceManager()).str();
+    Info->NL = getNL();
+    InfoList.push_back(Info);
+    return Info;
+  }
+
+  return std::shared_ptr<FreeQueriesInfo>();
+}
+
+void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
+                                                const Stmt *S,
+                                                const FunctionDecl *FD,
+                                                FreeQueriesKind K) {
+#ifdef DPCT_DEBUG_BUILD
+  assert(K != FreeQueriesKind::End && "Unexpected FreeQueriesKind::End");
+#endif // DPCT_DEBUG_BUILD
+
+  if (!FD) {
+    FD = DpctGlobalInfo::getParentFunction(S);
+  }
+
+  if (DpctGlobalInfo::useFreeQueries()) {
+    if (auto Info = getInfo(FD)) {
+      return Info->printImmediateText(OS, S, K);
+    }
+
+#ifdef DPCT_DEBUG_BUILD
+    llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
+    assert(0);
+#endif // !DPCT_DEBUG_BUILD
+
+  } else {
+    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+    OS << getNames(K).NonFreeQueriesName;
+  }
+}
+
+static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
+
+/// Generate regex replacement as placeholder.
+void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
+                                         FreeQueriesKind K) {
+  unsigned Index = Idx;
+  auto IsMacro = S->getBeginLoc().isMacroID();
+  if (IsMacro && K != SubGroup) {
+    auto MacroLoc = DpctGlobalInfo::getLocInfo(
+        DpctGlobalInfo::getSourceManager().getSpellingLoc(S->getBeginLoc()));
+    auto Iter = std::find_if(MacroInfos.begin(), MacroInfos.end(),
+                             [&](std::shared_ptr<MacroInfo> Info) -> bool {
+                               return (MacroLoc.first == Info->FilePath) &&
+                                      (MacroLoc.second == Info->Offset);
+                             });
+    if (Iter == MacroInfos.end()) {
+      MacroInfos.push_back(std::make_shared<MacroInfo>());
+      Iter = --MacroInfos.end();
+      (*Iter)->FilePath = MacroLoc.first;
+      (*Iter)->Offset = MacroLoc.second;
+    }
+    (*Iter)->Infos.push_back(Idx);
+    Index = Iter - MacroInfos.begin();
+  } else {
+    auto SLocInfo = DpctGlobalInfo::getLocInfo(S);
+    if (SLocInfo.first != FilePath)
+      return;
+
+    if (Refs.insert(SLocInfo.second).second) {
+      ++Counter[K];
+    }
+  }
+
+  OS << RegexPrefix << FreeQueriesRegexCh << getRegexNum(Index, IsMacro, K)
+     << RegexSuffix;
+  return;
+}
+
+/// Generate temporary variable declaration when reference counter > 2.
+/// Declaration example:
+/// auto item_ct1 = this_nd_item<3>();
+void FreeQueriesInfo::emplaceExtraDecl() {
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+    if (auto VarMapHead =
+            MemVarMap::getHeadWithoutPathCompression(&FuncInfo->getVarMap())) {
+      Dimension = VarMapHead->Dim;
+    }
+  }
+  if (Counter[FreeQueriesKind::NdItem] > 1) {
+    auto &KindNames =
+        getNames(static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem));
+    OS << "auto " << KindNames.ExtraVariableName << " = ";
+    printFreeQueriesFunctionName(
+        OS, static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem), Dimension);
+    OS << ';' << NL << Indent;
+  }
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, ExtraDeclLoc, 0, OS.str(), nullptr));
+}
+
+template <class F, class... Ts>
+std::string buildStringFromPrinter(F Func, Ts &&... Args) {
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  Func(OS, std::forward<Ts>(Args)...);
+  return OS.str();
+}
+
+std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
+  auto Index = getIndex(Num);
+  auto Kind = getKind(Num);
+  bool IsMacro = isMacro(Num);
+  if (IsMacro) {
+    if (Index < MacroInfos.size()) {
+      return buildStringFromPrinter(printFreeQueriesFunctionName, Kind,
+        MacroInfos[Index]->Dimension);
+    }
+#ifdef DPCT_DEBUG_BUILD
+    llvm::errs() << "FreeQueriesInfo index[" << Index
+      << "]is larger than list size[" << InfoList.size() << "]\n";
+    assert(0);
+#endif // DPCT_DEBUG_BUILD
+  }
+  if (Index < InfoList.size())
+    return InfoList[Index]->getReplaceString(getKind(Num));
+#ifdef DPCT_DEBUG_BUILD
+  llvm::errs() << "FreeQueriesInfo index[" << Index
+    << "]is larger than list size[" << InfoList.size() << "]\n";
+  assert(0);
+#endif // DPCT_DEBUG_BUILD
+  return "";
+}
+
+std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
+  if (K != FreeQueriesKind::NdItem || Counter[K] < 2)
+    return buildStringFromPrinter(printFreeQueriesFunctionName, K,
+                                  Dimension);
+  else
+    return getNames(K).ExtraVariableName;
+}
+
+void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
+                               const FunctionDecl *FD) {
+  FreeQueriesInfo::printImmediateText(OS, S, FD,
+                                      FreeQueriesInfo::FreeQueriesKind::NdItem);
+}
+std::string DpctGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printItem, S, FD);
+}
+
+void DpctGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
+                                const FunctionDecl *FD) {
+  FreeQueriesInfo::printImmediateText(OS, S, FD,
+                                      FreeQueriesInfo::FreeQueriesKind::Group);
+}
+std::string DpctGlobalInfo::getGroup(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printGroup, S, FD);
+}
+
+void DpctGlobalInfo::printSubGroup(llvm::raw_ostream &OS, const Stmt *S,
+                                   const FunctionDecl *FD) {
+  FreeQueriesInfo::printImmediateText(
+      OS, S, FD, FreeQueriesInfo::FreeQueriesKind::SubGroup);
+}
+std::string DpctGlobalInfo::getSubGroup(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printSubGroup, S, FD);
+}
+
+std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT, int Index);
+
+std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
+  unsigned Index;
+  char Method = MatchedStr[RegexPrefix.length()];
+  MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10,Index);
+  // D: deivce, used for pretty code
+  // Q: queue, used for pretty code
+  // V: vector size, used for rand API migration
+  // R: range dim, used for built-in variables(threadIdx.x,...) migration
+  // F: free queries function migration, such as this_nd_item, this_group,
+  // this_sub_group.
+  switch (Method) {
+  case 'R':
+    if (auto DFI = getCudaBuiltinXDFI(Index)) {
+      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+      if (Ptr && Ptr->Dim == 1) {
+        return "0";
+      }
+    }
+    return "2";
+  case 'V':
+    if (getDeviceRNGReturnNumSet().size() == 1) {
+      return std::to_string(
+          *getDeviceRNGReturnNumSet().begin());
+    }
+    return "dpct_placeholder/*Fix the vec_size manually*/";
+  case 'C':
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      return std::to_string(DpctGlobalInfo::getInstance()
+        .getCubPlaceholderIndexMap()[Index]
+        ->getVarMap()
+        .getHeadNodeDim());
+    }
+    return "3";
+  case 'D':
+    return getStringForRegexDefaultQueueAndDevice(
+        HelperFuncType::HFT_CurrentDevice, Index);
+  case 'Q':
+    return getStringForRegexDefaultQueueAndDevice(
+        HelperFuncType::HFT_DefaultQueue, Index);
+  case FreeQueriesInfo::FreeQueriesRegexCh:
+    return FreeQueriesInfo::getReplaceString(Index);
+  default:
+#ifdef DPCT_DEBUG_BUILD
+    llvm::errs() << "Unexpected method char: " << Method << "\n";
+    assert(0);
+#endif // DPCT_DEBUG_BUILD
+    return MatchedStr.str();
+  }
+}
+
+const std::string &getDefaultString(HelperFuncType HFT) {
+  switch (HFT) {
+  case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
+    const static std::string DefaultQueue =
+        MapNames::getDpctNamespace() + "get_default_queue()";
+    return DefaultQueue;
+  }
+  case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
+    const static std::string DefaultQueue =
+        MapNames::getDpctNamespace() + "get_current_device()";
+    return DefaultQueue;
+  }
+  case clang::dpct::HelperFuncType::HFT_InitValue:
+  default: {
+    const static std::string NullString;
+    return NullString;
+  }
+  }
+}
+
+std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
+                                                   int Index) {
+  if (HFT != HelperFuncType::HFT_DefaultQueue &&
+      HFT != HelperFuncType::HFT_CurrentDevice) {
+    return "";
+  }
+
+  if (DpctGlobalInfo::getDeviceChangedFlag() ||
+      !DpctGlobalInfo::getUsingDRYPattern()) {
+    return getDefaultString(HFT);
+  }
+
+  auto HelperFuncReplInfoIter =
+    DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+  if (HelperFuncReplInfoIter == DpctGlobalInfo::getHelperFuncReplInfoMap().end())
+    return getDefaultString(HFT);
+
+  std::string CounterKey =
+      HelperFuncReplInfoIter->second.DeclLocFile + ":" +
+      std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
+
+  auto TempVariableDeclCounterIter =
+      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
+  if (TempVariableDeclCounterIter ==
+      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+    return getDefaultString(HFT);
+  }
+
+  // All cases of replacing placeholders:
+  // dev_count  queue_count  dev_decl            queue_decl
+  // 0          1            /                   get_default_queue
+  // 1          0            get_current_device  /
+  // 1          1            get_current_device  get_default_queue
+  // 2          1            dev_ct1             get_default_queue
+  // 1          2            dev_ct1             q_ct1
+  // >=2        >=2          dev_ct1             q_ct1
+  if (HFT == HelperFuncType::HFT_DefaultQueue) {
+    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+        TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+      return getDefaultString(HFT);
+    } else {
+      return "q_ct1";
+    }
+  } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
+    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+        (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
+         TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
+      return getDefaultString(HFT);
+    } else {
+      return "dev_ct1";
+    }
+  }
+  return "";
+}
+
 } // namespace dpct
 } // namespace clang

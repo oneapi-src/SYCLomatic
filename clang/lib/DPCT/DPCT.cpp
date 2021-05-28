@@ -416,14 +416,16 @@ static list<ExplicitNamespace> UseExplicitNamespace(
 static list<DPCPPExtensions> NoDPCPPExtensions(
     "no-dpcpp-extensions",
     llvm::cl::desc(
-        "Comma separated list of DPC++ extensions not to be used in migrated code.\n"
+        "Comma separated list of DPC++ extensions not to be used in migrated "
+        "code.\n"
         "By default, these extensions will be used in migrated code."),
     llvm::cl::CommaSeparated,
-    values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::DPCPPE_Submit_Barrier),
+    values(llvm::cl::OptionEnumValue{"enqueued_barriers",
+                                     int(DPCPPExtensions::Ext_EnqueueBarrier),
                                      "Enqueued barriers DPC++ extension.",
                                      false}),
-    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
-
+    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore,
+    llvm::cl::cb<void, DPCPPExtensions>(DpctGlobalInfo::setExtensionUnused));
 static bits<ExperimentalFeatures> Experimentals(
   "use-experimental-features",
   llvm::cl::desc(
@@ -435,9 +437,15 @@ static bits<ExperimentalFeatures> Experimentals(
     llvm::cl::OptionEnumValue{
         "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
         "DPCT helper function: nd_range_barrier. Default: off\n",
+        false },
+    llvm::cl::OptionEnumValue{
+        "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
+        "The extension allows to get `id`, `item`, `nd_item`, `group`, `sub_group` instances globally.",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
+
 // clang-format on
+
 
 // TODO: implement one of this for each source language.
 std::string CudaPath;
@@ -1221,9 +1229,9 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
-  DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -1256,13 +1264,6 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
-
-  if (NoDPCPPExtensions.getNumOccurrences()) {
-    DpctGlobalInfo::setDPCPPExtSetNotPermit(NoDPCPPExtensions);
-  } else {
-    std::vector<DPCPPExtensions> DefaultDPCPPExtensions = {};
-    DpctGlobalInfo::setDPCPPExtSetNotPermit(DefaultDPCPPExtensions);
-  }
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();

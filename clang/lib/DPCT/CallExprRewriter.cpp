@@ -1791,6 +1791,7 @@ public:
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define SUBGROUP std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})

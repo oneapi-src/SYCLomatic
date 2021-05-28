@@ -192,3 +192,5 @@ DEF_WARNING(ACTIVE_MASK_NOT_SUPPORTED, 1086, "The function %0 is not supported. 
 DEF_COMMENT(ACTIVE_MASK_NOT_SUPPORTED, 1086, "The function {0} is not supported. You may need to use {1} instead or adjust the code.")
 DEF_WARNING(ND_RANGE_BARRIER, 1087, "DPC++ currently does not support across group synchronization, you can specify \"--use-experimental-features=nd_range_barrier\" to use dpct helper funcation nd_range_barrier to migrate %0.sync().")
 DEF_COMMENT(ND_RANGE_BARRIER, 1087, "DPC++ currently does not support across group synchronization, you can specify \"--use-experimental-features=nd_range_barrier\" to use dpct helper funcation nd_range_barrier to migrate {0}.sync().")
+DEF_WARNING(FREE_QUERIES_DIMENSION, 1088, "The macro definition has multiple migration results in free queries function dimension that could not be unified. You may need to modify the code.")
+DEF_COMMENT(FREE_QUERIES_DIMENSION, 1088, "The macro definition has multiple migration results in free queries function dimension that could not be unified. You may need to modify the code.")

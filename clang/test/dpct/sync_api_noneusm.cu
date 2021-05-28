@@ -9,7 +9,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: #define TB(b) sycl::group<3> b = item_ct1.get_group();
+// CHECK: #define TB(b) auto b = item_ct1.get_group();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
 __device__ void foo(int i) {}
@@ -18,12 +18,12 @@ __device__ void foo(int i) {}
 
 // CHECK: void k(sycl::nd_item<3> item_ct1) {
 __global__ void k() {
-  // CHECK: sycl::group<3> cta = item_ct1.get_group();
+  // CHECK: auto cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
   // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::sync(cta);
 
-  // CHECK: sycl::group<3> block = item_ct1.get_group();
+  // CHECK: auto block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
   // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
@@ -36,7 +36,7 @@ __global__ void k() {
   // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::sync(cg::this_thread_block());
 
-  // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);

@@ -293,98 +293,6 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   }
 }
 
-bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
-                                                 std::string &Text) {
-  if (HFT != HelperFuncType::HFT_DefaultQueue &&
-      HFT != HelperFuncType::HFT_CurrentDevice) {
-    return false;
-  }
-
-  auto HelperFuncReplInfoIter =
-      DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
-
-  if (DpctGlobalInfo::getDeviceChangedFlag() ||
-      !DpctGlobalInfo::getUsingDRYPattern()) {
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_default_queue()";
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_current_device()";
-    }
-    return true;
-  }
-
-  std::string CounterKey =
-      HelperFuncReplInfoIter->second.DeclLocFile + ":" +
-      std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
-
-  auto TempVariableDeclCounterIter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
-  if (TempVariableDeclCounterIter ==
-      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
-    return false;
-  }
-
-  // All cases of replacing placeholders:
-  // dev_count  queue_count  dev_decl            queue_decl
-  // 0          1            /                   get_default_queue
-  // 1          0            get_current_device  /
-  // 1          1            get_current_device  get_default_queue
-  // 2          1            dev_ct1             get_default_queue
-  // 1          2            dev_ct1             q_ct1
-  // >=2        >=2          dev_ct1             q_ct1
-  if (HFT == HelperFuncType::HFT_DefaultQueue) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_default_queue()";
-      return true;
-    } else if (TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_default_queue()";
-      return true;
-    } else {
-      Text = "q_ct1";
-      return true;
-    }
-  } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_current_device()";
-      return true;
-    } else if (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-               TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
-      Text = MapNames::getDpctNamespace() + "get_current_device()";
-      return true;
-    } else {
-      Text = "dev_ct1";
-      return true;
-    }
-  }
-  return false;
-}
-
-std::string ExtReplacements::processV() {
-  std::string Res;
-  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-    Res = std::to_string(*DpctGlobalInfo::getDeviceRNGReturnNumSet().begin());
-  } else {
-    Res = "dpct_placeholder/*Fix the vec_size manually*/";
-  }
-  return Res;
-}
-std::string ExtReplacements::processR(unsigned int Index) {
-  std::string Res = "2";
-  if (auto DFI = DpctGlobalInfo::getCudaBuiltinXDFI(Index)) {
-    auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-    if (Ptr && Ptr->Dim == 1) {
-      Res = "0";
-    }
-  }
-  return Res;
-}
-
 void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
   std::vector<std::shared_ptr<clang::dpct::ExtReplacement>> ReplsList =
       mergeReplsAtSameOffset();
@@ -692,87 +600,37 @@ void ExtReplacements::buildCudaArchHostFunc(
 void ExtReplacements::postProcess() {
   auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
   for (auto &R : ReplMap) {
-    std::string OriginReplText = R.second->getReplacementText().str();
-    std::string NewReplText;
 
     // D: deivce, used for pretty code
     // Q: queue, used for pretty code
     // V: vector size, used for rand API migration
     // R: range dim, used for built-in variables(threadIdx.x,...) migration
     // C: cub group dim, used for cub API migration
-    std::regex RE("\\{\\{NEEDREPLACE[DQVRC][1-9][0-9]*\\}\\}");
-    std::smatch MRes;
-    std::string MatchedSuffix;
-    bool Matched = false;
-    while (std::regex_search(OriginReplText, MRes, RE)) {
-      Matched = true;
-      std::string MatchedStr = MRes.str();
-      NewReplText = NewReplText + std::string(MRes.prefix());
-
-      if (MatchedStr.substr(13, 1) == "V" || MatchedStr.substr(13, 1) == "R") {
-        if (MatchedStr.substr(13, 1) == "V") {
-          NewReplText = NewReplText + processV();
-        } else {
-          unsigned int Index =
-              std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
-          NewReplText = NewReplText + processR(Index);
-        }
-        MatchedSuffix = std::string(MRes.suffix());
-        OriginReplText = MatchedSuffix;
-      } else if (MatchedStr.substr(13, 1) == "Q" ||
-                 MatchedStr.substr(13, 1) == "D") {
-        // get the index from the placeholder string
-        int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
-        // get the HelperFuncType from the placeholder string
-        HelperFuncType HFT = HelperFuncType::HFT_InitValue;
-        if (MatchedStr.substr(13, 1) == "Q")
-          HFT = HelperFuncType::HFT_DefaultQueue;
-        else if (MatchedStr.substr(13, 1) == "D")
-          HFT = HelperFuncType::HFT_CurrentDevice;
-
-        auto HelperFuncReplInfoIter =
-            DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
-        if (HelperFuncReplInfoIter ==
-            DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
-          // Cannot found HelperFuncReplInfo in the map, migrate it to default
-          // queue
-          NewReplText = NewReplText + MapNames::getDpctNamespace() +
-                        "get_default_queue()";
-          requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
-        } else {
-          std::string Text;
-          if (getStrReplacingPlaceholder(HFT, Index, Text)) {
-            NewReplText = NewReplText + Text;
-          } else {
-            NewReplText = NewReplText + MatchedStr;
-          }
-        }
-        MatchedSuffix = std::string(MRes.suffix());
-        OriginReplText = MatchedSuffix;
-      } else if(MatchedStr.substr(13, 1) == "C") {
-        int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
-        auto &Map =  DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
-        int GroupDim = 3;
-        if(DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          GroupDim = Map[Index]->getVarMap().getHeadNodeDim();
-        }
-        NewReplText = NewReplText + std::to_string(GroupDim);
-        MatchedSuffix = std::string(MRes.suffix());
-        OriginReplText = MatchedSuffix;
-      }
+    // F: free queries function migration, such as this_nd_item, this_group,
+    // this_sub_group.
+    StringRef OriginalText = R.second->getReplacementText();
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRFC][0-9]*\\}\\}");
+    std::match_results<StringRef::const_iterator> Result;
+    std::string NewText;
+    auto Begin = OriginalText.begin(), End = OriginalText.end();
+    while (std::regex_search(Begin, End, Result, RE)) {
+      NewText.append(Result.prefix().first, Result.prefix().length());
+      NewText += DpctGlobalInfo::getStringForRegexReplacement(
+          StringRef(Result[0].first, Result[0].length()));
+      Begin = Result.suffix().first;
     }
-
-    if (Matched) {
-      NewReplText = NewReplText + MatchedSuffix;
-      auto NewRepl = std::make_shared<ExtReplacement>(
-          FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
-          nullptr);
-      NewRepl->setBlockLevelFormatFlag(R.second->getBlockLevelFormatFlag());
-      NewRepl->setInsertPosition(
-          (dpct::InsertPosition)R.second->getInsertPosition());
-      R.second = NewRepl;
+    if (NewText.size()) {
+      NewText.append(Begin, End);
+      auto &Old = R.second;
+      auto New = std::make_shared<ExtReplacement>(
+          Old->getFilePath(), Old->getOffset(), Old->getLength(), NewText, nullptr);
+      New->setBlockLevelFormatFlag(Old->getBlockLevelFormatFlag());
+      New->setInsertPosition(
+          static_cast<dpct::InsertPosition>(Old->getInsertPosition()));
+      Old = std::move(New);
     }
   }
+
   if (DpctGlobalInfo::isKeepOriginCode())
     buildOriginCodeReplacements(FileInfo);
 

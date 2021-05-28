@@ -413,8 +413,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
         !DpctGlobalInfo::isInRoot(VD->getLocation())) {
-      addReplacement(DRE, DpctGlobalInfo::getItemName() +
-                              ".get_sub_group().get_local_range().get(0)");
+      addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
+                              ".get_local_range().get(0)");
     }
   }
 }
@@ -492,17 +492,17 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
           auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
           DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
-          addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "({{NEEDREPLACER",
                                          std::to_string(Index), "}})"));
           DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
         } else {
           DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "(", FieldName, ")"));
         }
       } else {
-        addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
     }

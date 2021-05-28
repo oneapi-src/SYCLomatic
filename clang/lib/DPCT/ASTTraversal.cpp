@@ -1106,7 +1106,8 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
       memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
                      declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
                                                        "blockIdx", "gridDim"))
-                                        .bind("varDecl")))))),
+                                        .bind("varDecl")))
+                         .bind("declRefExpr")))),
                  hasAncestor(functionDecl().bind("func")))
           .bind("memberExpr"),
       this);
@@ -1121,19 +1122,19 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-bool IterationSpaceBuiltinRule::renameBuiltinName(StringRef BuiltinName,
-                                                  std::string &NewName) {
-  NewName = getItemName();
+bool IterationSpaceBuiltinRule::renameBuiltinName(
+    const DeclRefExpr *DRE, std::string &NewName) {
+  auto BuiltinName = DRE->getDecl()->getName();
   if (BuiltinName == "threadIdx")
-    NewName += ".get_local_id(";
+    NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_id(";
   else if (BuiltinName == "blockDim")
-    NewName += ".get_local_range().get(";
+    NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_range().get(";
   else if (BuiltinName == "blockIdx")
-    NewName += ".get_group(";
+    NewName = DpctGlobalInfo::getItem(DRE) + ".get_group(";
   else if (BuiltinName == "gridDim")
-    NewName += ".get_group_range(";
+    NewName = DpctGlobalInfo::getItem(DRE) + ".get_group_range(";
   else if (BuiltinName == "warpSize")
-    NewName += ".get_sub_group().get_local_range().get(0)";
+    NewName = DpctGlobalInfo::getSubGroup(DRE) + ".get_local_range().get(0)";
   else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected field name: " << BuiltinName;
@@ -1188,9 +1189,8 @@ void IterationSpaceBuiltinRule::runRule(
       if (TyLen <= 0)
         return;
 
-      const auto BuiltinName = DRE->getDecl()->getName();
       std::string Replacement;
-      if (!renameBuiltinName(BuiltinName, Replacement))
+      if (!renameBuiltinName(DRE, Replacement))
         return;
 
       const auto FieldName = Tok2.getRawIdentifier().str();
@@ -1198,7 +1198,6 @@ void IterationSpaceBuiltinRule::runRule(
       auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
       if (!DFI)
         return;
-      DFI->setItem();
 
       if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         if (FieldName == "x") {
@@ -1231,12 +1230,16 @@ void IterationSpaceBuiltinRule::runRule(
       emplaceTransformation(
           new ReplaceText(Begin, TyLen, std::move(Replacement)));
     }
+    return;
   }
 
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
-  const VarDecl *VD = nullptr;
-  const DeclRefExpr *DRE = nullptr;
+  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+  const DeclRefExpr *DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr");
   std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
+  if (!VD || !DRE) {
+    return;
+  }
   bool IsME = false;
   if (ME) {
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func");
@@ -1245,17 +1248,8 @@ void IterationSpaceBuiltinRule::runRule(
     DFI = DeviceFunctionDecl::LinkRedecls(FD);
     if (!DFI)
       return;
-    DFI->setItem();
-    VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-    if (!VD) {
-      return;
-    }
     IsME = true;
-  } else if ((DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr"))) {
-    VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-    if (!VD) {
-      return;
-    }
+  } else {
     std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
                              .getFilename(VD->getBeginLoc())
                              .str();
@@ -1263,13 +1257,11 @@ void IterationSpaceBuiltinRule::runRule(
     if (!isChildOrSamePath(DpctInstallPath, InFile)) {
       return;
     }
-  } else {
-    return;
   }
 
   std::string Replacement;
   StringRef BuiltinName = VD->getName();
-  if (!renameBuiltinName(BuiltinName, Replacement))
+  if (!renameBuiltinName(DRE, Replacement))
     return;
 
   if (IsME) {
@@ -1346,7 +1338,6 @@ void IterationSpaceBuiltinRule::runRule(
       unsigned int Idx = PVD->getFunctionScopeIndex();
 
       for (const auto FDIter : FD->redecls()) {
-        DeviceFunctionDecl::LinkRedecls(FDIter)->setItem();
         if (IsConstQualified) {
           SourceRange SR;
           const ParmVarDecl *CurrentPVD = FDIter->getParamDecl(Idx);
@@ -1370,10 +1361,10 @@ void IterationSpaceBuiltinRule::runRule(
             SourceLocation InsertLoc =
                 SM.getExpansionLoc((*(BodyCS->child_begin()))->getBeginLoc());
             std::string IndentStr = getIndent(InsertLoc, SM).str();
-            std::string Text = "if (!" + PVD->getName().str() + ") " +
-                               PVD->getName().str() + " = " + getItemName() +
-                               ".get_sub_group().get_local_range().get(0);" +
-                               getNL() + IndentStr;
+            std::string Text = "if (!" + PVD->getName().str() + ") " + PVD->getName().str() +
+                " = " + DpctGlobalInfo::getSubGroup(BodyCS) +
+                               ".get_local_range().get(0);" + getNL() +
+                               IndentStr;
             emplaceTransformation(new InsertText(InsertLoc, std::move(Text)));
           }
         }
@@ -9221,8 +9212,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   auto &Context = dpct::DpctGlobalInfo::getContext();
 
   if (IsAssigned) {
-    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
-            DPCPPExtensions::DPCPPE_Submit_Barrier)) {
+    if (!DpctGlobalInfo::useEnqueueBarrier()) {
       // submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       emplaceTransformation(new ReplaceStmt(CE, false, Name, "0"));
@@ -9262,8 +9252,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     TM->setInsertPosition(IP_Right);
     emplaceTransformation(TM);
   } else {
-    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
-            DPCPPExtensions::DPCPPE_Submit_Barrier)) {
+    if (!DpctGlobalInfo::useEnqueueBarrier()) {
       // submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       auto TM = new ReplaceStmt(CE, false, Name, std::move(Repl.str()));
@@ -10005,8 +9994,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaStreamWaitEvent") {
     std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
-    if (DpctGlobalInfo::getDPCPPExtSetNotPermit().count(
-            DPCPPExtensions::DPCPPE_Submit_Barrier)) {
+    if (!DpctGlobalInfo::useEnqueueBarrier()) {
       // submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       ReplStr = StmtStr1 + ".wait()";
@@ -10223,7 +10211,7 @@ void DeviceFunctionDeclRule::runRule(
           }
 
           std::string ReplStr = "dpct::experimental::nd_range_barrier(" +
-                                DpctGlobalInfo::getItemName() + ", " +
+                                DpctGlobalInfo::getItem(CXXMCE) + ", " +
                                 DpctGlobalInfo::getSyncName() + ")";
 
           emplaceTransformation(new ReplaceStmt(CXXMCE, ReplStr));
@@ -12949,9 +12937,6 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "ancestor"))
-    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
-
   if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
@@ -12994,8 +12979,6 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDeclUsed");
     IsAssigned = true;
   }
-  if (FD)
-    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
@@ -13012,71 +12995,16 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
     std::string Replacement = MapNames::getClNamespace() + "group_barrier(" +
-                              getItemName() + ".get_group())";
+                              DpctGlobalInfo::getGroup(CE, FD) + ")";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        auto &SM = DpctGlobalInfo::getSourceManager();
-        std::vector<std::string> Vars;
-        for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
-          auto VD = dyn_cast<VarDecl>(*It);
-          if (VD->getLocation().isMacroID() &&
-              SM.isMacroArgExpansion(VD->getLocation())) {
-            auto VDBegin =
-                SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
-            VDBegin = SM.getSpellingLoc(VDBegin);
-            Token T;
-            Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
-            Vars.push_back(T.getRawIdentifier().str());
-          } else {
-            Vars.push_back(VD->getName().str());
-          }
-        }
-
-        auto Begin = P->getBeginLoc();
-        auto End = P->getEndLoc();
-        auto Range = getDefinitionRange(Begin, End);
-        Begin = Range.getBegin();
-        End = Range.getEnd();
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
-        unsigned int Len =
-            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-
-        auto FD = getImmediateOuterFuncDecl(P);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        DpctGlobalInfo::getInstance().insertCGBlockInfo(Begin, Len, Vars, DFI);
-        DpctGlobalInfo::updateSpellingLocDFIMaps(CE->getBeginLoc(), DFI);
-      } else {
-        auto FD = getImmediateOuterFuncDecl(P);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        std::string ReplStr{MapNames::getClNamespace() + "group<3> "};
-        for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
-          auto VD = dyn_cast<VarDecl>(*It);
-          if (It != P->decl_begin())
-            ReplStr += ", ";
-          auto &SM = DpctGlobalInfo::getSourceManager();
-          if (VD->getLocation().isMacroID() &&
-              SM.isMacroArgExpansion(VD->getLocation())) {
-            auto VDBegin =
-                SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
-            VDBegin = SM.getSpellingLoc(VDBegin);
-            Token T;
-            Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
-            ReplStr += T.getRawIdentifier().str();
-          } else {
-            ReplStr += VD->getName();
-          }
-          ReplStr += " = ";
-          ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
-        }
-        ReplStr += ";";
-        emplaceTransformation(new ReplaceStmt(P, std::move(ReplStr)));
+      if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
+        emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
       }
-    } else {
-      emplaceTransformation(new ReplaceStmt(CE, ""));
     }
+    emplaceTransformation(
+        new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE, FD)));
   } else if (FuncName == "__threadfence_block") {
     std::string CLNS = MapNames::getClNamespace();
     std::string ReplStr = CLNS + "ONEAPI::atomic_fence(" + CLNS +
@@ -13108,10 +13036,10 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       ReplStr = "(";
       ReplStr += MapNames::getClNamespace() + "group_barrier(" +
-                 DpctGlobalInfo::getItemName() + ".get_group()), ";
+                 DpctGlobalInfo::getGroup(CE, FD) + "), ";
     } else {
       ReplStr += MapNames::getClNamespace() + "group_barrier(" +
-                 DpctGlobalInfo::getItemName() + ".get_group());" + getNL();
+                 DpctGlobalInfo::getGroup(CE, FD) + ");" + getNL();
       ReplStr += getIndent(CE->getBeginLoc(), *Result.SourceManager).str();
     }
     if (FuncName == "__syncthreads_and") {
@@ -13121,14 +13049,14 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       ReplStr += MapNames::getClNamespace() + "reduce_over_group(";
     }
-    ReplStr += getItemName();
-    ReplStr += ".get_group(), ";
+    ReplStr += DpctGlobalInfo::getGroup(CE) + ", ";
     if (FuncName == "__syncthreads_count") {
       ReplStr += ExprAnalysis::ref(CE->getArg(0)) + " == 0 ? 0 : 1, " +
                  MapNames::getClNamespace() + "ONEAPI::plus<>()";
     } else {
       ReplStr += ExprAnalysis::ref(CE->getArg(0));
     }
+
     ReplStr += ")";
     if (IsAssigned)
       ReplStr += ")";
@@ -13137,7 +13065,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "__syncwarp") {
     std::string ReplStr;
     ReplStr = MapNames::getClNamespace() + "group_barrier(" +
-              DpctGlobalInfo::getItemName() + ".get_sub_group())";
+              DpctGlobalInfo::getSubGroup(CE, FD) + ")";
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   }
 }
@@ -15669,10 +15597,6 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
 }
 void CubRule::processCubDeclStmt(const DeclStmt *DS) {
   std::string Repl;
-  std::shared_ptr<clang::dpct::DeviceFunctionInfo> DI;
-  if (auto DeviceFuncDecl = getImmediateOuterFuncDecl(DS)) {
-    DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-  }
   for (auto Decl : DS->decls()) {
     auto VDecl = dyn_cast<VarDecl>(Decl);
     if (!VDecl)
@@ -15706,16 +15630,10 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
         continue;
       } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
                  ObjTypeStr.find("class cub::WarpReduce") == 0) {
-        if (DI) {
-          DI->setItem();
-        }
-        Repl = DpctGlobalInfo::getItemName() + ".get_sub_group()";
+        Repl = DpctGlobalInfo::getSubGroup(DRE);
       } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
                  ObjTypeStr.find("class cub::BlockReduce") == 0) {
-        if (DI) {
-          DI->setItem();
-        }
-        Repl = DpctGlobalInfo::getItemName() + ".get_group()";
+        Repl = DpctGlobalInfo::getGroup(DRE);
       } else {
         continue;
       }
@@ -15836,14 +15754,13 @@ void CubRule::processCubFuncCall(const CallExpr *CE) {
         const Expr *Lane = CE->getArg(1);
         ExprAnalysis ValueEA(Value);
         ExprAnalysis LaneEA(Lane);
-        Repl = DpctGlobalInfo::getItemName() + ".get_sub_group().shuffle(" +
+        auto DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
+        Repl = DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) + ".shuffle(" +
                ValueEA.getReplacedString() + ", " + LaneEA.getReplacedString() +
                ")";
-        auto DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
         if (DeviceFuncDecl) {
           auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
           if (DI) {
-            DI->setItem();
             DI->addSubGroupSizeRequest(WarpSize, CE->getBeginLoc(), "shuffle");
           }
         }
@@ -15872,7 +15789,6 @@ void CubRule::processCubFuncCall(const CallExpr *CE) {
 void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
   const CXXMemberCallExpr *BlockMC = nullptr, *WarpMC = nullptr;
   size_t WarpSize = 32;
-  bool isNeedItem = true;
   std::string Repl, NewFuncName, InitRepl, OpRepl, Indent, Group;
   auto ObjType = MC->getObjectType().getCanonicalType();
   std::string ObjTypeStr = ObjType.getAsString();
@@ -15903,15 +15819,16 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
     Indent =
         getIndent(BlockMC->getBeginLoc(), DpctGlobalInfo::getSourceManager())
             .str();
-    Group = DpctGlobalInfo::getItemName() + ".get_group()";
     if (BlockMC->getObjectType()->getTypeClass() ==
         clang::Type::TypeClass::SubstTemplateTypeParm) {
       auto DRE =
           dyn_cast_or_null<DeclRefExpr>(BlockMC->getImplicitObjectArgument());
       if (DRE) {
-        isNeedItem = false;
         Group = DRE->getNameInfo().getAsString();
       }
+    }
+    if(Group.empty()){
+      Group = DpctGlobalInfo::getGroup(BlockMC);
     }
 
     if (FuncName == "InclusiveSum" || FuncName == "ExclusiveSum" ||
@@ -15964,15 +15881,6 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              InEA.getReplacedString() + ", " + OpRepl + ")";
       emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
     }
-    if (!Repl.empty() && isNeedItem) {
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(BlockMC);
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          DI->setItem();
-        }
-      }
-    }
   } else if (WarpMC && WarpMC->getMethodDecl()) {
     std::string FuncName = WarpMC->getMethodDecl()->getNameAsString();
     std::string ValueType;
@@ -15986,15 +15894,17 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
     Indent =
         getIndent(WarpMC->getBeginLoc(), DpctGlobalInfo::getSourceManager())
             .str();
-    Group = DpctGlobalInfo::getItemName() + ".get_sub_group()";
+    auto FD = DpctGlobalInfo::getParentFunction(WarpMC);
     if (WarpMC->getObjectType()->getTypeClass() ==
         clang::Type::TypeClass::SubstTemplateTypeParm) {
       auto DRE =
           dyn_cast_or_null<DeclRefExpr>(WarpMC->getImplicitObjectArgument());
       if (DRE) {
-        isNeedItem = false;
         Group = DRE->getNameInfo().getAsString();
       }
+    }
+    if (Group.empty()) {
+      Group = DpctGlobalInfo::getSubGroup(WarpMC, FD);
     }
     if (FuncName == "InclusiveSum" || FuncName == "ExclusiveSum" ||
         FuncName == "InclusiveScan" || FuncName == "ExclusiveScan") {
@@ -16039,17 +15949,6 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              NewFuncName + "(" + Group + ", " + InEA.getReplacedString() +
              InitRepl + ", " + OpRepl + ")";
       emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          if (isNeedItem) {
-            DI->setItem();
-          }
-          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
-                                     NewFuncName);
-        }
-      }
     } else if (FuncName == "Broadcast") {
       auto FuncArgs = WarpMC->getArgs();
       const Expr *InData = FuncArgs[0];
@@ -16057,21 +15956,11 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
       ExprAnalysis InEA(InData);
       ExprAnalysis SrcLaneEA(SrcLane);
       Repl = MapNames::getClNamespace() + "group_broadcast(" +
-             DpctGlobalInfo::getItemName() + ".get_sub_group(), " +
+             DpctGlobalInfo::getSubGroup(WarpMC) + ", " +
              InEA.getReplacedString() + ", " + SrcLaneEA.getReplacedString() +
              ")";
+      NewFuncName = "group_broadcast";
       emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          if (isNeedItem) {
-            DI->setItem();
-          }
-          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
-                                     "group_broadcast");
-        }
-      }
     } else if (FuncName == "Reduce" || FuncName == "Sum") {
       auto FuncArgs = WarpMC->getArgs();
       const Expr *InData = FuncArgs[0];
@@ -16083,20 +15972,14 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
       } else {
         return;
       }
+      NewFuncName = "reduce_over_group";
       Repl = MapNames::getClNamespace() + "reduce_over_group(" + Group + ", " +
              InEA.getReplacedString() + ", " + OpRepl + ")";
       emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          if (isNeedItem) {
-            DI->setItem();
-          }
-          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
-                                     "reduce_over_group");
-        }
-      }
+    }
+    if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
+      FuncInfo->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
+                                       NewFuncName);
     }
   }
 }

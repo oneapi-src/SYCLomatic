@@ -544,4 +544,6 @@ bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
 bool isCubVar(const clang::VarDecl* VD);
+
+const std::string &getItemName();
 #endif // DPCT_UTILITY_H

@@ -17,7 +17,7 @@ __global__ void foo(){
   int c= warpSize;
 }
 
-// CHECK: void bar(){
+// CHECK: void bar(sycl::nd_item<3> item_ct1){
 // CHECK-NEXT:   int a = sycl::max((int)item_ct1.get_sub_group().get_local_range().get(0), 0);
 // CHECK-NEXT:   int warpSize = 1;
 // CHECK-NEXT:   int b = sycl::max(warpSize, 0);

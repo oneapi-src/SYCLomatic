@@ -268,8 +268,6 @@ protected:
                                           std::forward<Ts>(Vals)...);
   }
 
-  const std::string &getItemName() { return DpctGlobalInfo::getItemName(); }
-
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path and if the node has been processed by the same rule.
   template <typename NodeType>
@@ -563,7 +561,7 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
-  bool renameBuiltinName(StringRef BuiltinName, std::string &NewName);
+  bool renameBuiltinName(const DeclRefExpr *DRE, std::string &NewName);
 };
 
 /// Migration rule for class attributes.

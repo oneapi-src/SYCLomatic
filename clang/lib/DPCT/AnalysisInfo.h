@@ -219,17 +219,6 @@ struct BuiltinVarInfo {
   std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
 };
 
-struct CGBlockInfo {
-  CGBlockInfo(unsigned int Len, std::vector<std::string> Vars,
-              std::shared_ptr<DeviceFunctionInfo> DFI)
-      : Len(Len), Vars(Vars), DFI(DFI) {}
-  void buildInfo(std::string FilePath, unsigned int Offset, unsigned int Dim);
-
-  unsigned int Len = 0;
-  std::vector<std::string> Vars;
-  std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
-};
-
 struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
@@ -729,9 +718,6 @@ public:
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
   }
-  std::map<unsigned int, CGBlockInfo> &getCGBlockInfoMap() {
-    return CGBlockInfoMap;
-  }
   std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
@@ -815,7 +801,6 @@ private:
       DeviceRandomGenerateAPIMap;
   std::map<unsigned int, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
-  std::map<unsigned int, CGBlockInfo> CGBlockInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
@@ -1000,10 +985,16 @@ public:
     assert(!CudaPath.empty());
     return CudaPath;
   }
-  static const std::string &getItemName() {
-    const static std::string ItemName = "item" + getCTFixedSuffix();
-    return ItemName;
-  }
+  static void printItem(llvm::raw_ostream &, const Stmt *,
+                        const FunctionDecl *FD = nullptr);
+  static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void printGroup(llvm::raw_ostream &, const Stmt *,
+                         const FunctionDecl *FD = nullptr);
+  static std::string getGroup(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void printSubGroup(llvm::raw_ostream &, const Stmt *,
+                            const FunctionDecl *FD = nullptr);
+  static std::string getSubGroup(const Stmt *,
+                                 const FunctionDecl *FD = nullptr);
   static const std::string &getStreamName() {
     const static std::string StreamName = "stream" + getCTFixedSuffix();
     return StreamName;
@@ -1105,14 +1096,11 @@ public:
     CustomHelperFileName = Name;
   }
 
-  inline static std::set<DPCPPExtensions> getDPCPPExtSetNotPermit() {
-    return DPCPPExtSetNotPermit;
+  inline static bool getUsingExtension(DPCPPExtensions Ext) {
+    return ExtensionFlag & static_cast<unsigned>(Ext);
   }
-  inline static void setDPCPPExtSetNotPermit(
-      const std::vector<DPCPPExtensions> &DPCPPExtensionsVec) {
-    for (auto &Extension : DPCPPExtensionsVec) {
-      DPCPPExtSetNotPermit.insert(Extension);
-    }
+  inline static void setExtensionUnused(DPCPPExtensions Ext) {
+    ExtensionFlag &= (~static_cast<unsigned>(Ext));
   }
 
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
@@ -1211,6 +1199,8 @@ public:
     CurrentMaxIndex++;
     return Res;
   }
+
+  static std::string getStringForRegexReplacement(StringRef);
 
   inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
     CodeFormatStyle = Style;
@@ -1717,9 +1707,6 @@ public:
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
-  void insertCGBlockInfo(SourceLocation SL, unsigned int Len,
-                         std::vector<std::string> Vars,
-                         std::shared_ptr<DeviceFunctionInfo> DFI);
 
   void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
                         unsigned int Offset) {
@@ -1942,6 +1929,13 @@ public:
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
+  static bool useFreeQueries() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
+  }
+  static bool useEnqueueBarrier() {
+    return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
+  }
+
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
     return SpBLASUnsupportedMatrixTypeFlag;
   }
@@ -2226,6 +2220,7 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_set<std::string> TempVariableHandledSet;
   static bool UsingDRYPattern;
+  static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
   // Key: the fft handle declaration "FilePath:Offset"
   // Value: a struct incluing placement and direction
@@ -2253,7 +2248,7 @@ private:
   static std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
-  static std::set<DPCPPExtensions> DPCPPExtSetNotPermit;
+  static unsigned ExtensionFlag;
   static unsigned ExperimentalFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
@@ -3210,7 +3205,7 @@ private:
 
   template <CallOrDecl COD>
   inline ParameterStream &getItem(ParameterStream &PS) const {
-    return PS << DpctGlobalInfo::getItemName();
+    return PS << getItemName();
   }
 
   template <CallOrDecl COD>
@@ -3303,7 +3298,7 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   }
 
   std::string ItemParamDecl =
-      MapNames::getClNamespace() + NDItem + " " + DpctGlobalInfo::getItemName();
+      MapNames::getClNamespace() + NDItem + " " + getItemName();
   return PS << ItemParamDecl;
 }
 
@@ -4542,6 +4537,8 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
     std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
                         "queue &q_ct1 = dev_ct1.default_queue();";
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
+      requestFeature(HelperFeatureEnum::Device_get_default_queue,
+                     HFInfo.DeclLocFile);
       if (Iter->second.DefaultQueueCounter == 1) {
         if (Iter->second.CurrentDeviceCounter <= 1) {
           if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4567,6 +4564,8 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
       }
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
+      requestFeature(HelperFeatureEnum::Device_get_current_device,
+        HFInfo.DeclLocFile);
       if (Iter->second.CurrentDeviceCounter == 1 &&
           Iter->second.DefaultQueueCounter <= 1) {
         if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4575,8 +4574,6 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
               std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                HFInfo.DeclLocOffset, 0, DevDecl,
                                                nullptr));
-          requestFeature(HelperFeatureEnum::Device_get_current_device,
-                         HFInfo.DeclLocFile);
         }
       }
       Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
@@ -4584,8 +4581,12 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   } else {
     DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
+      requestFeature(HelperFeatureEnum::Device_get_default_queue,
+        HFInfo.DeclLocFile);
       Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
+      requestFeature(HelperFeatureEnum::Device_get_current_device,
+        HFInfo.DeclLocFile);
       Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
     }
     DpctGlobalInfo::getTempVariableDeclCounterMap().insert(

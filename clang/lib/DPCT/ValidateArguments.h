@@ -54,9 +54,13 @@ enum class ReportTypeEnum {
 };
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
 enum class ExplicitNamespace { EN_None, EN_CL, EN_SYCL, EN_SYCL_Math, EN_DPCT };
-enum class DPCPPExtensions { DPCPPE_Submit_Barrier };
+enum class DPCPPExtensions {
+  Ext_EnqueueBarrier = 0x01,
+};
 enum class ExperimentalFeatures {
-  Exp_NdRangeBarrier = 0x01, // Using nd_range_barrier.
+  Exp_NdRangeBarrier = 1, // Using nd_range_barrier.
+  Exp_FreeQueries = 2, // Using free queries functions, like this_nd_item,
+                           // this_group, this_subgroup.
 };
 
 bool makeInRootCanonicalOrSetDefaults(

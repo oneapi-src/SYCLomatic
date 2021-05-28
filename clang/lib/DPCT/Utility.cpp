@@ -3446,3 +3446,7 @@ bool isCubVar(const VarDecl *VD) {
   }
   return false;
 }
+const std::string &getItemName() {
+  const static std::string ItemName = "item" + getCTFixedSuffix();
+  return ItemName;
+}
