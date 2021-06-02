@@ -5,7 +5,7 @@
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #define DPCT_NAMED_LAMBDA
-// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 #include <stdio.h>

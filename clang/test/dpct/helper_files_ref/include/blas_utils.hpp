@@ -11,7 +11,7 @@
 
 #include "memory.hpp"
 #include "util.hpp"
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <utility>
 #include <vector>

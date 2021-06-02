@@ -43,7 +43,7 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 
 #include "memory.h"
 

@@ -9,7 +9,7 @@
 #ifndef __DPCT_ATOMIC_HPP__
 #define __DPCT_ATOMIC_HPP__
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 
 namespace dpct {
 

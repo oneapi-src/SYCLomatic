@@ -9,7 +9,7 @@
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>

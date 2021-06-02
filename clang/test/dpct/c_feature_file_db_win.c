@@ -15,7 +15,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./c_feature_file_db_win
 
-//CHECK:#include <sycl/sycl.hpp>
+//CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 #include "cuda_runtime.h"
 

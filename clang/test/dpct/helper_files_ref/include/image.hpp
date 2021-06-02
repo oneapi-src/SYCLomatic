@@ -9,7 +9,7 @@
 #ifndef __DPCT_IMAGE_HPP__
 #define __DPCT_IMAGE_HPP__
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 
 #include "memory.hpp"
 #include "util.hpp"

@@ -9,7 +9,7 @@
 #ifndef __DPCT_KERNEL_HPP__
 #define __DPCT_KERNEL_HPP__
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 
 namespace dpct {
 

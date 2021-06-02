@@ -38,7 +38,7 @@
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|local_include_dependency|

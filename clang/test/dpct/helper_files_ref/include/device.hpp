@@ -9,7 +9,7 @@
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
 
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>

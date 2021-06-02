@@ -1,6 +1,6 @@
 //RUN: dpct -out-root %T/curand-usm %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-usm/curand-usm.dp.cpp --match-full-lines %s
-//CHECK:#include <sycl/sycl.hpp>
+//CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <oneapi/mkl.hpp>
 #include <cuda.h>

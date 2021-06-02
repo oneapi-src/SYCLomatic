@@ -10,7 +10,7 @@
 #define __DPCT_MEMORY_HPP__
 
 #include "device.hpp"
-#include <sycl/sycl.hpp>
+#include <CL/sycl.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstring>

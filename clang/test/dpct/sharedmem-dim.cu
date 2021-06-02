@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/sharedmem-dim %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem-dim/sharedmem-dim.dp.cpp
-// CHECK: #include <sycl/sycl.hpp>
+// CHECK: #include <CL/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 
 #include <cuda_runtime.h>
