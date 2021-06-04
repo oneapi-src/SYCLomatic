@@ -10008,6 +10008,27 @@ void KernelCallRule::runRule(
     if (!FD->isTemplateInstantiation())
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
 
+    const CallExpr *Config = KCall->getConfig();
+    if (Config) {
+      if (Config->getNumArgs() > 2) {
+        const Expr *SharedMemSize = Config->getArg(2);
+        if (containSizeOfType(SharedMemSize)) {
+          auto KCallInfo =
+              DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+          KCallInfo->setEmitSizeofWarningFlag(true);
+        } else {
+          const Expr *ExprContainSizeofType = nullptr;
+          if (checkIfContainSizeofTypeRecursively(SharedMemSize,
+                                                  ExprContainSizeofType)) {
+            if (ExprContainSizeofType) {
+              report(ExprContainSizeofType->getBeginLoc(),
+                     Diagnostics::SIZEOF_WARNING, false);
+            }
+          }
+        }
+      }
+    }
+
     if (!FD)
       return;
 

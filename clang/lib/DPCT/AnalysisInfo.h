@@ -338,10 +338,11 @@ public:
 };
 
 struct StmtWithWarning {
-  StmtWithWarning(std::string Str, std::string Warning = "") : StmtStr(Str) {}
+  StmtWithWarning(std::string Str, std::vector<std::string> Warnings = {})
+      : StmtStr(Str), Warnings(Warnings) {}
 
   std::string StmtStr;
-  std::string Warning;
+  std::vector<std::string> Warnings;
 };
 
 using StmtList = std::vector<StmtWithWarning>;
@@ -2328,6 +2329,7 @@ public:
     return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
   }
   std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
+  inline bool containSizeofType() { return ContainSizeofType; }
 
 private:
   /// For ConstantArrayType, size in generated code is folded as an integer.
@@ -2394,6 +2396,7 @@ private:
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureIDTy> HelperFeatureSet;
+  bool ContainSizeofType = false;
 };
 
 // variable info includes name, type and location.
@@ -3752,11 +3755,14 @@ public:
     return *this;
   }
   KernelPrinter &operator<<(const StmtList &Stmts) {
+
     for (auto &S : Stmts) {
-      if (!S.Warning.empty()) {
-        line("/*");
-        line(S.Warning);
-        line("*/");
+      if (!S.Warnings.empty()) {
+        for (auto &Warning : S.Warnings) {
+          line("/*");
+          line(Warning);
+          line("*/");
+        }
       }
       line(S.StmtStr);
     }
@@ -3964,6 +3970,7 @@ public:
                   std::shared_ptr<DeviceFunctionInfo>);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
+  void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
 
 private:
   KernelCallExpr(unsigned Offset, const std::string &FilePath)
@@ -4088,6 +4095,7 @@ private:
   StmtList KernelStmts;
   std::string KernelArgs;
   int TotalArgsSize = 0;
+  bool EmitSizeofWarning = false;
 };
 
 class CudaMallocInfo {

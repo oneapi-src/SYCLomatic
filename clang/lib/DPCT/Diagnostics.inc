@@ -182,3 +182,5 @@ DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, "The generated code assumes that \"%0
 DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
 DEF_WARNING(KNOWN_UNSUPPORTED_TYPE, 1082, "The type %0 was not migrated because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.")
 DEF_COMMENT(KNOWN_UNSUPPORTED_TYPE, 1082, "The type {0} was not migrated because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.")
+DEF_WARNING(SIZEOF_WARNING, 1083, "The size of local memory may be different in original code and migrated code. You need to check the allocated memory size.")
+DEF_COMMENT(SIZEOF_WARNING, 1083, "The size of local memory may be different in original code and migrated code. You need to check the allocated memory size.")

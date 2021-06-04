@@ -384,7 +384,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum) {
 }
 template <class StreamTy, class FirstArg, class... RestArgs>
 StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
-                                FirstArg &&First, RestArgs &&...Rest) {
+                                FirstArg &&First, RestArgs &&... Rest) {
   if (PrintingArgsNum) {
     Stream << std::forward<FirstArg>(First);
     if (--PrintingArgsNum) {
@@ -396,7 +396,7 @@ StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
   return Stream;
 }
 template <class StreamTy, class... Args>
-StreamTy &printArguments(StreamTy &Stream, Args &&...Arguments) {
+StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
@@ -540,4 +540,7 @@ enum class MemcpyOrderAnalysisNodeKind {
   MOANK_SpecialCallExpr
 };
 bool canOmitMemcpyWait(const clang::CallExpr *CE);
+bool checkIfContainSizeofTypeRecursively(
+    const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
+bool containSizeOfType(const clang::Expr *E);
 #endif // DPCT_UTILITY_H

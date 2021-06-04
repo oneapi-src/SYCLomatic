@@ -626,8 +626,15 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
     if (VI->getType()->getDimension() > 1) {
-      SubmitStmtsList.RangeList.emplace_back(
-          VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+      StmtWithWarning SWW(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+      if (EmitSizeofWarning) {
+        DiagnosticsUtils::report(getFilePath(), getBegin(),
+                                 Diagnostics::SIZEOF_WARNING, false, false);
+        SWW.Warnings.push_back(
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::SIZEOF_WARNING));
+      }
+      SubmitStmtsList.RangeList.push_back(SWW);
     }
   } else {
     SubmitStmtsList.InitList.emplace_back(
@@ -651,10 +658,10 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                                  Diagnostics::TYPE_IN_FUNCTION, false, false,
                                  VI->getName(), VI->getLocalTypeName())) {
       if (!SubmitStmtsList.AccessorList.empty()) {
-        SubmitStmtsList.AccessorList.back().Warning =
+        SubmitStmtsList.AccessorList.back().Warnings.push_back(
             DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
                 Diagnostics::TYPE_IN_FUNCTION, VI->getName(),
-                VI->getLocalTypeName());
+                VI->getLocalTypeName()));
       }
     }
   }
@@ -2506,12 +2513,21 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     }
     OS << "cgh);";
     StmtWithWarning AccDecl(OS.str());
+    if (getType()->containSizeofType()){
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::SIZEOF_WARNING, false,
+                                 false);
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::SIZEOF_WARNING));
+    }
     if (Dimension > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),
                                    Diagnostics::EXCEED_MAX_DIMENSION, false,
                                    false)) {
-        AccDecl.Warning = DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-            Diagnostics::EXCEED_MAX_DIMENSION);
+        AccDecl.Warnings.push_back(
+            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                Diagnostics::EXCEED_MAX_DIMENSION));
       }
     }
     AccList.emplace_back(std::move(AccDecl));
@@ -2620,6 +2636,7 @@ void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
 
 void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
   Range.emplace_back(EA.getTemplateDependentStringInfo());
@@ -2628,6 +2645,7 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
 
 void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
                               bool NeedSizeFold) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   if (NeedSizeFold) {
     Range.emplace_back(getFoldedArraySize(TL));
   } else {
@@ -2637,6 +2655,7 @@ void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
 }
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis A;
   A.analyze(TL.getSizeExpr());
   return A.getReplacedString();

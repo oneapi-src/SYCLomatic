@@ -2787,9 +2787,13 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
   }
 }
 
-void findRelatedDREs(const Expr *E,
-                     std::set<const clang::DeclRefExpr *> &DRESet,
-                     bool &HasCallExpr) {
+/// Find all the DRE sub-expression of \p E
+/// \param [in] E The input expression
+/// \param [out] DRESet The DREs which are found by this function
+/// \param [out] HasCallExpr The flag means if there is CallExpr in \p E
+void findDREs(const Expr *E,
+              std::set<const clang::DeclRefExpr *> &DRESet,
+              bool &HasCallExpr) {
   if (!E)
     return;
 
@@ -2799,33 +2803,33 @@ void findRelatedDREs(const Expr *E,
   }
 
   if (auto UO = dyn_cast_or_null<UnaryOperator>(E)) {
-    findRelatedDREs(UO->getSubExpr(), DRESet, HasCallExpr);
+    findDREs(UO->getSubExpr(), DRESet, HasCallExpr);
     return;
   }
 
   if (auto BO = dyn_cast_or_null<BinaryOperator>(E)) {
-    findRelatedDREs(BO->getLHS(), DRESet, HasCallExpr);
-    findRelatedDREs(BO->getRHS(), DRESet, HasCallExpr);
+    findDREs(BO->getLHS(), DRESet, HasCallExpr);
+    findDREs(BO->getRHS(), DRESet, HasCallExpr);
     return;
   }
 
   if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(E)) {
-    findRelatedDREs(ASE->getBase(), DRESet, HasCallExpr);
+    findDREs(ASE->getBase(), DRESet, HasCallExpr);
     return;
   }
 
   if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(E)) {
-    findRelatedDREs(CSCE->getSubExpr(), DRESet, HasCallExpr);
+    findDREs(CSCE->getSubExpr(), DRESet, HasCallExpr);
     return;
   }
 
   if (auto PE = dyn_cast_or_null<ParenExpr>(E)) {
-    findRelatedDREs(PE->getSubExpr(), DRESet, HasCallExpr);
+    findDREs(PE->getSubExpr(), DRESet, HasCallExpr);
     return;
   }
 
   if (auto ICE = dyn_cast_or_null<ImplicitCastExpr>(E)) {
-    findRelatedDREs(ICE->getSubExpr(), DRESet, HasCallExpr);
+    findDREs(ICE->getSubExpr(), DRESet, HasCallExpr);
     return;
   }
 
@@ -2944,7 +2948,7 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
   Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
   bool HasCallExpr = false;
   std::set<const clang::DeclRefExpr *> DRESet;
-  findRelatedDREs(Expr, DRESet, HasCallExpr);
+  findDREs(Expr, DRESet, HasCallExpr);
   if (HasCallExpr)
     return;
   std::set<LocalVarAddrSpaceEnum> ResultSet;
@@ -3227,6 +3231,98 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
         return true;
       }
+    }
+  }
+  return false;
+}
+/// Check if \p E contains a sizeof(Type) sub-expression
+/// \param [in] E The input expression
+/// \returns The check result
+bool containSizeOfType(const Expr *E) {
+  auto SizeOfMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::unaryExprOrTypeTraitExpr(
+          clang::ast_matchers::ofKind(UETT_SizeOf))
+          .bind("sizeof"));
+  auto MatchedResults = clang::ast_matchers::match(
+      SizeOfMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
+  for (const auto &Res : MatchedResults) {
+    const UnaryExprOrTypeTraitExpr *UETTE =
+        Res.getNodeAs<UnaryExprOrTypeTraitExpr>("sizeof");
+    if (!UETTE)
+      continue;
+    if (UETTE->isArgumentType())
+      return true;
+  }
+  return false;
+}
+
+void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
+                              std::set<const clang::Expr *> &RHSSet) {
+  auto VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return;
+  auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(DRE);
+  if (!FD)
+    return;
+  auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
+  if (!CS)
+    return;
+
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  auto MatchedResults = clang::ast_matchers::match(
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  std::vector<const DeclRefExpr *> Refs;
+  for (auto &Result : MatchedResults) {
+    const DeclRefExpr *MatchedDRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!MatchedDRE)
+      continue;
+    if (MatchedDRE->getDecl() == VD) {
+      // Break means tool will not check the assignments after the DRE
+      if (MatchedDRE == DRE)
+        break;
+      Refs.push_back(MatchedDRE);
+    }
+  }
+
+  if (VD->hasInit()) {
+    RHSSet.insert(VD->getInit());
+  }
+  for (auto const &Ref : Refs) {
+    if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+      if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
+          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
+        RHSSet.insert(BO->getRHS());
+      }
+    }
+  }
+}
+
+/// Check if \p E and all expressions relative to \p E contain a sizeof(Type)
+/// sub-expression
+/// E.g., this function will check expression: a1, a2, b1, b2
+/// int a1 = b1;
+/// int a2 = b2;
+/// __shared__ float mem[a1 + a2];
+/// \param [in] E The input expression
+/// \param [out] ExprContainSizeofType The expression contains a sizeof(Type)
+/// \returns The check result
+bool checkIfContainSizeofTypeRecursively(
+    const clang::Expr *E, const clang::Expr *&ExprContainSizeofType) {
+  if (containSizeOfType(E)) {
+    ExprContainSizeofType = E;
+    return true;
+  }
+
+  bool HasCallExpr = false;
+  std::set<const clang::DeclRefExpr *> DRESet;
+  findDREs(E, DRESet, HasCallExpr);
+  for (const auto &DRE : DRESet) {
+    std::set<const clang::Expr *> RHSSet;
+    findRelatedAssignmentRHS(DRE, RHSSet);
+    for (const auto &RHS : RHSSet) {
+      if (checkIfContainSizeofTypeRecursively(RHS, ExprContainSizeofType))
+        return true;
     }
   }
   return false;
