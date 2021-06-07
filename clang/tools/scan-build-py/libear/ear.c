@@ -870,13 +870,31 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
    return;
 }
 
-/// Find command "nvcc" in \p str, and return the position of the character behind "nvcc".
-/// e.g: str could be: "/usr/local/bin/nvcc  -Xcompiler ...",
-///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...",
-///                    "cd /home/user && /usr/local/cuda/bin/nvcc  -ccbin=".
-/// \returns the position of the character behind "nvcc" in str,
-///          or NULL if no command "nvcc" found in str.
-const char *find_nvcc(const char *str) {
+#define COMPILER_ARRARY_SIZE 2
+const char *find_compiler(const char *str, int *compiler_idx_ptr,
+                          const char const *compiler_array[]) {
+  const char *pos = NULL;
+  for (int i = 0; i < COMPILER_ARRARY_SIZE; i++) {
+    if (((pos = strstr(str, compiler_array[i])) != NULL)) {
+      *compiler_idx_ptr = i;
+      break;
+    }
+  }
+  return pos;
+}
+
+const char *get_compiler(int compiler_idx, const char const *compiler_array[]) {
+  return compiler_array[compiler_idx];
+}
+
+// Find compiler name in \p str, and return the position of the
+// character behind the compiler name.
+// e.g: str could be:
+//      "/path/to/clang++  -Xcompiler ...",
+//      "cd /home/user && /path/to/clang++  -ccbin=".
+// returns the position of the character behind compiler in \p str,
+// or NULL if no command "clang++" found in str.
+const char *find_intercept_compiler(const char *str, int compiler_idx) {
   const char *pos = NULL;
   const char *ret = NULL;
 
@@ -885,8 +903,17 @@ const char *find_nvcc(const char *str) {
       pos = ptr;
 
       int len = pos - str;
-      if (len >= 4 && *(pos - 1) == 'c' && *(pos - 2) == 'c' &&
-        *(pos - 3) == 'v' && *(pos - 4) == 'n') {
+      if (compiler_idx == 0) {
+        // nvcc
+        if (len >= 4 && *(pos - 1) == 'c' && *(pos - 2) == 'c' &&
+            *(pos - 3) == 'v' && *(pos - 4) == 'n') {
+          ret = pos;
+          return ret;
+        }
+      } else if (len >= 7 && *(pos - 1) == '+' && *(pos - 2) == '+' &&
+                 *(pos - 3) == 'g' && *(pos - 4) == 'n' && *(pos - 5) == 'a' &&
+                 *(pos - 6) == 'l' && *(pos - 7) == 'c') {
+        // clang++
         ret = pos;
         return ret;
       }
@@ -895,27 +922,39 @@ const char *find_nvcc(const char *str) {
     }
   }
 
-
   if (pos == NULL) {
     int len = strlen(str);
-    if (len >= 4 && str[len - 1] == 'c' && str[len - 2] == 'c' &&
-        str[len - 3] == 'v' && str[len - 4] == 'n') {
-    ret = str + len;
-    return ret;
+    if (compiler_idx == 0) {
+      // nvcc
+      if (len >= 4 && str[len - 1] == 'c' && str[len - 2] == 'c' &&
+          str[len - 3] == 'v' && str[len - 4] == 'n') {
+        ret = str + len;
+        return ret;
+      }
+    } else if (len >= 7 && str[len - 1] == '+' && str[len - 2] == '+' &&
+               str[len - 3] == 'g' && str[len - 4] == 'n' &&
+               str[len - 5] == 'a' && str[len - 6] == 'l' &&
+               str[len - 7] == 'g') {
+      // clang++
+      ret = str + len;
+      return ret;
     }
   }
 
   return ret;
 }
 
-/// Repalce the command "nvcc" with path to command "intercept-stub" with path.
-/// \param [in] src It could be:"/usr/local/bin/nvcc",
-///                             "/usr/local/bin/nvcc -Xcompiler ...",
-///                             "CPATH=...;/path/to/nvcc",
-///                             "cd /path/to/dir && /path/to/nvcc".
-/// \param [in] pos Points to the position of the character behind "nvcc".
-/// \returns no return value.
-char * replace_binary_name(const char *src, const char *pos){
+// Repalce the command compiler with path to command "intercept-stub" with path.
+// src It could be:"/path/to/clang++",
+//                 "/path/to/clang++ -Xcompiler ...",
+//                 "CPATH=...;/path/to/clang++",
+//                 "cd /path/to/dir && /path/to/clang++".
+// pos Points to the position of the character behind compiler name
+// compiler_idx Returned by find_compiler().
+// compiler_array Compiler array.
+// returns no return value.
+char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
+                          const char const *compiler_array[]) {
     FILE *fp;
     char replacement[PATH_MAX];
     char file_path[PATH_MAX];
@@ -956,8 +995,8 @@ char * replace_binary_name(const char *src, const char *pos){
     char *insert_point = buffer;
 
     // To handle the situation that \psrc is
-    // "CPATH=...;/path/to/nvcc" and "cd /path/to/dir && /path/to/nvcc"
-    const char *pos_prefix = pos - strlen("nvcc");
+    // "CPATH=...;/path/to/clang++" and "cd /path/to/dir && /path/to/clang++"
+    const char *pos_prefix = pos - strlen(get_compiler(compiler_idx, compiler_array));
     for (; pos_prefix != src; pos_prefix--) {
         if (*pos_prefix == ';' || *pos_prefix == '&') {
             pos_prefix++;
@@ -1024,7 +1063,12 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     size_t const argc = bear_strings_length(argv);
 
 #ifdef INTEL_CUSTOMIZATION
-    // To indicate whether the captured argv[i] is a nvcc or ld command,
+    // compiler list should be intercepted.
+    const char const *compiler_array[] = {"nvcc", "clang++"};
+    // Current compiler index intercepted.
+    int compiler_idx = 0;
+
+    // To indicate whether the captured argv[i] is a compiler or ld command,
     // value: 1 yes, value 0 no.
     int is_nvcc_or_ld=0;
 
@@ -1037,7 +1081,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // is set to show argv[i+1] contains the xxx.o
     int flag_optval=0;
 
-    // value 1: means current command line is a nvcc comand, and the fake obj file
+    // value 1: means current command line is a compiler comand, and the fake obj file
     // has been created, else ret is set to 0.
     int ret = 0;
 
@@ -1046,13 +1090,13 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // (CPATH=;command  args), need remove () around the command
     int has_parenthesis=0;
 
-    // try to parse out nvcc and generate obj_file.
+    // try to parse out compiler intercepted and generate obj_file.
     for (size_t it = 0; it < argc; ++it) {
         const char *tail=argv[it];
         int len= strlen(tail);
         char *command=NULL;
         if(it<=3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ && is_nvcc_or_ld==0 &&
-                ((command=strstr(tail, "nvcc"))!=NULL)) {
+                ((command=find_compiler(tail, &compiler_idx, compiler_array))!=NULL)) {
           command_cp=command;
           it_cp=it;
           is_nvcc_or_ld=1;
@@ -1120,7 +1164,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
     for (size_t it = it_cp; it < argc; ++it) {
         if(it==it_cp && command_cp!=NULL) {
-           dump_US_field(command_cp + strlen("nvcc"), fd, US, has_parenthesis);
+           dump_US_field(command_cp + strlen(get_compiler(compiler_idx, compiler_array)), fd, US, has_parenthesis);
         } else {
            dump_US_field(argv[it], fd, US, has_parenthesis);
         }
@@ -1197,10 +1241,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         ret = 1;
     }
 
-    // try to replace nvcc with intercept-stub,
-    // e.g: "/path/to/nvcc -ccbin ... ",
-    //      "/bin/sh -c "/path/to"/bin/nvcc -ccbin ..."
-    const char *pos = find_nvcc(argv[it_cp]);
+    // try to replace nvcc or clang++ with intercept-stub,
+    // e.g: "/path/to/clang++ -ccbin ... ",
+    //      "/bin/sh -c "/path/to"/bin/clang++ -ccbin ..."
+    const char *pos = find_intercept_compiler(argv[it_cp], compiler_idx);
 
     int is_stub_need = 0;
     is_stub_need = (pos != NULL);
@@ -1209,12 +1253,12 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     {
         ret = 0; // intercept-stub should continue to run.
 
-        // intercept-stub is used to handle the nvcc command like
-        // "/bin/sh -c nvcc -c `echo ./`hello.c", it will change the nvcc command to
+        // intercept-stub is used to handle the compiler command like
+        // "/bin/sh -c clang++ -c `echo ./`hello.c", it changes the compiler command intercepted to
         // "/bin/sh -c /path/to/libear/intercept-stub -c `echo ./`hello.c", then the coming
         // command "/path/to/libear/intercept-stub -c ./hello.c" will be run, and the source file
         // name "hello.c" will be captured by intercept.py.
-        argv[it_cp] = replace_binary_name(argv[it_cp], pos);
+        argv[it_cp] = replace_binary_name(argv[it_cp], pos, compiler_idx, compiler_array);
     }
 
     if(ret == 1 && it_cp == 0){
