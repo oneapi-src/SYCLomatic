@@ -301,3 +301,21 @@ int run_foo12() {
   my_kernel4<<<1,1>>>(aa, bb, cc, dd, ee, ff, gg);
 }
 
+template<typename T>
+__global__ void my_kernel5(T** a_dev){
+  __shared__ T* aa;
+}
+
+void run_foo13(float* a_host[]) {
+  //CHECK:dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    sycl::accessor<float *, 0, sycl::access_mode::read_write, sycl::access::target::local> aa_acc_ct1(cgh);
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel5_{{[0-9a-z]+}}, float>>(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        my_kernel5(a_host, (float * *)aa_acc_ct1.get_pointer());
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  my_kernel5<<<1, 1>>>(a_host);
+}

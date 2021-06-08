@@ -1276,6 +1276,9 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       deduceTemplateArgumentFromType(TAIList, ParmType->getPointeeType(),
                                      ArgArray->getElementType(),
                                      getPointeeTypeLoc(TL));
+    } else if (auto DecayedArg = ARG_TYPE_CAST(DecayedType)) {
+      deduceTemplateArgumentFromType(TAIList, ParmType,
+                                     DecayedArg->getDecayedType(), TL);
     }
     break;
   case Type::LValueReference: {
