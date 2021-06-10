@@ -224,7 +224,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef INTEL_CUSTOMIZATION
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode, CompilationsDir);
-      clang::tooling::FormatSearchPath = BuildPath;
+      clang::tooling::FormatSearchPath = getAbsolutePath(BuildPath);
 #else
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode);
@@ -348,9 +348,6 @@ llvm::Error CommonOptionsParser::init(
           std::move(Compilations));
   Adjuster =
       getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN);
-  Adjuster = combineAdjusters(
-      std::move(Adjuster),
-      getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
 #ifdef INTEL_CUSTOMIZATION
   for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
@@ -359,6 +356,17 @@ llvm::Error CommonOptionsParser::init(
           std::move(Adjuster),
           getInsertArgumentAdjuster(I.c_str(), ArgumentInsertPosition::BEGIN));
     }
+    if (I.size() > 2 && I.substr(0, 2) == "-I") {
+      std::size_t Idx = 2;
+      for (; Idx < I.size(); ++Idx) {
+        if (!isspace(I[Idx]))
+          break;
+      }
+      std::string OriginalArg = I.substr(Idx);
+      llvm::SmallString<512> NativeArg(OriginalArg);
+      llvm::sys::path::native(NativeArg);
+      I = "-I " + NativeArg.str().str();
+    }
   }
   if (IsCudaFile) {
     Adjuster = combineAdjusters(
@@ -366,6 +374,9 @@ llvm::Error CommonOptionsParser::init(
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
   }
 #endif
+  Adjuster = combineAdjusters(
+      std::move(Adjuster),
+      getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
   Compilations = std::move(AdjustingCompilations);
   return llvm::Error::success();

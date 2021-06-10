@@ -63,6 +63,7 @@ void dpctExit(int ExitCode, bool NeedCleanUp) {
 }
 
 bool makeCanonical(SmallVectorImpl<char> &Path) {
+  llvm::sys::path::native(Path);
   if (fs::make_absolute(Path) != std::error_code()) {
     llvm::errs() << "Could not get absolute path from '" << Path << "'\n ";
     return false;

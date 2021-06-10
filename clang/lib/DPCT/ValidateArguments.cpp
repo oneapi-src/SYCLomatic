@@ -159,8 +159,12 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
   if (Path.empty()) {
     return 1;
   }
+
+  SmallString<512> NativePath(Path);
+  llvm::sys::path::native(NativePath);
+
   SmallString<512> AbsPath;
-  auto EC = llvm::sys::fs::real_path(Path, AbsPath);
+  auto EC = llvm::sys::fs::real_path(NativePath.str().str(), AbsPath);
   if ((bool)EC) {
     return -1;
   }
