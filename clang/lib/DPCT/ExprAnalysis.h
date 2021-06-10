@@ -292,6 +292,38 @@ public:
     }
   }
 
+  // Replace a sub expr
+  inline void addReplacement(const Expr *E, int length, std::string Text) {
+    auto SpellingLocInfo = getSpellingOffsetAndLength(E);
+    if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+      SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+      SM.getDecomposedLoc(SpellingLocInfo.first).second +
+      SpellingLocInfo.second >
+      SrcBegin + SrcLength) {
+      // If the spelling location is not in the parent range, add ExtReplacement
+      addExtReplacement(std::make_shared<ExtReplacement>(
+        SM, SpellingLocInfo.first, length, Text, nullptr));
+    }
+    else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+      SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+      SM.getDecomposedLoc(SpellingLocInfo.first).second +
+      SpellingLocInfo.second ==
+      SrcBegin + SrcLength) {
+      // If the spelling location is the same as the parent range, add both
+      addExtReplacement(std::make_shared<ExtReplacement>(
+        SM, SpellingLocInfo.first, length, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(E);
+      addReplacement(LocInfo.first, length, std::move(Text));
+    }
+    else {
+      // If the spelling location is inside the parent range, add string
+      // replacement. The String replacement will be add to ExtReplacement other
+      // where.
+      auto LocInfo = getOffsetAndLength(E);
+      addReplacement(LocInfo.first, length, std::move(Text));
+    }
+  }
+
   void applyAllSubExprRepl();
   // Replace a sub template arg
   inline void addReplacement(const Expr *E, unsigned TemplateIndex) {

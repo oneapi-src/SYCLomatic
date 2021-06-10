@@ -2019,13 +2019,13 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(
-                             hasAnyThrustFuncName(),
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
                     .bind("thrustFuncCall"),
                 this);
 
   MF.addMatcher(
-      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasAnyThrustFuncName())),
+      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasDeclContext(
+                               namespaceDecl(hasName("thrust"))))),
                            hasParent(callExpr().bind("thrustApiCallExpr")))
           .bind("unresolvedThrustAPILookupExpr"),
       this);
@@ -2062,9 +2062,21 @@ void ThrustFunctionRule::thrustFuncMigration(
 
   auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
 
-  if (ReplInfo == MapNames::ThrustFuncNamesMap.end())
+  // For the API migration defined in APINamesThrust.inc
+  if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
+    dpct::ExprAnalysis EA;
+    EA.analyze(CE);
+    auto Range = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    auto Len = Lexer::MeasureTokenLength(
+      Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
+    Len += SM.getDecomposedLoc(Range.getEnd()).second -
+      SM.getDecomposedLoc(Range.getBegin()).second;
+    auto ReplStr = EA.getReplacedString();
+    emplaceTransformation(new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
     return;
+  }
 
+  // For the API migration defined in APINamesMapThrust.inc
   auto HelperFeatureIter =
       MapNames::ThrustFuncNamesHelperFeaturesMap.find(ThrustFuncName);
   if (HelperFeatureIter != MapNames::ThrustFuncNamesHelperFeaturesMap.end()) {

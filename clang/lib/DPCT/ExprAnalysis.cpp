@@ -23,6 +23,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+
 extern std::string DpctInstallPath;
 namespace clang {
 namespace dpct {
@@ -413,6 +414,23 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
+
+  std::string CtorClassName =
+      Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
+  if (CtorClassName.find("thrust::") == 0) {
+    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrate the ctor.
+    // Ex. foo(thrust::minus<int>());
+    auto CXXTemporaryObjectExprMatcher = clang::ast_matchers::findAll(
+        clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
+    auto MatchedResults =
+        clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
+                                   clang::dpct::DpctGlobalInfo::getContext());
+    if (MatchedResults.size() > 0) {
+      addReplacement(Ctor, 8, "std::");
+    }
+  }
+
+
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);

@@ -1,0 +1,339 @@
+//===---APINamesMapThrust.inc-------------------------------------------===//
+//
+// Copyright (C) 2020 - 2021 Intel Corporation. All rights reserved.
+//
+// The information and source code contained herein is the exclusive
+// property of Intel Corporation and may not be disclosed, examined
+// or reproduced in whole or in part without explicit written authorization
+// from the company.
+//
+//===-----------------------------------------------------------------===//
+
+// thrust::replace_if
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::replace_if(thrust::device, device.begin(), device.end(), pred, 0);
+      CALL_FACTORY_ENTRY("replace_if",
+                         CALL("oneapi::dpl::replace_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3), ARG(4))),
+      //Handling case: thrust::replace_if(thrust::seq, host.begin(), host.end(), pred, 0);
+      CALL_FACTORY_ENTRY("replace_if",
+                         CALL("oneapi::dpl::replace_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "replace_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::replace_if(device.begin(), device.end(), stencil.begin(), pred, 0);
+        CALL_FACTORY_ENTRY("replace_if",
+                           CALL("dpct::replace_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+        //Handling case: thrust::replace_if(host.begin(), host.end(), stencil.begin(), pred, 0);
+        CALL_FACTORY_ENTRY("replace_if",
+                           CALL("dpct::replace_if",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "replace_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::replace_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred, 0);
+          CALL_FACTORY_ENTRY("replace_if",
+                             CALL("dpct::replace_if",
+                                  QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        //Handling case: thrust::replace_if(thrust::seq, host.begin(), host.end(), stencil.begin(), pred, 0);
+        CALL_FACTORY_ENTRY("replace_if",
+                           CALL("dpct::replace_if",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::replace_if(device.begin(), device.end(), pred, 0);
+      CALL_FACTORY_ENTRY("replace_if",
+                         CALL("oneapi::dpl::replace_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::replace_if(host.begin(), host.end(), pred, 0);
+      CALL_FACTORY_ENTRY("replace_if",
+                         CALL("oneapi::dpl::replace_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))))))
+
+// thrust::remove_if
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), pred);
+      CALL_FACTORY_ENTRY("remove_if",
+                         CALL("oneapi::dpl::remove_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::remove_if(thrust::seq, host.begin(), host.end(), pred);
+      CALL_FACTORY_ENTRY("remove_if",
+                         CALL("oneapi::dpl::remove_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::remove_if(device.begin(), device.end(), stencil.begin(), pred);
+        CALL_FACTORY_ENTRY("remove_if",
+                           CALL("dpct::remove_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3))),
+        //Handling case: thrust::remove_if(host.begin(), host.end(), stencil.begin(), pred);
+        CALL_FACTORY_ENTRY("remove_if",
+                           CALL("dpct::remove_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3)))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred);
+        CALL_FACTORY_ENTRY("remove_if",
+                           CALL("dpct::remove_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4))),
+        //Handling case: thrust::remove_if(thrust::seq, host.begin(), host.end(), stencil.begin(), pred);
+        CALL_FACTORY_ENTRY("remove_if",
+                           CALL("dpct::remove_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4))))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::remove_if(device.begin(), device.end(), pred);
+      CALL_FACTORY_ENTRY("remove_if",
+                         CALL("oneapi::dpl::remove_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2))),
+      //Handling case: thrust::remove_if(host.begin(), host.end(), pred);
+      CALL_FACTORY_ENTRY("remove_if",
+                         CALL("oneapi::dpl::remove_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))))
+
+// thrust::remove_copy_if
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), result, pred);
+      CALL_FACTORY_ENTRY("remove_copy_if",
+                         CALL("oneapi::dpl::remove_copy_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3), ARG(4))),
+      //Handling case: thrust::remove_copy_if(thrust::seq, host.begin(), host.end(), result, pred);
+      CALL_FACTORY_ENTRY("remove_copy_if",
+                         CALL("oneapi::dpl::remove_copy_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_copy_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::remove_copy_if(device.begin(), device.end(), stencil.begin(), result, pred);
+        CALL_FACTORY_ENTRY("remove_copy_if",
+                           CALL("dpct::remove_copy_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+        //Handling case: thrust::remove_copy_if(host.begin(), host.end(), stencil.begin(), result, pred);
+        CALL_FACTORY_ENTRY("remove_copy_if",
+                           CALL("dpct::remove_copy_if",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_copy_if",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), stencil.begin(), result, pred);
+        CALL_FACTORY_ENTRY("remove_copy_if",
+                           CALL("dpct::remove_copy_if",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        //Handling case: thrust::remove_copy_if(thrust::seq, host.begin(), host.end(), stencil.begin(), result, pred);
+        CALL_FACTORY_ENTRY("remove_copy_if",
+                           CALL("dpct::remove_copy_if",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::remove_copy_if(device.begin(), device.end(), result, pred);
+      CALL_FACTORY_ENTRY("remove_copy_if",
+                         CALL("oneapi::dpl::remove_copy_if",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::remove_copy_if(host.begin(), host.end(), result, pred);
+      CALL_FACTORY_ENTRY("remove_copy_if",
+                         CALL("oneapi::dpl::remove_copy_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))))))
+
+// thrust::not1
+CALL_FACTORY_ENTRY("not1", CALL("oneapi::dpl::not1", ARG(0)))
+
+// thrust::any_of
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("any_of",
+                         CALL("oneapi::dpl::any_of", 
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3))),
+      CALL_FACTORY_ENTRY("any_of", CALL("oneapi::dpl::any_of", ARG("oneapi::dpl::execution::seq"),
+                         ARG(1), ARG(2), ARG(3)))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("any_of",
+                         CALL("oneapi::dpl::any_of", 
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2))),
+      CALL_FACTORY_ENTRY("any_of", CALL("oneapi::dpl::any_of", ARG("oneapi::dpl::execution::seq"),
+                         ARG(0), ARG(1), ARG(2)))))
+
+// thrust::replace
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("replace",
+                         CALL("oneapi::dpl::replace", 
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3), ARG(4))),
+      CALL_FACTORY_ENTRY("replace", CALL("oneapi::dpl::replace", ARG("oneapi::dpl::execution::seq"),
+                         ARG(1), ARG(2), ARG(3), ARG(4)))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("replace",
+                         CALL("oneapi::dpl::replace", 
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))),
+      CALL_FACTORY_ENTRY("replace", CALL("oneapi::dpl::replace", ARG("oneapi::dpl::execution::seq"),
+                         ARG(0), ARG(1), ARG(2), ARG(3)))))
+
+// thrust::adjacent_difference
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::adjacent_difference(thrust::device, device.begin(), device.end(), result);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::adjacent_difference(thrust::seq, host.begin(), host.end(), result);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::adjacent_difference(device.begin(), device.end(), result, op);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::adjacent_difference(host.begin(), host.end(), result, op);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::adjacent_difference(thrust::device, device.begin(), device.end(), result, op);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3), ARG(4))),
+      //Handling case: thrust::adjacent_difference(thrust::seq, host.begin(), host.end(), result, op);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::adjacent_difference(device.begin(), device.end(), result);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2))),
+      //Handling case: thrust::adjacent_difference(host.begin(), host.end(), result);
+      CALL_FACTORY_ENTRY("adjacent_difference",
+                         CALL("oneapi::dpl::adjacent_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))))
+
+// thrust::inclusive_scan
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::inclusive_scan(thrust::device, device.begin(), device.end(), result);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3))),
+      //Handling case: thrust::inclusive_scan(thrust::seq, host.begin(), host.end(), result);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::inclusive_scan(device.begin(), device.end(), result, op);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))),
+      //thrust::inclusive_scan(host.begin(), host.end(), result, op);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::inclusive_scan(thrust::device, device.begin(), device.end(), result, op);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(1), ARG(2), ARG(3), ARG(4))),
+      //Handling case: thrust::inclusive_scan(thrust::seq, host.begin(), host.end(), result, op);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+      //Handling case: thrust::inclusive_scan(device.begin(), device.end(), result);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              ARG(0), ARG(1), ARG(2))),
+      //Handling case: thrust::inclusive_scan(host.begin(), host.end(), result);
+      CALL_FACTORY_ENTRY("inclusive_scan",
+                         CALL("oneapi::dpl::inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))))

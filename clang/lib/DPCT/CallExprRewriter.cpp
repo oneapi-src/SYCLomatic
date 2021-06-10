@@ -1266,6 +1266,19 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
+std::function<std::string(const CallExpr *)>
+makeQueueStr(const std::string Prefix, const std::string Suffix) {
+  return [=](const CallExpr *C) -> std::string {
+    if (checkWhetherIsDuplicate(C, false))
+      return "";
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+    std::string S =
+        Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}" + Suffix;
+    return S;
+  };
+}
+
 template <class Printer, class... Ts> class PrinterCreator {
   std::tuple<Ts...> Creators;
 
@@ -1671,6 +1684,60 @@ public:
   }
 };
 
+class CheckArgCount {
+  unsigned Count;
+
+public:
+  CheckArgCount(unsigned I) : Count(I) {}
+  bool operator()(const CallExpr *C) {
+    return C->getNumArgs() == Count;
+  }
+};
+
+class CheckArgType {
+  unsigned Idx;
+  std::string TypeName;
+public:
+  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name){}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx) {
+      std::string ArgType = C->getDirectCallee()
+                                ->getParamDecl(Idx)
+                                ->getType()
+                                .getCanonicalType()
+                                .getUnqualifiedType()
+                                .getAsString();
+      return ArgType.find(TypeName) != std::string::npos;
+    }
+    return false;
+  }
+};
+
+class CompareArgType {
+  unsigned Idx1, Idx2;
+
+public:
+  CompareArgType(unsigned I1, unsigned I2) : Idx1(I1), Idx2(I2) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx1 && C->getNumArgs() > Idx2) {
+      std::string ArgType1 = C->getDirectCallee()
+        ->getParamDecl(Idx1)
+        ->getType()
+        .getCanonicalType()
+        .getUnqualifiedType()
+        .getAsString();
+      std::string ArgType2 = C->getDirectCallee()
+        ->getParamDecl(Idx2)
+        ->getType()
+        .getCanonicalType()
+        .getUnqualifiedType()
+        .getAsString();
+      return ArgType1 != ArgType2;
+    }
+    return false;
+  }
+};
+
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define FEATURE_REQUEST_FACTORY(FILEID, NAME, x)                               \
   createFeatureRequestFactory(FILEID, NAME, x 0),
@@ -1679,6 +1746,7 @@ public:
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
+#define QUEUESTR(prefix, suffix) makeQueueStr(prefix, suffix)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
@@ -1801,6 +1869,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #include "APINamesDriver.inc"
 #include "APINamesTexture.inc"
+#include "APINamesThrust.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
