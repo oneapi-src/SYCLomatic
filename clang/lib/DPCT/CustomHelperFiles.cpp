@@ -60,14 +60,35 @@ void requestFeature(clang::dpct::HelperFileEnum FileID,
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
   std::string CopyrightHeader =
       MapNames::HelperNameContentMap.at(std::make_pair(File, "License")).Code;
+  if (File == HelperFileEnum::Dpct) {
+    std::string Prefix = "//==----";
+    std::string Suffix = "-*- C++ -*----------------==//";
+    std::string FileName = " " + getCustomMainHelperFileName() + ".hpp ";
+    const size_t ColumnLimit = 80;
+    size_t NumOfDashes = 0;
+    if (Prefix.size() + Suffix.size() + FileName.size() <= ColumnLimit) {
+      NumOfDashes =
+          ColumnLimit - Prefix.size() - Suffix.size() - FileName.size();
+    }
+
+    CopyrightHeader = Prefix + FileName + std::string(NumOfDashes, '-') +
+                      Suffix + "\n" + CopyrightHeader;
+  }
   replaceEndOfLine(CopyrightHeader);
   return CopyrightHeader;
 }
 
 std::pair<std::string, std::string>
 getHeaderGuardPair(const clang::dpct::HelperFileEnum File) {
-  std::string MacroName =
-      MapNames::HelperFileHeaderGuardMacroMap.find(File)->second;
+  std::string MacroName = "";
+  if (File == HelperFileEnum::Dpct && getCustomMainHelperFileName() != "dpct") {
+    MacroName = getCustomMainHelperFileName();
+    for (size_t Idx = 0; Idx < MacroName.size(); ++Idx)
+      MacroName[Idx] = llvm::toUpper(MacroName[Idx]);
+    MacroName = "__" + MacroName + "_HPP__";
+  } else {
+    MacroName = MapNames::HelperFileHeaderGuardMacroMap.find(File)->second;
+  }
   std::pair<std::string, std::string> Pair;
   Pair.first =
       "#ifndef " + MacroName + getNL() + "#define " + MacroName + getNL();

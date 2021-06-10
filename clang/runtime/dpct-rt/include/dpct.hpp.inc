@@ -1,7 +1,7 @@
+//==---- dpct.hpp ---------------------------------*- C++ -*----------------==//
 // DPCT_LABEL_BEGIN|License|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-//==---- dpct.hpp ---------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) 2018 - 2021 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
