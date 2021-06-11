@@ -230,6 +230,7 @@ ENTRY_RENAMED("__mulhi", MapNames::getClNamespace(false, true) + "mul_hi")
 ENTRY_RENAMED("__popc", MapNames::getClNamespace(false, true) + "popcount")
 ENTRY_RENAMED("__popcll", MapNames::getClNamespace(false, true) + "popcount")
 ENTRY_RENAMED("__brev", MapNames::getDpctNamespace() + "reverse_bits<unsigned int>")
+ENTRY_RENAMED("__byte_perm", MapNames::getDpctNamespace() + "byte_level_permute")
 
 // Used to add header file "<cmath>" into the file that calls "fabs".
 ENTRY_RENAMED("fabs", "::fabs")
@@ -588,7 +589,6 @@ ENTRY_UNSUPPORTED("__saturatef")
 
 // Integer Intrinsics
 ENTRY_UNSUPPORTED("__brevll")
-ENTRY_UNSUPPORTED("__byte_perm")
 ENTRY_UNSUPPORTED("__ffs")
 ENTRY_UNSUPPORTED("__ffsll")
 ENTRY_UNSUPPORTED("__funnelshift_l")

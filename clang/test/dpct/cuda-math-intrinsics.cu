@@ -2371,9 +2371,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
   // CHECK-NEXT: */
   ull = __brevll(ull);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
-  // CHECK-NEXT: */
+  // CHECK: u = dpct::byte_level_permute(u, u, u);
   u = __byte_perm(u, u, u);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
