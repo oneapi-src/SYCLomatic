@@ -1831,7 +1831,11 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     return;
   std::string ReplacedAtomicFuncName =
       MapNames::AtomicFuncNamesMap.at(AtomicFuncName);
-  requestFeature(HelperFileEnum::Atomic, ReplacedAtomicFuncName.substr(6), CE);
+  if (MapNames::getDpctNamespace().empty())
+    requestFeature(HelperFileEnum::Atomic, ReplacedAtomicFuncName, CE);
+  else
+    requestFeature(HelperFileEnum::Atomic,
+                   ReplacedAtomicFuncName.substr(std::strlen("dpct::")), CE);
 
   // Explicitly cast all arguments except first argument
   const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
@@ -7086,7 +7090,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     auto ReplInfoPair = MapNames::BLASFuncWrapperReplInfoMap.find(FuncName);
     MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
-    requestFeature(HelperFileEnum::BlasUtils, Replacement.substr(6), CE);
+    if (MapNames::getDpctNamespace().empty())
+      requestFeature(HelperFileEnum::BlasUtils, Replacement, CE);
+    else
+      requestFeature(HelperFileEnum::BlasUtils,
+                     Replacement.substr(std::strlen("dpct::")), CE);
     BLASEnumInfo EnumInfo(
         ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
         ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
