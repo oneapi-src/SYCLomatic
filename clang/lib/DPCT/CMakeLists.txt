@@ -44,8 +44,9 @@ add_clang_library(DPCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
   CallExprRewriter.cpp
-  Debug.cpp
   Diagnostics.cpp
+  Error.cpp
+  Statics.cpp
   ExprAnalysis.cpp
   ExtReplacements.cpp
   MapNames.cpp

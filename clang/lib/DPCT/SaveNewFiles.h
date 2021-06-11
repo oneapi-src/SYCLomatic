@@ -32,46 +32,6 @@ class RefactoringTool;
 }
 } // namespace clang
 
-/// ProcessStatus defines various statuses of dpct workflow
-enum ProcessStatus {
-  MigrationSucceeded = 0,
-  MigrationNoCodeChangeHappen = 1,
-  MigrationSkipped = 2,
-  MigrationError = -1,
-  MigrationSaveOutFail = -2, /*eg. have no write permission*/
-  MigrationErrorRunFromSDKFolder = -3,
-  MigrationErrorInRootContainCTTool = -4,
-  MigrationErrorInvalidCudaIncludePath = -5,
-  MigrationErrorInvalidInRootOrOutRoot = -6,
-  MigrationErrorInvalidInRootPath = -7,
-  MigrationErrorInvalidFilePath = -8,
-  MigrationErrorInvalidReportArgs = -9,
-  VcxprojPaserFileNotExist = -11,
-  VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
-  MigrationErrorInvalidInstallPath = -13,
-  MigrationErrorPathTooLong = -14,
-  MigrationErrorInvalidWarningID = -15,
-  MigrationOptionParsingError = -16,
-  MigrationErrorFileParseError = -17,
-  MigrationErrorShowHelp = -18,
-  MigrationErrorCannotFindDatabase = -19,
-  MigrationErrorCannotParseDatabase = -20,
-  MigrationErrorNoExplicitInRoot = -21,
-  MigrationSKIPForMissingCompileCommand = -22,
-  MigrationErrorSpecialCharacter = -23,
-  MigrationErrorPrefixTooLong = -25,
-  MigrationErrorNoFileTypeAvail = -27,
-  MigrationErrorInRootContainSDKFolder = -28,
-  MigrationErrorCannotAccessDirInDatabase = -29,
-  MigrationErrorInconsistentFileInDatabase = -30,
-  MigrationErrorCudaVersionUnsupported = -31,
-  MigrationErrorSupportedCudaVersionNotAvailable = -32,
-  MigrationErrorInvalidExplicitNamespace = -33,
-  MigrationErrorCustomHelperFileNameContainInvalidChar = -34,
-  MigrationErrorCustomHelperFileNameTooLong = -35,
-  MigrationErrorCustomHelperFileNamePathTooLong = -36,
-};
-
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///

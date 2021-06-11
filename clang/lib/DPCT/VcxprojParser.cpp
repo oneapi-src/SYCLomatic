@@ -9,8 +9,9 @@
 //
 //===---------------------------------------------------------------===//
 #include "VcxprojParser.h"
-#include "Debug.h"
+#include "Error.h"
 #include "SaveNewFiles.h"
+#include "Statics.h"
 #include "Utility.h"
 
 std::map<std::string, std::vector<std::string>> OptionsMap;

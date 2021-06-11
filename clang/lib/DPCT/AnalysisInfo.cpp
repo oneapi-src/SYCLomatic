@@ -10,9 +10,9 @@
 //===-----------------------------------------------------------------===//
 
 #include "AnalysisInfo.h"
-#include "Debug.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "Statics.h"
 #include "Utility.h"
 
 #include "clang/AST/DeclTemplate.h"

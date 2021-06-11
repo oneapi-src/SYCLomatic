@@ -1,4 +1,4 @@
-//===--- Debug.h ---------------------------------------*- C++ -*---===//
+//===--- Statics.h ---------------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 - 2021 Intel Corporation. All rights reserved.
 //
@@ -33,9 +33,8 @@ class ASTTraversal;
 #define DPCT_DEBUG_BUILD 1
 #endif
 
-class DebugInfo {
+class StaticsInfo {
 public:
-  static void ShowStatus(int status = 0, std::string Message = "");
   static void
   printMigrationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(
@@ -50,6 +49,7 @@ llvm::raw_ostream &DpctTerm();
 std::string getDpctStatsStr();
 std::string getDpctDiagsStr();
 std::string getDpctTermStr();
+std::string getDpctLogStr();
 extern int VerboseLevel;
 
 extern std::unordered_map<std::string, std::array<unsigned int, 3>>
@@ -61,20 +61,6 @@ enum VerboseLevel {
   VerboseLow = 1,
   VerboseHigh = 2,
 };
-
-#ifdef DPCT_DEBUG_BUILD // Debug build
-#define dpct_unreachable(message)                                              \
-  do {                                                                         \
-    DebugInfo::ShowStatus();                                                   \
-    llvm::dbgs() << message << "\n";                                           \
-    llvm::dbgs() << "Abortion at " << __FILE__ << ":" << __LINE__ << "\n";     \
-    abort();                                                                   \
-  } while (false)
-#else // Release build
-#define dpct_unreachable(message)                                              \
-  do {                                                                         \
-  } while (false)
-#endif // Release build
 
 void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
 } // namespace dpct

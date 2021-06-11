@@ -3596,7 +3596,6 @@ const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
 #undef HELPERFILE
 };
 
-
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
@@ -3620,7 +3619,7 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
-    DebugInfo::ShowStatus(MigrationError);
+    ShowStatus(MigrationError);
     dpctExit(MigrationError);
 #else
     return false;

@@ -12,8 +12,8 @@
 #include "SaveNewFiles.h"
 #include "AnalysisInfo.h"
 #include "Checkpoint.h"
-#include "Debug.h"
 #include "ExternalReplacement.h"
+#include "Statics.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"

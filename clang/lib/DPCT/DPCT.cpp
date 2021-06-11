@@ -16,10 +16,10 @@
 #include "Checkpoint.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
-#include "Debug.h"
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"
 #include "SignalProcess.h"
+#include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
@@ -532,7 +532,7 @@ public:
       Global.addReplacement(Repl);
     }
 
-    DebugInfo::printReplacements(TransformSet, Context);
+    StaticsInfo::printReplacements(TransformSet, Context);
   }
 
   void Initialize(ASTContext &Context) override {
@@ -633,16 +633,16 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
-      DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+      ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
 
     if (!CudaIncludeDetector.isVersionSupported()) {
-      DebugInfo::ShowStatus(MigrationErrorCudaVersionUnsupported);
+      ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
-    DebugInfo::ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
+    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
     dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
 
@@ -651,7 +651,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   SmallString<512> CudaPathAbs;
   std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
   if ((bool)EC) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   }
   return CudaPathAbs.str().str();
@@ -677,7 +677,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   SmallString<512> InstallPathAbs;
   std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
   if ((bool)EC) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidInstallPath);
+    ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
   }
   return InstallPathAbs.str().str();
@@ -688,17 +688,17 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
-    DebugInfo::ShowStatus(MigrationErrorRunFromSDKFolder);
+    ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, CudaPath)) {
-    DebugInfo::ShowStatus(MigrationErrorInRootContainSDKFolder);
+    ShowStatus(MigrationErrorInRootContainSDKFolder);
     dpctExit(MigrationErrorInRootContainSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, DpctInstallPath)) {
-    DebugInfo::ShowStatus(MigrationErrorInRootContainCTTool);
+    ShowStatus(MigrationErrorInRootContainCTTool);
     dpctExit(MigrationErrorInRootContainCTTool);
   }
 }
@@ -984,13 +984,13 @@ int runDPCT(int argc, const char **argv) {
       llvm::Error NewE =
           handleErrors(OptParser.takeError(), [](const DPCTError &DE) {
             if (DE.EC == -101) {
-              DebugInfo::ShowStatus(MigrationErrorCannotParseDatabase);
+              ShowStatus(MigrationErrorCannotParseDatabase);
               dpctExit(MigrationErrorCannotParseDatabase);
             } else if (DE.EC == -102) {
-              DebugInfo::ShowStatus(MigrationErrorCannotFindDatabase);
+              ShowStatus(MigrationErrorCannotFindDatabase);
               dpctExit(MigrationErrorCannotFindDatabase);
             } else {
-              DebugInfo::ShowStatus(MigrationError);
+              ShowStatus(MigrationError);
               dpctExit(MigrationError);
             }
           });
@@ -1000,7 +1000,7 @@ int runDPCT(int argc, const char **argv) {
         handleErrors(OptParser.takeError(), [](const llvm::StringError &E) {
           DpctLog() << E.getMessage();
         });
-    dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
+    dpct::ShowStatus(MigrationOptionParsingError);
     dpctExit(MigrationOptionParsingError);
   }
 
@@ -1012,23 +1012,23 @@ int runDPCT(int argc, const char **argv) {
   initWarningIDs();
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
-    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   if (OutRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
-    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
               << "' is too long\n";
-    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
-    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   // Report file prefix is limited to 128, so that <report-type> and
@@ -1036,7 +1036,7 @@ int runDPCT(int argc, const char **argv) {
   if (ReportFilePrefix.size() >= 128) {
     DpctLog() << "Error: --report-file-prefix '" << ReportFilePrefix
               << "' is too long\n";
-    DebugInfo::ShowStatus(MigrationErrorPrefixTooLong);
+    ShowStatus(MigrationErrorPrefixTooLong);
     dpctExit(MigrationErrorPrefixTooLong);
   }
   auto P = std::find_if_not(
@@ -1045,7 +1045,7 @@ int runDPCT(int argc, const char **argv) {
   if (P != ReportFilePrefix.end()) {
     DpctLog() << "Error: --report-file-prefix contains special character '"
               << *P << "' \n";
-    DebugInfo::ShowStatus(MigrationErrorSpecialCharacter);
+    ShowStatus(MigrationErrorSpecialCharacter);
     dpctExit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
@@ -1053,29 +1053,29 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
   if (InRoot.empty() && ProcessAllFlag) {
-    DebugInfo::ShowStatus(MigrationErrorNoExplicitInRoot);
+    ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
   if (!makeInRootCanonicalOrSetDefaults(InRoot,
                                         OptParser->getSourcePathList())) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
     dpctExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
   int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
   if (ValidPath == -1) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
+    ShowStatus(MigrationErrorInvalidInRootPath);
     dpctExit(MigrationErrorInvalidInRootPath);
   } else if (ValidPath == -2) {
-    DebugInfo::ShowStatus(MigrationErrorNoFileTypeAvail);
+    ShowStatus(MigrationErrorNoFileTypeAvail);
     dpctExit(MigrationErrorNoFileTypeAvail);
   }
 
   int SDKIncPathRes =
       checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
   if (SDKIncPathRes == -1) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKIncPathRes == 0) {
     HasSDKIncludeOption = true;
@@ -1083,7 +1083,7 @@ int runDPCT(int argc, const char **argv) {
 
   int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
   if (SDKPathRes == -1) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidCudaIncludePath);
+    ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKPathRes == 0) {
     HasSDKPathOption = true;
@@ -1098,7 +1098,7 @@ int runDPCT(int argc, const char **argv) {
   if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
                       ReportFilePrefix, ReportOnlyFlag, GenReport,
                       DVerbose) == false) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
+    ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
   }
 
@@ -1144,7 +1144,7 @@ int runDPCT(int argc, const char **argv) {
 
   IsUsingDefaultOutRoot = OutRoot.empty();
   if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
     dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
@@ -1269,19 +1269,19 @@ int runDPCT(int argc, const char **argv) {
 
     int RunResult = Tool.run(&Factory);
     if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
-      DebugInfo::ShowStatus(MigrationErrorCannotAccessDirInDatabase,
-                            ClangToolOutputMessage);
+      ShowStatus(MigrationErrorCannotAccessDirInDatabase,
+                 ClangToolOutputMessage);
       return MigrationErrorCannotAccessDirInDatabase;
     } else if (RunResult == MigrationErrorInconsistentFileInDatabase) {
-      DebugInfo::ShowStatus(MigrationErrorInconsistentFileInDatabase,
-                            ClangToolOutputMessage);
+      ShowStatus(MigrationErrorInconsistentFileInDatabase,
+                 ClangToolOutputMessage);
       return MigrationErrorInconsistentFileInDatabase;
     }
 
     if (RunResult && StopOnParseErr) {
       DumpOutputFile();
       if (RunResult == 1) {
-        DebugInfo::ShowStatus(MigrationErrorFileParseError);
+        ShowStatus(MigrationErrorFileParseError);
         return MigrationErrorFileParseError;
       } else {
         // When RunResult equals to 2, it means no error but some files are
@@ -1331,7 +1331,7 @@ int runDPCT(int argc, const char **argv) {
   }
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
-  DebugInfo::ShowStatus(Status);
+  ShowStatus(Status);
 
   DumpOutputFile();
   return Status;

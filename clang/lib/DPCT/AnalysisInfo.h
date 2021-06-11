@@ -13,11 +13,12 @@
 #define DPCT_ANALYSIS_INFO_H
 
 #include "CustomHelperFiles.h"
-#include "Debug.h"
+#include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include "LibraryAPIMigration.h"
 #include "SaveNewFiles.h"
+#include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
@@ -1106,7 +1107,7 @@ public:
   setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec) {
     size_t NamespaceVecSize = NamespacesVec.size();
     if (!NamespaceVecSize || NamespaceVecSize > 2) {
-      DebugInfo::ShowStatus(MigrationErrorInvalidExplicitNamespace);
+      ShowStatus(MigrationErrorInvalidExplicitNamespace);
       dpctExit(MigrationErrorInvalidExplicitNamespace);
     }
     for (auto &Namespace : NamespacesVec) {
@@ -1124,7 +1125,7 @@ public:
       bool Check3 = (Namespace == ExplicitNamespace::dpct &&
                      ExplicitNamespaceSet.count(ExplicitNamespace::dpct) == 1);
       if (Check1 || Check2 || Check3) {
-        DebugInfo::ShowStatus(MigrationErrorInvalidExplicitNamespace);
+        ShowStatus(MigrationErrorInvalidExplicitNamespace);
         dpctExit(MigrationErrorInvalidExplicitNamespace);
       } else {
         ExplicitNamespaceSet.insert(Namespace);

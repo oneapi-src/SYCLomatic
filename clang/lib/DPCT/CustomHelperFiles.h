@@ -41,9 +41,9 @@ struct HelperFunc {
   bool IsCalled = false; // has this feature be called
   std::set<std::string> CallerSrcFiles; // files have called this feature
   std::vector<HelperFeatureIDTy>
-      Dependency;   // some features which this feature depends on
-  std::string Code; // the code of this feature
-  std::string USMCode; // the code of this feature
+      Dependency;         // some features which this feature depends on
+  std::string Code;       // the code of this feature
+  std::string USMCode;    // the code of this feature
   std::string NonUSMCode; // the code of this feature
 };
 

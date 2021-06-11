@@ -11,7 +11,7 @@
 
 #include "SignalProcess.h"
 #include "Checkpoint.h"
-#include "SaveNewFiles.h"
+#include "Error.h"
 #include "Utility.h"
 
 #include "clang/Basic/LangOptions.h"

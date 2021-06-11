@@ -12,7 +12,7 @@
 #include "ExtReplacements.h"
 
 #include "AnalysisInfo.h"
-#include "Debug.h"
+#include "Statics.h"
 
 #include <assert.h>
 #include <regex>

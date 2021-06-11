@@ -10,8 +10,8 @@
 //===---------------------------------------------------------------===//
 
 #include "ValidateArguments.h"
-#include "Debug.h"
-#include "SaveNewFiles.h"
+#include "Error.h"
+#include "Statics.h"
 #include "Utility.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -100,7 +100,7 @@ bool makeInRootCanonicalOrSetDefaults(
   SmallString<512> InRootAbs;
   std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
   if ((bool)EC) {
-    clang::dpct::DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
+    clang::dpct::ShowStatus(MigrationErrorInvalidInRootPath);
     dpctExit(MigrationErrorInvalidInRootPath);
   }
   InRoot = InRootAbs.str().str();
@@ -240,21 +240,20 @@ void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
 
   std::string FileName = Name + ".hpp";
   if (FileName.size() >= MAX_NAME_LEN) {
-    clang::dpct::DebugInfo::ShowStatus(
-        MigrationErrorCustomHelperFileNameTooLong);
+    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNameTooLong);
     dpctExit(MigrationErrorCustomHelperFileNameTooLong);
   }
 
   std::string FilePath = OutRoot + "/include/" + Name + "/" + FileName;
   if (FilePath.size() >= MAX_PATH_LEN) {
-    clang::dpct::DebugInfo::ShowStatus(
-        MigrationErrorCustomHelperFileNamePathTooLong, FilePath);
+    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNamePathTooLong,
+                            FilePath);
     dpctExit(MigrationErrorCustomHelperFileNamePathTooLong);
   }
 
   for (size_t Idx = 0, End = Name.size(); Idx < End; Idx++) {
     if ((!isdigit(Name[Idx])) && (!isalpha(Name[Idx])) && (Name[Idx] != '_')) {
-      clang::dpct::DebugInfo::ShowStatus(
+      clang::dpct::ShowStatus(
           MigrationErrorCustomHelperFileNameContainInvalidChar);
       dpctExit(MigrationErrorCustomHelperFileNameContainInvalidChar);
     }

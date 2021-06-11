@@ -13,8 +13,8 @@
 #define DPCT_AST_DIAGNOSTICS_H
 
 #include "AnalysisInfo.h"
-#include "Debug.h"
 #include "SaveNewFiles.h"
+#include "Statics.h"
 #include "TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"

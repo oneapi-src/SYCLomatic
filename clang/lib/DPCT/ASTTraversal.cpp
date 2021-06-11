@@ -13,7 +13,6 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
-#include "Debug.h"
 #include "ExprAnalysis.h"
 #include "GAnalytics.h"
 #include "SaveNewFiles.h"
@@ -15226,11 +15225,11 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
     }
   }
 
-  DebugInfo::printMigrationRules(Storage);
+  StaticsInfo::printMigrationRules(Storage);
 
   Matchers.matchAST(Context);
 
-  DebugInfo::printMatchedRules(Storage);
+  StaticsInfo::printMatchedRules(Storage);
   CHECKPOINT_ASTMATCHER_RUN_EXIT();
 }
 

@@ -62,7 +62,7 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
 void reportInvalidWarningID(const std::string &Str) {
   DpctLog() << "Invalid warning ID or range: " << Str << "\n";
-  DebugInfo::ShowStatus(MigrationErrorInvalidWarningID);
+  ShowStatus(MigrationErrorInvalidWarningID);
   dpctExit(MigrationErrorInvalidWarningID);
 }
 

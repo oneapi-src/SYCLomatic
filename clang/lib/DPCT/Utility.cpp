@@ -13,10 +13,10 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
-#include "Debug.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "SaveNewFiles.h"
+#include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/ExprCXX.h"
@@ -333,7 +333,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
   }
   if (Vec.size() != InDegree.size()) {
     std::cout << "Error: Two rules have dependency on each other.\n";
-    dpct::DebugInfo::ShowStatus(MigrationError);
+    dpct::ShowStatus(MigrationError);
     dpctExit(MigrationError);
   }
 

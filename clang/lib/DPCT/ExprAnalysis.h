@@ -13,7 +13,7 @@
 #define DPCT_EXPR_ANALYSIS_H
 
 #include "CustomHelperFiles.h"
-#include "Debug.h"
+#include "Statics.h"
 #include "TextModification.h"
 
 #include "clang/AST/DeclTemplate.h"
