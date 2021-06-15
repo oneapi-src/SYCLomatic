@@ -2790,7 +2790,7 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
 
 void findRelatedDREs(const Expr *E,
                      std::set<const clang::DeclRefExpr *> &DRESet,
-                     bool HasCallExpr) {
+                     bool &HasCallExpr) {
   if (!E)
     return;
 

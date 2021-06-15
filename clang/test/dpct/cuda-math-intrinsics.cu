@@ -3534,3 +3534,17 @@ __device__ void bar1(double *d, bool flag) {
   d2_p = &d2;
   sincos(i, &d1, d2_p);
 }
+
+__device__ int* get_ptr();
+__device__ void bar2() {
+  double d0;
+  int i;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "get_ptr() + i" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::global_space>(get_ptr() + i));
+  double d2 = frexp(d0, get_ptr() + i);
+}
