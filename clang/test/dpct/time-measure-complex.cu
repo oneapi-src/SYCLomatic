@@ -213,17 +213,16 @@ int main(int argc, char **argv)
   } while (0)
 
 template <typename T>
-// CHECK: void check(T result, char const *const func) {
-void check(T result, char const *const func) {
+// CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {
+void my_error_checker(T ReturnValue, char const *const FuncName) {
 }
-#define checkCudaErrors(val) check((val), #val)
 
-#define cudaCheck(stmt) do {                         \
-  cudaError_t err = stmt;                            \
-  if (err != cudaSuccess) {                          \
-    char msg[256];                                   \
-    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
-  }                                                  \
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
+
+#define MY_CHECKER(CALL) do {                           \
+  cudaError_t Error = CALL;                             \
+  if (Error != cudaSuccess) {                           \
+  }                                                     \
 } while(0)
 
 
@@ -250,8 +249,8 @@ void foo_test_1() {
 // CHECK-NEXT:  stop.wait();
 // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:  CHECK_FOO(0);
-// CHECK-NEXT:  checkCudaErrors(0);
-// CHECK-NEXT:  cudaCheck(0);
+// CHECK-NEXT:  MY_ERROR_CHECKER(0);
+// CHECK-NEXT:  MY_CHECKER(0);
 // CHECK-NEXT:  int ret;
 // CHECK-NEXT:  ret = (0);
 // CHECK-NEXT:  int a = (0);
@@ -259,8 +258,8 @@ void foo_test_1() {
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
   cudaEventSynchronize(stop);
-  checkCudaErrors(cudaEventSynchronize(stop));
-  cudaCheck(cudaEventSynchronize(stop));
+  MY_ERROR_CHECKER(cudaEventSynchronize(stop));
+  MY_CHECKER(cudaEventSynchronize(stop));
   (cudaEventSynchronize(stop));
   int ret;
   ret = (cudaEventSynchronize(stop));

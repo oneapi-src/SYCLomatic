@@ -36,24 +36,19 @@ __global__ void testKernel(int L, int M, int N) {
 
 // Error handling macro
 
-// CHECK: #define CUDA_CHECK(call) \
-// CHECK-NEXT:  /* DPCT_ORIG     if ((call) != cudaSuccess) { \*/ \
-// CHECK-NEXT:      if ((call) != 0) { \
-// CHECK-NEXT:  /* DPCT_ORIG         cudaError_t err = cudaGetLastError(); \*/ \
-// CHECK-NEXT:          int err = 0; \
-// CHECK-NEXT:          std::cout << "CUDA error calling \"" #call "\", code is " << err << std::endl; \
-// CHECK-NEXT:          exit(err); \
-// CHECK-NEXT:       }
-#define CUDA_CHECK(call)                                                           \
-    if ((call) != cudaSuccess) { \
-        cudaError_t err = cudaGetLastError(); \
-        std::cout << "CUDA error calling \"" #call "\", code is " << err << std::endl; \
-        exit(err); \
-    }
+// CHECK: #define MY_CHECKER(CALL) \
+// CHECK-NEXT: /* DPCT_ORIG  if ((CALL) != cudaSuccess) { \*/ \
+// CHECK-NEXT:   if ((CALL) != 0) { \
+// CHECK-NEXT:     exit(-1); \
+// CHECK-NEXT:   }
+#define MY_CHECKER(CALL) \
+  if ((CALL) != cudaSuccess) { \
+    exit(-1); \
+  }
 
-#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
-void check(T result, char const *const func, const char *const file, int const line) {}
+void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -158,20 +153,20 @@ int main() {
 
   float *deviceOutputData = NULL;
 
-  // CHECK: /* DPCT_ORIG   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
+  // CHECK: /* DPCT_ORIG   MY_CHECKER(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
+  MY_CHECKER(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
 
   // copy result from device to host
   float *h_odata = NULL;
   float *d_odata = NULL;
-  // CHECK: /* DPCT_ORIG   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
+  // CHECK: /* DPCT_ORIG   MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
+  MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 
   // CHECK: /*
   // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
@@ -184,13 +179,13 @@ int main() {
   // CHECK-NEXT: */
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 
-  // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
+  // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because this call is redundant in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
+  cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }
 

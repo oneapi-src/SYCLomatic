@@ -24,7 +24,6 @@ void foo1() {
 do {                                           \
   cufftResult err = stmt;                                               \
   if (err != CUFFT_SUCCESS) {                                           \
-        char msg[128];  \
   }                                                                     \
 } while(0)
 void foo2() {
@@ -140,14 +139,9 @@ void foo5() {
 }
 
 
-#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
-
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
-void check(T result, char const *const func, const char *const file,
-           int const line) {
-  if (result) {
-  }
-}
+void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 void foo6() {
   cufftHandle plan;
@@ -155,9 +149,9 @@ void foo6() {
   cudaStream_t s;
 
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-  checkCudaErrors(cufftSetStream(plan, s));
+  MY_ERROR_CHECKER(cufftSetStream(plan, s));
 
-  //CHECK:checkCudaErrors([&](){
+  //CHECK:MY_ERROR_CHECKER([&](){
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
@@ -169,9 +163,9 @@ void foo6() {
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}());
-  checkCudaErrors(cufftExecR2C(plan, (float*)iodata, iodata));
+  MY_ERROR_CHECKER(cufftExecR2C(plan, (float*)iodata, iodata));
 }
-#undef checkCudaErrors
+#undef MY_ERROR_CHECKER
 
 
 #define CHECK_CUFFT(call)                                                      \
@@ -209,7 +203,6 @@ void foo7() {
 do {                                           \
   cufftResult err;                                                      \
   if ( (err = (stmt)) != CUFFT_SUCCESS) {                               \
-        char msg[128];                                                  \
   }                                                                     \
 } while(0)
 void foo8() {

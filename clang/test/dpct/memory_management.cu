@@ -854,14 +854,14 @@ void testCommas_in_global_memory() {
   free(h_A);
 }
 
-#define CUDA_CHECK(call)                                                           \
-    if ((call) != cudaSuccess) { \
+#define MY_CHECKER(CALL)                                                           \
+    if ((CALL) != cudaSuccess) { \
         exit(-1); \
     }
 
-#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
-void check(T result, char const *const func, const char *const file, int const line) {}
+void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 
 template<typename T>
@@ -901,14 +901,14 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
-  CUDA_CHECK(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+  // CHECK-NEXT: MY_CHECKER((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
+  MY_CHECKER(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
-  checkCudaErrors(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
+  MY_ERROR_CHECKER(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK: #define CUDAMEMCPY dpct::dpct_memcpy
   // CHECK-NEXT: CUDAMEMCPY(data, d_data, datasize * sizeof(T), dpct::device_to_host);
@@ -933,14 +933,14 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
-  CUDA_CHECK(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
+  // CHECK-NEXT: MY_CHECKER((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
+  MY_CHECKER(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
-  checkCudaErrors(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
+  MY_ERROR_CHECKER(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
 
   // CHECK: #define CUDAMEMCPY2D dpct::dpct_memcpy
   // CHECK-NEXT: CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
@@ -950,14 +950,14 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
-  CUDA_CHECK(cudaMemcpy3D(&parms));
+  // CHECK-NEXT: MY_CHECKER((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
+  MY_CHECKER(cudaMemcpy3D(&parms));
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
-  checkCudaErrors(cudaMemcpy3D(&parms));
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
+  MY_ERROR_CHECKER(cudaMemcpy3D(&parms));
 
   delete[] data;
 }

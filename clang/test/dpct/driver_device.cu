@@ -4,8 +4,8 @@
 #include <cuda_runtime_api.h>
 
 #define NUM 1
-#define CUDA_SAFE_CALL( call) do {\
-  int err = call;                \
+#define MY_SAFE_CALL(CALL) do {    \
+  int Error = CALL;                \
 } while (0)
 int main(){
   int result1, result2;
@@ -29,8 +29,8 @@ int main(){
   // CHECK: *((int *)pdevice) = 0;
   cuDeviceGet((CUdevice *)pdevice, 0);
 
-  // CHECK: CUDA_SAFE_CALL((device = 0, 0));
-  CUDA_SAFE_CALL(cuDeviceGet(&device, 0));
+  // CHECK: MY_SAFE_CALL((device = 0, 0));
+  MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
@@ -62,19 +62,19 @@ int main(){
   // CHECK-NEXT: */
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 
-  // CHECK: CUDA_SAFE_CALL((result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units(), 0));
-  CUDA_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
+  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units(), 0));
+  MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
 
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   // CHECK: result2 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
   cuDeviceComputeCapability(&result1, &result2, device);
 
-  // CHECK: CUDA_SAFE_CALL([&](){
+  // CHECK: MY_SAFE_CALL([&](){
   // CHECK-NEXT:   result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   // CHECK-NEXT:   result2 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
   // CHECK-NEXT:   return 0;
   // CHECK-NEXT: }());
-  CUDA_SAFE_CALL(cuDeviceComputeCapability(&result1, &result2, device));
+  MY_SAFE_CALL(cuDeviceComputeCapability(&result1, &result2, device));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
@@ -82,22 +82,22 @@ int main(){
   // CHECK-NEXT: result1 = dpct::get_current_device().get_info<sycl::info::device::version>();
   cuDriverGetVersion(&result1);
 
-  // CHECK: CUDA_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
-  CUDA_SAFE_CALL(cuDeviceGetCount(&result1));
+  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
+  MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   // CHECK: result1 = dpct::dev_mgr::instance().device_count();
   cuDeviceGetCount(&result1);
 
-  // CHECK: CUDA_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
-  CUDA_SAFE_CALL(cuDeviceGetCount(&result1));
+  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
+  MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   char name[100];
 
   // CHECK: memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90);
   cuDeviceGetName(name, 90, device);
 
-  // CHECK: CUDA_SAFE_CALL((memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90), 0));
-  CUDA_SAFE_CALL(cuDeviceGetName(name, 90, device));
+  // CHECK: MY_SAFE_CALL((memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90), 0));
+  MY_SAFE_CALL(cuDeviceGetName(name, 90, device));
 
   return 0;
 }

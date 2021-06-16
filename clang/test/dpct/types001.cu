@@ -102,11 +102,11 @@ cudaError_t apicall(int i) {
 cudaError_t err = apicall(0);
 
 template <typename T>
-// CHECK: void check(T result, char const *const func) {
-void check(T result, char const *const func) {
+// CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {
+void my_error_checker(T ReturnValue, char const *const FuncName) {
 }
 
-#define checkCudaErrors(val) check((val), #val)
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 
 int main(int argc, char **argv) {
   //CHECK:sycl::range<3> d3(1, 1, 1);
@@ -379,7 +379,7 @@ int main(int argc, char **argv) {
   a = sizeof(solverdnhandle);
   a = sizeof solverdnhandle;
 
-  checkCudaErrors(apicall(0));
+  MY_ERROR_CHECKER(apicall(0));
   return 0;
 }
 

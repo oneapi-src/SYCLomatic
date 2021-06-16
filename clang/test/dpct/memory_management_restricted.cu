@@ -5,9 +5,9 @@
 
 #include <cuda_runtime.h>
 
-#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
-void check(T result, char const *const func, const char *const file, int const line) {}
+void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 #define DATAMACRO 32*32
 
@@ -27,8 +27,8 @@ int main(){
     //CHECK:  /*
     //CHECK-NEXT:  DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:  */
-    //CHECK-NEXT:  checkCudaErrors((*data = (float *)sycl::malloc_device(DATAMACRO, q_ct1), 0));
-    checkCudaErrors(cudaMalloc((void **)data, DATAMACRO));
+    //CHECK-NEXT:  MY_ERROR_CHECKER((*data = (float *)sycl::malloc_device(DATAMACRO, q_ct1), 0));
+    MY_ERROR_CHECKER(cudaMalloc((void **)data, DATAMACRO));
 
     //Currently, migration of using template version API only covers the simple case: the argument specifiy the size is sizeof(T)*Expr, Expr*sizeof(T) and sizeof(T)
     //CHECK:  *data = sycl::malloc_device<float>(10*10, q_ct1);
@@ -53,8 +53,8 @@ int main(){
     // CHECK: /*
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:checkCudaErrors((size2 = d_A.get_size(), 0));
-    checkCudaErrors(cudaGetSymbolSize(&size2, d_A));
+    // CHECK-NEXT:MY_ERROR_CHECKER((size2 = d_A.get_size(), 0));
+    MY_ERROR_CHECKER(cudaGetSymbolSize(&size2, d_A));
 
     // CHECK: stream->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, stream);
@@ -71,20 +71,20 @@ int main(){
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
@@ -93,23 +93,23 @@ int main(){
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.memcpy(h_A, d_A, size2), 0));
     // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.memcpy(h_A, d_A, size2), 0));
     // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((q_ct1.memcpy(h_A, d_A, size2), 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.memcpy(h_A, d_A, size2), 0));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault);
-    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault));
+    MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread);
-    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread));
+    MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy);
-    checkCudaErrors(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy));
+    MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy));
 }
 
 
@@ -134,20 +134,20 @@ int foo() {
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
-    checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
     return 0;
 }
 
@@ -310,50 +310,50 @@ void foobar() {
 
 
   // a * sizeof
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * N * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(AAA(N) * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, AAA(N) * N * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * AAA(N), q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, N * AAA(N) * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N * AAA(N), q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, N * AAA(N) * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * QRNG_DIMENSIONS, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, N * QRNG_DIMENSIONS * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N * QRNG_DIMENSIONS, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, N * QRNG_DIMENSIONS * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF_FLOAT));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF_FLOAT));
 
   //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1);
   cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF_FLOAT);
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF(float)));
 
   //CHECK: d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * N, q_ct1);
   cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * N * SIZEOF(float));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, N * N * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * QRNG_DIMENSIONS, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * QRNG_DIMENSIONS * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * QRNG_DIMENSIONS, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * QRNG_DIMENSIONS * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * AAA(N), q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * AAA(N) * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(AAA(N) * AAA(N), q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, AAA(N) * AAA(N) * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N) * QRNG_DIMENSIONS, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, AAA(N) * QRNG_DIMENSIONS * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(AAA(N) * QRNG_DIMENSIONS, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, AAA(N) * QRNG_DIMENSIONS * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * AAA(N), q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * AAA(N) * sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS * AAA(N), q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, QRNG_DIMENSIONS * AAA(N) * sizeof(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * SIZEOF_FLOAT));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, N * N * SIZEOF_FLOAT));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, N * N * SIZEOF(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N * N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, N * N * SIZEOF(float)));
 
 
 
@@ -393,20 +393,20 @@ void foobar() {
 
 
   // sizeof * a
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * QRNG_DIMENSIONS));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(QRNG_DIMENSIONS, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float) * QRNG_DIMENSIONS));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(N, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * N));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(N, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float) * N));
 
-  //CHECK: checkCudaErrors((d_Output = (float *)sycl::malloc_device(sizeof(float) * BBB(N), q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * BBB(N)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = (float *)sycl::malloc_device(sizeof(float) * BBB(N), q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float) * BBB(N)));
 
   //CHECK: d_Output = (float *)sycl::malloc_device(sizeof(float) * BBB(N), q_ct1);
   cudaMalloc((void **)&d_Output, sizeof(float) * BBB(N));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(AAA(N), q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float) * AAA(N)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(AAA(N), q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float) * AAA(N)));
 
   //CHECK: d_Output = sycl::malloc_device<float>(AAA(N), q_ct1);
   cudaMalloc((void **)&d_Output, sizeof(float) * AAA(N));
@@ -435,13 +435,13 @@ void foobar() {
   //CHECK: d_Output = sycl::malloc_device<float>(1, q_ct1);
   cudaMalloc((void **)&d_Output, SIZEOF(float));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, SIZEOF_FLOAT));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, SIZEOF_FLOAT));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, SIZEOF(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, SIZEOF(float)));
 
-  //CHECK: checkCudaErrors((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
-  checkCudaErrors(cudaMalloc((void **)&d_Output, sizeof(float)));
+  //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
+  MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float)));
 }
 
