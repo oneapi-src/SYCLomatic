@@ -39,6 +39,13 @@ enum class HelperFeatureDependencyKind : unsigned int {
   HFDK_UsmRestricted
 };
 
+enum class HelperFeatureEnum : unsigned int {
+#define DPCT_FEATURE_ENUM
+#undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
+#include "clang/DPCT/HelperFeatureEnum.inc"
+#undef DPCT_FEATURE_ENUM
+};
+
 using HelperFeatureIDTy = std::pair<HelperFileEnum, std::string>;
 
 struct HelperFunc {
@@ -58,15 +65,10 @@ struct HelperFunc {
            // this field saved {Unknown, ""}.
 };
 
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName,
-                    const std::string &UsedFile);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, clang::SourceLocation SL);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const clang::Stmt *Stmt);
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const clang::Decl *Decl);
+void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile);
+void requestFeature(HelperFeatureEnum Feature, clang::SourceLocation SL);
+void requestFeature(HelperFeatureEnum Feature, const clang::Stmt *Stmt);
+void requestFeature(HelperFeatureEnum Feature, const clang::Decl *Decl);
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File);
 std::pair<std::string, std::string>

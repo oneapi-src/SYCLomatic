@@ -808,7 +808,7 @@ public:
   void handleComputeMode(std::string EnumName, const DeclRefExpr *E);
 
   static std::map<std::string, std::string> EnumNamesMap;
-  static std::map<std::string, HelperFeatureIDTy> EnumNamesHelperFeaturesMap;
+  static std::map<std::string, HelperFeatureEnum> EnumNamesHelperFeaturesMap;
 };
 
 /// Migration rule for Error enums constants.
@@ -964,7 +964,7 @@ public:
                    "get_default_queue().memcpy(" +
                    ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
                    ", sizeof(" + Type + ")*" + Size + ").wait();";
-          requestFeature(HelperFileEnum::Device, "get_default_queue", CE);
+          requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
         }
       };
 
@@ -977,7 +977,7 @@ public:
         declareTempArgs(X1Ptr, "x1_ct", Type, 3);
         declareTempArgs(ParamPtr, "param_ct", Type, 5);
 
-        requestFeature(HelperFileEnum::Device, "get_default_queue", CE);
+        requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
                  "malloc_shared<" + Type + ">(8, " +
@@ -1032,7 +1032,7 @@ public:
         declareTempArgs(CPtr, "c_ct", RealType, 3);
         declareTempArgs(SPtr, "s_ct", Type, 4);
 
-        requestFeature(HelperFileEnum::Device, "get_default_queue", CE);
+        requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
@@ -1115,7 +1115,7 @@ public:
 
       std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
 
-      requestFeature(HelperFileEnum::Device, "get_default_queue", CE);
+      requestFeature(HelperFeatureEnum::Device_get_default_queue, CE);
       PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
                         EA.getReplacedString() + ";" + getNL() + IndentStr +
                         IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
@@ -1155,7 +1155,7 @@ public:
         (FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") &&
         (ArgIndex == 5);
 
-    requestFeature(HelperFileEnum::Memory, "get_buffer_T", CE);
+    requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
     SyncAPIBufferAssignmentInThenBlock.emplace_back(
         BufferName + " = " + MapNames::getDpctNamespace() + "get_buffer<" +
         Type + ">(" + PointerStr + ");");
@@ -1183,7 +1183,7 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
-      requestFeature(HelperFileEnum::Memory, "mem_mgr_is_device_ptr", CE);
+      requestFeature(HelperFeatureEnum::Memory_mem_mgr_is_device_ptr, CE);
       std::string IfStmtStr = "if (" + MapNames::getDpctNamespace(true) +
                               "detail::mem_mgr::instance().is_device_ptr(" +
                               PointerStr + ")) {" + getNL() + IndentStr +
@@ -1708,7 +1708,7 @@ private:
     if (C->getNumArgs() > ArgIndex) {
       if (needExtraParens(C->getArg(ArgIndex)))
         insertAroundStmt(C->getArg(ArgIndex), "(", ")");
-      requestFeature(HelperFileEnum::Image, "image_matrix_to_pitched_data", C);
+      requestFeature(HelperFeatureEnum::Image_image_matrix_to_pitched_data, C);
       emplaceTransformation(
           new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
     }
@@ -1765,7 +1765,7 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
   const static MapNames::MapTy PitchMemberToSetter;
-  const static std::map<std::string, HelperFeatureIDTy> PitchMemberToFeature;
+  const static std::map<std::string, HelperFeatureEnum> PitchMemberToFeature;
   const static MapNames::MapTy SizeOrPosToMember;
   const static std::vector<std::string> RemoveMember;
 

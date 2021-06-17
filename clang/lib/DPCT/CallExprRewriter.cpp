@@ -818,10 +818,10 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
        << MigratedArg0;
     if (FuncName == "sincospi") {
       OS << " * DPCT_PI";
-      requestFeature(HelperFileEnum::Dpct, "dpct_pi", Call);
+      requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
     } else {
       OS << " * DPCT_PI_F";
-      requestFeature(HelperFileEnum::Dpct, "dpct_pi_f", Call);
+      requestFeature(HelperFeatureEnum::Dpct_dpct_pi_f, Call);
     }
 
     if (FuncName == "sincospi")
@@ -992,15 +992,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
-    requestFeature(HelperFileEnum::Util, "cast_double_to_int", Call);
+    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ")";
   } else if (FuncName == "__double2loint") {
-    requestFeature(HelperFileEnum::Util, "cast_double_to_int", Call);
+    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ", false)";
   } else if (FuncName == "__hiloint2double") {
-    requestFeature(HelperFileEnum::Util, "cast_ints_to_double", Call);
+    requestFeature(HelperFeatureEnum::Util_cast_ints_to_double, Call);
     OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
        << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
@@ -1049,12 +1049,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
            << "[2], " << MigratedArg1 << "[3]))";
         break;
       default:
-        requestFeature(HelperFileEnum::Util, "fast_length", Call);
+        requestFeature(HelperFeatureEnum::Util_fast_length, Call);
         OS << MapNames::getDpctNamespace() << "fast_length("
            << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
       }
     } else {
-      requestFeature(HelperFileEnum::Util, "fast_length", Call);
+      requestFeature(HelperFeatureEnum::Util_fast_length, Call);
       OS << MapNames::getDpctNamespace() << "fast_length("
          << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }
@@ -1550,25 +1550,24 @@ createAssignableFactory(
 /// key-value. Will call requestFeature when used to create CallExprRewriter.
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createFeatureRequestFactory(
-    HelperFileEnum FileID, std::string FeatureName,
+    HelperFeatureEnum Feature,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<RewriterFactoryWithFeatureRequest>(
-          FileID, std::move(FeatureName), Input.second));
+      std::make_shared<RewriterFactoryWithFeatureRequest>(Feature,
+                                                          Input.second));
 }
 /// Create RewriterFactoryWithFeatureRequest key-value pair with inner
 /// key-value. Will call requestFeature when used to create CallExprRewriter.
 template <class T>
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createFeatureRequestFactory(
-    HelperFileEnum FileID, std::string FeatureName,
+    HelperFeatureEnum Feature,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input,
     T) {
-  return createFeatureRequestFactory(FileID, std::move(FeatureName),
-                                     std::move(Input));
+  return createFeatureRequestFactory(Feature, std::move(Input));
 }
 
 /// Create ConditonalRewriterFactory key-value pair with two key-value
@@ -1730,16 +1729,15 @@ class CheckArgCount {
 
 public:
   CheckArgCount(unsigned I) : Count(I) {}
-  bool operator()(const CallExpr *C) {
-    return C->getNumArgs() == Count;
-  }
+  bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
 class CheckArgType {
   unsigned Idx;
   std::string TypeName;
+
 public:
-  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name){}
+  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() > Idx) {
       std::string ArgType = C->getDirectCallee()
@@ -1762,17 +1760,17 @@ public:
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() > Idx1 && C->getNumArgs() > Idx2) {
       std::string ArgType1 = C->getDirectCallee()
-        ->getParamDecl(Idx1)
-        ->getType()
-        .getCanonicalType()
-        .getUnqualifiedType()
-        .getAsString();
+                                 ->getParamDecl(Idx1)
+                                 ->getType()
+                                 .getCanonicalType()
+                                 .getUnqualifiedType()
+                                 .getAsString();
       std::string ArgType2 = C->getDirectCallee()
-        ->getParamDecl(Idx2)
-        ->getType()
-        .getCanonicalType()
-        .getUnqualifiedType()
-        .getAsString();
+                                 ->getParamDecl(Idx2)
+                                 ->getType()
+                                 .getCanonicalType()
+                                 .getUnqualifiedType()
+                                 .getAsString();
       return ArgType1 != ArgType2;
     }
     return false;
@@ -1780,8 +1778,8 @@ public:
 };
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
-#define FEATURE_REQUEST_FACTORY(FILEID, NAME, x)                               \
-  createFeatureRequestFactory(FILEID, NAME, x 0),
+#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
+  createFeatureRequestFactory(FEATURE, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})

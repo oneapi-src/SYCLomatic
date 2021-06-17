@@ -323,8 +323,7 @@ public:
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
-  static std::map<std::string,
-                  std::pair<clang::dpct::HelperFileEnum, std::string>>
+  static std::map<std::string, clang::dpct::HelperFeatureEnum>
       TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
@@ -335,8 +334,7 @@ public:
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static ThrustMapTy ThrustFuncNamesMap;
-  static std::map<std::string,
-                  std::pair<clang::dpct::HelperFileEnum, std::string>>
+  static std::map<std::string, clang::dpct::HelperFeatureEnum>
       ThrustFuncNamesHelperFeaturesMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;
@@ -409,8 +407,7 @@ public:
       HelperFileIDMap;
   static const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
       HelperFileHeaderGuardMacroMap;
-  static const std::unordered_map<
-      std::string, std::pair<clang::dpct::HelperFileEnum, std::string>>
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
       TextureAPIHelperFeaturesMap;
   static const std::unordered_map<clang::dpct::HelperFileEnum,
                                   std::vector<clang::dpct::HelperFileEnum>>
@@ -432,9 +429,24 @@ public:
   static const std::string DplExtrasNumericAllContentStr;
   static const std::string DplExtrasVectorAllContentStr;
 
-  static const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
-                        std::string>
+  static const std::map<clang::dpct::HelperFeatureIDTy, std::string>
       FeatureNameToAPINameMap;
+  static const std::unordered_map<clang::dpct::HelperFeatureEnum,
+                                  clang::dpct::HelperFeatureIDTy>
+      HelperFeatureEnumPairMap;
+
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToGetFeatureMap;
 };
 
 class MigrationStatistics {

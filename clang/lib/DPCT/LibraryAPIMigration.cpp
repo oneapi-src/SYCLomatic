@@ -110,10 +110,10 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
           std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
     }
     if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-      requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+      requestFeature(HelperFeatureEnum::Memory_get_buffer_T,
                      Locations.FuncPtrDeclBegin);
     } else {
-      requestFeature(HelperFileEnum::Memory, "get_buffer_T",
+      requestFeature(HelperFeatureEnum::Memory_get_buffer_T,
                      Locations.PrefixInsertLoc);
     }
 
@@ -211,7 +211,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       PrefixStmts.push_back("*/");
       PrefixStmts.push_back("desc->commit(" + MapNames::getDpctNamespace() +
                             "get_default_queue());");
-      requestFeature(HelperFileEnum::Device, "get_default_queue",
+      requestFeature(HelperFeatureEnum::Device_get_default_queue,
                      LocInfo.first);
     }
   }
@@ -1278,7 +1278,7 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
       else {
         if (QueueIndex == -1) {
           Stream = MapNames::getDpctNamespace() + "get_default_queue()";
-          requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+          requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
         } else
           Stream = "{{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}}";
       }
@@ -1552,7 +1552,7 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
   if (isDefaultStream(LastSetStreamCall->getArg(1))) {
     if (Index == -1) {
       StreamStr = MapNames::getDpctNamespace() + "get_default_queue()";
-      requestFeature(HelperFileEnum::Device, "get_default_queue", ExecCall);
+      requestFeature(HelperFeatureEnum::Device_get_default_queue, ExecCall);
     } else {
       StreamStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     }

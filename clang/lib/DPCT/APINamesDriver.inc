@@ -11,19 +11,21 @@
 
 #ifdef _WIN32
 
-ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
-                     CALL("LoadLibraryA",
-                          ARG("PlaceHolder/*Fix the module file name manually*/")))
+ASSIGN_FACTORY_ENTRY(
+    "cuModuleLoad", DEREF(0),
+    CALL("LoadLibraryA",
+         ARG("PlaceHolder/*Fix the module file name manually*/")))
 
-ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
-                     CALL("LoadLibraryA",
-                          ARG("PlaceHolder/*Fix the module file name manually*/")))
+ASSIGN_FACTORY_ENTRY(
+    "cuModuleLoadData", DEREF(0),
+    CALL("LoadLibraryA",
+         ARG("PlaceHolder/*Fix the module file name manually*/")))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)GetProcAddress",
-                          ARG(1), EXTENDSTR(2, "_wrapper")))
+                     CALL("(dpct::kernel_functor)GetProcAddress", ARG(1),
+                          EXTENDSTR(2, "_wrapper")))
 
-FEATURE_REQUEST_FACTORY(HelperFileEnum::Image, "image_wrapper_base_p_alias",
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuModuleGetTexRef", DEREF(0),
                             CALL("(dpct::image_wrapper_base_p)GetProcAddress",
@@ -33,20 +35,21 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("FreeLibrary", ARG(0)))
 
 #else
 
-ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
-                     CALL("dlopen",
-                          ARG("PlaceHolder/*Fix the module file name manually*/"),
-                          ARG("RTLD_LAZY")))
+ASSIGN_FACTORY_ENTRY(
+    "cuModuleLoad", DEREF(0),
+    CALL("dlopen", ARG("PlaceHolder/*Fix the module file name manually*/"),
+         ARG("RTLD_LAZY")))
 
-ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
-                     CALL("dlopen",
-                          ARG("PlaceHolder/*Fix the module file name manually*/"),
-                          ARG("RTLD_LAZY")))
+ASSIGN_FACTORY_ENTRY(
+    "cuModuleLoadData", DEREF(0),
+    CALL("dlopen", ARG("PlaceHolder/*Fix the module file name manually*/"),
+         ARG("RTLD_LAZY")))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)dlsym", ARG(1), EXTENDSTR(2, "_wrapper")))
+                     CALL("(dpct::kernel_functor)dlsym", ARG(1),
+                          EXTENDSTR(2, "_wrapper")))
 
-FEATURE_REQUEST_FACTORY(HelperFileEnum::Image, "image_wrapper_base_p_alias",
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuModuleGetTexRef", DEREF(0),
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
@@ -58,19 +61,18 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
-           buildString(MapNames::getClNamespace(), RangeType), 3),       \
+           buildString(MapNames::getClNamespace(), RangeType), 3),             \
        __VA_ARGS__)
 #define NDRANGE_CTOR(Arg0, Arg1)                                               \
   RANGES_CTOR("nd_range", BO(BinaryOperatorKind::BO_Mul, Arg0, Arg1), Arg1)
 #define RANGE_CTOR(Arg0, Arg1, Arg2) RANGES_CTOR("range", Arg0, Arg1, Arg2)
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-  "cuLaunchKernel", CALL(ARG(0), STREAM(8),
-    NDRANGE_CTOR(RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
-      RANGE_CTOR(ARG(6), ARG(5), ARG(4))),
-    ARG(7), ARG(9), ARG(10))))
+    "cuLaunchKernel", CALL(ARG(0), STREAM(8),
+                           NDRANGE_CTOR(RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
+                                        RANGE_CTOR(ARG(6), ARG(5), ARG(4))),
+                           ARG(7), ARG(9), ARG(10))))
 
 #undef NDRANGE_CTOR
 #undef RANGE_CTOR
 #undef RANGES_CTOR
-

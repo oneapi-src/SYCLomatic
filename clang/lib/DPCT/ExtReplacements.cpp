@@ -306,10 +306,10 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   if (DpctGlobalInfo::getDeviceChangedFlag() ||
       !DpctGlobalInfo::getUsingDRYPattern()) {
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
     }
     return true;
@@ -336,11 +336,11 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   // >=2        >=2          dev_ct1             q_ct1
   if (HFT == HelperFuncType::HFT_DefaultQueue) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else if (TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
       return true;
     } else {
@@ -349,12 +349,12 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
     }
   } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
-      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else if (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
                TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-      requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
+      requestFeature(HelperFeatureEnum::Device_get_current_device, FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
       return true;
     } else {
@@ -738,7 +738,7 @@ void ExtReplacements::postProcess() {
           // queue
           NewReplText = NewReplText + MapNames::getDpctNamespace() +
                         "get_default_queue()";
-          requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
+          requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
         } else {
           std::string Text;
           if (getStrReplacingPlaceholder(HFT, Index, Text)) {

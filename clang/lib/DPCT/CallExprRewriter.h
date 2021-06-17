@@ -218,17 +218,15 @@ public:
 
 class RewriterFactoryWithFeatureRequest : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-  HelperFileEnum FileID = HelperFileEnum::Unknown;
-  std::string FeatureName;
+  HelperFeatureEnum Feature;
 
 public:
   RewriterFactoryWithFeatureRequest(
-      HelperFileEnum FileID, std::string FeatureName,
+      HelperFeatureEnum Feature,
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory), FileID(FileID),
-        FeatureName(std::move(FeatureName)) {}
+      : Inner(InnerFactory), Feature(Feature) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    requestFeature(FileID, FeatureName, C);
+    requestFeature(Feature, C);
     return Inner->create(C);
   }
 };

@@ -31,13 +31,13 @@ std::string MapNames::getDpctNamespace(bool KeepNamespace) {
 }
 
 MapNames::MapTy MapNames::TypeNamesMap;
-std::map<std::string /*Original API*/, std::pair<HelperFileEnum, std::string>>
+std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::TypeNamesHelperFeaturesMap;
 MapNames::MapTy EnumConstantRule::EnumNamesMap;
-std::map<std::string /*Original API*/, std::pair<HelperFileEnum, std::string>>
+std::map<std::string /*Original API*/, HelperFeatureEnum>
     EnumConstantRule::EnumNamesHelperFeaturesMap;
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
-std::map<std::string /*Original API*/, std::pair<HelperFileEnum, std::string>>
+std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
 MapNames::MapTy MapNames::MathRewriterMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
@@ -247,32 +247,32 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   TypeNamesHelperFeaturesMap = {
-      {"cudaDeviceProp", {HelperFileEnum::Device, "device_info"}},
+      {"cudaDeviceProp", HelperFeatureEnum::Device_device_info},
       {"thrust::device_ptr",
-       {HelperFileEnum::DplExtrasMemory, "device_pointer_forward_decl"}},
+       HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl},
       {"thrust::device_vector",
-       {HelperFileEnum::DplExtrasVector, "device_vector"}},
-      {"cudaChannelFormatDesc", {HelperFileEnum::Image, "image_channel"}},
+       HelperFeatureEnum::DplExtrasVector_device_vector},
+      {"cudaChannelFormatDesc", HelperFeatureEnum::Image_image_channel},
       {"cudaChannelFormatKind",
-       {HelperFileEnum::Image, "image_channel_data_type"}},
-      {"cudaArray", {HelperFileEnum::Image, "image_matrix"}},
-      {"cudaArray_t", {HelperFileEnum::Image, "image_matrix_p_alias"}},
-      {"cudaTextureDesc", {HelperFileEnum::Image, "sampling_info"}},
-      {"cudaResourceDesc", {HelperFileEnum::Image, "image_data"}},
+       HelperFeatureEnum::Image_image_channel_data_type},
+      {"cudaArray", HelperFeatureEnum::Image_image_matrix},
+      {"cudaArray_t", HelperFeatureEnum::Image_image_matrix_p_alias},
+      {"cudaTextureDesc", HelperFeatureEnum::Image_sampling_info},
+      {"cudaResourceDesc", HelperFeatureEnum::Image_image_data},
       {"cudaTextureObject_t",
-       {HelperFileEnum::Image, "image_wrapper_base_p_alias"}},
-      {"cudaPitchedPtr", {HelperFileEnum::Memory, "pitched_data"}},
-      {"cudaMemcpyKind", {HelperFileEnum::Memory, "memcpy_direction"}},
-      {"CUarray_st", {HelperFileEnum::Image, "image_matrix"}},
-      {"CUarray", {HelperFileEnum::Image, "image_matrix_p_alias"}},
-      {"CUtexObject", {HelperFileEnum::Image, "image_wrapper_base_p_alias"}},
-      {"CUDA_RESOURCE_DESC", {HelperFileEnum::Image, "image_data"}},
-      {"CUDA_TEXTURE_DESC", {HelperFileEnum::Image, "sampling_info"}},
-      {"CUresourcetype_enum", {HelperFileEnum::Image, "image_data_type"}},
-      {"CUresourcetype", {HelperFileEnum::Image, "image_data_type"}},
-      {"cudaResourceType", {HelperFileEnum::Image, "image_data_type"}},
-      {"CUtexref", {HelperFileEnum::Image, "image_wrapper_base_p_alias"}},
-      {"CUfunction", {HelperFileEnum::Kernel, "kernel_functor"}},
+       HelperFeatureEnum::Image_image_wrapper_base_p_alias},
+      {"cudaPitchedPtr", HelperFeatureEnum::Memory_pitched_data},
+      {"cudaMemcpyKind", HelperFeatureEnum::Memory_memcpy_direction},
+      {"CUarray_st", HelperFeatureEnum::Image_image_matrix},
+      {"CUarray", HelperFeatureEnum::Image_image_matrix_p_alias},
+      {"CUtexObject", HelperFeatureEnum::Image_image_wrapper_base_p_alias},
+      {"CUDA_RESOURCE_DESC", HelperFeatureEnum::Image_image_data},
+      {"CUDA_TEXTURE_DESC", HelperFeatureEnum::Image_sampling_info},
+      {"CUresourcetype_enum", HelperFeatureEnum::Image_image_data_type},
+      {"CUresourcetype", HelperFeatureEnum::Image_image_data_type},
+      {"cudaResourceType", HelperFeatureEnum::Image_image_data_type},
+      {"CUtexref", HelperFeatureEnum::Image_image_wrapper_base_p_alias},
+      {"CUfunction", HelperFeatureEnum::Kernel_kernel_functor},
   };
 
   // Enum constants name mapping.
@@ -372,52 +372,51 @@ void MapNames::setExplicitNamespaceMap() {
       // enum Device Attribute
       // ...
       {"cudaDevAttrHostNativeAtomicSupported",
-       {HelperFileEnum::Device, "device_ext_is_native_atomic_supported"}},
+       HelperFeatureEnum::Device_device_ext_is_native_atomic_supported},
       {"cudaDevAttrComputeCapabilityMajor",
-       {HelperFileEnum::Device, "device_ext_get_major_version"}},
+       HelperFeatureEnum::Device_device_ext_get_major_version},
       {"cudaDevAttrComputeCapabilityMinor",
-       {HelperFileEnum::Device, "device_ext_get_minor_version"}},
+       HelperFeatureEnum::Device_device_ext_get_minor_version},
       {"cudaDevAttrMultiProcessorCount",
-       {HelperFileEnum::Device, "device_ext_get_max_compute_units"}},
+       HelperFeatureEnum::Device_device_ext_get_max_compute_units},
       {"cudaDevAttrClockRate",
-       {HelperFileEnum::Device, "device_ext_get_max_clock_frequency"}},
+       HelperFeatureEnum::Device_device_ext_get_max_clock_frequency},
       {"cudaDevAttrIntegrated",
-       {HelperFileEnum::Device, "device_ext_get_integrated"}},
+       HelperFeatureEnum::Device_device_ext_get_integrated},
       // enum Memcpy Kind
-      {"cudaMemcpyHostToHost", {HelperFileEnum::Memory, "memcpy_direction"}},
-      {"cudaMemcpyHostToDevice", {HelperFileEnum::Memory, "memcpy_direction"}},
-      {"cudaMemcpyDeviceToHost", {HelperFileEnum::Memory, "memcpy_direction"}},
-      {"cudaMemcpyDeviceToDevice",
-       {HelperFileEnum::Memory, "memcpy_direction"}},
-      {"cudaMemcpyDefault", {HelperFileEnum::Memory, "memcpy_direction"}},
+      {"cudaMemcpyHostToHost", HelperFeatureEnum::Memory_memcpy_direction},
+      {"cudaMemcpyHostToDevice", HelperFeatureEnum::Memory_memcpy_direction},
+      {"cudaMemcpyDeviceToHost", HelperFeatureEnum::Memory_memcpy_direction},
+      {"cudaMemcpyDeviceToDevice", HelperFeatureEnum::Memory_memcpy_direction},
+      {"cudaMemcpyDefault", HelperFeatureEnum::Memory_memcpy_direction},
       // enum Channel Format Kind
       {"cudaChannelFormatKindSigned",
-       {HelperFileEnum::Image, "image_channel_data_type"}},
+       HelperFeatureEnum::Image_image_channel_data_type},
       {"cudaChannelFormatKindUnsigned",
-       {HelperFileEnum::Image, "image_channel_data_type"}},
+       HelperFeatureEnum::Image_image_channel_data_type},
       {"cudaChannelFormatKindFloat",
-       {HelperFileEnum::Image, "image_channel_data_type"}},
+       HelperFeatureEnum::Image_image_channel_data_type},
       // enum Resource Type
-      {"cudaResourceTypeArray", {HelperFileEnum::Image, "image_data_type"}},
-      {"cudaResourceTypeLinear", {HelperFileEnum::Image, "image_data_type"}},
-      {"cudaResourceTypePitch2D", {HelperFileEnum::Image, "image_data_type"}},
+      {"cudaResourceTypeArray", HelperFeatureEnum::Image_image_data_type},
+      {"cudaResourceTypeLinear", HelperFeatureEnum::Image_image_data_type},
+      {"cudaResourceTypePitch2D", HelperFeatureEnum::Image_image_data_type},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
-       {HelperFileEnum::Device, "device_ext_get_major_version"}},
+       HelperFeatureEnum::Device_device_ext_get_major_version},
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR",
-       {HelperFileEnum::Device, "device_ext_get_minor_version"}},
+       HelperFeatureEnum::Device_device_ext_get_minor_version},
       {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
-       {HelperFileEnum::Device, "device_ext_get_integrated"}},
+       HelperFeatureEnum::Device_device_ext_get_integrated},
       {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE",
-       {HelperFileEnum::Device, "device_ext_get_max_clock_frequency"}},
+       HelperFeatureEnum::Device_device_ext_get_max_clock_frequency},
       {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT",
-       {HelperFileEnum::Device, "device_ext_get_max_compute_units"}},
+       HelperFeatureEnum::Device_device_ext_get_max_compute_units},
       {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
-       {HelperFileEnum::Device, "device_ext_is_native_atomic_supported"}},
+       HelperFeatureEnum::Device_device_ext_is_native_atomic_supported},
       // enum CUresourcetype_enum
-      {"CU_RESOURCE_TYPE_ARRAY", {HelperFileEnum::Image, "image_data_type"}},
-      {"CU_RESOURCE_TYPE_LINEAR", {HelperFileEnum::Image, "image_data_type"}},
-      {"CU_RESOURCE_TYPE_PITCH2D", {HelperFileEnum::Image, "image_data_type"}},
+      {"CU_RESOURCE_TYPE_ARRAY", HelperFeatureEnum::Image_image_data_type},
+      {"CU_RESOURCE_TYPE_LINEAR", HelperFeatureEnum::Image_image_data_type},
+      {"CU_RESOURCE_TYPE_PITCH2D", HelperFeatureEnum::Image_image_data_type},
       // ...
   };
 
@@ -435,24 +434,22 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   ThrustFuncNamesHelperFeaturesMap = {
-      {"sequence", {HelperFileEnum::DplExtrasAlgorithm, "iota"}},
-      {"stable_sort_by_key",
-       {HelperFileEnum::DplExtrasAlgorithm, "stable_sort"}},
-      {"transform_if", {HelperFileEnum::DplExtrasAlgorithm, "transform_if"}},
-      {"device_free", {HelperFileEnum::DplExtrasMemory, "free_device"}},
-      {"device_malloc", {HelperFileEnum::DplExtrasMemory, "malloc_device"}},
-      {"raw_pointer_cast",
-       {HelperFileEnum::DplExtrasMemory, "get_raw_pointer"}},
+      {"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+      {"stable_sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
+      {"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+      {"device_free", HelperFeatureEnum::DplExtrasMemory_free_device},
+      {"device_malloc", HelperFeatureEnum::DplExtrasMemory_malloc_device},
+      {"raw_pointer_cast", HelperFeatureEnum::DplExtrasMemory_get_raw_pointer},
       {"make_counting_iterator",
-       {HelperFileEnum::DplExtrasIterators, "make_counting_iterator"}},
+       HelperFeatureEnum::DplExtrasIterators_make_counting_iterator},
       {"device_pointer_cast",
-       {HelperFileEnum::DplExtrasMemory, "get_device_pointer"}},
-      {"inner_product", {HelperFileEnum::DplExtrasNumeric, "inner_product"}},
-      {"sort_by_key", {HelperFileEnum::DplExtrasAlgorithm, "sort"}},
+       HelperFeatureEnum::DplExtrasMemory_get_device_pointer},
+      {"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+      {"sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_sort},
       {"make_constant_iterator",
-       {HelperFileEnum::DplExtrasIterators, "make_constant_iterator"}},
+       HelperFeatureEnum::DplExtrasIterators_make_constant_iterator},
       {"partition_point",
-       {HelperFileEnum::DplExtrasAlgorithm, "partition_point"}}};
+       HelperFeatureEnum::DplExtrasAlgorithm_partition_point}};
 
   ITFName = {
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
@@ -3440,15 +3437,13 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };
 
-std::map<std::pair<clang::dpct::HelperFileEnum /*FileID*/,
-                   std::string /*Feature Name*/>,
-         clang::dpct::HelperFunc>
+std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
     MapNames::HelperNameContentMap{
 #define DPCT_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
   {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
 #define DPCT_DEPENDENCY(...) {__VA_ARGS__},
 #define DPCT_PARENT_FEATURE(ParentFeatureFile, ParentFeatureName)              \
-  , {clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName}
+  , { clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName }
 #define DPCT_CONTENT_END                                                       \
   }                                                                            \
   }                                                                            \
@@ -3530,38 +3525,27 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasNumeric, "__DPCT_NUMERIC_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasVector, "__DPCT_VECTOR_H__"}};
 
-const std::unordered_map<std::string, clang::dpct::HelperFeatureIDTy>
+const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::TextureAPIHelperFeaturesMap{
-        {"cudaCreateChannelDesc",
-         {clang::dpct::HelperFileEnum::Image, "image_channel"}},
-        {"cudaCreateChannelDescHalf",
-         {clang::dpct::HelperFileEnum::Image, "image_channel"}},
-        {"cudaUnbindTexture",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
-        {"cudaUnbindTexture",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
+        {"cudaCreateChannelDesc", {HelperFeatureEnum::Image_image_channel}},
+        {"cudaCreateChannelDescHalf", {HelperFeatureEnum::Image_image_channel}},
+        {"cudaUnbindTexture", {HelperFeatureEnum::Image_image_wrapper}},
+        {"cudaUnbindTexture", {HelperFeatureEnum::Image_image_wrapper}},
         {"cudaGetTextureObjectResourceDesc",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
+         {HelperFeatureEnum::Image_image_wrapper}},
         {"cudaGetTextureObjectTextureDesc",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
+         {HelperFeatureEnum::Image_image_wrapper}},
         {"cuTexObjectGetResourceDesc",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
-        {"cuTexObjectGetTextureDesc",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}},
+         {HelperFeatureEnum::Image_image_wrapper}},
+        {"cuTexObjectGetTextureDesc", {HelperFeatureEnum::Image_image_wrapper}},
         {"cudaCreateTextureObject",
-         {clang::dpct::HelperFileEnum::Image, "create_image_wrapper"}},
-        {"cuTexObjectCreate",
-         {clang::dpct::HelperFileEnum::Image, "create_image_wrapper"}},
-        {"cuArrayCreate_v2",
-         {clang::dpct::HelperFileEnum::Image, "image_matrix"}},
-        {"cuTexRefSetArray",
-         {clang::dpct::HelperFileEnum::Image, "image_data"}},
-        {"cuTexRefSetAddressMode",
-         {clang::dpct::HelperFileEnum::Image, "sampling_info"}},
-        {"cuTexRefSetFilterMode",
-         {clang::dpct::HelperFileEnum::Image, "sampling_info"}},
-        {"cuTexRefSetFormat",
-         {clang::dpct::HelperFileEnum::Image, "image_wrapper"}}};
+         {HelperFeatureEnum::Image_create_image_wrapper}},
+        {"cuTexObjectCreate", {HelperFeatureEnum::Image_create_image_wrapper}},
+        {"cuArrayCreate_v2", {HelperFeatureEnum::Image_image_matrix}},
+        {"cuTexRefSetArray", {HelperFeatureEnum::Image_image_data}},
+        {"cuTexRefSetAddressMode", {HelperFeatureEnum::Image_sampling_info}},
+        {"cuTexRefSetFilterMode", {HelperFeatureEnum::Image_sampling_info}},
+        {"cuTexRefSetFormat", {HelperFeatureEnum::Image_image_wrapper}}};
 
 const std::unordered_map<clang::dpct::HelperFileEnum,
                          std::vector<clang::dpct::HelperFileEnum>>
@@ -3573,6 +3557,15 @@ const std::unordered_map<clang::dpct::HelperFileEnum,
                                         clang::dpct::HelperFileEnum::Util}},
                                       {clang::dpct::HelperFileEnum::Memory,
                                        {clang::dpct::HelperFileEnum::Device}}};
+
+const std::unordered_map<clang::dpct::HelperFeatureEnum,
+                         clang::dpct::HelperFeatureIDTy>
+    MapNames::HelperFeatureEnumPairMap{
+#define DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
+#undef DPCT_FEATURE_ENUM
+#include "clang/DPCT/HelperFeatureEnum.inc"
+#undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
+    };
 
 const std::string MapNames::DpctAllContentStr =
 #include "clang/DPCT/dpct.all.inc"
@@ -3628,6 +3621,113 @@ const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
 #include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToGetFeatureMap = {
+        {"clockRate",
+         HelperFeatureEnum::Device_device_info_get_max_clock_frequency},
+        {"major", HelperFeatureEnum::Device_device_info_get_major_version},
+        {"minor", HelperFeatureEnum::Device_device_info_get_minor_version},
+        {"integrated", HelperFeatureEnum::Device_device_info_get_integrated},
+        {"warpSize",
+         HelperFeatureEnum::Device_device_info_get_max_sub_group_size},
+        {"multiProcessorCount",
+         HelperFeatureEnum::Device_device_info_get_max_compute_units},
+        {"maxThreadsPerBlock",
+         HelperFeatureEnum::Device_device_info_get_max_work_group_size},
+        {"maxThreadsPerMultiProcessor",
+         HelperFeatureEnum::
+             Device_device_info_get_max_work_items_per_compute_unit},
+        {"name", HelperFeatureEnum::Device_device_info_get_name},
+        {"totalGlobalMem",
+         HelperFeatureEnum::Device_device_info_get_global_mem_size},
+        {"sharedMemPerBlock",
+         HelperFeatureEnum::Device_device_info_get_local_mem_size},
+        {"maxGridSize",
+         HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToSetFeatureMap = {
+        {"clockRate",
+         HelperFeatureEnum::Device_device_info_set_max_clock_frequency},
+        {"major", HelperFeatureEnum::Device_device_info_set_major_version},
+        {"minor", HelperFeatureEnum::Device_device_info_set_minor_version},
+        {"integrated", HelperFeatureEnum::Device_device_info_set_integrated},
+        {"warpSize",
+         HelperFeatureEnum::Device_device_info_set_max_sub_group_size},
+        {"multiProcessorCount",
+         HelperFeatureEnum::Device_device_info_set_max_compute_units},
+        {"maxThreadsPerBlock",
+         HelperFeatureEnum::Device_device_info_set_max_work_group_size},
+        {"maxThreadsPerMultiProcessor",
+         HelperFeatureEnum::
+             Device_device_info_set_max_work_items_per_compute_unit},
+        {"name", HelperFeatureEnum::Device_device_info_set_name},
+        {"totalGlobalMem",
+         HelperFeatureEnum::Device_device_info_set_global_mem_size},
+        {"sharedMemPerBlock",
+         HelperFeatureEnum::Device_device_info_set_local_mem_size},
+        {"maxGridSize",
+         HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToSetFeatureMap = {
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_set_coordinate_normalization_mode}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToGetFeatureMap = {
+        {"addressing_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_get_coordinate_normalization_mode},
+        {"filtering_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_get_coordinate_normalization_mode},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_get_coordinate_normalization_mode}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToSetFeatureMap = {
+        {"sampling_info",
+         HelperFeatureEnum::Image_image_wrapper_base_set_sampling_info},
+        {"data", HelperFeatureEnum::Image_image_wrapper_base_set_data},
+        {"channel", HelperFeatureEnum::Image_image_wrapper_base_set_channel},
+        {"channel_data_type",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_data_type},
+        {"channel_size",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_size},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_image_wrapper_base_set_coordinate_normalization_mode},
+        {"channel_num",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_num},
+        {"channel_type",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_type}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToGetFeatureMap = {
+        {"sampling_info",
+         HelperFeatureEnum::Image_image_wrapper_base_get_sampling_info},
+        {"data", HelperFeatureEnum::Image_image_wrapper_base_get_data},
+        {"channel", HelperFeatureEnum::Image_image_wrapper_base_get_channel},
+        {"channel_data_type",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_data_type},
+        {"channel_size",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_size},
+        {"addressing_mode",
+         HelperFeatureEnum::Image_image_wrapper_base_get_addressing_mode},
+        {"filtering_mode",
+         HelperFeatureEnum::Image_image_wrapper_base_get_filtering_mode},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_image_wrapper_base_get_coordinate_normalization_mode},
+        {"channel_num",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_num},
+        {"channel_type",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_type},
+        {"sampler", HelperFeatureEnum::Image_image_wrapper_base_get_sampler},
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
@@ -3714,16 +3814,16 @@ const MapNames::MapTy MemoryDataTypeRule::PitchMemberToSetter{
     {"srcPitch", "set_pitch"},   {"srcHeight", "set_y"},
     {"srcHost", "set_data_ptr"}, {"srcDevice", "set_data_ptr"}};
 
-const std::map<std::string, HelperFeatureIDTy>
+const std::map<std::string, HelperFeatureEnum>
     MemoryDataTypeRule::PitchMemberToFeature{
-        {"dstPitch", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_pitch"}},
-        {"dstHeight", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_y"}},
-        {"dstHost", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
-        {"dstDevice", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
-        {"srcPitch", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_pitch"}},
-        {"srcHeight", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_y"}},
-        {"srcHost", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
-        {"srcDevice", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}}};
+        {"dstPitch", {HelperFeatureEnum::Memory_pitched_data_set_pitch}},
+        {"dstHeight", {HelperFeatureEnum::Memory_pitched_data_set_y}},
+        {"dstHost", {HelperFeatureEnum::Memory_pitched_data_set_data_ptr}},
+        {"dstDevice", {HelperFeatureEnum::Memory_pitched_data_set_data_ptr}},
+        {"srcPitch", {HelperFeatureEnum::Memory_pitched_data_set_pitch}},
+        {"srcHeight", {HelperFeatureEnum::Memory_pitched_data_set_y}},
+        {"srcHost", {HelperFeatureEnum::Memory_pitched_data_set_data_ptr}},
+        {"srcDevice", {HelperFeatureEnum::Memory_pitched_data_set_data_ptr}}};
 
 const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
     {"srcXInBytes", "[0]"},  {"srcY", "[1]"},   {"srcZ", "[2]"},

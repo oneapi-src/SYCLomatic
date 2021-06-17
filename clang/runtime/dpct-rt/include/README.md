@@ -12,7 +12,9 @@ some code
 Example2:
 ```
 // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
+// DPCT_PARENT_FEATURE|ParentFeatureNameRef
 // DPCT_DEPENDENCY_BEGIN
+// FileID|ParentFeatureNameRef
 // FileID|FeatureNameRef
 [// FileID|FeatureNameRef]
 ...
@@ -21,6 +23,8 @@ Example2:
 some code
 // DPCT_LABEL_END
 ```
+
+Note: If a feature has a parent feature, the parent feature should be added into dependency list.
 
 ## 3 predefined feature name
 For header file including dependency, please use predefined feature name:
@@ -60,7 +64,7 @@ Output files:
 ## For dpct developers
 Generally, request the feature before use it:
 ```
-void requestFeature(clang::dpct::HelperFileEnum FileID, std::string FeatureName, std::string CallerSrcFilePath);
+void requestFeature(clang::dpct::HelperFeatureEnum Feature, std::string CallerSrcFilePath);
 ```
 
 Feature used in following maps are request implicitly:
@@ -72,7 +76,7 @@ Feature used in following maps are request implicitly:
 E.g,
 ```
 TypeNamesHelperFeaturesMap = {
-  {"cudaDeviceProp", {HelperFileEnum::Device, "device_info"}}, // feature device_info in device.hpp will be requested implicitly 
+  {"cudaDeviceProp", HelperFeatureEnum::Device_device_info}, // feature device_info in device.hpp will be requested implicitly 
 }
 ```
 

@@ -418,8 +418,8 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
   if (CtorClassName.find("thrust::") == 0) {
-    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrate the ctor.
-    // Ex. foo(thrust::minus<int>());
+    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrate
+    // the ctor. Ex. foo(thrust::minus<int>());
     auto CXXTemporaryObjectExprMatcher = clang::ast_matchers::findAll(
         clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
     auto MatchedResults =
@@ -429,7 +429,6 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       addReplacement(Ctor, 8, "std::");
     }
   }
-
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
@@ -511,15 +510,16 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
-      requestFeature(HelperFileEnum::Device,
-                     "device_info_get_" + ReplacementStr, ME);
+      requestFeature(MapNames::PropToGetFeatureMap.at(
+                         ME->getMemberNameInfo().getAsString()),
+                     ME);
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(HelperFileEnum::Image,
-                     "image_wrapper_base_get_" + FieldName, ME);
+      requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(FieldName),
+                     ME);
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
@@ -571,8 +571,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   auto HelperFeatureIter =
       MapNames::TextureAPIHelperFeaturesMap.find(RefString);
   if (HelperFeatureIter != MapNames::TextureAPIHelperFeaturesMap.end()) {
-    requestFeature(HelperFeatureIter->second.first,
-                   HelperFeatureIter->second.second, CE);
+    requestFeature(HelperFeatureIter->second, CE);
   }
 
   // If the callee requires rewrite, get the rewriter
@@ -851,9 +850,9 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   } else {
     OS << " = ";
   }
-  requestFeature(HelperFileEnum::Memory, "dpct_malloc", Call);
-  requestFeature(HelperFileEnum::Memory, "dpct_malloc_2d", Call);
-  requestFeature(HelperFileEnum::Memory, "dpct_malloc_3d", Call);
+  requestFeature(HelperFeatureEnum::Memory_dpct_malloc, Call);
+  requestFeature(HelperFeatureEnum::Memory_dpct_malloc_2d, Call);
+  requestFeature(HelperFeatureEnum::Memory_dpct_malloc_3d, Call);
   OS << MapNames::getDpctNamespace() << "dpct_malloc(";
   ExprAnalysis ArgEA(SecondArg);
   ArgEA.analyze();
@@ -1005,7 +1004,7 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
       ExprAnalysis EA(SubE);
       EA.analyze();
       std::string Rep = EA.getReplacedString();
-      requestFeature(HelperFileEnum::Memory, "get_host_ptr", Call);
+      requestFeature(HelperFeatureEnum::Memory_get_host_ptr, Call);
       if (SubE->IgnoreImplicitAsWritten()->getStmtClass() ==
           Stmt::ParenExprClass) {
         Repl.push_back(
@@ -1056,7 +1055,7 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
                     std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                                 PointerTempType + ">(" + PointerName + ")")});
-    requestFeature(HelperFileEnum::Memory, "get_host_ptr", Call);
+    requestFeature(HelperFeatureEnum::Memory_get_host_ptr, Call);
   }
 }
 void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
@@ -1138,7 +1137,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                            DpctGlobalInfo::getContext().getLangOpts()),
                        DRE->getEndLoc(), "[0]");
       } else {
-        requestFeature(HelperFileEnum::Memory, "device_memory_get_ptr",
+        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
                        DRE->getEndLoc());
         addReplacement(Lexer::getLocForEndOfToken(
                            DRE->getEndLoc(), 0, SM,

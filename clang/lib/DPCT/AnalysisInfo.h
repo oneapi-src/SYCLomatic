@@ -2336,7 +2336,7 @@ public:
   bool isWritten() const {
     return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
   }
-  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
+  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
   inline bool containSizeofType() { return ContainSizeofType; }
 
 private:
@@ -2403,7 +2403,7 @@ private:
   bool IsTemplate;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
-  std::set<HelperFeatureIDTy> HelperFeatureSet;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
 };
 
@@ -2433,7 +2433,7 @@ public:
   inline void requestFeatureForSet(const std::string &Path) {
     if (Ty) {
       for (const auto &Item : Ty->getHelperFeatureSet()) {
-        requestFeature(Item.first, Item.second, Path);
+        requestFeature(Item, Path);
       }
     }
   }
@@ -2637,7 +2637,7 @@ private:
   }
   const std::string &getMemoryAttr();
   std::string getDpctAccessorType() {
-    requestFeature(HelperFileEnum::Memory, "dpct_accessor", getFilePath());
+    requestFeature(HelperFeatureEnum::Memory_dpct_accessor, getFilePath());
     auto Type = getType();
     return buildString(MapNames::getDpctNamespace(true), "accessor<",
                        getAccessorDataType(), ", ", getMemoryAttr(), ", ",
@@ -2819,7 +2819,7 @@ public:
   virtual std::string getHostDeclString() {
     ParameterStream PS;
     Type->prepareForImage();
-    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
 
     getDecl(PS, "image_wrapper") << ";";
     Type->endForImage();
@@ -2827,24 +2827,24 @@ public:
   }
 
   virtual std::string getSamplerDecl() {
-    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
                    FilePath);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
   virtual std::string getAccessorDecl() {
-    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     return buildString("auto ", NewVarName, "_acc = ", Name,
                        ".get_access(cgh);");
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
@@ -2886,12 +2886,12 @@ public:
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
-    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
-    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
                    FilePath);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        "->get_sampler();");
@@ -2899,7 +2899,7 @@ public:
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
-    requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     ParameterStream PS;
     Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
     return PS.Str;
@@ -2928,8 +2928,8 @@ public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl() override {
-    requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
-    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
@@ -2937,7 +2937,7 @@ public:
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
                    FilePath);
     return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
   }
@@ -4454,7 +4454,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                 std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                  HFInfo.DeclLocOffset, 0,
                                                  DevDecl, nullptr));
-            requestFeature(HelperFileEnum::Device, "get_current_device",
+            requestFeature(HelperFeatureEnum::Device_get_current_device,
                            HFInfo.DeclLocFile);
           }
         }
@@ -4463,9 +4463,9 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
           DpctGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(
                   HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
-          requestFeature(HelperFileEnum::Device, "get_current_device",
+          requestFeature(HelperFeatureEnum::Device_get_current_device,
                          HFInfo.DeclLocFile);
-          requestFeature(HelperFileEnum::Device, "device_ext_default_queue",
+          requestFeature(HelperFeatureEnum::Device_device_ext_default_queue,
                          HFInfo.DeclLocFile);
         }
       }
@@ -4479,7 +4479,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
               std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                HFInfo.DeclLocOffset, 0, DevDecl,
                                                nullptr));
-          requestFeature(HelperFileEnum::Device, "get_current_device",
+          requestFeature(HelperFeatureEnum::Device_get_current_device,
                          HFInfo.DeclLocFile);
         }
       }

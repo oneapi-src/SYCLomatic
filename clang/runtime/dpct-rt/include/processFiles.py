@@ -27,7 +27,8 @@ dpl_extras_content_files_name_list = [
 
 is_os_win = False
 
-features_list = []
+features_enum_list = []
+features_enum_pair_list = []
 
 stack = []
 input_files_dir = cur_file_dir
@@ -206,7 +207,12 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
             content_begin_line = bytes("DPCT_CONTENT_BEGIN(" + helper_file_enum_name + ", \"", 'utf-8') + \
                 splited[1] + bytes("\", \"", 'utf-8') + splited[2] + bytes("\", " + str(Idx) + ")\n", 'utf-8')
             inc_file_lines.append(content_begin_line)
-            features_list.append(bytes(helper_file_enum_name + "_", 'utf-8') + splited[1] + bytes(",", 'utf-8'))
+            feature_enum_name = bytes(helper_file_enum_name + "_", 'utf-8') + splited[1]
+            features_enum_list.append(feature_enum_name + bytes(",", 'utf-8'))
+            feature_pair_name = bytes("{clang::dpct::HelperFileEnum::" + helper_file_enum_name + ", \"", 'utf-8') +\
+                                splited[1] + bytes("\"}", 'utf-8')
+            features_enum_pair_list.append(bytes("{clang::dpct::HelperFeatureEnum::", 'utf-8') + feature_enum_name +\
+                                           bytes(", ", 'utf-8') + feature_pair_name + bytes("},", 'utf-8'))
             Idx = Idx + 1
         elif (line.startswith(bytes("// DPCT_LABEL_END", 'utf-8'))):
             if (not has_code):
@@ -419,8 +425,14 @@ def main():
                        True, dpl_extras_content_files_dict)
 
     features_enum_str = bytes("", 'utf-8')
-    for element in features_list:
+    features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM\n", 'utf-8')
+    for element in features_enum_list:
         features_enum_str = features_enum_str + element + bytes("\n", 'utf-8')
+    features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
+    features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP\n", 'utf-8')
+    for element in features_enum_pair_list:
+        features_enum_str = features_enum_str + element + bytes("\n", 'utf-8')
+    features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
 
     features_enum_file_handle.write(features_enum_str)
     features_enum_file_handle.close()

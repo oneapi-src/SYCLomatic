@@ -92,7 +92,7 @@ class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
   bool IsDependOnWrittenArgument = false;
-  std::set<HelperFeatureIDTy> HelperFeatureSet;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
 
 public:
   TemplateDependentStringInfo() = default;
@@ -115,8 +115,8 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
 
   bool isDependOnWritten() const { return IsDependOnWrittenArgument; }
-  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
-  void setHelperFeatureSet(std::set<HelperFeatureIDTy> Set) {
+  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
+  void setHelperFeatureSet(std::set<HelperFeatureEnum> Set) {
     HelperFeatureSet = Set;
   }
 };
@@ -296,26 +296,24 @@ public:
   inline void addReplacement(const Expr *E, int length, std::string Text) {
     auto SpellingLocInfo = getSpellingOffsetAndLength(E);
     if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
-      SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
-      SM.getDecomposedLoc(SpellingLocInfo.first).second +
-      SpellingLocInfo.second >
-      SrcBegin + SrcLength) {
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                SpellingLocInfo.second >
+            SrcBegin + SrcLength) {
       // If the spelling location is not in the parent range, add ExtReplacement
       addExtReplacement(std::make_shared<ExtReplacement>(
-        SM, SpellingLocInfo.first, length, Text, nullptr));
-    }
-    else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
-      SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
-      SM.getDecomposedLoc(SpellingLocInfo.first).second +
-      SpellingLocInfo.second ==
-      SrcBegin + SrcLength) {
+          SM, SpellingLocInfo.first, length, Text, nullptr));
+    } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                       SpellingLocInfo.second ==
+                   SrcBegin + SrcLength) {
       // If the spelling location is the same as the parent range, add both
       addExtReplacement(std::make_shared<ExtReplacement>(
-        SM, SpellingLocInfo.first, length, Text, nullptr));
+          SM, SpellingLocInfo.first, length, Text, nullptr));
       auto LocInfo = getOffsetAndLength(E);
       addReplacement(LocInfo.first, length, std::move(Text));
-    }
-    else {
+    } else {
       // If the spelling location is inside the parent range, add string
       // replacement. The String replacement will be add to ExtReplacement other
       // where.
@@ -330,7 +328,7 @@ public:
     auto LocInfo = getOffsetAndLength(E);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
   }
-  std::set<HelperFeatureIDTy> getHelperFeatureSet() { return HelperFeatureSet; }
+  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
 
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
@@ -603,7 +601,7 @@ private:
   StringReplacements ReplSet;
   std::string RewritePrefix;
   std::string RewritePostfix;
-  std::set<HelperFeatureIDTy> HelperFeatureSet;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
 };
 
 // Analyze pointer allocated by cudaMallocManaged.

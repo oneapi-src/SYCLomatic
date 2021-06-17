@@ -24,51 +24,44 @@
 namespace clang {
 namespace dpct {
 
-// Currently, the HelperFeatureEnum is only used to check
-// if there is duplicated feature name in each inc file
-enum class HelperFeatureEnum : unsigned int {
-#include "clang/DPCT/HelperFeatureEnum.inc"
-};
-
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName,
-                    const std::string &UsedFile) {
-  auto Key = std::make_pair(FileID, HelperFunctionName);
+void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
+  if (!MapNames::HelperFeatureEnumPairMap.count(Feature)) {
+#ifdef DPCT_DEBUG_BUILD
+    std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;
+    assert(0 && "Unknown requested feature.\n");
+#endif
+  }
+  auto Key = MapNames::HelperFeatureEnumPairMap.at(Feature);
   auto Iter = MapNames::HelperNameContentMap.find(Key);
   if (Iter != MapNames::HelperNameContentMap.end()) {
     Iter->second.IsCalled = true;
     Iter->second.CallerSrcFiles.insert(UsedFile);
   } else {
 #ifdef DPCT_DEBUG_BUILD
-    std::cout << "Unknown feature: File:" << (unsigned int)FileID
-              << ", Feature:" << HelperFunctionName << std::endl;
-    exit(-999);
-#else
+    std::cout << "Unknown feature: File:" << (unsigned int)Key.first
+              << ", Feature:" << Key.second << std::endl;
     assert(0 && "Unknown requested feature.\n");
 #endif
   }
 }
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, SourceLocation SL) {
+void requestFeature(HelperFeatureEnum Feature, SourceLocation SL) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ExpansionLoc = SM.getExpansionLoc(SL);
 
   std::string UsedFile = "";
   if (ExpansionLoc.isValid())
     UsedFile = dpct::DpctGlobalInfo::getLocInfo(ExpansionLoc).first;
-  requestFeature(FileID, HelperFunctionName, UsedFile);
+  requestFeature(Feature, UsedFile);
 }
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const Stmt *Stmt) {
+void requestFeature(HelperFeatureEnum Feature, const Stmt *Stmt) {
   if (!Stmt)
     return;
-  requestFeature(FileID, HelperFunctionName, Stmt->getBeginLoc());
+  requestFeature(Feature, Stmt->getBeginLoc());
 }
-void requestFeature(clang::dpct::HelperFileEnum FileID,
-                    std::string HelperFunctionName, const Decl *Decl) {
+void requestFeature(HelperFeatureEnum Feature, const Decl *Decl) {
   if (!Decl)
     return;
-  requestFeature(FileID, HelperFunctionName, Decl->getBeginLoc());
+  requestFeature(Feature, Decl->getBeginLoc());
 }
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
@@ -383,7 +376,7 @@ void generateHelperFunctions() {
 
   // dpct.hpp is always exsit, so request its non_local_include_dependency
   // feature
-  requestFeature(dpct::HelperFileEnum::Dpct, "non_local_include_dependency",
+  requestFeature(dpct::HelperFeatureEnum::Dpct_non_local_include_dependency,
                  "");
   // 1. add dependent APIs
   size_t UsedAPINum = getUsedAPINum();
@@ -426,8 +419,6 @@ void generateHelperFunctions() {
         std::cout << "Unknown dependency: File:"
                   << (unsigned int)Item.first.first
                   << ", Feature:" << Item.first.second << std::endl;
-        exit(-998);
-#else
         assert(0 && "Unknown dependency feature.\n");
 #endif
       }
@@ -710,16 +701,14 @@ void generateHelperFunctions() {
         clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
     if (HelperFeatureIter !=                                                   \
         clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second.first,                          \
-                     HelperFeatureIter->second.second, File);                  \
+      requestFeature(HelperFeatureIter->second, File);                         \
     }                                                                          \
   }
 #define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
   void requestHelperFeatureForTypeNames(const std::string Name, TYPE File) {   \
     auto HelperFeatureIter = MapNames::TypeNamesHelperFeaturesMap.find(Name);  \
     if (HelperFeatureIter != MapNames::TypeNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second.first,                          \
-                     HelperFeatureIter->second.second, File);                  \
+      requestFeature(HelperFeatureIter->second, File);                         \
     }                                                                          \
   }
 ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)

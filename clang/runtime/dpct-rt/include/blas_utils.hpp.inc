@@ -113,7 +113,7 @@ inline typename DataType<T>::T2 get_value(const T *s, cl::sycl::queue &q){
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
 // BlasUtils|stride_for|UsmNone
-// BlasUtils|mem_free
+// BlasUtils|mem_free|UsmRestricted
 // Util|DataType
 // Memory|dpct_memset_detail
 // Memory|get_buffer_T|UsmNone
@@ -230,7 +230,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
 // BlasUtils|stride_for|UsmNone
-// BlasUtils|mem_free
+// BlasUtils|mem_free|UsmRestricted
 // Util|DataType
 // Memory|get_buffer_T|UsmNone
 // DPCT_DEPENDENCY_END
@@ -364,7 +364,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
 // BlasUtils|stride_for|UsmNone
-// BlasUtils|mem_free
+// BlasUtils|mem_free|UsmRestricted
 // Util|DataType
 // Util|matrix_mem_copy_T
 // Memory|dpct_memset_detail
@@ -496,7 +496,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
 // BlasUtils|stride_for|UsmNone
-// BlasUtils|mem_free
+// BlasUtils|mem_free|UsmRestricted
 // Util|DataType
 // Memory|get_buffer_T|UsmNone
 // DPCT_DEPENDENCY_END

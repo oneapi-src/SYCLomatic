@@ -26,7 +26,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          CALL("oneapi::dpl::replace_if",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(1), ARG(2), ARG(3), ARG(4)))),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "replace_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_replace_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::replace_if(device.begin(), device.end(), stencil.begin(), pred, 0);
@@ -41,7 +41,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "replace_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_replace_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::replace_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred, 0);
@@ -84,7 +84,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          CALL("oneapi::dpl::remove_if",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(1), ARG(2), ARG(3)))),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::remove_if(device.begin(), device.end(), stencil.begin(), pred);
@@ -99,7 +99,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred);
@@ -142,7 +142,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          CALL("oneapi::dpl::remove_copy_if",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(1), ARG(2), ARG(3), ARG(4)))),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_copy_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::remove_copy_if(device.begin(), device.end(), stencil.begin(), result, pred);
@@ -157,7 +157,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "remove_copy_if",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), stencil.begin(), result, pred);
@@ -341,7 +341,7 @@ CONDITIONAL_FACTORY_ENTRY(
 // thrust::gather
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(5),
-  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "gather",
+  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_gather,
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
         // Handling case: thrust::gather(thrust::device, d_map.begin(), d_map.end(), d_values.begin(),d_output.begin());
@@ -352,7 +352,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::gather(thrust::seq, h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
         CALL_FACTORY_ENTRY("gather", CALL("dpct::gather", ARG("oneapi::dpl::execution::seq"),
                           ARG(1), ARG(2), ARG(3), ARG(4))))),
-  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "gather",
+  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_gather,
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
         // Handling case: thrust::gather(d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
@@ -367,7 +367,7 @@ CONDITIONAL_FACTORY_ENTRY(
 // thrust::scatter
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(5),
-  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "scatter",
+  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_scatter,
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
         // Handling case: thrust::scatter(thrust::device, d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
@@ -378,7 +378,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::scatter(thrust::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
         CALL_FACTORY_ENTRY("scatter", CALL("dpct::scatter", ARG("oneapi::dpl::execution::seq"),
                           ARG(1), ARG(2), ARG(3), ARG(4))))),
-  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "scatter",
+  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_scatter,
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
         // Handling case: thrust::scatter(d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
@@ -397,7 +397,7 @@ CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(6),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         // Handling case:
@@ -412,7 +412,7 @@ CONDITIONAL_FACTORY_ENTRY(
                           CALL("dpct::unique_copy",
                                 ARG("oneapi::dpl::execution::seq"),
                                 ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         // Handling case:
@@ -429,7 +429,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         // Handling case:
@@ -444,7 +444,7 @@ CONDITIONAL_FACTORY_ENTRY(
                            CALL("dpct::unique_copy",
                                 ARG("oneapi::dpl::execution::seq"),
                                 ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))),
-    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
         // Handling case:
