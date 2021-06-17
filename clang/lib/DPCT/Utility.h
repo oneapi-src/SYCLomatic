@@ -534,4 +534,11 @@ bool isTypeInRoot(const clang::MemberExpr *ME);
 void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);
+enum class MemcpyOrderAnalysisNodeKind {
+  MOANK_Memcpy = 0,
+  MOANK_MemcpyInFlowControl,
+  MOANK_OtherCallExpr,
+  MOANK_SpecialCallExpr
+};
+bool canOmitMemcpyWait(const clang::CallExpr *CE);
 #endif // DPCT_UTILITY_H

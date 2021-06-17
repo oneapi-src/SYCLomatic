@@ -644,6 +644,12 @@ public:
     }
   }
 
+  std::map<const CompoundStmt *,
+           std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>> &
+  getMemcpyOrderAnalysisResultMap() {
+    return MemcpyOrderAnalysisResultMap;
+  }
+
   std::map<unsigned int, HostRandomEngineTypeInfo> &
   getHostRandomEngineTypeMap() {
     return HostRandomEngineTypeMap;
@@ -785,6 +791,9 @@ private:
              1);
   }
 
+  std::map<const CompoundStmt *,
+           std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>>
+      MemcpyOrderAnalysisResultMap;
   std::map<unsigned int, HostRandomEngineTypeInfo> HostRandomEngineTypeMap;
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>

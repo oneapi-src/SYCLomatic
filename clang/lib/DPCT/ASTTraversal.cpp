@@ -11336,7 +11336,11 @@ void MemoryMigrationRule::memcpyMigration(
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 4, *Result.SourceManager));
       } else {
-        emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+        if (NameRef.compare("cudaMemcpy") || !canOmitMemcpyWait(C)) {
+          // wait is needed when FuncName is not cudaMemcpy or
+          // cudaMemcpy really needs wait
+          emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+        }
       }
       if (AsyncQueue.empty()) {
         if (checkWhetherIsDuplicate(C, false))

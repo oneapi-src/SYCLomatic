@@ -108,11 +108,11 @@ void foo() {
 
   /// memcpy
 
-  // CHECK: q_ct1.memcpy(d_A, h_A, size).wait();
+  // CHECK: q_ct1.memcpy(d_A, h_A, size);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: errorCode  = (q_ct1.memcpy(d_A, h_A, size).wait(), 0);
+  // CHECK: errorCode  = (q_ct1.memcpy(d_A, h_A, size), 0);
   errorCode  = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL((q_ct1.memcpy(d_A, h_A, size).wait(), 0));
+  // CHECK: MY_SAFE_CALL((q_ct1.memcpy(d_A, h_A, size), 0));
   MY_SAFE_CALL(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
 #define MACRO_A(x) size
 #define MACRO_A2(x) MACRO_A(x)
@@ -122,17 +122,17 @@ void foo() {
   //CHECK: /*
   //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, size).wait(), 0));
+  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, size), 0));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
   //CHECK: /*
   //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, MACRO_B).wait(), 0));
+  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, MACRO_B), 0));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_B, cudaMemcpyDeviceToHost));
   //CHECK: /*
   //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, MACRO_A2(1)).wait(), 0));
+  //CHECK-NEXT: MY_SAFE_CALL2((q_ct1.memcpy(d_A, h_A, MACRO_A2(1)), 0));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_A2(1), MACOR_C(1)));
   //CHECK: /*
   //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -832,4 +832,35 @@ void foo4(){
   // CHECK: */
   // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
   cuMemHostAlloc((void **)&h_A, sizeof(uchar4) - size, CU_MEMHOSTALLOC_PORTABLE);
+}
+
+#define MY_SAFE_CALL3(CALL) {                                               \
+  cudaError Error = CALL;                                                   \
+  if (Error != cudaSuccess) {                                               \
+    printf("%s\n", cudaGetErrorString(Error));                              \
+    exit(Error);                                                            \
+  }                                                                         \
+}
+
+void foo5(float* a) {
+// CHECK: MY_SAFE_CALL3((q_ct1.memcpy(a, a, 16), 0));
+// CHECK: MY_SAFE_CALL3((q_ct1.memcpy(a, a, 16), 0));
+// CHECK: MY_SAFE_CALL3((q_ct1.memcpy(a, a, 16).wait(), 0));
+  MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
+  MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
+  MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
+}
+
+
+void foo6(float* a) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: printf("%d\n", (q_ct1.memcpy(a, a, 16).wait(), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: printf("%d\n", (q_ct1.memcpy(a, a, 16).wait(), 0));
+  printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
+  printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
 }

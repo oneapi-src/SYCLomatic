@@ -3099,3 +3099,136 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
     }
   }
 }
+
+bool isInFlowControl(const clang::Stmt *S) {
+  if (!S)
+    return false;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  while (Parents.size() >= 1) {
+    auto *Parent = Parents[0].get<Stmt>();
+    if (Parent) {
+      auto StmtClass = Parent->getStmtClass();
+      if (StmtClass == Stmt::StmtClass::WhileStmtClass ||
+          StmtClass == Stmt::StmtClass::ForStmtClass ||
+          StmtClass == Stmt::StmtClass::IfStmtClass ||
+          StmtClass == Stmt::StmtClass::SwitchStmtClass||
+          StmtClass == Stmt::StmtClass::CallExprClass) {
+        return true;
+      } else if (StmtClass == Stmt::StmtClass::DoStmtClass) {
+        const Expr *CondExpr = dyn_cast<DoStmt>(Parent)->getCond();
+        Expr::EvalResult ER;
+        if (!CondExpr->isValueDependent() &&
+            CondExpr->EvaluateAsInt(ER, Context)) {
+          int64_t Value = ER.Val.getInt().getExtValue();
+          if (Value != 0) {
+            return true;
+          }
+        }
+      }
+    }
+    Parents = Context.getParents(Parents[0]);
+  }
+
+  return false;
+}
+
+bool analyzeMemcpyOrder(
+    const clang::CompoundStmt *CS,
+    std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>> &Vec) {
+  const static std::unordered_set<std::string> SpecialFuncNameSet = {
+      "printf", "cudaGetErrorString", "exit"};
+
+  auto CallExprMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::callExpr().bind("CallExpr"));
+  auto MatchedResults = clang::ast_matchers::match(
+      CallExprMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  for (auto &Result : MatchedResults) {
+    const CallExpr *CE = Result.getNodeAs<CallExpr>("CallExpr");
+    if (!CE)
+      return false;
+    std::string FuncName = "";
+    if (CE->getDirectCallee()) {
+      FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
+    } else {
+      if (auto ULE = dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee())) {
+        FuncName = ULE->getNameInfo().getAsString();
+      }
+    }
+    if (FuncName.empty())
+      return false;
+
+    if (FuncName == "cudaMemcpy") {
+      if (isInFlowControl(CE))
+        Vec.emplace_back(
+            CE, MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl);
+      else
+        Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
+    } else if (SpecialFuncNameSet.count(FuncName)) {
+      Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+    } else {
+      Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_OtherCallExpr);
+    }
+  }
+  return true;
+}
+
+/// This function is used to check if the ".wait()" can be omitted in the
+/// migrated code of cudaMemcpy API.
+/// Rule:
+/// Traverse  all CallExpr nodes between current cudaMemcpy CallExpr and
+/// the next cudaMemcpy CallExpr with pre-order.
+/// If (1) all these CallExpr nodess are in the SpecialFuncNameSet(e.g.,
+/// printf()), and (2) current and next cudaMemcpy are not in flow control
+/// Stmt, then the ".wait()" for current cudaMemcpy can be omitted.
+bool canOmitMemcpyWait(const clang::CallExpr *CE) {
+  if (!CE)
+    return false;
+  auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
+  if (!FD)
+    return false;
+  auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
+  if (!CS)
+    return false;
+
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto CSLocInfo = clang::dpct::DpctGlobalInfo::getLocInfo(
+      SM.getExpansionLoc(CS->getBeginLoc()));
+  auto FileInfo =
+      clang::dpct::DpctGlobalInfo::getInstance().insertFile(CSLocInfo.first);
+  auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
+  auto Iter = Map.find(CS);
+
+  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>> Vec;
+  if (Iter == Map.end()) {
+    if (!analyzeMemcpyOrder(CS, Vec))
+      return false;
+    Map.insert(std::make_pair(CS, Vec));
+  } else {
+    Vec = Iter->second;
+  }
+
+  bool StartSearch = false;
+
+  for (const auto &S : Vec) {
+    if (S.first == CE) {
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl)
+        return false;
+      StartSearch = true;
+      continue;
+    }
+    if (StartSearch) {
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_OtherCallExpr) {
+        return false;
+      }
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl) {
+        return false;
+      }
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
