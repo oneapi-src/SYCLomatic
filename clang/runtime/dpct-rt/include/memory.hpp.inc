@@ -100,7 +100,9 @@ typedef cl::sycl::buffer<byte_t> buffer_t;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|pitched_data|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data_1
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Pitched 2D/3D memory data.
 class pitched_data {
@@ -108,19 +110,81 @@ public:
   pitched_data() : pitched_data(nullptr, 0, 0, 0) {}
   pitched_data(void *data, size_t pitch, size_t x, size_t y)
       : _data(data), _pitch(pitch), _x(x), _y(y) {}
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|pitched_data_get_data_ptr|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void *get_data_ptr() { return _data; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|pitched_data_set_data_ptr|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_data_ptr(void *data) { _data = data; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|pitched_data_get_pitch|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_pitch() { return _pitch; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|pitched_data_set_pitch|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_pitch(size_t pitch) { _pitch = pitch; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|pitched_data_get_x|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_x() { return _x; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|pitched_data_set_x|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_x(size_t x) { _x = x; };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|pitched_data_get_y|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_y() { return _y; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|pitched_data_set_y|dpct
+// DPCT_PARENT_FEATURE|pitched_data
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_y(size_t y) { _y = y; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|pitched_data_1|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
   void *_data;
   size_t _pitch, _x, _y;
@@ -132,6 +196,8 @@ namespace detail {
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
 // Memory|typedef_buffer_t
+// Memory|mem_mgr_1
+// Memory|mem_mgr_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 class mem_mgr {
@@ -176,7 +242,14 @@ public:
   mem_mgr &operator=(const mem_mgr &) = delete;
   mem_mgr(mem_mgr &&) = delete;
   mem_mgr &operator=(mem_mgr &&) = delete;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_mem_alloc|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Allocate
   void *mem_alloc(size_t size) {
     if (!size)
@@ -197,7 +270,15 @@ public:
 
     return result;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_mem_free|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// Memory|mem_mgr_get_map_iterator
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Deallocate
   void mem_free(const void *ptr) {
     if (!ptr)
@@ -206,21 +287,44 @@ public:
     auto it = get_map_iterator(ptr);
     m_map.erase(it);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_translate_ptr|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// Memory|mem_mgr_get_map_iterator
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// map: device pointer -> allocation(buffer, alloc_ptr, size)
   allocation translate_ptr(const void *ptr) {
     std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     return it->second;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_is_device_ptr|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Check if the pointer represents device pointer or not.
   bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return (mapped_address_space <= ptr) &&
            (ptr < mapped_address_space + mapped_region_size);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_1|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// Memory|mem_mgr_2
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Returns the instance of memory manager singleton.
   static mem_mgr &instance() {
     static mem_mgr m;
@@ -237,7 +341,14 @@ private:
   /// This padding may be defined to some positive value to debug
   /// out of bound accesses.
   const size_t extra_padding = 0;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|mem_mgr_get_map_iterator|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   std::map<byte_t *, allocation>::iterator get_map_iterator(const void *ptr) {
     auto it = m_map.upper_bound((byte_t *)ptr);
     if (it == m_map.end()) {
@@ -253,6 +364,14 @@ private:
     }
     return it;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|mem_mgr_2|dpct::detail
+// DPCT_PARENT_FEATURE|mem_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr
+// Memory|mem_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 };
 // DPCT_LABEL_END
 
@@ -291,7 +410,7 @@ public:
 
 // DPCT_LABEL_BEGIN|dpct_malloc_detail|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
+// Memory|mem_mgr_mem_alloc|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
@@ -318,8 +437,9 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
 
 // DPCT_LABEL_BEGIN|dpct_memset_detail|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
-// Memory|typedef_byte_t
+// Memory|mem_mgr_is_device_ptr|UsmNone
+// Memory|mem_mgr_translate_ptr|UsmNone
+// Memory|typedef_byte_t|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
@@ -353,7 +473,9 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
 
 // DPCT_LABEL_BEGIN|dpct_memset_3d_detail|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
-// Memory|pitched_data
+// Memory|pitched_data_get_pitch
+// Memory|pitched_data_get_y
+// Memory|pitched_data_get_data_ptr
 // Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -401,9 +523,10 @@ dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
 // DPCT_LABEL_BEGIN|dpct_memcpy_detail|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|memcpy_direction
-// Memory|mem_mgr
-// Memory|typedef_byte_t
-// Memory|typedef_buffer_t
+// Memory|mem_mgr_is_device_ptr|UsmNone
+// Memory|mem_mgr_translate_ptr|UsmNone
+// Memory|typedef_byte_t|UsmNone
+// Memory|typedef_buffer_t|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
@@ -593,7 +716,9 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 // DPCT_DEPENDENCY_BEGIN
 // Memory|memcpy_direction
 // Memory|dpct_memcpy_3d_detail
-// Memory|pitched_data
+// Memory|pitched_data_get_data_ptr
+// Memory|pitched_data_get_pitch
+// Memory|pitched_data_get_y
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// memcpy 2D/3D matrix specified by pitched_data.
@@ -630,7 +755,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 // DPCT_LABEL_BEGIN|get_buffer_and_offset|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_buffer_t
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the buffer and the offset of a piece of memory pointed to by \p ptr.
@@ -652,7 +777,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 
 // DPCT_LABEL_BEGIN|get_buffer_T|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the data pointed from \p ptr as a 1D buffer reinterpreted as type T.
@@ -666,7 +791,7 @@ template <typename T> static cl::sycl::buffer<T> get_buffer(const void *ptr) {
 // DPCT_LABEL_BEGIN|get_buffer_byte_t|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_buffer_t
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the buffer of a piece of memory pointed to by \p ptr.
@@ -681,7 +806,7 @@ static buffer_t get_buffer(const void *ptr) {
 // DPCT_LABEL_BEGIN|access_wrapper|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // Memory|get_buffer_byte_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -713,7 +838,7 @@ public:
 // DPCT_LABEL_BEGIN|get_access|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the accessor for memory pointed by \p ptr.
@@ -773,7 +898,8 @@ template <typename T> static inline T *get_host_ptr(const void *ptr) {
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
 // Memory|dpct_malloc_pitch_detail
-// Memory|pitched_data
+// Memory|pitched_data_set_data_ptr
+// Memory|pitched_data_set_pitch
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Allocate memory block for 3D array on the device.
@@ -812,7 +938,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 // DPCT_LABEL_BEGIN|dpct_free|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
-// Memory|mem_mgr
+// Memory|mem_mgr_mem_free|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// free
@@ -1206,26 +1332,59 @@ private:
 namespace detail {
 // DPCT_LABEL_BEGIN|device_memory|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
-// Memory|memory_traits
-// Memory|dpct_malloc_detail
-// Memory|dpct_free
-// Memory|dpct_accessor
-// Memory|mem_mgr
-// Memory|dpct_memcpy_detail
-// Memory|memcpy_direction
-// Memory|get_buffer_T
-// Memory|get_buffer_byte_t
+// Memory|device_memory_1
+// Memory|device_memory_2
+// Memory|device_memory_3
+// Memory|device_memory_4
+// Memory|device_memory_5
+// Memory|device_memory_6
+// Memory|device_memory_value_t_alias
+// Memory|memory_region
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Device variable with address space of shared, global or constant.
 template <class T, memory_region Memory, size_t Dimension>
 class device_memory {
 public:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_accessor_t_alias|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|memory_traits
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   using accessor_t =
       typename detail::memory_traits<Memory, T>::template accessor_t<Dimension>;
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_value_t_alias|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|memory_traits
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   using value_t = typename detail::memory_traits<Memory, T>::value_t;
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_dpct_accessor_t_alias|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|dpct_accessor
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   using dpct_accessor_t = dpct::accessor<T, Memory, Dimension>;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_1|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|mem_mgr
+// Device|dev_mgr
+// Memory|dpct_free
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   device_memory() : device_memory(cl::sycl::range<Dimension>(1)) {}
 
   /// Constructor of 1-D array with initializer list
@@ -1281,11 +1440,30 @@ public:
     if (_host_ptr)
       std::free(_host_ptr);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_init|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|device_memory_init_q
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Allocate memory with default queue, and init memory if has initial value.
   void init() {
     init(dpct::get_default_queue());
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_init_q|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|dpct_memcpy_detail
+// Memory|memcpy_direction
+// Memory|device_memory_allocate_device
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Allocate memory with specficed queue, and init memory if has initial value.
   void init(cl::sycl::queue &q) {
     if (_device_ptr)
@@ -1296,36 +1474,91 @@ public:
     if (_host_ptr)
       detail::dpct_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_assign|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// The variable is assigned to a device pointer.
   void assign(value_t *src, size_t size) {
     this->~device_memory();
     new (this) device_memory(src, size);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_get_ptr|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|device_memory_get_ptr_q
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used .
   value_t *get_ptr() {
     return get_ptr(get_default_queue());
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_get_ptr_q|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|device_memory_init_q
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used .
   value_t *get_ptr(cl::sycl::queue &q) {
     init(q);
     return _device_ptr;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_get_size|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get the device memory object size in bytes.
   size_t get_size() { return _size; }
+// DPCT_LABEL_END
 
-#ifdef DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_BEGIN|device_memory_2|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|get_buffer_T|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     init();
+#ifdef DPCT_USM_LEVEL_NONE
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
                _device_ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
+#else
+    return _device_ptr[index];
+#endif // DPCT_USM_LEVEL_NONE
   }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_memory_get_access|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|get_buffer_byte_t|UsmNone
+// Memory|device_memory_dpct_accessor_t_alias|UsmRestricted
+// Memory|device_memory_get_access_sp
+// Memory|device_memory_accessor_t_alias|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return get_buffer(_device_ptr)
@@ -1334,11 +1567,6 @@ public:
                              detail::memory_traits<Memory, T>::target>(cgh);
   }
 #else
-  template <size_t D = Dimension>
-  typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
-    init();
-    return _device_ptr[index];
-  }
   /// Get dpct::accessor with dimension info for the device memory object
   /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>
@@ -1347,12 +1575,27 @@ public:
     return dpct_accessor_t((T *)_device_ptr, _range);
   }
 #endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_3|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
   device_memory(value_t *memory_ptr, size_t size)
       : _size(size), _range(size / sizeof(T)), _reference(true),
         _device_ptr(memory_ptr) {}
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_allocate_device|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|dpct_malloc_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void allocate_device(cl::sycl::queue &q) {
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
@@ -1363,7 +1606,14 @@ private:
 #endif
     _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_4|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t _size;
   cl::sycl::range<Dimension> _range;
   bool _reference;
@@ -1375,15 +1625,40 @@ class device_memory<T, Memory, 0> : public device_memory<T, Memory, 1> {
 public:
   using base = device_memory<T, Memory, 1>;
   using value_t = typename base::value_t;
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_accessor_t_alias_1|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   using accessor_t =
       typename detail::memory_traits<Memory, T>::template accessor_t<0>;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_5|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Constructor with initial value.
   device_memory(const value_t &val) : base(cl::sycl::range<1>(1), {val}) {}
 
   /// Default constructor
   device_memory() : base(1) {}
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_memory_get_access_sp|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// Memory|device_memory_accessor_t_alias_1
+// Memory|get_buffer_byte_t
+// Memory|device_memory_get_ptr
+// Memory|device_memory_get_access
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
@@ -1392,6 +1667,13 @@ public:
     return accessor_t(buf, cgh);
   }
 #endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_memory_6|dpct::detail
+// DPCT_PARENT_FEATURE|device_memory
+// DPCT_DEPENDENCY_BEGIN
+// Memory|device_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 };
 // DPCT_LABEL_END
 }

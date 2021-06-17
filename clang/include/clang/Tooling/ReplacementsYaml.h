@@ -153,24 +153,26 @@ template <> struct MappingTraits<std::pair<std::string, std::string>> {
 template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
   struct NormalizedHelperFuncForYaml {
     NormalizedHelperFuncForYaml(const IO &)
-        : IsCalled(false), CallerSrcFiles({}), APIName("") {}
+        : IsCalled(false), CallerSrcFiles({}), APIName(""), SubFeatureMap({}) {}
 
     NormalizedHelperFuncForYaml(const IO &,
                                const clang::tooling::HelperFuncForYaml &HFFY)
         : IsCalled(HFFY.IsCalled), CallerSrcFiles(HFFY.CallerSrcFiles),
-          APIName(HFFY.APIName) {}
+          APIName(HFFY.APIName), SubFeatureMap(HFFY.SubFeatureMap) {}
 
     clang::tooling::HelperFuncForYaml denormalize(const IO &) {
       clang::tooling::HelperFuncForYaml HFFY;
       HFFY.IsCalled = IsCalled;
       HFFY.CallerSrcFiles = CallerSrcFiles;
       HFFY.APIName = APIName;
+      HFFY.SubFeatureMap = SubFeatureMap;
       return HFFY;
     }
 
     bool IsCalled = false;
     std::vector<std::string> CallerSrcFiles;
     std::string APIName;
+    std::map<std::string, clang::tooling::HelperFuncForYaml> SubFeatureMap;
   };
 
   static void mapping(IO &Io, clang::tooling::HelperFuncForYaml &HFFY) {
@@ -180,6 +182,7 @@ template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
     Io.mapRequired("IsCalled", Keys->IsCalled);
     Io.mapRequired("CallerSrcFiles", Keys->CallerSrcFiles);
     Io.mapRequired("FeatureName", Keys->APIName);
+    Io.mapOptional("SubFeatureMap", Keys->SubFeatureMap);
   }
 };
 #endif

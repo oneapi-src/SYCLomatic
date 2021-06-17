@@ -27,6 +27,8 @@ dpl_extras_content_files_name_list = [
 
 is_os_win = False
 
+features_list = []
+
 stack = []
 input_files_dir = cur_file_dir
 
@@ -195,6 +197,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
     non_usm_line = []
     has_code = False
     usm_status = Usm_status_enum.COMMON
+    parent_feature = bytes("", 'utf-8')
     for line in cont_file_handle:
         if (line.startswith(bytes("// DPCT_LABEL_BEGIN", 'utf-8'))):
             line = line.replace(bytes('//', 'utf-8'), bytes('', 'utf-8'))
@@ -203,6 +206,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
             content_begin_line = bytes("DPCT_CONTENT_BEGIN(" + helper_file_enum_name + ", \"", 'utf-8') + \
                 splited[1] + bytes("\", \"", 'utf-8') + splited[2] + bytes("\", " + str(Idx) + ")\n", 'utf-8')
             inc_file_lines.append(content_begin_line)
+            features_list.append(bytes(helper_file_enum_name + "_", 'utf-8') + splited[1] + bytes(",", 'utf-8'))
             Idx = Idx + 1
         elif (line.startswith(bytes("// DPCT_LABEL_END", 'utf-8'))):
             if (not has_code):
@@ -213,15 +217,26 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 inc_file_lines.append(bytes(",\n", 'utf-8'))
                 inc_file_lines.append(
                     bytes("// =====below is usm code=================\n", 'utf-8'))
+                if (not usm_line):
+                    usm_line.append(bytes("\"\"\n", 'utf-8'))
                 append_lines(inc_file_lines, usm_line)
                 inc_file_lines.append(bytes(",\n", 'utf-8'))
                 inc_file_lines.append(
                     bytes("// =====below is none-usm code============\n", 'utf-8'))
+                if (not non_usm_line):
+                    non_usm_line.append(bytes("\"\"\n", 'utf-8'))
                 append_lines(inc_file_lines, non_usm_line)
+            
+            if (parent_feature == bytes("", 'utf-8')):
+                inc_file_lines.append(bytes("DPCT_PARENT_FEATURE(Unknown, \"\")\n", 'utf-8'))
+            else:
+                inc_file_lines.append(bytes("DPCT_PARENT_FEATURE(" + helper_file_enum_name + ", \"", 'utf-8') + \
+                                      parent_feature + bytes("\")\n", 'utf-8'))
             inc_file_lines.append(bytes("DPCT_CONTENT_END\n", 'utf-8'))
             is_code = False
             have_usm_code = False
             has_code = False
+            parent_feature = bytes("", 'utf-8')
         elif (line.startswith(bytes("// DPCT_DEPENDENCY_BEGIN", 'utf-8'))):
             dependency_line = bytes("DPCT_DEPENDENCY(", 'utf-8')
             is_dependency = True
@@ -239,13 +254,25 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
             non_usm_line.clear()
         elif (line.startswith(bytes("// DPCT_COMMENT", 'utf-8'))):
             continue
+        elif (line.startswith(bytes("// DPCT_PARENT_FEATURE", 'utf-8'))):
+            line = line.replace(bytes('//', 'utf-8'), bytes('', 'utf-8'))
+            line = line.strip()
+            splited = line.split(bytes('|', 'utf-8'))
+            parent_feature = splited[1]
         else:
             if (is_dependency):
                 line = line.replace(bytes('//', 'utf-8'), bytes('', 'utf-8'))
                 line = line.strip()
                 splited = line.split(bytes('|', 'utf-8'))
-                dependency_line = dependency_line + bytes("{clang::dpct::HelperFileEnum::", 'utf-8') + \
-                    splited[0] + bytes(", \"", 'utf-8') + splited[1] + bytes("\"},", 'utf-8')
+                if ((len(splited) <= 2) or (splited[2] == bytes("", 'utf-8'))):
+                    dependency_line = dependency_line + bytes("{{clang::dpct::HelperFileEnum::", 'utf-8') + \
+                                      splited[0] + bytes(", \"", 'utf-8') + splited[1] + \
+                                      bytes("\"}, clang::dpct::HelperFeatureDependencyKind::HFDK_Both},", 'utf-8')
+                else:
+                    dependency_line = dependency_line + bytes("{{clang::dpct::HelperFileEnum::", 'utf-8') + \
+                                      splited[0] + bytes(", \"", 'utf-8') + splited[1] + \
+                                      bytes("\"}, clang::dpct::HelperFeatureDependencyKind::HFDK_", 'utf-8') +\
+                                      splited[2] + bytes("},", 'utf-8')
             else:
                 runtime_file_lines.append(line)
                 inc_all_file_lines.append(
@@ -293,7 +320,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
 
 def check_files():
     file_handle = io.open(os.path.join(
-        input_files_dir, "HelperFileNames.inc"), "rb")
+        input_files_dir, "HelperFileAndFeatureNames.inc"), "rb")
     files_in_inc = []
     for line in file_handle:
         if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
@@ -318,17 +345,17 @@ def check_files():
     if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("Files defined in HelperFileNames.inc and files in current folder are not same.")
-    print("Please update the HelperFileNames.inc file.\n")
+    print("Files defined in HelperFileAndFeatureNames.inc and files in current folder are not same.")
+    print("Please update the HelperFileAndFeatureNames.inc file.\n")
 
     files_in_inc_but_not_in_dir = set_of_files_in_inc - set_of_files_in_current_dir
     if (len(files_in_inc_but_not_in_dir) != 0):
-        print("File(s) defined in HelperFileNames.inc but does not occur in the current folder:")
+        print("File(s) defined in HelperFileAndFeatureNames.inc but does not occur in the current folder:")
         print(files_in_inc_but_not_in_dir)
 
     files_in_dir_but_not_in_inc = set_of_files_in_current_dir - set_of_files_in_inc
     if (len(files_in_dir_but_not_in_inc) != 0):
-        print("File(s) occurs in the current folder but not defined in HelperFileNames.inc:")
+        print("File(s) occurs in the current folder but not defined in HelperFileAndFeatureNames.inc:")
         print(files_in_dir_but_not_in_inc)
 
     return False
@@ -381,12 +408,23 @@ def main():
     if (sys.platform == "win32"):
         is_os_win = True
 
+    features_enum_file_name = os.path.join(inc_files_dir, "HelperFeatureEnum.inc")
+    features_enum_file_handle = io.open(features_enum_file_name, "wb")
+
     for cont_file in content_files_list:
         process_a_file(cont_file, inc_files_dir,
                        runtime_files_dir, False, content_files_dict)
     for cont_file in dpl_extras_content_files_list:
         process_a_file(cont_file, inc_files_dir, runtime_files_dir,
                        True, dpl_extras_content_files_dict)
+
+    features_enum_str = bytes("", 'utf-8')
+    for element in features_list:
+        features_enum_str = features_enum_str + element + bytes("\n", 'utf-8')
+
+    features_enum_file_handle.write(features_enum_str)
+    features_enum_file_handle.close()
+
     print("[Note] DPCT *.inc files are generated successfully!")
 
 

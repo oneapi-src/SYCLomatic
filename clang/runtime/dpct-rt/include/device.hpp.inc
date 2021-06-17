@@ -82,63 +82,268 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_info|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info_1
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 class device_info {
 public:
+// DPCT_LABEL_END
   // get interface
+// DPCT_LABEL_BEGIN|device_info_get_name|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   char *get_name() { return _name; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_work_item_sizes|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::id<3> get_max_work_item_sizes() { return _max_work_item_sizes; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_host_unified_memory|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   bool get_host_unified_memory() { return _host_unified_memory; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_major_version|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_major_version() { return _major; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_minor_version|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_minor_version() { return _minor; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_integrated|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_integrated() { return _integrated; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_clock_frequency|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_clock_frequency() { return _frequency; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_compute_units|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_compute_units() { return _max_compute_units; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_work_group_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_work_group_size() { return _max_work_group_size; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_sub_group_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_sub_group_size() { return _max_sub_group_size; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_work_items_per_compute_unit|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_work_items_per_compute_unit() {
     return _max_work_items_per_compute_unit;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_nd_range_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t *get_max_nd_range_size() { return _max_nd_range_size; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_global_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_global_mem_size() { return _global_mem_size; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_local_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_local_mem_size() { return _local_mem_size; }
+// DPCT_LABEL_END
   // set interface
+// DPCT_LABEL_BEGIN|device_info_set_name|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_work_item_sizes|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_host_unified_memory|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_major_version|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_major_version(int major) { _major = major; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_minor_version|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_minor_version(int minor) { _minor = minor; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_integrated|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_integrated(int integrated) { _integrated = integrated; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_clock_frequency|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_clock_frequency(int frequency) { _frequency = frequency; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_compute_units|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_compute_units(int max_compute_units) {
     _max_compute_units = max_compute_units;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_global_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_global_mem_size(size_t global_mem_size) {
     _global_mem_size = global_mem_size;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_local_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_local_mem_size(size_t local_mem_size) {
     _local_mem_size = local_mem_size;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_work_group_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_work_group_size(int max_work_group_size) {
     _max_work_group_size = max_work_group_size;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_sub_group_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_sub_group_size(int max_sub_group_size) {
     _max_sub_group_size = max_sub_group_size;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_work_items_per_compute_unit|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void
   set_max_work_items_per_compute_unit(int max_work_items_per_compute_unit) {
     _max_work_items_per_compute_unit = max_work_items_per_compute_unit;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_nd_range_size|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_max_nd_range_size(int max_nd_range_size[]) {
     for (int i = 0; i < 3; i++)
       _max_nd_range_size[i] = max_nd_range_size[i];
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_info_1|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
   char _name[256];
   cl::sycl::id<3> _max_work_item_sizes;
@@ -160,7 +365,7 @@ private:
 // DPCT_LABEL_BEGIN|device_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|exception_handler
-// Device|device_info
+// Device|device_ext_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct device extension
@@ -182,30 +387,102 @@ public:
 #endif
     _saved_queue = _default_queue = _queues[0].get();
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_is_native_atomic_supported|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int is_native_atomic_supported() { return 0; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_get_major_version|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_version
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_major_version() {
     int major, minor;
     get_version(major, minor);
     return major;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_minor_version|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_version
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_minor_version() {
     int major, minor;
     get_version(major, minor);
     return minor;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_max_compute_units|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_device_info_return_info
+// Device|device_info_get_max_compute_units
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_compute_units() {
     return get_device_info().get_max_compute_units();
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_max_clock_frequency|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_device_info_return_info
+// Device|device_info_get_max_clock_frequency
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_max_clock_frequency() {
     return get_device_info().get_max_clock_frequency();
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_integrated|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_device_info_return_info
+// Device|device_info_get_integrated
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   int get_integrated() { return get_device_info().get_integrated(); }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_device_info_return_void|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_info
+// Device|device_ext_get_version
+// Device|device_info_set_name
+// Device|device_info_set_major_version
+// Device|device_info_set_minor_version
+// Device|device_info_set_max_work_item_sizes
+// Device|device_info_set_host_unified_memory
+// Device|device_info_set_max_clock_frequency
+// Device|device_info_set_max_compute_units
+// Device|device_info_set_max_work_group_size
+// Device|device_info_set_global_mem_size
+// Device|device_info_set_local_mem_size
+// Device|device_info_set_max_sub_group_size
+// Device|device_info_set_max_work_items_per_compute_unit
+// Device|device_info_set_max_nd_range_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void get_device_info(device_info &out) {
     device_info prop;
     prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
@@ -268,13 +545,28 @@ public:
 
     out = prop;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_device_info_return_info|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_device_info_return_void
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   device_info get_device_info() {
     device_info prop;
     get_device_info(prop);
     return prop;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_reset|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void reset() {
     std::lock_guard<std::mutex> lock(m_mutex);
     // The queues are shared_ptrs and the ref counts of the shared_ptrs increase
@@ -293,9 +585,23 @@ public:
 #endif
     _saved_queue = _default_queue = _queues.front().get();
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_default_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::queue &default_queue() { return *_default_queue; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_queues_wait_and_throw|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void queues_wait_and_throw() {
     std::unique_lock<std::mutex> lock(m_mutex);
     std::vector<std::shared_ptr<cl::sycl::queue>> current_queues(
@@ -307,6 +613,13 @@ public:
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_create_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::queue *create_queue(bool enable_exception_handler = false) {
     std::lock_guard<std::mutex> lock(m_mutex);
     cl::sycl::async_handler eh = {};
@@ -323,6 +636,13 @@ public:
 #endif
     return _queues.back().get();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_destroy_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void destroy_queue(cl::sycl::queue *&queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
     std::remove_if(_queues.begin(), _queues.end(),
@@ -331,17 +651,53 @@ public:
                    });
     queue = nullptr;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_set_saved_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_saved_queue(cl::sycl::queue* q) {
     std::lock_guard<std::mutex> lock(m_mutex);
     _saved_queue = q;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_get_saved_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::queue* get_saved_queue() {
     std::lock_guard<std::mutex> lock(m_mutex);
     return _saved_queue;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_get_context|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::context get_context() { return _ctx; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_1|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_get_version|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void get_version(int &major, int &minor) {
     // Version string has the following format:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>
@@ -363,6 +719,14 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_2|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;
   cl::sycl::context _ctx;
@@ -387,18 +751,43 @@ static inline unsigned int get_tid(){
 
 // DPCT_LABEL_BEGIN|dev_mgr|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|get_tid
 // Device|device_ext
+// Device|dev_mgr_2
+// Device|dev_mgr_3
+// Device|dev_mgr_4
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// device manager
 class dev_mgr {
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_1|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 public:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_current_device|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_check_id
+// Device|dev_mgr_1
+// Device|dev_mgr_current_device_id
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   device_ext &current_device() {
     unsigned int dev_id=current_device_id();
     check_id(dev_id);
     return *_devs[dev_id];
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_cpu_device|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   device_ext &cpu_device() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (_cpu_device == -1) {
@@ -407,11 +796,27 @@ public:
       return *_devs[_cpu_device];
     }
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_get_device|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_check_id
+// Device|dev_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   device_ext &get_device(unsigned int id) const {
     std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
     return *_devs[id];
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_current_device_id|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// Device|get_tid
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned int current_device_id() const {
    std::lock_guard<std::mutex> lock(m_mutex);
    auto it=_thread2dev_map.find(get_tid());
@@ -419,13 +824,38 @@ public:
       return it->second;
     return DEFAULT_DEVICE_ID;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_select_device|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// Device|dev_mgr_check_id
+// Device|get_tid
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void select_device(unsigned int id) {
     std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
     _thread2dev_map[get_tid()]=id;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_device_count|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned int device_count() { return _devs.size(); }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dev_mgr_2|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr
+// Device|dev_mgr_3
+// Device|dev_mgr_4
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Returns the instance of device manager singleton.
   static dev_mgr &instance() {
     static dev_mgr d_m;
@@ -435,7 +865,16 @@ public:
   dev_mgr &operator=(const dev_mgr &) = delete;
   dev_mgr(dev_mgr &&) = delete;
   dev_mgr &operator=(dev_mgr &&) = delete;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dev_mgr_3|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr
+// Device|dev_mgr_2
+// Device|dev_mgr_4
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
   mutable std::mutex m_mutex;
   dev_mgr() {
@@ -458,11 +897,27 @@ private:
       }
     }
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_check_id|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void check_id(unsigned int id) const {
     if (id >= _devs.size()) {
       throw std::runtime_error("invalid device id");
     }
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|dev_mgr_4|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr
+// Device|dev_mgr_2
+// Device|dev_mgr_3
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() can not find current
   /// thread id in _thread2dev_map, which means default device should be used
@@ -476,7 +931,8 @@ private:
 
 // DPCT_LABEL_BEGIN|get_default_queue|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
+// Device|dev_mgr_current_device
+// Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get the defualt queue of current device in
@@ -488,8 +944,7 @@ static inline cl::sycl::queue &get_default_queue() {
 
 // DPCT_LABEL_BEGIN|get_current_device|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// Device|device_ext
+// Device|dev_mgr_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get the current device.
@@ -500,8 +955,7 @@ static inline device_ext &get_current_device() {
 
 // DPCT_LABEL_BEGIN|get_device|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// Device|device_ext
+// Device|dev_mgr_get_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get a device by id.
@@ -512,8 +966,8 @@ static inline device_ext &get_device(unsigned int id) {
 
 // DPCT_LABEL_BEGIN|get_default_context|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
 // Device|get_current_device
+// Device|device_ext_get_context
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get the context of the default queue of current
@@ -525,8 +979,7 @@ static inline cl::sycl::context get_default_context() {
 
 // DPCT_LABEL_BEGIN|cpu_device|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Device|dev_mgr
-// Device|device_ext
+// Device|dev_mgr_cpu_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Util function to get a cpu device.

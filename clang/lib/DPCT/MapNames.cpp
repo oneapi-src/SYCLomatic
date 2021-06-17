@@ -368,6 +368,21 @@ void MapNames::setExplicitNamespaceMap() {
 
   // Enum constants name to helper feature mapping.
   EnumConstantRule::EnumNamesHelperFeaturesMap = {
+      // ...
+      // enum Device Attribute
+      // ...
+      {"cudaDevAttrHostNativeAtomicSupported",
+       {HelperFileEnum::Device, "device_ext_is_native_atomic_supported"}},
+      {"cudaDevAttrComputeCapabilityMajor",
+       {HelperFileEnum::Device, "device_ext_get_major_version"}},
+      {"cudaDevAttrComputeCapabilityMinor",
+       {HelperFileEnum::Device, "device_ext_get_minor_version"}},
+      {"cudaDevAttrMultiProcessorCount",
+       {HelperFileEnum::Device, "device_ext_get_max_compute_units"}},
+      {"cudaDevAttrClockRate",
+       {HelperFileEnum::Device, "device_ext_get_max_clock_frequency"}},
+      {"cudaDevAttrIntegrated",
+       {HelperFileEnum::Device, "device_ext_get_integrated"}},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost", {HelperFileEnum::Memory, "memcpy_direction"}},
       {"cudaMemcpyHostToDevice", {HelperFileEnum::Memory, "memcpy_direction"}},
@@ -386,6 +401,19 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaResourceTypeArray", {HelperFileEnum::Image, "image_data_type"}},
       {"cudaResourceTypeLinear", {HelperFileEnum::Image, "image_data_type"}},
       {"cudaResourceTypePitch2D", {HelperFileEnum::Image, "image_data_type"}},
+      // enum Driver Device Attribute
+      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
+       {HelperFileEnum::Device, "device_ext_get_major_version"}},
+      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR",
+       {HelperFileEnum::Device, "device_ext_get_minor_version"}},
+      {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
+       {HelperFileEnum::Device, "device_ext_get_integrated"}},
+      {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE",
+       {HelperFileEnum::Device, "device_ext_get_max_clock_frequency"}},
+      {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT",
+       {HelperFileEnum::Device, "device_ext_get_max_compute_units"}},
+      {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
+       {HelperFileEnum::Device, "device_ext_is_native_atomic_supported"}},
       // enum CUresourcetype_enum
       {"CU_RESOURCE_TYPE_ARRAY", {HelperFileEnum::Image, "image_data_type"}},
       {"CU_RESOURCE_TYPE_LINEAR", {HelperFileEnum::Image, "image_data_type"}},
@@ -3381,7 +3409,6 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
-    {"computeMode", "mode"},
     {"major", "major_version"},
     {"minor", "minor_version"},
     {"integrated", "integrated"},
@@ -3420,6 +3447,8 @@ std::map<std::pair<clang::dpct::HelperFileEnum /*FileID*/,
 #define DPCT_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
   {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
 #define DPCT_DEPENDENCY(...) {__VA_ARGS__},
+#define DPCT_PARENT_FEATURE(ParentFeatureFile, ParentFeatureName)              \
+  , {clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName}
 #define DPCT_CONTENT_END                                                       \
   }                                                                            \
   }                                                                            \
@@ -3596,7 +3625,7 @@ const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
 #define HELPERFILE(PATH, UNIQUE_ENUM)
 #define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)              \
   {{clang::dpct::HelperFileEnum::File, FeatureName}, APIName},
-#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
+#include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
 };
@@ -3684,6 +3713,17 @@ const MapNames::MapTy MemoryDataTypeRule::PitchMemberToSetter{
     {"dstHost", "set_data_ptr"}, {"dstDevice", "set_data_ptr"},
     {"srcPitch", "set_pitch"},   {"srcHeight", "set_y"},
     {"srcHost", "set_data_ptr"}, {"srcDevice", "set_data_ptr"}};
+
+const std::map<std::string, HelperFeatureIDTy>
+    MemoryDataTypeRule::PitchMemberToFeature{
+        {"dstPitch", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_pitch"}},
+        {"dstHeight", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_y"}},
+        {"dstHost", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
+        {"dstDevice", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
+        {"srcPitch", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_pitch"}},
+        {"srcHeight", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_y"}},
+        {"srcHost", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}},
+        {"srcDevice", {clang::dpct::HelperFileEnum::Memory, "pitched_data_set_data_ptr"}}};
 
 const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
     {"srcXInBytes", "[0]"},  {"srcY", "[1]"},   {"srcZ", "[2]"},

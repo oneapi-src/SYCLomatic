@@ -205,7 +205,7 @@ struct is_hetero_iterator<
 // Memory|typedef_byte_t
 // DplExtrasMemory|is_hetero_iterator
 // DplExtrasMemory|device_iterator
-// Memory|mem_mgr
+// Memory|mem_mgr_translate_ptr
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE

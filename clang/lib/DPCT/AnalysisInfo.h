@@ -2819,16 +2819,18 @@ public:
   }
 
   virtual std::string getSamplerDecl() {
+    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+                   FilePath);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
   virtual std::string getAccessorDecl() {
+    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
     return buildString("auto ", NewVarName, "_acc = ", Name,
                        ".get_access(cgh);");
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-
     requestFeature(HelperFileEnum::Image, "image_accessor_ext", FilePath);
     return getDecl(PS, "image_accessor_ext");
   }
@@ -2876,10 +2878,13 @@ public:
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
+    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
     requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
     return PS.Str;
   }
   std::string getSamplerDecl() override {
+    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+                   FilePath);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        "->get_sampler();");
   }
@@ -2916,6 +2921,7 @@ public:
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl() override {
     requestFeature(HelperFileEnum::Image, "image_wrapper", FilePath);
+    requestFeature(HelperFileEnum::Image, "image_wrapper_get_access", FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
@@ -2923,6 +2929,8 @@ public:
     return PS.Str;
   }
   std::string getSamplerDecl() override {
+    requestFeature(HelperFileEnum::Image, "image_wrapper_base_get_sampler",
+                   FilePath);
     return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
   }
 };
@@ -4434,7 +4442,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                   HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
           requestFeature(HelperFileEnum::Device, "get_current_device",
                          HFInfo.DeclLocFile);
-          requestFeature(HelperFileEnum::Device, "device_ext",
+          requestFeature(HelperFileEnum::Device, "device_ext_default_queue",
                          HFInfo.DeclLocFile);
         }
       }

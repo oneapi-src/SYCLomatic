@@ -1183,7 +1183,7 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
-      requestFeature(HelperFileEnum::Memory, "mem_mgr", CE);
+      requestFeature(HelperFileEnum::Memory, "mem_mgr_is_device_ptr", CE);
       std::string IfStmtStr = "if (" + MapNames::getDpctNamespace(true) +
                               "detail::mem_mgr::instance().is_device_ptr(" +
                               PointerStr + ")) {" + getNL() + IndentStr +
@@ -1708,6 +1708,7 @@ private:
     if (C->getNumArgs() > ArgIndex) {
       if (needExtraParens(C->getArg(ArgIndex)))
         insertAroundStmt(C->getArg(ArgIndex), "(", ")");
+      requestFeature(HelperFileEnum::Image, "image_matrix_to_pitched_data", C);
       emplaceTransformation(
           new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
     }
@@ -1764,6 +1765,7 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
   const static MapNames::MapTy PitchMemberToSetter;
+  const static std::map<std::string, HelperFeatureIDTy> PitchMemberToFeature;
   const static MapNames::MapTy SizeOrPosToMember;
   const static std::vector<std::string> RemoveMember;
 

@@ -65,6 +65,8 @@ struct kernel_function_info {
 // DPCT_LABEL_BEGIN|get_kernel_function_info|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Kernel|kernel_function_info
+// Device|dev_mgr
+// Device|dev_mgr_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static void get_kernel_function_info(kernel_function_info *kernel_info,

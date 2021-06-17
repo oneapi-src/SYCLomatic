@@ -1006,14 +1006,19 @@ public:
   /// Get the device memory object size in bytes.
   size_t get_size() { return _size; }
 
-#ifdef DPCT_USM_LEVEL_NONE
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     init();
+#ifdef DPCT_USM_LEVEL_NONE
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
                _device_ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
+#else
+    return _device_ptr[index];
+#endif // DPCT_USM_LEVEL_NONE
   }
+
+#ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return get_buffer(_device_ptr)
@@ -1022,11 +1027,6 @@ public:
                              detail::memory_traits<Memory, T>::target>(cgh);
   }
 #else
-  template <size_t D = Dimension>
-  typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
-    init();
-    return _device_ptr[index];
-  }
   /// Get dpct::accessor with dimension info for the device memory object
   /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>

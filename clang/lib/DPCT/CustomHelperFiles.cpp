@@ -24,6 +24,12 @@
 namespace clang {
 namespace dpct {
 
+// Currently, the HelperFeatureEnum is only used to check
+// if there is duplicated feature name in each inc file
+enum class HelperFeatureEnum : unsigned int {
+#include "clang/DPCT/HelperFeatureEnum.inc"
+};
+
 void requestFeature(clang::dpct::HelperFileEnum FileID,
                     std::string HelperFunctionName,
                     const std::string &UsedFile) {
@@ -32,6 +38,14 @@ void requestFeature(clang::dpct::HelperFileEnum FileID,
   if (Iter != MapNames::HelperNameContentMap.end()) {
     Iter->second.IsCalled = true;
     Iter->second.CallerSrcFiles.insert(UsedFile);
+  } else {
+#ifdef DPCT_DEBUG_BUILD
+    std::cout << "Unknown feature: File:" << (unsigned int)FileID
+              << ", Feature:" << HelperFunctionName << std::endl;
+    exit(-999);
+#else
+    assert(0 && "Unknown requested feature.\n");
+#endif
   }
 }
 void requestFeature(clang::dpct::HelperFileEnum FileID,
@@ -124,7 +138,21 @@ void addDependencyIncludeDirectives(
   std::set<clang::dpct::HelperFileEnum> FileDependency;
   for (const auto &Item : ContentVec) {
     for (const auto &Pair : Item.Dependency) {
-      FileDependency.insert(Pair.first);
+      if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+          HelperFilesCustomizationLevel::HFCL_API) {
+        if (Pair.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
+          if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+            FileDependency.insert(Pair.first.first);
+        } else if (Pair.second ==
+                   HelperFeatureDependencyKind::HFDK_UsmRestricted) {
+          if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+            FileDependency.insert(Pair.first.first);
+        } else {
+          FileDependency.insert(Pair.first.first);
+        }
+      } else {
+        FileDependency.insert(Pair.first.first);
+      }
     }
   }
   std::string Directives;
@@ -361,14 +389,29 @@ void generateHelperFunctions() {
   size_t UsedAPINum = getUsedAPINum();
   do {
     UsedAPINum = getUsedAPINum();
-    std::set<std::pair<std::pair<clang::dpct::HelperFileEnum, std::string>,
-                       std::set<std::string>>>
-        NeedInsert;
+    std::set<std::pair<HelperFeatureIDTy, std::set<std::string>>> NeedInsert;
     for (const auto &Item : MapNames::HelperNameContentMap) {
       if (Item.second.IsCalled) {
         for (const auto &DepItem : Item.second.Dependency) {
-          NeedInsert.insert(
-              std::make_pair(DepItem, Item.second.CallerSrcFiles));
+          if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+              HelperFilesCustomizationLevel::HFCL_API) {
+            if (DepItem.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
+              if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+                NeedInsert.insert(
+                    std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
+            } else if (DepItem.second ==
+                       HelperFeatureDependencyKind::HFDK_UsmRestricted) {
+              if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+                NeedInsert.insert(
+                    std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
+            } else {
+              NeedInsert.insert(
+                  std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
+            }
+          } else {
+            NeedInsert.insert(
+                std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
+          }
         }
       }
     }
@@ -378,6 +421,15 @@ void generateHelperFunctions() {
         Iter->second.IsCalled = true;
         Iter->second.CallerSrcFiles.insert(Item.second.begin(),
                                            Item.second.end());
+      } else {
+#ifdef DPCT_DEBUG_BUILD
+        std::cout << "Unknown dependency: File:"
+                  << (unsigned int)Item.first.first
+                  << ", Feature:" << Item.first.second << std::endl;
+        exit(-998);
+#else
+        assert(0 && "Unknown dependency feature.\n");
+#endif
       }
     }
   } while (getUsedAPINum() > UsedAPINum);
@@ -442,7 +494,22 @@ void generateHelperFunctions() {
         for (const auto &Item : MapNames::HelperNameContentMap) {
           if (Item.first.first == (dpct::HelperFileEnum)FileID) {
             for (const auto &Dep : Item.second.Dependency) {
-              FileUsedFlagVec[(unsigned int)Dep.first] = true;
+              if (clang::dpct::DpctGlobalInfo::
+                      getHelperFilesCustomizationLevel() ==
+                  HelperFilesCustomizationLevel::HFCL_API) {
+                if (Dep.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
+                  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+                    FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
+                } else if (Dep.second ==
+                           HelperFeatureDependencyKind::HFDK_UsmRestricted) {
+                  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+                    FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
+                } else {
+                  FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
+                }
+              } else {
+                FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
+              }
             }
           }
         }
@@ -827,32 +894,44 @@ void collectInfo(
   }
 }
 
-// update MapNames::HelperNameContentMap from TUR
+void processFeatureMap(
+    const std::map<std::string, clang::tooling::HelperFuncForYaml> &FeatureMap,
+    HelperFileEnum CurrentFileID, VersionCmpResult CompareResult,
+    std::map<std::string, std::set<std::string>> &APINameCallerSrcFilesMap) {
+  for (const auto &FeatureFromYaml : FeatureMap) {
+    HelperFeatureIDTy FeatureKey(CurrentFileID, FeatureFromYaml.first);
+    auto FeatureIter = MapNames::HelperNameContentMap.find(FeatureKey);
+    if (FeatureIter != MapNames::HelperNameContentMap.end()) {
+      FeatureIter->second.IsCalled =
+          FeatureIter->second.IsCalled || FeatureFromYaml.second.IsCalled;
+      for (auto &CallerFileName : FeatureFromYaml.second.CallerSrcFiles) {
+        FeatureIter->second.CallerSrcFiles.insert(CallerFileName);
+      }
+
+      // Process sub-features
+      if (!FeatureFromYaml.second.SubFeatureMap.empty()) {
+        processFeatureMap(FeatureFromYaml.second.SubFeatureMap, CurrentFileID,
+                          CompareResult, APINameCallerSrcFilesMap);
+      }
+    } else {
+      // Feature added/removed, need emit warning
+      collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
+    }
+  }
+}
+
+// Update MapNames::HelperNameContentMap from TUR
 void updateHelperNameContentMap(
     const clang::tooling::TranslationUnitReplacements &TUR) {
   std::map<std::string, std::set<std::string>> APINameCallerSrcFilesMap;
   VersionCmpResult CompareResult = compareToolVersion(TUR.DpctVersion);
 
-  for (auto &FileFeatureMap : TUR.FeatureMap) {
+  for (const auto &FileFeatureMap : TUR.FeatureMap) {
     auto Iter = MapNames::HelperFileIDMap.find(FileFeatureMap.first);
     if (Iter != MapNames::HelperFileIDMap.end()) {
       auto CurrentFileID = Iter->second;
-
-      for (auto &FeatureFromYaml : FileFeatureMap.second) {
-        std::string FeatureName = FeatureFromYaml.first;
-        HelperFeatureIDTy Key(CurrentFileID, FeatureName);
-        auto FeatureIter = MapNames::HelperNameContentMap.find(Key);
-        if (FeatureIter != MapNames::HelperNameContentMap.end()) {
-          FeatureIter->second.IsCalled =
-              FeatureIter->second.IsCalled || FeatureFromYaml.second.IsCalled;
-          for (auto &CallerFileName : FeatureFromYaml.second.CallerSrcFiles) {
-            FeatureIter->second.CallerSrcFiles.insert(CallerFileName);
-          }
-        } else {
-          // Feature added/removed, need emit warning
-          collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
-        }
-      }
+      processFeatureMap(FileFeatureMap.second, CurrentFileID, CompareResult,
+                        APINameCallerSrcFilesMap);
     } else {
       // New helper file added, need emit warning
       for (auto &FeatureFromYaml : FileFeatureMap.second) {
@@ -865,29 +944,53 @@ void updateHelperNameContentMap(
                                  APINameCallerSrcFilesMap);
 }
 
-// update TUR from MapNames::HelperNameContentMap
+// Update TUR from MapNames::HelperNameContentMap
 void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
+  auto updateAPIName = [](HelperFeatureIDTy Feature,
+                          clang::tooling::HelperFuncForYaml &HFFY) {
+    // If this feature can be found in the map, then save the API name (from
+    // the map) into yaml file; otherwise save the feature name into yaml
+    // file
+    auto Iter = MapNames::FeatureNameToAPINameMap.find(Feature);
+    if (Iter != MapNames::FeatureNameToAPINameMap.end()) {
+      HFFY.APIName = Iter->second;
+    } else {
+      HFFY.APIName = Feature.second;
+    }
+  };
+
   for (auto Entry : MapNames::HelperNameContentMap) {
     if (Entry.second.IsCalled) {
       std::string FileName = MapNames::HelperFileNameMap[Entry.first.first];
-      TUR.FeatureMap[FileName][Entry.first.second].IsCalled =
-          Entry.second.IsCalled;
-      TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.clear();
+      if (Entry.second.ParentFeature.first == HelperFileEnum::Unknown &&
+          Entry.second.ParentFeature.second.empty()) {
+        // This is not a sub-feature
+        TUR.FeatureMap[FileName][Entry.first.second].IsCalled =
+            Entry.second.IsCalled;
+        TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.clear();
 
-      for (auto CallerFileName : Entry.second.CallerSrcFiles) {
-        TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.push_back(
-            CallerFileName);
-      }
+        for (auto CallerFileName : Entry.second.CallerSrcFiles) {
+          TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.push_back(
+              CallerFileName);
+        }
 
-      // If this feature can be found in the map, then save the API name (from
-      // the map) into yaml file; otherwise save the feature name into yaml
-      // file
-      auto Iter = MapNames::FeatureNameToAPINameMap.find(Entry.first);
-      if (Iter != MapNames::FeatureNameToAPINameMap.end()) {
-        TUR.FeatureMap[FileName][Entry.first.second].APIName = Iter->second;
+        updateAPIName(Entry.first,
+                      TUR.FeatureMap[FileName][Entry.first.second]);
       } else {
-        TUR.FeatureMap[FileName][Entry.first.second].APIName =
-            Entry.first.second;
+        // This is a sub-feature
+        std::string ParentFeatureName = Entry.second.ParentFeature.second;
+        TUR.FeatureMap[FileName][ParentFeatureName]
+            .SubFeatureMap[Entry.first.second]
+            .IsCalled = Entry.second.IsCalled;
+        TUR.FeatureMap[FileName][ParentFeatureName]
+            .SubFeatureMap[Entry.first.second]
+            .CallerSrcFiles.clear();
+
+        for (auto CallerFileName : Entry.second.CallerSrcFiles) {
+          TUR.FeatureMap[FileName][ParentFeatureName]
+              .SubFeatureMap[Entry.first.second]
+              .CallerSrcFiles.push_back(CallerFileName);
+        }
       }
     }
   }

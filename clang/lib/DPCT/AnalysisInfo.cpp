@@ -637,6 +637,10 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       SubmitStmtsList.RangeList.push_back(SWW);
     }
   } else {
+    requestFeature(HelperFileEnum::Memory,
+                   isDefaultStream() ? "device_memory_init"
+                                     : "device_memory_init_q",
+                   getFilePath());
     SubmitStmtsList.InitList.emplace_back(
         VI->getInitStmt(isDefaultStream() ? "" : ExecutionConfig.Stream));
     if (VI->isLocal()) {
@@ -711,6 +715,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
 
       if (Arg.IsUsedAsLvalueAfterMalloc) {
         requestFeature(HelperFileEnum::Memory, "access_wrapper", getFilePath());
+        requestFeature(HelperFileEnum::Memory, "device_memory_get_ptr", getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
             Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
@@ -719,6 +724,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
             buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
       } else {
         requestFeature(HelperFileEnum::Memory, "get_access", getFilePath());
+        requestFeature(HelperFileEnum::Memory, "device_memory_get_ptr", getFilePath());
         SubmitStmtsList.AccessorList.emplace_back(
             buildString("auto ", Arg.getIdStringWithSuffix("acc"),
                         " = " + MapNames::getDpctNamespace() + "get_access(",
@@ -2533,9 +2539,12 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     AccList.emplace_back(std::move(AccDecl));
   } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
              AccMode != Accessor) {
+    requestFeature(HelperFileEnum::Memory, "device_memory_get_ptr", getFilePath());
     PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
                                      getConstVarName(), ".get_ptr();"));
   } else {
+    requestFeature(HelperFileEnum::Memory, "device_memory_get_access",
+                   getFilePath());
     AccList.emplace_back(buildString("auto ", getAccessorName(), " = ",
                                      getConstVarName(), ".get_access(cgh);"));
   }

@@ -26,25 +26,36 @@ namespace dpct {
 enum class HelperFileEnum : unsigned int {
 #define HELPERFILE(PATH, UNIQUE_ENUM) UNIQUE_ENUM,
 #define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)
-#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
+#include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
   HelperFileEnumTypeSize,
   Unknown,
 };
 
+enum class HelperFeatureDependencyKind : unsigned int {
+  HFDK_Both = 0,
+  HFDK_UsmNone,
+  HFDK_UsmRestricted
+};
+
 using HelperFeatureIDTy = std::pair<HelperFileEnum, std::string>;
 
 struct HelperFunc {
-  std::string Namespace; // the namespace of this helper function feature
-  int PositionIdx = -1;  // the position of this helper function feature
-  bool IsCalled = false; // has this feature be called
-  std::set<std::string> CallerSrcFiles; // files have called this feature
-  std::vector<HelperFeatureIDTy>
-      Dependency;         // some features which this feature depends on
-  std::string Code;       // the code of this feature
-  std::string USMCode;    // the code of this feature
-  std::string NonUSMCode; // the code of this feature
+  std::string Namespace = ""; // the namespace of this helper function feature
+  int PositionIdx = -1;       // the position of this helper function feature
+  bool IsCalled = false;      // has this feature be called
+  std::set<std::string> CallerSrcFiles = {}; // files have called this feature
+  std::vector<std::pair<HelperFeatureIDTy, HelperFeatureDependencyKind>>
+      Dependency = {};         // some features which this feature depends on
+  std::string Code = "";       // the code of this feature
+  std::string USMCode = "";    // the code of this feature
+  std::string NonUSMCode = ""; // the code of this feature
+  HelperFeatureIDTy ParentFeature = {
+      HelperFileEnum::Unknown,
+      ""}; // If this feature is a sub-feature, this field saved its
+           // parent feature. If this feature is not a sub-feature,
+           // this field saved {Unknown, ""}.
 };
 
 void requestFeature(clang::dpct::HelperFileEnum FileID,

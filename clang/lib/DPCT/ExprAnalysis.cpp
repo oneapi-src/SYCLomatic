@@ -511,11 +511,15 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
+      requestFeature(HelperFileEnum::Device,
+                     "device_info_get_" + ReplacementStr, ME);
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
+      requestFeature(HelperFileEnum::Image,
+                     "image_wrapper_base_get_" + FieldName, ME);
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
@@ -1131,6 +1135,8 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                            DpctGlobalInfo::getContext().getLangOpts()),
                        DRE->getEndLoc(), "[0]");
       } else {
+        requestFeature(HelperFileEnum::Memory, "device_memory_get_ptr",
+                       DRE->getEndLoc());
         addReplacement(Lexer::getLocForEndOfToken(
                            DRE->getEndLoc(), 0, SM,
                            DpctGlobalInfo::getContext().getLangOpts()),

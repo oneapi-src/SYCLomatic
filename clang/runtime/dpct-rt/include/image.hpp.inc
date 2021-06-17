@@ -220,7 +220,10 @@ template <int dimensions> struct image_creator;
 
 // DPCT_LABEL_BEGIN|image_channel|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
+// Image|image_channel_1
+// Image|image_channel_2
+// Image|image_channel_3
+// Image|image_channel_data_type
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image channel info, include channel number, order, data width and type
@@ -234,6 +237,16 @@ class image_channel {
   unsigned _channel_size = 0;
 
 public:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_create|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// Image|image_trait
+// Image|image_channel_set_channel_size
+// Image|image_channel_set_channel_data_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Create image channel info according to template argument \p T.
   template <class T> static image_channel create() {
     image_channel channel;
@@ -243,20 +256,70 @@ public:
     channel.set_channel_data_type(detail::image_trait<T>::data_type);
     return channel;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_1|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel() = default;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_get_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel_data_type get_channel_data_type() { return _type; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_set_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) { _type = type; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_get_total_size|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_total_size() { return _total_size; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_get_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_channel_num() { return _channel_num; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_set_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_num(unsigned channel_num) {
     _channel_num = channel_num;
     _total_size = _channel_size * _channel_num;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_2|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// Image|image_channel_set_channel_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// image_channel constructor.
   /// \param r Channel r width in bits.
   /// \param g Channel g width in bits. Should be same with \p r, or zero.
@@ -281,7 +344,14 @@ public:
       set_channel_size(1, r);
     }
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_get_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::image_channel_type get_channel_type() const {
     if (_channel_size == 4) {
       if (_type == image_channel_data_type::signed_int)
@@ -306,6 +376,13 @@ public:
     assert(false && "unexpected channel data kind and channel size");
     return cl::sycl::image_channel_type::signed_int32;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_set_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_type(cl::sycl::image_channel_type type) {
     switch (type) {
     case cl::sycl::image_channel_type::unsigned_int8:
@@ -345,7 +422,14 @@ public:
     }
     _total_size = _channel_size * _channel_num;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_get_channel_order|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::image_channel_order get_channel_order() const {
     switch (_channel_num) {
     case 1:
@@ -360,9 +444,23 @@ public:
       return cl::sycl::image_channel_order::r;
     }
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_get_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get the size for each channel in bits.
   unsigned get_channel_size() const { return _channel_size * 8; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_channel_set_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Set channel size.
   /// \param in_channel_num Channels number to set.
   /// \param channel_size Size for each channel in bits.
@@ -374,6 +472,13 @@ public:
     _channel_size = channel_size / 8;
     _total_size = _channel_size * _channel_num;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_channel_3|dpct
+// DPCT_PARENT_FEATURE|image_channel
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 };
 // DPCT_LABEL_END
 
@@ -381,8 +486,9 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_trait
 // Util|make_index_sequence
-// Memory|pitched_data
 // Image|image_channel
+// Image|image_matrix_1
+// Image|image_matrix_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// 2D or 3D matrix data for image.
@@ -391,19 +497,45 @@ class image_matrix {
   int _range[3] = {1, 1, 1};
   int _dims = 0;
   void *_host_data = nullptr;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_set_range|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Set range of each dimension.
   template <int dimensions> void set_range(cl::sycl::range<dimensions> range) {
     for (int i = 0; i < dimensions; ++i)
       _range[i] = range[i];
     _dims = dimensions;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_get_range_T|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Util|make_index_sequence
+// Image|image_matrix
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   template <int... DimIdx>
   cl::sycl::range<sizeof...(DimIdx)> get_range(integer_sequence<DimIdx...>) {
     return cl::sycl::range<sizeof...(DimIdx)>(_range[DimIdx]...);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_1|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// Image|image_matrix_set_range
+// Image|image_channel_get_total_size
+// Image|image_channel_set_channel_type
+// Image|image_channel_set_channel_num
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 public:
   /// Constructor with channel info and dimension size info.
   template <int dimensions>
@@ -424,11 +556,30 @@ public:
     }
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_create_image|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// Image|create_image_with_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Construct a new image class with the matrix data.
   template <int dimensions> cl::sycl::image<dimensions> *create_image() {
     return create_image<dimensions>(_channel);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_matrix_create_image_with_channel|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// Image|image_channel_get_channel_type
+// Image|image_channel_get_channel_order
+// Util|make_index_sequence
+// Image|image_matrix_get_range_T
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Construct a new image class with the matrix data.
   template <int dimensions>
   cl::sycl::image<dimensions> *create_image(image_channel channel) {
@@ -437,20 +588,57 @@ public:
         get_range(make_index_sequence<dimensions>()),
         cl::sycl::property::image::use_host_ptr());
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_get_channel|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_matrix_get_range|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get range of the image.
   cl::sycl::range<3> get_range() {
     return cl::sycl::range<3>(_range[0], _range[1], _range[2]);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_matrix_get_dims|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_matrix_to_pitched_data|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// Memory|pitched_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Convert to pitched data.
   pitched_data to_pitched_data() {
     return pitched_data(_host_data, _range[0], _range[0], _range[1]);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_matrix_2|dpct
+// DPCT_PARENT_FEATURE|image_matrix
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_matrix
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   ~image_matrix() {
     if (_host_data)
       std::free(_host_data);
@@ -474,10 +662,12 @@ enum class image_data_type { matrix, linear, pitch, unsupport };
 
 // DPCT_LABEL_BEGIN|image_data|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
 // Image|image_data_type
 // Image|image_matrix_p_alias
 // Image|image_channel
+// Image|image_data_1
+// Image|image_matrix_get_channel
+// Image|image_data_set_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image data info.
@@ -492,6 +682,13 @@ public:
              image_channel channel) {
     set_data(data_ptr, x_size, y_size, pitch_size, channel);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_data|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_data(image_matrix_p matrix_data) {
     _type = image_data_type::matrix;
     _data = matrix_data;
@@ -512,49 +709,206 @@ public:
     _pitch = pitch_size;
     _channel = channel;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_data_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_data_type get_data_type() { return _type; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_data_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_data_type(image_data_type type) { _type = type; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_data_ptr|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void *get_data_ptr() { return _data; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_data_ptr|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_data_ptr(void *data) { _data = data; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_x|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_x() { return _x; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_x|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_x(size_t x) { _x = x; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_y|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_y() { return _y; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_y|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_y(size_t y) { _y = y; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_pitch|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   size_t get_pitch() { return _pitch; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_pitch|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_pitch(size_t pitch) { _pitch = pitch; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_channel|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel get_channel() { return _channel; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_channel|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel(image_channel channel) { _channel = channel; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_get_channel_data_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel_data_type get_channel_data_type() {
     return _channel.get_channel_data_type();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_set_channel_data_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_get_channel_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_channel_size() { return _channel.get_channel_size(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_set_channel_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_get_channel_num
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_channel_num() { return _channel.get_channel_num(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_set_channel_num
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_num(unsigned num) {
     return _channel.set_channel_num(num);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_get_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_get_channel_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_data_set_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// Image|image_channel_set_channel_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_type(cl::sycl::image_channel_type type) {
     return _channel.set_channel_type(type);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_data_1|dpct
+// DPCT_PARENT_FEATURE|image_data
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 private:
   image_data_type _type;
   void *_data = nullptr;
@@ -565,7 +919,8 @@ private:
 
 // DPCT_LABEL_BEGIN|sampling_info|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
+// Image|sampling_info_1
+// Image|sampling_info_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image sampling info, include addressing mode, filtering mode and
@@ -576,30 +931,100 @@ class sampling_info {
   cl::sycl::filtering_mode _filtering_mode = cl::sycl::filtering_mode::nearest;
   cl::sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       cl::sycl::coordinate_normalization_mode::unnormalized;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sampling_info_1|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 public:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_get_addressing_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sampling_info_get_filtering_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_filtering_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sampling_info_get_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _coordinate_normalization_mode;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_coordinate_normalization_mode_enum|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _coordinate_normalization_mode = coordinate_normalization_mode;
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sampling_info_is_coordinate_normalized|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   bool is_coordinate_normalized() {
     return _coordinate_normalization_mode ==
            cl::sycl::coordinate_normalization_mode::normalized;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_coordinate_normalization_mode(int is_normalized) {
     _coordinate_normalization_mode =
         is_normalized ? cl::sycl::coordinate_normalization_mode::normalized
                       : cl::sycl::coordinate_normalization_mode::unnormalized;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode_filtering_mode_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void
   set(cl::sycl::addressing_mode addressing_mode,
       cl::sycl::filtering_mode filtering_mode,
@@ -608,25 +1033,46 @@ public:
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode_filtering_mode_is_normalized|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::addressing_mode addressing_mode,
            cl::sycl::filtering_mode filtering_mode, int is_normalized) {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sampling_info_get_sampler|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::sampler get_sampler() {
     return cl::sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
                              _filtering_mode);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|sampling_info_2|dpct
+// DPCT_PARENT_FEATURE|sampling_info
+// DPCT_DEPENDENCY_BEGIN
+// Image|sampling_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 };
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|image_wrapper_base|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
 // Image|sampling_info
 // Image|image_data
+// Image|image_wrapper_base_1
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image base class.
@@ -636,59 +1082,217 @@ class image_wrapper_base {
 
 public:
   virtual ~image_wrapper_base() = 0;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_attach|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_wrapper_base_set_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void attach(image_data data) { set_data(data); }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_sampling_info|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   sampling_info get_sampling_info() { return _sampling_info; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_sampling_info|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_sampling_info(sampling_info info) {
     _sampling_info = info;
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_data|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   const image_data &get_data() { return _data; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_data|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_data(image_data data) { _data = data; }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_get_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel get_channel() { return _data.get_channel(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_set_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel(image_channel channel) { _data.set_channel(channel); }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_get_channel_data_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   image_channel_data_type get_channel_data_type() {
     return _data.get_channel_data_type();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_data_type|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_set_channel_data_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) {
     _data.set_channel_data_type(type);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_get_channel_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_channel_size() { return _data.get_channel_size(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_size|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_set_channel_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _data.set_channel_size(channel_num, channel_size);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_addressing_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_get_addressing_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::addressing_mode get_addressing_mode() {
     return _sampling_info.get_addressing_mode();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_set_addressing_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::addressing_mode addressing_mode) {
     _sampling_info.set(addressing_mode);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_filtering_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_get_filtering_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::filtering_mode get_filtering_mode() {
     return _sampling_info.get_filtering_mode();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_filtering_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_set_filtering_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::filtering_mode filtering_mode) {
     _sampling_info.set(filtering_mode);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_get_coordinate_normalization_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _sampling_info.get_coordinate_normalization_mode();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_coordinate_normalization_mode_enum|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_set_coordinate_normalization_mode_enum
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void
   set(cl::sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _sampling_info.set(coordinate_normalization_mode);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_is_coordinate_normalized|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_is_coordinate_normalized
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   bool is_coordinate_normalized() {
     return _sampling_info.is_coordinate_normalized();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_set_coordinate_normalization_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_coordinate_normalization_mode(int is_normalized) {
     _sampling_info.set_coordinate_normalization_mode(is_normalized);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode_filtering_mode_coordinate_normalization_mode|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_wrapper_base_set_addressing_mode
+// Image|image_wrapper_base_set_filtering_mode
+// Image|image_wrapper_base_set_coordinate_normalization_mode_enum
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void
   set(cl::sycl::addressing_mode addressing_mode,
       cl::sycl::filtering_mode filtering_mode,
@@ -697,26 +1301,83 @@ public:
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode_filtering_mode_is_normalized|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_wrapper_base_set_addressing_mode
+// Image|image_wrapper_base_set_filtering_mode
+// Image|image_wrapper_base_set_coordinate_normalization_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set(cl::sycl::addressing_mode addressing_mode,
            cl::sycl::filtering_mode filtering_mode, int is_normalized) {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_get_channel_num
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   unsigned get_channel_num() { return _data.get_channel_num(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_num|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_set_channel_num
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_num(unsigned num) {
     return _data.set_channel_num(num);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_get_channel_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::image_channel_type get_channel_type() {
     return _data.get_channel_type();
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_type|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_data_set_channel_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void set_channel_type(cl::sycl::image_channel_type type) {
     return _data.set_channel_type(type);
   }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|image_wrapper_base_get_sampler|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|sampling_info_get_sampler
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   cl::sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_base_1|dpct
+// DPCT_PARENT_FEATURE|image_wrapper_base
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 };
 inline image_wrapper_base::~image_wrapper_base() {}
 // DPCT_LABEL_END
@@ -741,7 +1402,10 @@ template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 // Image|image_wrapper_base
 // Image|image_accessor_ext_forward_decl
 // Image|image_creator_forward_decl
-// Image|image_data
+// Image|image_trait
+// Image|image_wrapper_1
+// Image|image_channel_create
+// Image|image_wrapper_base_set_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image class, wrapper of cl::sycl::image.
@@ -756,12 +1420,34 @@ public:
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_get_access|dpct
+// DPCT_PARENT_FEATURE|image_wrapper
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper
+// Image|image_wrapper_base_get_data
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Get image accessor.
   accessor_t get_access(cl::sycl::handler &cgh) {
     if (!_image)
       _image = detail::image_creator<dimensions>()(get_data());
     return accessor_t(*_image, cgh);
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_attach|dpct
+// DPCT_PARENT_FEATURE|image_wrapper
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper
+// Image|image_matrix
+// Image|image_data
+// Image|image_wrapper_base_set_data
+// Image|image_channel
+// Image|image_wrapper_base_set_channel
+// Image|image_wrapper_base_get_channel
+// Image|image_wrapper_base_attach
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix) {
     detach();
@@ -790,6 +1476,13 @@ public:
     detach();
     image_wrapper_base::set_data(image_data(data, x, y, pitch, channel));
   }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_1|dpct
+// DPCT_PARENT_FEATURE|image_wrapper
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   /// Detach data.
   void detach() {
     if (_image)
@@ -908,6 +1601,19 @@ public:
 // DPCT_LABEL_BEGIN|create_image_wrapper|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Image|create_image_wrapper_detail_forward_decl
+// Image|image_wrapper_base
+// Image|image_data
+// Image|sampling_info
+// Image|image_channel
+// Image|image_data_get_data_type
+// Image|image_matrix_p_alias
+// Image|image_data_get_data_ptr
+// Image|image_matrix_get_channel
+// Image|image_matrix_get_dims
+// Image|image_data_get_channel
+// Image|create_image_wrapper_detail
+// Image|image_wrapper_base_set_sampling_info
+// Image|image_wrapper_base_set_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Create image wrapper according to image data and sampling info.
@@ -940,8 +1646,18 @@ namespace detail {
 // DPCT_LABEL_BEGIN|image_creator|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
-// Memory|mem_mgr
+// Memory|mem_mgr_is_device_ptr
 // Memory|get_buffer_byte_t
+// Image|image_data_get_data_type
+// Image|image_data_get_data_ptr
+// Image|image_data_get_channel
+// Image|image_data_get_x
+// Image|image_data_get_y
+// Image|image_data_get_pitch
+// Image|image_channel_get_channel_order
+// Image|image_channel_get_channel_type
+// Image|image_channel_get_total_size
+// Image|image_matrix_create_image_with_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Functor to create sycl::image from image_data
@@ -995,7 +1711,12 @@ template <> struct image_creator<3> {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|create_image_wrapper_detail|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper_base
+// Image|image_wrapper
+// Image|image_data_get_channel_type
+// Image|image_data_get_channel_num
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {

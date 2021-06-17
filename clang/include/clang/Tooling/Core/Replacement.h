@@ -375,11 +375,14 @@ llvm::Expected<std::string> applyAllReplacements(StringRef Code,
 #ifdef INTEL_CUSTOMIZATION
 struct HelperFuncForYaml {
   HelperFuncForYaml() : IsCalled(false), CallerSrcFiles({}) {}
-  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles)
-      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles) {}
+  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles,
+                    std::map<std::string, HelperFuncForYaml> SubFeatureMap)
+      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles),
+        SubFeatureMap(SubFeatureMap) {}
   bool IsCalled = false;
   std::vector<std::string> CallerSrcFiles;
   std::string APIName;
+  std::map<std::string, HelperFuncForYaml> SubFeatureMap;
 };
 #endif
 /// Collection of Replacements generated from a single translation unit.

@@ -94,7 +94,9 @@ struct is_iterator<T *> : std::true_type {};
 // DplExtrasVector|is_iterator
 // Device|get_default_queue
 // Device|get_default_context
-// Memory|mem_mgr
+// Memory|mem_mgr_mem_alloc|UsmNone
+// Memory|mem_mgr_translate_ptr|UsmNone
+// Memory|mem_mgr_mem_free|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifndef DPCT_USM_LEVEL_NONE
