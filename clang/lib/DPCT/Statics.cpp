@@ -31,7 +31,7 @@ std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 // unsigned int -> Times met
 std::map<std::string, unsigned int> SrcAPIStaticsMap;
 
-int VerboseLevel = NonVerbose;
+int VerboseLevel = VL_NonVerbose;
 
 void StaticsInfo::printMigrationRules(
     const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
@@ -55,7 +55,7 @@ void StaticsInfo::printMigrationRules(
     DpctDiags() << "# of MigrationRules: " << NumRules << "\n";
   };
 
-  if (VerboseLevel > NonVerbose) {
+  if (VerboseLevel > VL_NonVerbose) {
     print();
   }
 
@@ -67,7 +67,7 @@ void StaticsInfo::printMigrationRules(
 static void printMatchedRulesStaticsImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
   // Verbose level lower than "High" doesn't show migration rules' information
-  if (VerboseLevel < VerboseHigh) {
+  if (VerboseLevel < VL_VerboseHigh) {
     return;
   }
 
@@ -88,7 +88,7 @@ static void printReplacementsStaticsImpl(const TransformSetTy &TS,
                                          ASTContext &Context) {
   // Verbos level lower than "High" doesn't show detailed replacements'
   // information
-  if (VerboseLevel < VerboseHigh) {
+  if (VerboseLevel < VL_VerboseHigh) {
     return;
   }
 
@@ -166,16 +166,16 @@ void PrintMsg(const std::string &Msg, bool IsPrintOnNormal) {
   }
 
   switch (OutputVerbosity) {
-  case OutputVerbosityLev::detailed:
-  case OutputVerbosityLev::diagnostics:
+  case OutputVerbosityLevel::OVL_Detailed:
+  case OutputVerbosityLevel::OVL_Diagnostics:
     llvm::outs() << Msg;
     break;
-  case OutputVerbosityLev::normal:
+  case OutputVerbosityLevel::OVL_Normal:
     if (IsPrintOnNormal) {
       llvm::outs() << Msg;
     }
     break;
-  case OutputVerbosityLev::silent:
+  case OutputVerbosityLevel::OVL_Silent:
   default:
     break;
   }

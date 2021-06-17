@@ -41,22 +41,22 @@ namespace clang {
 namespace dpct {
 
 enum class HelperFuncType : int {
-  InitValue = 0,
-  DefaultQueue = 1,
-  CurrentDevice = 2
+  HFT_InitValue = 0,
+  HFT_DefaultQueue = 1,
+  HFT_CurrentDevice = 2
 };
 
 enum class KernelArgType : int {
-  Stream = 0,
-  Texture,
-  Accessor1D,
-  Accessor2D,
-  Accessor3D,
-  Array1D,
-  Array2D,
-  Array3D,
-  Default,
-  MaxParameterSize
+  KAT_Stream = 0,
+  KAT_Texture,
+  KAT_Accessor1D,
+  KAT_Accessor2D,
+  KAT_Accessor3D,
+  KAT_Array1D,
+  KAT_Array2D,
+  KAT_Array3D,
+  KAT_Default,
+  KAT_MaxParameterSize
 };
 
 class CudaMallocInfo;
@@ -248,7 +248,7 @@ struct HostDeviceFuncInfo {
   std::string FuncContentCache;
 };
 
-enum IfType { unknow, If, Ifdef, Ifndef, Elif };
+enum IfType { IT_Unknow, IT_If, IT_Ifdef, IT_Ifndef, IT_Elif };
 
 struct DirectiveInfo {
   unsigned NumberSignLoc = 0;
@@ -258,7 +258,7 @@ struct DirectiveInfo {
 };
 
 struct CudaArchPPInfo {
-  IfType DT = IfType::unknow;
+  IfType DT = IfType::IT_Unknow;
   DirectiveInfo IfInfo;
   DirectiveInfo ElseInfo;
   DirectiveInfo EndInfo;
@@ -390,26 +390,26 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 }
 
 enum HeaderType {
-  SYCL = 0,
-  Math,
-  Algorithm,
-  Time,
-  Complex,
-  Future,
-  Thread,
-  Numeric,
-  MKL_BLAS_Solver,
-  MKL_BLAS_Solver_Without_Util,
-  MKL_RNG,
-  MKL_SPBLAS,
-  MKL_SPBLAS_Without_Util,
-  MKL_FFT,
-  Chrono,
-  DL,
+  HT_SYCL = 0,
+  HT_Math,
+  HT_Algorithm,
+  HT_Time,
+  HT_Complex,
+  HT_Future,
+  HT_Thread,
+  HT_Numeric,
+  HT_MKL_BLAS_Solver,
+  HT_MKL_BLAS_Solver_Without_Util,
+  HT_MKL_RNG,
+  HT_MKL_SPBLAS,
+  HT_MKL_SPBLAS_Without_Util,
+  HT_MKL_FFT,
+  HT_Chrono,
+  HT_DL,
 };
 
 enum UsingType {
-  QUEUE_P,
+  UT_Queue_P,
 };
 
 //                             DpctGlobalInfo
@@ -502,15 +502,15 @@ public:
   void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
 
   void setMathHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::Math] = B;
+    HeaderInsertedBitMap[HeaderType::HT_Math] = B;
   }
 
   void setAlgorithmHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::Algorithm] = B;
+    HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
   }
 
   void setTimeHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::Time] = B;
+    HeaderInsertedBitMap[HeaderType::HT_Time] = B;
   }
 
   template <class... Args>
@@ -534,53 +534,58 @@ public:
 
   void insertHeader(HeaderType Type) {
     switch (Type) {
-    case SYCL:
-      return insertHeader(HeaderType::SYCL, FirstIncludeOffset, "<CL/sycl.hpp>",
+    case HT_SYCL:
+      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
+                          "<CL/sycl.hpp>",
                           "<" + getCustomMainHelperFileName() + "/" +
                               getCustomMainHelperFileName() + ".hpp>");
-    case Math:
-      return insertHeader(HeaderType::Math, LastIncludeOffset, "<cmath>");
-    case Algorithm:
-      return insertHeader(HeaderType::Algorithm, LastIncludeOffset,
+    case HT_Math:
+      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
+    case HT_Algorithm:
+      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
                           "<algorithm>");
-    case Complex:
-      return insertHeader(HeaderType::Complex, LastIncludeOffset, "<complex>");
-    case Thread:
-      return insertHeader(HeaderType::Thread, LastIncludeOffset, "<thread>");
-    case Future:
-      return insertHeader(HeaderType::Future, LastIncludeOffset, "<future>");
-    case Time:
-      return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
-    case MKL_BLAS_Solver:
+    case HT_Complex:
+      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
+                          "<complex>");
+    case HT_Thread:
+      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
+    case HT_Future:
+      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
+    case HT_Time:
+      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
+    case HT_MKL_BLAS_Solver:
       return insertHeader(
-          HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case MKL_BLAS_Solver_Without_Util:
-      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+    case HT_MKL_BLAS_Solver_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
-    case MKL_RNG:
-      return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
+    case HT_MKL_RNG:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
-    case MKL_SPBLAS:
+    case HT_MKL_SPBLAS:
       return insertHeader(
-          HeaderType::MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case MKL_SPBLAS_Without_Util:
-      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
+    case HT_MKL_SPBLAS_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
-    case MKL_FFT:
-      return insertHeader(HeaderType::MKL_FFT, LastIncludeOffset,
+    case HT_MKL_FFT:
+      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
-    case Numeric:
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<numeric>");
-    case Chrono:
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<chrono>");
-    case DL:
+    case HT_Numeric:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<numeric>");
+    case HT_Chrono:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<chrono>");
+    case HT_DL:
 #ifdef _WIN32
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset,
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<libloaderapi.h>");
 #else
-      return insertHeader(HeaderType::Numeric, LastIncludeOffset, "<dlfcn.h>");
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<dlfcn.h>");
 #endif
     }
   }
@@ -1122,17 +1127,18 @@ public:
     for (auto &Namespace : NamespacesVec) {
       // 1.Ensure option none is alone
       bool Check1 =
-          (Namespace == ExplicitNamespace::none && NamespaceVecSize == 2);
+          (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
       // 2.Ensuere option cl, sycl, sycl-math only enabled one
       bool Check2 =
-          ((Namespace == ExplicitNamespace::cl ||
-            Namespace == ExplicitNamespace::sycl ||
-            Namespace == ExplicitNamespace::sycl_math) &&
+          ((Namespace == ExplicitNamespace::EN_CL ||
+            Namespace == ExplicitNamespace::EN_SYCL ||
+            Namespace == ExplicitNamespace::EN_SYCL_Math) &&
            (ExplicitNamespaceSet.size() == 1 &&
-            ExplicitNamespaceSet.count(ExplicitNamespace::dpct) == 0));
+            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
       // 3.Check whether option dpct duplicated
-      bool Check3 = (Namespace == ExplicitNamespace::dpct &&
-                     ExplicitNamespaceSet.count(ExplicitNamespace::dpct) == 1);
+      bool Check3 =
+          (Namespace == ExplicitNamespace::EN_DPCT &&
+           ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
       if (Check1 || Check2 || Check3) {
         ShowStatus(MigrationErrorInvalidExplicitNamespace);
         dpctExit(MigrationErrorInvalidExplicitNamespace);
@@ -2550,7 +2556,7 @@ public:
     return PS << getArgName();
   }
   ParameterStream &getKernelArg(ParameterStream &PS) {
-    if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+    if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Accessor) {
         PS << getDpctAccessorType() << "(";
         PS << getAccessorName();
@@ -3045,13 +3051,13 @@ public:
   int calculateExtraArgsSize() const {
     int Size = 0;
     if (hasStream())
-      Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::Stream);
+      Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
 
     Size = Size + calculateExtraArgsSize(LocalVarMap) +
            calculateExtraArgsSize(GlobalVarMap) +
            calculateExtraArgsSize(ExternVarMap);
-    Size = Size + TextureMap.size() *
-                      MapNames::KernelArgTypeSizeMap.at(KernelArgType::Texture);
+    Size = Size + TextureMap.size() * MapNames::KernelArgTypeSizeMap.at(
+                                          KernelArgType::KAT_Texture);
 
     return Size;
   }
@@ -3783,7 +3789,7 @@ private:
       TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsPointer = Analysis.IsPointer;
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
         IsDoublePointer = Analysis.IsDoublePointer;
       }
 
@@ -3796,7 +3802,7 @@ private:
           PointerType = Arg->getType();
         }
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
-        ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Default);
+        ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
 
         // Currently, all the device RNG state struct are passed to kernel by
         // pointer. So we check the pointee type, if it is in the type map, we
@@ -3818,7 +3824,8 @@ private:
         if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
           ArgSize = Iter->second;
         else
-          ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Default);
+          ArgSize =
+              MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
       }
 
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
@@ -3830,7 +3837,7 @@ private:
             KernelCallExpr *Kernel)
         : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
           IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                        IsPointer),
           TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
@@ -3856,7 +3863,7 @@ private:
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
         : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
           IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                        IsPointer),
           TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
@@ -3877,7 +3884,7 @@ private:
       IsRedeclareRequired = false;
       TypeString = "";
       Index = 0;
-      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::Texture);
+      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
     }
 
     inline const std::string &getArgString() const { return ArgString; }
@@ -4243,26 +4250,27 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
     } else {
-      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) && (Type == SYCL)) {
+      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+          (Type == HT_SYCL)) {
         RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
       }
-      if (DpctGlobalInfo::isSyclNamedLambda() && (Type == SYCL)) {
+      if (DpctGlobalInfo::isSyclNamedLambda() && (Type == HT_SYCL)) {
         RSO << "#define DPCT_NAMED_LAMBDA" << getNL();
       }
-      if (AddOneDplHeaders && Type == SYCL) {
+      if (AddOneDplHeaders && Type == HT_SYCL) {
         RSO << "#include <oneapi/dpl/execution>" << getNL()
             << "#include <oneapi/dpl/algorithm>" << getNL();
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::dpct)) {
+            ExplicitNamespace::EN_DPCT)) {
       RSO << "using namespace dpct;" << getNL();
     }
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::sycl) &&
+            ExplicitNamespace::EN_SYCL) &&
         !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::cl)) {
+            ExplicitNamespace::EN_CL)) {
       RSO << "using namespace sycl;" << getNL();
     }
     insertHeader(std::move(RSO.str()), Offset);
@@ -4398,7 +4406,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
         "get_current_device();";
     std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
                         "queue &q_ct1 = dev_ct1.default_queue();";
-    if (HFT == HelperFuncType::DefaultQueue) {
+    if (HFT == HelperFuncType::HFT_DefaultQueue) {
       if (Iter->second.DefaultQueueCounter == 1) {
         if (Iter->second.CurrentDeviceCounter <= 1) {
           if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4423,7 +4431,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
         }
       }
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
-    } else if (HFT == HelperFuncType::CurrentDevice) {
+    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
       if (Iter->second.CurrentDeviceCounter == 1 &&
           Iter->second.DefaultQueueCounter <= 1) {
         if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4440,9 +4448,9 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
     }
   } else {
     DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
-    if (HFT == HelperFuncType::DefaultQueue) {
+    if (HFT == HelperFuncType::HFT_DefaultQueue) {
       Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
-    } else if (HFT == HelperFuncType::CurrentDevice) {
+    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
       Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
     }
     DpctGlobalInfo::getTempVariableDeclCounterMap().insert(

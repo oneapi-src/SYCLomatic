@@ -58,7 +58,7 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
   TUR.MainHelperFileName =
       clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
-  if (clang::dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+  if (clang::dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     TUR.USMLevel = "none";
   } else {
     TUR.USMLevel = "restricted";
@@ -101,10 +101,11 @@ int loadFromYaml(StringRef Input,
           "the previously migrated code.\n");
     }
     if (TU.USMLevel == "none")
-      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(UsmLevel::none);
+      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
+          UsmLevel::UL_None);
     else if (TU.USMLevel == "restricted")
       clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
-          UsmLevel::restricted);
+          UsmLevel::UL_Restricted);
   }
 
   return 0;

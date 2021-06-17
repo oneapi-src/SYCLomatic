@@ -29,16 +29,32 @@
 ///             management migration
 /// restricted: uses API from DPC++ Explicit and Restricted Unified
 ///             Shared Memory extension for memory management migration
-enum class UsmLevel { none, restricted };
-/// OutputVerbosityLev defines various verbosity levels for dpct reports
-enum class OutputVerbosityLev { silent, normal, detailed, diagnostics };
-enum class DPCTFormatStyle { llvm, google, custom };
-enum class ReportFormatEnum { notsetformat, csv, formatted };
-enum class HelperFilesCustomizationLevel { none, file, all, api };
-enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
-enum class AssumedNDRangeDimEnum : unsigned int { dim1 = 1, dim3 = 3 };
-enum class ExplicitNamespace { none, cl, sycl, sycl_math, dpct };
-enum class DPCPPExtensions { submit_barrier };
+enum class UsmLevel { UL_None, UL_Restricted };
+/// OutputVerbosityLevel defines various verbosity levels for dpct reports
+enum class OutputVerbosityLevel {
+  OVL_Silent,
+  OVL_Normal,
+  OVL_Detailed,
+  OVL_Diagnostics
+};
+enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
+enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
+enum class HelperFilesCustomizationLevel {
+  HFCL_None,
+  HFCL_File,
+  HFCL_All,
+  HFCL_API
+};
+enum class ReportTypeEnum {
+  RTE_NotSetType,
+  RTE_APIs,
+  RTE_Stats,
+  RTE_All,
+  RTE_Diags
+};
+enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
+enum class ExplicitNamespace { EN_None, EN_CL, EN_SYCL, EN_SYCL_Math, EN_DPCT };
+enum class DPCPPExtensions { DPCPPE_Submit_Barrier };
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);

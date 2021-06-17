@@ -32,18 +32,18 @@ std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
-UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
-UsmLevel DpctGlobalInfo::PreviousMigrationUsmLvl = UsmLevel::restricted;
+UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+UsmLevel DpctGlobalInfo::PreviousMigrationUsmLvl = UsmLevel::UL_Restricted;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
-    HelperFilesCustomizationLevel::none;
+    HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
-DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
+DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableComments = false;
@@ -551,7 +551,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     buildTempVariableMap(Index, *ConfigArgs.begin(),
-                         HelperFuncType::DefaultQueue);
+                         HelperFuncType::HFT_DefaultQueue);
   }
 }
 
@@ -1006,7 +1006,7 @@ void KernelCallExpr::buildInfo() {
 
 void KernelCallExpr::addReplacements() {
   if (TotalArgsSize >
-      MapNames::KernelArgTypeSizeMap.at(KernelArgType::MaxParameterSize))
+      MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
     DiagnosticsUtils::report(getFilePath(), getBegin(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);
@@ -1929,7 +1929,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
                                                     NonDefaultParamNum);
   if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
-    if (!(FileType & TypeCudaHeader) && !(FileType & TypeCppHeader) &&
+    if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
         FD->isThisDeclarationADefinition()) {
       FuncInfo->setDefinitionFilePath(FilePath);
     }
@@ -2285,7 +2285,7 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                 : Global),
       PointerAsArray(false) {
   if (getType()->isPointer() && getScope() == Global &&
-      DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     Attr = Device;
     getType()->adjustAsMemType();
     PointerAsArray = true;
@@ -2515,7 +2515,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
       }
     }
     AccList.emplace_back(std::move(AccDecl));
-  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
              AccMode != Accessor) {
     PtrList.emplace_back(buildString("auto ", getPtrName(), " = ",
                                      getConstVarName(), ".get_ptr();"));

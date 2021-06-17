@@ -1171,7 +1171,8 @@ void KernelArgumentAnalysis::analyze(const Expr *Expression) {
   if (IsPointer) {
     IsDoublePointer = Expression->getType()->getPointeeType()->isPointerType();
   }
-  TryGetBuffer = IsPointer && DpctGlobalInfo::getUsmLevel() == UsmLevel::none &&
+  TryGetBuffer = IsPointer &&
+                 DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                  !isNullPtr(Expression);
   IsRedeclareRequired = false;
   ArgumentAnalysis::analyze(Expression);

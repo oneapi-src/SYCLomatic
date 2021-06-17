@@ -30,16 +30,16 @@ namespace clang {
 namespace dpct {
 
 enum class FFTDirectionType : int {
-  uninitialized = 0,
-  unknown = 1,
-  forward = 2,
-  backward = 3
+  Uninitialized = 0,
+  Unknown = 1,
+  Forward = 2,
+  Backward = 3
 };
 enum class FFTPlacementType : int {
-  uninitialized = 0,
-  unknown = 1,
-  inplace = 2,
-  outofplace = 3
+  Uninitialized = 0,
+  Unknown = 1,
+  Inplace = 2,
+  Outofplace = 3
 };
 enum class FFTTypeEnum : int {
   C2R = 0,
@@ -104,8 +104,8 @@ struct LibraryAPIStmts {
 };
 
 struct FFTHandleInfo {
-  FFTDirectionType Direction = FFTDirectionType::uninitialized;
-  FFTPlacementType Placement = FFTPlacementType::uninitialized;
+  FFTDirectionType Direction = FFTDirectionType::Uninitialized;
+  FFTPlacementType Placement = FFTPlacementType::Uninitialized;
   // Below 5 members do not cover the case that one handle is resued
   // in different plan APIs. If the related plan API is "many", the flag
   // will be true. The checking of C2C/Z2Z will be done in Exec API
@@ -119,7 +119,7 @@ struct FFTHandleInfo {
   std::string OnembedStr;
 
   void updateDirectionFromExec(FFTDirectionType NewDirection) {
-    if (Direction == FFTDirectionType::uninitialized) {
+    if (Direction == FFTDirectionType::Uninitialized) {
       Direction = NewDirection;
       return;
     }
@@ -128,11 +128,11 @@ struct FFTHandleInfo {
     }
 
     // different directions and Direction is initialized
-    Direction = FFTDirectionType::unknown;
+    Direction = FFTDirectionType::Unknown;
     return;
   }
   void updatePlacementFromExec(FFTPlacementType NewPlacement) {
-    if (Placement == FFTPlacementType::uninitialized) {
+    if (Placement == FFTPlacementType::Uninitialized) {
       Placement = NewPlacement;
       return;
     }
@@ -141,7 +141,7 @@ struct FFTHandleInfo {
     }
 
     // different placements and Placement is initialized
-    Placement = FFTPlacementType::unknown;
+    Placement = FFTPlacementType::Unknown;
     return;
   }
   void updateResetInfo(bool F, std::string ID, std::string OD, std::string IE,
@@ -207,8 +207,8 @@ struct FFTPlanAPIInfo {
   std::string HandleDeclFileAndOffset;
 
   // Input info by Exec API
-  FFTPlacementType PlacementFromExec = FFTPlacementType::uninitialized;
-  FFTDirectionType DirectionFromExec = FFTDirectionType::uninitialized;
+  FFTPlacementType PlacementFromExec = FFTPlacementType::Uninitialized;
+  FFTDirectionType DirectionFromExec = FFTDirectionType::Uninitialized;
 
   // Input info by setstream API
   std::string StreamStr;

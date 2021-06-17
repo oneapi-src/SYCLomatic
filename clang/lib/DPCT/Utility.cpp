@@ -245,17 +245,17 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
   auto Extension = path::extension(FilePath);
 
   if (Extension == ".cu") {
-    return TypeCudaSource;
+    return SPT_CudaSource;
   } else if (Extension == ".cuh") {
-    return TypeCudaHeader;
+    return SPT_CudaHeader;
   } else if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
              Extension == ".c" || Extension == ".C") {
-    return TypeCppSource;
+    return SPT_CppSource;
   } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
              Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
              Extension == ".INL" || Extension == ".INC" ||
              Extension == ".TPP" || Extension == ".tpp") {
-    return TypeCppHeader;
+    return SPT_CppHeader;
   } else {
     // clang-format off
     // For unknown file extensions, determine the file type according to:
@@ -267,13 +267,13 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
     // clang-format on
     auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
     if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
-      return TypeCppSource;
+      return SPT_CppSource;
     }
     auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
     if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
-      return TypeCppHeader;
+      return SPT_CppHeader;
     }
-    return TypeCppSource;
+    return SPT_CppSource;
   }
 }
 

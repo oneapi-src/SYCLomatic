@@ -31,9 +31,9 @@ using IncludeMapSetTy =
     std::map<std::string, std::vector<std::unique_ptr<ReplaceInclude>>>;
 
 enum InsertPosition {
-  InsertPositionAlwaysLeft = 0,
-  InsertPositionLeft,
-  InsertPositionRight,
+  IP_AlwaysLeft = 0,
+  IP_Left,
+  IP_Right,
 };
 
 /// Extend Replacemnt to contain more meta info of Replament inserted by
@@ -127,7 +127,7 @@ public:
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
 private:
-  InsertPosition InsertPos = InsertPositionLeft;
+  InsertPosition InsertPos = IP_Left;
   unsigned BeginLine = 0, EndLine = 0;
   const TextModification *TM;
   unsigned PairID = 0;
@@ -151,7 +151,7 @@ public:
   enum Group { Any = 0, G1 = 1, G2 = 2, G3 = 3 };
 
   static const std::unordered_map<int, std::string> TMNameMap;
-  InsertPosition InsertPos = InsertPosition::InsertPositionLeft;
+  InsertPosition InsertPos = InsertPosition::IP_Left;
 
 public:
   TextModification(TMID _TMID) : ID(_TMID), Key(Any), ParentRuleID(0) {}

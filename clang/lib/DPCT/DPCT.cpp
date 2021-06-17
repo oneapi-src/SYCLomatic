@@ -138,37 +138,37 @@ static opt<std::string>
 static opt<ReportTypeEnum> ReportType(
     "report-type", desc("Specifies the type of report. Values are:\n"),
     llvm::cl::values(
-        llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
+        llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::RTE_APIs),
             "Information about API signatures that need migration and the number of times\n"
             "they were encountered. The report file name will have .apis suffix added.", false},
-        llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::stats),
+        llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::RTE_Stats),
                   "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
                   "DPC++, LOC migrated to DPC++ with helper functions, LOC not needing migration,\n"
                   "LOC needing migration but are not migrated. The report file name has the .stats\n"
                   "suffix added (default)", false},
-        llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
+        llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::RTE_All),
                   "All of the reports.", false}
         #ifdef DPCT_DEBUG_BUILD
-        , llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::diags),
+        , llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::RTE_Diags),
                   "diags information", true}
         #endif
         ),
-    llvm::cl::init(ReportTypeEnum::notsettype), value_desc("value"), cat(DPCTCat),
+    llvm::cl::init(ReportTypeEnum::RTE_NotSetType), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 static opt<ReportFormatEnum> ReportFormat(
     "report-format", desc("Format of the reports:\n"),
     llvm::cl::values(
-        llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::csv),
+        llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::RFE_CSV),
                   "Output is lines of comma separated values. The report file "
                   "name extension will\n"
                   "be .csv. (default)", false},
-        llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::formatted),
+        llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::RFE_Formatted),
                   "Output is formatted to be easier to read for "
                   "human eyes. Report file name\n"
                   "extension will be log.",
                   false}),
-    llvm::cl::init(ReportFormatEnum::notsetformat), value_desc("value"), cat(DPCTCat),
+    llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 static opt<std::string> ReportFilePrefix(
@@ -237,21 +237,21 @@ static opt<bool, true>
                 llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
 
-opt<OutputVerbosityLev> OutputVerbosity(
+opt<OutputVerbosityLevel> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
     llvm::cl::values(
-        llvm::cl::OptionEnumValue{"silent", int(OutputVerbosityLev::silent),
+        llvm::cl::OptionEnumValue{"silent", int(OutputVerbosityLevel::OVL_Silent),
                                   "Only messages from clang.", false},
-        llvm::cl::OptionEnumValue{"normal", int(OutputVerbosityLev::normal),
+        llvm::cl::OptionEnumValue{"normal", int(OutputVerbosityLevel::OVL_Normal),
                                   "\'silent\' and warnings, errors, and notes from dpct.",
                                   false},
-        llvm::cl::OptionEnumValue{"detailed", int(OutputVerbosityLev::detailed),
+        llvm::cl::OptionEnumValue{"detailed", int(OutputVerbosityLevel::OVL_Detailed),
                                   "\'normal\' and messages about which file is being processed.",
                                   false},
-        llvm::cl::OptionEnumValue{"diagnostics", int(OutputVerbosityLev::diagnostics),
+        llvm::cl::OptionEnumValue{"diagnostics", int(OutputVerbosityLevel::OVL_Diagnostics),
                                   "\'detailed\' and information about the detected "
                                   "conflicts and crashes. (default)", false}),
-    llvm::cl::init(OutputVerbosityLev::diagnostics), value_desc("value"), cat(DPCTCat),
+    llvm::cl::init(OutputVerbosityLevel::OVL_Diagnostics), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 opt<std::string>
@@ -264,14 +264,14 @@ opt<std::string>
 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
-    values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::restricted),
+    values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
                      "Uses API from DPC++ Explicit and Restricted Unified "
                      "Shared Memory extension\n"
                      "for memory management migration. (default)", false},
-           llvm::cl::OptionEnumValue{"none", int(UsmLevel::none),
+           llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.", false}),
-    init(UsmLevel::restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+    init(UsmLevel::UL_Restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 opt<format::FormatRange>
     FormatRng("format-range",
@@ -287,13 +287,13 @@ opt<format::FormatRange>
 opt<DPCTFormatStyle>
     FormatST("format-style",
                 llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
-                values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::llvm),
+                values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::FS_LLVM),
                      "Use the LLVM coding style.", false},
-                       llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::google),
+                       llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::FS_Google),
                      "Use the Google coding style.", false},
-                       llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::custom),
+                       llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::FS_Custom),
                      "Use the coding style defined in the .clang-format file (default).", false}),
-    init(DPCTFormatStyle::custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+    init(DPCTFormatStyle::FS_Custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
@@ -331,22 +331,22 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
     "use-custom-helper", desc("Customize the helper header files for migrated code. The values are:\n"),
     values(
         llvm::cl::OptionEnumValue{
-            "none", int(HelperFilesCustomizationLevel::none),
+            "none", int(HelperFilesCustomizationLevel::HFCL_None),
             "No customization (default).", false},
         llvm::cl::OptionEnumValue{
-            "file", int(HelperFilesCustomizationLevel::file),
+            "file", int(HelperFilesCustomizationLevel::HFCL_File),
             "Limit helper header files to only the necessary files for the migrated code and\n"
             "place them in the --out-root folder.", false},
         llvm::cl::OptionEnumValue{
-            "all", int(HelperFilesCustomizationLevel::all),
+            "all", int(HelperFilesCustomizationLevel::HFCL_All),
             "Generate a complete set of helper header files and place them in the --out-root\n"
             "folder.", false},
         llvm::cl::OptionEnumValue{
-            "api", int(HelperFilesCustomizationLevel::api),
+            "api", int(HelperFilesCustomizationLevel::HFCL_API),
             "Limit helper header files to only the necessary APIs for the migrated code and\n"
             "place them in the --out-root folder. The generated helper header files will also\n"
             "be affected by the option --usm-level.", false}),
-    init(HelperFilesCustomizationLevel::none), value_desc("value"),
+    init(HelperFilesCustomizationLevel::HFCL_None), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 
 opt<std::string> CustomHelperFileName(
@@ -376,7 +376,7 @@ static opt<AssumedNDRangeDimEnum> NDRangeDim(
             "3", 3,
             "Generate kernel code assuming 3D nd_range (default).",
             false}),
-    init(AssumedNDRangeDimEnum::dim3), value_desc("value"), cat(DPCTCat),
+    init(AssumedNDRangeDimEnum::ARE_Dim3), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 static list<ExplicitNamespace> UseExplicitNamespace(
@@ -386,25 +386,25 @@ static list<ExplicitNamespace> UseExplicitNamespace(
         "separated list. Default: dpct, sycl.\n"
         "Possible values are:"),
     llvm::cl::CommaSeparated,
-    values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::none),
+    values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::EN_None),
                                      "Generate code without namespaces. Cannot "
                                      "be used with other values.",
                                      false},
            llvm::cl::OptionEnumValue{
-               "cl", int(ExplicitNamespace::cl),
+               "cl", int(ExplicitNamespace::EN_CL),
                "Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false},
-           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::dpct),
+           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::EN_DPCT),
                                      "Generate code with dpct:: namespace.",
                                      false},
            llvm::cl::OptionEnumValue{
-               "sycl", int(ExplicitNamespace::sycl),
+               "sycl", int(ExplicitNamespace::EN_SYCL),
                "Generate code with sycl:: namespace. Cannot be used with cl or "
                "sycl-math values.",
                false},
            llvm::cl::OptionEnumValue{
-               "sycl-math", int(ExplicitNamespace::sycl_math),
+               "sycl-math", int(ExplicitNamespace::EN_SYCL_Math),
                "Generate code with sycl:: namespace, applied only for SYCL math functions.\n"
                "Cannot be used with cl or sycl values.",
                false}),
@@ -419,7 +419,7 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
         "Comma separated list of DPC++ extensions not to be used in migrated code.\n"
         "By default, these extensions will be used in migrated code."),
     llvm::cl::CommaSeparated,
-    values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::submit_barrier),
+    values(llvm::cl::OptionEnumValue{"enqueued_barriers", int(DPCPPExtensions::DPCPPE_Submit_Barrier),
                                      "Enqueued barriers DPC++ extension.",
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
@@ -446,10 +446,10 @@ public:
     int RequiredRType = 0;
     SourceProcessType FileType = GetSourceFileType(InFile);
 
-    if (FileType & (TypeCudaSource | TypeCudaHeader)) {
-      RequiredRType = ApplyToCudaFile;
-    } else if (FileType & (TypeCppSource | TypeCppHeader)) {
-      RequiredRType = ApplyToCppFile;
+    if (FileType & (SPT_CudaSource | SPT_CudaHeader)) {
+      RequiredRType = RT_ApplyToCudaFile;
+    } else if (FileType & (SPT_CppSource | SPT_CppHeader)) {
+      RequiredRType = RT_ApplyToCppFile;
     }
 
     if (Passes != "") {
@@ -776,8 +776,8 @@ static void saveApisReport(void) {
   } else {
     std::string RFile =
         OutRoot + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::csv ? ".apis.csv"
-                                                          : ".apis.log");
+        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
+                                                              : ".apis.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -785,7 +785,7 @@ static void saveApisReport(void) {
 
     std::string Str;
     llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat.getValue() == ReportFormatEnum::csv
+    Title << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                   ? " API name, Frequency "
                   : "API name\t\t\t\tFrequency");
 
@@ -793,7 +793,7 @@ static void saveApisReport(void) {
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
-      if (ReportFormat.getValue() == ReportFormatEnum::csv) {
+      if (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV) {
         File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
       } else {
         std::string Str;
@@ -821,8 +821,8 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
   } else {
     std::string RFile =
         OutRoot + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::csv ? ".stats.csv"
-                                                          : ".stats.log");
+        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".stats.csv"
+                                                              : ".stats.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -898,8 +898,8 @@ void PrintReportOnFault(std::string &FaultMsg) {
 
   std::string FileApis =
       OutRoot + "/" + ReportFilePrefix +
-      (ReportFormat.getValue() == ReportFormatEnum::csv ? ".apis.csv"
-                                                        : ".apis.log");
+      (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
+                                                            : ".apis.log");
   std::string FileDiags = OutRoot + "/" + ReportFilePrefix + ".diags.log";
 
   std::ofstream File;
@@ -920,12 +920,12 @@ void PrintReportOnFault(std::string &FaultMsg) {
 
 void parseFormatStyle() {
   clang::format::FormattingAttemptStatus Status;
-  StringRef StyleStr = "file"; // DPCTFormatStyle::custom
+  StringRef StyleStr = "file"; // DPCTFormatStyle::Custom
   if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-      DPCTFormatStyle::google) {
+      DPCTFormatStyle::FS_Google) {
     StyleStr = "google";
   } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-             DPCTFormatStyle::llvm) {
+             DPCTFormatStyle::FS_LLVM) {
     StyleStr = "llvm";
   }
   std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
@@ -1107,16 +1107,16 @@ int runDPCT(int argc, const char **argv) {
     llvm::raw_string_ostream OS(buf);
     OS << "Generate report: "
        << "report-type:"
-       << (ReportType.getValue() == ReportTypeEnum::all
+       << (ReportType.getValue() == ReportTypeEnum::RTE_All
                ? "all"
-               : (ReportType.getValue() == ReportTypeEnum::apis
+               : (ReportType.getValue() == ReportTypeEnum::RTE_APIs
                       ? "apis"
-                      : (ReportType.getValue() == ReportTypeEnum::stats
+                      : (ReportType.getValue() == ReportTypeEnum::RTE_Stats
                              ? "stats"
                              : "diags")))
        << ", report-format:"
-       << (ReportFormat.getValue() == ReportFormatEnum::csv ? "csv"
-                                                            : "formatted")
+       << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? "csv"
+                                                                : "formatted")
        << ", report-file-prefix:" << ReportFilePrefix << "\n";
 
     PrintMsg(OS.str());
@@ -1207,12 +1207,12 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setAssumedNDRangeDim(
-      (NDRangeDim == AssumedNDRangeDimEnum::dim1) ? 1 : 3);
+      (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
-      ExplicitNamespace::sycl, ExplicitNamespace::dpct};
+      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
   if (NoClNamespaceInline.getNumOccurrences()) {
     if (UseExplicitNamespace.getNumOccurrences()) {
       DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
@@ -1222,7 +1222,7 @@ int runDPCT(int argc, const char **argv) {
     } else {
       if (ExplicitClNamespace) {
         DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
-            ExplicitNamespace::cl, ExplicitNamespace::dpct});
+            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_DPCT});
       } else {
         DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
       }
@@ -1310,18 +1310,18 @@ int runDPCT(int argc, const char **argv) {
 
   if (GenReport) {
     // report: apis, stats, all, diags
-    if (ReportType.getValue() == ReportTypeEnum::all ||
-        ReportType.getValue() == ReportTypeEnum::apis)
+    if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
+        ReportType.getValue() == ReportTypeEnum::RTE_APIs)
       saveApisReport();
 
-    if (ReportType.getValue() == ReportTypeEnum::all ||
-        ReportType.getValue() == ReportTypeEnum::stats) {
+    if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
+        ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
       clock_t EndTime = clock();
       double Duration = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
       saveStatsReport(Tool, Duration);
     }
     // all doesn't include diags.
-    if (ReportType.getValue() == ReportTypeEnum::diags) {
+    if (ReportType.getValue() == ReportTypeEnum::RTE_Diags) {
       saveDiagsReport();
     }
     if (ReportOnlyFlag) {

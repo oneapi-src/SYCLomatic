@@ -183,18 +183,18 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &DVerbose) {
   bool Success = true;
   if (ROnly || !RFile.empty() || !DVerbose.empty() ||
-      RType != ReportTypeEnum::notsettype ||
-      RFormat != ReportFormatEnum::notsetformat) {
+      RType != ReportTypeEnum::RTE_NotSetType ||
+      RFormat != ReportFormatEnum::RFE_NotSetFormat) {
     GenReport = true;
     // check user provided value and give default value if required.
-    if (RType == ReportTypeEnum::notsettype) {
-      RType = ReportTypeEnum::stats;
+    if (RType == ReportTypeEnum::RTE_NotSetType) {
+      RType = ReportTypeEnum::RTE_Stats;
     }
     // check the report format value
-    if (RFormat == ReportFormatEnum::notsetformat) {
-      RFormat = ReportFormatEnum::csv;
-    } else if (!(RFormat == ReportFormatEnum::csv ||
-                 RFormat == ReportFormatEnum::formatted)) {
+    if (RFormat == ReportFormatEnum::RFE_NotSetFormat) {
+      RFormat = ReportFormatEnum::RFE_CSV;
+    } else if (!(RFormat == ReportFormatEnum::RFE_CSV ||
+                 RFormat == ReportFormatEnum::RFE_Formatted)) {
       llvm::errs() << "error value provided in option: --report-format, use "
                       "[csv|formatted].\n\n";
       Success = false;
@@ -206,11 +206,11 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 #ifdef DPCT_DEBUG_BUILD
     // check the report diags content value.
     if (DVerbose.empty()) {
-      clang::dpct::VerboseLevel = clang::dpct::VerboseLow;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseLow;
     } else if (DVerbose == "pass") {
-      clang::dpct::VerboseLevel = clang::dpct::VerboseLow;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseLow;
     } else if (DVerbose == "transformation") {
-      clang::dpct::VerboseLevel = clang::dpct::VerboseHigh;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseHigh;
     } else {
       Success = false;
       llvm::errs()
@@ -226,7 +226,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
                                      std::string &Name,
                                      const std::string &OutRoot) {
-  if ((Level == HelperFilesCustomizationLevel::none) && (Name != "dpct")) {
+  if ((Level == HelperFilesCustomizationLevel::HFCL_None) && (Name != "dpct")) {
     clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
                           "\"--use-custom-helper\" is not specified or "
                           "has \"none\" value.\n");

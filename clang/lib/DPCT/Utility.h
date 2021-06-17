@@ -269,16 +269,16 @@ template <typename T> const T *getDecl(const clang::Stmt *E);
 // TODO:  implement one of this for each source language.
 enum SourceProcessType {
   // flag for *.cu
-  TypeCudaSource = 1,
+  SPT_CudaSource = 1,
 
   // flag for *.cuh
-  TypeCudaHeader = 2,
+  SPT_CudaHeader = 2,
 
   // flag for *.cpp, *.cxx, *.cc, *.c, *.C
-  TypeCppSource = 4,
+  SPT_CppSource = 4,
 
   // flag for *.hpp, *.hxx *.h
-  TypeCppHeader = 8,
+  SPT_CppHeader = 8,
 };
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
@@ -424,7 +424,6 @@ bool isSameLocation(const clang::SourceLocation L1,
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
     const std::shared_ptr<clang::DynTypedNode> Parent);
-enum ExprSpellingStatus { NoType = 0, IsDefine = 1, IsExpansion = 2 };
 bool isLocationStraddle(clang::SourceLocation Begin, clang::SourceLocation End);
 bool isExprStraddle(const clang::Stmt *S);
 std::string getDrefName(const clang::Expr *E);

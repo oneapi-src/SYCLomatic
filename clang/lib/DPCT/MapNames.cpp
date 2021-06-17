@@ -56,17 +56,17 @@ std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap;
 void MapNames::setExplicitNamespaceMap() {
 
   auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-  if (NamespaceSet.count(ExplicitNamespace::dpct)) {
+  if (NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
     // Use dpct:: namespace explicitly
     DpctNamespace[0] = "dpct::";
   }
-  if (NamespaceSet.count(ExplicitNamespace::cl)) {
+  if (NamespaceSet.count(ExplicitNamespace::EN_CL)) {
     // Use cl::sycl:: namespace explicitly
     ClNamespace = {"cl::sycl::", "cl::sycl::", "cl::sycl::", "cl::sycl::"};
-  } else if (NamespaceSet.count(ExplicitNamespace::sycl)) {
+  } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL)) {
     // Use sycl:: namespace explicitly
     ClNamespace = {"sycl::", "sycl::", "sycl::", "sycl::"};
-  } else if (NamespaceSet.count(ExplicitNamespace::sycl_math)) {
+  } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL_Math)) {
     // Use sycl:: namespce for SYCL math functions
     ClNamespace = {"", "sycl::", "sycl::", "sycl::"};
   }
@@ -1036,34 +1036,37 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"double2", 16},    {"double3", 32},    {"double4", 32}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
-    {clang::dpct::KernelArgType::Stream, 208},
-    {clang::dpct::KernelArgType::Texture,
+    {clang::dpct::KernelArgType::KAT_Stream, 208},
+    {clang::dpct::KernelArgType::KAT_Texture,
      48 /*32(image accessor) + 16(sampler)*/},
-    {clang::dpct::KernelArgType::Accessor1D, 32},
-    {clang::dpct::KernelArgType::Accessor2D, 56},
-    {clang::dpct::KernelArgType::Accessor3D, 80},
-    {clang::dpct::KernelArgType::Array1D, 8},
-    {clang::dpct::KernelArgType::Array2D, 24},
-    {clang::dpct::KernelArgType::Array3D, 32},
-    {clang::dpct::KernelArgType::Default, 8},
-    {clang::dpct::KernelArgType::MaxParameterSize, 1024}};
+    {clang::dpct::KernelArgType::KAT_Accessor1D, 32},
+    {clang::dpct::KernelArgType::KAT_Accessor2D, 56},
+    {clang::dpct::KernelArgType::KAT_Accessor3D, 80},
+    {clang::dpct::KernelArgType::KAT_Array1D, 8},
+    {clang::dpct::KernelArgType::KAT_Array2D, 24},
+    {clang::dpct::KernelArgType::KAT_Array3D, 32},
+    {clang::dpct::KernelArgType::KAT_Default, 8},
+    {clang::dpct::KernelArgType::KAT_MaxParameterSize, 1024}};
 
 int MapNames::getArrayTypeSize(const int Dim) {
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     if (Dim == 2) {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor2D);
+      return KernelArgTypeSizeMap.at(
+          clang::dpct::KernelArgType::KAT_Accessor2D);
     } else if (Dim == 3) {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor3D);
+      return KernelArgTypeSizeMap.at(
+          clang::dpct::KernelArgType::KAT_Accessor3D);
     } else {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Accessor1D);
+      return KernelArgTypeSizeMap.at(
+          clang::dpct::KernelArgType::KAT_Accessor1D);
     }
   } else {
     if (Dim == 2) {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array2D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array2D);
     } else if (Dim == 3) {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array3D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array3D);
     } else {
-      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::Array1D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array1D);
     }
   }
 }

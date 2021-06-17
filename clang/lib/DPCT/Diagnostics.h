@@ -29,7 +29,7 @@
 
 extern llvm::cl::opt<std::string> SuppressWarnings;
 extern llvm::cl::opt<std::string> OutputFile;
-extern llvm::cl::opt<OutputVerbosityLev> OutputVerbosity;
+extern llvm::cl::opt<OutputVerbosityLevel> OutputVerbosity;
 extern bool SuppressWarningsAllFlag;
 
 namespace clang {
@@ -119,7 +119,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
 
-  if (OutputVerbosity != OutputVerbosityLev::silent) {
+  if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
     unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
         (DiagnosticIDs::Level)Msg.Category, Message);
     auto B = DiagEngine.Report(SL, ID);
@@ -266,7 +266,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    DiagnosticsEngine &Engine, Ts &&...Vals) {
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
 
-  if (OutputVerbosity != OutputVerbosityLev::silent) {
+  if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
     unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
         (DiagnosticIDs::Level)Msg.Category, Message);
     auto B = Engine.Report(SL, ID);
@@ -390,7 +390,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
                            std::forward<Ts>(Vals)...),
         nullptr);
     if (UseTextBegin)
-      R->setInsertPosition(InsertPosition::InsertPositionRight);
+      R->setInsertPosition(InsertPosition::IP_Right);
     DpctGlobalInfo::getInstance().addReplacement(R);
     UniqueID++;
   }

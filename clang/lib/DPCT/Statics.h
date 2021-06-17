@@ -57,9 +57,9 @@ extern std::unordered_map<std::string, std::array<unsigned int, 3>>
 extern std::map<std::string, unsigned int> SrcAPIStaticsMap;
 
 enum VerboseLevel {
-  NonVerbose = 0,
-  VerboseLow = 1,
-  VerboseHigh = 2,
+  VL_NonVerbose = 0,
+  VL_VerboseLow = 1,
+  VL_VerboseHigh = 2,
 };
 
 void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);

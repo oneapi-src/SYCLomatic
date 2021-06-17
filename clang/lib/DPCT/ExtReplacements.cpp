@@ -176,7 +176,7 @@ std::shared_ptr<ExtReplacement> ExtReplacements::buildOriginCodeReplacement(
   Text.insert(findCR(Text), Suffix);
   auto R = std ::make_shared<ExtReplacement>(FilePath, LineRange.SrcBeginOffset,
                                              0, std::move(Text), nullptr);
-  R->setInsertPosition(InsertPositionAlwaysLeft);
+  R->setInsertPosition(IP_AlwaysLeft);
   return R;
 }
 
@@ -218,11 +218,9 @@ ExtReplacements::mergeReplsAtSameOffset() {
     auto &Repl = R.second;
     if (Repl->getLength()) {
       Replace = mergeAtSameOffset(Replace, Repl);
-    } else if (Repl->getInsertPosition() ==
-               InsertPosition::InsertPositionAlwaysLeft) {
+    } else if (Repl->getInsertPosition() == InsertPosition::IP_AlwaysLeft) {
       InsertLeft = mergeAtSameOffset(InsertLeft, Repl);
-    } else if (Repl->getInsertPosition() ==
-               InsertPosition::InsertPositionRight) {
+    } else if (Repl->getInsertPosition() == InsertPosition::IP_Right) {
       InsertRight = mergeAtSameOffset(InsertRight, Repl);
     } else {
       Insert = mergeAtSameOffset(Insert, Repl);
@@ -282,13 +280,13 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     return;
   if (Repl->getLength()) {
     if (Repl->IsSYCLHeaderNeeded())
-      FileInfo->insertHeader(SYCL);
+      FileInfo->insertHeader(HT_SYCL);
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
     if (Repl->IsSYCLHeaderNeeded())
-      FileInfo->insertHeader(SYCL);
+      FileInfo->insertHeader(HT_SYCL);
     markAsAlive(Repl);
   } else {
     markAsDead(Repl);
@@ -297,8 +295,8 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
 
 bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
                                                  std::string &Text) {
-  if (HFT != HelperFuncType::DefaultQueue &&
-      HFT != HelperFuncType::CurrentDevice) {
+  if (HFT != HelperFuncType::HFT_DefaultQueue &&
+      HFT != HelperFuncType::HFT_CurrentDevice) {
     return false;
   }
 
@@ -307,10 +305,10 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
 
   if (DpctGlobalInfo::getDeviceChangedFlag() ||
       !DpctGlobalInfo::getUsingDRYPattern()) {
-    if (HFT == HelperFuncType::DefaultQueue) {
+    if (HFT == HelperFuncType::HFT_DefaultQueue) {
       requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
-    } else if (HFT == HelperFuncType::CurrentDevice) {
+    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
       requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
     }
@@ -336,7 +334,7 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
   // 2          1            dev_ct1             get_default_queue
   // 1          2            dev_ct1             q_ct1
   // >=2        >=2          dev_ct1             q_ct1
-  if (HFT == HelperFuncType::DefaultQueue) {
+  if (HFT == HelperFuncType::HFT_DefaultQueue) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
       requestFeature(HelperFileEnum::Device, "get_default_queue", FilePath);
       Text = MapNames::getDpctNamespace() + "get_default_queue()";
@@ -349,7 +347,7 @@ bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
       Text = "q_ct1";
       return true;
     }
-  } else if (HFT == HelperFuncType::CurrentDevice) {
+  } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
     if (!HelperFuncReplInfoIter->second.IsLocationValid) {
       requestFeature(HelperFileEnum::Device, "get_current_device", FilePath);
       Text = MapNames::getDpctNamespace() + "get_current_device()";
@@ -467,12 +465,12 @@ void ExtReplacements::processCudaArchMacro() {
             //    ...
             //    host_code/empty;
             //    ...
-            if ((Info.DT == IfType::Ifdef && Round == 1) ||
-                (Info.DT == IfType::Ifndef && Round == 0) ||
-                (Info.DT == IfType::If && Round == 1 &&
+            if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
+                (Info.DT == IfType::IT_Ifndef && Round == 0) ||
+                (Info.DT == IfType::IT_If && Round == 1 &&
                  (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
                   Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
-                (Info.DT == IfType::If && Round == 0 &&
+                (Info.DT == IfType::IT_If && Round == 0 &&
                  Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
               Pos_a = Info.IfInfo.NumberSignLoc;
               if (Pos_a != UINT_MAX) {
@@ -482,12 +480,12 @@ void ExtReplacements::processCudaArchMacro() {
                     FilePath, Pos_a, Len_a, "", nullptr));
                 DirectiveReserved = false;
               }
-            } else if ((Info.DT == IfType::Ifdef && Round == 0) ||
-                       (Info.DT == IfType::Ifndef && Round == 1) ||
-                       (Info.DT == IfType::If && Round == 0 &&
+            } else if ((Info.DT == IfType::IT_Ifdef && Round == 0) ||
+                       (Info.DT == IfType::IT_Ifndef && Round == 1) ||
+                       (Info.DT == IfType::IT_If && Round == 0 &&
                         (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
                          Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
-                       (Info.DT == IfType::If && Round == 1 &&
+                       (Info.DT == IfType::IT_If && Round == 1 &&
                         Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
               Pos_a = Info.IfInfo.NumberSignLoc;
               Pos_b = Info.EndInfo.NumberSignLoc;
@@ -525,12 +523,12 @@ void ExtReplacements::processCudaArchMacro() {
             //    ...
             //    host_code;
             //    ...
-            if ((Info.DT == IfType::Ifdef && Round == 1) ||
-                (Info.DT == IfType::Ifndef && Round == 0) ||
-                (Info.DT == IfType::If && Round == 1 &&
+            if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
+                (Info.DT == IfType::IT_Ifndef && Round == 0) ||
+                (Info.DT == IfType::IT_If && Round == 1 &&
                  (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
                   Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
-                (Info.DT == IfType::If && Round == 0 &&
+                (Info.DT == IfType::IT_If && Round == 0 &&
                  Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
               Pos_a = Info.IfInfo.NumberSignLoc;
               Pos_b = Info.EndInfo.NumberSignLoc;
@@ -545,12 +543,12 @@ void ExtReplacements::processCudaArchMacro() {
                     FilePath, Pos_b, Len_b, "", nullptr));
                 DirectiveReserved = false;
               }
-            } else if ((Info.DT == IfType::Ifdef && Round == 0) ||
-                       (Info.DT == IfType::Ifndef && Round == 1) ||
-                       (Info.DT == IfType::If && Round == 0 &&
+            } else if ((Info.DT == IfType::IT_Ifdef && Round == 0) ||
+                       (Info.DT == IfType::IT_Ifndef && Round == 1) ||
+                       (Info.DT == IfType::IT_If && Round == 0 &&
                         (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
                          Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
-                       (Info.DT == IfType::If && Round == 1 &&
+                       (Info.DT == IfType::IT_If && Round == 1 &&
                         Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
               Pos_a = Info.IfInfo.NumberSignLoc;
               Pos_b = Info.ElseInfo.NumberSignLoc;
@@ -573,17 +571,17 @@ void ExtReplacements::processCudaArchMacro() {
         //  ifndef__CUDA_ARCH__ --> ifdef DPCT_COMPATIBILITY_TEMP
         //  ifdef __CUDA_ARCH__ --> ifndef DPCT_COMPATIBILITY_TEMP
         if (DirectiveReserved && Round == 1) {
-          if (Info.DT == IfType::Ifdef) {
+          if (Info.DT == IfType::IT_Ifdef) {
             Pos_a = Info.IfInfo.DirectiveLoc;
             Len_a = 5 /*length of ifdef*/;
             addReplacement(std::make_shared<ExtReplacement>(
                 FilePath, Pos_a, Len_a, "ifndef", nullptr));
-          } else if (Info.DT == IfType::Ifndef) {
+          } else if (Info.DT == IfType::IT_Ifndef) {
             Pos_a = Info.IfInfo.DirectiveLoc;
             Len_a = 6 /*length of ifndef*/;
             addReplacement(std::make_shared<ExtReplacement>(
                 FilePath, Pos_a, Len_a, "ifdef", nullptr));
-          } else if (Info.DT == IfType::If) {
+          } else if (Info.DT == IfType::IT_If) {
             processIfMacro(*Repl, Info.IfInfo);
           }
         }
@@ -725,11 +723,11 @@ void ExtReplacements::postProcess() {
         // get the index from the placeholder string
         int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
         // get the HelperFuncType from the placeholder string
-        HelperFuncType HFT = HelperFuncType::InitValue;
+        HelperFuncType HFT = HelperFuncType::HFT_InitValue;
         if (MatchedStr.substr(13, 1) == "Q")
-          HFT = HelperFuncType::DefaultQueue;
+          HFT = HelperFuncType::HFT_DefaultQueue;
         else if (MatchedStr.substr(13, 1) == "D")
-          HFT = HelperFuncType::CurrentDevice;
+          HFT = HelperFuncType::HFT_CurrentDevice;
 
         auto HelperFuncReplInfoIter =
             DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);

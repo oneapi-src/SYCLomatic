@@ -166,12 +166,12 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 static void rewriteFileName(SmallString<512> &FilePath) {
   SourceProcessType FileType = GetSourceFileType(FilePath.str());
 
-  if (FileType & TypeCudaSource) {
+  if (FileType & SPT_CudaSource) {
     path::replace_extension(FilePath, "dp.cpp");
-  } else if (FileType & TypeCppSource) {
+  } else if (FileType & SPT_CppSource) {
     auto Extension = path::extension(FilePath);
     path::replace_extension(FilePath, Extension + ".dp.cpp");
-  } else if (FileType & TypeCudaHeader) {
+  } else if (FileType & SPT_CudaHeader) {
     path::replace_extension(FilePath, "dp.hpp");
   }
 }
@@ -217,7 +217,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
-        if (GetSourceFileType(FilePath) & TypeCudaSource) {
+        if (GetSourceFileType(FilePath) & SPT_CudaSource) {
           // Only migrates isolated CUDA source files.
           FilesNotProcessed.push_back(FilePath);
         } else {
@@ -384,7 +384,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // macro defined, it aslo need merge the migration triggered by each
       // command.
       SourceProcessType FileType = GetSourceFileType(Entry.first);
-      if (FileType & (TypeCppHeader | TypeCudaHeader)) {
+      if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
         mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
       } else {
 
@@ -562,9 +562,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // Awalys migrate *.cuh files to *.dp.hpp files,
       // Awalys migrate *.cu files to *.dp.cpp files.
       SourceProcessType FileType = GetSourceFileType(FilePath.str());
-      if (FileType & TypeCudaHeader) {
+      if (FileType & SPT_CudaHeader) {
         path::replace_extension(FilePath, "dp.hpp");
-      } else if (FileType & TypeCudaSource) {
+      } else if (FileType & SPT_CudaSource) {
         path::replace_extension(FilePath, "dp.cpp");
       }
 

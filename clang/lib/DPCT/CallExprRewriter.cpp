@@ -69,7 +69,7 @@ Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
       return getHashAsString(Loc.printToString(SM)).substr(0, 6);
     };
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, Call, HelperFuncType::DefaultQueue);
+    buildTempVariableMap(Index, Call, HelperFuncType::HFT_DefaultQueue);
     std::string TemplateArg = "";
     if (DpctGlobalInfo::isSyclNamedLambda())
       TemplateArg = std::string("<class Policy_") + UniqueName(Call) + ">";
@@ -364,7 +364,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     // For host functions
     else {
       // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Math);
+      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
       NewFuncName = SourceCalleeName.str();
       if (SourceCalleeName == "abs") {
         auto *BT =
@@ -527,7 +527,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 
             if (NamespaceStr.empty() && MigrateToStd) {
               DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
-                                                         Algorithm);
+                                                         HT_Algorithm);
               NewFuncName = "std::" + SourceCalleeName.str();
               if (!TypeName.empty())
                 NewFuncName += "<" + TypeName + ">";
@@ -1177,7 +1177,7 @@ class DerefStreamExpr {
 
   template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, E, HelperFuncType::DefaultQueue);
+    buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
     Stream << "{{NEEDREPLACEQ" << Index << "}}";
   }
 

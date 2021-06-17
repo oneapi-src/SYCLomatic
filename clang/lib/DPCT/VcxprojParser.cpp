@@ -227,7 +227,7 @@ void addMacroDefinedSet(const std::string &MacroDefined,
 
 void addFilesSet(const std::string Compiler, std::string &File) {
   SourceProcessType FileType = GetSourceFileType(File);
-  if (FileType & (TypeCudaSource | TypeCppSource)) {
+  if (FileType & (SPT_CudaSource | SPT_CppSource)) {
     FilesSet[Compiler].push_back(File);
   }
 }

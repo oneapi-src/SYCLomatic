@@ -149,11 +149,11 @@ void addDependencyIncludeDirectives(
 
 std::string getCode(const HelperFunc &Item) {
   if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-      HelperFilesCustomizationLevel::file) {
+      HelperFilesCustomizationLevel::HFCL_File) {
     return Item.Code;
   } else {
     // API level
-    if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+    if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (!Item.USMCode.empty())
         return Item.USMCode;
     } else {
@@ -384,10 +384,10 @@ void generateHelperFunctions() {
 
   // 2. build info of necessary headers to out-root
   if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-      HelperFilesCustomizationLevel::none)
+      HelperFilesCustomizationLevel::HFCL_None)
     return;
   else if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-           HelperFilesCustomizationLevel::all) {
+           HelperFilesCustomizationLevel::HFCL_All) {
     generateAllHelperFiles();
     return;
   }
@@ -411,7 +411,7 @@ void generateHelperFunctions() {
   std::vector<bool> FileUsedFlagVec(
       (unsigned int)clang::dpct::HelperFileEnum::HelperFileEnumTypeSize, false);
   if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-      HelperFilesCustomizationLevel::file) {
+      HelperFilesCustomizationLevel::HFCL_File) {
     // E.g., user code uses API2.
     // HelperFileA: API1(depends on API3), API2
     // HelperFileB: API3
@@ -453,11 +453,11 @@ void generateHelperFunctions() {
 #define UPDATE_FILE(FILENAME)                                                  \
   case clang::dpct::HelperFileEnum::FILENAME:                                  \
     if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==     \
-        HelperFilesCustomizationLevel::file) {                                 \
+        HelperFilesCustomizationLevel::HFCL_File) {                            \
       FILENAME##FileContent.push_back(Item.second);                            \
     } else if (clang::dpct::DpctGlobalInfo::                                   \
                    getHelperFilesCustomizationLevel() ==                       \
-               HelperFilesCustomizationLevel::api) {                           \
+               HelperFilesCustomizationLevel::HFCL_API) {                      \
       if (Item.second.IsCalled)                                                \
         FILENAME##FileContent.push_back(Item.second);                          \
     }                                                                          \
@@ -480,7 +480,7 @@ void generateHelperFunctions() {
       continue;
     } else if (clang::dpct::DpctGlobalInfo::
                    getHelperFilesCustomizationLevel() ==
-               HelperFilesCustomizationLevel::file) {
+               HelperFilesCustomizationLevel::HFCL_File) {
       if (!FileUsedFlagVec[size_t(Item.first.first)])
         continue;
     }
