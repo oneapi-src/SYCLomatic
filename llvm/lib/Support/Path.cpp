@@ -548,22 +548,6 @@ void native(const Twine &path, SmallVectorImpl<char> &result, Style style) {
 void native(SmallVectorImpl<char> &Path, Style style) {
   if (Path.empty())
     return;
-#ifdef INTEL_CUSTOMIZATION
-#ifdef __linux__
-  if (real_style(style) == Style::windows) {
-    std::replace(Path.begin(), Path.end(), '/', '\\');
-  } else {
-    std::replace(Path.begin(), Path.end(), '\\', '/');
-  }
-  if (Path[0] == '~' && (Path.size() == 1 || is_separator(Path[1], style))) {
-    SmallString<128> PathHome;
-    home_directory(PathHome);
-    PathHome.append(Path.begin() + 1, Path.end());
-    Path = PathHome;
-  }
-  return;
-#endif
-#endif
   if (real_style(style) == Style::windows) {
     std::replace(Path.begin(), Path.end(), '/', '\\');
     if (Path[0] == '~' && (Path.size() == 1 || is_separator(Path[1], style))) {
