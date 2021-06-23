@@ -178,6 +178,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::device", "oneapi::dpl::execution::dpcpp_default"},
       {"thrust::host", "oneapi::dpl::execution::seq"},
       {"thrust::minus", "std::minus"},
+      {"thrust::equal_to", "oneapi::dpl::equal_to"},
+      {"thrust::less", "oneapi::dpl::less"},
       {"thrust::negate", "std::negate"},
       {"thrust::identity", "oneapi::dpl::identity"},
       {"thrust::logical_or", "std::logical_or"},
