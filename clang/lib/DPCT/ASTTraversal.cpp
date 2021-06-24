@@ -3615,9 +3615,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -10207,10 +10205,44 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          callee(functionDecl(hasName("printf"))))
                     .bind("PrintfExpr"),
                 this);
+
+  MF.addMatcher(varDecl(hasAncestor(DeviceFunctionMatcher)).bind("varGrid"),
+                this);
+
+  MF.addMatcher(cxxMemberCallExpr(hasDescendant(memberExpr(hasDescendant(
+                                      implicitCastExpr().bind("impCastExpr")))))
+                    .bind("cxxMemberCall"),
+                this);
 }
 
 void DeviceFunctionDeclRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  if (auto CXXMCE =
+          getAssistNodeAsType<CXXMemberCallExpr>(Result, "cxxMemberCall")) {
+    if (auto ICE =
+            getAssistNodeAsType<ImplicitCastExpr>(Result, "impCastExpr")) {
+      auto Type = ICE->getType().getAsString();
+      if (Type == "const class cooperative_groups::__v1::grid_group") {
+        if (auto DRE = dyn_cast<DeclRefExpr>(ICE->getSubExpr())) {
+
+          if (!DpctGlobalInfo::useNdRangeBarrier()) {
+            auto Name = DRE->getNameInfo().getName().getAsString();
+            report(CXXMCE->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
+                   Name);
+            return;
+          }
+
+          std::string ReplStr = "dpct::experimental::nd_range_barrier(" +
+                                DpctGlobalInfo::getItemName() + ", " +
+                                DpctGlobalInfo::getSyncName() + ")";
+
+          emplaceTransformation(new ReplaceStmt(CXXMCE, ReplStr));
+          requestFeature(HelperFeatureEnum::Util_nd_range_barrier, CXXMCE);
+        }
+      }
+    }
+  }
 
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
@@ -10244,6 +10276,55 @@ void DeviceFunctionDeclRule::runRule(
   } else if (auto Ctor =
                  getAssistNodeAsType<CXXConstructExpr>(Result, "CtorExpr")) {
     FuncInfo->addCallee(Ctor);
+  }
+
+  if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
+
+    if (!Var->getInit())
+      return;
+
+    if (auto EWC = dyn_cast<ExprWithCleanups>(Var->getInit())) {
+      auto CXXCExpr = dyn_cast<CXXConstructExpr>(EWC->getSubExpr());
+      if (!CXXCExpr)
+        return;
+
+      auto IgnoreUSIS = CXXCExpr->IgnoreUnlessSpelledInSource();
+      if (!IgnoreUSIS)
+        return;
+
+      auto CE = dyn_cast<CallExpr>(IgnoreUSIS);
+      if (!CE)
+        return;
+
+      if (CE->getType().getAsString() !=
+          "class cooperative_groups::__v1::grid_group")
+        return;
+
+      if (!DpctGlobalInfo::useNdRangeBarrier()) {
+        auto Name = Var->getNameAsString();
+        report(Var->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false, Name);
+        return;
+      }
+
+      FuncInfo->setSync();
+      auto Begin = Var->getBeginLoc();
+      auto End = Var->getEndLoc();
+      const auto &SM = *Result.SourceManager;
+
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+
+      Token Tok;
+      Tok = Lexer::findNextToken(
+                End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
+                .getValue();
+      End = Tok.getLocation();
+
+      auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+
+      // Remove statement "cg::grid_group grid = cg::this_grid();"
+      emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
   }
 }
 
@@ -10799,7 +10880,7 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if(isCubVar(MemVar)) {
+    if (isCubVar(MemVar)) {
       return;
     }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
@@ -10837,7 +10918,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func && Decl) {
-    if(isCubVar(Decl)) {
+    if (isCubVar(Decl)) {
       return;
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
@@ -11169,17 +11250,17 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
 
   if (DerefType) {
     QualType DerefQT;
-     if(auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
+    if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
       QualType BaseType = ArraySub->getBase()->getType();
-      if(BaseType->isArrayType()) {
-        if(auto Array = BaseType->getAsArrayTypeUnsafe()) {
+      if (BaseType->isArrayType()) {
+        if (auto Array = BaseType->getAsArrayTypeUnsafe()) {
           DerefQT = Array->getElementType();
         }
-      } else if(BaseType->isPointerType()){
+      } else if (BaseType->isPointerType()) {
         DerefQT = BaseType->getPointeeType();
       }
     }
-    if(DerefQT.isNull()) {
+    if (DerefQT.isNull()) {
       DerefQT = E->getType();
     }
     if (NeedDerefOp)
@@ -12930,6 +13011,16 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads" || FuncName == "sync") {
+    if (auto CXXCE = dyn_cast<CXXMemberCallExpr>(CE)) {
+      if (auto ME = dyn_cast<MemberExpr>(CXXCE->getCallee())) {
+        if (auto ICE = dyn_cast<ImplicitCastExpr>(ME->getBase())) {
+          auto Type = ICE->getType().getAsString();
+          if (Type == "const class cooperative_groups::__v1::grid_group") {
+            return;
+          }
+        }
+      }
+    }
     report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
     std::string Replacement = MapNames::getClNamespace() + "group_barrier(" +
                               getItemName() + ".get_group())";
@@ -15579,7 +15670,7 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
 void CubRule::processCubDeclStmt(const DeclStmt *DS) {
   std::string Repl;
   std::shared_ptr<clang::dpct::DeviceFunctionInfo> DI;
-  if(auto DeviceFuncDecl = getImmediateOuterFuncDecl(DS)) {
+  if (auto DeviceFuncDecl = getImmediateOuterFuncDecl(DS)) {
     DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
   }
   for (auto Decl : DS->decls()) {
@@ -15669,24 +15760,23 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
         }
       } // 2.Used in temporary class constructor
       else if (auto AncestorMTE =
-                     DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(
-                         TL)) {
+                   DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
         auto MC = DpctGlobalInfo::findAncestor<CXXMemberCallExpr>(AncestorMTE);
         if (MC) {
           auto ObjType = MC->getObjectType().getCanonicalType();
           std::string ObjTypeStr = ObjType.getAsString();
           if (isTypeInRoot(ObjType.getTypePtr()) ||
               !(ObjTypeStr.find("class cub::WarpScan") == 0 ||
-               ObjTypeStr.find("class cub::WarpReduce") == 0 ||
-               ObjTypeStr.find("class cub::BlockScan") == 0 ||
-               ObjTypeStr.find("class cub::BlockReduce") == 0)) {
+                ObjTypeStr.find("class cub::WarpReduce") == 0 ||
+                ObjTypeStr.find("class cub::BlockScan") == 0 ||
+                ObjTypeStr.find("class cub::BlockReduce") == 0)) {
             DeleteFlag = false;
             break;
           }
         }
       } // 3.Used in self typedef decl
       else if (auto AncestorTD =
-                     DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
+                   DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
         if (AncestorTD != TD) {
           DeleteFlag = false;
           break;
@@ -15782,10 +15872,10 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
   std::string Repl, NewFuncName, InitRepl, OpRepl, Indent, Group;
   auto ObjType = MC->getObjectType().getCanonicalType();
   std::string ObjTypeStr = ObjType.getAsString();
-  if(isTypeInRoot(ObjType.getTypePtr())) {
+  if (isTypeInRoot(ObjType.getTypePtr())) {
     return;
   } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
-      ObjTypeStr.find("class cub::WarpReduce") == 0) {
+             ObjTypeStr.find("class cub::WarpReduce") == 0) {
     WarpMC = MC;
   } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
              ObjTypeStr.find("class cub::BlockReduce") == 0) {

@@ -220,7 +220,12 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
       } else if (CurrentNamespace == "dpct::internal") {
         ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
         ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
+      } else if (CurrentNamespace == "dpct::experimental") {
+        ContentStr =
+            ContentStr + "} // namespace experimental" + getNL() + getNL();
+        ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
       }
+
       CurrentNamespace = "";
       std::string Code = getCode(Item);
       replaceEndOfLine(Code);
@@ -233,7 +238,11 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
       } else if (CurrentNamespace == "dpct::internal") {
         ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
+      } else if (CurrentNamespace == "dpct::experimental") {
+        ContentStr =
+            ContentStr + "} // namespace experimental" + getNL() + getNL();
       }
+
       CurrentNamespace = "dpct";
       std::string Code = getCode(Item);
       replaceEndOfLine(Code);
@@ -244,6 +253,10 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
         ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
         ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
       } else if (CurrentNamespace == "dpct") {
+        ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
+      } else if (CurrentNamespace == "dpct::experimental") {
+        ContentStr =
+            ContentStr + "} // namespace experimental" + getNL() + getNL();
         ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
       }
       CurrentNamespace = "dpct::detail";
@@ -262,6 +275,24 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
       std::string Code = getCode(Item);
       replaceEndOfLine(Code);
       ContentStr = ContentStr + Code + getNL();
+    } else if (Item.Namespace == "dpct::experimental") {
+      // dpct::experimental namespace
+      if (CurrentNamespace.empty()) {
+        ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
+        ContentStr =
+            ContentStr + "namespace experimental {" + getNL() + getNL();
+      } else if (CurrentNamespace == "dpct") {
+        ContentStr =
+            ContentStr + "namespace experimental {" + getNL() + getNL();
+      } else if (CurrentNamespace == "dpct::detail") {
+        ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
+        ContentStr =
+            ContentStr + "namespace experimental {" + getNL() + getNL();
+      }
+      CurrentNamespace = "dpct::experimental";
+      std::string Code = getCode(Item);
+      replaceEndOfLine(Code);
+      ContentStr = ContentStr + Code + getNL();
     }
   }
 
@@ -272,6 +303,9 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
     ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
   } else if (CurrentNamespace == "dpct::internal") {
     ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
+    ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
+  } else if (CurrentNamespace == "dpct::experimental") {
+    ContentStr = ContentStr + "} // namespace experimental" + getNL() + getNL();
     ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
   }
 

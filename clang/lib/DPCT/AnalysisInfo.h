@@ -357,12 +357,12 @@ template <class T> inline void merge(T &Master, const T &Branch) {
 }
 
 template <class... Arguments>
-inline void appendString(llvm::raw_string_ostream &OS, Arguments &&...Args) {
+inline void appendString(llvm::raw_string_ostream &OS, Arguments &&... Args) {
   std::initializer_list<int>{(OS << std::forward<Arguments>(Args), 0)...};
 }
 
 template <class... Arguments>
-inline std::string buildString(Arguments &&...Args) {
+inline std::string buildString(Arguments &&... Args) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   appendString(OS, std::forward<Arguments>(Args)...);
@@ -383,7 +383,7 @@ template <class MapType,
           class... Args>
 inline typename MapType::mapped_type
 insertObject(MapType &Map, const typename MapType::key_type &Key,
-             Args &&...InitArgs) {
+             Args &&... InitArgs) {
   auto &Obj = Map[Key];
   if (!Obj)
     Obj = std::make_shared<ObjectType>(Key, std::forward<Args>(InitArgs)...);
@@ -450,7 +450,7 @@ public:
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
   }
   template <class Obj, class MappedT, class... Args>
-  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&...Arguments) {
+  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&... Arguments) {
     return insertObject<GlobalMap<MappedT>, Obj>(
         getMap<MappedT>(), Offset, FilePath, std::forward<Args>(Arguments)...);
   }
@@ -1008,6 +1008,10 @@ public:
     const static std::string StreamName = "stream" + getCTFixedSuffix();
     return StreamName;
   }
+  static const std::string &getSyncName() {
+    const static std::string SyncName = "sync" + getCTFixedSuffix();
+    return SyncName;
+  }
   static const std::string &getInRootHash() {
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
@@ -1110,6 +1114,11 @@ public:
       DPCPPExtSetNotPermit.insert(Extension);
     }
   }
+
+  template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
+    return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
+  }
+  static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -1277,7 +1286,7 @@ public:
   template <class StreamTy, class... Args>
   static inline StreamTy &
   printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,
-                 StringRef ClassName, Args &&...Arguments) {
+                 StringRef ClassName, Args &&... Arguments) {
     Stream << ClassName;
     if (!DpctGlobalInfo::isCtadEnabled()) {
       printArguments(Stream << "<", std::forward<Args>(Arguments)...) << ">";
@@ -1290,12 +1299,12 @@ public:
   }
   template <class StreamTy, class... Args>
   static inline StreamTy &printCtadClass(StreamTy &Stream, StringRef ClassName,
-                                         Args &&...Arguments) {
+                                         Args &&... Arguments) {
     return printCtadClass(Stream, 0, ClassName,
                           std::forward<Args>(Arguments)...);
   }
   template <class... Args>
-  static inline std::string getCtadClass(Args &&...Arguments) {
+  static inline std::string getCtadClass(Args &&... Arguments) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     return printCtadClass(OS, std::forward<Args>(Arguments)...).str();
@@ -1930,7 +1939,9 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-
+  static bool useNdRangeBarrier() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
+  }
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
     return SpBLASUnsupportedMatrixTypeFlag;
   }
@@ -2243,6 +2254,7 @@ private:
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
   static std::set<DPCPPExtensions> DPCPPExtSetNotPermit;
+  static unsigned ExperimentalFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -3038,15 +3050,17 @@ private:
 // function and call expression.
 class MemVarMap {
 public:
-  MemVarMap() : HasItem(false), HasStream(false) {}
+  MemVarMap() : HasItem(false), HasStream(false), HasSync(false) {}
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
   MemVarMap *Parent = this;
   bool hasItem() const { return HasItem; }
   bool hasStream() const { return HasStream; }
+  bool hasSync() const { return HasSync; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
+  inline void setSync(bool Has = true) { HasSync = Has; }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
   }
@@ -3062,6 +3076,7 @@ public:
              const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     setItem(hasItem() || VarMap.hasItem());
     setStream(hasStream() || VarMap.hasStream());
+    setSync(hasSync() || VarMap.hasSync());
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
@@ -3204,6 +3219,11 @@ private:
   }
 
   template <CallOrDecl COD>
+  inline ParameterStream &getSync(ParameterStream &PS) const {
+    return PS << buildString("atm_", DpctGlobalInfo::getSyncName());
+  }
+
+  template <CallOrDecl COD>
   inline std::string
   getArgumentsOrParameters(int PreParams, int PostParams,
                            FormatInfo FormatInformation = FormatInfo()) const {
@@ -3214,6 +3234,10 @@ private:
       getItem<COD>(PS) << ", ";
     if (hasStream())
       getStream<COD>(PS) << ", ";
+
+    if (hasSync())
+      getSync<COD>(PS) << ", ";
+
     if (!ExternVarMap.empty())
       GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second)
           << ", ";
@@ -3261,7 +3285,7 @@ private:
                                               int PreParams,
                                               int PostParams) const;
 
-  bool HasItem, HasStream;
+  bool HasItem, HasStream, HasSync;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -3292,6 +3316,18 @@ MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   return PS << StreamParamDecl;
 }
 
+template <>
+inline ParameterStream &
+MemVarMap::getSync<MemVarMap::DeclParameter>(ParameterStream &PS) const {
+  static std::string SyncParamDecl =
+      MapNames::getClNamespace() + "ONEAPI::atomic_ref<unsigned int," +
+      MapNames::getClNamespace() + "ONEAPI::memory_order::seq_cst," +
+      MapNames::getClNamespace() + "ONEAPI::memory_scope::device," +
+      MapNames::getClNamespace() + "access::address_space::global_space> &" +
+      DpctGlobalInfo::getSyncName();
+  return PS << SyncParamDecl;
+}
+
 inline void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
                                                        int PreParams,
                                                        int PostParams) const {
@@ -3301,6 +3337,10 @@ inline void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
 
   if (hasStream()) {
     getStream<MemVarMap::DeclParameter>(PS);
+  }
+
+  if (hasSync()) {
+    getSync<MemVarMap::DeclParameter>(PS);
   }
 
   if (!ExternVarMap.empty()) {
@@ -3665,6 +3705,7 @@ public:
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
   inline void setItem() { VarMap.setItem(); }
   inline void setStream() { VarMap.setStream(); }
+  inline void setSync() { VarMap.setSync(); }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     VarMap.addTexture(Tex);
   }
@@ -3781,7 +3822,7 @@ public:
     Stream << S;
     return *this;
   }
-  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
+  template <class... Args> KernelPrinter &line(Args &&... Arguments) {
     appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
     return *this;
   }
@@ -4050,6 +4091,53 @@ private:
       SubmitStmtsList.StreamList.emplace_back(buildString(
           MapNames::getClNamespace() + "stream ",
           DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
+    if (getVarMap().hasSync()) {
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+        OuterStmts.emplace_back(
+            buildString("dpct::global_memory<dpct::byte_t, 1> d_",
+                        DpctGlobalInfo::getSyncName(), "(4);"));
+
+        OuterStmts.emplace_back(
+            buildString("d_", DpctGlobalInfo::getSyncName(),
+                        ".init(dpct::get_default_queue());"));
+
+        SubmitStmtsList.SyncList.emplace_back(buildString(
+            "auto ", DpctGlobalInfo::getSyncName(), " = dpct::get_access(d_",
+            DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
+
+        OuterStmts.emplace_back(buildString("dpct::dpct_memset(d_",
+                                            DpctGlobalInfo::getSyncName(),
+                                            ".get_ptr(), 0, sizeof(int));\n"));
+
+        requestFeature(HelperFeatureEnum::Memory_dpct_memset, getFilePath());
+        requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
+
+        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
+                       getFilePath());
+        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+                       getFilePath());
+
+      } else {
+
+        SubmitStmtsList.SyncList.emplace_back(
+            buildString("dpct::global_memory<unsigned int, 0> d_",
+                        DpctGlobalInfo::getSyncName(), "(0);"));
+        SubmitStmtsList.SyncList.emplace_back(
+            buildString("unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
+                        DpctGlobalInfo::getSyncName(),
+                        ".get_ptr(dpct::get_default_queue());"));
+
+        SubmitStmtsList.SyncList.emplace_back(buildString(
+            "dpct::get_default_queue().memset(", DpctGlobalInfo::getSyncName(),
+            ", 0, sizeof(int)).wait();"));
+
+        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
+                       getFilePath());
+        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr_q,
+                       getFilePath());
+      }
+    }
   }
 
   void buildKernelArgsStmt();
@@ -4082,6 +4170,7 @@ private:
   class {
   public:
     StmtList StreamList;
+    StmtList SyncList;
     StmtList RangeList;
     StmtList MemoryList;
     StmtList InitList;
@@ -4095,6 +4184,7 @@ private:
 
     inline KernelPrinter &print(KernelPrinter &Printer) {
       printList(Printer, StreamList);
+      printList(Printer, SyncList);
       printList(Printer, ExternList);
       printList(Printer, MemoryList);
       printList(Printer, InitList, "init global memory");
@@ -4112,9 +4202,10 @@ private:
 
     bool empty() const noexcept {
       return CommandGroupList.empty() && NdRangeList.empty() &&
-        AccessorList.empty() && PtrList.empty() && InitList.empty() &&
+             AccessorList.empty() && PtrList.empty() && InitList.empty() &&
              ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
-             TextureList.empty() && SamplerList.empty() && StreamList.empty();
+             TextureList.empty() && SamplerList.empty() && StreamList.empty() &&
+             SyncList.empty();
     }
 
   private:

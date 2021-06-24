@@ -423,6 +423,20 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
                                      "Enqueued barriers DPC++ extension.",
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
+
+static bits<ExperimentalFeatures> Experimentals(
+  "use-experimental-features",
+  llvm::cl::desc(
+    "Comma separated list of experimental features expect to be used in migrated "
+    "code.\n"
+    "By default, these features will no be used in migrated code."),
+  llvm::cl::CommaSeparated,
+  values(
+    llvm::cl::OptionEnumValue{
+        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
+        "DPCT helper function: nd_range_barrier. Default: off\n",
+        false }),
+  value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -1209,6 +1223,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
+  DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 

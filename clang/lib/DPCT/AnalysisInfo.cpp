@@ -125,6 +125,7 @@ std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
 std::set<DPCPPExtensions> DpctGlobalInfo::DPCPPExtSetNotPermit;
+unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -921,14 +922,39 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
                  DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
   }
 
+  if (getVarMap().hasSync()) {
+    std::string SyncParamDecl;
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+      SyncParamDecl =
+          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
+          MapNames::getClNamespace() + "ONEAPI::atomic_ref<unsigned int," +
+          MapNames::getClNamespace() + "ONEAPI::memory_order::seq_cst," +
+          MapNames::getClNamespace() + "ONEAPI::memory_scope::device," +
+          MapNames::getClNamespace() + "access::address_space::global_space>(" +
+          DpctGlobalInfo::getSyncName() + "[0]);";
+
+    } else {
+      SyncParamDecl =
+          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
+          MapNames::getClNamespace() + "ONEAPI::atomic_ref<unsigned int," +
+          MapNames::getClNamespace() + "ONEAPI::memory_order::seq_cst," +
+          MapNames::getClNamespace() + "ONEAPI::memory_scope::device," +
+          MapNames::getClNamespace() +
+          "access::address_space::global_space>(*(unsigned int "
+          "*)&" +
+          DpctGlobalInfo::getSyncName() + "[0]);";
+    }
+    KernelStmts.emplace_back(SyncParamDecl);
+  }
   printKernel(Printer);
   Printer.line("});");
 }
 
 void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   auto B = Printer.block();
-  for (auto &S : KernelStmts)
+  for (auto &S : KernelStmts) {
     Printer.line(S.StmtStr);
+  }
   Printer.indent() << getName()
                    << (hasWrittenTemplateArgs()
                            ? buildString("<", getTemplateArguments(), ">")
@@ -2429,7 +2455,6 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
     DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
     return VI;
   }
-
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
@@ -2621,7 +2646,8 @@ void removeDuplicateVar(GlobalMap<T> &VarMap,
 }
 void MemVarMap::removeDuplicateVar() {
   std::unordered_set<std::string> VarNames{DpctGlobalInfo::getItemName(),
-                                           DpctGlobalInfo::getStreamName()};
+                                           DpctGlobalInfo::getStreamName(),
+                                           DpctGlobalInfo::getSyncName()};
   dpct::removeDuplicateVar(GlobalVarMap, VarNames);
   dpct::removeDuplicateVar(LocalVarMap, VarNames);
   dpct::removeDuplicateVar(ExternVarMap, VarNames);

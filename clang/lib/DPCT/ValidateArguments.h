@@ -55,6 +55,10 @@ enum class ReportTypeEnum {
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
 enum class ExplicitNamespace { EN_None, EN_CL, EN_SYCL, EN_SYCL_Math, EN_DPCT };
 enum class DPCPPExtensions { DPCPPE_Submit_Barrier };
+enum class ExperimentalFeatures {
+  Exp_NdRangeBarrier = 0x01, // Using nd_range_barrier.
+};
+
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
