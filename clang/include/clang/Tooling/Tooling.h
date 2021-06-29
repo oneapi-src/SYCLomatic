@@ -71,6 +71,8 @@ void SetGetRunRound(std::function<unsigned int()> Func);
 unsigned int DoGetRunRound();
 void SetModuleFiles(std::set<std::string> &MF);
 std::string getRealFilePath(std::string File, clang::FileManager *FM);
+void SetColorOptionPtr(unsigned int &ColorOption);
+void SetColorOptionValue(unsigned int ColorOption);
 } // namespace tooling
 } // namespace clang
 #endif

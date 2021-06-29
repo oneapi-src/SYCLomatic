@@ -324,7 +324,7 @@ public:
 private:
   SourceManagerForWarning() {
     DiagOpts = new DiagnosticOptions();
-    DiagOpts->ShowColors = true;
+    DiagOpts->ShowColors = DpctGlobalInfo::getInstance().getColorOption();
     DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
     Diagnostics = new DiagnosticsEngine(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,

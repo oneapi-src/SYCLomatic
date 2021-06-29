@@ -125,6 +125,7 @@ std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
 std::set<DPCPPExtensions> DpctGlobalInfo::DPCPPExtSetNotPermit;
+unsigned int DpctGlobalInfo::ColorOption = 1;
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -169,6 +170,7 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
+  tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
 }
 
 std::shared_ptr<KernelCallExpr>

@@ -2060,7 +2060,9 @@ public:
     }
     return Res;
   }
-
+  unsigned int getColorOption() {
+    return ColorOption;
+  }
 private:
   DpctGlobalInfo();
 
@@ -2238,6 +2240,7 @@ private:
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
   static std::set<DPCPPExtensions> DPCPPExtSetNotPermit;
+  static unsigned int ColorOption;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

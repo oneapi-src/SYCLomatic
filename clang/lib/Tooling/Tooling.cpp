@@ -80,6 +80,7 @@ static std::set<std::string> *ReProcessFilePtr = nullptr;
 static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<std::string> *ModuleFiles = nullptr;
+static unsigned int *ColorOptionPtr = nullptr;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -180,6 +181,16 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #else
   return File;
 #endif
+}
+
+void SetColorOptionPtr(unsigned int &ColorOption) {
+  ColorOptionPtr = &ColorOption;
+}
+
+void SetColorOptionValue(unsigned int ColorOption) {
+  if(ColorOptionPtr) {
+    *ColorOptionPtr = ColorOption;
+  }
 }
 
 } // namespace tooling
@@ -481,6 +492,7 @@ bool ToolInvocation::run() {
       ArrayRef<const char *>(Argv).slice(1), MissingArgIndex, MissingArgCount);
   ParseDiagnosticArgs(*DiagOpts, ParsedArgs);
 #ifdef INTEL_CUSTOMIZATION
+  SetColorOptionValue(DiagOpts->ShowColors);
   DiagnosticPrinter =new TextDiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
   DiagConsumer = DiagnosticPrinter;
   DiagnosticsEngine Diagnostics(
