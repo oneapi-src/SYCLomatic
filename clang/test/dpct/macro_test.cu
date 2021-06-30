@@ -962,7 +962,10 @@ void foo20() {
   CMC_PROFILING_END(__LINE__);
 }
 
-//CHECK: #define CALLSHFLSYNC(x) item_ct1.get_sub_group().shuffle(x, 3 ^ 1);
+//CHECK: /*
+//CHECK-NEXT: DPCT1023:21: The DPC++ sub-group does not support mask options for shuffle.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define CALLSHFLSYNC(x) item_ct1.get_sub_group().shuffle(x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
 //CHECK: #define CALLANYSYNC(x)                                                         \
 //CHECK-NEXT:   sycl::any_of_group(                                                          \

@@ -20,20 +20,20 @@ __device__ void foo(int i) {}
 __global__ void k() {
   // CHECK: sycl::group<3> cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::sync(cta);
 
   // CHECK: sycl::group<3> block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   block.sync();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::sync(block);
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::this_thread_block().sync();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   cg::sync(cg::this_thread_block());
 
   // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
@@ -57,37 +57,37 @@ __global__ void k() {
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::system);
   __threadfence_system();
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   // CHECK-NEXT: sycl::all_of_group(item_ct1.get_group(), p);
   __syncthreads_and(p);
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   // CHECK-NEXT: sycl::any_of_group(item_ct1.get_group(), p);
   __syncthreads_or(p);
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>());
   __syncthreads_count(p);
   // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
   __syncwarp(0xffffffff);
 
-  // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p));
+  // CHECK: int a = (sycl::group_barrier(item_ct1.get_group()), sycl::all_of_group(item_ct1.get_group(), p));
   int a = __syncthreads_and(p);
-  // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p));
+  // CHECK: int b = (sycl::group_barrier(item_ct1.get_group()), sycl::any_of_group(item_ct1.get_group(), p));
   int b = __syncthreads_or(p);
-  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>()));
+  // CHECK: int c = (sycl::group_barrier(item_ct1.get_group()), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>()));
   int c = __syncthreads_count(p);
 
-  // CHECK: foo((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((sycl::group_barrier(item_ct1.get_group()), sycl::all_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_and(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((sycl::group_barrier(item_ct1.get_group()), sycl::any_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_or(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
+  // CHECK: foo((sycl::group_barrier(item_ct1.get_group()), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
   foo(__syncthreads_count(p));
 
-  // CHECK: FOO((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((sycl::group_barrier(item_ct1.get_group()), sycl::all_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_and(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((sycl::group_barrier(item_ct1.get_group()), sycl::any_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_or(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
+  // CHECK: FOO((sycl::group_barrier(item_ct1.get_group()), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
   FOO(__syncthreads_count(p));
 }
 

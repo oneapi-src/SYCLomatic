@@ -8,19 +8,126 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_WARP("__all", MapNames::getClNamespace() + "all_of_group")
-ENTRY_WARP("__all_sync", MapNames::getClNamespace() + "all_of_group")
-ENTRY_WARP("__any", MapNames::getClNamespace() + "any_of_group")
-ENTRY_WARP("__any_sync", MapNames::getClNamespace() + "any_of_group")
-ENTRY_WARP("__shfl", "shuffle")
-ENTRY_WARP("__shfl_sync", "shuffle")
-ENTRY_WARP("__shfl_up", "shuffle_up")
-ENTRY_WARP("__shfl_up_sync", "shuffle_up")
-ENTRY_WARP("__shfl_down", "shuffle_down")
-ENTRY_WARP("__shfl_down_sync", "shuffle_down")
-ENTRY_WARP("__shfl_xor", "shuffle_xor")
-ENTRY_WARP("__shfl_xor_sync", "shuffle_xor")
 
-ENTRY_WARP("__activemask", "Unsupported: No such API in DPC++")
-ENTRY_WARP("__ballot", MapNames::getClNamespace() + "reduce_over_group")
-ENTRY_WARP("__ballot_sync", MapNames::getClNamespace() + "reduce_over_group")
+
+CALL_FACTORY_ENTRY(
+    "__all_sync",
+    CALL(MapNames::getClNamespace() + "all_of_group",
+         ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+         makeCombinedArg(
+             ARG("(~"),
+             makeCombinedArg(
+                 makeCallArgCreatorWithCall(0),
+                 makeCombinedArg(
+                     ARG(" & (0x1 << " + DpctGlobalInfo::getItemName()
+                         + ".get_sub_group().get_local_linear_id())) || "),
+                     makeCallArgCreatorWithCall(1))))))
+
+CALL_FACTORY_ENTRY("__all", CALL(MapNames::getClNamespace() + "all_of_group",
+                   ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+                   makeCallArgCreatorWithCall(0)))
+
+CALL_FACTORY_ENTRY(
+    "__any_sync",
+    CALL(MapNames::getClNamespace() + "any_of_group",
+         ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+         makeCombinedArg(
+             ARG("("),
+             makeCombinedArg(
+                 makeCallArgCreatorWithCall(0),
+                 makeCombinedArg(
+                     ARG(" & (0x1 << " + DpctGlobalInfo::getItemName()
+                         + ".get_sub_group().get_local_linear_id())) && "),
+                     makeCallArgCreatorWithCall(1))))))
+
+CALL_FACTORY_ENTRY("__any", CALL(MapNames::getClNamespace() + "any_of_group",
+                   ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+                   makeCallArgCreatorWithCall(0)))
+
+// __shfl_up_sync
+WARNING_FACTORY_ENTRY("__shfl_up_sync",
+                      CALL_FACTORY_ENTRY("__shfl_up_sync",
+                                         CALL(MapNames::getClNamespace() + "shift_group_right",
+                                              ARG(DpctGlobalInfo::getItemName()
+                                                  + ".get_sub_group()"),
+                                              makeCallArgCreatorWithCall(1), makeCallArgCreatorWithCall(2))),
+                      Diagnostics::MASK_UNSUPPORTED,
+                      ARG(MapNames::getClNamespace() + "shift_group_right"))
+
+// __shfl_up
+CALL_FACTORY_ENTRY("__shfl_up", CALL(MapNames::getClNamespace() + "shift_group_right",
+                   ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+                   makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
+// __shfl_down_sync
+WARNING_FACTORY_ENTRY("__shfl_down_sync",
+                      CALL_FACTORY_ENTRY("__shfl_down_sync",
+                                         CALL(MapNames::getClNamespace() + "shift_group_left",
+                                              ARG(DpctGlobalInfo::getItemName()
+                                                  + ".get_sub_group()"),
+                                              makeCallArgCreatorWithCall(1), makeCallArgCreatorWithCall(2))),
+                      Diagnostics::MASK_UNSUPPORTED,
+                      ARG(MapNames::getClNamespace() + "shift_group_left"))
+// __shfl_down
+CALL_FACTORY_ENTRY("__shfl_down", CALL(MapNames::getClNamespace() + "shift_group_left",
+                   ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+                   makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
+//__shfl_sync
+WARNING_FACTORY_ENTRY("__shfl_sync",
+                      MEMBER_CALL_FACTORY_ENTRY("__shfl_sync",
+                                                DpctGlobalInfo::getItemName() + ".get_sub_group()", false,
+                                                "shuffle", makeCallArgCreatorWithCall(1),
+                                                makeCallArgCreatorWithCall(2)),
+                      Diagnostics::MASK_UNSUPPORTED,
+                      ARG("shuffle"))
+// __shfl
+MEMBER_CALL_FACTORY_ENTRY("__shfl",
+                          DpctGlobalInfo::getItemName() + ".get_sub_group()", false,
+                          "shuffle", makeCallArgCreatorWithCall(0),
+                          makeCallArgCreatorWithCall(1))
+
+// __shfl_xor_sync
+WARNING_FACTORY_ENTRY("__shfl_xor_sync",
+                      MEMBER_CALL_FACTORY_ENTRY("__shfl_xor_sync",
+                                                DpctGlobalInfo::getItemName() + ".get_sub_group()", false,
+                                                "shuffle_xor", makeCallArgCreatorWithCall(1),
+                                                makeCallArgCreatorWithCall(2)),
+                      Diagnostics::MASK_UNSUPPORTED,
+                      ARG("shuffle_xor"))
+
+// __shfl_xor
+MEMBER_CALL_FACTORY_ENTRY("__shfl_xor",
+                          DpctGlobalInfo::getItemName() + ".get_sub_group()", false,
+                          "shuffle_xor", makeCallArgCreatorWithCall(0),
+                          makeCallArgCreatorWithCall(1))
+
+WARNING_FACTORY_ENTRY("__activemask",
+                      CALL_FACTORY_ENTRY("__activemask", CALL("__activemask")),
+                      Diagnostics::ACTIVE_MASK_NOT_SUPPORTED,
+                      ARG("__activemask"), ARG("0xffffffff"))
+
+CALL_FACTORY_ENTRY(
+    "__ballot",
+    CALL(MapNames::getClNamespace() + "reduce_over_group",
+         ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+         makeCombinedArg(
+             ARG(0),
+             ARG(" ? (0x1 << " + DpctGlobalInfo::getItemName()
+                 + ".get_sub_group().get_local_linear_id()) : 0, sycl::ONEAPI::plus<>()"))))
+
+CALL_FACTORY_ENTRY(
+    "__ballot_sync",
+    CALL(MapNames::getClNamespace() + "reduce_over_group",
+         ARG(DpctGlobalInfo::getItemName() + ".get_sub_group()"),
+         makeCombinedArg(
+             ARG("("),
+             makeCombinedArg(
+                 ARG(0),
+                 makeCombinedArg(
+                     ARG(" & (0x1 << " + DpctGlobalInfo::getItemName() + ".get_sub_group().get_local_linear_id())) && "),
+                     makeCombinedArg(
+                         ARG(1),
+                         ARG(" ? (0x1 << " + DpctGlobalInfo::getItemName()
+                             + ".get_sub_group().get_local_linear_id()) : 0, sycl::ONEAPI::plus<>()")))))))
+

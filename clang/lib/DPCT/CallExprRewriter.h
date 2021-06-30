@@ -186,6 +186,28 @@ public:
   }
 };
 
+template <class... MsgArgs>
+class ReportWarningRewriterFactory
+    : public CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>,
+                              Diagnostics, MsgArgs...> {
+  using BaseT = CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>,
+                                        Diagnostics, MsgArgs...>;
+  std::shared_ptr<CallExprRewriterFactoryBase> First;
+
+public:
+  using BaseT::CallExprRewriterFactory;
+  ReportWarningRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory,
+      std::string FuncName, Diagnostics MsgID, MsgArgs... Args)
+      : BaseT(FuncName, MsgID, Args...), First(FirstFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    auto R = BaseT::create(C);
+    if (First)
+      return First->create(C);
+    return R;
+  }
+};
+
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
@@ -374,29 +396,6 @@ protected:
   friend MathBinaryOperatorRewriterFactory;
 };
 
-/// The rewriter for migrating warp functions
-class WarpFunctionRewriter : public FuncCallExprRewriter {
-private:
-  static std::map<std::string, std::string> WarpFunctionsMap;
-  void reportNoMaskWarning() {
-    report(Diagnostics::MASK_UNSUPPORTED, false, TargetCalleeName);
-  }
-
-protected:
-  WarpFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeName)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
-
-public:
-  virtual Optional<std::string> rewrite() override;
-
-protected:
-  std::string getNewFuncName();
-
-  friend WarpFunctionRewriterFactory;
-  friend MapNames;
-};
-
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
   Val.print(Stream);
 }
@@ -406,6 +405,10 @@ template <class StreamT> void print(StreamT &Stream, const Expr *E) {
 }
 template <class StreamT> void print(StreamT &Stream, StringRef Str) {
   Stream << Str;
+}
+template <class StreamT>
+void print(StreamT &Stream, ExprAnalysis &EA, StringRef Str) {
+  print(Stream, Str);
 }
 template <class StreamT> void print(StreamT &Stream, const std::string &Str) {
   Stream << Str;
@@ -428,6 +431,12 @@ void print(StreamT &Stream, ArgumentAnalysis &AA,
   AA.analyze(P.second);
   Stream << AA.getRewritePrefix() << AA.getRewriteString()
          << AA.getRewritePostfix();
+}
+
+template <class StreamT, class T1, class T2>
+void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<T1, T2> P) {
+  dpct::print(Stream, AA, P.first);
+  dpct::print(Stream, AA, P.second);
 }
 
 template <class StreamT>
@@ -528,6 +537,12 @@ public:
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream,
                 std::pair<const CallExpr *, const Expr *> P) const {
+    dpct::print(Stream, A, P);
+  }
+
+  template <class StreamT, class T1, class T2>
+  void printArg(std::false_type, StreamT &Stream,
+    std::pair<T1, T2> P) const {
     dpct::print(Stream, A, P);
   }
 
@@ -701,6 +716,21 @@ public:
   }
 };
 
+template <class ArgT> class ToStringExprRewriter : public CallExprRewriter {
+  ArgT Arg;
+
+public:
+  ToStringExprRewriter(const CallExpr *C, StringRef Source,
+                       std::function<ArgT(const CallExpr *)> ArgCreator)
+      : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
+  Optional<std::string> rewrite() override {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    print(OS, Arg);
+    return Result;
+  }
+};
+
 template <class... ArgsT>
 class NewExprPrinter : CallExprPrinter<StringRef, ArgsT...> {
   using Base = CallExprPrinter<StringRef, ArgsT...>;
@@ -840,6 +870,13 @@ public:
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
       : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
+  MemberCallExprRewriter(
+    const CallExpr *C, StringRef Source,
+    const BaseT &BaseCreator, bool IsArrow,
+    StringRef Member,
+    const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
+    : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
+      C, Source, BaseCreator, IsArrow, Member, ArgsCreator(C)...) {}
 };
 
 template <class CalleeT, class... ArgsT>

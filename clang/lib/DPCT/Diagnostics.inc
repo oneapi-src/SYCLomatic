@@ -188,3 +188,5 @@ DEF_WARNING(DEVICE_CALL_DIFFERENT, 1084, "The function call has multiple migrati
 DEF_COMMENT(DEVICE_CALL_DIFFERENT, 1084, "The function call has multiple migration results in different template instantiations that could not be unified. You may need to modify the code.")
 DEF_WARNING(SUBGROUP_SIZE_CONFLICT, 1085, "The function %0 requires subgroup size to be %1, while other subgroup function in same DPC++ kernel requires differnt subgroup size. You may need to adjust the code.")
 DEF_COMMENT(SUBGROUP_SIZE_CONFLICT, 1085, "The function {0} requires subgroup size to be {1}, while other subgroup function in same DPC++ kernel requires differnt subgroup size. You may need to adjust the code.")
+DEF_WARNING(ACTIVE_MASK_NOT_SUPPORTED, 1086, "The function %0 is not supported. You may need to use %1 instead or adjust the code.")
+DEF_COMMENT(ACTIVE_MASK_NOT_SUPPORTED, 1086, "The function {0} is not supported. You may need to use {1} instead or adjust the code.")

@@ -51,7 +51,6 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASGemmExTypeInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
-std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -1032,12 +1031,6 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
-  };
-
-  WarpFunctionRewriter::WarpFunctionsMap = {
-#define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},
-#include "APINamesWarp.inc"
-#undef ENTRY_WARP
   };
 }
 

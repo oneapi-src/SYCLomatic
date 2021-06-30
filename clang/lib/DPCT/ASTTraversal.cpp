@@ -2063,11 +2063,6 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
         return p.first;
       });
 
-  auto hasAnyThrustFuncName = [&]() {
-    return internal::Matcher<NamedDecl>(
-        new internal::HasNameMatcher(ThrustFuncNames));
-  };
-
   MF.addMatcher(callExpr(callee(functionDecl(
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
                     .bind("thrustFuncCall"),
@@ -12871,9 +12866,10 @@ REGISTER_RULE(MathFunctionsRule)
 
 void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> WarpFunctions = {
-#define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
-#include "APINamesWarp.inc"
-#undef ENTRY_WARP
+    "__shfl_up_sync", "__shfl_down_sync", "__shfl_sync",
+    "__shfl_up", "__shfl_down", "__shfl", "__shfl_xor",
+    "__shfl_xor_sync", "__all", "__all_sync", "__any",
+    "__any_sync", "__ballot", "__ballot_sync", "__activemask"
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
@@ -12935,7 +12931,8 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads" || FuncName == "sync") {
     report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
-    std::string Replacement = getItemName() + ".barrier()";
+    std::string Replacement = MapNames::getClNamespace() + "group_barrier(" +
+                              getItemName() + ".get_group())";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
@@ -13030,9 +13027,11 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
     if (IsAssigned) {
       ReplStr = "(";
-      ReplStr += DpctGlobalInfo::getItemName() + ".barrier(), ";
+      ReplStr += MapNames::getClNamespace() + "group_barrier(" +
+                 DpctGlobalInfo::getItemName() + ".get_group()), ";
     } else {
-      ReplStr += DpctGlobalInfo::getItemName() + ".barrier();" + getNL();
+      ReplStr += MapNames::getClNamespace() + "group_barrier(" +
+                 DpctGlobalInfo::getItemName() + ".get_group());" + getNL();
       ReplStr += getIndent(CE->getBeginLoc(), *Result.SourceManager).str();
     }
     if (FuncName == "__syncthreads_and") {

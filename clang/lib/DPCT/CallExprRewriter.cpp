@@ -1085,88 +1085,6 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   return buildRewriteString();
 }
 
-Optional<std::string> WarpFunctionRewriter::rewrite() {
-  if (SourceCalleeName == "__activemask") {
-    report(Diagnostics::NOTSUPPORTED, false,
-           MapNames::ITFName.at(SourceCalleeName.str()));
-    RewriteArgList = getMigratedArgs();
-    setTargetCalleeName(SourceCalleeName.str());
-  } else {
-    if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
-      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
-                                  ".get_sub_group()");
-      RewriteArgList.emplace_back(getMigratedArg(0));
-    } else if (SourceCalleeName == "__all_sync" ||
-               SourceCalleeName == "__any_sync") {
-      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
-                                  ".get_sub_group()");
-      std::string Mask;
-      auto CE = dyn_cast<CallExpr>(Call->getArg(0));
-      if (CE && CE->getDirectCallee()) {
-        Mask = CE->getDirectCallee()->getNameAsString();
-      }
-      if (Mask == "__activemask") {
-        RewriteArgList.emplace_back(getMigratedArg(1));
-      } else if (SourceCalleeName == "__all_sync") {
-        RewriteArgList.emplace_back(
-            "(~" + getMigratedArg(0) + " & (0x1 << " +
-            DpctGlobalInfo::getItemName() +
-            ".get_sub_group().get_local_linear_id())) || " + getMigratedArg(1));
-      } else if (SourceCalleeName == "__any_sync") {
-        RewriteArgList.emplace_back(
-            "(" + getMigratedArg(0) + " & (0x1 << " +
-            DpctGlobalInfo::getItemName() +
-            ".get_sub_group().get_local_linear_id())) && " + getMigratedArg(1));
-      }
-      setTargetCalleeName(
-          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
-    } else if (SourceCalleeName == "__ballot" ||
-               SourceCalleeName == "__ballot_sync") {
-      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
-                                  ".get_sub_group()");
-      std::string Mask;
-      auto CE = dyn_cast<CallExpr>(Call->getArg(0));
-      if (CE && CE->getDirectCallee()) {
-        Mask = CE->getDirectCallee()->getNameAsString();
-      }
-      if (SourceCalleeName == "__ballot" || Mask == "__activemask") {
-        RewriteArgList.emplace_back(
-            getMigratedArg(Call->getNumArgs() - 1) + " ? " + "(0x1 << " +
-            DpctGlobalInfo::getItemName() +
-            ".get_sub_group().get_local_linear_id()) : 0");
-      } else if (SourceCalleeName == "__ballot_sync") {
-        RewriteArgList.emplace_back(
-            "(" + getMigratedArg(0) + " & (0x1 << " +
-            DpctGlobalInfo::getItemName() +
-            ".get_sub_group().get_local_linear_id())) && " + getMigratedArg(1) +
-            " ? " + "(0x1 << " + DpctGlobalInfo::getItemName() +
-            ".get_sub_group().get_local_linear_id()) : 0");
-      }
-      RewriteArgList.emplace_back(MapNames::getClNamespace() +
-                                  "ONEAPI::plus<>()");
-      setTargetCalleeName(
-          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
-    } else if (SourceCalleeName.endswith("_sync")) {
-      reportNoMaskWarning();
-      RewriteArgList.emplace_back(getMigratedArg(1));
-      RewriteArgList.emplace_back(getMigratedArg(2));
-      setTargetCalleeName(
-          buildString(DpctGlobalInfo::getItemName(), ".get_sub_group().",
-                      MapNames::findReplacedName(WarpFunctionsMap,
-                                                 SourceCalleeName.str())));
-    } else {
-      RewriteArgList.emplace_back(getMigratedArg(0));
-      RewriteArgList.emplace_back(getMigratedArg(1));
-      setTargetCalleeName(
-          buildString(DpctGlobalInfo::getItemName(), ".get_sub_group().",
-                      MapNames::findReplacedName(WarpFunctionsMap,
-                                                 SourceCalleeName.str())));
-    }
-  }
-
-  return buildRewriteString();
-}
-
 const Expr *getDereferencedExpr(const Expr *E) {
   E = E->IgnoreImplicitAsWritten();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
@@ -1275,6 +1193,15 @@ std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
     return std::pair<const CallExpr *, const Expr *>(C, C->getArg(Idx));
+  };
+}
+
+template <class T1, class T2>
+std::function<std::pair<T1, T2>(const CallExpr *)>
+makeCombinedArg(std::function<T1(const CallExpr *)> Part1,
+                std::function<T2(const CallExpr *)> Part2) {
+  return [=](const CallExpr *C) -> std::pair<T1, T2> {
+    return std::make_pair(Part1(C), Part2(C));
   };
 }
 
@@ -1514,6 +1441,32 @@ createMemberCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
+template <class BaseT, class... ArgsT>
+std::shared_ptr<CallExprRewriterFactoryBase>
+createMemberCallExprRewriterFactory(
+  const std::string &SourceName,
+  BaseT BaseCreator, bool IsArrow,
+  std::string MemberName,
+  std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+    MemberCallExprRewriter<BaseT, ArgsT...>,
+    BaseT, bool, std::string,
+    std::function<ArgsT(const CallExpr *)>...>>(
+      SourceName,
+      BaseCreator,
+      IsArrow, MemberName,
+      std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
+}
+
+template <class... ArgsT>
+std::shared_ptr<CallExprRewriterFactoryBase> createReportWarningRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    const std::string &FuncName, Diagnostics MsgId, ArgsT... ArgsCreator) {
+  return std::make_shared<ReportWarningRewriterFactory<ArgsT...>>(
+      Factory.second, FuncName, MsgId, ArgsCreator...);
+}
+
 template <class ArgT>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createDeleterCallExprRewriterFactory(
@@ -1524,6 +1477,15 @@ createDeleterCallExprRewriterFactory(
       SourceName,
       std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
+
+template <class ArgT>
+std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFactory(
+    const std::string &SourceName, std::function<ArgT(const CallExpr *)> &&ArgCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+      ToStringExprRewriter<ArgT>, std::function<ArgT(const CallExpr *)>>>(
+      SourceName, std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
+}
+
 
 /// Create AssignableRewriterFactory key-value pair with inner key-value.
 /// If the call expr's return value is used, will insert around "(" and ", 0)".
@@ -1809,6 +1771,10 @@ public:
   {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
 #define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
+#define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
+  {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
+#define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
+  {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 
 ///***************************************************************
 /// Examples:
@@ -1893,7 +1859,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME)                               \
   WARP_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#include "APINamesWarp.inc"
+
 #undef ENTRY_WARP
 
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
@@ -1909,6 +1875,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesDriver.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
+#include "APINamesWarp.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
