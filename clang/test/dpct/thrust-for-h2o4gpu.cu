@@ -18,6 +18,8 @@
 #include <thrust/inner_product.h>
 #include <thrust/extrema.h>
 #include <thrust/host_vector.h>
+#include <thrust/gather.h>
+#include <thrust/scatter.h>
 
 template <typename T> struct is_even {
   __host__ __device__ bool operator()(T x) {
@@ -222,6 +224,121 @@ void foo() {
   my_math c;
   //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*stream),dev_a,dev_a + 10,dev_b,c);
   thrust::transform(thrust::cuda::par.on(stream),dev_a,dev_a + 10,dev_b,c);
+}
+
+{
+  int values[10] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  thrust::device_vector<int> d_values(values, values + 10);
+  int map[10] = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+  thrust::device_vector<int> d_map(map, map + 10);
+  thrust::device_vector<int> d_output(10);
+  // CHECK: dpct::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+  // CHECK-NEXT: dpct::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+  thrust::gather(d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+  thrust::gather(thrust::device, d_map.begin(), d_map.end(), d_values.begin(),d_output.begin());
+}
+
+{
+  int values[10] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  thrust::host_vector<int> h_values(values, values + 10);
+  int map[10] = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+  thrust::host_vector<int> h_map(map, map + 10);
+  thrust::host_vector<int> h_output(10);
+
+  // CHECK: dpct::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
+  // CHECK-NEXT: dpct::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
+  thrust::gather(thrust::seq, h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
+  thrust::gather(h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
+}
+
+{
+  int values[10] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  thrust::device_vector<int> d_values(values, values + 10);
+  int map[10] = {0, 5, 1, 6, 2, 7, 3, 8, 4, 9};
+  thrust::device_vector<int> d_map(map, map + 10);
+  thrust::device_vector<int> d_output(10);
+
+  // CHECK: dpct::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+  // CHECK-NEXT: dpct::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+  thrust::scatter(d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+  thrust::scatter(thrust::device, d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+}
+
+{
+  int values[10] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  thrust::host_vector<int> h_values(values, values + 10);
+  int map[10] = {0, 5, 1, 6, 2, 7, 3, 8, 4, 9};
+  thrust::host_vector<int> h_map(map, map + 10);
+  thrust::host_vector<int> h_output(10);
+
+  // CHECK: dpct::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+  // CHECK-NEXT: dpct::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+  thrust::scatter(thrust::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+  thrust::scatter(h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+}
+
+{
+  const int N = 7;
+  int A[N] = {1, 3, 3, 3, 2, 2, 1}; // input keys
+  int B[N] = {9, 8, 7, 6, 5, 4, 3}; // input values
+
+  thrust::device_vector<int> d_keys(A, A + N);
+  thrust::device_vector<int> d_values(B, B + N);
+  thrust::device_vector<int> d_output_keys(N);
+  thrust::device_vector<int> d_output_values(N);
+  thrust::equal_to<int> binary_pred;
+
+  typedef thrust::pair<thrust::device_vector<int>::iterator,
+                       thrust::device_vector<int>::iterator>
+      iter_pair;
+  thrust::device_vector<iter_pair> new_last_vec(1);
+  iter_pair new_last;
+
+  thrust::pair<int *, int *> new_end;
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+  *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+  *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+  *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+  *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+}
+
+{
+  const int N = 7;
+  int A[N] = {1, 3, 3, 3, 2, 2, 1}; // input keys
+  int B[N] = {9, 8, 7, 6, 5, 4, 3}; // input values
+
+  thrust::host_vector<int> h_keys(A, A + N);
+  thrust::host_vector<int> h_values(B, B + N);
+  thrust::host_vector<int> h_output_keys(N);
+  thrust::host_vector<int> h_output_values(N);
+  thrust::equal_to<int> binary_pred;
+
+  typedef thrust::pair<thrust::host_vector<int>::iterator,
+                       thrust::host_vector<int>::iterator>
+      iter_pair;
+  thrust::host_vector<iter_pair> new_last_vec(1);
+  iter_pair new_last;
+
+  thrust::pair<int *, int *> new_end;
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+  *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+  *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+  *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+  *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(),h_output_keys.begin(), h_output_values.begin());
 }
 }
 

@@ -337,3 +337,125 @@ CONDITIONAL_FACTORY_ENTRY(
                          CALL("oneapi::dpl::inclusive_scan",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(0), ARG(1), ARG(2))))))
+
+// thrust::gather
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "gather",
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::gather(thrust::device, d_map.begin(), d_map.end(), d_values.begin(),d_output.begin());
+        CALL_FACTORY_ENTRY("gather",
+                          CALL("dpct::gather",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4))),
+        // Handling case: thrust::gather(thrust::seq, h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
+        CALL_FACTORY_ENTRY("gather", CALL("dpct::gather", ARG("oneapi::dpl::execution::seq"),
+                          ARG(1), ARG(2), ARG(3), ARG(4))))),
+  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "gather",
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::gather(d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+        CALL_FACTORY_ENTRY("gather",
+                          CALL("dpct::gather",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3))),
+        // Handling case: thrust::gather(h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
+        CALL_FACTORY_ENTRY("gather", CALL("dpct::gather", ARG("oneapi::dpl::execution::seq"),
+                          ARG(0), ARG(1), ARG(2), ARG(3))))))
+
+// thrust::scatter
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "scatter",
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::scatter(thrust::device, d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+        CALL_FACTORY_ENTRY("scatter",
+                          CALL("dpct::scatter",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4))),
+        // Handling case: thrust::scatter(thrust::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+        CALL_FACTORY_ENTRY("scatter", CALL("dpct::scatter", ARG("oneapi::dpl::execution::seq"),
+                          ARG(1), ARG(2), ARG(3), ARG(4))))),
+  FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "scatter",
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::scatter(d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+        CALL_FACTORY_ENTRY("scatter",
+                          CALL("dpct::scatter",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3))),
+        // Handling case: thrust::scatter(h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+        CALL_FACTORY_ENTRY("scatter", CALL("dpct::scatter", ARG("oneapi::dpl::execution::seq"),
+                          ARG(0), ARG(1), ARG(2), ARG(3))))))
+
+
+
+// thrust::unique_by_key_copy
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(6),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(),d_output_keys.begin(), d_output_values.begin());
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                          CALL("dpct::unique_copy",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(1), ARG(2), ARG(3), ARG(4),  ARG(5))),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                          CALL("dpct::unique_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                           CALL("dpct::unique_copy",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                           CALL("dpct::unique_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CompareArgType(0, 1),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+          CALL_FACTORY_ENTRY("unique_by_key_copy",
+                             CALL("dpct::unique_copy",
+                                  QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                           CALL("dpct::unique_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))),
+    FEATURE_REQUEST_FACTORY(HelperFileEnum::DplExtrasAlgorithm, "unique_copy",
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(),d_output_keys.begin(), d_output_values.begin());
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                          CALL("dpct::unique_copy",
+                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                ARG(0), ARG(1), ARG(2), ARG(3),ARG(4))),
+        // Handling case:
+        // *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+        CALL_FACTORY_ENTRY("unique_by_key_copy",
+                          CALL("dpct::unique_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))))
