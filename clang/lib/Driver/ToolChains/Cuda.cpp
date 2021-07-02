@@ -118,6 +118,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
     CV = CudaVersion::CUDA_113;
     IsVersionSupported = true;
     return true;
+  } else if (Major == 11 && Minor == 4) {
+    CV = CudaVersion::CUDA_114;
+    IsVersionSupported = true;
+    return true;
   }
   return false;
 }

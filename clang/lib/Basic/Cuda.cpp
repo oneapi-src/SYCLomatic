@@ -39,8 +39,10 @@ const char *CudaVersionToString(CudaVersion V) {
 #ifdef INTEL_CUSTOMIZATION
   case CudaVersion::CUDA_113:
     return "11.3";
-  }
+  case CudaVersion::CUDA_114:
+    return "11.4";
 #endif
+  }
   llvm_unreachable("invalid enum");
 }
 
@@ -60,6 +62,7 @@ CudaVersion CudaStringToVersion(const llvm::Twine &S) {
       .Case("11.2", CudaVersion::CUDA_112)
 #ifdef INTEL_CUSTOMIZATION
       .Case("11.3", CudaVersion::CUDA_113)
+      .Case("11.4", CudaVersion::CUDA_114)
 #endif
       .Default(CudaVersion::UNKNOWN);
 }
@@ -232,6 +235,8 @@ CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
 #ifdef INTEL_CUSTOMIZATION
   case 113:
     return CudaVersion::CUDA_113;
+  case 114:
+    return CudaVersion::CUDA_114;
 #endif
   default:
     return CudaVersion::UNKNOWN;
