@@ -1086,8 +1086,7 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 }
 
 Optional<std::string> WarpFunctionRewriter::rewrite() {
-  if (SourceCalleeName == "__activemask" || SourceCalleeName == "__ballot" ||
-      SourceCalleeName == "__ballot_sync") {
+  if (SourceCalleeName == "__activemask") {
     report(Diagnostics::NOTSUPPORTED, false,
            MapNames::ITFName.at(SourceCalleeName.str()));
     RewriteArgList = getMigratedArgs();
@@ -1095,14 +1094,56 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
   } else {
     if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
       RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
-                                  ".get_group()");
+                                  ".get_sub_group()");
       RewriteArgList.emplace_back(getMigratedArg(0));
     } else if (SourceCalleeName == "__all_sync" ||
                SourceCalleeName == "__any_sync") {
-      reportNoMaskWarning();
       RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
-                                  ".get_group()");
-      RewriteArgList.emplace_back(getMigratedArg(1));
+                                  ".get_sub_group()");
+      std::string Mask;
+      auto CE = dyn_cast<CallExpr>(Call->getArg(0));
+      if (CE && CE->getDirectCallee()) {
+        Mask = CE->getDirectCallee()->getNameAsString();
+      }
+      if (Mask == "__activemask") {
+        RewriteArgList.emplace_back(getMigratedArg(1));
+      } else if (SourceCalleeName == "__all_sync") {
+        RewriteArgList.emplace_back(
+            "(~" + getMigratedArg(0) + " & (0x1 << " +
+            DpctGlobalInfo::getItemName() +
+            ".get_sub_group().get_local_linear_id())) || " + getMigratedArg(1));
+      } else if (SourceCalleeName == "__any_sync") {
+        RewriteArgList.emplace_back(
+            "(" + getMigratedArg(0) + " & (0x1 << " +
+            DpctGlobalInfo::getItemName() +
+            ".get_sub_group().get_local_linear_id())) && " + getMigratedArg(1));
+      }
+      setTargetCalleeName(
+          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
+    } else if (SourceCalleeName == "__ballot" ||
+               SourceCalleeName == "__ballot_sync") {
+      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() +
+                                  ".get_sub_group()");
+      std::string Mask;
+      auto CE = dyn_cast<CallExpr>(Call->getArg(0));
+      if (CE && CE->getDirectCallee()) {
+        Mask = CE->getDirectCallee()->getNameAsString();
+      }
+      if (SourceCalleeName == "__ballot" || Mask == "__activemask") {
+        RewriteArgList.emplace_back(
+            getMigratedArg(Call->getNumArgs() - 1) + " ? " + "(0x1 << " +
+            DpctGlobalInfo::getItemName() +
+            ".get_sub_group().get_local_linear_id()) : 0");
+      } else if (SourceCalleeName == "__ballot_sync") {
+        RewriteArgList.emplace_back(
+            "(" + getMigratedArg(0) + " & (0x1 << " +
+            DpctGlobalInfo::getItemName() +
+            ".get_sub_group().get_local_linear_id())) && " + getMigratedArg(1) +
+            " ? " + "(0x1 << " + DpctGlobalInfo::getItemName() +
+            ".get_sub_group().get_local_linear_id()) : 0");
+      }
+      RewriteArgList.emplace_back(MapNames::getClNamespace() +
+                                  "ONEAPI::plus<>()");
       setTargetCalleeName(
           MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
     } else if (SourceCalleeName.endswith("_sync")) {

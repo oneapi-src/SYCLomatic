@@ -8,10 +8,10 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-ENTRY_WARP("__all", MapNames::getClNamespace() + "ONEAPI::all_of")
-ENTRY_WARP("__all_sync", MapNames::getClNamespace() + "ONEAPI::all_of")
-ENTRY_WARP("__any", MapNames::getClNamespace() + "ONEAPI::any_of")
-ENTRY_WARP("__any_sync", MapNames::getClNamespace() + "ONEAPI::any_of")
+ENTRY_WARP("__all", MapNames::getClNamespace() + "all_of_group")
+ENTRY_WARP("__all_sync", MapNames::getClNamespace() + "all_of_group")
+ENTRY_WARP("__any", MapNames::getClNamespace() + "any_of_group")
+ENTRY_WARP("__any_sync", MapNames::getClNamespace() + "any_of_group")
 ENTRY_WARP("__shfl", "shuffle")
 ENTRY_WARP("__shfl_sync", "shuffle")
 ENTRY_WARP("__shfl_up", "shuffle_up")
@@ -22,5 +22,5 @@ ENTRY_WARP("__shfl_xor", "shuffle_xor")
 ENTRY_WARP("__shfl_xor_sync", "shuffle_xor")
 
 ENTRY_WARP("__activemask", "Unsupported: No such API in DPC++")
-ENTRY_WARP("__ballot", "Unsupported: No such API in DPC++")
-ENTRY_WARP("__ballot_sync", "Unsupported: No such API in DPC++")
+ENTRY_WARP("__ballot", MapNames::getClNamespace() + "reduce_over_group")
+ENTRY_WARP("__ballot_sync", MapNames::getClNamespace() + "reduce_over_group")

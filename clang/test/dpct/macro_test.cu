@@ -964,11 +964,12 @@ void foo20() {
 
 //CHECK: #define CALLSHFLSYNC(x) item_ct1.get_sub_group().shuffle(x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
-//CHECK: /*
-//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
-//CHECK-NEXT: sycl::ONEAPI::any_of.
-//CHECK-NEXT: */
-//CHECK-NEXT: #define CALLANYSYNC(x) sycl::ONEAPI::any_of(item_ct1.get_group(), x != 0.0f);
+//CHECK: #define CALLANYSYNC(x)                                                         \
+//CHECK-NEXT:   sycl::any_of_group(                                                          \
+//CHECK-NEXT:       item_ct1.get_sub_group(),                                                \
+//CHECK-NEXT:       (0xffffffff &                                                            \
+//CHECK-NEXT:        (0x1 << item_ct1.get_sub_group().get_local_linear_id())) &&             \
+//CHECK-NEXT:           x != 0.0f);
 #define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
 
 __global__ void foo21(){
