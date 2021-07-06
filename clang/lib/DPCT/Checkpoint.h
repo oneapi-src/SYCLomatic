@@ -22,7 +22,7 @@
 
 #else
 #define JMP_BUF jmp_buf
-#define SETJMP(x) setjmp(x)
+#define SETJMP(x) _setjmp(x)
 #define LONGJMP longjmp
 #endif
 

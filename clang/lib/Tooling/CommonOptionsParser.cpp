@@ -52,12 +52,15 @@ const char *const CommonOptionsParser::HelpMessage =
     "\tsuffix of a path in the compile command database.\n"
     "\n";
 
+
+namespace clang {
+namespace tooling {
+
 #ifdef INTEL_CUSTOMIZATION
 #ifdef _WIN32
 std::string VcxprojFilePath;
 #endif
-namespace clang {
-namespace tooling {
+
 static std::string FormatSearchPath = "";
 std::string getFormatSearchPath() { return FormatSearchPath; }
 #ifdef _WIN32

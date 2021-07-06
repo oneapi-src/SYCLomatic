@@ -81,6 +81,7 @@ static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<std::string> *ModuleFiles = nullptr;
 static unsigned int *ColorOptionPtr = nullptr;
+extern std::string VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
@@ -202,7 +203,7 @@ void SetColorOptionValue(unsigned int ColorOption) {
 
 #else
 #define JMP_BUF   jmp_buf
-#define SETJMP(x)       setjmp(x)
+#define SETJMP(x)       _setjmp(x)
 #define LONGJMP      longjmp
 #endif
 
@@ -776,7 +777,6 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
       // In Microsoft Visual Studio Project, CUDA file in <None> is not part of
       // the build project, So if "*.cu" files is found in <None> node, just
       // skip it and give a warning message.
-      extern std::string VcxprojFilePath;
       if ((!CommandLine.empty() && CommandLine[0] == "None") &&
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
