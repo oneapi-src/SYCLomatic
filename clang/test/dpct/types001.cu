@@ -8,6 +8,7 @@
 #include <cusolverDn.h>
 #include <cufft.h>
 #include <stdio.h>
+#include <vector>
 
 // CHECK: dpct::device_info deviceProp;
 cudaDeviceProp deviceProp;
@@ -564,3 +565,17 @@ void fun3() {
   }
 }
 
+void fun4() {
+  // CHECK: std::vector<sycl::queue *> vec1;
+  // CHECK-NEXT: vec1.push_back(nullptr);
+  // CHECK-NEXT: std::vector<sycl::queue *> vec2;
+  // CHECK-NEXT: vec2.push_back(nullptr);
+  // CHECK-NEXT: sycl::queue *a1 = nullptr;
+  // CHECK-NEXT: sycl::queue *a2 = nullptr;
+  std::vector<cudaStream_t> vec1;
+  vec1.push_back(cudaStream_t());
+  std::vector<CUstream> vec2;
+  vec2.push_back(CUstream());
+  cudaStream_t a1 = cudaStream_t();
+  CUstream a2 = CUstream();
+}

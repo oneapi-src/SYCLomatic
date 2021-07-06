@@ -3229,6 +3229,21 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     if (!Str.empty() && !SpecialCaseHappened) {
       SrcAPIStaticsMap[TypeStr]++;
+
+      /// Process code like:
+      /// \code
+      ///   vector.push_back(cudaStream_t());
+      ///   cudaStream_t s = cudaStream_t();
+      /// \endcode
+      if (TL->getType().getAsString() == "cudaStream_t" ||
+          TL->getType().getAsString() == "CUstream") {
+        if (auto CSVIE =
+                DpctGlobalInfo::findParent<CXXScalarValueInitExpr>(TL)) {
+          emplaceTransformation(new ReplaceStmt(CSVIE, "nullptr"));
+          return;
+        }
+      }
+
       auto Len = Lexer::MeasureTokenLength(
           EndLoc, *SM, DpctGlobalInfo::getContext().getLangOpts());
       Len += SM->getDecomposedLoc(EndLoc).second -
