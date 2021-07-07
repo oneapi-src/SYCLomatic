@@ -407,6 +407,115 @@ Iter4 transform_if(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|scatter|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename Policy, typename InputIter1, typename InputIter2,
+          typename OutputIter>
+void scatter(Policy &&policy, InputIter1 first, InputIter1 last, InputIter2 map,
+             OutputIter result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<InputIter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter2>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<OutputIter>::iterator_category,
+              std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  oneapi::dpl::copy(policy, first, last,
+                    oneapi::dpl::make_permutation_iterator(result, map));
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gather|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename Policy, typename InputIter1, typename InputIter2,
+          typename OutputIter>
+OutputIter gather(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
+                  InputIter2 input_first, OutputIter result) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<InputIter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter2>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<OutputIter>::iterator_category,
+              std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  auto perm_begin =
+      oneapi::dpl::make_permutation_iterator(input_first, map_first);
+  const int n = ::std::distance(map_first, map_last);
+
+  return oneapi::dpl::copy(policy, perm_begin, perm_begin + n, result);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|scatter_if|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|transform_if
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename Policy, typename InputIter1, typename InputIter2,
+          typename InputIter3, typename OutputIter, typename Predicate>
+void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
+                InputIter2 map, InputIter3 mask, OutputIter result,
+                Predicate pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<InputIter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter2>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter3>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<OutputIter>::iterator_category,
+              std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  transform_if(policy, first, last, mask,
+               oneapi::dpl::make_permutation_iterator(result, map),
+               [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gather_if|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|transform_if
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename Policy, typename InputIter1, typename InputIter2,
+          typename InputIter3, typename OutputIter, typename Predicate>
+OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
+                     InputIter2 mask, InputIter3 input_first, OutputIter result,
+                     Predicate pred) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<InputIter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter2>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<InputIter3>::iterator_category,
+              std::random_access_iterator_tag>::value &&
+          std::is_same<
+              typename std::iterator_traits<OutputIter>::iterator_category,
+              std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  auto perm_begin =
+      oneapi::dpl::make_permutation_iterator(input_first, map_first);
+  const int n = std::distance(map_first, map_last);
+
+  return transform_if(policy, perm_begin, perm_begin + n, mask, result,
+                      [=](auto &&v) { return v; },
+                      [=](auto &&m) { return pred(m); });
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|merge|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|compare_key_fun
