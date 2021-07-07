@@ -2092,6 +2092,22 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CubRule : public NamedMigrationRule<CubRule> {
+public:
+  CubRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
+private:
+  static int PlaceholderIndex;
+  std::string getOpRepl(const Expr *Operator);
+  void processCubDeclStmt(const DeclStmt *DS);
+  void processCubTypeDef(const TypedefDecl *TD);
+  void processCubFuncCall(const CallExpr *CE);
+  void processCubMemberCall(const CXXMemberCallExpr *MC);
+  void processTypeLoc(const TypeLoc *TL);
+};
+
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 

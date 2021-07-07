@@ -529,7 +529,7 @@ void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
-bool isTypeInRoot(const clang::MemberExpr *ME);
+bool isTypeInRoot(const clang::Type *TypePtr);
 void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);
@@ -543,4 +543,5 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
+bool isCubVar(const clang::VarDecl* VD);
 #endif // DPCT_UTILITY_H

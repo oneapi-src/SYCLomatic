@@ -699,7 +699,8 @@ void ExtReplacements::postProcess() {
     // Q: queue, used for pretty code
     // V: vector size, used for rand API migration
     // R: range dim, used for built-in variables(threadIdx.x,...) migration
-    std::regex RE("\\{\\{NEEDREPLACE[DQVR][1-9][0-9]*\\}\\}");
+    // C: cub group dim, used for cub API migration
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRC][1-9][0-9]*\\}\\}");
     std::smatch MRes;
     std::string MatchedSuffix;
     bool Matched = false;
@@ -746,6 +747,16 @@ void ExtReplacements::postProcess() {
             NewReplText = NewReplText + MatchedStr;
           }
         }
+        MatchedSuffix = std::string(MRes.suffix());
+        OriginReplText = MatchedSuffix;
+      } else if(MatchedStr.substr(13, 1) == "C") {
+        int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
+        auto &Map =  DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
+        int GroupDim = 3;
+        if(DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+          GroupDim = Map[Index]->getVarMap().getHeadNodeDim();
+        }
+        NewReplText = NewReplText + std::to_string(GroupDim);
         MatchedSuffix = std::string(MRes.suffix());
         OriginReplText = MatchedSuffix;
       }

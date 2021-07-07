@@ -525,7 +525,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
              MapNames::SupportedVectorTypes.end()) {
 
     // Skip user-defined type.
-    if (isTypeInRoot(ME))
+    if (isTypeInRoot(ME->getBase()->getType().getTypePtr()))
       return;
 
     if (*BaseType.rbegin() == '1') {
@@ -664,7 +664,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     llvm::raw_string_ostream OS(TyName);
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
-    SR.setEnd(TSTL.getTemplateNameLoc());
+    if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
+        OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan") {
+      SR.setEnd(TSTL.getTemplateNameLoc());
+    }
     analyzeTemplateSpecializationType(TSTL);
     break;
   }

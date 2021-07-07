@@ -126,6 +126,8 @@ std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
 std::set<DPCPPExtensions> DpctGlobalInfo::DPCPPExtSetNotPermit;
 unsigned int DpctGlobalInfo::ColorOption = 1;
+std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
+    DpctGlobalInfo::CubPlaceholderIndexMap;
 
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
@@ -830,10 +832,44 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   static std::string CanIgnoreRangeStr1D =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
+  std::string SubGroupSizeAttr;
+  auto DeviceFuncInfo = getFuncInfo();
+  unsigned int RequiredSubGroupSize = 0;
+  if (DeviceFuncInfo) {
+    std::deque<std::shared_ptr<DeviceFunctionInfo>> ProcessRequireQueue;
+    std::set<std::shared_ptr<DeviceFunctionInfo>> ProcessedSet;
+    ProcessRequireQueue.push_back(DeviceFuncInfo);
+    ProcessedSet.insert(DeviceFuncInfo);
+    while (!ProcessRequireQueue.empty()) {
+      auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
+      for (auto &Element : SGSize) {
+        if (RequiredSubGroupSize == 0) {
+          RequiredSubGroupSize = std::get<0>(Element);
+        } else if (RequiredSubGroupSize != std::get<0>(Element)) {
+          DiagnosticsUtils::report(std::get<1>(Element), std::get<2>(Element),
+                                   Diagnostics::SUBGROUP_SIZE_CONFLICT, true,
+                                   false, std::get<3>(Element),
+                                   std::get<0>(Element));
+        }
+      }
+      for (auto &Element : ProcessRequireQueue.front()->getCallExprMap()) {
+        auto Child = Element.second->getFuncInfo();
+        if (Child && ProcessedSet.find(Child) == ProcessedSet.end()) {
+          ProcessRequireQueue.push_back(Element.second->getFuncInfo());
+          ProcessedSet.insert(Child);
+        }
+      }
+      ProcessRequireQueue.pop_front();
+    }
+  }
+  if (RequiredSubGroupSize != 0) {
+    SubGroupSizeAttr = " [[intel::reqd_sub_group_size(" +
+                       std::to_string(RequiredSubGroupSize) + ")]]";
+  }
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
-                 DpctGlobalInfo::getItemName(), ") {");
+                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap())) &&
@@ -855,7 +891,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
-                 DpctGlobalInfo::getItemName(), ") {");
+                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
   } else {
     DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 3)
@@ -872,7 +908,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
-                 DpctGlobalInfo::getItemName(), ") {");
+                 DpctGlobalInfo::getItemName(), ")" + SubGroupSizeAttr + " {");
   }
 
   printKernel(Printer);

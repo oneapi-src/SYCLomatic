@@ -3025,20 +3025,23 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
   const NamedDecl *ND = nullptr;
   if (!TypePtr)
     return ND;
-
-  if (TypePtr->isRecordType())
+  if (TypePtr->isRecordType()) {
     ND = TypePtr->castAs<clang::RecordType>()->getDecl();
-  else if (TypePtr->isEnumeralType())
+  } else if (TypePtr->isEnumeralType()) {
     ND = TypePtr->castAs<clang::EnumType>()->getDecl();
-  else if (TypePtr->getTypeClass() == clang::Type::Typedef)
+  } else if (TypePtr->getTypeClass() == clang::Type::Typedef) {
     ND = TypePtr->castAs<clang::TypedefType>()->getDecl();
-
+  } else if (TypePtr->getTypeClass() == clang::Type::ConstantArray) {
+    if (auto Array = TypePtr->getAsArrayTypeUnsafe()) {
+      ND =
+          getNamedDecl(Array->getElementType().getCanonicalType().getTypePtr());
+    }
+  }
   return ND;
 }
-
-bool isTypeInRoot(const clang::MemberExpr *ME) {
+bool isTypeInRoot(const clang::Type *TypePtr) {
   bool IsInRoot = false;
-  if (const auto *ND = getNamedDecl(ME->getBase()->getType().getTypePtr())) {
+  if (const auto *ND = getNamedDecl(TypePtr)) {
     auto Loc = ND->getBeginLoc();
     auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
     if (dpct::DpctGlobalInfo::isInRoot(Path, true))
@@ -3324,6 +3327,120 @@ bool checkIfContainSizeofTypeRecursively(
       if (checkIfContainSizeofTypeRecursively(RHS, ExprContainSizeofType))
         return true;
     }
+  }
+  return false;
+}
+
+bool isCubVar(const VarDecl *VD) {
+  std::string CanonicalType = VD->getType().getCanonicalType().getAsString();
+  //1.process non-template case
+  if (!isTypeInRoot(VD->getType().getCanonicalType().getTypePtr()) &&
+      (CanonicalType.find("struct cub::") == 0 ||
+       CanonicalType.find("class cub::") == 0)) {
+    return true;
+  }
+  //2.process template cases
+  if (CanonicalType.find("::TempStorage") != std::string::npos) {
+    std::string TypeParameterName;
+    auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
+      std::string Name;
+      if (auto NNS = DNT.getQualifierLoc().getNestedNameSpecifier()) {
+        if (auto Type = NNS->getAsType()) {
+          Name = QualType(Type, 0).getAsString();
+        }
+      }
+      return Name;
+    };
+    if (auto CAT = VD->getTypeSourceInfo()
+                       ->getTypeLoc()
+                       .getAs<ConstantArrayTypeLoc>()) {
+      auto DNT = CAT.getElementLoc().getAs<DependentNameTypeLoc>();
+      TypeParameterName = findTypeParameterName(DNT);
+    } else if (auto DNT = VD->getTypeSourceInfo()
+                              ->getTypeLoc()
+                              .getAs<DependentNameTypeLoc>()) {
+      TypeParameterName = findTypeParameterName(DNT);
+    }
+    // if type not template parameter and not include cub::
+    // then we return false
+    if (TypeParameterName.empty()) {
+      return false;
+    }
+    auto DeviceFuncDecl =
+        clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(VD);
+    std::string DeviceFuncName = DeviceFuncDecl->getNameAsString();
+    auto FuncTemp = DeviceFuncDecl->getDescribedFunctionTemplate();
+    if (!FuncTemp) {
+      return false;
+    }
+    auto TempPara = FuncTemp->getTemplateParameters();
+    int index = -1;
+    for (auto Itr = TempPara->begin(); Itr != TempPara->end(); Itr++) {
+      if ((*Itr)->getNameAsString() == TypeParameterName) {
+        index = Itr - TempPara->begin();
+        break;
+      }
+    }
+    if (index == -1) {
+      return false;
+    }
+    auto isCub = [&](const Expr *Callee) {
+      auto DRE = dyn_cast<DeclRefExpr>(Callee);
+      if (!DRE) {
+        return false;
+      }
+      auto TemplateArgsList = DRE->template_arguments();
+      if (TemplateArgsList.size() < (unsigned)index) {
+        return false;
+      }
+      if (TemplateArgsList[index].getArgument().getKind() ==
+          TemplateArgument::ArgKind::Type) {
+        auto CanonicalType = TemplateArgsList[index]
+                                 .getArgument()
+                                 .getAsType()
+                                 .getCanonicalType();
+        std::string ArgTy = CanonicalType.getAsString();
+        if (!isTypeInRoot(CanonicalType.getTypePtr()) &&
+            ArgTy.find("class cub::") == 0) {
+          return true;
+        }
+      }
+      return false;
+    };
+    if (DeviceFuncDecl->hasAttr<CUDADeviceAttr>()) {
+      auto DevCallMatcher = ast_matchers::callExpr(
+                                ast_matchers::callee(ast_matchers::functionDecl(
+                                    ast_matchers::hasName(DeviceFuncName))))
+                                .bind("devcall");
+      auto DevCallMatchResult = ast_matchers::match(
+          DevCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
+      // if no MatchResult, then we return false.
+      bool Result = DevCallMatchResult.size();
+      for (auto &Element : DevCallMatchResult) {
+        if (auto CE = Element.getNodeAs<CallExpr>("devcall")) {
+          auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
+          Result = Result && isCub(Callee);
+        }
+      }
+      return Result;
+    } else if (DeviceFuncDecl->hasAttr<CUDAGlobalAttr>()) {
+      auto KernelCallMatcher =
+          ast_matchers::cudaKernelCallExpr(
+              ast_matchers::callee(ast_matchers::functionDecl(
+                  ast_matchers::hasName(DeviceFuncName))))
+              .bind("kernelcall");
+      auto KernelMatchResult = ast_matchers::match(
+          KernelCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
+      bool Result = KernelMatchResult.size();
+      for (auto &Element : KernelMatchResult) {
+        if (auto CE = Element.getNodeAs<CUDAKernelCallExpr>("kernelcall")) {
+          auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
+          Result = Result && isCub(Callee);
+        }
+      }
+      return Result;
+    }
+    return false;
   }
   return false;
 }

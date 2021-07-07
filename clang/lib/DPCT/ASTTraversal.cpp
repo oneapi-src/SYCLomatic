@@ -48,6 +48,45 @@ extern llvm::cl::opt<UsmLevel> USMLevel;
 extern bool ProcessAllFlag;
 extern bool ExplicitClNamespace;
 
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM) {
+  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+  if (Length > 0) {
+    return new ReplaceText(Begin, Length, std::move(Str));
+  }
+  return nullptr;
+}
+
+/// Return a TextModication that removes nth argument of the CallExpr,
+/// together with the preceding comma.
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM) {
+  if (C->getNumArgs() <= n)
+    return nullptr;
+  if (C->getArg(n)->isDefaultArgument())
+    return nullptr;
+
+  SourceLocation Begin, End;
+  if (n) {
+    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
+    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  } else {
+    Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
+    if (C->getNumArgs() > 1) {
+      End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
+    } else {
+      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    }
+  }
+  return replaceText(Begin, End, "", SM);
+}
+
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
                hasParent(whileStmt()), hasParent(doStmt()),
@@ -3503,7 +3542,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
 
   // To skip user-defined type.
-  if (isTypeInRoot(ME))
+  if (ME && isTypeInRoot(ME->getBase()->getType().getTypePtr()))
     return;
 
   auto BaseTy = ME->getBase()->getType().getAsString();
@@ -10335,7 +10374,8 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                                       unless(hasParent(arraySubscriptExpr())))
                                       .bind("impl")),
                         anything()),
-                  to(DeclMatcher), hasAncestor(functionDecl().bind("func")))
+                  to(DeclMatcher.bind("decl")),
+                  hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
 
@@ -10716,7 +10756,11 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 }
 
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
+    if(isCubVar(MemVar)) {
+      return;
+    }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
@@ -10749,8 +10793,12 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
+  auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
-  if (MemVarRef && Func) {
+  if (MemVarRef && Func && Decl) {
+    if(isCubVar(Decl)) {
+      return;
+    }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
     if (Func->isImplicit() ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
@@ -10927,45 +10975,6 @@ void MemoryMigrationRule::replaceMemAPIArg(
   }
   emplaceTransformation(
       new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(OS.str())));
-}
-
-TextModification *replaceText(SourceLocation Begin, SourceLocation End,
-                              std::string &&Str, const SourceManager &SM) {
-  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-  if (Length > 0) {
-    return new ReplaceText(Begin, Length, std::move(Str));
-  }
-  return nullptr;
-}
-
-/// Return a TextModication that removes nth argument of the CallExpr,
-/// together with the preceding comma.
-TextModification *removeArg(const CallExpr *C, unsigned n,
-                            const SourceManager &SM) {
-  if (C->getNumArgs() <= n)
-    return nullptr;
-  if (C->getArg(n)->isDefaultArgument())
-    return nullptr;
-
-  SourceLocation Begin, End;
-  if (n) {
-    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
-    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-  } else {
-    Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
-    if (C->getNumArgs() > 1) {
-      End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
-    } else {
-      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    }
-  }
-  return replaceText(Begin, End, "", SM);
 }
 
 bool MemoryMigrationRule::canUseTemplateStyleMigration(
@@ -15433,6 +15442,538 @@ void CudaArchMacroRule::runRule(
   }
 }
 REGISTER_RULE(CudaArchMacroRule)
+
+void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                  "WarpScan", "WarpReduce", "BlockScan", "BlockReduce"))))))
+          .bind("TypeLoc"),
+      this);
+
+  MF.addMatcher(
+      typedefDecl(
+          hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce")))))))
+          .bind("TypeDefDecl"),
+      this);
+
+  MF.addMatcher(
+      declStmt(
+          has(varDecl(anyOf(
+              hasType(hasCanonicalType(qualType(
+                  hasDeclaration(namedDecl(hasAnyName("TempStorage")))))),
+              hasType(arrayType(hasElementType(hasCanonicalType(qualType(
+                  hasDeclaration(namedDecl(hasAnyName("TempStorage"))))))))))))
+          .bind("DeclStmt"),
+      this);
+
+  MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
+                                      "InclusiveSum", "ExclusiveSum",
+                                      "InclusiveScan", "ExclusiveScan",
+                                      "Reduce", "Sum", "Broadcast", "Scan")))))
+                    .bind("MemberCall"),
+                this);
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
+                             "ShuffleIndex", "ThreadLoad", "ThreadStore"))))
+                    .bind("FuncCall"),
+                this);
+}
+
+std::string CubRule::getOpRepl(const Expr *Operator) {
+  std::string OpRepl = MapNames::getClNamespace() + "ONEAPI::plus<>()";
+  if (auto Op = dyn_cast_or_null<CXXConstructExpr>(Operator)) {
+    std::string OpType =
+        Op->getType()->getCanonicalTypeInternal().getAsString();
+    if (OpType == "struct cub::Max") {
+      OpRepl = MapNames::getClNamespace() + "ONEAPI::maximum<>()";
+    } else if (OpType == "struct cub::Min") {
+      OpRepl = MapNames::getClNamespace() + "ONEAPI::minimum<>()";
+    }
+  }
+  return OpRepl;
+}
+void CubRule::processCubDeclStmt(const DeclStmt *DS) {
+  std::string Repl;
+  std::shared_ptr<clang::dpct::DeviceFunctionInfo> DI;
+  if(auto DeviceFuncDecl = getImmediateOuterFuncDecl(DS)) {
+    DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+  }
+  for (auto Decl : DS->decls()) {
+    auto VDecl = dyn_cast<VarDecl>(Decl);
+    if (!VDecl)
+      return;
+    std::string VarType =
+        VDecl->getTypeSourceInfo()->getType().getCanonicalType().getAsString();
+    std::string VarName = VDecl->getNameAsString();
+
+    auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(Decl);
+    if (!isCubVar(VDecl)) {
+      return;
+    }
+    // always remove TempStorage variable declaration
+    emplaceTransformation(new ReplaceStmt(DS, ""));
+
+    // process TempStorage used in class constructor
+    auto TempVarMatcher = compoundStmt(forEachDescendant(
+        declRefExpr(to(varDecl(hasName(VarName)))).bind("TempVar")));
+    auto MatchResult = ast_matchers::match(TempVarMatcher, *MatcherScope,
+                                           DpctGlobalInfo::getContext());
+    for (auto &Element : MatchResult) {
+      auto DRE = Element.getNodeAs<DeclRefExpr>("TempVar");
+      auto ObjDecl = DpctGlobalInfo::findAncestor<VarDecl>(DRE);
+      if (!ObjDecl || !DRE) {
+        continue;
+      }
+      auto ArrayOfDRE = DpctGlobalInfo::findAncestor<ArraySubscriptExpr>(DRE);
+      auto ObjCanonicalType = ObjDecl->getType().getCanonicalType();
+      std::string ObjTypeStr = ObjCanonicalType.getAsString();
+      if (isTypeInRoot(ObjCanonicalType.getTypePtr())) {
+        continue;
+      } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
+                 ObjTypeStr.find("class cub::WarpReduce") == 0) {
+        if (DI) {
+          DI->setItem();
+        }
+        Repl = DpctGlobalInfo::getItemName() + ".get_sub_group()";
+      } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
+                 ObjTypeStr.find("class cub::BlockReduce") == 0) {
+        if (DI) {
+          DI->setItem();
+        }
+        Repl = DpctGlobalInfo::getItemName() + ".get_group()";
+      } else {
+        continue;
+      }
+      if (ArrayOfDRE) {
+        emplaceTransformation(new ReplaceStmt(ArrayOfDRE, Repl));
+      } else {
+        emplaceTransformation(new ReplaceStmt(DRE, Repl));
+      }
+    }
+  }
+}
+void CubRule::processCubTypeDef(const TypedefDecl *TD) {
+  auto CanonicalType = TD->getUnderlyingType().getCanonicalType();
+  std::string CanonicalTypeStr = CanonicalType.getAsString();
+  std::string TypeName = TD->getNameAsString();
+  if (isTypeInRoot(CanonicalType.getTypePtr()) ||
+      CanonicalTypeStr.find("class cub::") != 0) {
+    return;
+  }
+  auto &Context = clang::dpct::DpctGlobalInfo::getContext();
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto MyMatcher = compoundStmt(forEachDescendant(
+      typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasName(TypeName))))))
+          .bind("typeLoc")));
+  auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(TD);
+  auto TypeLocMatchResult =
+      ast_matchers::match(MyMatcher, *MatcherScope, Context);
+  bool DeleteFlag = true;
+  // Currently, typedef decl can be deteled in following cases
+  for (auto &Element : TypeLocMatchResult) {
+    if (auto TL = Element.getNodeAs<TypeLoc>("typeLoc")) {
+      // 1.Used in TempStorage variable declaration
+      if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
+        auto VarType = AncestorVD->getType().getCanonicalType();
+        std::string VarTypeStr =
+            AncestorVD->getType().getCanonicalType().getAsString();
+        if (isTypeInRoot(VarType.getTypePtr()) ||
+            !(VarTypeStr.find("TempStorage") != std::string::npos &&
+              VarTypeStr.find("struct cub::") == 0)) {
+          DeleteFlag = false;
+          break;
+        }
+      } // 2.Used in temporary class constructor
+      else if (auto AncestorMTE =
+                     DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(
+                         TL)) {
+        auto MC = DpctGlobalInfo::findAncestor<CXXMemberCallExpr>(AncestorMTE);
+        if (MC) {
+          auto ObjType = MC->getObjectType().getCanonicalType();
+          std::string ObjTypeStr = ObjType.getAsString();
+          if (isTypeInRoot(ObjType.getTypePtr()) ||
+              !(ObjTypeStr.find("class cub::WarpScan") == 0 ||
+               ObjTypeStr.find("class cub::WarpReduce") == 0 ||
+               ObjTypeStr.find("class cub::BlockScan") == 0 ||
+               ObjTypeStr.find("class cub::BlockReduce") == 0)) {
+            DeleteFlag = false;
+            break;
+          }
+        }
+      } // 3.Used in self typedef decl
+      else if (auto AncestorTD =
+                     DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
+        if (AncestorTD != TD) {
+          DeleteFlag = false;
+          break;
+        }
+      } else {
+        DeleteFlag = false;
+        break;
+      }
+    }
+  }
+  if (DeleteFlag) {
+    emplaceTransformation(new ReplaceDecl(TD, ""));
+  } else {
+    auto BeginLoc =
+        SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
+    auto EndLoc =
+        SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
+    if (CanonicalTypeStr.find("Warp") != std::string::npos) {
+      emplaceTransformation(
+          replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                      MapNames::getClNamespace() + "ONEAPI::sub_group", SM));
+    } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
+      auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
+      if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
+                             DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
+        if (auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl)) {
+          auto &Map = DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
+          Map.insert({PlaceholderIndex, DI});
+          emplaceTransformation(
+              replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                          MapNames::getClNamespace() + "group<{{NEEDREPLACEC" +
+                              std::to_string(PlaceholderIndex++) + "}}>",
+                          SM));
+        }
+      }
+    }
+  }
+}
+void CubRule::processCubFuncCall(const CallExpr *CE) {
+  std::string Repl;
+  size_t WarpSize = 32;
+  if (auto DC = CE->getDirectCallee()) {
+    std::string FuncName = DC->getNameAsString();
+    if (FuncName == "ShuffleIndex") {
+      auto TA = DC->getTemplateSpecializationArgs();
+      WarpSize = TA->get(0).getAsIntegral().getExtValue();
+      std::string ValueType =
+          TA->get(1).getAsType().getUnqualifiedType().getAsString();
+      auto MemberMask = CE->getArg(2);
+      auto Mask = dyn_cast<IntegerLiteral>(MemberMask);
+      if (Mask && Mask->getValue().getZExtValue() == 0xffffffff) {
+        const Expr *Value = CE->getArg(0);
+        const Expr *Lane = CE->getArg(1);
+        ExprAnalysis ValueEA(Value);
+        ExprAnalysis LaneEA(Lane);
+        Repl = DpctGlobalInfo::getItemName() + ".get_sub_group().shuffle(" +
+               ValueEA.getReplacedString() + ", " + LaneEA.getReplacedString() +
+               ")";
+        auto DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
+        if (DeviceFuncDecl) {
+          auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+          if (DI) {
+            DI->setItem();
+            DI->addSubGroupSizeRequest(WarpSize, CE->getBeginLoc(), "shuffle");
+          }
+        }
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      }
+    } else if (FuncName == "ThreadLoad") {
+      auto FuncArgs = CE->getArgs();
+      const Expr *InData = FuncArgs[0];
+      ExprAnalysis InEA(InData);
+      Repl = "*(" + InEA.getReplacedString() + ")";
+    } else if (FuncName == "ThreadStore") {
+      auto FuncArgs = CE->getArgs();
+      const Expr *OutputIterator = FuncArgs[0];
+      const Expr *Value = FuncArgs[1];
+      ExprAnalysis ItrEA(OutputIterator);
+      ExprAnalysis ValueEA(Value);
+      Repl = "*(" + ItrEA.getReplacedString() +
+             ") = " + ValueEA.getReplacedString();
+    }
+    if (!Repl.empty()) {
+      emplaceTransformation(new ReplaceStmt(CE, Repl));
+    }
+  }
+}
+void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
+  const CXXMemberCallExpr *BlockMC = nullptr, *WarpMC = nullptr;
+  size_t WarpSize = 32;
+  bool isNeedItem = true;
+  std::string Repl, NewFuncName, InitRepl, OpRepl, Indent, Group;
+  auto ObjType = MC->getObjectType().getCanonicalType();
+  std::string ObjTypeStr = ObjType.getAsString();
+  if(isTypeInRoot(ObjType.getTypePtr())) {
+    return;
+  } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
+      ObjTypeStr.find("class cub::WarpReduce") == 0) {
+    WarpMC = MC;
+  } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
+             ObjTypeStr.find("class cub::BlockReduce") == 0) {
+    BlockMC = MC;
+  } else {
+    return;
+  }
+  if (BlockMC && BlockMC->getMethodDecl()) {
+    if (BlockMC->getMethodDecl()->getParamDecl(0)->getType()->isPointerType()) {
+      return;
+    }
+    std::string FuncName = BlockMC->getMethodDecl()->getNameAsString();
+    std::string ValueType;
+    int NumArgs = BlockMC->getNumArgs();
+    auto FuncArgs = BlockMC->getArgs();
+    auto MD = BlockMC->getMethodDecl()->getParent();
+    if (auto CTS = dyn_cast<ClassTemplateSpecializationDecl>(MD)) {
+      auto &TA = CTS->getTemplateArgs();
+      ValueType = TA[0].getAsType().getUnqualifiedType().getAsString();
+    }
+    Indent =
+        getIndent(BlockMC->getBeginLoc(), DpctGlobalInfo::getSourceManager())
+            .str();
+    Group = DpctGlobalInfo::getItemName() + ".get_group()";
+    if (BlockMC->getObjectType()->getTypeClass() ==
+        clang::Type::TypeClass::SubstTemplateTypeParm) {
+      auto DRE =
+          dyn_cast_or_null<DeclRefExpr>(BlockMC->getImplicitObjectArgument());
+      if (DRE) {
+        isNeedItem = false;
+        Group = DRE->getNameInfo().getAsString();
+      }
+    }
+
+    if (FuncName == "InclusiveSum" || FuncName == "ExclusiveSum" ||
+        FuncName == "InclusiveScan" || FuncName == "ExclusiveScan") {
+      const Expr *InData = FuncArgs[0];
+      const Expr *OutData = FuncArgs[1];
+      ExprAnalysis InEA(InData);
+      ExprAnalysis OutEA(OutData);
+      if (FuncName == "ExclusiveScan" && NumArgs == 4) {
+        if (FuncArgs[0]->getType().getCanonicalType().getAsString() ==
+            FuncArgs[2]->getType().getCanonicalType().getAsString()) {
+          ExprAnalysis InitEA(FuncArgs[2]);
+          InitRepl = ", " + InitEA.getReplacedString();
+          OpRepl = getOpRepl(FuncArgs[3]);
+          NewFuncName =
+              MapNames::getClNamespace() + "exclusive_scan_over_group";
+        } else {
+          return;
+        }
+      } else if (FuncName == "InclusiveScan" && NumArgs == 3) {
+        OpRepl = getOpRepl(FuncArgs[2]);
+        NewFuncName = MapNames::getClNamespace() + "inclusive_scan_over_group";
+      } else if (FuncName == "ExclusiveSum" && NumArgs == 2) {
+        OpRepl = getOpRepl(nullptr);
+        InitRepl = ", 0";
+        NewFuncName = MapNames::getClNamespace() + "exclusive_scan_over_group";
+      } else if (FuncName == "InclusiveSum" && NumArgs == 2) {
+        OpRepl = getOpRepl(nullptr);
+        NewFuncName = MapNames::getClNamespace() + "inclusive_scan_over_group";
+      } else {
+        return;
+      }
+      Repl = OutEA.getReplacedString() + " = " + NewFuncName + "(" + Group +
+             ", " + InEA.getReplacedString() + InitRepl + ", " + OpRepl + ")";
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+    } else if (FuncName == "Sum" || FuncName == "Reduce") {
+      if (FuncArgs[0]->getType()->isPointerType()) {
+        return;
+      }
+      const Expr *InData = FuncArgs[0];
+      ExprAnalysis InEA(InData);
+      if (FuncName == "Reduce" && NumArgs == 2) {
+        OpRepl = getOpRepl(FuncArgs[1]);
+      } else if (FuncName == "Sum" && NumArgs == 1) {
+        OpRepl = getOpRepl(nullptr);
+      } else {
+        return;
+      }
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" + Group + ", " +
+             InEA.getReplacedString() + ", " + OpRepl + ")";
+      emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
+    }
+    if (!Repl.empty() && isNeedItem) {
+      auto DeviceFuncDecl = getImmediateOuterFuncDecl(BlockMC);
+      if (DeviceFuncDecl) {
+        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+        if (DI) {
+          DI->setItem();
+        }
+      }
+    }
+  } else if (WarpMC && WarpMC->getMethodDecl()) {
+    std::string FuncName = WarpMC->getMethodDecl()->getNameAsString();
+    std::string ValueType;
+    int NumArgs = WarpMC->getNumArgs();
+    auto MD = WarpMC->getMethodDecl()->getParent();
+    if (auto CTS = dyn_cast<ClassTemplateSpecializationDecl>(MD)) {
+      auto &TA = CTS->getTemplateArgs();
+      ValueType = TA[0].getAsType().getUnqualifiedType().getAsString();
+      WarpSize = TA[1].getAsIntegral().getExtValue();
+    }
+    Indent =
+        getIndent(WarpMC->getBeginLoc(), DpctGlobalInfo::getSourceManager())
+            .str();
+    Group = DpctGlobalInfo::getItemName() + ".get_sub_group()";
+    if (WarpMC->getObjectType()->getTypeClass() ==
+        clang::Type::TypeClass::SubstTemplateTypeParm) {
+      auto DRE =
+          dyn_cast_or_null<DeclRefExpr>(WarpMC->getImplicitObjectArgument());
+      if (DRE) {
+        isNeedItem = false;
+        Group = DRE->getNameInfo().getAsString();
+      }
+    }
+    if (FuncName == "InclusiveSum" || FuncName == "ExclusiveSum" ||
+        FuncName == "InclusiveScan" || FuncName == "ExclusiveScan") {
+      auto FuncArgs = WarpMC->getArgs();
+      const Expr *InData = FuncArgs[0];
+      const Expr *OutData = FuncArgs[1];
+      if (FuncName == "ExclusiveScan") {
+        if (NumArgs == 3) {
+          OpRepl = getOpRepl(FuncArgs[2]);
+        } else if (NumArgs == 4 &&
+                   WarpMC->getMethodDecl()
+                           ->getParamDecl(0)
+                           ->getType()
+                           .getCanonicalType()
+                           .getAsString() == WarpMC->getMethodDecl()
+                                                 ->getParamDecl(2)
+                                                 ->getType()
+                                                 .getCanonicalType()
+                                                 .getAsString()) {
+          ExprAnalysis InitEA(FuncArgs[2]);
+          InitRepl = ", " + InitEA.getReplacedString();
+          OpRepl = getOpRepl(FuncArgs[3]);
+        } else {
+          return;
+        }
+        NewFuncName = "exclusive_scan_over_group";
+      } else if (FuncName == "InclusiveScan" && NumArgs == 3) {
+        OpRepl = getOpRepl(FuncArgs[2]);
+        NewFuncName = "inclusive_scan_over_group";
+      } else if (FuncName == "ExclusiveSum" && NumArgs == 2) {
+        OpRepl = getOpRepl(nullptr);
+        NewFuncName = "exclusive_scan_over_group";
+      } else if (FuncName == "InclusiveSum" && NumArgs == 2) {
+        OpRepl = getOpRepl(nullptr);
+        NewFuncName = "inclusive_scan_over_group";
+      } else {
+        return;
+      }
+      ExprAnalysis InEA(InData);
+      ExprAnalysis OutEA(OutData);
+      Repl = OutEA.getReplacedString() + " = " + MapNames::getClNamespace() +
+             NewFuncName + "(" + Group + ", " + InEA.getReplacedString() +
+             InitRepl + ", " + OpRepl + ")";
+      emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
+      if (DeviceFuncDecl) {
+        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+        if (DI) {
+          if (isNeedItem) {
+            DI->setItem();
+          }
+          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
+                                     NewFuncName);
+        }
+      }
+    } else if (FuncName == "Broadcast") {
+      auto FuncArgs = WarpMC->getArgs();
+      const Expr *InData = FuncArgs[0];
+      const Expr *SrcLane = FuncArgs[1];
+      ExprAnalysis InEA(InData);
+      ExprAnalysis SrcLaneEA(SrcLane);
+      Repl = MapNames::getClNamespace() + "group_broadcast(" +
+             DpctGlobalInfo::getItemName() + ".get_sub_group(), " +
+             InEA.getReplacedString() + ", " + SrcLaneEA.getReplacedString() +
+             ")";
+      emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
+      if (DeviceFuncDecl) {
+        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+        if (DI) {
+          if (isNeedItem) {
+            DI->setItem();
+          }
+          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
+                                     "group_broadcast");
+        }
+      }
+    } else if (FuncName == "Reduce" || FuncName == "Sum") {
+      auto FuncArgs = WarpMC->getArgs();
+      const Expr *InData = FuncArgs[0];
+      ExprAnalysis InEA(InData);
+      if (FuncName == "Reduce" && NumArgs == 2) {
+        OpRepl = getOpRepl(FuncArgs[1]);
+      } else if (FuncName == "Sum" && NumArgs == 1) {
+        OpRepl = getOpRepl(nullptr);
+      } else {
+        return;
+      }
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" + Group + ", " +
+             InEA.getReplacedString() + ", " + OpRepl + ")";
+      emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+      auto DeviceFuncDecl = getImmediateOuterFuncDecl(WarpMC);
+      if (DeviceFuncDecl) {
+        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
+        if (DI) {
+          if (isNeedItem) {
+            DI->setItem();
+          }
+          DI->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
+                                     "reduce_over_group");
+        }
+      }
+    }
+  }
+}
+
+void CubRule::processTypeLoc(const TypeLoc *TL) {
+  auto TD = DpctGlobalInfo::findAncestor<TypedefDecl>(TL);
+  if (TD || isTypeInRoot(TL->getType().getCanonicalType().getTypePtr()))
+    return;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
+  auto BeginLoc = Range.getBegin();
+  auto EndLoc = Range.getEnd();
+  std::string TypeName = TL->getType().getCanonicalType().getAsString();
+  if (TypeName.find("class cub::WarpScan") == 0 ||
+      TypeName.find("class cub::WarpReduce") == 0) {
+    emplaceTransformation(
+        replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                    MapNames::getClNamespace() + "ONEAPI::sub_group", SM));
+  } else if (TypeName.find("class cub::BlockScan") == 0 ||
+             TypeName.find("class cub::BlockReduce") == 0) {
+    auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
+    if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
+                           DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
+      if (auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl)) {
+        auto &Map = DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
+        Map.insert({PlaceholderIndex, DI});
+        emplaceTransformation(
+            replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                        MapNames::getClNamespace() + "group<{{NEEDREPLACEC" +
+                            std::to_string(PlaceholderIndex++) + "}}>",
+                        SM));
+      }
+    }
+  }
+}
+
+int CubRule::PlaceholderIndex = 1;
+
+void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const CXXMemberCallExpr *MC =
+          getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
+    processCubMemberCall(MC);
+  } else if (const DeclStmt *DS = getNodeAsType<DeclStmt>(Result, "DeclStmt")) {
+    processCubDeclStmt(DS);
+  } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
+    processCubFuncCall(CE);
+  } else if (const TypedefDecl *TD =
+                 getNodeAsType<TypedefDecl>(Result, "TypeDefDecl")) {
+    processCubTypeDef(TD);
+  } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    processTypeLoc(TL);
+  }
+}
+REGISTER_RULE(CubRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

@@ -2060,9 +2060,12 @@ public:
     }
     return Res;
   }
-  unsigned int getColorOption() {
-    return ColorOption;
+  unsigned int getColorOption() { return ColorOption; }
+  std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
+  getCubPlaceholderIndexMap() {
+    return CubPlaceholderIndexMap;
   }
+
 private:
   DpctGlobalInfo();
 
@@ -2241,6 +2244,8 @@ private:
       DFIToSpellingLocsMapForAssumeNDRange;
   static std::set<DPCPPExtensions> DPCPPExtSetNotPermit;
   static unsigned int ColorOption;
+  static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
+      CubPlaceholderIndexMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -3706,6 +3711,18 @@ public:
   size_t ParamsNum;
   size_t NonDefaultParamNum;
   GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
+  void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
+                              std::string APIName) {
+    if (Size == 0 || Loc.isInvalid())
+      return;
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+    RequiredSubGroupSize.push_back(
+        std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName));
+  }
+  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string>>
+      &getSubGroupSize() {
+    return RequiredSubGroupSize;
+  }
 
 private:
   void mergeCalledTexObj(
@@ -3717,7 +3734,9 @@ private:
   bool IsBuilt;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
-
+  // subgroup size, filepath, offset, api name
+  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string>>
+      RequiredSubGroupSize;
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;
 
