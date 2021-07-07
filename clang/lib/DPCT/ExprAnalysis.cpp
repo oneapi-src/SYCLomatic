@@ -510,7 +510,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
-      requestFeature(MapNames::PropToGetFeatureMap.at(
+      requestFeature(PropToGetFeatureMap.at(
                          ME->getMemberNameInfo().getAsString()),
                      ME);
     }
@@ -518,7 +518,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(FieldName),
+      requestFeature(ImageWrapperBaseToGetFeatureMap.at(FieldName),
                      ME);
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
@@ -567,12 +567,6 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
-
-  auto HelperFeatureIter =
-      MapNames::TextureAPIHelperFeaturesMap.find(RefString);
-  if (HelperFeatureIter != MapNames::TextureAPIHelperFeaturesMap.end()) {
-    requestFeature(HelperFeatureIter->second, CE);
-  }
 
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)

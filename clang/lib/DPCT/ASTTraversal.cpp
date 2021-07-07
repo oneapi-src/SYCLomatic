@@ -4100,13 +4100,13 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
   if (Parents[0].get<clang::ImplicitCastExpr>()) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
-    requestFeature(MapNames::PropToGetFeatureMap.at(MemberName), ME);
+    requestFeature(PropToGetFeatureMap.at(MemberName), ME);
     emplaceTransformation(
         new RenameFieldInMemberExpr(ME, "get_" + Search->second + "()"));
   } else if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
     // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName), ME);
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
@@ -11645,8 +11645,6 @@ void MemoryMigrationRule::memcpySymbolMigration(
       ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
     } else {
       requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
       ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
     }
   } else {
@@ -11664,8 +11662,6 @@ void MemoryMigrationRule::memcpySymbolMigration(
       }
     } else {
       requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
       ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
     }
   }
@@ -13858,14 +13854,14 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
               Image_image_wrapper_base_set_coordinate_normalization_mode_enum,
           AssignedBO);
     } else {
-      if (MapNames::SamplingInfoToSetFeatureMap.count(MethodName.str())) {
+      if (SamplingInfoToSetFeatureMap.count(MethodName.str())) {
         requestFeature(
-            MapNames::SamplingInfoToSetFeatureMap.at(MethodName.str()),
+            SamplingInfoToSetFeatureMap.at(MethodName.str()),
             AssignedBO);
       }
-      if (MapNames::ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
+      if (ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
         requestFeature(
-            MapNames::ImageWrapperBaseToSetFeatureMap.at(MethodName.str()),
+            ImageWrapperBaseToSetFeatureMap.at(MethodName.str()),
             AssignedBO);
       }
     }
@@ -13883,13 +13879,12 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     } else {
       emplaceTransformation(new RenameFieldInMemberExpr(
           ME, buildString("get_", ReplField, "()")));
-      if (MapNames::SamplingInfoToGetFeatureMap.count(ReplField)) {
-        requestFeature(MapNames::SamplingInfoToGetFeatureMap.at(ReplField),
-                       AssignedBO);
+      if (SamplingInfoToGetFeatureMap.count(ReplField)) {
+        requestFeature(SamplingInfoToGetFeatureMap.at(ReplField), ME);
       }
-      if (MapNames::ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
-        requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(ReplField),
-                       AssignedBO);
+      if (ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
+        requestFeature(ImageWrapperBaseToGetFeatureMap.at(ReplField),
+                       ME);
       }
     }
   }
@@ -14109,7 +14104,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
             CE);
       } else {
         requestFeature(
-            MapNames::ImageWrapperBaseToSetFeatureMap.at(MethodName.str()), CE);
+            ImageWrapperBaseToSetFeatureMap.at(MethodName.str()), CE);
       }
       std::shared_ptr<CallExprRewriter> Rewriter =
           std::make_shared<AssignableRewriter>(

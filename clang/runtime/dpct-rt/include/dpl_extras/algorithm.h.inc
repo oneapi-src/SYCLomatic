@@ -131,7 +131,7 @@ Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 
 // DPCT_LABEL_BEGIN|remove_copy_if|dpct
 // DPCT_DEPENDENCY_BEGIN
-// DplExtrasFunctional|negate_predicate_key_fun
+// DplExtrasFunctional|predicate_key_fun
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,

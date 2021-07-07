@@ -71,10 +71,7 @@ oneapi::dpl::counting_iterator<T> make_counting_iterator(const T &input) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|constant_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|using_std_advance
-// DplExtrasIterators|using_std_distance
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _Tp> class constant_iterator {
 public:

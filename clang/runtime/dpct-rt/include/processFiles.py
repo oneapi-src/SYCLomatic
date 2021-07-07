@@ -30,6 +30,8 @@ is_os_win = False
 features_enum_list = []
 features_enum_pair_list = []
 
+features_enum_referenced_list = []
+
 stack = []
 input_files_dir = cur_file_dir
 
@@ -208,11 +210,11 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 splited[1] + bytes("\", \"", 'utf-8') + splited[2] + bytes("\", " + str(Idx) + ")\n", 'utf-8')
             inc_file_lines.append(content_begin_line)
             feature_enum_name = bytes(helper_file_enum_name + "_", 'utf-8') + splited[1]
-            features_enum_list.append(feature_enum_name + bytes(",", 'utf-8'))
+            features_enum_list.append(feature_enum_name)
             feature_pair_name = bytes("{clang::dpct::HelperFileEnum::" + helper_file_enum_name + ", \"", 'utf-8') +\
                                 splited[1] + bytes("\"}", 'utf-8')
             features_enum_pair_list.append(bytes("{clang::dpct::HelperFeatureEnum::", 'utf-8') + feature_enum_name +\
-                                           bytes(", ", 'utf-8') + feature_pair_name + bytes("},", 'utf-8'))
+                                           bytes(", ", 'utf-8') + feature_pair_name + bytes("}", 'utf-8'))
             Idx = Idx + 1
         elif (line.startswith(bytes("// DPCT_LABEL_END", 'utf-8'))):
             if (not has_code):
@@ -279,6 +281,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                                       splited[0] + bytes(", \"", 'utf-8') + splited[1] + \
                                       bytes("\"}, clang::dpct::HelperFeatureDependencyKind::HFDK_", 'utf-8') +\
                                       splited[2] + bytes("},", 'utf-8')
+                features_enum_referenced_list.append(splited[0] + bytes("_", 'utf-8')  + splited[1])
             else:
                 runtime_file_lines.append(line)
                 inc_all_file_lines.append(
@@ -351,7 +354,7 @@ def check_files():
     if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("Files defined in HelperFileAndFeatureNames.inc and files in current folder are not same.")
+    print("Error: Files defined in HelperFileAndFeatureNames.inc and files in current folder are not same.")
     print("Please update the HelperFileAndFeatureNames.inc file.\n")
 
     files_in_inc_but_not_in_dir = set_of_files_in_inc - set_of_files_in_current_dir
@@ -366,6 +369,15 @@ def check_files():
 
     return False
 
+def check_dependency():
+    set_of_features_enum = set(features_enum_list)
+    set_of_features_enum_referenced = set(features_enum_referenced_list)
+    features_referenced_but_not_defined = set_of_features_enum_referenced - set_of_features_enum
+    if (len(features_referenced_but_not_defined) != 0):
+        print("Error: Feature(s) is used in dependency but does not defined:")
+        print(features_referenced_but_not_defined)
+        return False
+    return True
 
 def main():
     if (sys.version_info.major < 3):
@@ -415,7 +427,8 @@ def main():
         is_os_win = True
 
     features_enum_file_name = os.path.join(inc_files_dir, "HelperFeatureEnum.inc")
-    features_enum_file_handle = io.open(features_enum_file_name, "wb")
+    if (os.path.exists(features_enum_file_name)):
+        os.remove(features_enum_file_name)
 
     for cont_file in content_files_list:
         process_a_file(cont_file, inc_files_dir,
@@ -424,14 +437,18 @@ def main():
         process_a_file(cont_file, inc_files_dir, runtime_files_dir,
                        True, dpl_extras_content_files_dict)
 
+    if (not check_dependency()):
+        exit_script()
+
+    features_enum_file_handle = io.open(features_enum_file_name, "wb")
     features_enum_str = bytes("", 'utf-8')
     features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM\n", 'utf-8')
     for element in features_enum_list:
-        features_enum_str = features_enum_str + element + bytes("\n", 'utf-8')
+        features_enum_str = features_enum_str + element + bytes(",\n", 'utf-8')
     features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
     features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP\n", 'utf-8')
     for element in features_enum_pair_list:
-        features_enum_str = features_enum_str + element + bytes("\n", 'utf-8')
+        features_enum_str = features_enum_str + element + bytes(",\n", 'utf-8')
     features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
 
     features_enum_file_handle.write(features_enum_str)

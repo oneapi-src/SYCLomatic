@@ -18,6 +18,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace clang {
@@ -104,6 +105,55 @@ void updateHelperNameContentMap(
 void updateTUR(clang::tooling::TranslationUnitReplacements &TUR);
 
 void replaceEndOfLine(std::string &StrNeedProcess);
+
+extern std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
+                clang::dpct::HelperFunc>
+    HelperNameContentMap;
+extern std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileNameMap;
+extern std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+    HelperFileIDMap;
+extern const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileHeaderGuardMacroMap;
+extern const std::unordered_map<clang::dpct::HelperFileEnum,
+                                std::vector<clang::dpct::HelperFileEnum>>
+    HelperFileDependencyMap;
+
+extern const std::string DpctAllContentStr;
+extern const std::string AtomicAllContentStr;
+extern const std::string BlasUtilsAllContentStr;
+extern const std::string DeviceAllContentStr;
+extern const std::string DplUtilsAllContentStr;
+extern const std::string ImageAllContentStr;
+extern const std::string KernelAllContentStr;
+extern const std::string MemoryAllContentStr;
+extern const std::string UtilAllContentStr;
+extern const std::string DplExtrasAlgorithmAllContentStr;
+extern const std::string DplExtrasFunctionalAllContentStr;
+extern const std::string DplExtrasIteratorsAllContentStr;
+extern const std::string DplExtrasMemoryAllContentStr;
+extern const std::string DplExtrasNumericAllContentStr;
+extern const std::string DplExtrasVectorAllContentStr;
+
+extern const std::map<clang::dpct::HelperFeatureIDTy, std::string>
+    FeatureNameToAPINameMap;
+extern const std::unordered_map<clang::dpct::HelperFeatureEnum,
+                                clang::dpct::HelperFeatureIDTy>
+    HelperFeatureEnumPairMap;
+
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    PropToGetFeatureMap;
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    PropToSetFeatureMap;
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    SamplingInfoToSetFeatureMap;
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    SamplingInfoToGetFeatureMap;
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    ImageWrapperBaseToSetFeatureMap;
+extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+    ImageWrapperBaseToGetFeatureMap;
+
 } // namespace dpct
 } // namespace clang
 

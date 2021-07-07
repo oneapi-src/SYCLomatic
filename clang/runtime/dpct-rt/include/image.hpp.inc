@@ -484,8 +484,6 @@ public:
 
 // DPCT_LABEL_BEGIN|image_matrix|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
-// Util|make_index_sequence
 // Image|image_channel
 // Image|image_matrix_1
 // Image|image_matrix_2
@@ -562,7 +560,7 @@ public:
 // DPCT_PARENT_FEATURE|image_matrix
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_matrix
-// Image|create_image_with_channel
+// Image|image_matrix_create_image_with_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Construct a new image class with the matrix data.

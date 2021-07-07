@@ -1279,6 +1279,7 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
 // DPCT_LABEL_BEGIN|dpct_accessor|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|memory_traits
+// Memory|memory_region
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct accessor used as device function parameter.
@@ -1533,6 +1534,7 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // Memory|device_memory
 // Memory|get_buffer_T|UsmNone
+// Memory|device_memory_init
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   template <size_t D = Dimension>
@@ -1554,7 +1556,7 @@ public:
 // Memory|device_memory
 // Memory|get_buffer_byte_t|UsmNone
 // Memory|device_memory_dpct_accessor_t_alias|UsmRestricted
-// Memory|device_memory_get_access_sp
+// Memory|device_memory_get_access_sp|UsmNone
 // Memory|device_memory_accessor_t_alias|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE

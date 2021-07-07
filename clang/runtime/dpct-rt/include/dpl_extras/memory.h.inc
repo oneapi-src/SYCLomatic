@@ -205,7 +205,8 @@ struct is_hetero_iterator<
 // Memory|typedef_byte_t
 // DplExtrasMemory|is_hetero_iterator
 // DplExtrasMemory|device_iterator
-// Memory|mem_mgr_translate_ptr
+// Memory|mem_mgr_translate_ptr|UsmNone
+// DplExtrasMemory|device_pointer_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
@@ -714,7 +715,9 @@ public:
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|malloc_device|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
@@ -725,7 +728,9 @@ static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
 }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_new|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T>
 device_pointer<T> device_new(device_pointer<T> p, const T &value,
@@ -745,13 +750,17 @@ device_pointer<T> device_new(const std::size_t count = 1) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|free_device|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> void free_device(device_pointer<T> ptr) {}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_delete|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T>
 typename std::enable_if<!std::is_trivially_destructible<T>::value, void>::type
@@ -766,7 +775,9 @@ device_delete(device_pointer<T>, const std::size_t count = 1) {}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|get_device_pointer|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> device_pointer<T> get_device_pointer(T *ptr) {
   return device_pointer<T>(ptr);
@@ -779,7 +790,9 @@ device_pointer<T> get_device_pointer(const device_pointer<T> &ptr) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|get_raw_pointer|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
   return ptr.get();

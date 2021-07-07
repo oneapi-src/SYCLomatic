@@ -719,8 +719,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
 
       if (Arg.IsUsedAsLvalueAfterMalloc) {
         requestFeature(HelperFeatureEnum::Memory_access_wrapper, getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                       getFilePath());
+        if (Arg.IsDefinedOnDevice) {
+          requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+                         getFilePath());
+        }
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
             Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
@@ -729,8 +731,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
             buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
       } else {
         requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                       getFilePath());
+        if (Arg.IsDefinedOnDevice) {
+          requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+                         getFilePath());
+        }
         SubmitStmtsList.AccessorList.emplace_back(
             buildString("auto ", Arg.getIdStringWithSuffix("acc"),
                         " = " + MapNames::getDpctNamespace() + "get_access(",
@@ -2488,7 +2492,7 @@ const std::string &MemVarInfo::getMemoryAttr() {
   requestFeature(HelperFeatureEnum::Memory_memory_region, getFilePath());
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getDpctNamespace() + "device";
+    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
     return DeviceMemory;
   }
   case clang::dpct::MemVarInfo::Constant: {

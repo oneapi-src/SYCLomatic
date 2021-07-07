@@ -25,15 +25,15 @@ namespace clang {
 namespace dpct {
 
 void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
-  if (!MapNames::HelperFeatureEnumPairMap.count(Feature)) {
+  if (!HelperFeatureEnumPairMap.count(Feature)) {
 #ifdef DPCT_DEBUG_BUILD
     std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;
     assert(0 && "Unknown requested feature.\n");
 #endif
   }
-  auto Key = MapNames::HelperFeatureEnumPairMap.at(Feature);
-  auto Iter = MapNames::HelperNameContentMap.find(Key);
-  if (Iter != MapNames::HelperNameContentMap.end()) {
+  auto Key = HelperFeatureEnumPairMap.at(Feature);
+  auto Iter = HelperNameContentMap.find(Key);
+  if (Iter != HelperNameContentMap.end()) {
     Iter->second.IsCalled = true;
     Iter->second.CallerSrcFiles.insert(UsedFile);
   } else {
@@ -66,7 +66,7 @@ void requestFeature(HelperFeatureEnum Feature, const Decl *Decl) {
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
   std::string CopyrightHeader =
-      MapNames::HelperNameContentMap.at(std::make_pair(File, "License")).Code;
+      HelperNameContentMap.at(std::make_pair(File, "License")).Code;
   if (File == HelperFileEnum::Dpct) {
     std::string Prefix = "//==----";
     std::string Suffix = "-*- C++ -*----------------==//";
@@ -94,7 +94,7 @@ getHeaderGuardPair(const clang::dpct::HelperFileEnum File) {
       MacroName[Idx] = llvm::toUpper(MacroName[Idx]);
     MacroName = "__" + MacroName + "_HPP__";
   } else {
-    MacroName = MapNames::HelperFileHeaderGuardMacroMap.find(File)->second;
+    MacroName = HelperFileHeaderGuardMacroMap.find(File)->second;
   }
   std::pair<std::string, std::string> Pair;
   Pair.first =
@@ -121,9 +121,9 @@ void addDependencyIncludeDirectives(
 
   bool IsCurrentFileInDpExtra = isDplFile(FileID);
 
-  auto Iter = MapNames::HelperNameContentMap.find(
+  auto Iter = HelperNameContentMap.find(
       std::make_pair(FileID, "local_include_dependency"));
-  if (Iter == MapNames::HelperNameContentMap.end())
+  if (Iter == HelperNameContentMap.end())
     return;
 
   auto Content = Iter->second;
@@ -155,13 +155,13 @@ void addDependencyIncludeDirectives(
     if (IsCurrentFileInDpExtra) {
       if (isDplFile(Item))
         Directives = Directives + "#include \"" +
-                     MapNames::HelperFileNameMap.at(Item) + "\"" + getNL();
+                     HelperFileNameMap.at(Item) + "\"" + getNL();
       else
         Directives = Directives + "#include \"../" +
-                     MapNames::HelperFileNameMap.at(Item) + "\"" + getNL();
+                     HelperFileNameMap.at(Item) + "\"" + getNL();
     } else {
       Directives = Directives + "#include \"" +
-                   MapNames::HelperFileNameMap.at(Item) + "\"" + getNL();
+                   HelperFileNameMap.at(Item) + "\"" + getNL();
     }
   }
   Content.Code = Directives;
@@ -325,10 +325,10 @@ void generateAllHelperFiles() {
   {                                                                            \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
-            MapNames::HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                    \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
-    std::string Code = MapNames::FILE_NAME##AllContentStr;                     \
+    std::string Code = FILE_NAME##AllContentStr;                     \
     replaceEndOfLine(Code);                                                    \
     FILE_NAME##File << Code;                                                   \
     FILE_NAME##File.flush();                                                   \
@@ -337,10 +337,10 @@ void generateAllHelperFiles() {
   {                                                                            \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
-            MapNames::HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                    \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
-    std::string Code = MapNames::FILE_NAME##AllContentStr;                     \
+    std::string Code = FILE_NAME##AllContentStr;                     \
     replaceEndOfLine(Code);                                                    \
     FILE_NAME##File << Code;                                                   \
     FILE_NAME##File.flush();                                                   \
@@ -367,7 +367,7 @@ void generateAllHelperFiles() {
 void generateHelperFunctions() {
   auto getUsedAPINum = []() -> size_t {
     size_t Res = 0;
-    for (const auto &Item : MapNames::HelperNameContentMap) {
+    for (const auto &Item : HelperNameContentMap) {
       if (Item.second.IsCalled)
         Res++;
     }
@@ -383,7 +383,7 @@ void generateHelperFunctions() {
   do {
     UsedAPINum = getUsedAPINum();
     std::set<std::pair<HelperFeatureIDTy, std::set<std::string>>> NeedInsert;
-    for (const auto &Item : MapNames::HelperNameContentMap) {
+    for (const auto &Item : HelperNameContentMap) {
       if (Item.second.IsCalled) {
         for (const auto &DepItem : Item.second.Dependency) {
           if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
@@ -409,8 +409,8 @@ void generateHelperFunctions() {
       }
     }
     for (const auto &Item : NeedInsert) {
-      auto Iter = MapNames::HelperNameContentMap.find(Item.first);
-      if (Iter != MapNames::HelperNameContentMap.end()) {
+      auto Iter = HelperNameContentMap.find(Item.first);
+      if (Iter != HelperNameContentMap.end()) {
         Iter->second.IsCalled = true;
         Iter->second.CallerSrcFiles.insert(Item.second.begin(),
                                            Item.second.end());
@@ -471,7 +471,7 @@ void generateHelperFunctions() {
       return Res;
     };
 
-    for (const auto &Item : MapNames::HelperNameContentMap)
+    for (const auto &Item : HelperNameContentMap)
       if (Item.second.IsCalled)
         FileUsedFlagVec[size_t(Item.first.first)] = true;
     size_t UsedFileNum = getUsedFileNum();
@@ -482,7 +482,7 @@ void generateHelperFunctions() {
            ++FileID) {
         if (!FileUsedFlagVec[FileID])
           continue;
-        for (const auto &Item : MapNames::HelperNameContentMap) {
+        for (const auto &Item : HelperNameContentMap) {
           if (Item.first.first == (dpct::HelperFileEnum)FileID) {
             for (const auto &Dep : Item.second.Dependency) {
               if (clang::dpct::DpctGlobalInfo::
@@ -521,7 +521,7 @@ void generateHelperFunctions() {
     }                                                                          \
     break;
 
-  for (const auto &Item : MapNames::HelperNameContentMap) {
+  for (const auto &Item : HelperNameContentMap) {
     if (Item.first.second == "local_include_dependency") {
       // local_include_dependency for dpct and dpl_utils is inserted in step3
       // local_include_dependency for others are inserted in
@@ -590,11 +590,11 @@ void generateHelperFunctions() {
     // of getNL().
 #define ADD_INCLUDE_DIRECTIVE_FOR_DPL(FILENAME)                                \
   if (!FILENAME##FileContent.empty()) {                                        \
-    FILENAME##FileContent.push_back(MapNames::HelperNameContentMap.at(         \
+    FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
         std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"dpl_extras/" +                               \
-             MapNames::HelperFileNameMap.at(                                   \
+             HelperFileNameMap.at(                                   \
                  clang::dpct::HelperFileEnum::FILENAME) +                      \
              "\"\n";                                                           \
   }
@@ -606,18 +606,18 @@ void generateHelperFunctions() {
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasVector)
 #undef ADD_INCLUDE_DIRECTIVE_FOR_DPL
 
-    auto Item = MapNames::HelperNameContentMap.at(std::make_pair(
+    auto Item = HelperNameContentMap.at(std::make_pair(
         clang::dpct::HelperFileEnum::DplUtils, "local_include_dependency"));
     Item.Code = IDDStr;
     DplUtilsFileContent.push_back(Item);
   }
 
   if (!DplUtilsFileContent.empty() ||
-      MapNames::HelperNameContentMap
+      HelperNameContentMap
           .at(std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
                              "non_local_include_dependency"))
           .IsCalled) {
-    DplUtilsFileContent.push_back(MapNames::HelperNameContentMap.at(
+    DplUtilsFileContent.push_back(HelperNameContentMap.at(
         std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
                        "non_local_include_dependency")));
   }
@@ -626,11 +626,11 @@ void generateHelperFunctions() {
 
 #define ADD_INCLUDE_DIRECTIVE(FILENAME)                                        \
   if (!FILENAME##FileContent.empty()) {                                        \
-    FILENAME##FileContent.push_back(MapNames::HelperNameContentMap.at(         \
+    FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
         std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"" +                                          \
-             MapNames::HelperFileNameMap.at(                                   \
+             HelperFileNameMap.at(                                   \
                  clang::dpct::HelperFileEnum::FILENAME) +                      \
              "\"\n";                                                           \
   }
@@ -646,7 +646,7 @@ void generateHelperFunctions() {
   ADD_INCLUDE_DIRECTIVE(Util)
 #undef ADD_INCLUDE_DIRECTIVE
 
-  auto Item = MapNames::HelperNameContentMap.at(std::make_pair(
+  auto Item = HelperNameContentMap.at(std::make_pair(
       clang::dpct::HelperFileEnum::Dpct, "local_include_dependency"));
   Item.Code = IDDStr;
   DpctFileContent.push_back(Item);
@@ -658,7 +658,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
-            MapNames::HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                    \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
@@ -670,7 +670,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
-            MapNames::HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                    \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
@@ -859,8 +859,8 @@ void collectInfo(
       // In the future, if there is an API removed, below code should be
       // enabled:
       // auto FeatureID = std::make_pair(File, Feature.first);
-      // auto Iter = MapNames::RemovedFeatureMap.find(FeatureID);
-      // if (Iter == MapNames::RemovedFeatureMap.end()) {
+      // auto Iter = RemovedFeatureMap.find(FeatureID);
+      // if (Iter == RemovedFeatureMap.end()) {
       //   return;
       // } else {
       //   APIName = Iter->second;
@@ -889,8 +889,8 @@ void processFeatureMap(
     std::map<std::string, std::set<std::string>> &APINameCallerSrcFilesMap) {
   for (const auto &FeatureFromYaml : FeatureMap) {
     HelperFeatureIDTy FeatureKey(CurrentFileID, FeatureFromYaml.first);
-    auto FeatureIter = MapNames::HelperNameContentMap.find(FeatureKey);
-    if (FeatureIter != MapNames::HelperNameContentMap.end()) {
+    auto FeatureIter = HelperNameContentMap.find(FeatureKey);
+    if (FeatureIter != HelperNameContentMap.end()) {
       FeatureIter->second.IsCalled =
           FeatureIter->second.IsCalled || FeatureFromYaml.second.IsCalled;
       for (auto &CallerFileName : FeatureFromYaml.second.CallerSrcFiles) {
@@ -909,15 +909,15 @@ void processFeatureMap(
   }
 }
 
-// Update MapNames::HelperNameContentMap from TUR
+// Update HelperNameContentMap from TUR
 void updateHelperNameContentMap(
     const clang::tooling::TranslationUnitReplacements &TUR) {
   std::map<std::string, std::set<std::string>> APINameCallerSrcFilesMap;
   VersionCmpResult CompareResult = compareToolVersion(TUR.DpctVersion);
 
   for (const auto &FileFeatureMap : TUR.FeatureMap) {
-    auto Iter = MapNames::HelperFileIDMap.find(FileFeatureMap.first);
-    if (Iter != MapNames::HelperFileIDMap.end()) {
+    auto Iter = HelperFileIDMap.find(FileFeatureMap.first);
+    if (Iter != HelperFileIDMap.end()) {
       auto CurrentFileID = Iter->second;
       processFeatureMap(FileFeatureMap.second, CurrentFileID, CompareResult,
                         APINameCallerSrcFilesMap);
@@ -933,24 +933,24 @@ void updateHelperNameContentMap(
                                  APINameCallerSrcFilesMap);
 }
 
-// Update TUR from MapNames::HelperNameContentMap
+// Update TUR from HelperNameContentMap
 void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
   auto updateAPIName = [](HelperFeatureIDTy Feature,
                           clang::tooling::HelperFuncForYaml &HFFY) {
     // If this feature can be found in the map, then save the API name (from
     // the map) into yaml file; otherwise save the feature name into yaml
     // file
-    auto Iter = MapNames::FeatureNameToAPINameMap.find(Feature);
-    if (Iter != MapNames::FeatureNameToAPINameMap.end()) {
+    auto Iter = FeatureNameToAPINameMap.find(Feature);
+    if (Iter != FeatureNameToAPINameMap.end()) {
       HFFY.APIName = Iter->second;
     } else {
       HFFY.APIName = Feature.second;
     }
   };
 
-  for (auto Entry : MapNames::HelperNameContentMap) {
+  for (auto Entry : HelperNameContentMap) {
     if (Entry.second.IsCalled) {
-      std::string FileName = MapNames::HelperFileNameMap[Entry.first.first];
+      std::string FileName = HelperFileNameMap[Entry.first.first];
       if (Entry.second.ParentFeature.first == HelperFileEnum::Unknown &&
           Entry.second.ParentFeature.second.empty()) {
         // This is not a sub-feature
@@ -1009,6 +1009,275 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
   replaceAllOccurredStrsInStr(StrNeedProcess, "\n", "\r\n");
 #endif
 }
+
+std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
+    HelperNameContentMap{
+#define DPCT_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
+  {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
+#define DPCT_DEPENDENCY(...) {__VA_ARGS__},
+#define DPCT_PARENT_FEATURE(ParentFeatureFile, ParentFeatureName)              \
+  , { clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName }
+#define DPCT_CONTENT_END                                                       \
+  }                                                                            \
+  }                                                                            \
+  ,
+#include "clang/DPCT/atomic.inc"
+#include "clang/DPCT/blas_utils.inc"
+#include "clang/DPCT/device.inc"
+#include "clang/DPCT/dpct.inc"
+#include "clang/DPCT/dpl_extras/algorithm.inc"
+#include "clang/DPCT/dpl_extras/functional.inc"
+#include "clang/DPCT/dpl_extras/iterators.inc"
+#include "clang/DPCT/dpl_extras/memory.inc"
+#include "clang/DPCT/dpl_extras/numeric.inc"
+#include "clang/DPCT/dpl_extras/vector.inc"
+#include "clang/DPCT/dpl_utils.inc"
+#include "clang/DPCT/image.inc"
+#include "clang/DPCT/kernel.inc"
+#include "clang/DPCT/memory.inc"
+#include "clang/DPCT/util.inc"
+#undef DPCT_CONTENT_BEGIN
+#undef DPCT_DEPENDENCY
+#undef DPCT_CONTENT_END
+    };
+
+std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileNameMap{
+        {clang::dpct::HelperFileEnum::Dpct, "dpct.hpp"},
+        {clang::dpct::HelperFileEnum::Atomic, "atomic.hpp"},
+        {clang::dpct::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
+        {clang::dpct::HelperFileEnum::Device, "device.hpp"},
+        {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
+        {clang::dpct::HelperFileEnum::Image, "image.hpp"},
+        {clang::dpct::HelperFileEnum::Kernel, "kernel.hpp"},
+        {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
+        {clang::dpct::HelperFileEnum::Util, "util.hpp"},
+        {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
+        {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
+        {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
+        {clang::dpct::HelperFileEnum::DplExtrasMemory, "memory.h"},
+        {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
+        {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"}};
+
+std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+    HelperFileIDMap{
+        {"dpct.hpp", clang::dpct::HelperFileEnum::Dpct},
+        {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
+        {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
+        {"device.hpp", clang::dpct::HelperFileEnum::Device},
+        {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
+        {"image.hpp", clang::dpct::HelperFileEnum::Image},
+        {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
+        {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
+        {"util.hpp", clang::dpct::HelperFileEnum::Util},
+        {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
+        {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
+        {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
+        {"memory.h", clang::dpct::HelperFileEnum::DplExtrasMemory},
+        {"numeric.h", clang::dpct::HelperFileEnum::DplExtrasNumeric},
+        {"vector.h", clang::dpct::HelperFileEnum::DplExtrasVector}};
+
+const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+    HelperFileHeaderGuardMacroMap{
+        {clang::dpct::HelperFileEnum::Dpct, "__DPCT_HPP__"},
+        {clang::dpct::HelperFileEnum::Atomic, "__DPCT_ATOMIC_HPP__"},
+        {clang::dpct::HelperFileEnum::BlasUtils, "__DPCT_BLAS_HPP__"},
+        {clang::dpct::HelperFileEnum::Device, "__DPCT_DEVICE_HPP__"},
+        {clang::dpct::HelperFileEnum::DplUtils, "__DPL_UTILS_HPP"},
+        {clang::dpct::HelperFileEnum::Image, "__DPCT_IMAGE_HPP__"},
+        {clang::dpct::HelperFileEnum::Kernel, "__DPCT_KERNEL_HPP__"},
+        {clang::dpct::HelperFileEnum::Memory, "__DPCT_MEMORY_HPP__"},
+        {clang::dpct::HelperFileEnum::Util, "__DPCT_UTIL_HPP__"},
+        {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
+         "__DPCT_ALGORITHM_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasFunctional,
+         "__DPCT_FUNCTIONAL_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasIterators,
+         "__DPCT_ITERATORS_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasMemory, "__DPCT_MEMORY_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasNumeric, "__DPCT_NUMERIC_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasVector, "__DPCT_VECTOR_H__"}};
+
+const std::unordered_map<clang::dpct::HelperFileEnum,
+                         std::vector<clang::dpct::HelperFileEnum>>
+    HelperFileDependencyMap{{clang::dpct::HelperFileEnum::BlasUtils,
+                                       {clang::dpct::HelperFileEnum::Memory,
+                                        clang::dpct::HelperFileEnum::Util}},
+                                      {clang::dpct::HelperFileEnum::Image,
+                                       {clang::dpct::HelperFileEnum::Memory,
+                                        clang::dpct::HelperFileEnum::Util}},
+                                      {clang::dpct::HelperFileEnum::Memory,
+                                       {clang::dpct::HelperFileEnum::Device}}};
+
+const std::unordered_map<clang::dpct::HelperFeatureEnum,
+                         clang::dpct::HelperFeatureIDTy>
+    HelperFeatureEnumPairMap{
+#define DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
+#undef DPCT_FEATURE_ENUM
+#include "clang/DPCT/HelperFeatureEnum.inc"
+#undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
+    };
+
+const std::string DpctAllContentStr =
+#include "clang/DPCT/dpct.all.inc"
+    ;
+const std::string AtomicAllContentStr =
+#include "clang/DPCT/atomic.all.inc"
+    ;
+const std::string BlasUtilsAllContentStr =
+#include "clang/DPCT/blas_utils.all.inc"
+    ;
+const std::string DeviceAllContentStr =
+#include "clang/DPCT/device.all.inc"
+    ;
+const std::string DplUtilsAllContentStr =
+#include "clang/DPCT/dpl_utils.all.inc"
+    ;
+const std::string ImageAllContentStr =
+#include "clang/DPCT/image.all.inc"
+    ;
+const std::string KernelAllContentStr =
+#include "clang/DPCT/kernel.all.inc"
+    ;
+const std::string MemoryAllContentStr =
+#include "clang/DPCT/memory.all.inc"
+    ;
+const std::string UtilAllContentStr =
+#include "clang/DPCT/util.all.inc"
+    ;
+const std::string DplExtrasAlgorithmAllContentStr =
+#include "clang/DPCT/dpl_extras/algorithm.all.inc"
+    ;
+const std::string DplExtrasFunctionalAllContentStr =
+#include "clang/DPCT/dpl_extras/functional.all.inc"
+    ;
+const std::string DplExtrasIteratorsAllContentStr =
+#include "clang/DPCT/dpl_extras/iterators.all.inc"
+    ;
+const std::string DplExtrasMemoryAllContentStr =
+#include "clang/DPCT/dpl_extras/memory.all.inc"
+    ;
+const std::string DplExtrasNumericAllContentStr =
+#include "clang/DPCT/dpl_extras/numeric.all.inc"
+    ;
+const std::string DplExtrasVectorAllContentStr =
+#include "clang/DPCT/dpl_extras/vector.all.inc"
+    ;
+
+const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
+    FeatureNameToAPINameMap = {
+#define HELPERFILE(PATH, UNIQUE_ENUM)
+#define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)              \
+  {{clang::dpct::HelperFileEnum::File, FeatureName}, APIName},
+#include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
+#undef HELPER_FEATURE_MAP_TO_APINAME
+#undef HELPERFILE
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    PropToGetFeatureMap = {
+        {"clockRate",
+         HelperFeatureEnum::Device_device_info_get_max_clock_frequency},
+        {"major", HelperFeatureEnum::Device_device_info_get_major_version},
+        {"minor", HelperFeatureEnum::Device_device_info_get_minor_version},
+        {"integrated", HelperFeatureEnum::Device_device_info_get_integrated},
+        {"warpSize",
+         HelperFeatureEnum::Device_device_info_get_max_sub_group_size},
+        {"multiProcessorCount",
+         HelperFeatureEnum::Device_device_info_get_max_compute_units},
+        {"maxThreadsPerBlock",
+         HelperFeatureEnum::Device_device_info_get_max_work_group_size},
+        {"maxThreadsPerMultiProcessor",
+         HelperFeatureEnum::
+             Device_device_info_get_max_work_items_per_compute_unit},
+        {"name", HelperFeatureEnum::Device_device_info_get_name},
+        {"totalGlobalMem",
+         HelperFeatureEnum::Device_device_info_get_global_mem_size},
+        {"sharedMemPerBlock",
+         HelperFeatureEnum::Device_device_info_get_local_mem_size},
+        {"maxGridSize",
+         HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    PropToSetFeatureMap = {
+        {"clockRate",
+         HelperFeatureEnum::Device_device_info_set_max_clock_frequency},
+        {"major", HelperFeatureEnum::Device_device_info_set_major_version},
+        {"minor", HelperFeatureEnum::Device_device_info_set_minor_version},
+        {"integrated", HelperFeatureEnum::Device_device_info_set_integrated},
+        {"warpSize",
+         HelperFeatureEnum::Device_device_info_set_max_sub_group_size},
+        {"multiProcessorCount",
+         HelperFeatureEnum::Device_device_info_set_max_compute_units},
+        {"maxThreadsPerBlock",
+         HelperFeatureEnum::Device_device_info_set_max_work_group_size},
+        {"maxThreadsPerMultiProcessor",
+         HelperFeatureEnum::
+             Device_device_info_set_max_work_items_per_compute_unit},
+        {"name", HelperFeatureEnum::Device_device_info_set_name},
+        {"totalGlobalMem",
+         HelperFeatureEnum::Device_device_info_set_global_mem_size},
+        {"sharedMemPerBlock",
+         HelperFeatureEnum::Device_device_info_set_local_mem_size},
+        {"maxGridSize",
+         HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    SamplingInfoToSetFeatureMap = {
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_set_coordinate_normalization_mode}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    SamplingInfoToGetFeatureMap = {
+        {"addressing_mode",
+         HelperFeatureEnum::Image_sampling_info_get_addressing_mode},
+        {"filtering_mode",
+         HelperFeatureEnum::Image_sampling_info_get_filtering_mode},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_sampling_info_get_coordinate_normalization_mode}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    ImageWrapperBaseToSetFeatureMap = {
+        {"sampling_info",
+         HelperFeatureEnum::Image_image_wrapper_base_set_sampling_info},
+        {"data", HelperFeatureEnum::Image_image_wrapper_base_set_data},
+        {"channel", HelperFeatureEnum::Image_image_wrapper_base_set_channel},
+        {"channel_data_type",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_data_type},
+        {"channel_size",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_size},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_image_wrapper_base_set_coordinate_normalization_mode},
+        {"channel_num",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_num},
+        {"channel_type",
+         HelperFeatureEnum::Image_image_wrapper_base_set_channel_type}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    ImageWrapperBaseToGetFeatureMap = {
+        {"sampling_info",
+         HelperFeatureEnum::Image_image_wrapper_base_get_sampling_info},
+        {"data", HelperFeatureEnum::Image_image_wrapper_base_get_data},
+        {"channel", HelperFeatureEnum::Image_image_wrapper_base_get_channel},
+        {"channel_data_type",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_data_type},
+        {"channel_size",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_size},
+        {"addressing_mode",
+         HelperFeatureEnum::Image_image_wrapper_base_get_addressing_mode},
+        {"filtering_mode",
+         HelperFeatureEnum::Image_image_wrapper_base_get_filtering_mode},
+        {"coordinate_normalization_mode",
+         HelperFeatureEnum::
+             Image_image_wrapper_base_get_coordinate_normalization_mode},
+        {"channel_num",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_num},
+        {"channel_type",
+         HelperFeatureEnum::Image_image_wrapper_base_get_channel_type},
+        {"sampler", HelperFeatureEnum::Image_image_wrapper_base_get_sampler},
+};
 
 } // namespace dpct
 } // namespace clang

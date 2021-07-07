@@ -1200,7 +1200,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
-  MapNames::HelperFileNameMap[HelperFileEnum::Dpct] =
+  HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
