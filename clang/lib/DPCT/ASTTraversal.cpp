@@ -14154,10 +14154,24 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
           {"x", "1"}, {"y", "2"}, {"z", "3"}, {"w", "4"}, {"f", ""}};
       std::string MemberName = ME->getMemberNameInfo().getAsString();
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+        if (MemberName == "f")
+          requestFeature(
+              HelperFeatureEnum::Image_image_wrapper_base_set_channel_data_type,
+              ME);
+        else
+          requestFeature(
+              HelperFeatureEnum::Image_image_wrapper_base_set_channel_size, ME);
         requestFeature(MethodNameToSetFeatureMap.at(MemberName), BO);
         emplaceTransformation(ReplaceMemberAssignAsSetMethod(
             BO, ME, MethodNameMap[MemberName], "", ExtraArgMap[MemberName]));
       } else {
+        if (MemberName == "f")
+          requestFeature(
+              HelperFeatureEnum::Image_image_wrapper_base_get_channel_data_type,
+              ME);
+        else
+          requestFeature(
+              HelperFeatureEnum::Image_image_wrapper_base_get_channel_size, ME);
         requestFeature(MethodNameToGetFeatureMap.at(MemberName), ME);
         emplaceTransformation(new RenameFieldInMemberExpr(
             ME, buildString("get_", MethodNameMap[MemberName], "()")));

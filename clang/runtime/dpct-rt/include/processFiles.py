@@ -445,11 +445,11 @@ def main():
     features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM\n", 'utf-8')
     for element in features_enum_list:
         features_enum_str = features_enum_str + element + bytes(",\n", 'utf-8')
-    features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
+    features_enum_str = features_enum_str + bytes("#endif // DPCT_FEATURE_ENUM\n", 'utf-8')
     features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP\n", 'utf-8')
     for element in features_enum_pair_list:
         features_enum_str = features_enum_str + element + bytes(",\n", 'utf-8')
-    features_enum_str = features_enum_str + bytes("#endif\n", 'utf-8')
+    features_enum_str = features_enum_str + bytes("#endif // DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP\n", 'utf-8')
 
     features_enum_file_handle.write(features_enum_str)
     features_enum_file_handle.close()

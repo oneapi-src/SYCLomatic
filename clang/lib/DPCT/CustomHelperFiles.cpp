@@ -1268,10 +1268,7 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"addressing_mode",
          HelperFeatureEnum::Image_sampling_info_get_addressing_mode},
         {"filtering_mode",
-         HelperFeatureEnum::Image_sampling_info_get_filtering_mode},
-        {"coordinate_normalization_mode",
-         HelperFeatureEnum::
-             Image_sampling_info_get_coordinate_normalization_mode}};
+         HelperFeatureEnum::Image_sampling_info_get_filtering_mode}};
 const std::unordered_map<std::string, HelperFeatureEnum>
     ImageWrapperBaseToSetFeatureMap = {
         {"sampling_info",
