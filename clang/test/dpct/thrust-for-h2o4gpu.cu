@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <thrust/inner_product.h>
 #include <thrust/extrema.h>
-
+#include <thrust/host_vector.h>
 
 template <typename T> struct is_even {
   __host__ __device__ bool operator()(T x) {
