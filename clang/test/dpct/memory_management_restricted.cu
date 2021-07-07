@@ -11,6 +11,25 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
 #define DATAMACRO 32*32
 
+//CHECK: template<typename ntype>
+//CHECK-NEXT: void test(){
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:   int i = 0;
+//CHECK-NEXT:   ntype** ptr;
+//CHECK-NEXT:   ntype* array[10];
+//CHECK-NEXT:   ptr[i] = (ntype *)sycl::malloc_device(10 * sizeof(ntype), q_ct1);
+//CHECK-NEXT:   array[i] = (ntype *)sycl::malloc_device(10 * sizeof(ntype), q_ct1);
+//CHECK-NEXT: }
+template<typename ntype>
+void test(){
+  int i = 0;
+  ntype** ptr;
+  ntype* array[10];
+  cudaMalloc(&ptr[i], 10 * sizeof(ntype));
+  cudaMalloc(&array[i], 10 * sizeof(ntype));
+}
+
 int main(){
     //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
     //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();

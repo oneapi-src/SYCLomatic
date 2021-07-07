@@ -7,6 +7,23 @@
 
 __constant__ float constData[1234567 * 4];
 
+// CHECK: template<typename ntype>
+//CHECK-NEXT: void test(){
+//CHECK-NEXT:   int i = 0;
+//CHECK-NEXT:   ntype** ptr;
+//CHECK-NEXT:   ntype* array[10];
+//CHECK-NEXT:   ptr[i] = (ntype *)dpct::dpct_malloc(10 * sizeof(ntype));
+//CHECK-NEXT:   array[i] = (ntype *)dpct::dpct_malloc(10 * sizeof(ntype));
+//CHECK-NEXT: }
+template<typename ntype>
+void test(){
+  int i = 0;
+  ntype** ptr;
+  ntype* array[10];
+  cudaMalloc(&ptr[i], 10 * sizeof(ntype));
+  cudaMalloc(&array[i], 10 * sizeof(ntype));
+}
+
 void fooo() {
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);

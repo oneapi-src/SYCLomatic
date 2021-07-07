@@ -11118,7 +11118,20 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
   OS << EA.getReplacedString();
 
   if (DerefType) {
-    QualType DerefQT = E->getType();
+    QualType DerefQT;
+     if(auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
+      QualType BaseType = ArraySub->getBase()->getType();
+      if(BaseType->isArrayType()) {
+        if(auto Array = BaseType->getAsArrayTypeUnsafe()) {
+          DerefQT = Array->getElementType();
+        }
+      } else if(BaseType->isPointerType()){
+        DerefQT = BaseType->getPointeeType();
+      }
+    }
+    if(DerefQT.isNull()) {
+      DerefQT = E->getType();
+    }
     if (NeedDerefOp)
       DerefQT = DerefQT->getPointeeType();
     *DerefType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
