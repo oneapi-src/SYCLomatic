@@ -71,13 +71,8 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
-  int mem_base_addr_align =
-      exec_queue.get_device()
-          .get_info<cl::sycl::info::device::mem_base_addr_align>();
-  std::int64_t stride_a =
-      detail::stride_for(n * lda, mem_base_addr_align / sizeof(T));
-  std::int64_t stride_ipiv =
-      detail::stride_for(n, mem_base_addr_align / sizeof(T));
+  std::int64_t stride_a = n * lda;
+  std::int64_t stride_ipiv = n;
   std::int64_t scratchpad_size = oneapi::mkl::lapack::getrf_batch_scratchpad_size<Ty>(
       exec_queue, n, n, lda, stride_a, stride_ipiv, batch_size);
 
@@ -86,11 +81,11 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
-  for (int64_t i = 0; i < batch_size; ++i)
+  for (std::int64_t i = 0; i < batch_size; ++i)
     dpct_memcpy(a_buffer_ptr + i * stride_a, host_a[i], n * lda * sizeof(T));
 
   {
-    cl::sycl::buffer<int64_t, 1> ipiv_buf(
+    cl::sycl::buffer<std::int64_t, 1> ipiv_buf(
         cl::sycl::range<1>(batch_size * stride_ipiv));
     cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
     auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
@@ -111,19 +106,21 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   }
 
   // Copy back to the original buffers
-  cl::sycl::event e;
-  for (int64_t i = 0; i < batch_size; ++i)
-    e = detail::dpct_memcpy(exec_queue, host_a[i], a_buffer_ptr + i * stride_a,
-                            n * lda * sizeof(T), automatic);
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                         a_buffer_ptr + i * stride_a,
+                                         n * lda * sizeof(T), automatic));
 
   std::vector<void *> ptrs{host_a};
   std::thread mem_free_thread(
-      [=](std::vector<void *> pointers_array, cl::sycl::event e) {
-        e.wait();
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
         for (auto p : pointers_array)
           free(p);
       },
-      ptrs, e);
+      ptrs, events);
   mem_free_thread.detach();
 #else
   std::int64_t m_int64 = n;
@@ -138,7 +135,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       cl::sycl::malloc_device<std::int64_t>(batch_size * n, exec_queue);
   std::int64_t **ipiv_int64_ptr =
       cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
-  for (int64_t i = 0; i < batch_size; ++i)
+  for (std::int64_t i = 0; i < batch_size; ++i)
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
   oneapi::mkl::lapack::getrf_batch(exec_queue, &m_int64, &n_int64, (Ty **)a, &lda_int64,
@@ -181,15 +178,9 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
-  int mem_base_addr_align =
-      exec_queue.get_device()
-          .get_info<cl::sycl::info::device::mem_base_addr_align>();
-  std::int64_t stride_a =
-      detail::stride_for(n * lda, mem_base_addr_align / sizeof(T));
-  std::int64_t stride_b =
-      detail::stride_for(nrhs * ldb, mem_base_addr_align / sizeof(T));
-  std::int64_t stride_ipiv =
-      detail::stride_for(n, mem_base_addr_align / sizeof(T));
+  std::int64_t stride_a = n * lda;
+  std::int64_t stride_b = nrhs * ldb;
+  std::int64_t stride_ipiv = n;
   std::int64_t scratchpad_size = oneapi::mkl::lapack::getrs_batch_scratchpad_size<Ty>(
       exec_queue, trans, n, nrhs, lda, stride_a, stride_ipiv, ldb, stride_b,
       batch_size);
@@ -202,7 +193,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   T **host_b = (T **)malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
-  for (int64_t i = 0; i < batch_size; ++i) {
+  for (std::int64_t i = 0; i < batch_size; ++i) {
     dpct_memcpy(a_buffer_ptr + i * stride_a, host_a[i], n * lda * sizeof(T));
     dpct_memcpy(b_buffer_ptr + i * stride_b, host_b[i], nrhs * ldb * sizeof(T));
   }
@@ -211,7 +202,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
     auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
     auto b_buffer = get_buffer<Ty>(b_buffer_ptr);
     cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
-    cl::sycl::buffer<int64_t, 1> ipiv_buf(
+    cl::sycl::buffer<std::int64_t, 1> ipiv_buf(
         cl::sycl::range<1>(batch_size * stride_ipiv));
     auto from_buf = get_buffer<int>(ipiv);
     exec_queue.submit([&](cl::sycl::handler &cgh) {
@@ -230,18 +221,20 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   }
 
   // Copy back to the original buffers
-  cl::sycl::event e;
-  for (int64_t i = 0; i < batch_size; ++i)
-    e = detail::dpct_memcpy(exec_queue, host_b[i], b_buffer_ptr + i * stride_b,
-                            nrhs * ldb * sizeof(T), automatic);
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_b[i],
+                                         b_buffer_ptr + i * stride_b,
+                                         nrhs * ldb * sizeof(T), automatic));
   std::vector<void *> ptrs{host_a, host_b};
   std::thread mem_free_thread(
-      [=](std::vector<void *> pointers_array, cl::sycl::event e) {
-        e.wait();
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
         for (auto p : pointers_array)
           free(p);
       },
-      ptrs, e);
+      ptrs, events);
   mem_free_thread.detach();
 #else
   std::int64_t n_int64 = n;
@@ -266,7 +259,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
         });
   });
 
-  for (int64_t i = 0; i < batch_size; ++i)
+  for (std::int64_t i = 0; i < batch_size; ++i)
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
   cl::sycl::event e = oneapi::mkl::lapack::getrs_batch(
@@ -298,13 +291,8 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
-  int mem_base_addr_align =
-      exec_queue.get_device()
-          .get_info<cl::sycl::info::device::mem_base_addr_align>();
-  std::int64_t stride_b =
-      detail::stride_for(n * ldb, mem_base_addr_align / sizeof(T));
-  std::int64_t stride_ipiv =
-      detail::stride_for(n, mem_base_addr_align / sizeof(T));
+  std::int64_t stride_b = n * ldb;
+  std::int64_t stride_ipiv = n;
   std::int64_t scratchpad_size = oneapi::mkl::lapack::getri_batch_scratchpad_size<Ty>(
       exec_queue, n, ldb, stride_b, stride_ipiv, batch_size);
 
@@ -316,7 +304,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
 
-  for (int64_t i = 0; i < batch_size; ++i) {
+  for (std::int64_t i = 0; i < batch_size; ++i) {
     // Need to create a copy of input matrices A to keep them unchanged.
     // B (copy of A) will be used as input and output parameter in MKL API
     // call.
@@ -327,7 +315,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   {
     auto b_buffer = get_buffer<Ty>(b_buffer_ptr);
     cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
-    cl::sycl::buffer<int64_t, 1> ipiv_buf(
+    cl::sycl::buffer<std::int64_t, 1> ipiv_buf(
         cl::sycl::range<1>(batch_size * stride_ipiv));
     auto from_buf = get_buffer<int>(ipiv);
     exec_queue.submit([&](cl::sycl::handler &cgh) {
@@ -346,18 +334,20 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   }
 
   // Copy back to the original buffers
-  cl::sycl::event e;
-  for (int64_t i = 0; i < batch_size; ++i)
-    e = detail::dpct_memcpy(exec_queue, host_b[i], b_buffer_ptr + i * stride_b,
-                            n * ldb * sizeof(T), automatic);
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_b[i],
+                                         b_buffer_ptr + i * stride_b,
+                                         n * ldb * sizeof(T), automatic));
   std::vector<void *> ptrs{host_a, host_b};
   std::thread mem_free_thread(
-      [=](std::vector<void *> pointers_array, cl::sycl::event e) {
-        e.wait();
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
         for (auto p : pointers_array)
           free(p);
       },
-      ptrs, e);
+      ptrs, events);
   mem_free_thread.detach();
 #else
   std::int64_t n_int64 = n;
@@ -379,7 +369,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
         });
   });
 
-  for (int64_t i = 0; i < batch_size; ++i) {
+  for (std::int64_t i = 0; i < batch_size; ++i) {
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
     // Need to create a copy of input matrices A to keep them unchanged.
     // B (copy of A) will be used as input and output parameter in MKL API
@@ -416,13 +406,8 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
-  int mem_base_addr_align =
-      exec_queue.get_device()
-          .get_info<cl::sycl::info::device::mem_base_addr_align>();
-  std::int64_t stride_a =
-      detail::stride_for(n * lda, mem_base_addr_align / sizeof(T));
-  std::int64_t stride_tau = detail::stride_for(std::max(1, std::min(m, n)),
-                                               mem_base_addr_align / sizeof(T));
+  std::int64_t stride_a = n * lda;
+  std::int64_t stride_tau = std::max(1, std::min(m, n));
   std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
       exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
 
@@ -435,7 +420,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   dpct_memcpy(host_tau, tau, batch_size * sizeof(T *));
 
-  for (int64_t i = 0; i < batch_size; ++i)
+  for (std::int64_t i = 0; i < batch_size; ++i)
     dpct_memcpy(a_buffer_ptr + i * stride_a, host_a[i], n * lda * sizeof(T));
   {
     auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
@@ -447,32 +432,34 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   }
 
   // Copy back to the original buffers
-  cl::sycl::event e_a;
-  cl::sycl::event e_tau;
-  for (int64_t i = 0; i < batch_size; ++i) {
-    e_a =
-        detail::dpct_memcpy(exec_queue, host_a[i], a_buffer_ptr + i * stride_a,
-                            n * lda * sizeof(T), automatic);
-    e_tau = detail::dpct_memcpy(
+  std::vector<cl::sycl::event> events_a;
+  std::vector<cl::sycl::event> events_tau;
+  for (std::int64_t i = 0; i < batch_size; ++i) {
+    events_a.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                           a_buffer_ptr + i * stride_a,
+                                           n * lda * sizeof(T), automatic));
+    events_tau.push_back(detail::dpct_memcpy(
         exec_queue, host_tau[i], tau_buffer_ptr + i * stride_tau,
-        std::max(1, std::min(m, n)) * sizeof(T), automatic);
+        std::max(1, std::min(m, n)) * sizeof(T), automatic));
   }
   std::vector<void *> ptr_a{host_a};
   std::vector<void *> ptr_tau{host_tau};
   std::thread mem_free_thread_a(
-      [=](std::vector<void *> pointers_array, cl::sycl::event e) {
-        e.wait();
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
         for (auto p : pointers_array)
           free(p);
       },
-      ptr_a, e_a);
+      ptr_a, events_a);
   std::thread mem_free_thread_tau(
-      [=](std::vector<void *> pointers_array, cl::sycl::event e) {
-        e.wait();
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
         for (auto p : pointers_array)
           free(p);
       },
-      ptr_tau, e_tau);
+      ptr_tau, events_tau);
   mem_free_thread_a.detach();
   mem_free_thread_tau.detach();
 #else
