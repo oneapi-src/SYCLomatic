@@ -8110,13 +8110,11 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
         SuffixInsertStr += "std::vector<void *> " + WSVectorNameStr + "{" +
                            ScratchpadNameStr + "};" + getNL() + IndentStr;
-        SuffixInsertStr +=
-            "std::thread mem_free_thread(" + MapNames::getDpctNamespace(true) +
-            "detail::mem_free, " + ExprAnalysis::ref(CE->getArg(0)) + ", " +
-            WSVectorNameStr + ", " + EventNameStr + ");" + getNL() + IndentStr;
-        SuffixInsertStr +=
-            "mem_free_thread.detach();" + std::string(getNL()) + IndentStr;
-        requestFeature(HelperFeatureEnum::BlasUtils_mem_free, CE);
+        SuffixInsertStr += MapNames::getDpctNamespace() + "async_dpct_free(" +
+                           WSVectorNameStr + ", {" + EventNameStr + "}, *" +
+                           ExprAnalysis::ref(CE->getArg(0)) + ");" + getNL() +
+                           IndentStr;
+        requestFeature(HelperFeatureEnum::Memory_async_dpct_free, CE);
       } else {
         PrefixInsertStr += IndentStr + MapNames::getClNamespace() + "buffer<" +
                            BufferTypeStr + ", 1> " + ScratchpadNameStr + "{" +

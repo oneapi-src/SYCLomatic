@@ -3,8 +3,8 @@
 // RUN: FileCheck --input-file %T/Memory/api_test13_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test13_out
 
-// CHECK: 10
-// TEST_FEATURE: Memory_mem_mgr_is_device_ptr
+// CHECK: 11
+// TEST_FEATURE: Memory_is_device_ptr
 
 #include "cublas_v2.h"
 

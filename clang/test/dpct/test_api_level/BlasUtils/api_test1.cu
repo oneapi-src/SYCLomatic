@@ -1,19 +1,25 @@
-// RUN: dpct --format-range=none   --use-custom-helper=api -out-root %T/BlasUtils/api_test1_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --use-custom-helper=api -out-root %T/BlasUtils/api_test1_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/BlasUtils/api_test1_out/MainSourceFiles.yaml | wc -l > %T/BlasUtils/api_test1_out/count.txt
 // RUN: FileCheck --input-file %T/BlasUtils/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/BlasUtils/api_test1_out
 
-// CHECK: 2
-
-// TEST_FEATURE: BlasUtils_mem_free
+// CHECK: 22
 
 #include "cublas_v2.h"
-#include "cusolverDn.h"
+
+// TEST_FEATURE: BlasUtils_geqrf_batch_wrapper
 
 int main() {
-  cusolverDnHandle_t cusolverH;
-  float B_f, C_f = 0;
-  int devInfo;
-  cusolverDnSpotrs(cusolverH, CUBLAS_FILL_MODE_LOWER, 0, 0, &C_f, 4, &B_f, 4, &devInfo);
+  cublasHandle_t handle;
+  int n = 275;
+  int m = 275;
+  int lda = 275;
+
+  float **Aarray_S = 0;
+  float **TauArray_S = 0;
+  int *infoArray = 0;
+  int batchSize = 10;
+
+  cublasSgeqrfBatched(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize);
   return 0;
 }

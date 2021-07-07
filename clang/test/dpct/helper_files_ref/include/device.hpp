@@ -18,6 +18,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <thread>
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -122,6 +123,11 @@ public:
   device_ext() : cl::sycl::device(), _ctx(*this) {}
   ~device_ext() {
     std::lock_guard<std::mutex> lock(m_mutex);
+    for (auto &task : _tasks) {
+      if (task.joinable())
+        task.join();
+    }
+    _tasks.clear();
     _queues.clear();
   }
   device_ext(const cl::sycl::device &base)
@@ -306,11 +312,19 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
+  void add_task(std::thread &&task) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    _tasks.push_back(std::move(task));
+  }
+  friend void async_dpct_free(std::vector<void *>,
+                              std::vector<cl::sycl::event>,
+                              cl::sycl::queue &);
   cl::sycl::queue *_default_queue;
   cl::sycl::queue *_saved_queue;
   cl::sycl::context _ctx;
   std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
   mutable std::mutex m_mutex;
+  std::vector<std::thread> _tasks;
 };
 
 static inline unsigned int get_tid(){

@@ -47,6 +47,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <thread>
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -375,6 +376,11 @@ public:
   device_ext() : cl::sycl::device(), _ctx(*this) {}
   ~device_ext() {
     std::lock_guard<std::mutex> lock(m_mutex);
+    for (auto &task : _tasks) {
+      if (task.joinable())
+        task.join();
+    }
+    _tasks.clear();
     _queues.clear();
   }
   device_ext(const cl::sycl::device &base)
@@ -711,6 +717,23 @@ private:
     minor = std::stoi(&(ver[i]));
   }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_add_task|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+  void add_task(std::thread &&task) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    _tasks.push_back(std::move(task));
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_async_dpct_free_friend_decl|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+  friend void async_dpct_free(std::vector<void *>,
+                              std::vector<cl::sycl::event>,
+                              cl::sycl::queue &);
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_ext_2|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
@@ -723,6 +746,7 @@ private:
   cl::sycl::context _ctx;
   std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
   mutable std::mutex m_mutex;
+  std::vector<std::thread> _tasks;
 };
 // DPCT_LABEL_END
 

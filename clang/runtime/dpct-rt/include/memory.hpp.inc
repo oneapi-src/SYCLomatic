@@ -47,6 +47,7 @@
 #include <unordered_map>
 #include <map>
 #include <utility>
+#include <thread>
 
 #if defined(__linux__)
 #include <sys/mman.h>
@@ -762,6 +763,22 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 // DPCT_LABEL_END
 } // namespace detail
 
+// DPCT_LABEL_BEGIN|is_device_ptr|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|mem_mgr_is_device_ptr
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+/// Check if the pointer \p ptr represents device pointer or not.
+///
+/// \param ptr The pointer to be checked.
+/// \returns true if \p ptr is a device pointer.
+static inline bool is_device_ptr(const void *ptr) {
+  return detail::mem_mgr::instance().is_device_ptr(ptr);
+}
+#endif
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|get_buffer_and_offset|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_buffer_t
@@ -965,6 +982,37 @@ static inline void dpct_free(void *ptr,
 #endif // DPCT_USM_LEVEL_NONE
   }
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dpct_free|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_default_queue
+// Device|get_current_device
+// Device|device_ext_add_task
+// Device|device_ext_async_dpct_free_friend_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifndef DPCT_USM_LEVEL_NONE
+/// Free the device memory pointed by a batch of pointers in \p pointers which
+/// are related to \p q after \p events completed.
+///
+/// \param pointers The pointers point to the device memory requested to be freed.
+/// \param events The events to be waited.
+/// \param q The sycl::queue the memory relates to.
+inline void async_dpct_free(std::vector<void *> pointers,
+                            std::vector<cl::sycl::event> events,
+                            cl::sycl::queue &q = get_default_queue()) {
+  std::thread t(
+      [](std::vector<void *> pointers, std::vector<cl::sycl::event> events,
+         cl::sycl::context ctxt) {
+        cl::sycl::event::wait(events);
+        for (auto p : pointers)
+          cl::sycl::free(p, ctxt);
+      },
+      std::move(pointers), std::move(events), q.get_context());
+  get_current_device().add_task(std::move(t));
+}
+#endif
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dpct_memcpy|dpct

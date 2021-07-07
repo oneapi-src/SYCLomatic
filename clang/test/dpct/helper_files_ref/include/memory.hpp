@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <map>
 #include <utility>
+#include <thread>
 
 #if defined(__linux__)
 #include <sys/mman.h>
@@ -505,6 +506,16 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 }
 } // namespace detail
 
+#ifdef DPCT_USM_LEVEL_NONE
+/// Check if the pointer \p ptr represents device pointer or not.
+///
+/// \param ptr The pointer to be checked.
+/// \returns true if \p ptr is a device pointer.
+static inline bool is_device_ptr(const void *ptr) {
+  return detail::mem_mgr::instance().is_device_ptr(ptr);
+}
+#endif
+
 /// Get the buffer and the offset of a piece of memory pointed to by \p ptr.
 ///
 /// \param ptr Pointer to a piece of memory.
@@ -638,6 +649,28 @@ static inline void dpct_free(void *ptr,
 #endif // DPCT_USM_LEVEL_NONE
   }
 }
+
+#ifndef DPCT_USM_LEVEL_NONE
+/// Free the device memory pointed by a batch of pointers in \p pointers which
+/// are related to \p q after \p events completed.
+///
+/// \param pointers The pointers point to the device memory requested to be freed.
+/// \param events The events to be waited.
+/// \param q The sycl::queue the memory relates to.
+inline void async_dpct_free(std::vector<void *> pointers,
+                            std::vector<cl::sycl::event> events,
+                            cl::sycl::queue &q = get_default_queue()) {
+  std::thread t(
+      [](std::vector<void *> pointers, std::vector<cl::sycl::event> events,
+         cl::sycl::context ctxt) {
+        cl::sycl::event::wait(events);
+        for (auto p : pointers)
+          cl::sycl::free(p, ctxt);
+      },
+      std::move(pointers), std::move(events), q.get_context());
+  get_current_device().add_task(std::move(t));
+}
+#endif
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
 /// to the address specified by \p to_ptr. The value of \p direction is used to

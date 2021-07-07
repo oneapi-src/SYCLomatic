@@ -1181,10 +1181,10 @@ public:
     };
 
     auto assembleIfStmt = [&]() {
-      requestFeature(HelperFeatureEnum::Memory_mem_mgr_is_device_ptr, CE);
-      std::string IfStmtStr = "if (" + MapNames::getDpctNamespace(true) +
-                              "detail::mem_mgr::instance().is_device_ptr(" +
-                              PointerStr + ")) {" + getNL() + IndentStr +
+      requestFeature(HelperFeatureEnum::Memory_is_device_ptr, CE);
+      std::string IfStmtStr = "if (" + MapNames::getDpctNamespace() +
+                              "is_device_ptr(" + PointerStr + ")) {" + getNL() +
+                              IndentStr +
                               getBlockStr(SyncAPIBufferAssignmentInThenBlock) +
                               "} else {" + getNL() + IndentStr +
                               getBlockStr(SyncAPIBufferAssignmentInElseBlock) +

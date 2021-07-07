@@ -150,8 +150,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   });
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64, ipiv_int64_ptr};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -268,8 +267,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -383,8 +381,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       &group_sizes, scratchpad, scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -477,8 +474,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
       &group_sizes, scratchpad, scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 

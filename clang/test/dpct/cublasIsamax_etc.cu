@@ -41,7 +41,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -56,7 +56,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -71,7 +71,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -86,7 +86,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -102,7 +102,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -117,7 +117,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -132,7 +132,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -147,7 +147,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -162,7 +162,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -175,7 +175,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -188,7 +188,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -201,7 +201,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -282,7 +282,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} =  sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -296,7 +296,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} =  sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -310,7 +310,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} =  sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -324,7 +324,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} =  sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -338,7 +338,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -351,7 +351,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_S)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_S)) {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
@@ -364,7 +364,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -377,7 +377,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result_D)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(result_D)) {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
@@ -430,7 +430,7 @@ int main() {
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -451,7 +451,7 @@ int main() {
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -472,7 +472,7 @@ int main() {
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -493,7 +493,7 @@ int main() {
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -552,7 +552,7 @@ int main() {
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
@@ -573,7 +573,7 @@ int main() {
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_f)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_f)) {
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
@@ -594,7 +594,7 @@ int main() {
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
@@ -615,7 +615,7 @@ int main() {
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
-  // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(x_d)) {
+  // CHECK-NEXT: if (dpct::is_device_ptr(x_d)) {
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);

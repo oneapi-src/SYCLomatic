@@ -73,7 +73,7 @@ int main() {
     // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
     // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
     // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-    // CHECK-NEXT: if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+    // CHECK-NEXT: if (dpct::is_device_ptr(result)) {
     // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
     // CHECK-NEXT: } else {
     // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
@@ -142,7 +142,7 @@ int main() {
     // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
     // CHECK-NEXT:auto result_buf_ct{{[0-9]+}} = sycl::buffer<int>(sycl::range<1>(1));
     // CHECK-NEXT:sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-    // CHECK-NEXT:if (dpct::detail::mem_mgr::instance().is_device_ptr(result)) {
+    // CHECK-NEXT:if (dpct::is_device_ptr(result)) {
     // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
     // CHECK-NEXT:} else {
     // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));

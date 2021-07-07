@@ -131,6 +131,7 @@ HELPER_FEATURE_MAP_TO_APINAME(Util, "vectorized_isgreater_unsigned", "vectorized
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_info_1", "device_info")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_get_device_info_return_void", "device_ext::get_device_info")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_get_device_info_return_info", "device_ext::get_device_info")
+HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_friend_async_dpct_free_decl", "async_dpct_free")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_1", "device_ext")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_2", "device_ext")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_mgr_1", "device_mgr")

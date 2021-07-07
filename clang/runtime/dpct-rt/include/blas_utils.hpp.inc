@@ -112,7 +112,7 @@ inline typename DataType<T>::T2 get_value(const T *s, cl::sycl::queue &q){
 // Memory|dpct_malloc|UsmNone
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
-// BlasUtils|mem_free|UsmRestricted
+// Memory|async_dpct_free|UsmRestricted
 // Util|DataType
 // Memory|dpct_memset_detail
 // Memory|get_buffer_T|UsmNone
@@ -215,8 +215,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   });
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64, ipiv_int64_ptr};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 // DPCT_LABEL_END
@@ -226,7 +225,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 // Memory|dpct_malloc|UsmNone
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
-// BlasUtils|mem_free|UsmRestricted
+// Memory|async_dpct_free|UsmRestricted
 // Util|DataType
 // Memory|get_buffer_T|UsmNone
 // Dpct|dpct_named_lambda
@@ -345,8 +344,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 // DPCT_LABEL_END
@@ -356,7 +354,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
 // Memory|dpct_malloc|UsmNone
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
-// BlasUtils|mem_free|UsmRestricted
+// Memory|async_dpct_free|UsmRestricted
 // Util|DataType
 // Util|matrix_mem_copy_T
 // Memory|dpct_memset_detail
@@ -474,8 +472,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       &group_sizes, scratchpad, scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 // DPCT_LABEL_END
@@ -485,7 +482,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 // Memory|dpct_malloc|UsmNone
 // Memory|dpct_memcpy|UsmNone
 // Memory|dpct_memcpy_detail|UsmNone
-// BlasUtils|mem_free|UsmRestricted
+// Memory|async_dpct_free|UsmRestricted
 // Util|DataType
 // Memory|get_buffer_T|UsmNone
 // DPCT_DEPENDENCY_END
@@ -579,8 +576,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
       &group_sizes, scratchpad, scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad};
-  std::thread mem_free_thread(detail::mem_free, &exec_queue, ptrs, e);
-  mem_free_thread.detach();
+  async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
 // DPCT_LABEL_END
