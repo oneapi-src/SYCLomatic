@@ -471,6 +471,7 @@ public:
   device_vector(InputIterator first,
                 typename std::enable_if<
                     internal::is_iterator<InputIterator>::value &&
+                        !std::is_pointer<InputIterator>::value &&
                         std::is_same<typename std::iterator_traits<
                                          InputIterator>::iterator_category,
                                      std::random_access_iterator_tag>::value,
@@ -481,6 +482,21 @@ public:
     auto dst = oneapi::dpl::begin(buf);
     std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
               first, last, dst);
+  }
+
+  template <typename InputIterator>
+  device_vector(InputIterator first,
+                typename std::enable_if<std::is_pointer<InputIterator>::value,
+                                        InputIterator>::type last)
+      : _storage(alloc_store(std::distance(first, last) * sizeof(T))),
+        _size(std::distance(first, last)) {
+    auto buf = get_buffer();
+    Buffer tmp_buf(first, last);
+    auto start = oneapi::dpl::begin(tmp_buf);
+    auto end = oneapi::dpl::end(tmp_buf);
+    auto dst = oneapi::dpl::begin(buf);
+    std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+              start, end, dst);
   }
 
   template <typename InputIterator>
