@@ -74,14 +74,11 @@ void testReference(const int &i) {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU<<<griddim, threaddim>>>(i);
 
 }
@@ -178,14 +175,11 @@ int main() {
   // CHECK-NEXT:   });
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(3, 2, 1), cl::sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, karg3int);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
   // CHECK:  /*
@@ -203,67 +197,49 @@ int main() {
   // CHECK-NEXT:     });
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, arr[karg3int]);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(23, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU <<<2, 4>>>(23);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU <<<2, 4>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU2_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class helloFromGPU2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(1, 1, 3), cl::sycl::range<3>(1, 1, 3)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU2(item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU2 <<<2, 3>>>();
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU<<<2, threaddim>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   helloFromGPU<<<griddim, 4>>>();
 
-  // CHECK: q_ct1.submit(
-  // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class helloFromGPUDDefaultArgs_{{[a-f0-9]+}}>>(
+  // CHECK: q_ct1.parallel_for<dpct_kernel_name<class helloFromGPUDDefaultArgs_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
   // CHECK-NEXT:       [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPUDDefaultArgs(1, 2, 3, item_ct1, 4, 5, 6);
   // CHECK-NEXT:       });
-  // CHECK-NEXT:   });
   helloFromGPUDDefaultArgs <<<2, 4>>>(1,2,3,4,5,6);
 }
 

@@ -99,14 +99,11 @@ void foo_test_1() {
 
 // CHECK:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:        for (int i=0; i<4; i++) {
-// CHECK-NEXT:            dpct::get_default_queue().submit(
-// CHECK-NEXT:              [&](sycl::handler &cgh) {
-// CHECK-NEXT:                cgh.parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel_foo();
 // CHECK-NEXT:                  });
-// CHECK-NEXT:              });
 // CHECK-NEXT:        }
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord( start, 0 );
@@ -477,14 +474,11 @@ int foo_test_4()
     {
 // CHECK:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->submit(
-// CHECK-NEXT:          [&](sycl::handler &cgh) {
-// CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:              sycl::nd_range<3>(grid * block, block), 
 // CHECK-NEXT:              [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                foo_kernel_1();
 // CHECK-NEXT:              });
-// CHECK-NEXT:          });
         foo_kernel_1<<<grid, block, 0, streams[i]>>>();
         foo_kernel_2<<<grid, block, 0, streams[i]>>>();
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();

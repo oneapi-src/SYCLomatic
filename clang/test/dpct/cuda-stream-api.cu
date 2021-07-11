@@ -69,14 +69,11 @@ static void func()
   for (; 0; )
     cudaStreamCreate(&s0);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<16, 32, 0>>>();
 
   // CHECK: /*
@@ -85,24 +82,18 @@ static void func()
   // CHECK-NEXT: MY_ERROR_CHECKER((s1 = dev_ct1.create_queue(), 0));
   MY_ERROR_CHECKER(cudaStreamCreate(&s1));
 
-  // CHECK:   s0->submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   s0->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<16, 32, 0, s0>>>();
 
-  // CHECK:   s1->submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   s1->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<16, 32, 0, s1>>>();
 
   {
@@ -121,24 +112,18 @@ static void func()
     // CHECK-NEXT: MY_ERROR_CHECKER((*(s3) = dev_ct1.create_queue(), 0));
     MY_ERROR_CHECKER(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
-    // CHECK:   s2->submit(
-    // CHECK-NEXT:     [&](sycl::handler &cgh) {
-    // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK:   s2->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
-    // CHECK-NEXT:     });
     kernelFunc<<<16, 32, 0, s2>>>();
 
-    // CHECK:   (*s3)->submit(
-    // CHECK-NEXT:     [&](sycl::handler &cgh) {
-    // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK:   (*s3)->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
-    // CHECK-NEXT:     });
     kernelFunc<<<16, 32, 0, *s3>>>();
 
     // CHECK: dev_ct1.destroy_queue(s2);
@@ -167,23 +152,17 @@ static void func()
       // CHECK-NEXT: MY_ERROR_CHECKER((s5 = dev_ct1.create_queue(), 0));
       MY_ERROR_CHECKER(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
-      // CHECK:   s4->submit(
-      // CHECK-NEXT:     [&](sycl::handler &cgh) {
-      // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK:   s4->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
       // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
-      // CHECK-NEXT:     });
       kernelFunc<<<16, 32, 0, s4>>>();
-      // CHECK:   s5->submit(
-      // CHECK-NEXT:     [&](sycl::handler &cgh) {
-      // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK:   s5->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
       // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
-      // CHECK-NEXT:     });
       kernelFunc<<<16, 32, 0, s5>>>();
 
       // CHECK: dev_ct1.destroy_queue(s4);

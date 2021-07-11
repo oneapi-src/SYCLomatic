@@ -44,13 +44,11 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  To get the device limit, query info::device::max_work_group_size. Adjust the
 //CHECK-NEXT:  workgroup size if needed.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  q_ct1.submit([&](cl::sycl::handler &cgh) {
-//CHECK-NEXT:    cgh.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
+//CHECK-NEXT:  q_ct1.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
 //CHECK-NEXT:                                     item_ct1);
 //CHECK-NEXT:                     });
-//CHECK-NEXT:  });
 //CHECK-NEXT:}
 int main() {
   dim3 griddim = 2;

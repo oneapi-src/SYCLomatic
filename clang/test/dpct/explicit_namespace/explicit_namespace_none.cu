@@ -30,14 +30,11 @@ __global__ void kernel() {
 }
 
 void foo() {
-// CHECK:   get_default_queue().submit(
-// CHECK-NEXT:     [&](handler &cgh) {
-// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         nd_range<3>(range<3>(1, 1, ceil(2.3)), range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](nd_item<3> item_{{[0-9a-z]+}}) {
 // CHECK-NEXT:           kernel();
 // CHECK-NEXT:         });
-// CHECK-NEXT:     });
   kernel<<< ceil(2.3), 1 >>>();
 }
 // CHECK: global_memory<int, 0> al;

@@ -44,23 +44,17 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
 #ifdef CUDA
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           foo();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class bar_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class bar_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           bar();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   foo<<<1, 1, 1>>>();
   bar<<<1, 1, 1>>>();
 #else

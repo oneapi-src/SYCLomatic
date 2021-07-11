@@ -34,14 +34,11 @@ int main() {
   cudaMalloc(&karg2, 32 * sizeof(int));
 
   int karg3 = 80;
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernelPtr((const int *)karg1, karg2, karg3, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }
 
@@ -222,30 +219,21 @@ int run_foo10() {
 
 __global__ void my_kernel3(){}
 int run_foo11() {
-  // CHECK:q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
+  // CHECK:q_ct1.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:        my_kernel3();
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  });
-  // CHECK-NEXT:q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:        my_kernel3();
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  });
-  // CHECK-NEXT:q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class my_kernel3_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:        my_kernel3();
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  });
   my_kernel3<<<1,1,1,cudaStreamDefault>>>();
   my_kernel3<<<1,1,1,cudaStreamPerThread>>>();
   my_kernel3<<<1,1,1,cudaStreamLegacy>>>();

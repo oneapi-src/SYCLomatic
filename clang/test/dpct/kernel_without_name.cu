@@ -29,14 +29,11 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK: dpct::get_default_queue().submit(
-  // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK: dpct::get_default_queue().parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPU(i, item_ct1);
   // CHECK-NEXT:       });
-  // CHECK-NEXT:   });
   helloFromGPU<<<griddim, threaddim>>>(i);
 
 }
@@ -79,9 +76,7 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK:     q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:     q_ct1.parallel_for(
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
   struct KernelPointer {
@@ -95,34 +90,22 @@ int main() {
   //CHECK-NEXT:    cgh.parallel_for(
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   helloFromGPU <<<2, 4>>>(23);
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   helloFromGPU <<<2, 4>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   helloFromGPU2 <<<2, 3>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   helloFromGPU<<<2, threaddim>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for(
+  // CHECK:   q_ct1.parallel_for(
   helloFromGPU<<<griddim, 4>>>();
 }
 

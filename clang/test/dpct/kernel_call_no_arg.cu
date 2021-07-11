@@ -42,14 +42,11 @@ int main() {
   // CHECK:     });
   kernel1<<<1, threads_per_block>>>();
 
-  // CHECK:   q_ct1.submit(
-  // CHECK:     [&](sycl::handler &cgh) {
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel2();
   // CHECK:         });
-  // CHECK:     });
   kernel2<<<1, 1>>>();
 
   return 0;

@@ -41,14 +41,11 @@ void test() {
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   Reset_kernel_parameters<<<1,1>>>();
-  // CHECK: q_ct1.submit(
-  // CHECK-NEXT:  [&](sycl::handler &cgh) {
-  // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class cuda_hello_{{[a-f0-9]+}}>>(
+  // CHECK: q_ct1.parallel_for<dpct_kernel_name<class cuda_hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:        cuda_hello();
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  });
   cuda_hello<<<2,2>>>();
 
   // CHECK:          q_ct1.submit(
@@ -81,24 +78,18 @@ int main(void) {
   float *h_C = (float *)malloc(size);
   call_constAdd(h_C, size);
 
-  // CHECK:  q_ct1.submit(
-  // CHECK-NEXT:    [&](sycl::handler &cgh) {
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class static_func_{{[a-f0-9]+}}>>(
+  // CHECK:  q_ct1.parallel_for<dpct_kernel_name<class static_func_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:          static_func();
   // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
   static_func<<<1, 1>>>();
 
-  // CHECK:  q_ct1.submit(
-  // CHECK-NEXT:    [&](sycl::handler &cgh) {
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class static_func_in_anonymous_namespace_{{[a-f0-9]+}}>>(
+  // CHECK:  q_ct1.parallel_for<dpct_kernel_name<class static_func_in_anonymous_namespace_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:          static_func_in_anonymous_namespace();
   // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
   static_func_in_anonymous_namespace<<<1, 1>>>();
 
   return 0;

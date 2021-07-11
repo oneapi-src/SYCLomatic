@@ -4110,6 +4110,13 @@ private:
       return Printer;
     }
 
+    bool empty() const noexcept {
+      return CommandGroupList.empty() && NdRangeList.empty() &&
+        AccessorList.empty() && PtrList.empty() && InitList.empty() &&
+             ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
+             TextureList.empty() && SamplerList.empty() && StreamList.empty();
+    }
+
   private:
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
                              StringRef Comments = "") {

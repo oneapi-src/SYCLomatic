@@ -97,31 +97,26 @@ void foo() {
   //CHECK-NEXT: macro.
   //CHECK-NEXT: */
   //CHECK-NEXT: CALL(([&]() {
-  //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
-  //CHECK-NEXT:     cgh.parallel_for(
+  //CHECK-NEXT:   q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:           foo_kernel();
   //CHECK-NEXT:         });
-  //CHECK-NEXT:   });
   //CHECK-NEXT: }()))
   CALL( (foo_kernel<<<1, 2, 0>>>()) )
 
   //CHECK: #define AA 3
   //CHECK-NEXT: #define MCALL                                                                  \
-  //CHECK-NEXT: q_ct1.submit([&](sycl::handler &cgh) {                                       \
-  //CHECK-NEXT:   cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *               \
+  //CHECK-NEXT: q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *               \
   //CHECK-NEXT:                                          sycl::range<3>(1, 1, 2 * AA),       \
   //CHECK-NEXT:                                      sycl::range<3>(1, 1, 2 * AA)),          \
-  //CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });        \
-  //CHECK-NEXT: });
+  //CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
   //CHECK-NEXT: MCALL
   #define AA 3
   #define MCALL foo_kernel<<<dim3(2,1), 2*AA, 0>>>();
   MCALL
 
-  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
-  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
   // CHECK-NEXT:                          GET_BLOCKS(outputThreadCount, outputThreadCount)) *
@@ -130,11 +125,9 @@ void foo() {
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         foo_kernel();
   // CHECK-NEXT:       });
-  // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS(outputThreadCount, outputThreadCount), 2, 0>>>();
 
-  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
-  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
   // CHECK-NEXT:                          GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS)) *
@@ -143,11 +136,9 @@ void foo() {
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         foo_kernel();
   // CHECK-NEXT:       });
-  // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS), 0, 0>>>();
 
-  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
-  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
   // CHECK-NEXT:                          GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount)) *
@@ -156,11 +147,9 @@ void foo() {
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         foo_kernel();
   // CHECK-NEXT:       });
-  // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount), 0, 0>>>();
 
-  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
-  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
   // CHECK-NEXT:                          GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS)) *
@@ -169,7 +158,6 @@ void foo() {
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         foo_kernel();
   // CHECK-NEXT:       });
-  // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS), 2, 0>>>();
 
   // Test if SIGABRT.
@@ -215,12 +203,10 @@ NNBI(3.0);
 double cosine = cos(2 * PI);
 
 //CHECK: #define MACRO_KC                                                                    \
-//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:   q_ct1.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),   \
 //CHECK-NEXT:                           sycl::range<3>(1, 1, 2)),                            \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });                     \
-//CHECK-NEXT:   });
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
 #define MACRO_KC foo_kernel<<<2, 2, 0>>>();
 
 //CHECK: MACRO_KC
@@ -283,14 +269,12 @@ int b;
   int b;
 #endif
 
-  //CHECK: q_ct1.submit([&](sycl::handler &cgh) {
-  //CHECK-NEXT:   cgh.parallel_for(
+  //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),
   //CHECK-NEXT:                         sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:         foo_kernel2(3, 3, item_ct1);
   //CHECK-NEXT:       });
-  //CHECK-NEXT: });
   foo_kernel2<<<2, 2, 0>>>(3,3
     #ifdef MACRO_CC
     , 2
@@ -566,11 +550,9 @@ __global__ void templatefoo(){
 //CHECK: #define AAA 15 + 3
 //CHECK-NEXT: #define CCC <<<1,1>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });              \
-//CHECK-NEXT:   });
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });
 //CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
 //CHECK-NEXT: #define CALL_KERNEL2(E, F) sycl::range<3>(1, 1, 1)
 //CHECK-NEXT: void templatefoo2(){

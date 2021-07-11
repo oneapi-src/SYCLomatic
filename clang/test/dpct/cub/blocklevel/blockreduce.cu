@@ -80,27 +80,21 @@ int main() {
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      cgh.parallel_for(
+//CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:          SumKernel(dev_data, item_ct1);
 //CHECK-NEXT:        });
-//CHECK-NEXT:    });
   SumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      cgh.parallel_for(
+//CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:          ReduceKernel(dev_data, item_ct1);
 //CHECK-NEXT:        });
-//CHECK-NEXT:    });
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);

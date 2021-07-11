@@ -8,13 +8,10 @@
 __global__ void k() {}
 
 //     CHECK:void foo1(){
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:            cgh.parallel_for(
-//CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                    k();
-//CHECK-NEXT:                });
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            k();
 //CHECK-NEXT:        });
 //CHECK-NEXT:}
 void foo1(){
@@ -23,13 +20,10 @@ void foo1(){
 
 
 //     CHECK:void foo2(){
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:            cgh.parallel_for(
-//CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                    k();
-//CHECK-NEXT:                });
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            k();
 //CHECK-NEXT:        });
 //CHECK-NEXT:}
 void foo2(){
@@ -37,13 +31,10 @@ void foo2(){
 }
 
 //     CHECK:void foo3(){
-//CHECK-NEXT:    dpct::get_default_queue().submit(
-//CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:            cgh.parallel_for(
-//CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                    k();
-//CHECK-NEXT:                });
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            k();
 //CHECK-NEXT:        });
 //CHECK-NEXT:}
 void foo3(){

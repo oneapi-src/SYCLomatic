@@ -79,14 +79,11 @@ int main(int argc, char* argv[]) {
 
 
   // kernel call without sync
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -96,14 +93,11 @@ int main(int argc, char* argv[]) {
   cudaEventRecord(start, 0);
 
   // kernel call without sync
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -136,23 +130,17 @@ int main(int argc, char* argv[]) {
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
   // kernel call with sync
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -184,14 +172,11 @@ int main(int argc, char* argv[]) {
     MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
   // kernel call without sync
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -228,14 +213,11 @@ int main(int argc, char* argv[]) {
   // kernel call without sync
   // CHECK:  DPCT1049:{{[0-9a-f]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  q_ct1.submit(
-  // CHECK-NEXT:    [&](sycl::handler &cgh) {
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:  q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)), 
   // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:          kernelFunc();
   // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK:  dpct::get_current_device().queues_wait_and_throw();
@@ -252,14 +234,11 @@ int main(int argc, char* argv[]) {
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK:/*

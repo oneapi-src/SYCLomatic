@@ -302,119 +302,92 @@ int main() {
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
   
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel1(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   ExclusiveScanKernel1<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel2(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   ExclusiveScanKernel2<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveScanKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   InclusiveScanKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveSumKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   ExclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveSumKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   InclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:   q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           BroadcastKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
-//CHECK-NEXT:     });
   BroadcastKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      cgh.parallel_for(
+//CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:          WarningTestKernel1(dev_data, item_ct1);
 //CHECK-NEXT:        });
-//CHECK-NEXT:    });
   WarningTestKernel1<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      cgh.parallel_for(
+//CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(8){{\]\]}} {
 //CHECK-NEXT:          WarningTestKernel2(dev_data, item_ct1);
 //CHECK-NEXT:        });
-//CHECK-NEXT:    });
   WarningTestKernel2<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      cgh.parallel_for(
+//CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:          TemplateKernel1(dev_data, item_ct1);
 //CHECK-NEXT:        });
-//CHECK-NEXT:    });
   TemplateKernel1<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);

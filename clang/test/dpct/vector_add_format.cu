@@ -40,13 +40,11 @@ int main()
     cudaMalloc(&d_C, VECTOR_SIZE*sizeof(float));
 
 
-//     CHECK:    q_ct1.submit([&](sycl::handler &cgh) {
-//CHECK-NEXT:        cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE),
-//CHECK-NEXT:                                           sycl::range<3>(1, 1, VECTOR_SIZE)),
-//CHECK-NEXT:                         [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                             VectorAddKernel(d_A, d_B, d_C, item_ct1);
-//CHECK-NEXT:                         });
-//CHECK-NEXT:    });
+//     CHECK:    q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE),
+//CHECK-NEXT:                                         sycl::range<3>(1, 1, VECTOR_SIZE)),
+//CHECK-NEXT:                       [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:                           VectorAddKernel(d_A, d_B, d_C, item_ct1);
+//CHECK-NEXT:                       });
     VectorAddKernel<<<1, VECTOR_SIZE>>>(d_A, d_B, d_C);
 
 //     CHECK:    float Result[VECTOR_SIZE] = { };

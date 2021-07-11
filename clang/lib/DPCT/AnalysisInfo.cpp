@@ -802,8 +802,12 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << ".";
   else
     Printer << "->";
-  (Printer << "submit(").newLine();
-  printSubmitLamda(Printer);
+  if (SubmitStmtsList.empty()) {
+    printParallelFor(Printer);
+  } else {
+    (Printer << "submit(").newLine();
+    printSubmitLamda(Printer);
+  }
 }
 
 void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
@@ -812,6 +816,7 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   {
     auto Body = Printer.block();
     SubmitStmtsList.print(Printer);
+    Printer.indent() << "cgh.";
     printParallelFor(Printer);
   }
   Printer.line("});");
@@ -821,16 +826,15 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   if (!SubmitStmtsList.NdRangeList.empty() &&
       DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
+  Printer << "parallel_for";
   if (DpctGlobalInfo::isSyclNamedLambda()) {
-    Printer.line(
-        "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
-        LocInfo.LocHash,
-        (hasTemplateArgs() ? (", " + getTemplateArguments(false, true)) : ""),
-        ">>(");
+    Printer << "<dpct_kernel_name<class " << getName() << "_" << LocInfo.LocHash;
+    if (hasTemplateArgs())
+      Printer << ", " << getTemplateArguments(false, true);
+    Printer << ">>";
     requestFeature(HelperFeatureEnum::Dpct_dpct_named_lambda, getFilePath());
-  } else {
-    Printer.line("cgh.parallel_for(");
   }
+  (Printer << "(").newLine();
   auto B = Printer.block();
   static std::string CanIgnoreRangeStr3D =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3) +

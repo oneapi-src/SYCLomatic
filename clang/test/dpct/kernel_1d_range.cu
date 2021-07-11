@@ -405,86 +405,62 @@ __global__ void k8() {
 
 int main() {
   int aa = 2;
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(aa) * sycl::range<1>(3), sycl::range<1>(3)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        k1(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k1<<<aa, 3>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(6, 5, 4), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k2(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k2<<<dim3(4 ,5, 6), 1>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 7) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k3(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k3<<<7, 8>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 9) * sycl::range<3>(12, 11, 10), sycl::range<3>(12, 11, 10)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k4(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k4<<<9, dim3(10 ,11, 12)>>>();
 
   int bb = 14;
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(13) * sycl::range<1>(bb), sycl::range<1>(bb)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        k5(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k5<<<dim3(13), dim3(bb)>>>();
 
   dim3 cc(1, 2, 3);
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(cc) * sycl::range<3>(1, 1, 15), sycl::range<3>(1, 1, 15)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k6(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k6<<<dim3(cc), 15>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k7(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k7<<<1, 1>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k8(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k8<<<1, 1>>>();
   return 0;
 }
@@ -545,14 +521,11 @@ __global__ void global1() {
 
 
 int foo3() {
-  //CHECK:dpct::get_default_queue().submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:dpct::get_default_queue().parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global1(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global1<<<1,1>>>();
   return 0;
 }
@@ -582,14 +555,11 @@ __global__ void global2() {
 }
 
 int foo4() {
-  //CHECK:dpct::get_default_queue().submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:dpct::get_default_queue().parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global2(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global2<<<3 ,4>>>();
   return 0;
 }
@@ -612,24 +582,18 @@ __global__ void global4() {
 }
 
 int foo5() {
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global3(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global3<<<1,1>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global4(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global4<<<1,1>>>();
   return 0;
 }
@@ -652,24 +616,18 @@ __global__ void global6() {
 }
 
 int foo6() {
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global5(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global5<<<1,1>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(3, 2, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global6(item_ct1);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   global6<<<dim3(1,2,3),1>>>();
   return 0;
 }

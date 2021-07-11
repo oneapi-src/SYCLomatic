@@ -49,14 +49,11 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.submit(
-  //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class k1_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k1_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k1(a);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k1<<<1,1>>>(a);
 
   //CHECK:/*
@@ -123,27 +120,21 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.submit(
-  //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class k4_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k4_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k4(b);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k4<<<1,1>>>(b);
 
   EEE e;
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'e' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.submit(
-  //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class k5_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k5_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k5(e);
   //CHECK-NEXT:      });
-  //CHECK-NEXT:  });
   k5<<<1,1>>>(e);
 }

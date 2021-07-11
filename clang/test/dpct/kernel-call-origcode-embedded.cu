@@ -93,14 +93,11 @@ int main() {
   // CHECK:   /*
   // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   testKernel<<<10, intvar>>>(karg1int, karg2int, // comments
                              // comments.
                              karg3int);
@@ -108,14 +105,11 @@ int main() {
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
   // CHECK:  karg2int,
   // CHECK:  karg3int);*/
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
                                       /* comments */
                                       karg2int, // comments
@@ -126,14 +120,11 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
   // CHECK-NEXT:  karg2int, karg3int); */
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     }); // comments
+  // CHECK-NEXT:         }); // comments
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
 	  karg2int, /* comments */karg3int/* comments */); // comments
 
@@ -141,14 +132,11 @@ int main() {
   // CHECK:   /*
   // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[2]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);
 
   float *deviceOutputData = NULL;

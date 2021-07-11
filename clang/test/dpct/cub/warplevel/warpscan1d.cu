@@ -61,20 +61,19 @@ __global__ void TemplateKernel1(int* data) {
 int main() {
   int* dev_data = nullptr;
 
+  dim3 GridSize(2);
+  dim3 BlockSize(1 , 1, 128);
   int TotalThread = GridSize.x * BlockSize.x * BlockSize.y * BlockSize.z;
 
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
 
   init_data(dev_data, TotalThread);
 
-//CHECK: q_ct1.submit(
-//CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       cgh.parallel_for(
+//CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:           sycl::nd_range<1>(sycl::range<1>(2) * sycl::range<1>(128), sycl::range<1>(128)),
 //CHECK-NEXT:           [=](sycl::nd_item<1> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:             TemplateKernel1(dev_data, item_ct1);
 //CHECK-NEXT:           });
-//CHECK-NEXT:     });
   TemplateKernel1<<<2, 128>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);

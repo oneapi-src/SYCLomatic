@@ -57,32 +57,23 @@ __global__ void kernelFoo2(int i = 0, int j = 0){
 int main(){
   //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
-  //CHECK: q_ct1.submit(
-  //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     cgh.parallel_for(
+  //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:           kernelFoo(1, 2, item_ct1);
   //CHECK-NEXT:         });
-  //CHECK-NEXT:   });
   kernelFoo<<<1,2>>>(1,2);
-  //CHECK: q_ct1.submit(
-  //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     cgh.parallel_for(
+  //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:           kernelFoo1(1, item_ct1, 2);
   //CHECK-NEXT:         });
-  //CHECK-NEXT:   });
   kernelFoo1<<<1,2>>>(1,2);
-  //CHECK: q_ct1.submit(
-  //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     cgh.parallel_for(
+  //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:           kernelFoo2(item_ct1, 1, 2);
   //CHECK-NEXT:         });
-  //CHECK-NEXT:   });
   kernelFoo2<<<1,2>>>(1,2);
   return 0;
 }
