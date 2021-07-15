@@ -734,3 +734,48 @@ void foo_ctst1983() {
     cudaEventSynchronize(event2);
   }
 }
+
+__global__ void kernel_ctst2184() {}
+
+void foo_ctst2184() {
+  int nbytes;
+  float value = 10.0f;
+  float gpu_time = 0.0f;
+
+  float *h_a = 0;
+  float *d_a = 0;
+
+  // CHECK: sycl::event stop, start;
+  // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;
+  // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
+  // CHECK-NEXT:    */
+  // CHECK-NEXT:  CHECK(0);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this call is redundant in DPC++.
+  // CHECK-NEXT:    */
+  // CHECK-NEXT:  CHECK(0);
+  cudaEvent_t stop, start;
+  CHECK(cudaEventCreate(&start));
+  CHECK(cudaEventCreate(&stop));
+
+  // CHECK:  start_ct1 = std::chrono::steady_clock::now();
+  // CHECK:  CHECK(0);
+  CHECK(cudaEventRecord(start));
+  CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
+  kernel_ctst2184<<<1, 1>>>();
+  CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
+
+  // CHECK:  dpct::get_current_device().queues_wait_and_throw();
+  // CHECK:  q_ct1.wait();
+  // CHECK:  stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK:  CHECK(0);
+  CHECK(cudaEventRecord(stop));
+
+  unsigned long int counter = 0;
+  while (cudaEventQuery(stop) == cudaErrorNotReady) {
+    counter++;
+  }
+  CHECK(cudaEventElapsedTime(&gpu_time, start, stop));
+}

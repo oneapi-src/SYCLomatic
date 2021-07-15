@@ -227,7 +227,7 @@ protected:
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
-  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
       auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
@@ -249,7 +249,7 @@ protected:
   // The location should be consistent with the result of
   // ReplaceStmt::getReplacement
   template <typename IDTy, typename... Ts>
-  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Begin(S->getBeginLoc());
     if (Begin.isMacroID() && !isOuterMostMacro(S)) {
@@ -1445,6 +1445,7 @@ private:
 
   void findThreadSyncLocation(const Stmt *Node);
   const clang::Stmt *getRedundantParenExpr(const CallExpr *Call);
+  bool isEventElapsedTimeFollowed(const CallExpr *Expr);
   // Since the state of a rule is shared between multiple matches, it iss
   // necessary to clear the previous migration status.
   // The call is supposed to be called whenever a migrtion on time measurement
@@ -1731,7 +1732,7 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   template <class... Args>
   void emplaceParamDecl(const VarDecl *VD, StringRef ParamType,
                         bool HasInitialZeroCtor, std::string InitValue = "0",
-                        Args &&...ParamNames) {
+                        Args &&... ParamNames) {
     std::string ParamDecl;
     llvm::raw_string_ostream OS(ParamDecl);
     OS << ParamType << " ";

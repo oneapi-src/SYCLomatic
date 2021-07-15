@@ -8956,6 +8956,39 @@ EventQueryTraversal EventAPICallRule::getEventQueryTraversal() {
   return EventQueryTraversal(CurrentRule);
 }
 
+bool EventAPICallRule::isEventElapsedTimeFollowed(const CallExpr *Expr) {
+  bool IsMeasureTime = false;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto CELoc = SM.getExpansionLoc(Expr->getBeginLoc()).getRawEncoding();
+  auto FD = getImmediateOuterFuncDecl(Expr);
+  if (!FD)
+    return false;
+  auto FuncBody = FD->getBody();
+  for (auto It = FuncBody->child_begin(); It != FuncBody->child_end(); ++It) {
+    auto Loc = SM.getExpansionLoc(It->getBeginLoc()).getRawEncoding();
+    if (Loc < CELoc)
+      continue;
+
+    const CallExpr *Call = nullptr;
+    findEventAPI(*It, Call, "cudaEventElapsedTime");
+    if (Call) {
+      // To check the argment of "cudaEventQuery" is same as the second argument
+      // of "cudaEventElapsedTime", in the code pieces:
+      // ...
+      // unsigned long int counter = 0;
+      // while (cudaEventQuery(stop) == cudaErrorNotReady) {
+      //  counter++;
+      // }
+      // cudaEventElapsedTime(&gpu_time, start, stop);
+      // ...
+      auto Arg2 = getStmtSpelling(Call->getArg(2));
+      auto Arg0 = getStmtSpelling(Expr->getArg(0));
+      if (Arg2 == Arg0)
+        IsMeasureTime = true;
+    }
+  }
+  return IsMeasureTime;
+}
 void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "eventAPICall");
@@ -8989,7 +9022,9 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaEventQuery") {
     if (getEventQueryTraversal().startFromQuery(CE))
       return;
-    if (auto FD = getImmediateOuterFuncDecl(CE)) {
+
+    if (!isEventElapsedTimeFollowed(CE)) {
+      auto FD = getImmediateOuterFuncDecl(CE);
       reset();
       TimeElapsedCE = CE;
       updateAsyncRange(CE, "cudaEventCreate");
