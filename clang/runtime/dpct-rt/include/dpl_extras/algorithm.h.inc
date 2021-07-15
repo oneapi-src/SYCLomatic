@@ -96,13 +96,15 @@ Iter3 replace_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
 
 // DPCT_LABEL_BEGIN|remove_if|dpct
 // DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|enable_if_hetero_execution_policy
 // DplExtrasFunctional|__buffer
 // DplExtrasFunctional|rebind_policy
 // DplExtrasFunctional|negate_predicate_key_fun
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
-Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+internal::enable_if_hetero_execution_policy<Policy, Iter1>
+remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   static_assert(
       std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
                    std::random_access_iterator_tag>::value &&
@@ -126,6 +128,31 @@ Iter1 remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
       policy);
   return std::copy(policy2, _tmp.get(), std::get<0>(end.base()), first);
+}
+
+template <typename Policy, typename Iter1, typename Iter2, typename Pred>
+typename std::enable_if<!internal::is_hetero_execution_policy<
+                            typename std::decay<Policy>::type>::value,
+                        Iter1>::type
+remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  using oneapi::dpl::make_zip_iterator;
+  using policy_type = typename std::decay<Policy>::type;
+  using ValueType = typename std::iterator_traits<Iter1>::value_type;
+
+  std::vector<ValueType> _tmp(std::distance(first, last));
+
+  auto end = std::copy_if(
+      policy, make_zip_iterator(first, mask),
+      make_zip_iterator(last, mask + std::distance(first, last)),
+      make_zip_iterator(_tmp.begin(), oneapi::dpl::discard_iterator()),
+      internal::negate_predicate_key_fun<Pred>(p));
+  return std::copy(policy, _tmp.begin(), std::get<0>(end.base()), first);
 }
 // DPCT_LABEL_END
 
@@ -1095,12 +1122,13 @@ partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
 
 // DPCT_LABEL_BEGIN|stable_partition|dpct
 // DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|enable_if_hetero_execution_policy
 // DplExtrasFunctional|predicate_key_fun
 // DplExtrasFunctional|__buffer
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
-internal::enable_if_execution_policy<Policy, Iter1>
+internal::enable_if_hetero_execution_policy<Policy, Iter1>
 stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   static_assert(
       std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
@@ -1121,6 +1149,33 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
                             oneapi::dpl::make_zip_iterator(
                                 last, _tmp.get() + std::distance(first, last)),
                             internal::predicate_key_fun<Pred>(p));
+  return std::get<0>(ret_val.base());
+}
+
+template <typename Policy, typename Iter1, typename Iter2, typename Pred>
+typename std::enable_if<!internal::is_hetero_execution_policy<
+                            typename std::decay<Policy>::type>::value,
+                        Iter1>::type
+stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
+  static_assert(
+      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
+                   std::random_access_iterator_tag>::value &&
+          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
+                       std::random_access_iterator_tag>::value,
+      "Iterators passed to algorithms must be random-access iterators.");
+  typedef typename std::decay<Policy>::type policy_type;
+  std::vector<typename std::iterator_traits<Iter1>::value_type> _tmp(
+      std::distance(first, last));
+
+  std::copy(std::forward<Policy>(policy), mask,
+            mask + std::distance(first, last), _tmp.begin());
+
+  auto ret_val = std::stable_partition(
+      std::forward<Policy>(policy),
+      oneapi::dpl::make_zip_iterator(first, _tmp.begin()),
+      oneapi::dpl::make_zip_iterator(last,
+                                     _tmp.begin() + std::distance(first, last)),
+      internal::predicate_key_fun<Pred>(p));
   return std::get<0>(ret_val.base());
 }
 // DPCT_LABEL_END
