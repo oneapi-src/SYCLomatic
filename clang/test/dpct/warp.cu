@@ -15,7 +15,6 @@ __global__ void foo() {
   int val = 0;
   int srcLane;
   unsigned delta;
-  int warpSize;
   int laneMask;
 
   // CHECK: sycl::all_of_group(item_{{[0-9a-z]+}}.get_sub_group(), predicate);
@@ -113,3 +112,84 @@ __global__ void foo() {
   }
 }
 
+__global__ void foo2() {  
+  unsigned mask;
+  int predicate;
+  int val = 0;
+  int srcLane;
+  unsigned delta;
+  int laneMask;
+
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  __shfl(val, srcLane, 16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  __shfl_sync(mask, val, srcLane, 16);
+
+  // CHECK: sycl::shift_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  __shfl_up(val, delta, 16);
+  // CHECK: /*
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::shift_group_right.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::shift_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  __shfl_up_sync(mask, val, delta, 16);
+
+  // CHECK: sycl::shift_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  __shfl_down(val, delta, 16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::shift_group_left.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::shift_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  __shfl_down_sync(mask, val, delta, 16);
+
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  __shfl_xor(val, laneMask, 16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  __shfl_xor_sync(mask, val, laneMask, 16);
+}
+
+__global__ void foo3() {
+  unsigned mask;
+  int predicate;
+  int val = 0;
+  int srcLane;
+
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  __shfl(val, srcLane, 16);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::shift_group_left.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT:DPCT1085:{{[0-9]+}}: The function shift_group_left requires subgroup size to be 32, while other subgroup function in same DPC++ kernel requires differnt subgroup size. You may need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::shift_group_left(item_ct1.get_sub_group(), val, srcLane);
+  __shfl_down_sync(mask, val, srcLane, 32);
+}
+
+int main() {
+  //CHECK:   q_ct1.parallel_for(
+  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  //CHECK-NEXT:      foo(item_ct1);
+  //CHECK-NEXT:    });
+  foo<<<1,1>>>();
+
+  //CHECK:   q_ct1.parallel_for(
+  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(16){{\]\]}} {
+  //CHECK-NEXT:      foo2(item_ct1);
+  //CHECK-NEXT:    });
+  foo2<<<1,1>>>();
+
+  //CHECK:   q_ct1.parallel_for(
+  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(16){{\]\]}} {
+  //CHECK-NEXT:      foo3(item_ct1);
+  //CHECK-NEXT:    });
+  foo3<<<1,1>>>();
+}

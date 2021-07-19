@@ -1350,6 +1350,40 @@ makeNewExprCreator(std::string TypeName,
 
 bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
 
+template<size_t Idx>
+size_t getSizeFromCallArg(const CallExpr*C) {
+  auto SizeExpr = C->getArg(Idx);
+  Expr::EvalResult Result;
+  if (!SizeExpr->isValueDependent() &&
+    SizeExpr->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+    return Result.Val.getInt().getZExtValue();
+  }
+  return 0;
+}
+
+template <size_t Idx>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createFactoryWithSubGroupSizeRequest(
+    std::string NewFuncName,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Inner) {
+  return std::make_pair(
+      std::move(Inner.first),
+      std::make_shared<RewriterFactoryWithSubGroupSize>(
+          getSizeFromCallArg<Idx>, std::move(NewFuncName), Inner.second));
+}
+
+template <size_t Idx, class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createFactoryWithSubGroupSizeRequest(
+    std::string NewFuncName,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Inner,
+    T) {
+  return createFactoryWithSubGroupSizeRequest<Idx>(std::move(NewFuncName),
+                                                   std::move(Inner));
+}
+
 template <class... StmtPrinters>
 std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
     const std::string &SourceName,
@@ -1742,6 +1776,8 @@ public:
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
+  createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
