@@ -579,3 +579,18 @@ void fun4() {
   cudaStream_t a1 = cudaStream_t();
   CUstream a2 = CUstream();
 }
+
+namespace {
+// CHECK: dpct::memcpy_direction K;
+// CHECK-NEXT: dpct::memcpy_direction fun(dpct::memcpy_direction);
+cudaMemcpyKind K;
+cudaMemcpyKind fun(cudaMemcpyKind);
+}
+
+
+namespace {
+// CHECK: int M;
+// CHECK-NEXT: int fun(int);
+cudaComputeMode M;
+cudaComputeMode fun(cudaComputeMode);
+}

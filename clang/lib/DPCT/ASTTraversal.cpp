@@ -2533,7 +2533,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftHandle", "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "pair", "CUdeviceptr",
-                  "cudaDeviceAttr", "CUmodule", "CUfunction"),
+                  "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
+                  "cudaComputeMode"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -4124,11 +4125,6 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                                 "cudaMemoryAdvise", "cudaDeviceAttr"))))))
                     .bind("EnumConstant"),
                 this);
-
-  MF.addMatcher(parmVarDecl(hasType(namedDecl(hasAnyName("cudaMemcpyKind",
-                                                         "cudaComputeMode"))))
-                    .bind("parmVarDecl"),
-                this);
 }
 
 void EnumConstantRule::handleComputeMode(std::string EnumName,
@@ -4182,48 +4178,6 @@ void EnumConstantRule::handleComputeMode(std::string EnumName,
 }
 
 void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
-
-  if (const auto PVD = getNodeAsType<ParmVarDecl>(Result, "parmVarDecl")) {
-
-    SourceManager *SM = Result.SourceManager;
-    auto LOpts = Result.Context->getLangOpts();
-    auto BeginLoc = PVD->getBeginLoc();
-    std::string TypeName = PVD->getType().getAsString();
-
-    Token Tok;
-    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-    if (!Tok.isAnyIdentifier()) {
-      return;
-    }
-
-    const IdentifierInfo *IdInfo =
-        PVD->getOriginalType().getBaseTypeIdentifier();
-
-    if (!IdInfo)
-      return;
-
-    std::string BaseTypeName = IdInfo->getName().str();
-
-    auto TypeNameStr = Tok.getRawIdentifier().str();
-    int Length = BaseTypeName.length();
-
-    if (TypeNameStr == "enum") {
-      const char *startBuf = SM->getCharacterData(BeginLoc);
-      auto TypeSpecEnd = PVD->getTypeSpecEndLoc();
-      const char *EndBuf = SM->getCharacterData(TypeSpecEnd);
-      Length += (EndBuf - startBuf);
-    }
-
-    std::string Replacement =
-        MapNames::findReplacedName(MapNames::TypeNamesMap, BaseTypeName);
-    requestHelperFeatureForTypeNames(BaseTypeName, BeginLoc);
-
-    if (!Replacement.empty()) {
-      emplaceTransformation(
-          new ReplaceText(BeginLoc, Length, std::move(Replacement)));
-    }
-  }
-
   const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
   if (!E)
     return;
