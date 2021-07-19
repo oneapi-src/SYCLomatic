@@ -12920,6 +12920,7 @@ void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 REGISTER_RULE(WarpFunctionsRule)

@@ -994,3 +994,10 @@ foo23(void)
 {
   __builtin_ia32_emms();
 }
+
+//CHECK: #define SHFL(x, y, z) item_ct1.get_sub_group().shuffle((x), (y))
+#define SHFL(x, y, z) __shfl((x), (y), (z))
+__global__ void foo24(){
+  int i;
+  SHFL(i, i, 16);
+}
