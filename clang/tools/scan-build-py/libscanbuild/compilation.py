@@ -51,6 +51,8 @@ IGNORED_FLAGS = {
     '-march': 1,
     '--cuda': 0,
     '-cuda': 0,
+    '--threads': 1,
+    '-threads': 1,
 
     # --cubin/-cubin, --ptx/-ptx are kept in compilation database, which are
     # used for driver API migration.
