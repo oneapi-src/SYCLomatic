@@ -265,8 +265,8 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
 #else
-  // `Rs` is from yaml file, `Replaces` is from current migration.
-  // To avoid SIGABRT, ignore `Rs`, just return `*Replaces.begin()`.
+  // `Rs` is from yaml file (previous migration), `Replaces` is from current migration.
+  // To avoid SIGABRT, ignore previous replacement `Rs`, keep current migration result.
   return *this;
 #endif
 #else
@@ -307,12 +307,30 @@ llvm::Error Replacements::add(const Replacement &R) {
       // either order produces the same text, they are order-independent.
       if ((R.getReplacementText() + I->getReplacementText()).str() !=
           (I->getReplacementText() + R.getReplacementText()).str())
+#ifdef INTEL_CUSTOMIZATION
+#ifndef NDEBUG
         return llvm::make_error<ReplacementError>(
             replacement_error::insert_conflict, R, *I);
       // If insertions are order-independent, we can merge them.
       Replacement NewR(
           R.getFilePath(), R.getOffset(), 0,
           (R.getReplacementText() + I->getReplacementText()).str());
+#else
+        ;
+      // `R` is from yaml file (previous migration), `I` is from current
+      // migration. To avoid SIGABRT, ignore previous replacement `R`, keep
+      // current migration result.
+      Replacement NewR(R.getFilePath(), R.getOffset(), 0,
+                       I->getReplacementText().str());
+#endif
+#else
+        return llvm::make_error<ReplacementError>(
+            replacement_error::insert_conflict, R, *I);
+      // If insertions are order-independent, we can merge them.
+      Replacement NewR(
+          R.getFilePath(), R.getOffset(), 0,
+          (R.getReplacementText() + I->getReplacementText()).str());
+#endif
       Replaces.erase(I);
       Replaces.insert(std::move(NewR));
       return llvm::Error::success();
