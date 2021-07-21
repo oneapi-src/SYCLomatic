@@ -427,9 +427,9 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
 static bits<ExperimentalFeatures> Experimentals(
   "use-experimental-features",
   llvm::cl::desc(
-    "Comma separated list of experimental features expect to be used in migrated "
+    "Comma separated list of experimental features to be used in migrated "
     "code.\n"
-    "By default, these features will no be used in migrated code."),
+    "By default, these features will not be used in migrated code."),
   llvm::cl::CommaSeparated,
   values(
     llvm::cl::OptionEnumValue{
