@@ -410,6 +410,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       if (!ReplBLASEnum.empty())
         addReplacement(DRE, ReplBLASEnum);
     }
+  } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    if (RefString == "warpSize" &&
+        !DpctGlobalInfo::isInRoot(VD->getLocation())) {
+      addReplacement(DRE, DpctGlobalInfo::getItemName() +
+                              ".get_sub_group().get_local_range().get(0)");
+    }
   }
 }
 

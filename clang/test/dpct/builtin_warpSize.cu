@@ -17,6 +17,17 @@ __global__ void foo(){
   int c= warpSize;
 }
 
+// CHECK: void bar(){
+// CHECK-NEXT:   int a = sycl::max((int)item_ct1.get_sub_group().get_local_range().get(0), 0);
+// CHECK-NEXT:   int warpSize = 1;
+// CHECK-NEXT:   int b = sycl::max(warpSize, 0);
+// CHECK-NEXT: }
+__global__ void bar(){
+  int a = max(warpSize, 0);
+  int warpSize = 1;
+  int b = max(warpSize, 0);
+}
+
 // CHECK: int tensorPos(const int ct, sycl::nd_item<3> item_ct1, int numLane = 0) {
 // CHECK-NEXT:   if (!numLane) numLane = item_ct1.get_sub_group().get_local_range().get(0);
 // CHECK-NEXT:   int r = ct * numLane;
