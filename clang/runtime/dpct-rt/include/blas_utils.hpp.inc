@@ -167,7 +167,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
     exec_queue.submit([&](cl::sycl::handler &cgh) {
       auto from_acc = ipiv_buf.get_access<cl::sycl::access_mode::read>(cgh);
       auto to_acc = to_buffer.get_access<cl::sycl::access_mode::write>(cgh);
-      cgh.parallel_for<class device_int64_to_int>(
+      cgh.parallel_for<class getrf_device_int64_to_int>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * n + id.get(1)] =
                 static_cast<int>(from_acc[id.get(0) * stride_ipiv + id.get(1)]);
@@ -211,7 +211,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
                            scratchpad_size);
 
   cl::sycl::event e = exec_queue.submit([&](cl::sycl::handler &cgh) {
-    cgh.parallel_for<class device_int64_to_int>(
+    cgh.parallel_for<class getrf_device_int64_to_int_usm>(
         cl::sycl::range<1>(batch_size * n), [=](cl::sycl::id<1> idx) {
           ipiv[idx] = static_cast<int>(ipiv_int64[idx]);
         });
@@ -294,7 +294,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
     exec_queue.submit([&](cl::sycl::handler &cgh) {
       auto from_acc = from_buf.get_access<cl::sycl::access_mode::read>(cgh);
       auto to_acc = ipiv_buf.get_access<cl::sycl::access_mode::write>(cgh);
-      cgh.parallel_for<class device_int_to_int64>(
+      cgh.parallel_for<class getrs_device_int_to_int64>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =
                 static_cast<std::int64_t>(from_acc[id.get(0) * n + id.get(1)]);
@@ -337,7 +337,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
 
   exec_queue.submit([&](cl::sycl::handler &cgh) {
-    cgh.parallel_for<class device_int_to_int64>(
+    cgh.parallel_for<class getrs_device_int_to_int64_usm>(
         cl::sycl::range<1>(batch_size * n), [=](cl::sycl::id<1> idx) {
           ipiv_int64[idx] = static_cast<std::int64_t>(ipiv[idx]);
         });
@@ -424,7 +424,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
     exec_queue.submit([&](cl::sycl::handler &cgh) {
       auto from_acc = from_buf.get_access<cl::sycl::access_mode::read>(cgh);
       auto to_acc = ipiv_buf.get_access<cl::sycl::access_mode::write>(cgh);
-      cgh.parallel_for<class device_int_to_int64>(
+      cgh.parallel_for<class getri_device_int_to_int64>(
           cl::sycl::range<2>(batch_size, n), [=](cl::sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =
                 static_cast<std::int64_t>(from_acc[id.get(0) * n + id.get(1)]);
@@ -464,7 +464,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       cl::sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
 
   exec_queue.submit([&](cl::sycl::handler &cgh) {
-    cgh.parallel_for<class device_int_to_int64>(
+    cgh.parallel_for<class getri_device_int_to_int64_usm>(
         cl::sycl::range<1>(batch_size * n), [=](cl::sycl::id<1> idx) {
           ipiv_int64[idx] = static_cast<std::int64_t>(ipiv[idx]);
         });
