@@ -3548,7 +3548,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
 
   // To skip user-defined type.
-  if (ME && isTypeInRoot(ME->getBase()->getType().getTypePtr()))
+  if (!ME && isTypeInRoot(ME->getBase()->getType().getTypePtr()))
     return;
 
   auto BaseTy = ME->getBase()->getType().getAsString();
@@ -12947,11 +12947,10 @@ REGISTER_RULE(MathFunctionsRule)
 
 void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> WarpFunctions = {
-    "__shfl_up_sync", "__shfl_down_sync", "__shfl_sync",
-    "__shfl_up", "__shfl_down", "__shfl", "__shfl_xor",
-    "__shfl_xor_sync", "__all", "__all_sync", "__any",
-    "__any_sync", "__ballot", "__ballot_sync", "__activemask"
-  };
+      "__shfl_up_sync", "__shfl_down_sync", "__shfl_sync", "__shfl_up",
+      "__shfl_down",    "__shfl",           "__shfl_xor",  "__shfl_xor_sync",
+      "__all",          "__all_sync",       "__any",       "__any_sync",
+      "__ballot",       "__ballot_sync",    "__activemask"};
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
                              new internal::HasNameMatcher(WarpFunctions)))),
@@ -13945,14 +13944,12 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
           AssignedBO);
     } else {
       if (SamplingInfoToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(
-            SamplingInfoToSetFeatureMap.at(MethodName.str()),
-            AssignedBO);
+        requestFeature(SamplingInfoToSetFeatureMap.at(MethodName.str()),
+                       AssignedBO);
       }
       if (ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(
-            ImageWrapperBaseToSetFeatureMap.at(MethodName.str()),
-            AssignedBO);
+        requestFeature(ImageWrapperBaseToSetFeatureMap.at(MethodName.str()),
+                       AssignedBO);
       }
     }
     emplaceTransformation(ReplaceMemberAssignAsSetMethod(
@@ -13973,8 +13970,7 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
         requestFeature(SamplingInfoToGetFeatureMap.at(ReplField), ME);
       }
       if (ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
-        requestFeature(ImageWrapperBaseToGetFeatureMap.at(ReplField),
-                       ME);
+        requestFeature(ImageWrapperBaseToGetFeatureMap.at(ReplField), ME);
       }
     }
   }
@@ -14207,8 +14203,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                 Image_image_wrapper_base_set_coordinate_normalization_mode_enum,
             CE);
       } else {
-        requestFeature(
-            ImageWrapperBaseToSetFeatureMap.at(MethodName.str()), CE);
+        requestFeature(ImageWrapperBaseToSetFeatureMap.at(MethodName.str()),
+                       CE);
       }
       std::shared_ptr<CallExprRewriter> Rewriter =
           std::make_shared<AssignableRewriter>(
@@ -15755,6 +15751,8 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
       typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasName(TypeName))))))
           .bind("typeLoc")));
   auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(TD);
+  if (!MatcherScope)
+    return;
   auto TypeLocMatchResult =
       ast_matchers::match(MyMatcher, *MatcherScope, Context);
   bool DeleteFlag = true;
@@ -15836,6 +15834,8 @@ void CubRule::processCubFuncCall(const CallExpr *CE) {
     std::string FuncName = DC->getNameAsString();
     if (FuncName == "ShuffleIndex") {
       auto TA = DC->getTemplateSpecializationArgs();
+      if (!TA)
+        return;
       WarpSize = TA->get(0).getAsIntegral().getExtValue();
       std::string ValueType =
           TA->get(1).getAsType().getUnqualifiedType().getAsString();

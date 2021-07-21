@@ -2791,8 +2791,7 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
 /// \param [in] E The input expression
 /// \param [out] DRESet The DREs which are found by this function
 /// \param [out] HasCallExpr The flag means if there is CallExpr in \p E
-void findDREs(const Expr *E,
-              std::set<const clang::DeclRefExpr *> &DRESet,
+void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
               bool &HasCallExpr) {
   if (!E)
     return;
@@ -3119,7 +3118,7 @@ bool isInFlowControl(const clang::Stmt *S) {
       if (StmtClass == Stmt::StmtClass::WhileStmtClass ||
           StmtClass == Stmt::StmtClass::ForStmtClass ||
           StmtClass == Stmt::StmtClass::IfStmtClass ||
-          StmtClass == Stmt::StmtClass::SwitchStmtClass||
+          StmtClass == Stmt::StmtClass::SwitchStmtClass ||
           StmtClass == Stmt::StmtClass::CallExprClass) {
         return true;
       } else if (StmtClass == Stmt::StmtClass::DoStmtClass) {
@@ -3277,7 +3276,8 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
       VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
   std::vector<const DeclRefExpr *> Refs;
   for (auto &Result : MatchedResults) {
-    const DeclRefExpr *MatchedDRE = Result.getNodeAs<DeclRefExpr>("VarReference");
+    const DeclRefExpr *MatchedDRE =
+        Result.getNodeAs<DeclRefExpr>("VarReference");
     if (!MatchedDRE)
       continue;
     if (MatchedDRE->getDecl() == VD) {
@@ -3333,13 +3333,13 @@ bool checkIfContainSizeofTypeRecursively(
 
 bool isCubVar(const VarDecl *VD) {
   std::string CanonicalType = VD->getType().getCanonicalType().getAsString();
-  //1.process non-template case
+  // 1.process non-template case
   if (!isTypeInRoot(VD->getType().getCanonicalType().getTypePtr()) &&
       (CanonicalType.find("struct cub::") == 0 ||
        CanonicalType.find("class cub::") == 0)) {
     return true;
   }
-  //2.process template cases
+  // 2.process template cases
   if (CanonicalType.find("::TempStorage") != std::string::npos) {
     std::string TypeParameterName;
     auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
@@ -3368,6 +3368,8 @@ bool isCubVar(const VarDecl *VD) {
     }
     auto DeviceFuncDecl =
         clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(VD);
+    if (!DeviceFuncDecl)
+      return false;
     std::string DeviceFuncName = DeviceFuncDecl->getNameAsString();
     auto FuncTemp = DeviceFuncDecl->getDescribedFunctionTemplate();
     if (!FuncTemp) {
