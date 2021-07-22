@@ -10190,10 +10190,72 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                                       implicitCastExpr().bind("impCastExpr")))))
                     .bind("cxxMemberCall"),
                 this);
+  MF.addMatcher(
+      functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))
+          .bind("deviceFuncDecl"),
+      this);
 }
 
 void DeviceFunctionDeclRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "deviceFuncDecl")) {
+    if (FD->isTemplateInstantiation())
+      return;
+
+    auto Name = FD->getNameAsString();
+    const auto &SM = (*Result.Context).getSourceManager();
+    SourceLocation BeginLoc, EndLoc;
+    auto NumParams = FD->getNumParams();
+    auto LOpts = dpct::DpctGlobalInfo::getContext().getLangOpts();
+    if (NumParams > 0) {
+      // To get the range of original device function signature with parameters
+      BeginLoc = FD->getBeginLoc();
+      if (auto DFT = FD->getDescribedFunctionTemplate())
+        BeginLoc = DFT->getBeginLoc();
+
+      EndLoc = FD->getAsFunction()->getParamDecl(NumParams - 1)->getEndLoc();
+
+      Token Tok;
+      auto Ret = Lexer::findNextToken(EndLoc, SM, LOpts);
+      if (Ret.hasValue()) {
+        Tok = Ret.getValue();
+        if (Tok.is(tok::r_paren))
+          EndLoc = Tok.getLocation();
+      }
+    } else {
+      // To get the range of original device function signature without
+      // parameters
+      BeginLoc = FD->getBeginLoc();
+      EndLoc = FD->getEndLoc();
+      Token Tok;
+      auto Ret = Lexer::findNextToken(EndLoc, SM, LOpts);
+
+      while (Ret.hasValue()) {
+        if (Tok.is(tok::r_paren)) {
+          EndLoc = Tok.getLocation();
+          break;
+        }
+        Ret = Lexer::findNextToken(Tok.getLocation(), SM, LOpts);
+      }
+    }
+
+    auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
+    auto EndLocInfo = DpctGlobalInfo::getLocInfo(EndLoc);
+    auto FileInfo =
+        DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+    auto &Map = FileInfo->getFuncDeclRangeMap();
+
+    auto Iter = Map.find(Name);
+    if (Iter == Map.end()) {
+      std::vector<std::pair<unsigned int, unsigned int>> Vec;
+      Vec.push_back(std::make_pair(BeginLocInfo.second, EndLocInfo.second));
+      Map[Name] = Vec;
+    } else {
+      Iter->second.push_back(
+          std::make_pair(BeginLocInfo.second, EndLocInfo.second));
+    }
+  }
 
   if (auto CXXMCE =
           getAssistNodeAsType<CXXMemberCallExpr>(Result, "cxxMemberCall")) {

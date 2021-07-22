@@ -177,3 +177,123 @@ int main() {
   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }
 
+// CHECK: /* DPCT_ORIG template <bool storeSum, bool isNP2>
+// CHECK-NEXT:__global__ static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:                            const unsigned int *g_idata,
+// CHECK-NEXT:                            unsigned int *g_blockSums,
+// CHECK-NEXT:                            int n,
+// CHECK-NEXT:                            int blockIndex,
+// CHECK-NEXT:                            int baseIndex);*/
+// CHECK-NEXT:template <bool storeSum, bool isNP2>
+// CHECK-NEXT:static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:                            const unsigned int *g_idata,
+// CHECK-NEXT:                            unsigned int *g_blockSums,
+// CHECK-NEXT:                            int n,
+// CHECK-NEXT:                            int blockIndex,
+// CHECK-NEXT:                            int baseIndex,
+// CHECK-NEXT:                            sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                            uint8_t *dpct_local);
+template <bool storeSum, bool isNP2>
+__global__ static void foo_2(unsigned int *g_odata,
+                            const unsigned int *g_idata,
+                            unsigned int *g_blockSums,
+                            int n,
+                            int blockIndex,
+                            int baseIndex);
+
+// CHECK: /* DPCT_ORIG template <bool isNP2>
+// CHECK-NEXT:__device__ static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:                          const unsigned int* s_data,
+// CHECK-NEXT:                          int n,
+// CHECK-NEXT:                          int ai, int bi,
+// CHECK-NEXT:                          int mem_ai, int mem_bi,
+// CHECK-NEXT:                          int bankOffsetA, int bankOffsetB);*/
+// CHECK-NEXT:template <bool isNP2>
+// CHECK-NEXT:static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:                          const unsigned int* s_data,
+// CHECK-NEXT:                          int n,
+// CHECK-NEXT:                          int ai, int bi,
+// CHECK-NEXT:                          int mem_ai, int mem_bi,
+// CHECK-NEXT:                          int bankOffsetA, int bankOffsetB,
+// CHECK-NEXT:                          sycl::nd_item<3> item_ct1);
+template <bool isNP2>
+__device__ static void foo_1(unsigned int* g_odata,
+                          const unsigned int* s_data,
+                          int n,
+                          int ai, int bi,
+                          int mem_ai, int mem_bi,
+                          int bankOffsetA, int bankOffsetB);
+
+// CHECK:/* DPCT_ORIG template <bool isNP2>
+// CHECK-NEXT:__device__ static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:                              const unsigned int* s_data,
+// CHECK-NEXT:                              int n,
+// CHECK-NEXT:                              int ai, int bi,
+// CHECK-NEXT:                              int mem_ai, int mem_bi,
+// CHECK-NEXT:                              int bankOffsetA, int bankOffsetB)*/
+// CHECK-NEXT: template <bool isNP2>
+// CHECK-NEXT:static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:                              const unsigned int* s_data,
+// CHECK-NEXT:                              int n,
+// CHECK-NEXT:                              int ai, int bi,
+// CHECK-NEXT:                              int mem_ai, int mem_bi,
+// CHECK-NEXT:                              int bankOffsetA, int bankOffsetB,
+// CHECK-NEXT:                              sycl::nd_item<3> item_ct1)
+template <bool isNP2>
+__device__ static void foo_1(unsigned int* g_odata,
+                              const unsigned int* s_data,
+                              int n,
+                              int ai, int bi,
+                              int mem_ai, int mem_bi,
+                              int bankOffsetA, int bankOffsetB)
+{
+// CHECK: /* DPCT_ORIG     __syncthreads();*/
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    sycl::group_barrier(item_ct1.get_group());
+    __syncthreads();
+
+}
+
+// CHECK:/* DPCT_ORIG template <bool storeSum, bool isNP2>
+// CHECK-NEXT:__global__ static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:                        const unsigned int *g_idata,
+// CHECK-NEXT:                        unsigned int *g_blockSums,
+// CHECK-NEXT:                        int n,
+// CHECK-NEXT:                        int blockIndex,
+// CHECK-NEXT:                        int baseIndex)*/
+// CHECK-NEXT:template <bool storeSum, bool isNP2>
+// CHECK-NEXT:static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:                        const unsigned int *g_idata,
+// CHECK-NEXT:                        unsigned int *g_blockSums,
+// CHECK-NEXT:                        int n,
+// CHECK-NEXT:                        int blockIndex,
+// CHECK-NEXT:                        int baseIndex,
+// CHECK-NEXT:                        sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                        uint8_t *dpct_local)
+template <bool storeSum, bool isNP2>
+__global__ static void foo_2(unsigned int *g_odata,
+                        const unsigned int *g_idata,
+                        unsigned int *g_blockSums,
+                        int n,
+                        int blockIndex,
+                        int baseIndex)
+{
+    int ai, bi, mem_ai, mem_bi, bankOffsetA, bankOffsetB;
+    extern __shared__ unsigned int s_data[];
+    foo_1<isNP2>(g_odata, s_data, n,
+                                 ai, bi, mem_ai, mem_bi,
+                                 bankOffsetA, bankOffsetB);
+}
+
+// CHECK: /* DPCT_ORIG __global__ static void foo_3(void){*/
+// CHECK-NEXT: static void foo_3(){
+__global__ static void foo_3(void){
+}
+
+int foo_ctst1358() {
+ foo_2<true, true><<<1, 1>>>(NULL, NULL, NULL, 1, 2, 3);
+ return 0;
+}
+

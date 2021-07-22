@@ -622,7 +622,20 @@ public:
   // Set line range info of replacement
   void setLineRange(ExtReplacements::SourceLineRange &LineRange,
                     std::shared_ptr<ExtReplacement> Repl) {
-    unsigned Begin = Repl->getOffset(), End = Begin + Repl->getLength();
+    unsigned Begin = Repl->getOffset();
+    unsigned End = Begin + Repl->getLength();
+
+    // Update original code range embedded in the migrated code
+    auto &Map = getFuncDeclRangeMap();
+    for (auto &Entry : Map) {
+      for (auto &Range : Entry.second) {
+        if (Begin >= Range.first && End <= Range.second) {
+          Begin = Range.first;
+          End = Range.second;
+        }
+      }
+    }
+
     auto &BeginLine = getLineInfoFromOffset(Begin);
     auto &EndLine = getLineInfoFromOffset(End);
     LineRange.SrcBeginLine = BeginLine.Number;
@@ -643,6 +656,11 @@ public:
            std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>> &
   getMemcpyOrderAnalysisResultMap() {
     return MemcpyOrderAnalysisResultMap;
+  }
+
+  std::map<std::string, std::vector<std::pair<unsigned int, unsigned int>>> &
+  getFuncDeclRangeMap() {
+    return FuncDeclRangeMap;
   }
 
   std::map<unsigned int, HostRandomEngineTypeInfo> &
@@ -786,6 +804,13 @@ private:
   std::map<const CompoundStmt *,
            std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>>
       MemcpyOrderAnalysisResultMap;
+
+  std::map<std::string /*Function name*/,
+           std::vector<
+               std::pair<unsigned int /*Begin location of function signature*/,
+                         unsigned int /*End location of function signature*/>>>
+      FuncDeclRangeMap;
+
   std::map<unsigned int, HostRandomEngineTypeInfo> HostRandomEngineTypeMap;
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>
