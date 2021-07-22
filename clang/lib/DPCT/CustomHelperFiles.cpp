@@ -955,6 +955,9 @@ void updateHelperNameContentMap(
       auto CurrentFileID = Iter->second;
       processFeatureMap(FileFeatureMap.second, CurrentFileID, CompareResult,
                         APINameCallerSrcFilesMap);
+    } else if (FileFeatureMap.first == (TUR.MainHelperFileName + ".hpp")) {
+      processFeatureMap(FileFeatureMap.second, HelperFileEnum::Dpct,
+                        CompareResult, APINameCallerSrcFilesMap);
     } else {
       // New helper file added, need emit warning
       for (auto &FeatureFromYaml : FileFeatureMap.second) {
@@ -971,6 +974,13 @@ void updateHelperNameContentMap(
 void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
   auto updateAPIName = [](HelperFeatureIDTy Feature,
                           clang::tooling::HelperFuncForYaml &HFFY) {
+    if (Feature.second == "License" ||
+        Feature.second == "non_local_include_dependency" ||
+        Feature.second == "local_include_dependency") {
+      HFFY.APIName = "";
+      return;
+    }
+
     // If this feature can be found in the map, then save the API name (from
     // the map) into yaml file; otherwise save the feature name into yaml
     // file
