@@ -5,21 +5,29 @@
 #include <stdio.h>
 #include <vector>
 
-// CHECK: void helloFromGPUDDefaultArgs(int i, int j, int k,
-// CHECK-NEXT:   cl::sycl::nd_item<3> item_ct1,
-// CHECK-NEXT: int l = 0,
-// CHECK-NEXT: int m = 0, int n = 0) {
-// CHECK-NEXT: int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-// CHECK-NEXT: item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
-// CHECK-NEXT: }
-__global__ void helloFromGPUDDefaultArgs(int i, int j, int k,
-  int l = 0,
+#define PAR
+//CHECK: void helloFromGPUDDefaultArgs(int i, int j
+//CHECK-NEXT: #ifdef PAR
+//CHECK-NEXT:   , int k
+//CHECK-NEXT: , cl::sycl::nd_item<3> item_ct1
+//CHECK-NEXT: #endif
+//CHECK-NEXT:   , int l = 0,
+//CHECK-NEXT:   int m = 0, int n = 0) {
+//CHECK-NEXT: int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+//CHECK-NEXT: item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+//CHECK-NEXT: }
+__global__ void helloFromGPUDDefaultArgs(int i, int j
+#ifdef PAR
+  , int k
+#endif
+  , int l = 0,
   int m = 0, int n = 0) {
 int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
 blockDim.x + threadIdx.x;
 }
 
-// CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N);
+
+//CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> item_ct1, int N);
 __global__ void testKernel(int L, int M, int N);
 
 // CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N = 0);

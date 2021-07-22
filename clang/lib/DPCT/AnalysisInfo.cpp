@@ -1858,7 +1858,12 @@ void DeviceFunctionInfo::buildInfo() {
 }
 
 std::string DeviceFunctionDecl::getExtraParameters() {
-  return FuncInfo->getExtraParameters(FilePath, FormatInformation);
+  std::string Result =
+      FuncInfo->getExtraParameters(FilePath, FormatInformation);
+  if (!Result.empty() && IsReplaceFollowedByPP) {
+    Result += getNL();
+  }
+  return Result;
 }
 
 std::string ExplicitInstantiationDecl::getExtraParameters() {
@@ -2277,6 +2282,12 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   //                                      need get here
   if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
     InsertLocation = TokOfHash.getLocation();
+  }
+
+  Token PPTok;
+  if (!Lexer::getRawToken(InsertLocation, PPTok, SM, LO, true) &&
+      PPTok.is(tok::hash)) {
+    IsReplaceFollowedByPP = true;
   }
 
   ReplaceOffset = SM.getFileOffset(InsertLocation);

@@ -3616,6 +3616,7 @@ protected:
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
+  bool IsReplaceFollowedByPP = false;
   unsigned NonDefaultParamNum;
   bool IsDefFilePathNeeded;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
