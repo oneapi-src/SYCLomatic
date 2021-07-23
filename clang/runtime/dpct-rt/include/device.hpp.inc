@@ -46,6 +46,7 @@
 #include <set>
 #include <sstream>
 #include <map>
+#include <vector>
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -517,25 +518,15 @@ public:
         get_info<cl::sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
 
-    // For Intel(R) oneAPI DPC++ Compiler, if current device does not support
-    // "cl_intel_required_subgroup_size" extension, max_sub_group_size will be
-    // initialized to one.
-    // For other compilers, max_sub_group_size will be initialized to one.
-    // This code may need to be updated depending on subgroup support by other
-    // compilers.
     size_t max_sub_group_size = 1;
-#ifdef __SYCL_COMPILER_VERSION
-    if (has_extension("cl_intel_required_subgroup_size")) {
-      cl::sycl::vector_class<size_t> sub_group_sizes =
-          get_info<cl::sycl::info::device::sub_group_sizes>();
+    std::vector<size_t> sub_group_sizes =
+        get_info<cl::sycl::info::device::sub_group_sizes>();
 
-      for (const auto &sub_group_size : sub_group_sizes) {
-        if (max_sub_group_size < sub_group_size)
-          max_sub_group_size = sub_group_size;
-      }
-
+    for (const auto &sub_group_size : sub_group_sizes) {
+      if (max_sub_group_size < sub_group_size)
+        max_sub_group_size = sub_group_size;
     }
-#endif
+
     prop.set_max_sub_group_size(max_sub_group_size);
 
     prop.set_max_work_items_per_compute_unit(
