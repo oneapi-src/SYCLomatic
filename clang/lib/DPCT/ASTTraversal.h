@@ -1436,8 +1436,7 @@ private:
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                     const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);
-  void updateAsyncRange(const CallExpr *AsyncCE,
-                        const std::string EventAPIName);
+  void updateAsyncRange(const Stmt *FuncBody, const std::string EventAPIName);
   void updateAsyncRangRecursive(const Stmt *Node, const CallExpr *AsyncCE,
                                 const std::string EventAPIName);
 

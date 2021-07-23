@@ -505,3 +505,36 @@ void foo_ctst1983() {
     cudaEventSynchronize(event2);
   }
 }
+
+template <class T, class vecT> void foo_ctst2131();
+int foo_test_ctst2131() { foo_ctst2131<float, float4>(); }
+
+template <class T, class vecT> void foo_ctst2131() {
+  int size;
+  int num_blocks = 64;
+  int num_threads = 256;
+  int smem_size = sizeof(T) * num_threads;
+
+  // Allocate device memory
+  T *d_idata, *d_odata, *d_block_sums;
+  cudaEvent_t start, stop;
+  int passes;
+  int iters;
+
+  for (int k = 0; k < passes; k++) {
+    float totalScanTime = 0.0f;
+    SAFE_CALL(cudaEventRecord(start, 0));
+    for (int j = 0; j < iters; j++) {
+      reduce<T, 256>
+          <<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
+    }
+    // CHECK: dpct::get_current_device().queues_wait_and_throw();
+    // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT: SAFE_CALL((stop = q_ct1.submit_barrier(), 0));
+    // CHECK-NEXT: SAFE_CALL(0);
+    // CHECK-NEXT: totalScanTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    SAFE_CALL(cudaEventRecord(stop, 0));
+    SAFE_CALL(cudaEventSynchronize(stop));
+    cudaEventElapsedTime(&totalScanTime, start, stop);
+  }
+}

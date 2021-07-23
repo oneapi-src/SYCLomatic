@@ -9016,11 +9016,17 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (!isEventElapsedTimeFollowed(CE)) {
       auto FD = getImmediateOuterFuncDecl(CE);
+      if (!FD)
+        return;
+      auto FuncBody = FD->getBody();
+
+      if (!FuncBody)
+        return;
       reset();
       TimeElapsedCE = CE;
-      updateAsyncRange(CE, "cudaEventCreate");
+      updateAsyncRange(FuncBody, "cudaEventCreate");
       if (RecordBegin && RecordEnd) {
-        processAsyncJob(FD->getAsFunction()->getBody());
+        processAsyncJob(FuncBody);
 
         if (!IsKernelInLoopStmt) {
           DpctGlobalInfo::getInstance().updateTimeStubTypeInfo(
@@ -9516,32 +9522,23 @@ void EventAPICallRule::updateAsyncRangRecursive(
 //                                                             /TimeElapsedLoc
 //        ...
 //    }
-// \p AsyncCE is call expr to help to locate RecordEndLoc.
-// \p EventAPIName is the EventAPI name (.i.e cudaEventRecord or
+// \p FuncBody is the body of the function which calls function pointed by
+// TimeElapsedCE \p EventAPIName is the EventAPI name (.i.e cudaEventRecord or
 // cudaEventCreate) to help to locate RecordEndLoc.
-void EventAPICallRule::updateAsyncRange(const CallExpr *AsyncCE,
+void EventAPICallRule::updateAsyncRange(const Stmt *FuncBody,
                                         const std::string EventAPIName) {
-  auto FD = getImmediateOuterFuncDecl(AsyncCE);
-
-  if (!FD)
-    return;
-  auto FuncBody = FD->getBody();
-
-  if (!FuncBody)
-    return;
-
-  auto EventArg = AsyncCE->getArg(0);
+  auto EventArg = TimeElapsedCE->getArg(0);
   if (IsEventArgArraySubscriptExpr(EventArg)) {
     // If the event arg is a ArraySubscriptExpr, if not async range is not
     // identified, mark all kernels in the current function to wait.
-    updateAsyncRangRecursive(FuncBody, AsyncCE, EventAPIName);
+    updateAsyncRangRecursive(FuncBody, TimeElapsedCE, EventAPIName);
     if (!RecordEnd) {
       IsKernelSync = true;
       RecordBegin = *FuncBody->child_begin();
-      RecordEnd = AsyncCE;
+      RecordEnd = TimeElapsedCE;
     }
   } else {
-    updateAsyncRangRecursive(FuncBody, AsyncCE, EventAPIName);
+    updateAsyncRangRecursive(FuncBody, TimeElapsedCE, EventAPIName);
   }
 }
 
@@ -9564,12 +9561,21 @@ void EventAPICallRule::handleTimeMeasurement() {
   auto FD = getImmediateOuterFuncDecl(TimeElapsedCE);
   if (!FD)
     return;
-  auto FuncBody = FD->getBody();
+
+  const Stmt *FuncBody = nullptr;
+  if (FD->isTemplateInstantiation()) {
+    auto FTD = FD->getPrimaryTemplate();
+    if (!FTD)
+      return;
+    FuncBody = FTD->getTemplatedDecl()->getBody();
+  } else {
+    FuncBody = FD->getBody();
+  }
 
   if (!FuncBody)
     return;
 
-  updateAsyncRange(TimeElapsedCE, "cudaEventRecord");
+  updateAsyncRange(FuncBody, "cudaEventRecord");
 
   if (!RecordBegin || !RecordEnd) {
     return;
@@ -9671,8 +9677,8 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
           IsKernelInLoopStmt = true;
         }
 
-        auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
-        if (FD && !FD->isTemplateInstantiation())
+        auto FD = getImmediateOuterFuncDecl(Node);
+        if (FD)
           handleKernelCalls(FD->getBody(), dyn_cast<CUDAKernelCallExpr>(*It));
         break;
       }
@@ -9687,8 +9693,8 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
             IsKernelInLoopStmt = true;
           }
 
-          auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Node);
-          if (FD && !FD->isTemplateInstantiation())
+          auto FD = getImmediateOuterFuncDecl(Node);
+          if (FD)
             handleKernelCalls(FD->getBody(), KCall);
         }
         break;
