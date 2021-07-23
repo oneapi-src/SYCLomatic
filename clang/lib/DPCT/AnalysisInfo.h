@@ -3774,15 +3774,16 @@ public:
   size_t NonDefaultParamNum;
   GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
   void addSubGroupSizeRequest(unsigned int Size, SourceLocation Loc,
-                              std::string APIName) {
+                              std::string APIName, std::string VarName = "") {
     if (Size == 0 || Loc.isInvalid())
       return;
     auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
     RequiredSubGroupSize.push_back(
-        std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName));
+        std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
   }
-  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string>>
-      &getSubGroupSize() {
+  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
+                         std::string>> &
+  getSubGroupSize() {
     return RequiredSubGroupSize;
   }
 
@@ -3796,8 +3797,9 @@ private:
   bool IsBuilt;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
-  // subgroup size, filepath, offset, api name
-  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string>>
+  // subgroup size, filepath, offset, api name, var name
+  std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
+                         std::string>>
       RequiredSubGroupSize;
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;
@@ -4171,7 +4173,7 @@ private:
   // true, if migrated DPC++ code block need extra { }
   bool NeedBraces = true;
   struct {
-    std::string Config[5] = {"", "", "", "0", ""};
+    std::string Config[6] = {"", "", "", "0", "", ""};
     std::string &GroupSize = Config[0];
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
@@ -4180,6 +4182,7 @@ private:
     std::string GroupSizeFor1D = "";
     std::string LocalSizeFor1D = "";
     std::string &NdRange = Config[4];
+    std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
   } ExecutionConfig;
 

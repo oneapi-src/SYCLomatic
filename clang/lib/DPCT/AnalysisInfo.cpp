@@ -870,7 +870,85 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
 }
 
 void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
+  std::string SubGroupSizeWarning;
+  auto DeviceFuncInfo = getFuncInfo();
+  struct {
+    bool isFirstRef = true;
+    bool isEvaluated = true;
+    unsigned int Size;
+    std::string SizeStr;
+  } RequiredSubGroupSize;
+  if (DeviceFuncInfo) {
+    std::deque<std::shared_ptr<DeviceFunctionInfo>> ProcessRequireQueue;
+    std::set<std::shared_ptr<DeviceFunctionInfo>> ProcessedSet;
+    ProcessRequireQueue.push_back(DeviceFuncInfo);
+    ProcessedSet.insert(DeviceFuncInfo);
+    while (!ProcessRequireQueue.empty()) {
+      auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
+      for (auto &Element : SGSize) {
+        unsigned int Size = std::get<0>(Element);
+        if (RequiredSubGroupSize.isFirstRef) {
+          RequiredSubGroupSize.isFirstRef = false;
+          if (Size == UINT_MAX) {
+            RequiredSubGroupSize.isEvaluated = false;
+            RequiredSubGroupSize.SizeStr = std::get<4>(Element);
+            ExecutionConfig.SubGroupSize =
+                " [[intel::reqd_sub_group_size(dpct_placeholder)]]";
+            SubGroupSizeWarning =
+                DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+                    Diagnostics::SUBGROUP_SIZE_NOT_EVALUATED,
+                    std::get<4>(Element));
+          } else {
+            RequiredSubGroupSize.Size = Size;
+            ExecutionConfig.SubGroupSize =
+                " [[intel::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
+          }
+        } else {
+          bool isNeedEmitWarning = true;
+          std::string ConflictSize;
+          if (RequiredSubGroupSize.isEvaluated) {
+            if (Size == UINT_MAX) {
+              ConflictSize = "\'" + std::get<4>(Element) + "\'";
+            } else if (RequiredSubGroupSize.Size != Size) {
+              ConflictSize = std::to_string(Size);
+            } else {
+              isNeedEmitWarning = false;
+            }
+          } else {
+            if (Size != UINT_MAX) {
+              ConflictSize = std::to_string(Size);
+            } else if (RequiredSubGroupSize.SizeStr != std::get<4>(Element)) {
+              ConflictSize = "\'" + std::get<4>(Element) + "\'";
+            } else {
+              isNeedEmitWarning = false;
+            }
+          }
+          if (isNeedEmitWarning) {
+            DiagnosticsUtils::report(std::get<1>(Element), std::get<2>(Element),
+                                     Diagnostics::SUBGROUP_SIZE_CONFLICT, true,
+                                     false, std::get<3>(Element), ConflictSize);
+          }
+        }
+      }
+      for (auto &Element : ProcessRequireQueue.front()->getCallExprMap()) {
+        auto Child = Element.second->getFuncInfo();
+        if (Child && ProcessedSet.find(Child) == ProcessedSet.end()) {
+          ProcessRequireQueue.push_back(Element.second->getFuncInfo());
+          ProcessedSet.insert(Child);
+        }
+      }
+      ProcessRequireQueue.pop_front();
+    }
+  }
   Printer.indent();
+  if(!SubGroupSizeWarning.empty()) {
+    Printer << "/*" << getNL();
+    Printer.indent();
+    Printer << SubGroupSizeWarning << getNL();
+    Printer.indent();
+    Printer << "*/" << getNL();
+    Printer.indent();
+  }
   if (!getEvent().empty()) {
     Printer << getEvent() << " = ";
   }
@@ -927,44 +1005,10 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   static std::string CanIgnoreRangeStr1D =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
-  std::string SubGroupSizeAttr;
-  auto DeviceFuncInfo = getFuncInfo();
-  unsigned int RequiredSubGroupSize = 0;
-  if (DeviceFuncInfo) {
-    std::deque<std::shared_ptr<DeviceFunctionInfo>> ProcessRequireQueue;
-    std::set<std::shared_ptr<DeviceFunctionInfo>> ProcessedSet;
-    ProcessRequireQueue.push_back(DeviceFuncInfo);
-    ProcessedSet.insert(DeviceFuncInfo);
-    while (!ProcessRequireQueue.empty()) {
-      auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
-      for (auto &Element : SGSize) {
-        if (RequiredSubGroupSize == 0) {
-          RequiredSubGroupSize = std::get<0>(Element);
-        } else if (RequiredSubGroupSize != std::get<0>(Element)) {
-          DiagnosticsUtils::report(std::get<1>(Element), std::get<2>(Element),
-                                   Diagnostics::SUBGROUP_SIZE_CONFLICT, true,
-                                   false, std::get<3>(Element),
-                                   std::get<0>(Element));
-        }
-      }
-      for (auto &Element : ProcessRequireQueue.front()->getCallExprMap()) {
-        auto Child = Element.second->getFuncInfo();
-        if (Child && ProcessedSet.find(Child) == ProcessedSet.end()) {
-          ProcessRequireQueue.push_back(Element.second->getFuncInfo());
-          ProcessedSet.insert(Child);
-        }
-      }
-      ProcessRequireQueue.pop_front();
-    }
-  }
-  if (RequiredSubGroupSize != 0) {
-    SubGroupSizeAttr = " [[intel::reqd_sub_group_size(" +
-                       std::to_string(RequiredSubGroupSize) + ")]]";
-  }
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
-                 getItemName(), ") ", SubGroupSizeAttr, " {");
+                 getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap())) &&
@@ -986,7 +1030,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
-                 getItemName(), ") ", SubGroupSizeAttr, " {");
+                 getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
     DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 3)
@@ -1003,7 +1047,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
-                 getItemName(), ") ", SubGroupSizeAttr, " {");
+                 getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   }
 
   if (getVarMap().hasSync()) {

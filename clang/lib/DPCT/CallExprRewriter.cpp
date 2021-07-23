@@ -1353,15 +1353,22 @@ makeNewExprCreator(std::string TypeName,
 
 bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
 
-template<size_t Idx>
-size_t getSizeFromCallArg(const CallExpr*C) {
+template <unsigned int Idx>
+unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
+  // Default sub group size align with cuda warp size
+  if (Idx == UINT_MAX) {
+    return 32;
+  }
   auto SizeExpr = C->getArg(Idx);
   Expr::EvalResult Result;
   if (!SizeExpr->isValueDependent() &&
-    SizeExpr->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+      SizeExpr->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
     return Result.Val.getInt().getZExtValue();
+  } else {
+    ExprAnalysis EA(SizeExpr);
+    Var = EA.getReplacedString();
+    return UINT_MAX;
   }
-  return 0;
 }
 
 template <size_t Idx>

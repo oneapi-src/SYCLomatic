@@ -254,19 +254,27 @@ public:
 
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-  std::function<size_t(const CallExpr *)> F;
+  std::function<size_t(const CallExpr *, std::string &)> F;
   std::string Name;
 
 public:
   RewriterFactoryWithSubGroupSize(
-    std::function<size_t(const CallExpr *)> Method, std::string NewFuncName,
+      std::function<size_t(const CallExpr *, std::string &)> Method,
+      std::string NewFuncName,
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory), F(Method), Name(NewFuncName) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     auto FuncInfo =
         DeviceFunctionDecl::LinkRedecls(DpctGlobalInfo::getParentFunction(C));
     if (FuncInfo) {
-      FuncInfo->addSubGroupSizeRequest(F(C), C->getBeginLoc(), Name);
+      std::string VarNotEvaluated;
+      unsigned int Size = F(C, VarNotEvaluated);
+      if (Size != UINT_MAX) {
+        FuncInfo->addSubGroupSizeRequest(Size, C->getBeginLoc(), Name);
+      } else {
+        FuncInfo->addSubGroupSizeRequest(Size, C->getBeginLoc(), Name,
+                                         VarNotEvaluated);
+      }
     }
     return Inner->create(C);
   }

@@ -9,39 +9,55 @@
 //
 //===-----------------------------------------------------------------===//
 
-CALL_FACTORY_ENTRY(
-    "__all_sync",
-    CALL(MapNames::getClNamespace() + "all_of_group", SUBGROUP,
-         makeCombinedArg(
-             ARG("(~"),
-             makeCombinedArg(
-                 makeCallArgCreatorWithCall(0),
-                 makeCombinedArg(
-                     makeCombinedArg(
-                         ARG(" & (0x1 << "),
-                         makeCombinedArg(SUBGROUP,
-                                         ARG(".get_local_linear_id())) || "))),
-                     makeCallArgCreatorWithCall(1))))))
+// __all_sync
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "all_of_group",
+    CALL_FACTORY_ENTRY(
+        "__all_sync",
+        CALL(
+            MapNames::getClNamespace() + "all_of_group", SUBGROUP,
+            makeCombinedArg(
+                ARG("(~"),
+                makeCombinedArg(
+                    makeCallArgCreatorWithCall(0),
+                    makeCombinedArg(
+                        makeCombinedArg(
+                            ARG(" & (0x1 << "),
+                            makeCombinedArg(
+                                SUBGROUP, ARG(".get_local_linear_id())) || "))),
+                        makeCallArgCreatorWithCall(1)))))))
 
-CALL_FACTORY_ENTRY("__all", CALL(MapNames::getClNamespace() + "all_of_group",
-                                 SUBGROUP, makeCallArgCreatorWithCall(0)))
+// __all
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "all_of_group",
+    CALL_FACTORY_ENTRY("__all",
+                       CALL(MapNames::getClNamespace() + "all_of_group",
+                            SUBGROUP, makeCallArgCreatorWithCall(0))))
 
-CALL_FACTORY_ENTRY(
-    "__any_sync",
-    CALL(MapNames::getClNamespace() + "any_of_group", SUBGROUP,
-         makeCombinedArg(
-             ARG("("),
-             makeCombinedArg(
-                 makeCallArgCreatorWithCall(0),
-                 makeCombinedArg(
-                     makeCombinedArg(
-                         ARG(" & (0x1 << "),
-                         makeCombinedArg(SUBGROUP,
-                                         ARG(".get_local_linear_id())) && "))),
-                     makeCallArgCreatorWithCall(1))))))
+// __any_sync
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "any_of_group",
+    CALL_FACTORY_ENTRY(
+        "__any_sync",
+        CALL(
+            MapNames::getClNamespace() + "any_of_group", SUBGROUP,
+            makeCombinedArg(
+                ARG("("),
+                makeCombinedArg(
+                    makeCallArgCreatorWithCall(0),
+                    makeCombinedArg(
+                        makeCombinedArg(
+                            ARG(" & (0x1 << "),
+                            makeCombinedArg(
+                                SUBGROUP, ARG(".get_local_linear_id())) && "))),
+                        makeCallArgCreatorWithCall(1)))))))
 
-CALL_FACTORY_ENTRY("__any", CALL(MapNames::getClNamespace() + "any_of_group",
-                                 SUBGROUP, makeCallArgCreatorWithCall(0)))
+// __any
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "any_of_group",
+    CALL_FACTORY_ENTRY("__any",
+                       CALL(MapNames::getClNamespace() + "any_of_group",
+                            SUBGROUP, makeCallArgCreatorWithCall(0))))
 
 // __shfl_up_sync
 SUBGROUPSIZE_FACTORY(
@@ -120,29 +136,35 @@ WARNING_FACTORY_ENTRY("__activemask",
                       Diagnostics::ACTIVE_MASK_NOT_SUPPORTED,
                       ARG("__activemask"), ARG("0xffffffff"))
 
-CALL_FACTORY_ENTRY(
-    "__ballot",
-    CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
-         makeCombinedArg(
-             ARG(0),
-             makeCombinedArg(
-                 makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
-                 ARG(".get_local_linear_id()) : 0, sycl::ONEAPI::plus<>()")))))
+// __ballot
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
+    CALL_FACTORY_ENTRY(
+        "__ballot",
+        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+             makeCombinedArg(ARG(0),
+                             makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "),
+                                                             SUBGROUP),
+                                             ARG(".get_local_linear_id()) : 0, "
+                                                 "sycl::ONEAPI::plus<>()"))))))
 
-CALL_FACTORY_ENTRY(
-    "__ballot_sync",
-    CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
-         makeCombinedArg(
-             ARG("("),
+// __ballot_sync
+SUBGROUPSIZE_FACTORY(
+    UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
+    CALL_FACTORY_ENTRY(
+        "__ballot_sync",
+        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
              makeCombinedArg(
-                 ARG(0),
+                 ARG("("),
                  makeCombinedArg(
-                     makeCombinedArg(makeCombinedArg(ARG(" & (0x1 << "),
-                                                     SUBGROUP),
-                                     ARG(".get_local_linear_id())) && ")),
+                     ARG(0),
                      makeCombinedArg(
-                         ARG(1),
+                         makeCombinedArg(makeCombinedArg(ARG(" & (0x1 << "),
+                                                         SUBGROUP),
+                                         ARG(".get_local_linear_id())) && ")),
                          makeCombinedArg(
-                             makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
-                             ARG(".get_local_linear_id("
-                                 ")) : 0, sycl::ONEAPI::plus<>()"))))))))
+                             ARG(1),
+                             makeCombinedArg(
+                                 makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
+                                 ARG(".get_local_linear_id("
+                                     ")) : 0, sycl::ONEAPI::plus<>()")))))))))
