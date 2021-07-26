@@ -43,6 +43,13 @@
 #include <limits.h>
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dpct_named_lambda|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <class... Args> class dpct_kernel_name;
+template <int Arg> class dpct_kernel_scalar;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -63,15 +70,6 @@
 #else
 #define __dpct_align__(n) __attribute__((aligned(n)))
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
-#endif
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|dpct_named_lambda|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-#ifdef DPCT_NAMED_LAMBDA
-template <class... Args> class dpct_kernel_name;
-template <int Arg> class dpct_kernel_scalar;
 #endif
 // DPCT_LABEL_END
 

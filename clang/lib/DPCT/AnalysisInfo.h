@@ -4392,9 +4392,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
           (Type == HT_SYCL)) {
         RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
       }
-      if (DpctGlobalInfo::isSyclNamedLambda() && (Type == HT_SYCL)) {
-        RSO << "#define DPCT_NAMED_LAMBDA" << getNL();
-      }
       if (AddOneDplHeaders && Type == HT_SYCL) {
         RSO << "#include <oneapi/dpl/execution>" << getNL()
             << "#include <oneapi/dpl/algorithm>" << getNL();

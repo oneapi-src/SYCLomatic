@@ -6,10 +6,8 @@
 
 // CHECK: 17
 
-// CHECK: #ifdef DPCT_NAMED_LAMBDA
-// CHECK-NEXT: template <class... Args> class dpct_kernel_name;
+// CHECK: template <class... Args> class dpct_kernel_name;
 // CHECK-NEXT: template <int Arg> class dpct_kernel_scalar;
-// CHECK-NEXT: #endif
 
 // TEST_FEATURE: Dpct_dpct_named_lambda
 

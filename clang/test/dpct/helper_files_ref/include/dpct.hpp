@@ -13,6 +13,9 @@
 #include <iostream>
 #include <limits.h>
 
+template <class... Args> class dpct_kernel_name;
+template <int Arg> class dpct_kernel_scalar;
+
 #include "atomic.hpp"
 #include "device.hpp"
 #include "image.hpp"
@@ -26,11 +29,6 @@
 #else
 #define __dpct_align__(n) __attribute__((aligned(n)))
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
-#endif
-
-#ifdef DPCT_NAMED_LAMBDA
-template <class... Args> class dpct_kernel_name;
-template <int Arg> class dpct_kernel_scalar;
 #endif
 
 #define DPCT_COMPATIBILITY_TEMP (600)

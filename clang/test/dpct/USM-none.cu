@@ -4,7 +4,6 @@
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none/USM-none.dp.cpp %s
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
-// CHECK-NEXT: #define DPCT_NAMED_LAMBDA
 // CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
