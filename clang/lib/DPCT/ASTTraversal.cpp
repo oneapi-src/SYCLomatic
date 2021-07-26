@@ -3549,7 +3549,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
 
   // To skip user-defined type.
-  if (!ME && isTypeInRoot(ME->getBase()->getType().getTypePtr()))
+  if (!ME || isTypeInRoot(ME->getBase()->getType().getTypePtr()))
     return;
 
   auto BaseTy = ME->getBase()->getType().getAsString();
