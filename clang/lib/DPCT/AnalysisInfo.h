@@ -255,6 +255,20 @@ struct CudaArchPPInfo {
   bool isInHDFunc = false;
 };
 
+struct MemcpyOrderAnalysisInfo {
+  MemcpyOrderAnalysisInfo(
+      std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+          MemcpyOrderVec,
+      std::vector<unsigned int> DREOffsetVec)
+      : MemcpyOrderVec(MemcpyOrderVec), DREOffsetVec(DREOffsetVec) {}
+  MemcpyOrderAnalysisInfo()
+      : MemcpyOrderVec({}), DREOffsetVec({}) {}
+
+  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+      MemcpyOrderVec;
+  std::vector<unsigned int> DREOffsetVec;
+};
+
 // functin name, <file path, Info>
 using HDDefMap =
     std::unordered_multimap<std::string,
@@ -652,8 +666,7 @@ public:
     }
   }
 
-  std::map<const CompoundStmt *,
-           std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>> &
+  std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo> &
   getMemcpyOrderAnalysisResultMap() {
     return MemcpyOrderAnalysisResultMap;
   }
@@ -801,8 +814,7 @@ private:
              1);
   }
 
-  std::map<const CompoundStmt *,
-           std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>>
+  std::map<const CompoundStmt *, MemcpyOrderAnalysisInfo>
       MemcpyOrderAnalysisResultMap;
 
   std::map<std::string /*Function name*/,

@@ -108,7 +108,7 @@ void foo() {
 
   /// memcpy
 
-  // CHECK: q_ct1.memcpy(d_A, h_A, size);
+  // CHECK: q_ct1.memcpy(d_A, h_A, size).wait();
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK: errorCode  = (q_ct1.memcpy(d_A, h_A, size), 0);
   errorCode  = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
@@ -863,4 +863,104 @@ void foo6(float* a) {
   // CHECK-NEXT: printf("%d\n", (q_ct1.memcpy(a, a, 16).wait(), 0));
   printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
+}
+
+__global__ void test_kernel() {}
+
+int foo7() {
+  unsigned int mem_size;
+  unsigned int *h_out_data;
+  unsigned int *h_data;
+  unsigned int *d_out_data;
+  unsigned int *d_in_data_1;
+  unsigned int *d_in_data_2;
+  int num_data;
+
+  for (unsigned int i = 0; i < num_data; i++)
+    h_data[i] = i;
+  // CHECK: q_ct1.memcpy(d_in_data_1, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_1, h_data, mem_size, cudaMemcpyHostToDevice);
+
+  for (unsigned int i = 0; i < num_data; i++)
+    h_data[i] = num_data - 1 - i;
+  // CHECK: q_ct1.memcpy(d_in_data_2, h_data, mem_size);
+  cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
+
+  test_kernel<<<3, 3>>>();
+  cudaDeviceSynchronize();
+  // CHECK: q_ct1.memcpy(h_out_data, d_out_data, mem_size).wait();
+  cudaMemcpy(h_out_data, d_out_data, mem_size, cudaMemcpyDeviceToHost);
+
+  return 0;
+}
+
+int foo8() {
+  unsigned int mem_size;
+  unsigned int *h_data;
+  unsigned int *d_in_data_1;
+  unsigned int *d_in_data_2;
+
+  // CHECK: q_ct1.memcpy(d_in_data_1, h_data, mem_size);
+  cudaMemcpy(d_in_data_1, h_data, mem_size, cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.memcpy(d_in_data_2, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
+  return 0;
+}
+
+int foo9() {
+  unsigned int mem_size;
+  unsigned int *h_data;
+  unsigned int *d_in_data_1;
+  unsigned int *d_in_data_2;
+  unsigned int *test = d_in_data_1;
+
+  // CHECK: q_ct1.memcpy(d_in_data_1, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_1, h_data, mem_size, cudaMemcpyHostToDevice);
+  test;
+  // CHECK: q_ct1.memcpy(d_in_data_2, h_data, mem_size).wait();
+  cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
+  return 0;
+}
+
+int foo10(unsigned int *test) {
+  unsigned int mem_size;
+  unsigned int *data_d, *data_h;
+
+  // CHECK: q_ct1.memcpy(data_d, data_h, mem_size).wait();
+  cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+  test;
+  // CHECK: q_ct1.memcpy(data_d, data_h, mem_size).wait();
+  cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+  return 0;
+}
+
+unsigned int *global_test;
+
+int foo11() {
+  unsigned int mem_size;
+  unsigned int *data_d, *data_h;
+
+  // CHECK: q_ct1.memcpy(data_d, data_h, mem_size).wait();
+  cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+  global_test;
+  // CHECK: q_ct1.memcpy(data_d, data_h, mem_size).wait();
+  cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+  return 0;
+}
+
+struct TEST {
+  unsigned int t;
+  void call() {
+    unsigned int mem_size;
+    unsigned int *data_d, *data_h;
+    // CHECK: q_ct1.memcpy(data_d, data_h, mem_size);
+    cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+    // CHECK: q_ct1.memcpy(data_d, data_h, mem_size).wait();
+    cudaMemcpy(data_d, data_h, mem_size, cudaMemcpyHostToDevice);
+  }
+};
+
+int foo12() {
+  TEST test;
+  return 0;
 }

@@ -604,6 +604,32 @@ const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E) {
   return getAncestorDeclStmtNode(E).get<DeclStmt>();
 }
 
+void getTheOuterMostExprOrValueDecl(const clang::Expr *E,
+                                    const clang::Expr *&ResultExpr,
+                                    const clang::ValueDecl *&ResultDecl) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto ParentNodes = Context.getParents(*E);
+  DynTypedNode ParentNode;
+  ResultExpr = E;
+  ResultDecl = nullptr;
+  while (!ParentNodes.empty()) {
+    ParentNode = ParentNodes[0];
+    if (!ParentNode.get<Expr>() && !ParentNode.get<ValueDecl>()) {
+      break;
+    }
+
+    if (ParentNode.get<Expr>()) {
+      ResultDecl = nullptr;
+      ResultExpr = ParentNode.get<Expr>();
+    } else if (ParentNode.get<ValueDecl>()) {
+      ResultExpr = nullptr;
+      ResultDecl = ParentNode.get<ValueDecl>();
+    }
+
+    ParentNodes = Context.getParents(ParentNode);
+  }
+}
+
 const std::shared_ptr<clang::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
@@ -2787,6 +2813,14 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
   }
 }
 
+llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U>
+findDREInScope(const clang::Stmt *Scope) {
+  auto VarReferenceMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::declRefExpr().bind("VarReference"));
+  return clang::ast_matchers::match(VarReferenceMatcher, *Scope,
+                                    clang::dpct::DpctGlobalInfo::getContext());
+}
+
 /// Find all the DRE sub-expression of \p E
 /// \param [in] E The input expression
 /// \param [out] DRESet The DREs which are found by this function
@@ -2796,45 +2830,25 @@ void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
   if (!E)
     return;
 
-  if (dyn_cast_or_null<CallExpr>(E)) {
-    HasCallExpr = true;
-    return;
+  auto DREResults = findDREInScope(E);
+  for (auto &Result : DREResults) {
+    const DeclRefExpr *MatchedDRE =
+        Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!MatchedDRE)
+      continue;
+    DRESet.insert(MatchedDRE);
   }
 
-  if (auto UO = dyn_cast_or_null<UnaryOperator>(E)) {
-    findDREs(UO->getSubExpr(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto BO = dyn_cast_or_null<BinaryOperator>(E)) {
-    findDREs(BO->getLHS(), DRESet, HasCallExpr);
-    findDREs(BO->getRHS(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto ASE = dyn_cast_or_null<ArraySubscriptExpr>(E)) {
-    findDREs(ASE->getBase(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(E)) {
-    findDREs(CSCE->getSubExpr(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto PE = dyn_cast_or_null<ParenExpr>(E)) {
-    findDREs(PE->getSubExpr(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto ICE = dyn_cast_or_null<ImplicitCastExpr>(E)) {
-    findDREs(ICE->getSubExpr(), DRESet, HasCallExpr);
-    return;
-  }
-
-  if (auto DRE = dyn_cast_or_null<DeclRefExpr>(E)) {
-    DRESet.insert(DRE);
-    return;
+  auto CallExprMatcher = clang::ast_matchers::findAll(
+      clang::ast_matchers::callExpr().bind("CallExpr"));
+  auto CEResults = clang::ast_matchers::match(
+      CallExprMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
+  for (auto &Result : CEResults) {
+    const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
+    if (MatchedCE) {
+      HasCallExpr = true;
+      return;
+    }
   }
 }
 
@@ -2877,10 +2891,7 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
   // Using ASTMatcher to find all DRE in current CompoundStmt, if that DRE's
   // declaration is same as VD, push that DRE into Refs. The DRE in Refs will be
   // checked in the next step.
-  auto VarReferenceMatcher = clang::ast_matchers::findAll(
-      clang::ast_matchers::declRefExpr().bind("VarReference"));
-  auto MatchedResults = clang::ast_matchers::match(
-      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  auto MatchedResults = findDREInScope(CS);
   std::vector<const DeclRefExpr *> Refs;
   for (auto &Result : MatchedResults) {
     const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
@@ -3057,10 +3068,7 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      std::vector<const clang::DeclRefExpr *> &Refs) {
   if (!HandleDecl)
     return;
-  auto VarReferenceMatcher = clang::ast_matchers::findAll(
-      clang::ast_matchers::declRefExpr().bind("VarReference"));
-  auto MatchedResults = clang::ast_matchers::match(
-      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+  auto MatchedResults = findDREInScope(CS);
 
   for (auto &Result : MatchedResults) {
     const DeclRefExpr *DRE = Result.getNodeAs<DeclRefExpr>("VarReference");
@@ -3141,10 +3149,19 @@ bool isInFlowControl(const clang::Stmt *S) {
 
 bool analyzeMemcpyOrder(
     const clang::CompoundStmt *CS,
-    std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>> &Vec) {
+    std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+        &MemcpyOrderVec,
+    std::vector<unsigned int> &DREOffsetVec) {
   const static std::unordered_set<std::string> SpecialFuncNameSet = {
-      "printf", "cudaGetErrorString", "exit"};
+      "printf", "cudaGetErrorString", "exit", "cudaDeviceSynchronize"};
 
+  std::set<const clang::Expr *> SrcDstExprs;
+  std::set<const clang::Expr *> ExcludeExprs;
+  std::set<const clang::Expr *> MemcpyCallExprs;
+
+  // 1. Find all CallExprs in this scope. If there is any CallExpr
+  //    between two memcpy() API calls. The wait() must be added after
+  //    the previous memcpy() call.
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto MatchedResults = clang::ast_matchers::match(
@@ -3164,18 +3181,161 @@ bool analyzeMemcpyOrder(
     if (FuncName.empty())
       return false;
 
+    ExcludeExprs.insert(CE->getCallee());
+
     if (FuncName == "cudaMemcpy") {
       if (isInFlowControl(CE))
-        Vec.emplace_back(
+        MemcpyOrderVec.emplace_back(
             CE, MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl);
-      else
-        Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
+      else {
+        // Record the first and second argument of memcpy
+        SrcDstExprs.insert(CE->getArg(0));
+        SrcDstExprs.insert(CE->getArg(1));
+        ExcludeExprs.insert(CE);
+        MemcpyCallExprs.insert(CE);
+        MemcpyOrderVec.emplace_back(CE,
+                                    MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
+      }
     } else if (SpecialFuncNameSet.count(FuncName)) {
-      Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+      MemcpyOrderVec.emplace_back(
+          CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
     } else {
-      Vec.emplace_back(CE, MemcpyOrderAnalysisNodeKind::MOANK_OtherCallExpr);
+      if (auto KCall = dyn_cast<CUDAKernelCallExpr>(CE)) {
+        const CallExpr *Config = KCall->getConfig();
+        if (Config) {
+          // If kernel call uses default queue, it will not affect the memcpy
+          if (Config->getNumArgs() == 4) {
+            if (isDefaultStream(Config->getArg(3))) {
+              MemcpyOrderVec.emplace_back(
+                  CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+              continue;
+            }
+          } else {
+            MemcpyOrderVec.emplace_back(
+                CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+            continue;
+          }
+        }
+      } else if (auto KCall =
+                     dyn_cast_or_null<CUDAKernelCallExpr>(getParentStmt(CE))) {
+        if (CE == KCall->getConfig()) {
+          // Ignore the config CallExpr in kernel call.
+          MemcpyOrderVec.emplace_back(
+              CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+          continue;
+        }
+      }
+      MemcpyOrderVec.emplace_back(
+          CE, MemcpyOrderAnalysisNodeKind::MOANK_OtherCallExpr);
     }
   }
+
+  std::set<const clang::DeclRefExpr *> AllDREsInCS;
+  auto Results = findDREInScope(CS);
+  for (auto &Result : Results) {
+    const DeclRefExpr *MatchedDRE =
+        Result.getNodeAs<DeclRefExpr>("VarReference");
+    if (!MatchedDRE)
+      continue;
+    AllDREsInCS.insert(MatchedDRE);
+  }
+
+  // Find all DREs related with the first and the second arguments
+  // of the memcpy APIs. If there is any related DRE between two
+  // memcpy calls, wait() must be added after the previous memcpy.
+  //
+  // The method to find all related DREs:
+  // Find all memcpy APIs in this scope, insert the DREs in the first
+  // and second arguments of those APIs into the DRE set.
+  // Find DREs in the scope, if the DRE's declaration is not a local variable,
+  // insert the declaration into VD set.
+  // do {
+  //   1.Add the declarations of DREs in the DRE set into VD set.
+  //   2.Find all DREs in this scope related to the declarations in VD set.
+  //   3.Add the DRE which is related to the DRE in step2 into DRE set.
+  // } while (DRE set is changed or VD set is changed);
+  std::set<const clang::DeclRefExpr *> DRESet;
+  std::set<const clang::DeclRefExpr *> ExcludeDRESet;
+  bool HasCallExpr = true;
+  for (const auto &E : SrcDstExprs)
+    findDREs(E, DRESet, HasCallExpr);
+  for (const auto &E : ExcludeExprs)
+    findDREs(E, ExcludeDRESet, HasCallExpr);
+  for (const auto &DRE : AllDREsInCS) {
+    if (DRE->getDecl()->getKind() == clang::Decl::Kind::EnumConstant) {
+      ExcludeDRESet.insert(DRE);
+    }
+  }
+
+  std::size_t DRESetSize = DRESet.size();
+  std::set<const clang::ValueDecl *> VDSet;
+
+  for (const auto &DRE : AllDREsInCS) {
+    if (ExcludeDRESet.count(DRE))
+      continue;
+    if (const clang::ValueDecl* VD = DRE->getDecl()) {
+      if (const clang::VarDecl* VarD = dyn_cast<clang::VarDecl>(VD)) {
+        if (VarD->isLocalVarDecl()) {
+          continue;
+        }
+      }
+      VDSet.insert(VD);
+    }
+  }
+  std::size_t VDSetSize = VDSet.size();
+  do {
+    DRESetSize = DRESet.size();
+    VDSetSize = VDSet.size();
+    for (const auto &DRE : DRESet) {
+      if (DRE->getDecl())
+        VDSet.insert(DRE->getDecl());
+    }
+
+    for (const auto &DRE : AllDREsInCS) {
+      if (ExcludeDRESet.count(DRE))
+        continue;
+      if (DRE->getDecl() && VDSet.count(DRE->getDecl())) {
+        const clang::Expr *ExprScope = nullptr;
+        const clang::ValueDecl *DeclScope = nullptr;
+        getTheOuterMostExprOrValueDecl(DRE, ExprScope, DeclScope);
+        llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> Results;
+        if (ExprScope) {
+          Results = findDREInScope(ExprScope);
+        } else if (DeclScope) {
+          if (const clang::VarDecl *VarD = dyn_cast<VarDecl>(DeclScope)) {
+            if (VarD->hasInit() &&
+                MemcpyCallExprs.count(VarD->getInit()->IgnoreImplicit())) {
+              continue;
+            }
+          }
+          VDSet.insert(DeclScope);
+          auto VarReferenceMatcher = clang::ast_matchers::valueDecl(
+              clang::ast_matchers::forEachDescendant(
+                  clang::ast_matchers::declRefExpr().bind("VarReference")));
+          Results = clang::ast_matchers::match(
+              VarReferenceMatcher, *DeclScope,
+              clang::dpct::DpctGlobalInfo::getContext());
+        }
+        for (auto &Result : Results) {
+          const DeclRefExpr *MatchedDRE =
+              Result.getNodeAs<DeclRefExpr>("VarReference");
+          if (!MatchedDRE)
+            continue;
+          DRESet.insert(MatchedDRE);
+        }
+      }
+    }
+
+  } while (DRESetSize < DRESet.size() || VDSetSize < VDSet.size());
+
+  for (const auto &DRE : DRESet) {
+    if (ExcludeDRESet.count(DRE))
+      continue;
+    DREOffsetVec.push_back(dpct::DpctGlobalInfo::getSourceManager()
+                               .getExpansionLoc(DRE->getBeginLoc())
+                               .getRawEncoding());
+  }
+  std::sort(DREOffsetVec.begin(), DREOffsetVec.end());
   return true;
 }
 
@@ -3205,18 +3365,22 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
   auto Iter = Map.find(CS);
 
-  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>> Vec;
+  std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
+      MemcpyOrderVec;
+  std::vector<unsigned int> DREOffsetVec;
   if (Iter == Map.end()) {
-    if (!analyzeMemcpyOrder(CS, Vec))
+    if (!analyzeMemcpyOrder(CS, MemcpyOrderVec, DREOffsetVec))
       return false;
-    Map.insert(std::make_pair(CS, Vec));
+    Map.insert(std::make_pair(
+        CS, dpct::MemcpyOrderAnalysisInfo(MemcpyOrderVec, DREOffsetVec)));
   } else {
-    Vec = Iter->second;
+    MemcpyOrderVec = Iter->second.MemcpyOrderVec;
+    DREOffsetVec = Iter->second.DREOffsetVec;
   }
 
   bool StartSearch = false;
 
-  for (const auto &S : Vec) {
+  for (const auto &S : MemcpyOrderVec) {
     if (S.first == CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl)
         return false;
@@ -3231,6 +3395,21 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         return false;
       }
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
+        SourceLocation CurrentCallExprEndLoc =
+            SM.getExpansionLoc(CE->getEndLoc());
+
+        unsigned int CurrentCallExprEndOffset =
+            CurrentCallExprEndLoc.getRawEncoding();
+        unsigned int NextCallExprBeginOffset =
+            SM.getExpansionLoc(S.first->getBeginLoc()).getRawEncoding();
+
+        auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
+            DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
+        if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end())
+          return true;
+        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
+          return false;
+
         return true;
       }
     }
