@@ -205,6 +205,7 @@ struct is_hetero_iterator<
 // Memory|typedef_byte_t
 // DplExtrasMemory|is_hetero_iterator
 // DplExtrasMemory|device_iterator
+// Device|get_default_queue|UsmRestricted
 // Memory|mem_mgr_translate_ptr|UsmNone
 // DplExtrasMemory|device_pointer_forward_decl
 // DPCT_DEPENDENCY_END
@@ -397,7 +398,7 @@ public:
 
   device_pointer_base(ValueType *p) : ptr(p) {}
   device_pointer_base(const std::size_t count) {
-    cl::sycl::queue default_queue;
+    cl::sycl::queue default_queue = dpct::get_default_queue();
     ptr = static_cast<ValueType *>(cl::sycl::malloc_device(
         count, default_queue.get_device(), default_queue.get_context()));
   }
