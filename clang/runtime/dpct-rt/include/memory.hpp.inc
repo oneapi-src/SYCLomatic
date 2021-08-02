@@ -696,14 +696,24 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
       (const unsigned char *)from_ptr + from_id.get(2) * from_slice +
       from_id.get(1) * from_range.get(0) + from_id.get(0);
 
+  if (to_slice == from_slice && to_slice == size.get(1) * size.get(0)) {
+    return {dpct_memcpy(q, to_surface, from_surface, to_slice * size.get(2),
+                       direction)};
+  }
   for (size_t z = 0; z < size.get(2); ++z) {
     unsigned char *to_ptr = to_surface;
     const unsigned char *from_ptr = from_surface;
-    for (size_t y = 0; y < size.get(1); ++y) {
-      event_list.push_back(
-          dpct_memcpy(q, to_ptr, from_ptr, size.get(0), direction));
-      to_ptr += to_range.get(0);
-      from_ptr += from_range.get(0);
+    if (to_range.get(0) == from_range.get(0) &&
+        to_range.get(0) == size.get(0)) {
+      event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr,
+                                       size.get(0) * size.get(1), direction));
+    } else {
+      for (size_t y = 0; y < size.get(1); ++y) {
+        event_list.push_back(
+            dpct_memcpy(q, to_ptr, from_ptr, size.get(0), direction));
+        to_ptr += to_range.get(0);
+        from_ptr += from_range.get(0);
+      }
     }
     to_surface += to_slice;
     from_surface += from_slice;
