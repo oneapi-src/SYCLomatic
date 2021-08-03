@@ -195,7 +195,6 @@ class ReportWarningRewriterFactory
   std::shared_ptr<CallExprRewriterFactoryBase> First;
 
 public:
-  using BaseT::CallExprRewriterFactory;
   ReportWarningRewriterFactory(
       std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory,
       std::string FuncName, Diagnostics MsgID, MsgArgs... Args)
