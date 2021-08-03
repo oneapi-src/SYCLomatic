@@ -1122,8 +1122,8 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-bool IterationSpaceBuiltinRule::renameBuiltinName(
-    const DeclRefExpr *DRE, std::string &NewName) {
+bool IterationSpaceBuiltinRule::renameBuiltinName(const DeclRefExpr *DRE,
+                                                  std::string &NewName) {
   auto BuiltinName = DRE->getDecl()->getName();
   if (BuiltinName == "threadIdx")
     NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_id(";
@@ -1361,10 +1361,10 @@ void IterationSpaceBuiltinRule::runRule(
             SourceLocation InsertLoc =
                 SM.getExpansionLoc((*(BodyCS->child_begin()))->getBeginLoc());
             std::string IndentStr = getIndent(InsertLoc, SM).str();
-            std::string Text = "if (!" + PVD->getName().str() + ") " + PVD->getName().str() +
+            std::string Text =
+                "if (!" + PVD->getName().str() + ") " + PVD->getName().str() +
                 " = " + DpctGlobalInfo::getSubGroup(BodyCS) +
-                               ".get_local_range().get(0);" + getNL() +
-                               IndentStr;
+                ".get_local_range().get(0);" + getNL() + IndentStr;
             emplaceTransformation(new InsertText(InsertLoc, std::move(Text)));
           }
         }
@@ -10203,49 +10203,21 @@ void DeviceFunctionDeclRule::runRule(
     if (FD->isTemplateInstantiation())
       return;
 
-    auto Name = FD->getNameAsString();
-    const auto &SM = (*Result.Context).getSourceManager();
-    SourceLocation BeginLoc, EndLoc;
-    auto NumParams = FD->getNumParams();
-    auto LOpts = dpct::DpctGlobalInfo::getContext().getLangOpts();
-    if (NumParams > 0) {
-      // To get the range of original device function signature with parameters
-      BeginLoc = FD->getBeginLoc();
-      if (auto DFT = FD->getDescribedFunctionTemplate())
-        BeginLoc = DFT->getBeginLoc();
+    const auto &FTL = FD->getFunctionTypeLoc();
+    if (!FTL)
+      return;
 
-      EndLoc = FD->getAsFunction()->getParamDecl(NumParams - 1)->getEndLoc();
-
-      Token Tok;
-      auto Ret = Lexer::findNextToken(EndLoc, SM, LOpts);
-      if (Ret.hasValue()) {
-        Tok = Ret.getValue();
-        if (Tok.is(tok::r_paren))
-          EndLoc = Tok.getLocation();
-      }
-    } else {
-      // To get the range of original device function signature without
-      // parameters
-      BeginLoc = FD->getBeginLoc();
-      EndLoc = FD->getEndLoc();
-      Token Tok;
-      auto Ret = Lexer::findNextToken(EndLoc, SM, LOpts);
-
-      while (Ret.hasValue()) {
-        if (Tok.is(tok::r_paren)) {
-          EndLoc = Tok.getLocation();
-          break;
-        }
-        Ret = Lexer::findNextToken(Tok.getLocation(), SM, LOpts);
-      }
-    }
+    auto BeginLoc = FD->getBeginLoc();
+    if (auto DFT = FD->getDescribedFunctionTemplate())
+      BeginLoc = DFT->getBeginLoc();
+    auto EndLoc = FTL.getRParenLoc();
 
     auto BeginLocInfo = DpctGlobalInfo::getLocInfo(BeginLoc);
     auto EndLocInfo = DpctGlobalInfo::getLocInfo(EndLoc);
     auto FileInfo =
         DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
     auto &Map = FileInfo->getFuncDeclRangeMap();
-
+    auto Name = FD->getNameAsString();
     auto Iter = Map.find(Name);
     if (Iter == Map.end()) {
       std::vector<std::pair<unsigned int, unsigned int>> Vec;
@@ -15889,7 +15861,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
         Group = DRE->getNameInfo().getAsString();
       }
     }
-    if(Group.empty()){
+    if (Group.empty()) {
       Group = DpctGlobalInfo::getGroup(BlockMC);
     }
 
