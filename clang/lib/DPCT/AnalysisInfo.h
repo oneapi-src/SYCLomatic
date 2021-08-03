@@ -4014,7 +4014,7 @@ private:
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
   void printSubmitLamda(KernelPrinter &Printer);
-  void printParallelFor(KernelPrinter &Printer);
+  void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
 
 public:
@@ -4141,17 +4141,17 @@ private:
 
       } else {
 
-        SubmitStmtsList.SyncList.emplace_back(
+        OuterStmts.emplace_back(
             buildString("dpct::global_memory<unsigned int, 0> d_",
                         DpctGlobalInfo::getSyncName(), "(0);"));
-        SubmitStmtsList.SyncList.emplace_back(
+        OuterStmts.emplace_back(
             buildString("unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
                         DpctGlobalInfo::getSyncName(),
                         ".get_ptr(dpct::get_default_queue());"));
 
-        SubmitStmtsList.SyncList.emplace_back(buildString(
-            "dpct::get_default_queue().memset(", DpctGlobalInfo::getSyncName(),
-            ", 0, sizeof(int)).wait();"));
+        OuterStmts.emplace_back(buildString("dpct::get_default_queue().memset(",
+                                            DpctGlobalInfo::getSyncName(),
+                                            ", 0, sizeof(int)).wait();"));
 
         requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
                        getFilePath());
@@ -4590,7 +4590,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
       requestFeature(HelperFeatureEnum::Device_get_current_device,
-        HFInfo.DeclLocFile);
+                     HFInfo.DeclLocFile);
       if (Iter->second.CurrentDeviceCounter == 1 &&
           Iter->second.DefaultQueueCounter <= 1) {
         if (DpctGlobalInfo::getUsingDRYPattern() &&
@@ -4607,11 +4607,11 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
     DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
       requestFeature(HelperFeatureEnum::Device_get_default_queue,
-        HFInfo.DeclLocFile);
+                     HFInfo.DeclLocFile);
       Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
       requestFeature(HelperFeatureEnum::Device_get_current_device,
-        HFInfo.DeclLocFile);
+                     HFInfo.DeclLocFile);
       Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
     }
     DpctGlobalInfo::getTempVariableDeclCounterMap().insert(

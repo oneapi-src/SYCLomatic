@@ -101,19 +101,17 @@ __global__ void kernel() {
 }
 
 int main() {
-// CHECK:  dpct::get_default_queue().submit(
-// CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
-// CHECK-NEXT:      unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_default_queue());
-// CHECK-NEXT:      dpct::get_default_queue().memset(sync_ct1, 0, sizeof(int)).wait();
-// CHECK-EMPTY:
-// CHECK-NEXT:      cgh.parallel_for(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
-// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          auto atm_sync_ct1 = sycl::ONEAPI::atomic_ref<unsigned int,sycl::ONEAPI::memory_order::seq_cst,sycl::ONEAPI::memory_scope::device,sycl::access::address_space::global_space>(sync_ct1[0]);
-// CHECK-NEXT:          kernel(item_ct1, atm_sync_ct1);
-// CHECK-NEXT:        });
-// CHECK-NEXT:    });
+// CHECK:  {
+// CHECK-NEXT:    dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
+// CHECK-NEXT:    unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_default_queue());
+// CHECK-NEXT:    dpct::get_default_queue().memset(sync_ct1, 0, sizeof(int)).wait();
+// CHECK-NEXT:    dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
+// CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1)  {
+// CHECK-NEXT:        auto atm_sync_ct1 = sycl::ONEAPI::atomic_ref<unsigned int,sycl::ONEAPI::memory_order::seq_cst,sycl::ONEAPI::memory_scope::device,sycl::access::address_space::global_space>(sync_ct1[0]);
+// CHECK-NEXT:        kernel(item_ct1, atm_sync_ct1);
+// CHECK-NEXT:      }).wait();
+// CHECK-NEXT:  }
   kernel<<<2, 2>>>();
   cudaDeviceSynchronize();
   return 0;

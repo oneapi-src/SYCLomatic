@@ -116,7 +116,7 @@ int main() {
 // CHECK-NEXT:            auto atm_sync_ct1 = sycl::ONEAPI::atomic_ref<unsigned int,sycl::ONEAPI::memory_order::seq_cst,sycl::ONEAPI::memory_scope::device,sycl::access::address_space::global_space>(*(unsigned int *)&sync_ct1[0]);
 // CHECK-NEXT:            kernel(item_ct1, atm_sync_ct1);
 // CHECK-NEXT:          });
-// CHECK-NEXT:      });
+// CHECK-NEXT:      }).wait();
 // CHECK-NEXT:  }
   kernel<<<2, 2>>>();
   cudaDeviceSynchronize();
