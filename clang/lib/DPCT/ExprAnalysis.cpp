@@ -686,6 +686,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
   }
+  else if(getFinalCastTypeNameStr(TyName) != TyName){
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, getFinalCastTypeNameStr(TyName));
+  }
 }
 
 void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {

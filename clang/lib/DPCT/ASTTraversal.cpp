@@ -11343,17 +11343,10 @@ void MemoryMigrationRule::mallocMigration(
 
   if (Name == "cudaMalloc" || Name == "cuMemAlloc_v2") {
     if (USMLevel == UsmLevel::UL_Restricted) {
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      if (IsAssigned)
-        emplaceTransformation(new InsertBeforeStmt(C, "("));
-      mallocMigrationWithTransformation(
-          *Result.SourceManager, C, Name,
-          MapNames::getClNamespace() + "malloc_device",
-          "{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-      if (IsAssigned) {
-        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
-        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-      }
+      // Leverage CallExprRewritter to migrate the USM verison
+      ExprAnalysis EA(C);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       std::ostringstream OS;

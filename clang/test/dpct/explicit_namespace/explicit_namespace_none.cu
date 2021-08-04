@@ -61,7 +61,7 @@ __global__ void kernel2(float *out) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err = (*0 = (NULL TYPE)malloc_device(0, get_default_queue()), 0)) {
+// CHECK-NEXT:  if (err = (*0 = (void *)malloc_device(0, get_default_queue()), 0)) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}

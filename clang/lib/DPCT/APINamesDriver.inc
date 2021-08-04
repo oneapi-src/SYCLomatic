@@ -1,4 +1,4 @@
-//===---APINamesTexture.inc ---------------------------------------------===//
+//===---APINamesDriver.inc--------------------------------------------===//
 //
 // Copyright (C) 2018 - 2021 Intel Corporation. All rights reserved.
 //
@@ -76,3 +76,4 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 #undef NDRANGE_CTOR
 #undef RANGE_CTOR
 #undef RANGES_CTOR
+

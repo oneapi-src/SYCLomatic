@@ -215,7 +215,12 @@ public:
   AssignableRewriter(const CallExpr *C,
                      std::shared_ptr<CallExprRewriter> InnerRewriter)
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
-        IsAssigned(isAssigned(C)) {}
+        IsAssigned(isAssigned(C)) {
+    if (IsAssigned)
+      CallExprRewriterFactory<UnsupportFunctionRewriter<>, Diagnostics>(
+          "", Diagnostics::NOERROR_RETURN_COMMA_OP)
+          .create(C);
+  }
 
   Optional<std::string> rewrite() override {
     Optional<std::string> &&Result = Inner->rewrite();
@@ -703,6 +708,22 @@ public:
             std::forward<CallArgsT>(Args)...) {}
 };
 
+template <class TypeInfoT, class SubExprT>
+class CastExprPrinter {
+  TypeInfoT TypeInfo;
+  SubExprT SubExpr;
+
+public:
+  CastExprPrinter(TypeInfoT &&T, SubExprT &&S)
+    : TypeInfo(std::forward<TypeInfoT>(T)), SubExpr(std::forward<SubExprT>(S)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << "(";
+    dpct::print(Stream, TypeInfo);
+    Stream << ")";
+    dpct::print(Stream, SubExpr);
+  }
+};
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 class BinaryOperatorPrinter {
   LValueT LVal;
@@ -719,6 +740,7 @@ public:
     dpct::print(Stream, RVal);
   }
 };
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
     BinaryOperator::getOpcodeStr(Op).str();

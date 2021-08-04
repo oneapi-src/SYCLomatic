@@ -134,9 +134,21 @@ void test_texref() {
 
   // CHECK: tex->set_channel_type(format);
   // CHECK-NEXT: tex->set_channel_num(4);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: cudaCheck((tex->set_channel_type(format), tex->set_channel_num(4), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: func((tex->set_channel_type(format), tex->set_channel_num(4), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: funcT((tex->set_channel_type(format), tex->set_channel_num(4), 0));
   cuTexRefSetFormat(tex, format, 4);
   err_code = cuTexRefSetFormat(tex, CU_AD_FORMAT_FLOAT, chn_num);
@@ -149,11 +161,23 @@ void test_texref() {
   // CHECK-NEXT: */
   // CHECK-NEXT: tex->set_coordinate_normalization_mode(flags & 0x02);
   // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1074:{{[0-9]+}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set(sycl::coordinate_normalization_mode::normalized), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: cudaCheck((tex->set(sycl::coordinate_normalization_mode::normalized), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: func((tex->set(sycl::coordinate_normalization_mode::normalized), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: funcT((tex->set(sycl::coordinate_normalization_mode::unnormalized), 0));
   cuTexRefSetFlags(tex, flags);
   err_code = cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
@@ -162,9 +186,21 @@ void test_texref() {
   funcT(cuTexRefSetFlags(tex,1));
 
   // CHECK: tex->set(addr_mode);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set(sycl::addressing_mode::clamp_to_edge), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: cudaCheck((tex->set(addr_mode), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: func((tex->set(addr_mode), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: funcT((tex->set(addr_mode), 0));
   cuTexRefSetAddressMode(tex, 0, addr_mode);
   err_code = cuTexRefSetAddressMode(tex, 1, CU_TR_ADDRESS_MODE_CLAMP);
@@ -173,9 +209,21 @@ void test_texref() {
   funcT(cuTexRefSetAddressMode(tex,0,addr_mode));
 
   // CHECK: tex->set(filter_mode);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->set(sycl::filtering_mode::linear), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: cudaCheck((tex->set(filter_mode), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: func((tex->set(filter_mode), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: funcT((tex->set(filter_mode), 0));
   cuTexRefSetFilterMode(tex, filter_mode);
   err_code = cuTexRefSetFilterMode(tex, CU_TR_FILTER_MODE_LINEAR);
@@ -184,9 +232,21 @@ void test_texref() {
   funcT(cuTexRefSetFilterMode(tex,filter_mode));
 
   // CHECK: tex->attach(dpct::image_data(arr));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: err_code = (tex->attach(dpct::image_data(arr)), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: cudaCheck((tex->attach(dpct::image_data(arr)), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: func((tex->attach(dpct::image_data(arr)), 0));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: funcT((tex->attach(dpct::image_data(arr)), 0));
   cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT);
   err_code = cuTexRefSetArray(tex, arr, 0x01);

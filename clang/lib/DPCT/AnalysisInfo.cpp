@@ -210,7 +210,6 @@ public:
   static void buildInfo() {
     for (auto &Info : InfoList)
       Info->emplaceExtraDecl();
-    unsigned I = 0;
     for (auto &Info : MacroInfos) {
       Info->Dimension = InfoList[Info->Infos.front()]->Dimension;
       for (auto Idx : Info->Infos) {

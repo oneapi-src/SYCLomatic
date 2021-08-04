@@ -17,6 +17,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
+#include <cstdarg>
 
 namespace clang {
 namespace dpct {
@@ -1088,6 +1089,8 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   return buildRewriteString();
 }
 
+// In AST, &SubExpr could be recognized as UnaryOperator or CXXOperatorCallExpr.
+// To get the SubExpr from the original Expr, both cases need to be handled.
 const Expr *getDereferencedExpr(const Expr *E) {
   E = E->IgnoreImplicitAsWritten();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
@@ -1104,6 +1107,7 @@ const Expr *getDereferencedExpr(const Expr *E) {
 
 DerefExpr DerefExpr::create(const Expr *E) {
   DerefExpr D;
+  // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
   D.E = getDereferencedExpr(E);
   if (D.E) {
     D.AddrOfRemoved = true;
@@ -1183,6 +1187,14 @@ std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
   };
 }
 
+std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
+    std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+        F) {
+  return [=](const CallExpr *C) -> DerefExpr {
+    return DerefExpr::create(F(C).second);
+  };
+}
+
 std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
 }
@@ -1196,6 +1208,24 @@ std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
     return std::pair<const CallExpr *, const Expr *>(C, C->getArg(Idx));
+  };
+}
+
+const Expr *removeCStyleCast(const Expr*E) {
+  if (auto CSCE = dyn_cast<CStyleCastExpr>(E)) {
+    return CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+  }
+  else {
+    return E;
+  }
+}
+
+// Prepare the arg for deref by removing the CStyleCast
+std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+makeDerefArgCreatorWithCall(unsigned Idx) {
+  return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
+    return std::pair<const CallExpr *, const Expr *>(
+        C, removeCStyleCast(C->getArg(Idx)));
   };
 }
 
@@ -1238,14 +1268,11 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
 }
 
 std::function<std::string(const CallExpr *)>
-makeQueueStr(const std::string Prefix, const std::string Suffix) {
+makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
-    if (checkWhetherIsDuplicate(C, false))
-      return "";
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-    std::string S =
-        Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}" + Suffix;
+    std::string S = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     return S;
   };
 }
@@ -1287,9 +1314,7 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                                        Member, Args...);
 }
 
-PrinterCreator<
-    TemplatedCallee, std::string,
-    std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>
+std::function<TemplatedCallee(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
   return PrinterCreator<
@@ -1309,6 +1334,41 @@ makeTemplatedCalleeCreator(std::string CalleeName,
             Ret.emplace_back(TemplateArgsList[Idx]);
           }
         }
+        return Ret;
+      });
+}
+
+template <class First>
+void setTemplateArgumentInfo(const CallExpr *C,
+  std::vector<TemplateArgumentInfo> &Vec,
+  std::function<First(const CallExpr *)> F) {
+  TemplateArgumentInfo TAI;
+  TAI.setAsType(F(C));
+  Vec.emplace_back(TAI);
+}
+
+template <class First, class... ArgsT>
+void setTemplateArgumentInfo(const CallExpr *C,
+                             std::vector<TemplateArgumentInfo> &Vec,
+                             std::function<First(const CallExpr *)> F,
+                             ArgsT... Args) {
+  TemplateArgumentInfo TAI;
+  TAI.setAsType(F(C));
+  Vec.emplace_back(TAI);
+  setTemplateArgumentInfo(C, Vec, Args...);
+}
+
+
+template <class... CallArgsT>
+std::function<TemplatedCallee(const CallExpr *)>
+makeTemplatedCalleeWithArgsCreator(std::string Callee,
+                           std::function<CallArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<
+      TemplatedCallee, std::string,
+      std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
+      Callee, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+        std::vector<TemplateArgumentInfo> Ret;
+        setTemplateArgumentInfo(C, Ret, Args...);
         return Ret;
       });
 }
@@ -1342,6 +1402,15 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
+template <class TypeInfoT, class SubExprT>
+std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
+makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
+  std::function<SubExprT(const CallExpr *)> Sub) {
+  return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
+    std::function<TypeInfoT(const CallExpr *)>,
+    std::function<SubExprT(const CallExpr *)>>(TypeInfo, Sub);
+}
+
 template <class... ArgsT>
 std::function<NewExprPrinter<ArgsT...>(const CallExpr *)>
 makeNewExprCreator(std::string TypeName,
@@ -1369,6 +1438,144 @@ unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
     Var = EA.getReplacedString();
     return UINT_MAX;
   }
+}
+
+// Get the derefed type name of an arg while getDereferencedExpr is get the derefed expr.
+std::function<std::string(const CallExpr*C)>
+getDerefedType(size_t Idx) {
+  return [=](const CallExpr*C) ->std::string {
+    if (Idx >= C->getNumArgs())
+      return "";
+    auto TE = removeCStyleCast(C->getArg(Idx));
+    // Deref by removing the "&" of &SubExpr
+    auto DE = getDereferencedExpr(TE);
+    bool NeedDeref = true;
+    // If getDereferencedExpr returns value, DE is the derefed TE.
+    if (DE) {
+      NeedDeref = false;
+      TE = DE;
+    }
+
+    QualType DerefQT;
+    if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(TE)) {
+      // Handle cases like A[3] where A is an array or pointer
+      QualType BaseType = ArraySub->getBase()->getType();
+      if (BaseType->isArrayType()) {
+        if (auto Array = BaseType->getAsArrayTypeUnsafe()) {
+          DerefQT = Array->getElementType();
+        }
+      } else if (BaseType->isPointerType()) {
+        DerefQT = BaseType->getPointeeType();
+      }
+    }
+
+    // All other cases
+    if (DerefQT.isNull()) {
+      DerefQT = TE->getType();
+    }
+    if (NeedDeref)
+      DerefQT = DerefQT->getPointeeType();
+    return DpctGlobalInfo::getReplacedTypeName(DerefQT);
+  };
+}
+
+// Can only be used if CheckCanUseTemplateMalloc is true.
+std::function<std::string(const CallExpr*C)>
+getDoubleDerefedType(size_t Idx) {
+  return [=](const CallExpr*C) ->std::string {
+    if (Idx >= C->getNumArgs())
+      return "";
+
+    // Remove CStyleCast if any
+    auto TE = removeCStyleCast(C->getArg(Idx));
+
+    // Deref twice
+    QualType DerefQT = TE->getType();
+    if (DerefQT->isPointerType()) {
+      DerefQT = DerefQT->getPointeeType();
+      if (DerefQT->isPointerType()) {
+        DerefQT = DerefQT->getPointeeType();
+      }
+      else {
+        return "";
+      }
+    }
+    else {
+      return "";
+    }
+    std::string ReplType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+
+    return ReplType;
+  };
+}
+
+// Remove sizeof(T) if using template version.
+// Can only be used if CheckCanUseTemplateMalloc is true.
+std::function<std::string(const CallExpr*C)>
+getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
+  return [=](const CallExpr*C) ->std::string {
+    auto AllocatedExpr = C->getArg(PtrIdx);
+    auto SizeExpr = C->getArg(SizeIdx);
+    const Expr *AE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(AllocatedExpr)) {
+      AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    }
+    else {
+      AE = AllocatedExpr;
+    }
+
+    ArgumentAnalysis AA;
+    AA.setCallSpelling(C);
+    AA.analyze(SizeExpr);
+    std::string OrginalStr =
+        AA.getRewritePrefix() + AA.getRewriteString() + AA.getRewritePostfix();
+
+    // Deref twice
+    QualType DerefQT = AE->getType();
+    if (DerefQT->isPointerType()) {
+      DerefQT = DerefQT->getPointeeType();
+      if (DerefQT->isPointerType()) {
+        DerefQT = DerefQT->getPointeeType();
+      } else {
+        return OrginalStr;
+      }
+    } else {
+      return OrginalStr;
+    }
+
+    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+
+    auto BO = dyn_cast<BinaryOperator>(SizeExpr);
+    if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
+      std::string Repl;
+      if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+        // case 1: sizeof(b) * a
+        ArgumentAnalysis AASize;
+        AASize.setCallSpelling(C);
+        AASize.analyze(BO->getRHS());
+        Repl = AASize.getRewritePrefix() + AASize.getRewriteString() +
+          AASize.getRewritePostfix();
+        return Repl;
+      } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+        // case 2: a * sizeof(b)
+        ArgumentAnalysis AASize;
+        AASize.setCallSpelling(C);
+        AASize.analyze(BO->getLHS());
+        Repl = AASize.getRewritePrefix() + AASize.getRewriteString() +
+          AASize.getRewritePostfix();
+        return Repl;
+      } else {
+        return OrginalStr;
+      }
+    } else {
+      // case 3: sizeof(b)
+      if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+        return "1";
+      }
+    }
+
+    return OrginalStr;
+  };
 }
 
 template <size_t Idx>
@@ -1730,6 +1937,76 @@ public:
   }
 };
 
+
+// sycl has 2 overloading of malloc_device
+// 1. sycl::malloc_device(Addr, Size)
+// 2. sycl::malloc_device<type>(Addr, Size)
+// DPCT will use the template version if following constraints hold:
+// 1. The Addr can be derefed twice. The derefed type is type_1
+// 2. The Size argement contains sizeof(type_2)
+// 3. type_1 and type_2 are the same
+class CheckCanUseTemplateMalloc {
+  unsigned AddrArgIdx;
+  unsigned SizeArgIdx;
+
+public:
+  CheckCanUseTemplateMalloc(unsigned AddrIdx, unsigned SizeIdx)
+      : AddrArgIdx(AddrIdx), SizeArgIdx(SizeIdx) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() <= AddrArgIdx)
+      return false;
+    auto AllocatedExpr = C->getArg(AddrArgIdx);
+    const Expr *AE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(AllocatedExpr)) {
+      AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    }
+    else {
+      AE = AllocatedExpr;
+    }
+
+    // Try to deref twice to avoid the type is an unresolved template
+    QualType DerefQT = AE->getType();
+    if (DerefQT->isPointerType()) {
+      DerefQT = DerefQT->getPointeeType();
+      if (DerefQT->isPointerType()) {
+        DerefQT = DerefQT->getPointeeType();
+      }
+      else {
+        return false;
+      }
+    }
+    else {
+      return false;
+    }
+
+    if (C->getNumArgs() <= SizeArgIdx)
+      return false;
+    auto SizeExpr = C->getArg(SizeArgIdx);
+    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    auto BO = dyn_cast<BinaryOperator>(SizeExpr);
+    if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
+      std::string Repl;
+      if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+        // case 1: sizeof(b) * a
+        return true;
+      }
+      else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+        // case 2: a * sizeof(b)
+        return true;
+      }
+      return false;
+    }
+    else {
+      // case 3: sizeof(b)
+      if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+};
+
 class CheckArgCount {
   unsigned Count;
 
@@ -1803,15 +2080,18 @@ public:
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
-#define QUEUESTR(prefix, suffix) makeQueueStr(prefix, suffix)
+#define QUEUESTR makeQueueStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
+#define CAST(T, S) makeCastExprCreator(T, S)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
+#define TEMPLATED_CALLEE_WITH_ARGS(FuncName, ...)                              \
+  makeTemplatedCalleeWithArgsCreator(FuncName, __VA_ARGS__)
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
@@ -1929,6 +2209,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#include "APINamesMemory.inc"
 #include "APINamesDriver.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"

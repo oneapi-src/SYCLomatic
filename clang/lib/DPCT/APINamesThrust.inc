@@ -19,7 +19,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::replace_if(thrust::device, device.begin(), device.end(), pred, 0);
       CALL_FACTORY_ENTRY("replace_if",
                          CALL("oneapi::dpl::replace_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3), ARG(4))),
       //Handling case: thrust::replace_if(thrust::seq, host.begin(), host.end(), pred, 0);
       CALL_FACTORY_ENTRY("replace_if",
@@ -32,7 +32,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::replace_if(device.begin(), device.end(), stencil.begin(), pred, 0);
         CALL_FACTORY_ENTRY("replace_if",
                            CALL("dpct::replace_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
         //Handling case: thrust::replace_if(host.begin(), host.end(), stencil.begin(), pred, 0);
         CALL_FACTORY_ENTRY("replace_if",
@@ -47,7 +47,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::replace_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred, 0);
           CALL_FACTORY_ENTRY("replace_if",
                              CALL("dpct::replace_if",
-                                  QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                   ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
         //Handling case: thrust::replace_if(thrust::seq, host.begin(), host.end(), stencil.begin(), pred, 0);
         CALL_FACTORY_ENTRY("replace_if",
@@ -59,7 +59,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::replace_if(device.begin(), device.end(), pred, 0);
       CALL_FACTORY_ENTRY("replace_if",
                          CALL("oneapi::dpl::replace_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::replace_if(host.begin(), host.end(), pred, 0);
       CALL_FACTORY_ENTRY("replace_if",
@@ -77,7 +77,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), pred);
       CALL_FACTORY_ENTRY("remove_if",
                          CALL("oneapi::dpl::remove_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::remove_if(thrust::seq, host.begin(), host.end(), pred);
       CALL_FACTORY_ENTRY("remove_if",
@@ -90,12 +90,12 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_if(device.begin(), device.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3))),
         //Handling case: thrust::remove_if(host.begin(), host.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
@@ -105,19 +105,19 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4))),
         //Handling case: thrust::remove_if(thrust::seq, host.begin(), host.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4))))),
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
       //Handling case: thrust::remove_if(device.begin(), device.end(), pred);
       CALL_FACTORY_ENTRY("remove_if",
                          CALL("oneapi::dpl::remove_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2))),
       //Handling case: thrust::remove_if(host.begin(), host.end(), pred);
       CALL_FACTORY_ENTRY("remove_if",
@@ -135,7 +135,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), result, pred);
       CALL_FACTORY_ENTRY("remove_copy_if",
                          CALL("oneapi::dpl::remove_copy_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3), ARG(4))),
       //Handling case: thrust::remove_copy_if(thrust::seq, host.begin(), host.end(), result, pred);
       CALL_FACTORY_ENTRY("remove_copy_if",
@@ -148,7 +148,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_copy_if(device.begin(), device.end(), stencil.begin(), result, pred);
         CALL_FACTORY_ENTRY("remove_copy_if",
                            CALL("dpct::remove_copy_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
         //Handling case: thrust::remove_copy_if(host.begin(), host.end(), stencil.begin(), result, pred);
         CALL_FACTORY_ENTRY("remove_copy_if",
@@ -163,7 +163,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), stencil.begin(), result, pred);
         CALL_FACTORY_ENTRY("remove_copy_if",
                            CALL("dpct::remove_copy_if",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
         //Handling case: thrust::remove_copy_if(thrust::seq, host.begin(), host.end(), stencil.begin(), result, pred);
         CALL_FACTORY_ENTRY("remove_copy_if",
@@ -175,7 +175,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::remove_copy_if(device.begin(), device.end(), result, pred);
       CALL_FACTORY_ENTRY("remove_copy_if",
                          CALL("oneapi::dpl::remove_copy_if",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::remove_copy_if(host.begin(), host.end(), result, pred);
       CALL_FACTORY_ENTRY("remove_copy_if",
@@ -193,7 +193,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "thrust::device_ptr"),
       CALL_FACTORY_ENTRY("any_of",
                          CALL("oneapi::dpl::any_of", 
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3))),
       CALL_FACTORY_ENTRY("any_of", CALL("oneapi::dpl::any_of", ARG("oneapi::dpl::execution::seq"),
                          ARG(1), ARG(2), ARG(3)))),
@@ -201,7 +201,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "thrust::device_ptr"),
       CALL_FACTORY_ENTRY("any_of",
                          CALL("oneapi::dpl::any_of", 
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2))),
       CALL_FACTORY_ENTRY("any_of", CALL("oneapi::dpl::any_of", ARG("oneapi::dpl::execution::seq"),
                          ARG(0), ARG(1), ARG(2)))))
@@ -213,7 +213,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "thrust::device_ptr"),
       CALL_FACTORY_ENTRY("replace",
                          CALL("oneapi::dpl::replace", 
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3), ARG(4))),
       CALL_FACTORY_ENTRY("replace", CALL("oneapi::dpl::replace", ARG("oneapi::dpl::execution::seq"),
                          ARG(1), ARG(2), ARG(3), ARG(4)))),
@@ -221,7 +221,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "thrust::device_ptr"),
       CALL_FACTORY_ENTRY("replace",
                          CALL("oneapi::dpl::replace", 
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2), ARG(3))),
       CALL_FACTORY_ENTRY("replace", CALL("oneapi::dpl::replace", ARG("oneapi::dpl::execution::seq"),
                          ARG(0), ARG(1), ARG(2), ARG(3)))))
@@ -236,7 +236,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::adjacent_difference(thrust::device, device.begin(), device.end(), result);
       CALL_FACTORY_ENTRY("adjacent_difference",
                          CALL("oneapi::dpl::adjacent_difference",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::adjacent_difference(thrust::seq, host.begin(), host.end(), result);
       CALL_FACTORY_ENTRY("adjacent_difference",
@@ -248,7 +248,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::adjacent_difference(device.begin(), device.end(), result, op);
       CALL_FACTORY_ENTRY("adjacent_difference",
                          CALL("oneapi::dpl::adjacent_difference",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::adjacent_difference(host.begin(), host.end(), result, op);
       CALL_FACTORY_ENTRY("adjacent_difference",
@@ -262,7 +262,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::adjacent_difference(thrust::device, device.begin(), device.end(), result, op);
       CALL_FACTORY_ENTRY("adjacent_difference",
                          CALL("oneapi::dpl::adjacent_difference",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3), ARG(4))),
       //Handling case: thrust::adjacent_difference(thrust::seq, host.begin(), host.end(), result, op);
       CALL_FACTORY_ENTRY("adjacent_difference",
@@ -274,7 +274,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::adjacent_difference(device.begin(), device.end(), result);
       CALL_FACTORY_ENTRY("adjacent_difference",
                          CALL("oneapi::dpl::adjacent_difference",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2))),
       //Handling case: thrust::adjacent_difference(host.begin(), host.end(), result);
       CALL_FACTORY_ENTRY("adjacent_difference",
@@ -292,7 +292,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::inclusive_scan(thrust::device, device.begin(), device.end(), result);
       CALL_FACTORY_ENTRY("inclusive_scan",
                          CALL("oneapi::dpl::inclusive_scan",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3))),
       //Handling case: thrust::inclusive_scan(thrust::seq, host.begin(), host.end(), result);
       CALL_FACTORY_ENTRY("inclusive_scan",
@@ -304,7 +304,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::inclusive_scan(device.begin(), device.end(), result, op);
       CALL_FACTORY_ENTRY("inclusive_scan",
                          CALL("oneapi::dpl::inclusive_scan",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2), ARG(3))),
       //thrust::inclusive_scan(host.begin(), host.end(), result, op);
       CALL_FACTORY_ENTRY("inclusive_scan",
@@ -318,7 +318,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::inclusive_scan(thrust::device, device.begin(), device.end(), result, op);
       CALL_FACTORY_ENTRY("inclusive_scan",
                          CALL("oneapi::dpl::inclusive_scan",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(1), ARG(2), ARG(3), ARG(4))),
       //Handling case: thrust::inclusive_scan(thrust::seq, host.begin(), host.end(), result, op);
       CALL_FACTORY_ENTRY("inclusive_scan",
@@ -330,7 +330,7 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::inclusive_scan(device.begin(), device.end(), result);
       CALL_FACTORY_ENTRY("inclusive_scan",
                          CALL("oneapi::dpl::inclusive_scan",
-                              QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                               ARG(0), ARG(1), ARG(2))),
       //Handling case: thrust::inclusive_scan(host.begin(), host.end(), result);
       CALL_FACTORY_ENTRY("inclusive_scan",
@@ -347,7 +347,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::gather(thrust::device, d_map.begin(), d_map.end(), d_values.begin(),d_output.begin());
         CALL_FACTORY_ENTRY("gather",
                           CALL("dpct::gather",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4))),
         // Handling case: thrust::gather(thrust::seq, h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
         CALL_FACTORY_ENTRY("gather", CALL("dpct::gather", ARG("oneapi::dpl::execution::seq"),
@@ -358,7 +358,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::gather(d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
         CALL_FACTORY_ENTRY("gather",
                           CALL("dpct::gather",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3))),
         // Handling case: thrust::gather(h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
         CALL_FACTORY_ENTRY("gather", CALL("dpct::gather", ARG("oneapi::dpl::execution::seq"),
@@ -373,7 +373,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::scatter(thrust::device, d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
         CALL_FACTORY_ENTRY("scatter",
                           CALL("dpct::scatter",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4))),
         // Handling case: thrust::scatter(thrust::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
         CALL_FACTORY_ENTRY("scatter", CALL("dpct::scatter", ARG("oneapi::dpl::execution::seq"),
@@ -384,7 +384,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // Handling case: thrust::scatter(d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
         CALL_FACTORY_ENTRY("scatter",
                           CALL("dpct::scatter",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3))),
         // Handling case: thrust::scatter(h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
         CALL_FACTORY_ENTRY("scatter", CALL("dpct::scatter", ARG("oneapi::dpl::execution::seq"),
@@ -404,7 +404,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(),d_output_keys.begin(), d_output_values.begin());
         CALL_FACTORY_ENTRY("unique_by_key_copy",
                           CALL("dpct::unique_copy",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(1), ARG(2), ARG(3), ARG(4),  ARG(5))),
         // Handling case:
         // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
@@ -419,7 +419,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
         CALL_FACTORY_ENTRY("unique_by_key_copy",
                            CALL("dpct::unique_copy",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
         // Handling case:
         // *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
@@ -436,7 +436,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
           CALL_FACTORY_ENTRY("unique_by_key_copy",
                              CALL("dpct::unique_copy",
-                                  QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                   ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
         // Handling case:
         // *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
@@ -451,7 +451,7 @@ CONDITIONAL_FACTORY_ENTRY(
         // *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(),d_output_keys.begin(), d_output_values.begin());
         CALL_FACTORY_ENTRY("unique_by_key_copy",
                           CALL("dpct::unique_copy",
-                                QUEUESTR("oneapi::dpl::execution::make_device_policy(",")"),
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 ARG(0), ARG(1), ARG(2), ARG(3),ARG(4))),
         // Handling case:
         // *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());

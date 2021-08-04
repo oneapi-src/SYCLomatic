@@ -1408,7 +1408,7 @@ public:
     QT.print(OS, PP);
     OS.flush();
     setTypeNamesMapPtr(nullptr);
-    return MigratedTypeStr;
+    return getFinalCastTypeNameStr(MigratedTypeStr);
   }
   static inline std::string getReplacedTypeName(QualType QT) {
     return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
@@ -3010,6 +3010,10 @@ public:
   }
   void setAsType(const TypeLoc &TL) {
     setArgFromExprAnalysis(TL);
+    Kind = TemplateArgument::Type;
+  }
+  void setAsType(std::string TS) {
+    setArgStr(std::move(TS));
     Kind = TemplateArgument::Type;
   }
   void setAsNonType(const llvm::APInt &Int) {
