@@ -292,6 +292,23 @@ __global__ void TemplateKernel1(int* data) {
   Scan1<BlockScan, int>(bs);
 }
 
+__global__ void ScanKernel(int* data) {
+  typedef cub::WarpScan<int> WarpScan;
+
+  __shared__ typename WarpScan::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output1 = 0, output2 = 0;
+// CHECK: /*
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT: */
+// CHECK-NEXT: WarpScan(temp1).Scan(input, output1, output2, cub::Sum());
+  WarpScan(temp1).Scan(input, output1, output2, cub::Sum());
+  data[threadid] = output1 + output2;
+}
+
 int main() {
   int* dev_data = nullptr;
 

@@ -1895,9 +1895,16 @@ public:
   RecognizeAPINameRule() {
     SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
   }
-  const std::string GetFunctionSignature(const FunctionDecl *Func);
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
+private:
+  const std::string getFunctionSignature(const FunctionDecl *Func,
+                                         std::string ObjName);
+  std::vector<std::vector<std::string>>
+  splitAPIName(std::vector<std::string> &AllAPINames);
+  void processMemberFuncCall(const CXXMemberCallExpr *MC);
+  void processFuncCall(const CallExpr *CE, bool HaveKeywordInAPIName);
 };
 
 /// RecognizeTypeRule to emit warning message for known unsupported type

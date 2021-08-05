@@ -453,6 +453,9 @@ void MapNames::setExplicitNamespaceMap() {
   ITFName = {
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, #INTERFACENAME},
+#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+                              TARGET, COMMENT)                                 \
+  {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
@@ -462,6 +465,8 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_CUB.inc"
+#undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
 
@@ -3433,6 +3438,9 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
+#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+                              TARGET, COMMENT)                                 \
+  {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
@@ -3442,6 +3450,8 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_CUB.inc"
+#undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
 

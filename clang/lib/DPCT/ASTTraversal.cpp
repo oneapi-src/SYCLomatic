@@ -13130,31 +13130,146 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(KernelFunctionInfoRule)
 
+// split api name
+std::vector<std::vector<std::string>>
+RecognizeAPINameRule::splitAPIName(std::vector<std::string> &AllAPINames) {
+  std::vector<std::vector<std::string>> Result;
+  std::vector<std::string> FuncNames, FuncNamesHasNS, FuncNamespaces,
+      MemFuncNames, ObjNames, MemFuncNamesHasNS, ObjNamesHasNS, ObjNamespaces;
+  for (auto &APIName : AllAPINames) {
+    size_t ScopeResolutionOpPos = APIName.find("::");
+    size_t DotPos = APIName.find(".");
+    if (DotPos == std::string::npos) {
+      // 1. FunctionName
+      if (ScopeResolutionOpPos == std::string::npos) {
+        FuncNames.emplace_back(APIName);
+      } else {
+        // 2. NameSpace::FunctionName
+        if (std::find(FuncNamespaces.begin(), FuncNamespaces.end(),
+                      APIName.substr(0, ScopeResolutionOpPos)) ==
+            FuncNamespaces.end()) {
+          FuncNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
+        }
+        FuncNamesHasNS.emplace_back(
+            APIName.substr(ScopeResolutionOpPos + std::string("::").length()));
+      }
+    } else {
+      // 3. ObjectName.FunctionName
+      if (ScopeResolutionOpPos == std::string::npos) {
+        if (std::find(ObjNames.begin(), ObjNames.end(),
+                      APIName.substr(0, DotPos + std::string(".").length())) ==
+            ObjNames.end()) {
+          ObjNames.emplace_back(
+              APIName.substr(0, DotPos + std::string(".").length()));
+        }
+        MemFuncNames.emplace_back(
+            APIName.substr(DotPos + std::string(".").length()));
+      } else {
+        // 4. Namespace::ObjectName.FunctionName
+        if (std::find(ObjNamespaces.begin(), ObjNamespaces.end(),
+                      APIName.substr(0, ScopeResolutionOpPos)) ==
+            ObjNamespaces.end()) {
+          ObjNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
+        }
+        if (std::find(ObjNamesHasNS.begin(), ObjNamesHasNS.end(),
+                      APIName.substr(ScopeResolutionOpPos +
+                                         std::string("::").length(),
+                                     DotPos - ScopeResolutionOpPos -
+                                         std::string("::").length())) ==
+            ObjNamesHasNS.end()) {
+          ObjNamesHasNS.emplace_back(APIName.substr(
+              ScopeResolutionOpPos + std::string("::").length(),
+              DotPos - ScopeResolutionOpPos - std::string("::").length()));
+        }
+        MemFuncNamesHasNS.emplace_back(
+            APIName.substr(DotPos + std::string(".").length()));
+      }
+    }
+  }
+  return {FuncNames, FuncNamesHasNS,    FuncNamespaces, MemFuncNames,
+          ObjNames,  MemFuncNamesHasNS, ObjNamesHasNS,  ObjNamespaces};
+}
+
 void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AllAPINames = MigrationStatistics::GetAllAPINames();
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
-                         new internal::HasNameMatcher(AllAPINames)))),
-                     unless(hasAncestor(cudaKernelCallExpr())),
-                     unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
-          .bind("APINamesUsed"),
-      this);
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
-                     unless(callee(functionDecl(internal::Matcher<NamedDecl>(
-                         new internal::HasNameMatcher(AllAPINames))))),
-                     unless(hasAncestor(cudaKernelCallExpr())),
-                     unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
-          .bind("ManualMigrateAPI"),
-      this);
+  // AllAPIComponent[0] : FuncNames
+  // AllAPIComponent[1] : FuncNamesHasNS
+  // AllAPIComponent[2] : FuncNamespaces
+  // AllAPIComponent[3] : MemFuncNames
+  // AllAPIComponent[4] : ObjNames
+  // AllAPIComponent[5] : MemFuncNamesHasNS
+  // AllAPIComponent[6] : ObjNamesHasNS
+  // AllAPIComponent[7] : ObjNamespaces
+  std::vector<std::vector<std::string>> AllAPIComponent =
+      splitAPIName(AllAPINames);
+  if (!AllAPIComponent[0].empty()) {
+    MF.addMatcher(
+        callExpr(
+            allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
+                      new internal::HasNameMatcher(AllAPIComponent[0])))),
+                  unless(hasAncestor(cudaKernelCallExpr())),
+                  unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
+            .bind("APINamesUsed"),
+        this);
+    MF.addMatcher(
+        callExpr(
+            allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
+                  unless(callee(functionDecl(internal::Matcher<NamedDecl>(
+                      new internal::HasNameMatcher(AllAPIComponent[0]))))),
+                  unless(hasAncestor(cudaKernelCallExpr())),
+                  unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
+            .bind("ManualMigrateAPI"),
+        this);
+  }
+
+  if (!AllAPIComponent[1].empty() && !AllAPIComponent[2].empty()) {
+    MF.addMatcher(
+        callExpr(
+            callee(functionDecl(allOf(
+                namedDecl(internal::Matcher<NamedDecl>(
+                    new internal::HasNameMatcher(AllAPIComponent[1]))),
+                hasDeclContext(
+                    namespaceDecl(namedDecl(internal::Matcher<NamedDecl>(
+                        new internal::HasNameMatcher(AllAPIComponent[2])))))))))
+            .bind("APINamesHasNSUsed"),
+        this);
+  }
+
+  if (!AllAPIComponent[3].empty() && !AllAPIComponent[4].empty()) {
+    MF.addMatcher(
+        cxxMemberCallExpr(
+            on(hasType(hasCanonicalType(
+                qualType(hasDeclaration(namedDecl(internal::Matcher<NamedDecl>(
+                    new internal::HasNameMatcher(AllAPIComponent[4])))))))),
+            callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
+                new internal::HasNameMatcher(AllAPIComponent[3]))))))
+            .bind("MFAPINamesUsed"),
+        this);
+  }
+
+  if (!AllAPIComponent[5].empty() && !AllAPIComponent[6].empty() &&
+      !AllAPIComponent[7].empty()) {
+    MF.addMatcher(
+        cxxMemberCallExpr(
+            on(hasType(hasCanonicalType(qualType(hasDeclaration(allOf(
+                namedDecl(internal::Matcher<NamedDecl>(
+                    new internal::HasNameMatcher(AllAPIComponent[6]))),
+                hasDeclContext(namespaceDecl(namedDecl(
+                    internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
+                        AllAPIComponent[7]))))))))))),
+            callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
+                new internal::HasNameMatcher(AllAPIComponent[5]))))))
+            .bind("MFAPINamesHasNSUsed"),
+        this);
+  }
 }
 
 const std::string
-RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
-
+RecognizeAPINameRule::getFunctionSignature(const FunctionDecl *Func,
+                                           std::string ObjName) {
   std::string Buf;
   llvm::raw_string_ostream OS(Buf);
-  OS << Func->getReturnType().getAsString() << " "
+  OS << Func->getReturnType().getAsString() << " " << ObjName
      << Func->getQualifiedNameAsString() << "(";
 
   for (unsigned int Index = 0; Index < Func->getNumParams(); Index++) {
@@ -13169,18 +13284,52 @@ RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
   return OS.str();
 }
 
-void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
-  bool HaveKeywordInAPIName = false;
-  const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
-  if (!C) {
-    C = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI");
-    if (!C) {
-      return;
-    }
-    HaveKeywordInAPIName = true;
+void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
+  //1. assemble api name
+  //2. emit warning for unmigrated api
+  QualType ObjType = MC->getObjectType().getCanonicalType();
+  if (isTypeInRoot(ObjType.getTypePtr())) {
+    return;
   }
+  std::string ObjNameSpace, ObjName;
+  auto ObjDecl = getNamedDecl(ObjType.getTypePtr());
+  if (const auto *NSD = dyn_cast<NamespaceDecl>(ObjDecl->getDeclContext())) {
+    if (!NSD->isInlineNamespace()) {
+      ObjNameSpace = NSD->getName().str() + "::";
+    }
+  }
+  ObjName = ObjNameSpace + ObjDecl->getNameAsString() + ".";
+  std::string FuncName = MC->getMethodDecl()->getNameAsString();
+  std::string APIName = ObjName + FuncName;
+
+  SrcAPIStaticsMap[getFunctionSignature(MC->getMethodDecl(), ObjName)]++;
+
+  if (!MigrationStatistics::IsMigrated(APIName)) {
+    GAnalytics(getFunctionSignature(MC->getMethodDecl(), ObjName));
+    const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    const SourceLocation FileLoc = SM.getFileLoc(MC->getBeginLoc());
+
+    std::string SLStr = FileLoc.printToString(SM);
+
+    std::size_t PosCol = SLStr.rfind(':');
+    std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
+    std::string FileName = SLStr.substr(0, PosRow);
+    LOCStaticsMap[FileName][2]++;
+
+    auto Iter = MapNames::ITFName.find(APIName.c_str());
+    if (Iter != MapNames::ITFName.end()) {
+      report(MC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             Iter->second);
+    } else {
+      report(MC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
+    }
+  }
+}
+
+void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
+                                           bool HaveKeywordInAPIName) {
   std::string Namespace;
-  const NamedDecl *ND = dyn_cast<NamedDecl>(C->getCalleeDecl());
+  const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
@@ -13188,15 +13337,16 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  std::string APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
 
-  if (!Namespace.empty() && Namespace == "thrust") {
+  if (!Namespace.empty() && (Namespace == "thrust" || Namespace == "cub")) {
     APIName = Namespace + "::" + APIName;
   }
 
-  SrcAPIStaticsMap[GetFunctionSignature(C->getCalleeDecl()->getAsFunction())]++;
+  SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
+                                        "")]++;
   if (APIName.size() >= 4 && APIName.substr(0, 4) == "nccl") {
-    auto D = C->getCalleeDecl();
+    auto D = CE->getCalleeDecl();
     if (D) {
       auto FilePath = DpctGlobalInfo::getSourceManager()
                           .getFilename(D->getBeginLoc())
@@ -13205,10 +13355,10 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
-    report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
+    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Collective Communications Library");
   } else if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
-    auto D = C->getCalleeDecl();
+    auto D = CE->getCalleeDecl();
     if (D) {
       auto FilePath = DpctGlobalInfo::getSourceManager()
                           .getFilename(D->getBeginLoc())
@@ -13217,7 +13367,7 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
-    report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
+    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
   } else if (HaveKeywordInAPIName) {
     // In the AST matcher, it will match function call whose name contains
@@ -13225,9 +13375,9 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
     // branch. If code goes here, we treat the API is user-defined, just return.
     return;
   } else if (!MigrationStatistics::IsMigrated(APIName)) {
-    GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
-    const SourceManager &SM = (*Result.Context).getSourceManager();
-    const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());
+    GAnalytics(getFunctionSignature(CE->getCalleeDecl()->getAsFunction(), ""));
+    const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    const SourceLocation FileLoc = SM.getFileLoc(CE->getBeginLoc());
 
     std::string SLStr = FileLoc.printToString(SM);
 
@@ -13238,11 +13388,27 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
 
     auto Iter = MapNames::ITFName.find(APIName.c_str());
     if (Iter != MapNames::ITFName.end())
-      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              Iter->second);
     else
-      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
   }
+}
+void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = nullptr;
+  const CXXMemberCallExpr *MC = nullptr;
+  if ((CE = getNodeAsType<CallExpr>(Result, "APINamesUsed")) ||
+      (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed"))) {
+    processFuncCall(CE, false);
+  } else if (CE = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI")) {
+    processFuncCall(CE, true);
+  } else if ((MC =
+                  getNodeAsType<CXXMemberCallExpr>(Result, "MFAPINamesUsed")) ||
+             (MC = getNodeAsType<CXXMemberCallExpr>(Result,
+                                                    "MFAPINamesHasNSUsed"))) {
+    processMemberFuncCall(MC);
+  }
+  return;
 }
 
 REGISTER_RULE(RecognizeAPINameRule)
@@ -15821,10 +15987,12 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              ObjTypeStr.find("class cub::BlockReduce") == 0) {
     BlockMC = MC;
   } else {
+    report(MC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
     return;
   }
   if (BlockMC && BlockMC->getMethodDecl()) {
     if (BlockMC->getMethodDecl()->getParamDecl(0)->getType()->isPointerType()) {
+      report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
       return;
     }
     std::string FuncName = BlockMC->getMethodDecl()->getNameAsString();
@@ -15866,6 +16034,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
           NewFuncName =
               MapNames::getClNamespace() + "exclusive_scan_over_group";
         } else {
+          report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
           return;
         }
       } else if (FuncName == "InclusiveScan" && NumArgs == 3) {
@@ -15879,6 +16048,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
         OpRepl = getOpRepl(nullptr);
         NewFuncName = MapNames::getClNamespace() + "inclusive_scan_over_group";
       } else {
+        report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
       }
       Repl = OutEA.getReplacedString() + " = " + NewFuncName + "(" + Group +
@@ -15886,6 +16056,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
       emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
     } else if (FuncName == "Sum" || FuncName == "Reduce") {
       if (FuncArgs[0]->getType()->isPointerType()) {
+        report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
       }
       const Expr *InData = FuncArgs[0];
@@ -15895,6 +16066,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
       } else if (FuncName == "Sum" && NumArgs == 1) {
         OpRepl = getOpRepl(nullptr);
       } else {
+        report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
       }
       Repl = MapNames::getClNamespace() + "reduce_over_group(" + Group + ", " +
@@ -15948,6 +16120,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
           InitRepl = ", " + InitEA.getReplacedString();
           OpRepl = getOpRepl(FuncArgs[3]);
         } else {
+          report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
           return;
         }
         NewFuncName = "exclusive_scan_over_group";
@@ -15961,6 +16134,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
         OpRepl = getOpRepl(nullptr);
         NewFuncName = "inclusive_scan_over_group";
       } else {
+        report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
       }
       ExprAnalysis InEA(InData);
@@ -15990,6 +16164,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
       } else if (FuncName == "Sum" && NumArgs == 1) {
         OpRepl = getOpRepl(nullptr);
       } else {
+        report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
         return;
       }
       NewFuncName = "reduce_over_group";
