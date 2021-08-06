@@ -3124,6 +3124,9 @@ FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
     return std::shared_ptr<FreeQueriesInfo>();
 
   if (auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody())) {
+    if (CS->body_empty())
+      return std::shared_ptr<FreeQueriesInfo>();
+
     auto ExtraDeclLoc = CS->body_front()->getBeginLoc();
     auto LocInfo = DpctGlobalInfo::getLocInfo(ExtraDeclLoc);
     auto Iter = std::find_if(InfoList.begin(), InfoList.end(),
@@ -3309,7 +3312,7 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index);
 
 std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
-  unsigned Index;
+  unsigned Index = 0;
   char Method = MatchedStr[RegexPrefix.length()];
   MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
   // D: deivce, used for pretty code
