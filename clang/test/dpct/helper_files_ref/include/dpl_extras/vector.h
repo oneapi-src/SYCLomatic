@@ -581,7 +581,7 @@ public:
   size_type capacity() const {
     return _storage != nullptr ? detail::mem_mgr::instance()
                                          .translate_ptr(_storage)
-                                         .buffer.get_count() /
+                                         .buffer.size() /
                                      sizeof(T)
                                : 0;
   }
