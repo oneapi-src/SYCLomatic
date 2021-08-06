@@ -1739,6 +1739,10 @@ public:
   CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() > Idx) {
+      if (!C->getDirectCallee())
+        return true;
+      if (!C->getDirectCallee()->getParamDecl(Idx))
+        return true;
       std::string ArgType = C->getDirectCallee()
                                 ->getParamDecl(Idx)
                                 ->getType()
@@ -1747,7 +1751,7 @@ public:
                                 .getAsString();
       return ArgType.find(TypeName) != std::string::npos;
     }
-    return false;
+    return true;
   }
 };
 
@@ -1758,6 +1762,12 @@ public:
   CompareArgType(unsigned I1, unsigned I2) : Idx1(I1), Idx2(I2) {}
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() > Idx1 && C->getNumArgs() > Idx2) {
+      if (!C->getDirectCallee())
+        return true;
+      if (!C->getDirectCallee()->getParamDecl(Idx1))
+        return true;
+      if (!C->getDirectCallee()->getParamDecl(Idx2))
+        return true;
       std::string ArgType1 = C->getDirectCallee()
                                  ->getParamDecl(Idx1)
                                  ->getType()
@@ -1772,7 +1782,7 @@ public:
                                  .getAsString();
       return ArgType1 != ArgType2;
     }
-    return false;
+    return true;
   }
 };
 

@@ -18,6 +18,13 @@ struct greater_than_zero
   typedef int argument_type;
 };
 
+template<class T1, class T2>
+void foo2(T1 policy, T2 vec){
+  thrust::device_vector<int> R(4);
+  //CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), vec.begin(), vec.end(), R.begin(), std::minus<int>());
+  thrust::inclusive_scan(policy, vec.begin(), vec.end(), R.begin(), thrust::minus<int>());
+}
+
 int main(){
     return 0;
 }
@@ -158,6 +165,7 @@ void foo_host(){
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin());
+  //CHECK-NEXT: foo2(oneapi::dpl::execution::make_device_policy(q_ct1), A);
   thrust::inclusive_scan(A.begin(), A.end(), R.begin(), TM);
   thrust::inclusive_scan(B.begin(), B.end(), R2.begin(), thrust::minus<int>());
   thrust::inclusive_scan(thrust::device, A.begin(), A.end(), R.begin(), thrust::minus<int>());
@@ -166,5 +174,6 @@ void foo_host(){
   thrust::inclusive_scan(B.begin(), B.end(), R2.begin());
   thrust::inclusive_scan(thrust::device, A.begin(), A.end(), R.begin());
   thrust::inclusive_scan(thrust::seq, B.begin(), B.end(), R2.begin());
+  foo2(thrust::device, A);
 }
 
