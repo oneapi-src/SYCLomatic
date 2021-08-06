@@ -3,7 +3,7 @@
 
 // CHECK: void test_syncthreads(int *arr, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void test_syncthreads(int *arr) {
-  // CHECK: sycl::group_barrier([[ITEMNAME]].get_group());
+  // CHECK: [[ITEMNAME]].barrier();
   __syncthreads();
   arr[threadIdx.x] = threadIdx.x;
 }

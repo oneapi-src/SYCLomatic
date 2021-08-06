@@ -25,12 +25,12 @@ using namespace cooperative_groups;
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::group_barrier(sycl::this_group<1>());
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  TB(b);
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  a = (sycl::group_barrier(sycl::this_group<1>()), sycl::all_of_group(sycl::this_group<1>(), a));
+// CHECK-NEXT:  a = (item_ct1.barrier(), sycl::all_of_group(sycl::this_group<1>(), a));
 // CHECK-NEXT:  sycl::all_of_group(sycl::ONEAPI::this_sub_group(), a);
 // CHECK-NEXT:  sycl::ONEAPI::this_sub_group().shuffle(a, a);
 // CHECK-NEXT:}
@@ -55,7 +55,7 @@ __global__ void test1() {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::group_barrier(sycl::this_group<3>());
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  TB1(b);
 // CHECK-NEXT:  sycl::all_of_group(sycl::ONEAPI::this_sub_group(), a);
 // CHECK-NEXT:  sycl::ONEAPI::this_sub_group().shuffle(a, a);

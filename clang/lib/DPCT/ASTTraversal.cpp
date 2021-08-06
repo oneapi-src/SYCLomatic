@@ -13034,8 +13034,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
-    std::string Replacement = MapNames::getClNamespace() + "group_barrier(" +
-                              DpctGlobalInfo::getGroup(CE, FD) + ")";
+    std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
@@ -13075,11 +13074,9 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
     if (IsAssigned) {
       ReplStr = "(";
-      ReplStr += MapNames::getClNamespace() + "group_barrier(" +
-                 DpctGlobalInfo::getGroup(CE, FD) + "), ";
+      ReplStr += DpctGlobalInfo::getItem(CE) + ".barrier(), ";
     } else {
-      ReplStr += MapNames::getClNamespace() + "group_barrier(" +
-                 DpctGlobalInfo::getGroup(CE, FD) + ");" + getNL();
+      ReplStr += DpctGlobalInfo::getItem(CE) + ".barrier();" + getNL();
       ReplStr += getIndent(CE->getBeginLoc(), *Result.SourceManager).str();
     }
     if (FuncName == "__syncthreads_and") {
@@ -13104,8 +13101,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__syncwarp") {
     std::string ReplStr;
-    ReplStr = MapNames::getClNamespace() + "group_barrier(" +
-              DpctGlobalInfo::getSubGroup(CE, FD) + ")";
+    ReplStr = DpctGlobalInfo::getItem(CE) + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   }
 }

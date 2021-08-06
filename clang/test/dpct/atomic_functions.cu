@@ -484,7 +484,7 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::group_barrier(item_ct1.get_group());
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range().get(2);
 // CHECK-NEXT:  int offset = item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2);
 // CHECK-NEXT:  while (i < size) {
@@ -494,7 +494,7 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  sycl::group_barrier(item_ct1.get_group());
+// CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&(histo[item_ct1.get_local_id(2)]))).fetch_add(temp[item_ct1.get_local_id(2)]);
 // CHECK-NEXT:}
 __global__ void mykernel_1(unsigned char *buffer, long size,
