@@ -336,16 +336,15 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
         llvm::cl::OptionEnumValue{
             "file", int(HelperFilesCustomizationLevel::HFCL_File),
             "Limit helper header files to only the necessary files for the migrated code and\n"
-            "place them in the --out-root folder.", false},
+            "place them in the --out-root directory.", false},
         llvm::cl::OptionEnumValue{
             "all", int(HelperFilesCustomizationLevel::HFCL_All),
             "Generate a complete set of helper header files and place them in the --out-root\n"
-            "folder.", false},
+            "directory.", false},
         llvm::cl::OptionEnumValue{
             "api", int(HelperFilesCustomizationLevel::HFCL_API),
             "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root folder. The generated helper header files will also\n"
-            "be affected by the option --usm-level.", false}),
+            "place them in the --out-root directory.", false}),
     init(HelperFilesCustomizationLevel::HFCL_None), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 
