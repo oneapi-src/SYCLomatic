@@ -250,7 +250,7 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
   unsigned int num_groups = item.get_group_range(2) * item.get_group_range(1) *
                             item.get_group_range(0);
 
-  cl::sycl::group_barrier(item.get_group());
+  item.barrier();
 
   if (item.get_local_linear_id() == 0) {
     unsigned int inc = 1;
@@ -267,7 +267,7 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
       ;
   }
 
-  cl::sycl::group_barrier(item.get_group());
+  item.barrier();
 }
 
 /// Synchronize work items from all work groups within a DPC++ kernel.
@@ -286,7 +286,7 @@ nd_range_barrier(sycl::nd_item<1> item,
                      cl::sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
 
-  cl::sycl::group_barrier(item.get_group());
+  item.barrier();
 
   if (item.get_local_linear_id() == 0) {
     unsigned int inc = 1;
@@ -302,7 +302,7 @@ nd_range_barrier(sycl::nd_item<1> item,
       ;
   }
 
-  cl::sycl::group_barrier(item.get_group());
+  item.barrier();
 }
 }
 } // namespace dpct
