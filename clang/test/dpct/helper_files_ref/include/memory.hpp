@@ -40,7 +40,7 @@ enum memcpy_direction {
 };
 enum memory_region {
   global = 0,  // device global memory
-  constant,    // device constant memroy
+  constant,    // device constant memory
   local,       // device local memory
   shared,      // memory which can be accessed by host and device
 };
@@ -200,16 +200,16 @@ template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr cl::sycl::access::address_space asp =
-      (Memory == global)
-          ? cl::sycl::access::address_space::global_space
+      (Memory == local)
+          ? cl::sycl::access::address_space::local_space
           : ((Memory == constant)
                  ? cl::sycl::access::address_space::constant_space
-                 : cl::sycl::access::address_space::local_space);
+                 : cl::sycl::access::address_space::global_space);
   static constexpr cl::sycl::access::target target =
-      (Memory == global)
-          ? cl::sycl::access::target::global_buffer
+      (Memory == local)
+          ? cl::sycl::access::target::local
           : ((Memory == constant) ? cl::sycl::access::target::constant_buffer
-                                  : cl::sycl::access::target::local);
+                                  : cl::sycl::access::target::global_buffer);
   static constexpr cl::sycl::access_mode mode =
       (Memory == constant) ? cl::sycl::access_mode::read
                            : cl::sycl::access_mode::read_write;
