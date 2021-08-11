@@ -709,19 +709,7 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 }
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
-  if (VI->isShared()) {
-    if (VI->getType()->getDimension() > 1) {
-      StmtWithWarning SWW(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
-      if (EmitSizeofWarning) {
-        DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                 Diagnostics::SIZEOF_WARNING, false, false);
-        SWW.Warnings.push_back(
-            DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-                Diagnostics::SIZEOF_WARNING));
-      }
-      SubmitStmtsList.RangeList.push_back(SWW);
-    }
-  } else {
+  if (!VI->isShared()) {
     requestFeature(isDefaultStream()
                        ? HelperFeatureEnum::Memory_device_memory_init
                        : HelperFeatureEnum::Memory_device_memory_init_q,
@@ -739,9 +727,9 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
       SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
     }
   }
-  VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
-                                  SubmitStmtsList.AccessorList,
-                                  SubmitStmtsList.PtrList);
+  VI->appendAccessorOrPointerDecl(
+      ExecutionConfig.ExternMemSize, EmitSizeofWarning,
+      SubmitStmtsList.AccessorList, SubmitStmtsList.PtrList);
   if (VI->isTypeDeclaredLocal()) {
     if (DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::TYPE_IN_FUNCTION, false, false,
@@ -2723,34 +2711,63 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+
+std::string MemVarInfo::getSyclAccessorType() {
+  std::string Ret;
+  llvm::raw_string_ostream OS(Ret);
+  OS << MapNames::getClNamespace() << "accessor<";
+  OS << getAccessorDataType() << ", ";
+  OS << getType()->getDimension() << ", ";
+
+  OS << MapNames::getClNamespace() << "access_mode::";
+  if (getAttr() == MemVarInfo::VarAttrKind::Constant)
+    OS << "read";
+  else
+    OS << "read_write";
+  OS << ", ";
+
+  OS << MapNames::getClNamespace() << "access::target::";
+  switch (getAttr()) {
+  case VarAttrKind::Constant:
+    OS << "constant_buffer";
+    break;
+  case VarAttrKind::Shared:
+    OS << "local";
+    break;
+  case VarAttrKind::Device:
+  case VarAttrKind::Managed:
+    OS << "global_buffer";
+    break;
+  default:
+    break;
+  }
+
+  OS << ">";
+  return OS.str();
+}
 void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
+                                             bool ExternEmitWarning,
                                              StmtList &AccList,
                                              StmtList &PtrList) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   if (isShared()) {
-    auto Dimension = getType()->getDimension();
-    OS << MapNames::getClNamespace() + "accessor<" << getAccessorDataType()
-       << ", " << Dimension
-       << ", " + MapNames::getClNamespace() + "access_mode::read_write, " +
-              MapNames::getClNamespace() + "access::target::local> "
-       << getAccessorName() << "(";
-    if (Dimension > 1) {
-      OS << getRangeName() << ", ";
-    } else if (Dimension == 1) {
+    OS << getSyclAccessorType();
+    OS << " " << getAccessorName() << "(";
+    if (getType()->getDimension())
       OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
          << ", ";
-    }
-    OS << "cgh);";
+    OS << "cgh)";
+    OS << ";";
     StmtWithWarning AccDecl(OS.str());
-    if (getType()->containSizeofType()) {
+    if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::SIZEOF_WARNING, false, false);
       AccDecl.Warnings.push_back(
           DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
               Diagnostics::SIZEOF_WARNING));
     }
-    if (Dimension > 3) {
+    if (getType()->getDimension() > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),
                                    Diagnostics::EXCEED_MAX_DIMENSION, false,
                                    false)) {

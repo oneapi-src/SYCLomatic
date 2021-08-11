@@ -71,7 +71,7 @@ __global__ void simple_kernel(float *d_array) {
 __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
-// CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
+// CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::constant_buffer> const_float,
 // CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::constant, 2>(const_float_acc_ct1), const_one_acc_ct1);
+  // CHECK-NEXT:         simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, const_float_acc_ct1, const_one_acc_ct1);
   // CHECK-NEXT:        });
   // CHECK-NEXT:   });
   simple_kernel_one<<<size / 64, 64, 0, stream>>>(d_array);

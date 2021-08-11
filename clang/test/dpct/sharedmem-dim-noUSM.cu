@@ -41,18 +41,17 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<int, 4, sycl::access_mode::read_write, sycl::access::target::local> sha2_mem_acc_ct1(sha2_mem_range_ct1, cgh);
+// CHECK-NEXT: sycl::accessor<int, 4, sycl::access_mode::read_write, sycl::access::target::local> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
 
   staticReverse<<<10,10>>>();
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory may be different in original code and migrated code. You need to check the allocated memory size.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::range<4> dpct_local_range_ct1(16*sizeof(int), 2, 2, 2);
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
+// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
 
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;

@@ -2564,7 +2564,8 @@ public:
   }
 
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
-                                   StmtList &AccList, StmtList &PtrList);
+                                   bool ExternEmitWarning, StmtList &AccList,
+                                   StmtList &PtrList);
 
   inline std::string getRangeClass() {
     std::string Result;
@@ -2591,7 +2592,10 @@ public:
       PS << getAccessorDataType();
       PS << " *";
     } else {
-      PS << getDpctAccessorType() << " ";
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None || isShared())
+        PS << getSyclAccessorType() << " ";
+      else
+        PS << getDpctAccessorType() << " ";
     }
     return PS << getArgName();
   }
@@ -2600,14 +2604,7 @@ public:
   }
   ParameterStream &getKernelArg(ParameterStream &PS) {
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      if (AccMode == Accessor) {
-        PS << getDpctAccessorType() << "(";
-        PS << getAccessorName();
-        if (isShared()) {
-          PS << ", " << getRangeName();
-        }
-        PS << ")";
-      } else if (AccMode == Pointer) {
+      if (AccMode == Pointer) {
         if (!getType()->isWritten())
           PS << "(" << getAccessorDataType() << " *)";
         PS << getAccessorName() << ".get_pointer()";
@@ -2668,6 +2665,7 @@ private:
     return buildString("(", InitList, ")");
   }
   const std::string &getMemoryAttr();
+  std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
     requestFeature(HelperFeatureEnum::Memory_dpct_accessor, getFilePath());
     auto Type = getType();

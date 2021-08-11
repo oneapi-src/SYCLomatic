@@ -365,17 +365,17 @@ void bar() {
 #define AAA int *a
 #define BBB int *BB
 
-// CHECK: #define CCC AAA, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la, int *b=0
+// CHECK: #define CCC AAA, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la, int *b=0
 // CHECK-NEXT: #define CC AAA, BBB
 #define CCC AAA, int *b=0
 #define CC AAA, BBB
 
 // CHECK: #define CCCC(x) void fooc(x)
-// CHECK-NEXT: #define CCCCC(x) void foocc(x, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK-NEXT: #define CCCCC(x) void foocc(x, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 #define CCCC(x) __device__ void fooc(x)
 #define CCCCC(x) __device__ void foocc(x)
 
-// CHECK: #define XX(x) void foox(x, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK: #define XX(x) void foox(x, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 // CHECK-NEXT: #define FF XX(CC)
 #define XX(x) __device__ void foox(x)
 #define FF XX(CC)
@@ -414,7 +414,7 @@ CCCC(CCC)
   __shared__ double la[8][0];
 }
 
-// CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 #define FFF __device__ void foo(AAA, BBB)
 
 // CHECK: FFF
@@ -429,7 +429,7 @@ FFF
 
 }
 
-// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
 
 // CHECK: FFFFF(pos, q)
@@ -446,7 +446,7 @@ FFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la)
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 #define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 // CHECK: FFFFFF(pos, q)
@@ -464,7 +464,7 @@ FFFFFF(pos, q)
 }
 
 // CHECK: void foo6(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd,
-// CHECK-NEXT:   dpct::accessor<double, dpct::local, 2> la)
+// CHECK-NEXT:   sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> la)
 // CHECK-NEXT: {
 // CHECK-NEXT: }
 __device__ void foo6(AAA, BBB)

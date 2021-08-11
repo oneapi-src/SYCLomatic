@@ -56,8 +56,8 @@ __global__ void staticReverse(int *d, int n) {
 
 // CHECK: template<typename TData>
 // CHECK-NEXT: void templateReverse(TData *d, TData n, sycl::nd_item<3> [[ITEM:item_ct1]],
-// CHECK-NEXT:                      dpct::accessor<TData, dpct::local, 2> s,
-// CHECK-NEXT:                      dpct::accessor<TData, dpct::local, 3> s3) {
+// CHECK-NEXT:                      sycl::accessor<TData, 2, sycl::access_mode::read_write, sycl::access::target::local> s,
+// CHECK-NEXT:                      sycl::accessor<TData, 3, sycl::access_mode::read_write, sycl::access::target::local> s3) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
@@ -82,17 +82,14 @@ void testTemplate() {
 
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:     sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:     sycl::accessor<T, 2, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
-  // CHECK-NEXT:     sycl::accessor<T, 3, sycl::access_mode::read_write, sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
+  // CHECK-NEXT:     sycl::accessor<T, 2, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     sycl::accessor<T, 3, sycl::access_mode::read_write, sycl::access::target::local> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, dpct::accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<T, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
+  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<T><<<1, n>>>(d_d, n);
@@ -136,17 +133,14 @@ int main(void) {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:     sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:     sycl::accessor<int, 2, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
-  // CHECK-NEXT:     sycl::accessor<int, 3, sycl::access_mode::read_write, sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 2, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     sycl::accessor<int, 3, sycl::access_mode::read_write, sycl::access::target::local> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct::accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<int, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
+  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n>>>(d_d, n);

@@ -3,10 +3,9 @@
 // RUN: FileCheck --input-file %T/Memory/api_test23_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test23_out
 
-// CHECK: 53
+// CHECK: 52
 // TEST_FEATURE: Memory_device_memory_get_access
 // TEST_FEATURE: Memory_device_memory_init
-// TEST_FEATURE: Memory_dpct_accessor
 // TEST_FEATURE: Memory_memory_region
 
 __device__ float c[16][16];
