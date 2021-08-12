@@ -144,6 +144,15 @@ static const std::map<std::string, std::string>* TypeNamesMapPtr;
 void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr) {
   TypeNamesMapPtr = Ptr;
 }
+Optional<std::string> getReplacedName(const NamedDecl *D) {
+  if (TypeNamesMapPtr) {
+    auto Iter = TypeNamesMapPtr->find(D->getQualifiedNameAsString(false));
+    if (Iter != TypeNamesMapPtr->end()) {
+      return Iter->second;
+    }
+  }
+  return Optional<std::string>();
+}
 #endif
 static void AppendTypeQualList(raw_ostream &OS, unsigned TypeQuals,
                                bool HasRestrictKeyword) {
@@ -1035,6 +1044,14 @@ void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
 }
 
 void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
+#ifdef INTEL_CUSTOMIZATION
+  auto Name = getReplacedName(D);
+  if (Name.hasValue()) {
+    OS << Name.getValue();
+    spaceBeforePlaceHolder(OS);
+    return;
+  }
+#endif
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
@@ -1042,21 +1059,7 @@ void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
     AppendScope(D->getDeclContext(), OS, D->getDeclName());
 
   IdentifierInfo *II = D->getIdentifier();
-#ifdef INTEL_CUSTOMIZATION
-  if (TypeNamesMapPtr) {
-    std::string OriginType = II->getName().str();
-    auto P = TypeNamesMapPtr->find(OriginType);
-    if (P != TypeNamesMapPtr->end()) {
-      OS << P->second;
-    } else {
-      OS << II->getName();
-    }
-  } else {
-    OS << II->getName();
-  }
-#else
   OS << II->getName();
-#endif
   spaceBeforePlaceHolder(OS);
 }
 
@@ -1334,30 +1337,28 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
     OS << ' ';
   }
 
+#ifdef INTEL_CUSTOMIZATION
+  auto Name = getReplacedName(D);
+
+  // Compute the full nested-name-specifier for this type.
+  // In C, this will always be empty except when the type
+  // being printed is anonymous within other Record.
+  if (!Name.hasValue() && !Policy.SuppressScope)
+    AppendScope(D->getDeclContext(), OS, D->getDeclName());
+
+  if (Name.hasValue())
+    OS << Name.getValue();
+  else
+#else
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
   if (!Policy.SuppressScope)
     AppendScope(D->getDeclContext(), OS, D->getDeclName());
 
+#endif // INTEL_CUSTOMIZATION
   if (const IdentifierInfo *II = D->getIdentifier())
-#ifdef INTEL_CUSTOMIZATION
-  {
-    if (TypeNamesMapPtr) {
-      std::string OriginType = II->getName().str();
-      auto P = TypeNamesMapPtr->find(OriginType);
-      if (P != TypeNamesMapPtr->end()) {
-        OS << P->second;
-      } else {
-        OS << II->getName();
-      }
-    } else {
-      OS << II->getName();
-    }
-  }
-#else
     OS << II->getName();
-#endif
   else if (TypedefNameDecl *Typedef = D->getTypedefNameForAnonDecl()) {
     assert(Typedef->getIdentifier() && "Typedef without identifier?");
     OS << Typedef->getIdentifier()->getName();
@@ -1501,6 +1502,12 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
   IncludeStrongLifetimeRAII Strong(Policy);
 
   TemplateDecl *TD = T->getTemplateName().getAsTemplateDecl();
+#ifdef INTEL_CUSTOMIZATION
+  auto Name = getReplacedName(TD);
+  if (Name.hasValue())
+    OS << Name.getValue();
+  else
+#endif // INTEL_CUSTOMIZATION
   if (FullyQualify && TD) {
     if (!Policy.SuppressScope)
       AppendScope(TD->getDeclContext(), OS, TD->getDeclName());
@@ -1541,6 +1548,26 @@ void TypePrinter::printInjectedClassNameAfter(const InjectedClassNameType *T,
 
 void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
                                         raw_ostream &OS) {
+#ifdef INTEL_CUSTOMIZATION
+  if (TypeNamesMapPtr) {
+    if (auto TT = T->getNamedType()->getAs<TypedefType>()) {
+      auto Name = TT->getDecl()->getQualifiedNameAsString(false);
+      if (StringRef(Name).startswith("thrust")) {
+        return printBefore(TT->getDecl()->getUnderlyingType(), OS);
+      }
+    }
+    if (T->getQualifier()) {
+      std::string QualifiedName;
+      llvm::raw_string_ostream InternalOS(QualifiedName);
+      T->getQualifier()->print(InternalOS, Policy);
+      if (StringRef(InternalOS.str()).startswith("thrust")) {
+        printBefore(T->getNamedType(), OS);
+        return;
+      }
+    }
+  }
+#endif // INTEL_CUSTOMIZATION
+
   if (Policy.IncludeTagDefinition && T->getOwnedTagDecl()) {
     TagDecl *OwnedTagDecl = T->getOwnedTagDecl();
     assert(OwnedTagDecl->getTypeForDecl() == T->getNamedType().getTypePtr() &&
@@ -1555,6 +1582,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
   // The tag definition will take care of these.
   if (!Policy.IncludeTagDefinition)
   {
+
     // When removing aliases don't print keywords to avoid having things
     // like 'typename int'
     if (!Policy.SuppressTypedefs)
