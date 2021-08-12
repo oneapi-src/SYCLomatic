@@ -20,7 +20,7 @@ cudaStream_t s;
 
 // CHECK: void foo1() {
 // CHECK-NEXT: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
-// CHECK-NEXT: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+// CHECK-NEXT: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
 // CHECK-NEXT: dpct::get_default_queue().memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
 // CHECK-NEXT: dpct::get_default_queue().memset(d_A, 23, size).wait();
 // CHECK-NEXT: dpct::get_default_queue().memset(d_A, 23, size).wait();

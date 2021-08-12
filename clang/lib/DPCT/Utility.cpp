@@ -3113,22 +3113,32 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
   }
 }
 
-bool isInFlowControl(const clang::Stmt *S) {
+/// Find the flow control ancestor node for \p S
+/// If \p RangeLimit is not nullptr, find flow control node in the sub-tree of
+/// \p RangeLimit
+/// If \p RangeLimit is nullptr, find flow control node in all ancestor of \p S
+/// Retrun nullptr if no flow control found in the range.
+/// Otherwise it will return the flow control node.
+const clang::Stmt *
+getAncestorFlowControl(const clang::Stmt *S,
+                       const clang::CompoundStmt *RangeLimit = nullptr) {
   if (!S)
-    return false;
+    return nullptr;
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   while (Parents.size() >= 1) {
     auto *Parent = Parents[0].get<Stmt>();
     if (Parent) {
+      if (Parent == RangeLimit)
+        return nullptr;
       auto StmtClass = Parent->getStmtClass();
       if (StmtClass == Stmt::StmtClass::WhileStmtClass ||
           StmtClass == Stmt::StmtClass::ForStmtClass ||
           StmtClass == Stmt::StmtClass::IfStmtClass ||
           StmtClass == Stmt::StmtClass::SwitchStmtClass ||
           StmtClass == Stmt::StmtClass::CallExprClass) {
-        return true;
+        return Parent;
       } else if (StmtClass == Stmt::StmtClass::DoStmtClass) {
         const Expr *CondExpr = dyn_cast<DoStmt>(Parent)->getCond();
         Expr::EvalResult ER;
@@ -3136,7 +3146,7 @@ bool isInFlowControl(const clang::Stmt *S) {
             CondExpr->EvaluateAsInt(ER, Context)) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value != 0) {
-            return true;
+            return Parent;
           }
         }
       }
@@ -3144,7 +3154,70 @@ bool isInFlowControl(const clang::Stmt *S) {
     Parents = Context.getParents(Parents[0]);
   }
 
+  return nullptr;
+}
+
+bool isAncestorOf(const Stmt *Descendant, const Stmt *Ancestor) {
+  if (!Descendant)
+    return false;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*Descendant);
+  while (Parents.size() >= 1) {
+    auto *Parent = Parents[0].get<Stmt>();
+    if (Parent) {
+      if (Parent == Ancestor)
+        return true;
+    }
+    Parents = Context.getParents(Parents[0]);
+  }
+
   return false;
+}
+
+/// This function first finds the nearest flow control stmt in the
+/// ancestors of \p S, then returns the body (CompoundStmt) of that
+/// flow control stmt
+const clang::CompoundStmt *getBodyofAncestorFCStmt(const clang::Stmt *S) {
+  auto FlowControlStmt = getAncestorFlowControl(S, nullptr);
+  if (!FlowControlStmt)
+    return nullptr;
+  auto StmtClass = FlowControlStmt->getStmtClass();
+  const clang::CompoundStmt *CS = nullptr;
+  switch (StmtClass) {
+  case Stmt::StmtClass::WhileStmtClass: {
+    CS = dyn_cast_or_null<CompoundStmt>(
+        dyn_cast<WhileStmt>(FlowControlStmt)->getBody());
+    break;
+  }
+  case Stmt::StmtClass::ForStmtClass: {
+    CS = dyn_cast_or_null<CompoundStmt>(
+        dyn_cast<ForStmt>(FlowControlStmt)->getBody());
+    break;
+  }
+  case Stmt::StmtClass::DoStmtClass: {
+    CS = dyn_cast_or_null<CompoundStmt>(
+        dyn_cast<DoStmt>(FlowControlStmt)->getBody());
+    break;
+  }
+  case Stmt::StmtClass::IfStmtClass: {
+    if (isAncestorOf(S, dyn_cast<IfStmt>(FlowControlStmt)->getThen())) {
+      CS = dyn_cast_or_null<CompoundStmt>(
+          dyn_cast<IfStmt>(FlowControlStmt)->getThen());
+    } else {
+      CS = dyn_cast_or_null<CompoundStmt>(
+          dyn_cast<IfStmt>(FlowControlStmt)->getElse());
+    }
+    break;
+  }
+  case Stmt::StmtClass::SwitchStmtClass:
+    return nullptr;
+  case Stmt::StmtClass::CallExprClass:
+    return nullptr;
+  default:
+    break;
+  }
+  return CS;
 }
 
 bool analyzeMemcpyOrder(
@@ -3183,11 +3256,12 @@ bool analyzeMemcpyOrder(
 
     ExcludeExprs.insert(CE->getCallee());
 
-    if (FuncName == "cudaMemcpy") {
-      if (isInFlowControl(CE))
+    if (FuncName == "cudaMemcpy" || FuncName == "cudaMemcpyFromSymbol" ||
+        FuncName == "cudaMemcpyToSymbol") {
+      if (getAncestorFlowControl(CE, CS)) {
         MemcpyOrderVec.emplace_back(
             CE, MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl);
-      else {
+      } else {
         // Record the first and second argument of memcpy
         SrcDstExprs.insert(CE->getArg(0));
         SrcDstExprs.insert(CE->getArg(1));
@@ -3273,8 +3347,8 @@ bool analyzeMemcpyOrder(
   for (const auto &DRE : AllDREsInCS) {
     if (ExcludeDRESet.count(DRE))
       continue;
-    if (const clang::ValueDecl* VD = DRE->getDecl()) {
-      if (const clang::VarDecl* VarD = dyn_cast<clang::VarDecl>(VD)) {
+    if (const clang::ValueDecl *VD = DRE->getDecl()) {
+      if (const clang::VarDecl *VarD = dyn_cast<clang::VarDecl>(VD)) {
         if (VarD->isLocalVarDecl()) {
           continue;
         }
@@ -3340,20 +3414,60 @@ bool analyzeMemcpyOrder(
 }
 
 /// This function is used to check if the ".wait()" can be omitted in the
-/// migrated code of cudaMemcpy API.
+/// migrated code of cudaMemcpy/cudaMemcpyFromSymbol/cudaMemcpyToSymbol API.
 /// Rule:
-/// Traverse  all CallExpr nodes between current cudaMemcpy CallExpr and
+/// This function analyze the code in five scopes respectively (The CompoundStmt
+/// of WhileStmt/ForStmt/DoStmt/IfStmt/FuncDecl). The analysis result of the
+/// outer scope will not affect the inner scope.
+///
+/// Traverse all CallExpr nodes between current cudaMemcpy CallExpr and
 /// the next cudaMemcpy CallExpr with pre-order.
-/// If (1) all these CallExpr nodess are in the SpecialFuncNameSet(e.g.,
+/// If (1) all these CallExpr nodes are in the SpecialFuncNameSet(e.g.,
 /// printf()), and (2) current and next cudaMemcpy are not in flow control
 /// Stmt, then the ".wait()" for current cudaMemcpy can be omitted.
+///
+/// E.g.,
+/// \code
+/// void foo() {
+///   cudaMemcpy();
+///   cudaMemcpy();
+///   while (true) {
+///     cudaMemcpy();
+///     cudaMemcpy();
+///     if (true) {
+///       cudaMemcpy();
+///       cudaMemcpy();
+///     }
+///   }
+/// }
+/// \endcode
+/// will be migrated to
+/// \code
+/// void foo() {
+///   q_ct1.emecpy();
+///   q_ct1.emecpy().wait();
+///   while (true) {
+///     q_ct1.emecpy();
+///     q_ct1.emecpy().wait();
+///     if (true) {
+///       q_ct1.emecpy();
+///       q_ct1.emecpy().wait();
+///     }
+///   }
+/// }
+/// \endcode
 bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
-  auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
-  if (!FD)
-    return false;
-  auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
+
+  const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
+  if (!CS) {
+    auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
+    if (!FD)
+      return false;
+    CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
+  }
+
   if (!CS)
     return false;
 

@@ -109,31 +109,31 @@ int main(int argc, char **argv) {
   for (int loop = 0; loop < 360; loop++)
     h_array[loop] = acos(-1.0f) * loop / 180.0f;
 
-  // CHECK:   q_ct1.memcpy(const_ptr.get_ptr(), &d_int, sizeof(int *)).wait();
+  // CHECK:   q_ct1.memcpy(const_ptr.get_ptr(), &d_int, sizeof(int *));
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360).wait(), 0);
+  // CHECK-NEXT:   (q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357).wait(), 0);
+  // CHECK-NEXT:   (q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357), 0);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357).wait(), 0);
+  // CHECK-NEXT:  (q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
   // CHECK:/*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354).wait(), 0);
+  // CHECK-NEXT: (q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354), 0);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
   // CHECK:  /*

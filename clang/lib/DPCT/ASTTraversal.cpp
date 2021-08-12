@@ -11812,7 +11812,9 @@ void MemoryMigrationRule::memcpySymbolMigration(
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
       }
-      emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+      if (!canOmitMemcpyWait(C)) {
+        emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+      }
     }
   }
 }

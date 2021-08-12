@@ -76,7 +76,7 @@ void foo1() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
-  // CHECK-NEXT: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK-NEXT: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
   // CHECK-NEXT: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
@@ -97,8 +97,8 @@ void foo1() {
 void foo2() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
-  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
-  // CHECK-NEXT: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
+  // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
+  // CHECK-NEXT: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   // CHECK-NEXT: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
