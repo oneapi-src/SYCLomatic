@@ -80,19 +80,14 @@ void foo_host(){
   thrust::replace_if(thrust::seq, B.begin(), B.end(), S2.begin(), pred, 0);
   thrust::replace_if(B.begin(), B.end(), S2.begin(), pred, 0);
 
-
-  // [Todo] Currently the migraion of the last 2 cases of remove_if are incorrect since
-  // dpct::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), pred)
-  // will encouter compile fail in oneDPL. Will fix after ONEDPL-271 is fixed.
-
   //CHECK: oneapi::dpl::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
   //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
   //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred);
   //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred);
   //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), pred);
   //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), pred);
-  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), S2.begin(), pred);
-  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), S2.begin(), pred);
+  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), pred);
+  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), pred);
   thrust::remove_if(thrust::device, A.begin(), A.end(), pred);
   thrust::remove_if(A.begin(), A.end(), pred);
   thrust::remove_if(thrust::device, A.begin(), A.end(), S.begin(), pred);

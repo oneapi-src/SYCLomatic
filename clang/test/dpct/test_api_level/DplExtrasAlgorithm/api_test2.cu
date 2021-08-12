@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test2_out
 
-// CHECK: 22
+// CHECK: 7
 // TEST_FEATURE: DplExtrasAlgorithm_remove_if
 
 #include <thrust/remove.h>

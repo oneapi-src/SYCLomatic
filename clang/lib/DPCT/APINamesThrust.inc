@@ -95,7 +95,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_if(host.begin(), host.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG("oneapi::dpl::execution::seq"),
                                 ARG(0), ARG(1), ARG(2), ARG(3)))))),
   CONDITIONAL_FACTORY_ENTRY(
     CompareArgType(0, 1),
@@ -110,7 +110,7 @@ CONDITIONAL_FACTORY_ENTRY(
         //Handling case: thrust::remove_if(thrust::seq, host.begin(), host.end(), stencil.begin(), pred);
         CALL_FACTORY_ENTRY("remove_if",
                            CALL("dpct::remove_if",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG("oneapi::dpl::execution::seq"),
                                 ARG(1), ARG(2), ARG(3), ARG(4))))),
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgType(1, "thrust::device_ptr"),
