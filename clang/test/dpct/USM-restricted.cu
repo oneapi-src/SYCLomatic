@@ -94,6 +94,14 @@ void foo() {
   cudaMallocHost(&h_A, sizeof(double2) / size);
   cudaMallocHost(&h_A, sizeof(uchar4) / size);
 
+  float* buffer[2];
+#define SIZE_1 (128 * 1024 * 1024)
+  // CHECK: *buffer = sycl::malloc_host<float>(SIZE_1, q_ct1);
+  // CHECK-NEXT: *(buffer + 1) = sycl::malloc_host<float>(SIZE_1, q_ct1);
+  cudaMallocHost((void**)buffer, SIZE_1 * sizeof(float));
+  cudaMallocHost((void**)(buffer + 1), SIZE_1 * sizeof(float));
+#undef SIZE_1
+
   // CHECK: d_A = (float *)sycl::malloc_shared(size, q_ct1);
   cudaMallocManaged((void **)&d_A, size);
   // CHECK: errorCode = (d_A = (float *)sycl::malloc_shared(size, q_ct1), 0);

@@ -11371,18 +11371,9 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc") {
-    std::string ReplaceName;
-    if (USMLevel == UsmLevel::UL_Restricted) {
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      mallocMigrationWithTransformation(
-          *Result.SourceManager, C, Name,
-          MapNames::getClNamespace() + "malloc_host",
-          "{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-    } else {
-      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
-                                        "malloc");
-    }
-    emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   } else if (Name == "cudaMallocManaged") {
     if (USMLevel == UsmLevel::UL_Restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
@@ -12272,7 +12263,9 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise") &&
         Name.compare("cudaArrayGetInfo") && Name.compare("cudaMalloc") &&
         Name.compare("cudaMallocPitch") && Name.compare("cudaMalloc3D") &&
-        Name.compare("cublasAlloc") && Name.compare("cuMemGetInfo_v2")) {
+        Name.compare("cublasAlloc") && Name.compare("cuMemGetInfo_v2") &&
+        Name.compare("cudaHostAlloc") && Name.compare("cudaMallocHost") &&
+        Name.compare("cuMemHostAlloc")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&

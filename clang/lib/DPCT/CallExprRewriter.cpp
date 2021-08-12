@@ -1440,6 +1440,19 @@ unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
   }
 }
 
+/// If the input \p QT is a pointer type or an array type, this function will
+/// return the deref-ed type. Otherwise an empty QualType object will be returned.
+/// The caller need to check if the return value is null using isNull().
+QualType DerefQualType(QualType QT) {
+  QualType DerefQT;
+  if (QT->isPointerType()) {
+    DerefQT = QT->getPointeeType();
+  } else if (QT->isArrayType()) {
+    DerefQT = dyn_cast<ArrayType>(QT.getTypePtr())->getElementType();
+  }
+  return DerefQT;
+};
+
 // Get the derefed type name of an arg while getDereferencedExpr is get the derefed expr.
 std::function<std::string(const CallExpr*C)>
 getDerefedType(size_t Idx) {
@@ -1473,8 +1486,11 @@ getDerefedType(size_t Idx) {
     if (DerefQT.isNull()) {
       DerefQT = TE->getType();
     }
-    if (NeedDeref)
-      DerefQT = DerefQT->getPointeeType();
+    if (NeedDeref) {
+      DerefQT = DerefQualType(DerefQT);
+      if (DerefQT.isNull())
+        return "";
+    }
     return DpctGlobalInfo::getReplacedTypeName(DerefQT);
   };
 }
@@ -1491,18 +1507,12 @@ getDoubleDerefedType(size_t Idx) {
 
     // Deref twice
     QualType DerefQT = TE->getType();
-    if (DerefQT->isPointerType()) {
-      DerefQT = DerefQT->getPointeeType();
-      if (DerefQT->isPointerType()) {
-        DerefQT = DerefQT->getPointeeType();
-      }
-      else {
-        return "";
-      }
-    }
-    else {
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
       return "";
-    }
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
+      return "";
     std::string ReplType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
 
     return ReplType;
@@ -1532,16 +1542,12 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
 
     // Deref twice
     QualType DerefQT = AE->getType();
-    if (DerefQT->isPointerType()) {
-      DerefQT = DerefQT->getPointeeType();
-      if (DerefQT->isPointerType()) {
-        DerefQT = DerefQT->getPointeeType();
-      } else {
-        return OrginalStr;
-      }
-    } else {
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
       return OrginalStr;
-    }
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
+      return OrginalStr;
 
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
 
@@ -1575,6 +1581,12 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
     }
 
     return OrginalStr;
+  };
+}
+
+std::function<bool(const CallExpr *C)> checkIsUSM() {
+  return [](const CallExpr *C) -> bool {
+    return DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted;
   };
 }
 
@@ -1966,18 +1978,12 @@ public:
 
     // Try to deref twice to avoid the type is an unresolved template
     QualType DerefQT = AE->getType();
-    if (DerefQT->isPointerType()) {
-      DerefQT = DerefQT->getPointeeType();
-      if (DerefQT->isPointerType()) {
-        DerefQT = DerefQT->getPointeeType();
-      }
-      else {
-        return false;
-      }
-    }
-    else {
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
       return false;
-    }
+    DerefQT = DerefQualType(DerefQT);
+    if (DerefQT.isNull())
+      return false;
 
     if (C->getNumArgs() <= SizeArgIdx)
       return false;
