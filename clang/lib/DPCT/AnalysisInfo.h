@@ -979,13 +979,13 @@ public:
                         .getFilename(getSourceManager().getExpansionLoc(SL))
                         .str());
   }
-  static bool isInRoot(const std::string &FilePath, bool IsFilePathAbs = true) {
-    if (IsFilePathAbs) {
+  static bool isInRoot(const std::string &FilePath, bool IsChildRelative = true) {
+    if (IsChildRelative) {
       std::string Path = removeSymlinks(getFileManager(), FilePath);
       makeCanonical(Path);
       return isChildPath(InRoot, Path);
     } else {
-      return isChildPath(InRoot, FilePath, IsFilePathAbs);
+      return isChildPath(InRoot, FilePath, IsChildRelative);
     }
   }
 

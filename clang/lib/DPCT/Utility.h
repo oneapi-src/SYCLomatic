@@ -133,13 +133,13 @@ inline bool isDirectory(const std::string &FilePath) {
 /// /x/y and /x/y   -> false
 /// /x/y and /x/yy/ -> false (not a prefix in terms of a path)
 inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
-                        bool IsChildAbs = true) {
+                        bool IsChildRelative = true) {
   // 1st make Child as absolute path, then do compare.
   llvm::SmallString<256> ChildAbs;
   std::error_code EC;
   bool InChildAbsValid = true;
 
-  if (IsChildAbs) {
+  if (IsChildRelative) {
     auto &RealPath = RealPathCache[Child];
     if (!RealPath.empty()) {
       ChildAbs = RealPath;
@@ -148,7 +148,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
       if ((bool)EC) {
         InChildAbsValid = false;
       } else {
-        RealPath = ChildAbs;
+        RealPathCache[Child] = ChildAbs;
       }
     }
   } else {
