@@ -73,7 +73,7 @@ static char const **bear_update_environment(char *const envp[], bear_env_t *env)
 static char const **bear_update_environ(char const **in, char const *key, char const *value);
 static char **bear_get_environment();
 #ifdef INTEL_CUSTOMIZATION
-static void bear_report_call(char const *fun, char const *argv[]);
+static int bear_report_call(char const *fun, char const *argv[]);
 #else
 static void bear_report_call(char const *fun, char const *const argv[]);
 #endif
@@ -168,7 +168,9 @@ static void on_unload(void) {
 #ifdef HAVE_EXECVE
 int execve(const char *path, char *const argv[], char *const envp[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if (ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -182,7 +184,9 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 #endif
 int execv(const char *path, char *const argv[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -194,10 +198,11 @@ int execv(const char *path, char *const argv[]) {
 #ifdef HAVE_EXECVPE
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
     // To sync file name with argv[0], in case argv[0] is changed
     // by bear_report_call.
-    file = argv[0];
+    if(ret)
+        file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -208,10 +213,11 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
 #ifdef HAVE_EXECVP
 int execvp(const char *file, char *const argv[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
     // To sync file name with argv[0], in case argv[0] is changed
     // by bear_report_call.
-    file = argv[0];
+    if(ret)
+        file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -222,10 +228,11 @@ int execvp(const char *file, char *const argv[]) {
 #ifdef HAVE_EXECVP2
 int execvP(const char *file, const char *search_path, char *const argv[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
     // To sync file name with argv[0], in case argv[0] is changed
     // by bear_report_call.
-    file = argv[0];
+    if(ret)
+        file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -236,7 +243,9 @@ int execvP(const char *file, const char *search_path, char *const argv[]) {
 #ifdef HAVE_EXECT
 int exect(const char *path, char *const argv[], char *const envp[]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -255,7 +264,9 @@ int execl(const char *path, const char *arg, ...) {
     va_end(args);
 
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -278,7 +289,9 @@ int execlp(const char *file, const char *arg, ...) {
     va_end(args);
 
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -302,7 +315,9 @@ int execle(const char *path, const char *arg, ...) {
     va_end(args);
 
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -320,7 +335,9 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 const posix_spawnattr_t *restrict attrp,
                 char *const argv[restrict], char *const envp[restrict]) {
 #ifdef INTEL_CUSTOMIZATION
-    bear_report_call(__func__, (char const **)argv);
+    int ret = bear_report_call(__func__, (char const **)argv);
+    if(ret)
+        path = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -465,6 +482,29 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 #endif
 
 #ifdef INTEL_CUSTOMIZATION
+
+static int call_eaccess(const char *pathname, int mode) {
+    typedef int (*func)(const char *, int);
+    DLSYM(func, fp, "eaccess");
+    int const result = (*fp)(pathname, mode);
+    return result;
+}
+
+int eaccess(const char *pathname, int mode) {
+    int len = strlen(pathname);
+    if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+        pathname[1] == 'v' && pathname[0] == 'n') {
+        // To handle case like "nvcc foo.cu ..."
+        return 0;
+    } else if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+                pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+                pathname[len - 5] == '/') {
+        // To handle case like "/path/to/nvcc foo.cu ..."
+        return 0;
+    }
+    return call_eaccess(pathname, mode);
+}
+
 static int generate_file(char * filename){
     char buf[512];
     char cmd[512];
@@ -887,6 +927,7 @@ const char *get_compiler(int compiler_idx, const char const *compiler_array[]) {
   return compiler_array[compiler_idx];
 }
 
+
 // Find compiler name in \p str, and return the position of the
 // character behind the compiler name.
 // e.g: str could be:
@@ -1016,11 +1057,14 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 
 #endif
 
-/* this method is to write log about the process creation. */
 #ifdef INTEL_CUSTOMIZATION
-
-
-static void bear_report_call(char const *fun, char const *argv[]) {
+// This method parses the command execution issued by the build tool make to
+// write log for the compile options and fake the expecting outcome for the
+// command. It returns whether intercept-stub is used to take over the command
+// execution intercepted.
+// true means intercept-stub is used to take over the command execution intercepted,
+// false means intercept-stub is not used to take over the command execution intercepted.
+static int bear_report_call(char const *fun, char const *argv[]) {
 #else
 static void bear_report_call(char const *fun, char const *const argv[]) {
 #endif
@@ -1248,9 +1292,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 
     int is_stub_need = 0;
     is_stub_need = (pos != NULL);
-
-    if(is_stub_need)
-    {
+    if(is_stub_need) {
         ret = 0; // intercept-stub should continue to run.
 
         // intercept-stub is used to handle the compiler command like
@@ -1264,6 +1306,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     if(ret == 1 && it_cp == 0){
         exit(0);
     }
+    return is_stub_need;
 #endif
 }
 
