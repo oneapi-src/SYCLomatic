@@ -28,7 +28,7 @@ void print_data(int* data, int num) {
 //CHECK: template<typename ScanTy, typename DataTy>
 //CHECK-NEXT: void Scan1(ScanTy &s) {
 //CHECK-NEXT:  DataTy d;
-//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: }
 template<typename ScanTy, typename DataTy>
 __device__ void Scan1(ScanTy &s) {
@@ -38,7 +38,7 @@ __device__ void Scan1(ScanTy &s) {
 
 //CHECK: void TemplateKernel1(int* data,
 //CHECK-NEXT:  sycl::nd_item<1> item_ct1) {
-//CHECK-NEXT:  typedef sycl::ONEAPI::sub_group WarpScan;
+//CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
 //CHECK-NEXT:  typedef sycl::group<1> BlockScan;
 //CHECK-EMPTY:
 //CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());

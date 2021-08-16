@@ -145,8 +145,9 @@ SUBGROUPSIZE_FACTORY(
              makeCombinedArg(ARG(0),
                              makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "),
                                                              SUBGROUP),
-                                             ARG(".get_local_linear_id()) : 0, "
-                                                 "sycl::ONEAPI::plus<>()"))))))
+                                             ARG(".get_local_linear_id()) : 0, " +
+                                                 MapNames::getClNamespace() +
+                                                 "ext::oneapi::plus<>()"))))))
 
 // __ballot_sync
 SUBGROUPSIZE_FACTORY(
@@ -166,5 +167,6 @@ SUBGROUPSIZE_FACTORY(
                              ARG(1),
                              makeCombinedArg(
                                  makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
-                                 ARG(".get_local_linear_id("
-                                     ")) : 0, sycl::ONEAPI::plus<>()")))))))))
+                                 ARG(".get_local_linear_id()) : 0, " +
+                                     MapNames::getClNamespace() +
+                                     "ext::oneapi::plus<>()")))))))))

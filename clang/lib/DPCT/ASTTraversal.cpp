@@ -13037,25 +13037,25 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE, FD)));
   } else if (FuncName == "__threadfence_block") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ONEAPI::atomic_fence(" + CLNS +
-                          "ONEAPI::memory_order::acq_rel, " + CLNS +
-                          "ONEAPI::memory_scope::work_group" + ")";
+    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
+                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
+                          "ext::oneapi::memory_scope::work_group" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__threadfence") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ONEAPI::atomic_fence(" + CLNS +
-                          "ONEAPI::memory_order::acq_rel, " + CLNS +
-                          "ONEAPI::memory_scope::device" + ")";
+    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
+                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
+                          "ext::oneapi::memory_scope::device" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__threadfence_system") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ONEAPI::atomic_fence(" + CLNS +
-                          "ONEAPI::memory_order::acq_rel, " + CLNS +
-                          "ONEAPI::memory_scope::system" + ")";
+    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
+                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
+                          "ext::oneapi::memory_scope::system" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -13080,7 +13080,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     ReplStr += DpctGlobalInfo::getGroup(CE) + ", ";
     if (FuncName == "__syncthreads_count") {
       ReplStr += ExprAnalysis::ref(CE->getArg(0)) + " == 0 ? 0 : 1, " +
-                 MapNames::getClNamespace() + "ONEAPI::plus<>()";
+                 MapNames::getClNamespace() + "ext::oneapi::plus<>()";
     } else {
       ReplStr += ExprAnalysis::ref(CE->getArg(0));
     }
@@ -15610,14 +15610,14 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 }
 
 std::string CubRule::getOpRepl(const Expr *Operator) {
-  std::string OpRepl = MapNames::getClNamespace() + "ONEAPI::plus<>()";
+  std::string OpRepl = MapNames::getClNamespace() + "ext::oneapi::plus<>()";
   if (auto Op = dyn_cast_or_null<CXXConstructExpr>(Operator)) {
     std::string OpType =
         Op->getType()->getCanonicalTypeInternal().getAsString();
     if (OpType == "struct cub::Max") {
-      OpRepl = MapNames::getClNamespace() + "ONEAPI::maximum<>()";
+      OpRepl = MapNames::getClNamespace() + "ext::oneapi::maximum<>()";
     } else if (OpType == "struct cub::Min") {
-      OpRepl = MapNames::getClNamespace() + "ONEAPI::minimum<>()";
+      OpRepl = MapNames::getClNamespace() + "ext::oneapi::minimum<>()";
     }
   }
   return OpRepl;
@@ -15744,7 +15744,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
     if (CanonicalTypeStr.find("Warp") != std::string::npos) {
       emplaceTransformation(
           replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
-                      MapNames::getClNamespace() + "ONEAPI::sub_group", SM));
+                      MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
     } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
       auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
       if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
@@ -16024,7 +16024,7 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
       TypeName.find("class cub::WarpReduce") == 0) {
     emplaceTransformation(
         replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
-                    MapNames::getClNamespace() + "ONEAPI::sub_group", SM));
+                    MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);

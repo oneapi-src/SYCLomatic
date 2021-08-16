@@ -170,19 +170,19 @@ __global__ void kernel18() {
 
 __global__ void kernel19() {
   unsigned mask;
-  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ONEAPI::plus<>());
+  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ext::oneapi::plus<>());
   mask = __ballot(threadIdx.x < NUM_ELEMENTS);
 }
 
 __global__ void kernel20() {
   unsigned mask;
-  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (__activemask() & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ONEAPI::plus<>());
+  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (__activemask() & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ext::oneapi::plus<>());
   mask = __ballot_sync(__activemask(), threadIdx.x < NUM_ELEMENTS);
 }
 
 __global__ void kernel21() {
   unsigned mask;
-  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (FULL_MASK & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ONEAPI::plus<>());
+  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (FULL_MASK & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ext::oneapi::plus<>());
   mask = __ballot_sync(FULL_MASK, threadIdx.x < NUM_ELEMENTS);
 }
 

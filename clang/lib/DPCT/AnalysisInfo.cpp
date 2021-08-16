@@ -1042,18 +1042,18 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       SyncParamDecl =
           "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
-          MapNames::getClNamespace() + "ONEAPI::atomic_ref<unsigned int," +
-          MapNames::getClNamespace() + "ONEAPI::memory_order::seq_cst," +
-          MapNames::getClNamespace() + "ONEAPI::memory_scope::device," +
+          MapNames::getClNamespace() + "ext::oneapi::atomic_ref<unsigned int," +
+          MapNames::getClNamespace() + "ext::oneapi::memory_order::seq_cst," +
+          MapNames::getClNamespace() + "ext::oneapi::memory_scope::device," +
           MapNames::getClNamespace() + "access::address_space::global_space>(" +
           DpctGlobalInfo::getSyncName() + "[0]);";
 
     } else {
       SyncParamDecl =
           "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
-          MapNames::getClNamespace() + "ONEAPI::atomic_ref<unsigned int," +
-          MapNames::getClNamespace() + "ONEAPI::memory_order::seq_cst," +
-          MapNames::getClNamespace() + "ONEAPI::memory_scope::device," +
+          MapNames::getClNamespace() + "ext::oneapi::atomic_ref<unsigned int," +
+          MapNames::getClNamespace() + "ext::oneapi::memory_order::seq_cst," +
+          MapNames::getClNamespace() + "ext::oneapi::memory_scope::device," +
           MapNames::getClNamespace() +
           "access::address_space::global_space>(*(unsigned int "
           "*)&" +
@@ -3169,7 +3169,7 @@ FreeQueriesInfo::getNames(FreeQueriesKind K) {
       {getItemName() + ".get_group()",
        MapNames::getClNamespace() + "this_group", "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ONEAPI::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];

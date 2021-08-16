@@ -32,7 +32,7 @@ void print_data(int* data, int num) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-NEXT: }
 __global__ void ExclusiveScanKernel1(int* data) {
@@ -55,7 +55,7 @@ __global__ void ExclusiveScanKernel1(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, 0, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, 0, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-NEXT: }
 __global__ void ExclusiveScanKernel2(int* data) {
@@ -78,7 +78,7 @@ __global__ void ExclusiveScanKernel2(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-NEXT: }
 __global__ void InclusiveScanKernel(int* data) {
@@ -101,7 +101,7 @@ __global__ void InclusiveScanKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-NEXT: }
 __global__ void ExclusiveSumKernel(int* data) {
@@ -124,7 +124,7 @@ __global__ void ExclusiveSumKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-NEXT: }
 __global__ void InclusiveSumKernel(int* data) {
@@ -170,13 +170,13 @@ __global__ void BroadcastKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-EMPTY:
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires subgroup size to be 16, while other subgroup function in same DPC++ kernel requires different subgroup size. You may need to adjust the code.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:  data[threadid] = output + data[threadid];
 //CHECK-NEXT:}
 __global__ void WarningTestKernel1(int* data) {
@@ -204,7 +204,7 @@ __global__ void WarningTestKernel1(int* data) {
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires subgroup size to be 32, while other subgroup function in same DPC++ kernel requires different subgroup size. You may need to adjust the code.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  data = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), data, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  data = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), data, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:}
 __device__ void WarpScanTest(){
   typedef cub::WarpScan<int> WarpScan;
@@ -219,7 +219,7 @@ __device__ void WarpScanTest(){
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function reduce_over_group requires subgroup size to be 16, while other subgroup function in same DPC++ kernel requires different subgroup size. You may need to adjust the code.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  data = sycl::reduce_over_group(item_ct1.get_sub_group(), data, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  data = sycl::reduce_over_group(item_ct1.get_sub_group(), data, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:}
 __device__ void WarpReduceTest(){
   typedef cub::WarpReduce<int, 16> WarpReduce;
@@ -235,7 +235,7 @@ __device__ void WarpReduceTest(){
 //CHECK-EMPTY:
 //CHECK-NEXT: int input = data[threadid];
 //CHECK-NEXT: int output = 0;
-//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ONEAPI::plus<>());
+//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: data[threadid] = output;
 //CHECK-EMPTY:
 //CHECK-NEXT: WarpScanTest(item_ct1);
@@ -262,7 +262,7 @@ __global__ void WarningTestKernel2(int* data) {
 //CHECK: template<typename ScanTy, typename DataTy>
 //CHECK-NEXT: void Scan1(ScanTy &s) {
 //CHECK-NEXT:  DataTy d;
-//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::ONEAPI::plus<>());
+//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT: }
 template<typename ScanTy, typename DataTy>
 __device__ void Scan1(ScanTy &s) {
@@ -272,7 +272,7 @@ __device__ void Scan1(ScanTy &s) {
 
 //CHECK: void TemplateKernel1(int* data,
 //CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:  typedef sycl::ONEAPI::sub_group WarpScan;
+//CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
 //CHECK-NEXT:  typedef sycl::group<3> BlockScan;
 //CHECK-EMPTY:
 //CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());

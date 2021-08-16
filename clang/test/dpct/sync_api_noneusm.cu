@@ -45,17 +45,17 @@ __global__ void k() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::work_group);
+  // CHECK-NEXT: sycl::ext::oneapi::atomic_fence(sycl::ext::oneapi::memory_order::acq_rel, sycl::ext::oneapi::memory_scope::work_group);
   __threadfence_block();
   // CHECK: /*
   // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::device);
+  // CHECK-NEXT: sycl::ext::oneapi::atomic_fence(sycl::ext::oneapi::memory_order::acq_rel, sycl::ext::oneapi::memory_scope::device);
   __threadfence();
   // CHECK: /*
   // CHECK-NEXT: DPCT1078:{{[0-9]+}}: Consider replacing memory_order::acq_rel with memory_order::seq_cst for correctness if strong memory order restrictions are needed.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::ONEAPI::atomic_fence(sycl::ONEAPI::memory_order::acq_rel, sycl::ONEAPI::memory_scope::system);
+  // CHECK-NEXT: sycl::ext::oneapi::atomic_fence(sycl::ext::oneapi::memory_order::acq_rel, sycl::ext::oneapi::memory_scope::system);
   __threadfence_system();
   // CHECK: item_ct1.barrier();
   // CHECK-NEXT: sycl::all_of_group(item_ct1.get_group(), p);
@@ -64,7 +64,7 @@ __global__ void k() {
   // CHECK-NEXT: sycl::any_of_group(item_ct1.get_group(), p);
   __syncthreads_or(p);
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>());
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
   __syncthreads_count(p);
   // CHECK: item_ct1.barrier();
   __syncwarp(0xffffffff);
@@ -73,26 +73,26 @@ __global__ void k() {
   int a = __syncthreads_and(p);
   // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p));
   int b = __syncthreads_or(p);
-  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>()));
+  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>()));
   int c = __syncthreads_count(p);
 
   // CHECK: foo((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_and(p));
   // CHECK: foo((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_or(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
+  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   foo(__syncthreads_count(p));
 
   // CHECK: FOO((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_and(p));
   // CHECK: FOO((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_or(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ONEAPI::plus<>())));
+  // CHECK: FOO((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   FOO(__syncthreads_count(p));
 }
 
 // CHECK: void kernel(sycl::nd_item<3> item_ct1,
-// CHECK-NEXT:             sycl::ONEAPI::atomic_ref<unsigned int,sycl::ONEAPI::memory_order::seq_cst,sycl::ONEAPI::memory_scope::device,sycl::access::address_space::global_space> &sync_ct1) {
+// CHECK-NEXT:             sycl::ext::oneapi::atomic_ref<unsigned int,sycl::ext::oneapi::memory_order::seq_cst,sycl::ext::oneapi::memory_scope::device,sycl::access::address_space::global_space> &sync_ct1) {
 // CHECK-NEXT:   dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
 // CHECK-NEXT: }
 __global__ void kernel() {
@@ -113,7 +113,7 @@ int main() {
 // CHECK-NEXT:        cgh.parallel_for(
 // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            auto atm_sync_ct1 = sycl::ONEAPI::atomic_ref<unsigned int,sycl::ONEAPI::memory_order::seq_cst,sycl::ONEAPI::memory_scope::device,sycl::access::address_space::global_space>(*(unsigned int *)&sync_ct1[0]);
+// CHECK-NEXT:            auto atm_sync_ct1 = sycl::ext::oneapi::atomic_ref<unsigned int,sycl::ext::oneapi::memory_order::seq_cst,sycl::ext::oneapi::memory_scope::device,sycl::access::address_space::global_space>(*(unsigned int *)&sync_ct1[0]);
 // CHECK-NEXT:            kernel(item_ct1, atm_sync_ct1);
 // CHECK-NEXT:          });
 // CHECK-NEXT:      }).wait();
