@@ -3164,12 +3164,14 @@ std::vector<std::shared_ptr<FreeQueriesInfo::MacroInfo>>
 const FreeQueriesInfo::FreeQueriesNames &
 FreeQueriesInfo::getNames(FreeQueriesKind K) {
   static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
-      {getItemName(), MapNames::getClNamespace() + "this_nd_item",
+      {getItemName(),
+       MapNames::getClNamespace() + "ext::oneapi::experimental::this_nd_item",
        getItemName()},
       {getItemName() + ".get_group()",
-       MapNames::getClNamespace() + "this_group", "group" + getCTFixedSuffix()},
+       MapNames::getClNamespace() + "ext::oneapi::experimental::this_group",
+       "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ext::oneapi::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::experimental::this_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];
