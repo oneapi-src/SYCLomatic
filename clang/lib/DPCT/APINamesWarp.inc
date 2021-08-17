@@ -133,8 +133,7 @@ SUBGROUPSIZE_FACTORY(2, "shuffle_xor",
 
 WARNING_FACTORY_ENTRY("__activemask",
                       CALL_FACTORY_ENTRY("__activemask", CALL("__activemask")),
-                      Diagnostics::ACTIVE_MASK_NOT_SUPPORTED,
-                      ARG("__activemask"), ARG("0xffffffff"))
+                      Diagnostics::ACTIVE_MASK_NOT_SUPPORTED)
 
 // __ballot
 SUBGROUPSIZE_FACTORY(

@@ -17,7 +17,7 @@ __global__ void kernel1() {
 __global__ void kernel2() {
   int predicate;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: The function __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::all_of_group(item_{{[0-9a-z]+}}.get_sub_group(), (~__activemask() & (0x1 << item_{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) || predicate);
   __all_sync(__activemask(), predicate);
@@ -39,7 +39,7 @@ __global__ void kernel4() {
 __global__ void kernel5() {
   int predicate;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: The function __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::any_of_group(item_ct1.get_sub_group(), (__activemask() & (0x1 << item_ct1.get_sub_group().get_local_linear_id())) && predicate);
   __any_sync(__activemask(), predicate);
@@ -189,7 +189,7 @@ __global__ void kernel21() {
 __global__ void kernel22() {
   unsigned mask;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: The function __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
   //CHECK-NEXT: */
   //CHECK-NEXT: mask = __activemask();
   mask = __activemask();
@@ -530,7 +530,7 @@ int main() {
   kernel31<<<1,1>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of subgroup size attribute argument 'warpSize' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression. You may need to adjust the code.
+  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of the subgroup size attribute argument 'warpSize' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -540,7 +540,7 @@ int main() {
   kernel32<<<1,1>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of subgroup size attribute argument 'WS' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression. You may need to adjust the code.
+  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of the subgroup size attribute argument 'WS' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
