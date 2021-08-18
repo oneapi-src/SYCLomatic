@@ -40,10 +40,10 @@ int foo2(cudaDataType DT) {
 
   //CHECK: int mode = 0;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed, because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because the function call is redundant in DPC++.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed, because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because the function call is redundant in DPC++.
   //CHECK-NEXT: */
   //CHECK-NEXT: int cdt;
   //CHECK-NEXT: int cbdt;

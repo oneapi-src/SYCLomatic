@@ -430,12 +430,12 @@ static bits<ExperimentalFeatures> Experimentals(
   llvm::cl::desc(
     "Comma separated list of experimental features to be used in migrated "
     "code.\n"
-    "By default, these features will not be used in migrated code."),
+    "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
   llvm::cl::CommaSeparated,
   values(
     llvm::cl::OptionEnumValue{
         "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "DPCT helper function: nd_range_barrier. Default: off\n",
+        "Experimental helper function used to help cross group synchronization during migration.\n",
         false },
     llvm::cl::OptionEnumValue{
         "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),

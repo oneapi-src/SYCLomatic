@@ -24,25 +24,25 @@ void foo() {
   cudaDeviceGetLimit(pValue, limit);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetSharedMemConfig was removed, because
-  // CHECK-NEXT: DPC++ currently does not support configuring shared memory on devices.
-  // CHECK-NEXT: */
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetSharedMemConfig was removed because DPC++
+  // CHECK-NEXT: currently does not support configuring shared memory on devices.
+  // CHECK-NEXT:*/
   cudaDeviceSetSharedMemConfig(config);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed, because DPC++
-  // CHECK-NEXT: currently does not support setting flags for devices.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed because DPC++ currently
+  // CHECK-NEXT: does not support setting flags for devices.
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed, because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because DPC++
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed, because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because DPC++
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
@@ -90,12 +90,12 @@ void foo() {
   cudaFuncCache fconfig;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetSharedMemConfig was removed, because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetSharedMemConfig was removed because DPC++
   // CHECK-NEXT: currently does not support configuring shared memory on devices.
   cudaFuncSetSharedMemConfig(NULL, config );
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetCacheConfig was removed, because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetCacheConfig was removed because DPC++
   // CHECK-NEXT: currently does not support configuring shared memory on devices.
   cudaFuncSetCacheConfig(NULL, fconfig);
 
