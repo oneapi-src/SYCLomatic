@@ -482,7 +482,7 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range().get(2);
@@ -492,7 +492,7 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:    i += offset;
 // CHECK-NEXT:  }
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance, if there is no access to global memory.
+// CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(&(histo[item_ct1.get_local_id(2)]))).fetch_add(temp[item_ct1.get_local_id(2)]);
