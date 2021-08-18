@@ -8,7 +8,7 @@
 // CHECK: #define TB(b) auto b = sycl::ext::oneapi::experimental::this_group<1>();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 // CHECK:/*
-// CHECK-NEXT:DPCT1088:{{[0-9]+}}: The macro definition has multiple migration results in dimension of free queries function that could not be unified. You may need to modify the code.
+// CHECK-NEXT:DPCT1088:{{[0-9]+}}: The macro definition has multiple migration results in the dimension of free queries function that could not be unified. You may need to modify the code.
 // CHECK-NEXT:*/
 // CHECK-NEXT: #define TB1(b) auto b = sycl::ext::oneapi::experimental::this_group<Placeholder /* Fix the dimension manually */>();
 #define TB1(b) cg::thread_block b = cg::this_thread_block();

@@ -32,7 +32,7 @@ __global__ void compute_lj_force()
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     texReader positionTexReader;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1084:{{[0-9]+}}:  The function call has multiple migration results in different template instantiations that could not be unified. You may need to modify the code.
+    // CHECK-NEXT: DPCT1084:{{[0-9]+}}:  The function call has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
     // CHECK-NEXT: */
     // CHECK-NEXT: float j = positionTexReader(idx, posTexture_dp).x();
     float j = positionTexReader(idx).x;

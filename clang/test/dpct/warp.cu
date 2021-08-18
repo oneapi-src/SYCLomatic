@@ -277,7 +277,7 @@ __global__ void kernel31() {
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::shift_group_left.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT:DPCT1085:{{[0-9]+}}: The function shift_group_left requires subgroup size to be 32, while other subgroup function in same DPC++ kernel requires different subgroup size. You may need to adjust the code.
+  // CHECK-NEXT:DPCT1085:{{[0-9]+}}: The function shift_group_left requires subgroup size to be 32, while other subgroup functions in same DPC++ kernel require a different subgroup size. You may need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::shift_group_left(item_ct1.get_sub_group(), val, srcLane);
   __shfl_down_sync(mask, val, srcLane, 32);
@@ -530,7 +530,7 @@ int main() {
   kernel31<<<1,1>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of the subgroup size attribute argument 'warpSize' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression.
+  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of subgroup size attribute argument 'warpSize' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with an integral constant expression.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -540,7 +540,7 @@ int main() {
   kernel32<<<1,1>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of the subgroup size attribute argument 'WS' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with integral constant expression.
+  // CHECK-NEXT: DPCT1089:{{[0-9]+}}: The value of subgroup size attribute argument 'WS' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace "dpct_placeholder" with an integral constant expression.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

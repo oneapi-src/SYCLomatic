@@ -48,7 +48,7 @@ int main(void)
   staticReverse<<<10,10>>>();
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory may be different in original code and migrated code. Check the correctness of the allocated memory size.
+// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
@@ -61,7 +61,7 @@ int main(void)
 
 void foo1() {
 // CHECK: /*
-// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory may be different in original code and migrated code. Check the correctness of the allocated memory size.
+// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
 // CHECK-NEXT: int shared_memory_size = 3 * sizeof(float);
   int shared_memory_size = 3 * sizeof(float);
@@ -70,7 +70,7 @@ void foo1() {
 
 void foo2() {
 // CHECK: /*
-// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory may be different in original code and migrated code. Check the correctness of the allocated memory size.
+// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
 // CHECK-NEXT: int bbb = sizeof(float);
   int aaa = 3;
@@ -86,7 +86,7 @@ __global__ void kernel3() {
 
 void foo3() {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory may be different in original code and migrated code. Check the correctness of the allocated memory size.
+  // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(36/*sizeof(float3) * 3*/), cgh);
   kernel3<<<1, 1>>>();
