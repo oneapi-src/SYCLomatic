@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
 // CHECK:/*
-// CHECK-NEXT:DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated/ discrete GPU devices.
+// CHECK-NEXT:DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated and discrete GPU devices.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;

@@ -828,12 +828,12 @@ typedef CONCATE(Event_t) event_t2;
 //CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
 //CHECK-NEXT:   unsigned int flags;
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
 //CHECK-NEXT:   int priority;
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+//CHECK-NEXT:   DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
 //CHECK-NEXT:   dev_ct1.destroy_queue(stream2);

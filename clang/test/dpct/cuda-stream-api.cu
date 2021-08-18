@@ -98,7 +98,7 @@ static void func()
 
   {
     // CHECK: /*
-    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
     // CHECK-NEXT: */
     // CHECK-NEXT: s2 = dev_ct1.create_queue();
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
@@ -107,7 +107,7 @@ static void func()
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
     // CHECK-NEXT: */
     // CHECK-NEXT: MY_ERROR_CHECKER((*(s3) = dev_ct1.create_queue(), 0));
     MY_ERROR_CHECKER(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
@@ -138,7 +138,7 @@ static void func()
   {
     {
       // CHECK: /*
-      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
       // CHECK-NEXT: */
       // CHECK-NEXT: s4 = dev_ct1.create_queue();
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
@@ -147,7 +147,7 @@ static void func()
       // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
       // CHECK-NEXT: */
       // CHECK-NEXT: /*
-      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
       // CHECK-NEXT: */
       // CHECK-NEXT: MY_ERROR_CHECKER((s5 = dev_ct1.create_queue(), 0));
       MY_ERROR_CHECKER(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));

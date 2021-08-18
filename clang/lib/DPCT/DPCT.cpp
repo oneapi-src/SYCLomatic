@@ -338,13 +338,13 @@ static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
             "Limit helper header files to only the necessary files for the migrated code and\n"
             "place them in the --out-root directory.", false},
         llvm::cl::OptionEnumValue{
-            "all", int(HelperFilesCustomizationLevel::HFCL_All),
-            "Generate a complete set of helper header files and place them in the --out-root\n"
-            "directory.", false},
-        llvm::cl::OptionEnumValue{
             "api", int(HelperFilesCustomizationLevel::HFCL_API),
             "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root directory.", false}),
+            "place them in the --out-root directory.", false},
+        llvm::cl::OptionEnumValue{
+            "all", int(HelperFilesCustomizationLevel::HFCL_All),
+            "Generate a complete set of helper header files and place them in the --out-root\n"
+            "directory.", false}),
     init(HelperFilesCustomizationLevel::HFCL_None), value_desc("value"),
     cat(DPCTCat), llvm::cl::Optional);
 

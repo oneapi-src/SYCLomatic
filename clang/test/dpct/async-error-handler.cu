@@ -11,13 +11,13 @@ int main() {
   cudaStreamCreate(&s0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+  // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
   // CHECK-NEXT: */
   // CHECK-NEXT: s1 = dev_ct1.create_queue(true);
   cudaStreamCreateWithFlags(&s1, cudaStreamDefault);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
+  // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
   // CHECK-NEXT: */
   // CHECK-NEXT: s2 = dev_ct1.create_queue(true);
   cudaStreamCreateWithPriority(&s2, cudaStreamDefault, 2);

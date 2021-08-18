@@ -3,7 +3,7 @@
 #include <iostream>
 
 // CHECK:    /*
-// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf, if your code is used on the device.
+// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf if your code is used on the device.
 // CHECK-NEXT:    */
 #define foo_assert( cond) \
    do \
@@ -38,7 +38,7 @@ HOST_DEVICE_END
 // CHECK:SYCL_EXTERNAL HOST_DEVICE
 // CHECK-NEXT:void SubFooReaction::fooCollision(){
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf, if your code is used on the device.
+// CHECK-NEXT:    DPCT1040:{{[0-9]+}}: Use sycl::stream instead of printf if your code is used on the device.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    printf("hello");
 // CHECK-NEXT:}
