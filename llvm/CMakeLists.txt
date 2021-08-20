@@ -609,6 +609,12 @@ if(NOT DEFINED LLVM_DYLIB_COMPONENTS)
     "Semicolon-separated list of components to include in libLLVM, or \"all\".")
 endif()
 
+# INTEL_CUSTOMIZATION
+if(WIN32)
+    add_compile_options(/MT)
+endif()
+#end INTEL_CUSTOMIZATION
+
 if(MSVC)
   option(LLVM_BUILD_LLVM_C_DYLIB "Build LLVM-C.dll (Windows only)" ON)
   # Set this variable to OFF here so it can't be set with a command-line

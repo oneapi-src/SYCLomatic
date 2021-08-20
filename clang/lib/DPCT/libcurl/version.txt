@@ -12,9 +12,10 @@
    $ make install
 3  Windows build.
    a. start Visual Studio X64 command line
-   b. cd z:\libcurl\curl-7.74\windows-build\curl-7.74.0\winbuild
-   c. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
-   d. check the result in z:\libcurl\curl-7.74\windows-build\curl-7.74.0\builds folder
+   b. cd z:\libcurl\curl-7.78\windows-build\curl-7.78.0\winbuild
+   c. change /MD to /MT and /MDd to /MTd in file winbuild\MakefileBuild.vc in line359 and line362
+   e. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
+   f. check the result in z:\libcurl\curl-7.78\windows-build\curl-7.78.0\builds folder
 
 4. Update header file into dpct project
    a. Copy header files from z:\libcurl\curl-7.74\windows-build\curl-7.74.0\builds\libcurl-vc-x64-release-static\include to dpd_icl-syclct/clang/lib/DPCT/libcurl/include folder
