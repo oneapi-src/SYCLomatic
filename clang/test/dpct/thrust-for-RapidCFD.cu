@@ -63,7 +63,7 @@ void foo_host(){
     //CHECK: std::min_element(h_input.begin(), h_input.end());
     thrust::min_element(h_input.begin(), h_input.end());
 
-    //CHECK: dpct::discard_iterator();
+    //CHECK: oneapi::dpl::discard_iterator();
     thrust::make_discard_iterator();
     //CHECK: oneapi::dpl::reduce_by_segment(
     //CHECK-NEXT:     oneapi::dpl::execution::make_device_policy(q_ct1), h_input.begin(),
