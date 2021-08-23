@@ -80,7 +80,9 @@ struct is_hetero_execution_policy<
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|is_fpga_execution_policy|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|is_hetero_execution_policy
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _T> struct is_fpga_execution_policy : ::std::false_type {};
 
@@ -93,7 +95,9 @@ struct is_hetero_execution_policy<
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|enable_if_hetero_execution_policy|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|is_hetero_execution_policy
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class _ExecPolicy, class _T>
 using enable_if_hetero_execution_policy = typename std::enable_if<
