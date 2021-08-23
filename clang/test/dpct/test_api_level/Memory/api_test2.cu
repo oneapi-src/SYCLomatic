@@ -8,7 +8,7 @@
 // TEST_FEATURE: Memory_dpct_malloc_2d
 
 int main() {
-  cudaExtent extent(1, 1, 1);
+  cudaExtent extent = make_cudaExtent(1, 1, 1);
   cudaPitchedPtr p3;
   cudaMalloc3D(&p3, extent);
   return 0;

@@ -10,7 +10,8 @@
 
 #include <thrust/device_ptr.h>
 int main() {
-  thrust::device_ptr<double> d_ptr(1);
+  double *a;
+  thrust::device_ptr<double> d_ptr(a);
   thrust::raw_pointer_cast(d_ptr);
   return 0;
 }

@@ -9,7 +9,7 @@
 
 int main() {
   cudaChannelFormatDesc desc;
-  cudaExtent extent(1, 1, 1);
+  cudaExtent extent = make_cudaExtent(1, 1, 1);
   unsigned int flags;
   cudaArray_t array;
 

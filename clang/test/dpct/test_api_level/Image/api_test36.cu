@@ -10,6 +10,6 @@
 int main() {
   cudaTextureDesc texDesc42;
   cudaTextureFilterMode a = texDesc42.filterMode;
-  cudaTextureAddressMode b = texDesc42.addressMode;
+  cudaTextureAddressMode b = texDesc42.addressMode[0];
   return 0;
 }

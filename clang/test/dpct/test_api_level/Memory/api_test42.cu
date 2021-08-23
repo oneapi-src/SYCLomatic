@@ -9,7 +9,7 @@
 // TEST_FEATURE: Memory_async_dpct_memset_3d
 
 int main() {
-  cudaExtent e(1, 1, 1);
+  cudaExtent e = make_cudaExtent(1, 1, 1);
   cudaPitchedPtr p_A;
   cudaMemset3DAsync(p_A, 0xf, e);
   return 0;
