@@ -445,7 +445,6 @@ static bits<ExperimentalFeatures> Experimentals(
 
 // clang-format on
 
-
 // TODO: implement one of this for each source language.
 std::string CudaPath;
 std::string DpctInstallPath;
