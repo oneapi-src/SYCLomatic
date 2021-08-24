@@ -3,7 +3,6 @@
 ; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt -wasm-disable-explicit-locals -mattr=+bulk-memory --mtriple wasm32-unknown-emscripten | FileCheck %s --check-prefixes=CHECK,TLS
 ; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt -wasm-disable-explicit-locals -mattr=+bulk-memory --mtriple wasm32-unknown-emscripten -fast-isel | FileCheck %s --check-prefixes=CHECK,TLS
 ; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt -wasm-disable-explicit-locals -mattr=-bulk-memory | FileCheck %s --check-prefixes=CHECK,NO-TLS
-target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
 target triple = "wasm32-unknown-unknown"
 
 ; ERROR: LLVM ERROR: only -ftls-model=local-exec is supported for now on non-Emscripten OSes: variable tls
@@ -105,7 +104,7 @@ define void @tls_base_write(i8** %output) {
 }
 
 ; CHECK: .type tls,@object
-; TLS-NEXT: .section .tbss.tls,"",@
+; TLS-NEXT: .section .tbss.tls,"T",@
 ; NO-TLS-NEXT: .section .bss.tls,"",@
 ; CHECK-NEXT: .p2align 2
 ; CHECK-NEXT: tls:

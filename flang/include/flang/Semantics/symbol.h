@@ -76,6 +76,8 @@ public:
   bool isFunction() const { return result_ != nullptr; }
   bool isInterface() const { return isInterface_; }
   void set_isInterface(bool value = true) { isInterface_ = value; }
+  bool isDummy() const { return isDummy_; }
+  void set_isDummy(bool value = true) { isDummy_ = value; }
   Scope *entryScope() { return entryScope_; }
   const Scope *entryScope() const { return entryScope_; }
   void set_entryScope(Scope &scope) { entryScope_ = &scope; }
@@ -95,6 +97,7 @@ public:
 
 private:
   bool isInterface_{false}; // true if this represents an interface-body
+  bool isDummy_{false}; // true when interface of dummy procedure
   std::vector<Symbol *> dummyArgs_; // nullptr -> alternate return indicator
   Symbol *result_{nullptr};
   Scope *entryScope_{nullptr}; // if ENTRY, points to subprogram's scope
@@ -259,7 +262,7 @@ public:
   void add_paramDecl(const Symbol &symbol) { paramDecls_.push_back(symbol); }
   void add_component(const Symbol &);
   void set_sequence(bool x = true) { sequence_ = x; }
-  void set_isForwardReferenced() { isForwardReferenced_ = true; }
+  void set_isForwardReferenced(bool value) { isForwardReferenced_ = value; }
   const std::list<SourceName> &componentNames() const {
     return componentNames_;
   }
@@ -507,9 +510,10 @@ public:
       // OpenMP data-copying attribute
       OmpCopyIn, OmpCopyPrivate,
       // OpenMP miscellaneous flags
-      OmpCommonBlock, OmpReduction, OmpAllocate, OmpDeclareSimd,
-      OmpDeclareTarget, OmpThreadprivate, OmpDeclareReduction, OmpFlushed,
-      OmpCriticalLock, OmpIfSpecified, OmpNone, OmpPreDetermined, OmpAligned);
+      OmpCommonBlock, OmpReduction, OmpAligned, OmpAllocate,
+      OmpDeclarativeAllocateDirective, OmpExecutableAllocateDirective,
+      OmpDeclareSimd, OmpDeclareTarget, OmpThreadprivate, OmpDeclareReduction,
+      OmpFlushed, OmpCriticalLock, OmpIfSpecified, OmpNone, OmpPreDetermined);
   using Flags = common::EnumSet<Flag, Flag_enumSize>;
 
   const Scope &owner() const { return *owner_; }

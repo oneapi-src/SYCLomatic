@@ -8,9 +8,9 @@
 
 #include "NativeProcessLinux.h"
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdint>
+#include <cstring>
 #include <unistd.h>
 
 #include <fstream>
@@ -53,9 +53,18 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 
+#ifdef __aarch64__
+#include <asm/hwcap.h>
+#include <sys/auxv.h>
+#endif
+
 // Support hardware breakpoints in case it has not been defined
 #ifndef TRAP_HWBKPT
 #define TRAP_HWBKPT 4
+#endif
+
+#ifndef HWCAP2_MTE
+#define HWCAP2_MTE (1 << 18)
 #endif
 
 using namespace lldb;
@@ -281,6 +290,21 @@ NativeProcessLinux::Factory::Attach(
       pid, -1, native_delegate, Info.GetArchitecture(), mainloop, *tids_or));
 }
 
+NativeProcessLinux::Extension
+NativeProcessLinux::Factory::GetSupportedExtensions() const {
+  NativeProcessLinux::Extension supported =
+      Extension::multiprocess | Extension::fork | Extension::vfork |
+      Extension::pass_signals | Extension::auxv | Extension::libraries_svr4;
+
+#ifdef __aarch64__
+  // At this point we do not have a process so read auxv directly.
+  if ((getauxval(AT_HWCAP2) & HWCAP2_MTE))
+    supported |= Extension::memory_tagging;
+#endif
+
+  return supported;
+}
+
 // Public Instance Methods
 
 NativeProcessLinux::NativeProcessLinux(::pid_t pid, int terminal_fd,
@@ -288,7 +312,7 @@ NativeProcessLinux::NativeProcessLinux(::pid_t pid, int terminal_fd,
                                        const ArchSpec &arch, MainLoop &mainloop,
                                        llvm::ArrayRef<::pid_t> tids)
     : NativeProcessELF(pid, terminal_fd, delegate), m_arch(arch),
-      m_intel_pt_manager(pid) {
+      m_main_loop(mainloop), m_intel_pt_manager(pid) {
   if (m_terminal_fd != -1) {
     Status status = EnsureFDFlags(m_terminal_fd, O_NONBLOCK);
     assert(status.Success());
@@ -647,7 +671,12 @@ void NativeProcessLinux::MonitorSIGTRAP(const siginfo_t &info,
   }
 
   case (SIGTRAP | (PTRACE_EVENT_VFORK_DONE << 8)): {
-    ResumeThread(thread, thread.GetState(), LLDB_INVALID_SIGNAL_NUMBER);
+    if (bool(m_enabled_extensions & Extension::vfork)) {
+      thread.SetStoppedByVForkDone();
+      StopRunningThreads(thread.GetID());
+    }
+    else
+      ResumeThread(thread, thread.GetState(), LLDB_INVALID_SIGNAL_NUMBER);
     break;
   }
 
@@ -901,8 +930,6 @@ bool NativeProcessLinux::MonitorClone(
       assert(!tgid_ret || tgid_ret.getValue() == GetID());
 
       NativeThreadLinux &child_thread = AddThread(child_pid, /*resume*/ true);
-      // Resume the newly created thread.
-      ResumeThread(child_thread, eStateRunning, LLDB_INVALID_SIGNAL_NUMBER);
       ThreadWasCreated(child_thread);
 
       // Resume the parent.
@@ -914,16 +941,24 @@ bool NativeProcessLinux::MonitorClone(
     LLVM_FALLTHROUGH;
   case PTRACE_EVENT_FORK:
   case PTRACE_EVENT_VFORK: {
-    MainLoop unused_loop;
-    NativeProcessLinux child_process{static_cast<::pid_t>(child_pid),
-                                     m_terminal_fd,
-                                     *m_delegates[0],
-                                     m_arch,
-                                     unused_loop,
-                                     {static_cast<::pid_t>(child_pid)}};
-    child_process.Detach();
-    ResumeThread(*parent_thread, parent_thread->GetState(),
-                 LLDB_INVALID_SIGNAL_NUMBER);
+    bool is_vfork = clone_info->event == PTRACE_EVENT_VFORK;
+    std::unique_ptr<NativeProcessLinux> child_process{new NativeProcessLinux(
+        static_cast<::pid_t>(child_pid), m_terminal_fd, m_delegate, m_arch,
+        m_main_loop, {static_cast<::pid_t>(child_pid)})};
+    if (!is_vfork)
+      child_process->m_software_breakpoints = m_software_breakpoints;
+
+    Extension expected_ext = is_vfork ? Extension::vfork : Extension::fork;
+    if (bool(m_enabled_extensions & expected_ext)) {
+      m_delegate.NewSubprocess(this, std::move(child_process));
+      // NB: non-vfork clone() is reported as fork
+      parent_thread->SetStoppedByFork(is_vfork, child_pid);
+      StopRunningThreads(parent_thread->GetID());
+    } else {
+      child_process->Detach();
+      ResumeThread(*parent_thread, parent_thread->GetState(),
+                   LLDB_INVALID_SIGNAL_NUMBER);
+    }
     break;
   }
   default:
@@ -1394,6 +1429,132 @@ llvm::Error NativeProcessLinux::DeallocateMemory(lldb::addr_t addr) {
 
   m_allocated_memory.erase(it);
   return llvm::Error::success();
+}
+
+Status NativeProcessLinux::ReadMemoryTags(int32_t type, lldb::addr_t addr,
+                                          size_t len,
+                                          std::vector<uint8_t> &tags) {
+  llvm::Expected<NativeRegisterContextLinux::MemoryTaggingDetails> details =
+      GetCurrentThread()->GetRegisterContext().GetMemoryTaggingDetails(type);
+  if (!details)
+    return Status(details.takeError());
+
+  // Ignore 0 length read
+  if (!len)
+    return Status();
+
+  // lldb will align the range it requests but it is not required to by
+  // the protocol so we'll do it again just in case.
+  // Remove non address bits too. Ptrace calls may work regardless but that
+  // is not a guarantee.
+  MemoryTagManager::TagRange range(details->manager->RemoveNonAddressBits(addr),
+                                   len);
+  range = details->manager->ExpandToGranule(range);
+
+  // Allocate enough space for all tags to be read
+  size_t num_tags = range.GetByteSize() / details->manager->GetGranuleSize();
+  tags.resize(num_tags * details->manager->GetTagSizeInBytes());
+
+  struct iovec tags_iovec;
+  uint8_t *dest = tags.data();
+  lldb::addr_t read_addr = range.GetRangeBase();
+
+  // This call can return partial data so loop until we error or
+  // get all tags back.
+  while (num_tags) {
+    tags_iovec.iov_base = dest;
+    tags_iovec.iov_len = num_tags;
+
+    Status error = NativeProcessLinux::PtraceWrapper(
+        details->ptrace_read_req, GetID(), reinterpret_cast<void *>(read_addr),
+        static_cast<void *>(&tags_iovec), 0, nullptr);
+
+    if (error.Fail()) {
+      // Discard partial reads
+      tags.resize(0);
+      return error;
+    }
+
+    size_t tags_read = tags_iovec.iov_len;
+    assert(tags_read && (tags_read <= num_tags));
+
+    dest += tags_read * details->manager->GetTagSizeInBytes();
+    read_addr += details->manager->GetGranuleSize() * tags_read;
+    num_tags -= tags_read;
+  }
+
+  return Status();
+}
+
+Status NativeProcessLinux::WriteMemoryTags(int32_t type, lldb::addr_t addr,
+                                           size_t len,
+                                           const std::vector<uint8_t> &tags) {
+  llvm::Expected<NativeRegisterContextLinux::MemoryTaggingDetails> details =
+      GetCurrentThread()->GetRegisterContext().GetMemoryTaggingDetails(type);
+  if (!details)
+    return Status(details.takeError());
+
+  // Ignore 0 length write
+  if (!len)
+    return Status();
+
+  // lldb will align the range it requests but it is not required to by
+  // the protocol so we'll do it again just in case.
+  // Remove non address bits too. Ptrace calls may work regardless but that
+  // is not a guarantee.
+  MemoryTagManager::TagRange range(details->manager->RemoveNonAddressBits(addr),
+                                   len);
+  range = details->manager->ExpandToGranule(range);
+
+  // Not checking number of tags here, we may repeat them below
+  llvm::Expected<std::vector<lldb::addr_t>> unpacked_tags_or_err =
+      details->manager->UnpackTagsData(tags);
+  if (!unpacked_tags_or_err)
+    return Status(unpacked_tags_or_err.takeError());
+
+  llvm::Expected<std::vector<lldb::addr_t>> repeated_tags_or_err =
+      details->manager->RepeatTagsForRange(*unpacked_tags_or_err, range);
+  if (!repeated_tags_or_err)
+    return Status(repeated_tags_or_err.takeError());
+
+  // Repack them for ptrace to use
+  llvm::Expected<std::vector<uint8_t>> final_tag_data =
+      details->manager->PackTags(*repeated_tags_or_err);
+  if (!final_tag_data)
+    return Status(final_tag_data.takeError());
+
+  struct iovec tags_vec;
+  uint8_t *src = final_tag_data->data();
+  lldb::addr_t write_addr = range.GetRangeBase();
+  // unpacked tags size because the number of bytes per tag might not be 1
+  size_t num_tags = repeated_tags_or_err->size();
+
+  // This call can partially write tags, so we loop until we
+  // error or all tags have been written.
+  while (num_tags > 0) {
+    tags_vec.iov_base = src;
+    tags_vec.iov_len = num_tags;
+
+    Status error = NativeProcessLinux::PtraceWrapper(
+        details->ptrace_write_req, GetID(),
+        reinterpret_cast<void *>(write_addr), static_cast<void *>(&tags_vec), 0,
+        nullptr);
+
+    if (error.Fail()) {
+      // Don't attempt to restore the original values in the case of a partial
+      // write
+      return error;
+    }
+
+    size_t tags_written = tags_vec.iov_len;
+    assert(tags_written && (tags_written <= num_tags));
+
+    src += tags_written * details->manager->GetTagSizeInBytes();
+    write_addr += details->manager->GetGranuleSize() * tags_written;
+    num_tags -= tags_written;
+  }
+
+  return Status();
 }
 
 size_t NativeProcessLinux::UpdateThreads() {

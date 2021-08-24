@@ -50,6 +50,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include <cassert>
 #include <cstddef>
 #include <utility>
@@ -325,7 +326,7 @@ void AggressiveDeadCodeElimination::initialize() {
 
 bool AggressiveDeadCodeElimination::isAlwaysLive(Instruction &I) {
   // TODO -- use llvm::isInstructionTriviallyDead
-  if (I.isEHPad() || I.mayHaveSideEffects() || !I.willReturn()) {
+  if (I.isEHPad() || I.mayHaveSideEffects()) {
     // Skip any value profile instrumentation calls if they are
     // instrumenting constants.
     if (isInstrumentsConstant(I))
@@ -552,6 +553,7 @@ bool AggressiveDeadCodeElimination::removeDeadInstructions() {
 
     // Prepare to delete.
     Worklist.push_back(&I);
+    salvageDebugInfo(I);
     I.dropAllReferences();
   }
 
@@ -700,7 +702,6 @@ PreservedAnalyses ADCEPass::run(Function &F, FunctionAnalysisManager &FAM) {
     PA.preserve<DominatorTreeAnalysis>();
     PA.preserve<PostDominatorTreeAnalysis>();
   }
-  PA.preserve<GlobalsAA>();
   return PA;
 }
 

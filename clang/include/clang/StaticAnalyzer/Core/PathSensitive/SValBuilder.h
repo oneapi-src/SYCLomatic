@@ -72,9 +72,6 @@ protected:
   /// The width of the scalar type used for array indices.
   const unsigned ArrayIndexWidth;
 
-  virtual SVal evalCastFromNonLoc(NonLoc val, QualType castTy) = 0;
-  virtual SVal evalCastFromLoc(Loc val, QualType castTy) = 0;
-
   SVal evalCastKind(UndefinedVal V, QualType CastTy, QualType OriginalTy);
   SVal evalCastKind(UnknownVal V, QualType CastTy, QualType OriginalTy);
   SVal evalCastKind(Loc V, QualType CastTy, QualType OriginalTy);
@@ -96,11 +93,6 @@ protected:
                        QualType OriginalTy);
   SVal evalCastSubKind(nonloc::PointerToMember V, QualType CastTy,
                        QualType OriginalTy);
-
-public:
-  // FIXME: Make these protected again once RegionStoreManager correctly
-  // handles loads from different bound value types.
-  virtual SVal dispatchCast(SVal val, QualType castTy) = 0;
 
 public:
   SValBuilder(llvm::BumpPtrAllocator &alloc, ASTContext &context,
@@ -246,6 +238,14 @@ public:
                                                 const LocationContext *LCtx,
                                                 unsigned Count);
 
+  /// Conjure a symbol representing heap allocated memory region.
+  ///
+  /// Note, now, the expression *doesn't* need to represent a location.
+  /// But the type need to!
+  DefinedOrUnknownSVal getConjuredHeapSymbolVal(const Expr *E,
+                                                const LocationContext *LCtx,
+                                                QualType type, unsigned Count);
+
   DefinedOrUnknownSVal getDerivedRegionValueSymbolVal(
       SymbolRef parentSymbol, const TypedValueRegion *region);
 
@@ -387,6 +387,10 @@ public:
   Loc makeLoc(const llvm::APSInt& integer) {
     return loc::ConcreteInt(BasicVals.getValue(integer));
   }
+
+  /// Return MemRegionVal on success cast, otherwise return None.
+  Optional<loc::MemRegionVal> getCastedMemRegionVal(const MemRegion *region,
+                                                    QualType type);
 
   /// Make an SVal that represents the given symbol. This follows the convention
   /// of representing Loc-type symbols (symbolic pointers and references)

@@ -923,8 +923,6 @@ if (NOT CLANG_BUILT_STANDALONE)
   else()
     list(APPEND DPCT_RUN
       install-dpct-intercept-build
-      install-dpct-lib-scan-build-files
-      install-dpct-libear-files
       install-dpct-headers
       install-clang-resource-headers
       install-dpct

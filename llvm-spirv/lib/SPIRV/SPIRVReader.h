@@ -78,9 +78,6 @@ public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
 
   static const StringSet<> BuiltInConstFunc;
-  std::string getOCLBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
@@ -125,43 +122,7 @@ public:
   Value *transConvertInst(SPIRVValue *BV, Function *F, BasicBlock *BB);
   Instruction *transBuiltinFromInst(const std::string &FuncName,
                                     SPIRVInstruction *BI, BasicBlock *BB);
-  Instruction *transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
-  void transOCLVectorLoadStore(std::string &UnmangledName,
-                               std::vector<SPIRVWord> &BArgs);
-
-  /// Post-process translated LLVM module for OpenCL.
-  bool postProcessOCL();
-
-  /// \brief Post-process OpenCL builtin functions returning struct type.
-  ///
-  /// Some OpenCL builtin functions are translated to SPIR-V instructions with
-  /// struct type result, e.g. NDRange creation functions. Such functions
-  /// need to be post-processed to return the struct through sret argument.
-  bool postProcessOCLBuiltinReturnStruct(Function *F);
-
-  /// \brief Post-process OpenCL builtin functions having array argument.
-  ///
-  /// These functions are translated to functions with array type argument
-  /// first, then post-processed to have pointer arguments.
-  bool postProcessOCLBuiltinWithArrayArguments(Function *F,
-                                               StringRef DemangledName);
-
-  /// \brief Post-process OpImageWrite.
-  ///   return write_image(image, coord, color, image_operands, ...);
-  /// =>
-  ///   write_image(image, coord, ..., color)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
-                                     const std::string &DemangledName);
-
-  /// \brief Post-process OpBuildNDRange.
-  ///   OpBuildNDRange GlobalWorkSize, LocalWorkSize, GlobalWorkOffset
-  /// =>
-  ///   call ndrange_XD(GlobalWorkOffset, GlobalWorkSize, LocalWorkSize)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
-                                       const std::string &DemangledName);
 
   /// \brief Expand OCL builtin functions with scalar argument, e.g.
   /// step, smoothstep.
@@ -189,7 +150,6 @@ public:
 
 private:
   Module *M;
-  BuiltinVarMap BuiltinGVMap;
   LLVMContext *Context;
   SPIRVModule *BM;
   SPIRVToLLVMTypeMap TypeMap;
@@ -218,9 +178,6 @@ private:
   // with kPlaceholderPrefix.
   Value *mapValue(SPIRVValue *BV, Value *V);
 
-  bool isSPIRVBuiltinVariable(GlobalVariable *GV,
-                              SPIRVBuiltinVariableKind *Kind = nullptr);
-
   // OpenCL function always has NoUnwind attribute.
   // Change this if it is no longer true.
   bool isFuncNoUnwind() const { return true; }
@@ -231,20 +188,16 @@ private:
 
   bool isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const;
   bool isDirectlyTranslatedToOCL(Op OpCode) const;
-  bool transOCLBuiltinsFromVariables();
-  bool transOCLBuiltinFromVariable(GlobalVariable *GV,
-                                   SPIRVBuiltinVariableKind Kind);
   MDString *transOCLKernelArgTypeName(SPIRVFunctionParameter *);
   Value *mapFunction(SPIRVFunction *BF, Function *F);
   Value *getTranslatedValue(SPIRVValue *BV);
   IntrinsicInst *getLifetimeStartIntrinsic(Instruction *I);
   SPIRVErrorLog &getErrorLog();
   void setCallingConv(CallInst *Call);
-  void setAttrByCalledFunc(CallInst *Call);
   Type *transFPType(SPIRVType *T);
-  BinaryOperator *transShiftLogicalBitwiseInst(SPIRVValue *BV, BasicBlock *BB,
-                                               Function *F);
-  Instruction *transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F);
+  Value *transShiftLogicalBitwiseInst(SPIRVValue *BV, BasicBlock *BB,
+                                      Function *F);
+  Value *transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F);
   void transOCLBuiltinFromInstPreproc(SPIRVInstruction *BI, Type *&RetTy,
                                       std::vector<SPIRVValue *> &Args);
   Instruction *transOCLBuiltinPostproc(SPIRVInstruction *BI, CallInst *CI,
@@ -252,6 +205,7 @@ private:
                                        const std::string &DemangledName);
   std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST);
+  std::string transVMEImageTypeName(SPIRV::SPIRVTypeVmeImageINTEL *VT);
   std::string transOCLPipeTypeName(
       SPIRV::SPIRVTypePipe *ST, bool UseSPIRVFriendlyFormat = false,
       SPIRVAccessQualifierKind PipeAccess = AccessQualifierReadOnly);
@@ -270,8 +224,8 @@ private:
   inline llvm::Metadata *getMetadataFromName(std::string Name);
   inline std::vector<llvm::Metadata *>
   getMetadataFromNameAndParameter(std::string Name, SPIRVWord Parameter);
-  void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
-                                      std::string &Name);
+  inline MDNode *getMetadataFromNameAndParameter(std::string Name,
+                                                 int64_t Parameter);
   template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue *V);
   Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);

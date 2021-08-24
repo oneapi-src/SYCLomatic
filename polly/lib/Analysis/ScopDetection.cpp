@@ -78,7 +78,13 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+#include <algorithm>
 #include <cassert>
+#include <memory>
+#include <stack>
+#include <string>
+#include <utility>
+#include <vector>
 
 using namespace llvm;
 using namespace polly;
@@ -327,10 +333,14 @@ static bool doesStringMatchAnyRegex(StringRef Str,
 //===----------------------------------------------------------------------===//
 // ScopDetection.
 
-ScopDetection::ScopDetection(Function &F, const DominatorTree &DT,
-                             ScalarEvolution &SE, LoopInfo &LI, RegionInfo &RI,
-                             AliasAnalysis &AA, OptimizationRemarkEmitter &ORE)
-    : DT(DT), SE(SE), LI(LI), RI(RI), AA(AA), ORE(ORE) {
+ScopDetection::ScopDetection(const DominatorTree &DT, ScalarEvolution &SE,
+                             LoopInfo &LI, RegionInfo &RI, AliasAnalysis &AA,
+                             OptimizationRemarkEmitter &ORE)
+    : DT(DT), SE(SE), LI(LI), RI(RI), AA(AA), ORE(ORE) {}
+
+void ScopDetection::detect(Function &F) {
+  assert(ValidRegions.empty() && "Detection must run only once");
+
   if (!PollyProcessUnprofitable && LI.empty())
     return;
 
@@ -1869,7 +1879,9 @@ bool ScopDetectionWrapperPass::runOnFunction(Function &F) {
   auto &SE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
   auto &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
   auto &ORE = getAnalysis<OptimizationRemarkEmitterWrapperPass>().getORE();
-  Result.reset(new ScopDetection(F, DT, SE, LI, RI, AA, ORE));
+
+  Result = std::make_unique<ScopDetection>(DT, SE, LI, RI, AA, ORE);
+  Result->detect(F);
   return false;
 }
 
@@ -1916,7 +1928,10 @@ ScopDetection ScopAnalysis::run(Function &F, FunctionAnalysisManager &FAM) {
   auto &SE = FAM.getResult<ScalarEvolutionAnalysis>(F);
   auto &DT = FAM.getResult<DominatorTreeAnalysis>(F);
   auto &ORE = FAM.getResult<OptimizationRemarkEmitterAnalysis>(F);
-  return {F, DT, SE, LI, RI, AA, ORE};
+
+  ScopDetection Result(DT, SE, LI, RI, AA, ORE);
+  Result.detect(F);
+  return Result;
 }
 
 PreservedAnalyses ScopAnalysisPrinterPass::run(Function &F,

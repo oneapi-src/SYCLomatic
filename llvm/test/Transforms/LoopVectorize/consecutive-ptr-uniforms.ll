@@ -50,8 +50,8 @@ for.end:
 ; CHECK:       %index = phi i64 [ 0, %vector.ph ], [ %index.next, %vector.body ]
 ; CHECK:       %offset.idx = sub i64 %n, %index
 ; CHECK-NOT:   getelementptr
-; CHECK:       %[[G0:.+]] = getelementptr inbounds i32, i32* %a, i64 -3
-; CHECK:       getelementptr inbounds i32, i32* %[[G0]], i64 %offset.idx
+; CHECK:       %[[G0IDX:.+]] = add nsw i64 %offset.idx, -3
+; CHECK:       getelementptr inbounds i32, i32* %a, i64 %[[G0IDX]]
 ; CHECK-NOT:   getelementptr
 ; CHECK:       br i1 {{.*}}, label %middle.block, label %vector.body
 ;
@@ -466,7 +466,7 @@ for.end:
 ; INTER-NEXT:    [[TMP7:%.*]] = getelementptr inbounds i8, i8* %B, i64 [[INDEX]]
 ; INTER-NEXT:    [[TMP8:%.*]] = bitcast i8* [[TMP7]] to <4 x i8>*
 ; INTER-NEXT:    store <4 x i8> [[TMP6]], <4 x i8>* [[TMP8]], align 1
-; INTER-NEXT:    [[INDEX_NEXT]] = add i64 [[INDEX]], 4
+; INTER-NEXT:    [[INDEX_NEXT]] = add nuw i64 [[INDEX]], 4
 ; INTER:         br i1 {{.*}}, label %middle.block, label %vector.body
 ;
 define void @bitcast_pointer_operand(i64* %A, i8* %B, i64 %n) {

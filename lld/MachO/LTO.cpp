@@ -13,9 +13,12 @@
 #include "Symbols.h"
 #include "Target.h"
 
+#include "lld/Common/Args.h"
 #include "lld/Common/ErrorHandler.h"
 #include "lld/Common/Strings.h"
 #include "lld/Common/TargetOptionsCommandFlags.h"
+#include "llvm/LTO/Caching.h"
+#include "llvm/LTO/Config.h"
 #include "llvm/LTO/LTO.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -25,6 +28,7 @@
 using namespace lld;
 using namespace lld::macho;
 using namespace llvm;
+using namespace llvm::MachO;
 using namespace llvm::sys;
 
 static lto::Config createConfig() {
@@ -39,6 +43,11 @@ static lto::Config createConfig() {
   };
   c.TimeTraceEnabled = config->timeTraceEnabled;
   c.TimeTraceGranularity = config->timeTraceGranularity;
+  c.OptLevel = config->ltoo;
+  c.CGOptLevel = args::getCGOptLevel(config->ltoo);
+  if (config->saveTemps)
+    checkError(c.addSaveTemps(config->outputFile.str() + ".",
+                              /*UseInputModulePath=*/true));
   return c;
 }
 
@@ -67,6 +76,13 @@ void BitcodeCompiler::add(BitcodeFile &f) {
     // be removed.
     r.Prevailing = !objSym.isUndefined() && sym->getFile() == &f;
 
+    // FIXME: What about other output types? And we can probably be less
+    // restrictive with -flat_namespace, but it's an infrequent use case.
+    // FIXME: Honor config->exportDynamic.
+    r.VisibleToRegularObj = config->outputType != MH_EXECUTE ||
+                            config->namespaceKind == NamespaceKind::flat ||
+                            sym->isUsedInRegularObj;
+
     // Un-define the symbol so that we don't get duplicate symbol errors when we
     // load the ObjFile emitted by LTO compilation.
     if (r.Prevailing)
@@ -74,7 +90,6 @@ void BitcodeCompiler::add(BitcodeFile &f) {
                                RefState::Strong);
 
     // TODO: set the other resolution configs properly
-    r.VisibleToRegularObj = true;
   }
   checkError(ltoObj->add(std::move(f.obj), resols));
 }
@@ -84,11 +99,28 @@ void BitcodeCompiler::add(BitcodeFile &f) {
 std::vector<ObjFile *> BitcodeCompiler::compile() {
   unsigned maxTasks = ltoObj->getMaxTasks();
   buf.resize(maxTasks);
+  files.resize(maxTasks);
 
-  checkError(ltoObj->run([&](size_t task) {
-    return std::make_unique<lto::NativeObjectStream>(
-        std::make_unique<raw_svector_ostream>(buf[task]));
-  }));
+  // The -cache_path_lto option specifies the path to a directory in which
+  // to cache native object files for ThinLTO incremental builds. If a path was
+  // specified, configure LTO to use it as the cache directory.
+  lto::NativeObjectCache cache;
+  if (!config->thinLTOCacheDir.empty())
+    cache = check(
+        lto::localCache(config->thinLTOCacheDir,
+                        [&](size_t task, std::unique_ptr<MemoryBuffer> mb) {
+                          files[task] = std::move(mb);
+                        }));
+
+  checkError(ltoObj->run(
+      [&](size_t task) {
+        return std::make_unique<lto::NativeObjectStream>(
+            std::make_unique<raw_svector_ostream>(buf[task]));
+      },
+      cache));
+
+  if (!config->thinLTOCacheDir.empty())
+    pruneCache(config->thinLTOCacheDir, config->thinLTOCachePolicy);
 
   if (config->saveTemps) {
     if (!buf[0].empty())
@@ -109,7 +141,7 @@ std::vector<ObjFile *> BitcodeCompiler::compile() {
     if (!config->ltoObjPath.empty()) {
       filePath = config->ltoObjPath;
       path::append(filePath, Twine(i) + "." +
-                                 getArchitectureName(config->target.Arch) +
+                                 getArchitectureName(config->arch()) +
                                  ".lto.o");
       saveBuffer(buf[i], filePath);
       modTime = getModTime(filePath);
@@ -117,6 +149,8 @@ std::vector<ObjFile *> BitcodeCompiler::compile() {
     ret.push_back(make<ObjFile>(
         MemoryBufferRef(buf[i], saver.save(filePath.str())), modTime, ""));
   }
-
+  for (std::unique_ptr<MemoryBuffer> &file : files)
+    if (file)
+      ret.push_back(make<ObjFile>(*file, 0, ""));
   return ret;
 }

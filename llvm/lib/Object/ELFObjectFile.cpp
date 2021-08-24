@@ -469,6 +469,8 @@ StringRef ELFObjectFileBase::getAMDGPUCPUName() const {
     return "gfx1011";
   case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1012:
     return "gfx1012";
+  case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1013:
+    return "gfx1013";
   case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1030:
     return "gfx1030";
   case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1031:
@@ -477,6 +479,10 @@ StringRef ELFObjectFileBase::getAMDGPUCPUName() const {
     return "gfx1032";
   case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1033:
     return "gfx1033";
+  case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1034:
+    return "gfx1034";
+  case ELF::EF_AMDGPU_MACH_AMDGCN_GFX1035:
+    return "gfx1035";
   default:
     llvm_unreachable("Unknown EF_AMDGPU_MACH value");
   }
@@ -532,9 +538,16 @@ void ELFObjectFileBase::setARMSubArch(Triple &TheTriple) const {
     case ARMBuildAttrs::v6K:
       Triple += "v6k";
       break;
-    case ARMBuildAttrs::v7:
-      Triple += "v7";
+    case ARMBuildAttrs::v7: {
+      Optional<unsigned> ArchProfileAttr =
+          Attributes.getAttributeValue(ARMBuildAttrs::CPU_arch_profile);
+      if (ArchProfileAttr.hasValue() &&
+          ArchProfileAttr.getValue() == ARMBuildAttrs::MicroControllerProfile)
+        Triple += "v7m";
+      else
+        Triple += "v7";
       break;
+    }
     case ARMBuildAttrs::v6_M:
       Triple += "v6m";
       break;

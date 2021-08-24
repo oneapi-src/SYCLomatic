@@ -4195,7 +4195,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
           }
         }
         if (auto EC = dyn_cast<EnumConstantDecl>(E->getDecl())) {
-          std::string Repl = EC->getInitVal().toString(10);
+          std::string Repl = toString(EC->getInitVal(), 10);
           emplaceTransformation(new ReplaceStmt(E, Repl));
           return;
         }
@@ -4230,7 +4230,7 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (EventAPICallRule::getEventQueryTraversal().startFromEnumRef(DE))
     return;
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-  std::string Repl = EC->getInitVal().toString(10);
+  std::string Repl = toString(EC->getInitVal(), 10);
 
   // If the cudaErrorNotReady is one operand of binary operator "==" or "!=",
   // and the other operand is the function call "cudaEventQuery", and the whole
@@ -4355,14 +4355,14 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "FFTConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
     return;
   }
 
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "FFTTypeConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
 
     auto Value = EC->getInitVal().getExtValue();
     DpctGlobalInfo::getFFTTypeSet().insert(getFFTTypeFromValue(Value));
@@ -4394,7 +4394,7 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "BLASStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
   }
 
   if (const DeclRefExpr *DE =
@@ -4427,7 +4427,7 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
   }
 }
 
@@ -4455,7 +4455,7 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "SPBLASStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
   }
 
   if (const DeclRefExpr *DE =
@@ -7680,7 +7680,7 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "SOLVERStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
   }
 
   if (const DeclRefExpr *DE =

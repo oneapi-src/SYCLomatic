@@ -14,6 +14,8 @@ import sys
 _isClang      = lambda cfg: '__clang__' in compilerMacros(cfg) and '__apple_build_version__' not in compilerMacros(cfg)
 _isAppleClang = lambda cfg: '__apple_build_version__' in compilerMacros(cfg)
 _isGCC        = lambda cfg: '__GNUC__' in compilerMacros(cfg) and '__clang__' not in compilerMacros(cfg)
+_isMSVC       = lambda cfg: '_MSC_VER' in compilerMacros(cfg)
+_msvcVersion  = lambda cfg: (int(compilerMacros(cfg)['_MSC_VER']) // 100, int(compilerMacros(cfg)['_MSC_VER']) % 100)
 
 DEFAULT_FEATURES = [
   Feature(name='fcoroutines-ts',
@@ -40,15 +42,7 @@ DEFAULT_FEATURES = [
   Feature(name='has-fobjc-arc',                 when=lambda cfg: hasCompileFlag(cfg, '-xobjective-c++ -fobjc-arc') and
                                                                  sys.platform.lower().strip() == 'darwin'), # TODO: this doesn't handle cross-compiling to Apple platforms.
   Feature(name='objective-c++',                 when=lambda cfg: hasCompileFlag(cfg, '-xobjective-c++ -fobjc-arc')),
-
-  # Note: We use a custom modules cache path to make sure that we don't reuse
-  #       the default one, which can be shared across builds. This is important
-  #       because we define macros in headers files, and a change in these macros
-  #       doesn't seem to invalidate modules cache entries, which means we could
-  #       build against now-invalid cached headers from a previous build.
-  Feature(name='modules-support',
-          when=lambda cfg: hasCompileFlag(cfg, '-fmodules'),
-          actions=lambda cfg: [AddCompileFlag('-fmodules-cache-path=%t/ModuleCache')]),
+  Feature(name='no-noexcept-function-type',     when=lambda cfg: featureTestMacros(cfg).get('__cpp_noexcept_function_type', 0) < 201510),
 
   Feature(name='non-lockfree-atomics',
           when=lambda cfg: sourceBuilds(cfg, """
@@ -72,7 +66,8 @@ DEFAULT_FEATURES = [
   Feature(name=lambda cfg: 'apple-clang-{__clang_major__}.{__clang_minor__}'.format(**compilerMacros(cfg)),                        when=_isAppleClang),
   Feature(name=lambda cfg: 'apple-clang-{__clang_major__}.{__clang_minor__}.{__clang_patchlevel__}'.format(**compilerMacros(cfg)), when=_isAppleClang),
 
-  Feature(name='clang',                                                                                                            when=_isClang),
+  Feature(name='clang',                                                                                                            when=_isClang,
+          actions=[AddCompileFlag('-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER')]),
   Feature(name=lambda cfg: 'clang-{__clang_major__}'.format(**compilerMacros(cfg)),                                                when=_isClang),
   Feature(name=lambda cfg: 'clang-{__clang_major__}.{__clang_minor__}'.format(**compilerMacros(cfg)),                              when=_isClang),
   Feature(name=lambda cfg: 'clang-{__clang_major__}.{__clang_minor__}.{__clang_patchlevel__}'.format(**compilerMacros(cfg)),       when=_isClang),
@@ -81,6 +76,10 @@ DEFAULT_FEATURES = [
   Feature(name=lambda cfg: 'gcc-{__GNUC__}'.format(**compilerMacros(cfg)),                                                         when=_isGCC),
   Feature(name=lambda cfg: 'gcc-{__GNUC__}.{__GNUC_MINOR__}'.format(**compilerMacros(cfg)),                                        when=_isGCC),
   Feature(name=lambda cfg: 'gcc-{__GNUC__}.{__GNUC_MINOR__}.{__GNUC_PATCHLEVEL__}'.format(**compilerMacros(cfg)),                  when=_isGCC),
+
+  Feature(name='msvc',                                                                                                             when=_isMSVC),
+  Feature(name=lambda cfg: 'msvc-{}'.format(*_msvcVersion(cfg)),                                                                   when=_isMSVC),
+  Feature(name=lambda cfg: 'msvc-{}.{}'.format(*_msvcVersion(cfg)),                                                                when=_isMSVC),
 ]
 
 # Deduce and add the test features that that are implied by the #defines in
@@ -105,6 +104,8 @@ macros = {
   '_LIBCPP_HAS_NO_FILESYSTEM_LIBRARY': 'libcpp-has-no-filesystem-library',
   '_LIBCPP_HAS_NO_RANDOM_DEVICE': 'libcpp-has-no-random-device',
   '_LIBCPP_HAS_NO_LOCALIZATION': 'libcpp-has-no-localization',
+  '_LIBCPP_HAS_NO_INCOMPLETE_FORMAT': 'libcpp-has-no-incomplete-format',
+  '_LIBCPP_HAS_NO_INCOMPLETE_RANGES': 'libcpp-has-no-incomplete-ranges',
 }
 for macro, feature in macros.items():
   DEFAULT_FEATURES += [
@@ -147,6 +148,7 @@ for locale, alts in locales.items():
 DEFAULT_FEATURES += [
   Feature(name='darwin', when=lambda cfg: '__APPLE__' in compilerMacros(cfg)),
   Feature(name='windows', when=lambda cfg: '_WIN32' in compilerMacros(cfg)),
+  Feature(name='windows-dll', when=lambda cfg: '_WIN32' in compilerMacros(cfg) and not '_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS' in compilerMacros(cfg)),
   Feature(name='linux', when=lambda cfg: '__linux__' in compilerMacros(cfg)),
   Feature(name='netbsd', when=lambda cfg: '__NetBSD__' in compilerMacros(cfg)),
   Feature(name='freebsd', when=lambda cfg: '__FreeBSD__' in compilerMacros(cfg))
@@ -159,51 +161,4 @@ DEFAULT_FEATURES += [
     when=lambda cfg: shutil.which('gdb') is not None,
     actions=[AddSubstitution('%{gdb}', lambda cfg: shutil.which('gdb'))]
   )
-]
-
-
-# When vendor-specific availability annotations are enabled, add Lit features
-# with various forms of the target triple to make it easier to write XFAIL or
-# UNSUPPORTED markup for tests that are known to fail on a particular triple.
-#
-# More specifically, when the `use_system_cxx_lib` parameter is enabled, then
-# assuming the `target_triple` is set to `x86_64-apple-macosx10.12`, the
-# following features will be made available:
-#   - with_system_cxx_lib=macosx
-#   - with_system_cxx_lib=macosx10.12
-#   - with_system_cxx_lib=x86_64-apple-macosx10.12
-#
-# These features can be used to XFAIL a test that fails when deployed on (or is
-# compiled for) an older system. For example, if the test exhibits a bug in the
-# libc on a particular system version, or if the test uses a symbol that is not
-# available on an older version of the dylib, it can be marked as XFAIL with
-# one of the above features.
-#
-# It is sometimes useful to check that a test fails specifically when compiled
-# for a given deployment target. For example, this is the case when testing
-# availability markup, where we want to make sure that using the annotated
-# facility on a deployment target that doesn't support it will fail at compile
-# time, not at runtime. This can be achieved by creating a `.compile.pass.cpp`
-# and XFAILing it for the right deployment target. If the test doesn't fail at
-# compile-time like it's supposed to, the test will XPASS. Another option is to
-# create a `.verify.cpp` test that checks for the right errors, and mark that
-# test as requiring `with_system_cxx_lib=<something>`.
-#
-# TODO: This is very unclean -- we assume that the 'use_system_cxx_lib' parameter
-#       is set before this feature gets detected, and we also set a dummy name
-#       for the main feature. We also take for granted that `target_triple`
-#       exists in the config object. This should be refactored so that the
-#       'use_system_cxx_lib' Parameter can set these features itself.
-def _addSystemCxxLibDeclinations(cfg):
-  (arch, vendor, platform) = cfg.target_triple.split('-', 2)
-  (sysname, version) = re.match(r'([^0-9]+)([0-9\.]*)', platform).groups()
-  return [
-    AddFeature('with_system_cxx_lib={}-{}-{}{}'.format(arch, vendor, sysname, version)),
-    AddFeature('with_system_cxx_lib={}{}'.format(sysname, version)),
-    AddFeature('with_system_cxx_lib={}'.format(sysname)),
-  ]
-DEFAULT_FEATURES += [
-  Feature(name='__dummy_use_system_cxx_lib',
-          when=lambda cfg: 'use_system_cxx_lib' in cfg.available_features,
-          actions=_addSystemCxxLibDeclinations)
 ]

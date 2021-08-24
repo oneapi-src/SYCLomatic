@@ -16,6 +16,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileOutputBuffer.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/LineIterator.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
@@ -41,8 +42,7 @@ static cl::opt<bool> noLeadingLines("no-leading-lines",
 static StringRef toolName;
 static int errorCount;
 
-LLVM_ATTRIBUTE_NORETURN static void fatal(StringRef filename,
-                                          const Twine &message) {
+[[noreturn]] static void fatal(StringRef filename, const Twine &message) {
   if (filename.empty())
     WithColor::error(errs(), toolName) << message << '\n';
   else

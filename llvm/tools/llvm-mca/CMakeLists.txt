@@ -2,6 +2,7 @@ include_directories(include)
 
 set(LLVM_LINK_COMPONENTS
   AllTargetsAsmParsers
+  AllTargetsMCAs          # CustomBehaviour and InstrPostProcess
   AllTargetsDescs
   AllTargetsDisassemblers
   AllTargetsInfos

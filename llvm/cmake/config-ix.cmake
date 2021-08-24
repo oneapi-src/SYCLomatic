@@ -149,6 +149,7 @@ if(LLVM_ENABLE_LIBXML2)
     cmake_push_check_state()
     list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBXML2_INCLUDE_DIRS})
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBXML2_LIBRARIES})
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS ${LIBXML2_DEFINITIONS})
     check_symbol_exists(xmlReadMemory libxml/xmlreader.h HAVE_LIBXML2)
     cmake_pop_check_state()
     if(LLVM_ENABLE_LIBXML2 STREQUAL FORCE_ON AND NOT HAVE_LIBXML2)
@@ -189,8 +190,8 @@ else()
   set(LLVM_ENABLE_TERMINFO 0)
 endif()
 
-check_library_exists(xar xar_open "" HAVE_LIBXAR)
-if(HAVE_LIBXAR)
+check_library_exists(xar xar_open "" LLVM_HAVE_LIBXAR)
+if(LLVM_HAVE_LIBXAR)
   set(XAR_LIB xar)
 endif()
 
@@ -280,8 +281,14 @@ endif()
 
 CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtimespec.tv_nsec
     "sys/types.h;sys/stat.h" HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
-CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtim.tv_nsec
-    "sys/types.h;sys/stat.h" HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
+if (UNIX AND ${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+# The st_mtim.tv_nsec member of a `stat` structure is not reliable on some AIX
+# environments.
+  set(HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 0)
+else()
+  CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtim.tv_nsec
+      "sys/types.h;sys/stat.h" HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
+endif()
 
 check_symbol_exists(__GLIBC__ stdio.h LLVM_USING_GLIBC)
 if( LLVM_USING_GLIBC )

@@ -62,6 +62,7 @@ static std::string getThinLTOOutputFile(StringRef path) {
 static lto::Config createConfig() {
   lto::Config c;
   c.Options = initTargetOptionsFromCodeGenFlags();
+  c.Options.EmitAddrsig = true;
 
   // Always emit a section per function/datum with LTO. LLVM LTO should get most
   // of the benefit of linker GC, but there are still opportunities for ICF.
@@ -86,6 +87,7 @@ static lto::Config createConfig() {
   c.DebugPassManager = config->ltoDebugPassManager;
   c.CSIRProfile = std::string(config->ltoCSProfileFile);
   c.RunCSIRInstr = config->ltoCSProfileGenerate;
+  c.PGOWarnMismatch = config->ltoPGOWarnMismatch;
 
   if (config->saveTemps)
     checkError(c.addSaveTemps(std::string(config->outputFile) + ".",

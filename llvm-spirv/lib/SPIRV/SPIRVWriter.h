@@ -94,6 +94,7 @@ public:
   bool transSourceLanguage();
   bool transExtension();
   bool transBuiltinSet();
+  bool transWorkItemBuiltinCallsToVariables();
   bool isKnownIntrinsic(Intrinsic::ID Id);
   SPIRVValue *transIntrinsicInst(IntrinsicInst *Intrinsic, SPIRVBasicBlock *BB);
   SPIRVValue *transCallInst(CallInst *Call, SPIRVBasicBlock *BB);
@@ -102,7 +103,7 @@ public:
   SPIRVValue *transAsmINTEL(InlineAsm *Asm);
   SPIRVValue *transAsmCallINTEL(CallInst *Call, SPIRVBasicBlock *BB);
   bool transDecoration(Value *V, SPIRVValue *BV);
-  void transMemAliasingINTELDecorations(Value *V, SPIRVValue *BV);
+  void transMemAliasingINTELDecorations(Instruction *V, SPIRVValue *BV);
   SPIRVWord transFunctionControlMask(Function *);
   SPIRVFunction *transFunctionDecl(Function *F);
   void transVectorComputeMetadata(Function *F);
@@ -137,6 +138,7 @@ public:
     OCLTypeToSPIRVPtr = OCLTypeToSPIRV;
   }
   OCLTypeToSPIRVBase *getOCLTypeToSPIRV() { return OCLTypeToSPIRVPtr; }
+  ~LLVMToSPIRVBase();
 
 private:
   Module *M;
@@ -150,6 +152,7 @@ private:
   std::unique_ptr<LLVMToSPIRVDbgTran> DbgTran;
   std::unique_ptr<CallGraph> CG;
   OCLTypeToSPIRVBase *OCLTypeToSPIRVPtr;
+  std::vector<llvm::Instruction *> UnboundInst;
 
   enum class FPContract { UNDEF, DISABLED, ENABLED };
   DenseMap<Function *, FPContract> FPContractMap;

@@ -69,9 +69,6 @@ PassManager<LazyCallGraph::SCC, CGSCCAnalysisManager, LazyCallGraph &,
 
   PreservedAnalyses PA = PreservedAnalyses::all();
 
-  if (DebugLogging)
-    dbgs() << "Starting CGSCC pass manager run.\n";
-
   // The SCC may be refined while we are running passes over it, so set up
   // a pointer that we can update.
   LazyCallGraph::SCC *C = &InitialC;
@@ -141,9 +138,6 @@ PassManager<LazyCallGraph::SCC, CGSCCAnalysisManager, LazyCallGraph &,
   // preserved. We mark this with a set so that we don't need to inspect each
   // one individually.
   PA.preserveSet<AllAnalysesOn<LazyCallGraph::SCC>>();
-
-  if (DebugLogging)
-    dbgs() << "Finished CGSCC pass manager run.\n";
 
   return PA;
 }
@@ -438,8 +432,13 @@ PreservedAnalyses DevirtSCCRepeatedPass::run(LazyCallGraph::SCC &InitialC,
       break;
     }
 
-    // Check that we didn't miss any update scenario.
-    assert(!UR.InvalidatedSCCs.count(C) && "Processing an invalid SCC!");
+    // If the CGSCC pass wasn't able to provide a valid updated SCC, the
+    // current SCC may simply need to be skipped if invalid.
+    if (UR.InvalidatedSCCs.count(C)) {
+      LLVM_DEBUG(dbgs() << "Skipping invalidated root or island SCC!\n");
+      break;
+    }
+
     assert(C->begin() != C->end() && "Cannot have an empty SCC!");
 
     // Check whether any of the handles were devirtualized.

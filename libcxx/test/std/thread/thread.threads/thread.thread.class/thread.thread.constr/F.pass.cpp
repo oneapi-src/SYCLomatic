@@ -8,8 +8,6 @@
 //
 // UNSUPPORTED: libcpp-has-no-threads
 
-// XFAIL: LIBCXX-WINDOWS-FIXME
-
 // <thread>
 
 // class thread
@@ -148,7 +146,7 @@ void test_throwing_new_during_thread_creation() {
             assert(i < numAllocs);
             assert(!f_run); // (2.2)
         }
-        assert(old_outstanding == outstanding_new); // (2.3)
+        ASSERT_WITH_LIBRARY_INTERNAL_ALLOCATIONS(old_outstanding == outstanding_new); // (2.3)
     }
     f_run = false;
     throw_one = 0xFFF;

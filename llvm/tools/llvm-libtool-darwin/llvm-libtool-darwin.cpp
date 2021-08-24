@@ -21,6 +21,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/LineIterator.h"
+#include "llvm/Support/VirtualFileSystem.h"
 #include "llvm/Support/WithColor.h"
 #include "llvm/TextAPI/Architecture.h"
 #include <map>
@@ -570,7 +571,7 @@ static Expected<Config> parseCommandLine(int Argc, char **Argv) {
 
 int main(int Argc, char **Argv) {
   InitLLVM X(Argc, Argv);
-  cl::HideUnrelatedOptions({&LibtoolCategory, &ColorCategory});
+  cl::HideUnrelatedOptions({&LibtoolCategory, &getColorCategory()});
   Expected<Config> ConfigOrErr = parseCommandLine(Argc, Argv);
   if (!ConfigOrErr) {
     WithColor::defaultErrorHandler(ConfigOrErr.takeError());

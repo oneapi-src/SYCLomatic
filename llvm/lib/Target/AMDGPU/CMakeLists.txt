@@ -44,6 +44,7 @@ add_llvm_target(AMDGPUCodeGen
   AMDGPUAliasAnalysis.cpp
   AMDGPUAlwaysInlinePass.cpp
   AMDGPUAnnotateKernelFeatures.cpp
+  AMDGPUAttributor.cpp
   AMDGPUAnnotateUniformValues.cpp
   AMDGPUArgumentUsageInfo.cpp
   AMDGPUAsmPrinter.cpp
@@ -52,6 +53,7 @@ add_llvm_target(AMDGPUCodeGen
   AMDGPUCodeGenPrepare.cpp
   AMDGPUExportClustering.cpp
   AMDGPUFixFunctionBitcasts.cpp
+  AMDGPUCtorDtorLowering.cpp
   AMDGPUFrameLowering.cpp
   AMDGPUHSAMetadataStreamer.cpp
   AMDGPUInstCombineIntrinsic.cpp
@@ -81,6 +83,7 @@ add_llvm_target(AMDGPUCodeGen
   AMDGPUPropagateAttributes.cpp
   AMDGPURegBankCombiner.cpp
   AMDGPURegisterBankInfo.cpp
+  AMDGPUReplaceLDSUseWithPointer.cpp
   AMDGPURewriteOutArguments.cpp
   AMDGPUSubtarget.cpp
   AMDGPUTargetMachine.cpp
@@ -91,6 +94,7 @@ add_llvm_target(AMDGPUCodeGen
   AMDGPUPerfHintAnalysis.cpp
   AMDILCFGStructurizer.cpp
   AMDGPUPrintfRuntimeBinding.cpp
+  AMDGPUResourceUsageAnalysis.cpp
   GCNHazardRecognizer.cpp
   GCNIterativeScheduler.cpp
   GCNMinRegStrategy.cpp
@@ -131,6 +135,7 @@ add_llvm_target(AMDGPUCodeGen
   SIMemoryLegalizer.cpp
   SIOptimizeExecMasking.cpp
   SIOptimizeExecMaskingPreRA.cpp
+  SIOptimizeVGPRLiveRange.cpp
   SIPeepholeSDWA.cpp
   SIPostRABundler.cpp
   SIPreEmitPeephole.cpp
@@ -139,9 +144,9 @@ add_llvm_target(AMDGPUCodeGen
   SIShrinkInstructions.cpp
   SIWholeQuadMode.cpp
   GCNILPSched.cpp
-  GCNRegBankReassign.cpp
   GCNNSAReassign.cpp
   GCNDPPCombine.cpp
+  GCNPreRAOptimizations.cpp
   SIModeRegister.cpp
 
   LINK_COMPONENTS
@@ -171,6 +176,7 @@ add_llvm_target(AMDGPUCodeGen
 
 add_subdirectory(AsmParser)
 add_subdirectory(Disassembler)
+add_subdirectory(MCA)
 add_subdirectory(MCTargetDesc)
 add_subdirectory(TargetInfo)
 add_subdirectory(Utils)

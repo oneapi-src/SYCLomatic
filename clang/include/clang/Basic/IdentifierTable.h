@@ -40,6 +40,14 @@ class LangOptions;
 class MultiKeywordSelector;
 class SourceLocation;
 
+enum class ReservedIdentifierStatus {
+  NotReserved = 0,
+  StartsWithUnderscoreAtGlobalScope,
+  StartsWithDoubleUnderscore,
+  StartsWithUnderscoreFollowedByCapitalLetter,
+  ContainsDoubleUnderscore,
+};
+
 /// A simple pair of identifier info and location.
 using IdentifierLocPair = std::pair<IdentifierInfo *, SourceLocation>;
 
@@ -48,7 +56,7 @@ using IdentifierLocPair = std::pair<IdentifierInfo *, SourceLocation>;
 /// of a pointer to one of these classes.
 enum { IdentifierInfoAlignment = 8 };
 
-static constexpr int ObjCOrBuiltinIDBits = 15;
+static constexpr int ObjCOrBuiltinIDBits = 16;
 
 /// One of these records is kept for each identifier that
 /// is lexed.  This contains information about whether the token was \#define'd,
@@ -113,7 +121,10 @@ class alignas(IdentifierInfoAlignment) IdentifierInfo {
   // True if this is a mangled OpenMP variant name.
   unsigned IsMangledOpenMPVariantName : 1;
 
-  // 28 bits left in a 64-bit word.
+  // True if this is a deprecated macro
+  unsigned IsDeprecatedMacro : 1;
+
+  // 24 bits left in a 64-bit word.
 
   // Managed by the language front-end.
   void *FETokenInfo = nullptr;
@@ -126,7 +137,8 @@ class alignas(IdentifierInfoAlignment) IdentifierInfo {
         IsPoisoned(false), IsCPPOperatorKeyword(false),
         NeedsHandleIdentifier(false), IsFromAST(false), ChangedAfterLoad(false),
         FEChangedAfterLoad(false), RevertedTokenID(false), OutOfDate(false),
-        IsModulesImport(false), IsMangledOpenMPVariantName(false) {}
+        IsModulesImport(false), IsMangledOpenMPVariantName(false),
+        IsDeprecatedMacro(false) {}
 
 public:
   IdentifierInfo(const IdentifierInfo &) = delete;
@@ -175,6 +187,7 @@ public:
       HadMacro = true;
     } else {
       RecomputeNeedsHandleIdentifier();
+      setIsDeprecatedMacro(false);
     }
   }
   /// Returns true if this identifier was \#defined to some value at any
@@ -182,6 +195,18 @@ public:
   /// macro history table in Preprocessor.
   bool hadMacroDefinition() const {
     return HadMacro;
+  }
+
+  bool isDeprecatedMacro() const { return IsDeprecatedMacro; }
+
+  void setIsDeprecatedMacro(bool Val) {
+    if (IsDeprecatedMacro == Val)
+      return;
+    IsDeprecatedMacro = Val;
+    if (Val)
+      NeedsHandleIdentifier = true;
+    else
+      RecomputeNeedsHandleIdentifier();
   }
 
   /// If this is a source-language token (e.g. 'for'), this API
@@ -385,14 +410,7 @@ public:
 
   /// Determine whether \p this is a name reserved for the implementation (C99
   /// 7.1.3, C++ [lib.global.names]).
-  bool isReservedName(bool doubleUnderscoreOnly = false) const {
-    if (getLength() < 2)
-      return false;
-    const char *Name = getNameStart();
-    return Name[0] == '_' &&
-           (Name[1] == '_' ||
-            (Name[1] >= 'A' && Name[1] <= 'Z' && !doubleUnderscoreOnly));
-  }
+  ReservedIdentifierStatus isReserved(const LangOptions &LangOpts) const;
 
   /// Provide less than operator for lexicographical sorting.
   bool operator<(const IdentifierInfo &RHS) const {

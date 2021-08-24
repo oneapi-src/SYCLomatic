@@ -36,8 +36,12 @@ class SCF_Op<string mnemonic, list<OpTrait> traits = []> :
   let parser = [{ return ::parse$cppClass(parser, result); }];
 }
 
-def ConditionOp : SCF_Op<"condition",
-                         [HasParent<"WhileOp">, NoSideEffect, Terminator]> {
+def ConditionOp : SCF_Op<"condition", [
+  HasParent<"WhileOp">,
+  DeclareOpInterfaceMethods<RegionBranchTerminatorOpInterface>,
+  NoSideEffect,
+  Terminator
+]> {
   let summary = "loop continuation condition";
   let description = [{
     This operation accepts the continuation (i.e., inverse of exit) condition
@@ -53,6 +57,61 @@ def ConditionOp : SCF_Op<"condition",
 
   // Override the default verifier, everything is checked by traits.
   let verifier = ?;
+}
+
+//===----------------------------------------------------------------------===//
+// ExecuteRegionOp
+//===----------------------------------------------------------------------===//
+
+def ExecuteRegionOp : SCF_Op<"execute_region"> {
+  let summary = "operation that executes its region exactly once";
+  let description = [{
+    The `execute_region` operation is used to allow multiple blocks within SCF
+    and other operations which can hold only one block.  The `execute_region`
+    operation executes the region held exactly once and cannot have any operands.
+    As such, its region has no arguments. All SSA values that dominate the op can
+    be accessed inside the op. The op's region can have multiple blocks and the
+    blocks can have multiple distinct terminators. Values returned from this op's
+    region define the op's results.
+
+    Example:
+
+    ```mlir
+    scf.for %i = 0 to 128 step %c1 {
+      %y = scf.execute_region -> i32 {
+        %x = load %A[%i] : memref<128xi32>
+        scf.yield %x : i32
+      }
+    }
+
+    affine.for %i = 0 to 100 {
+      "foo"() : () -> ()
+      %v = scf.execute_region -> i64 {
+        cond_br %cond, ^bb1, ^bb2
+
+      ^bb1:
+        %c1 = constant 1 : i64
+        br ^bb3(%c1 : i64)
+
+      ^bb2:
+        %c2 = constant 2 : i64
+        br ^bb3(%c2 : i64)
+
+      ^bb3(%x : i64):
+        scf.yield %x : i64
+      }
+      "bar"(%v) : (i64) -> ()
+    }
+    ```
+  }];
+
+  let results = (outs Variadic<AnyType>);
+
+  let regions = (region AnyRegion:$region);
+
+  let hasCanonicalizer = 1;
+
+  let hasFolder = 0;
 }
 
 def ForOp : SCF_Op<"for",
@@ -171,6 +230,10 @@ def ForOp : SCF_Op<"for",
     Operation::operand_range getIterOperands() {
       return getOperands().drop_front(getNumControlOperands());
     }
+    MutableArrayRef<OpOperand> getIterOpOperands() {
+      return
+        getOperation()->getOpOperands().drop_front(getNumControlOperands());
+    }
 
     void setLowerBound(Value bound) { getOperation()->setOperand(0, bound); }
     void setUpperBound(Value bound) { getOperation()->setOperand(1, bound); }
@@ -193,6 +256,8 @@ def ForOp : SCF_Op<"for",
       return getOperation()->getNumOperands() - getNumControlOperands();
     }
     /// Get the region iter arg that corresponds to an OpOperand.
+    /// This helper prevents internal op implementation detail leakage to
+    /// clients by hiding the operand / block argument mapping.
     BlockArgument getRegionIterArgForOpOperand(OpOperand &opOperand) {
       assert(opOperand.getOperandNumber() >= getNumControlOperands() &&
              "expected an iter args operand");
@@ -202,6 +267,8 @@ def ForOp : SCF_Op<"for",
         opOperand.getOperandNumber() - getNumControlOperands()];
     }
     /// Get the OpOperand& that corresponds to a region iter arg.
+    /// This helper prevents internal op implementation detail leakage to
+    /// clients by hiding the operand / block argument mapping.
     OpOperand &getOpOperandForRegionIterArg(BlockArgument bbArg) {
       assert(bbArg.getArgNumber() >= getNumInductionVars() &&
              "expected a bbArg that is not an induction variable");
@@ -209,6 +276,27 @@ def ForOp : SCF_Op<"for",
              "bbArg does not belong to the scf::ForOp body");
       return getOperation()->getOpOperand(
         getNumControlOperands() + bbArg.getArgNumber() - getNumInductionVars());
+    }
+    /// Get the OpResult that corresponds to an OpOperand.
+    /// Assert that opOperand is an iterArg.
+    /// This helper prevents internal op implementation detail leakage to
+    /// clients by hiding the operand / block argument mapping.
+    OpResult getResultForOpOperand(OpOperand &opOperand) {
+      assert(opOperand.getOperandNumber() >= getNumControlOperands() &&
+             "expected an iter args operand");
+      assert(opOperand.getOwner() == getOperation() &&
+             "opOperand does not belong to this scf::ForOp operation");
+      return getOperation()->getResult(
+        opOperand.getOperandNumber() - getNumControlOperands());
+    }
+    /// Get the OpOperand& that corresponds to an OpResultOpOperand.
+    /// This helper prevents internal op implementation detail leakage to
+    /// clients by hiding the operand / block argument mapping.
+    OpOperand &getOpOperandForResult(OpResult opResult) {
+      assert(opResult.getDefiningOp() == getOperation() &&
+             "opResult does not belong to the scf::ForOp operation");
+      return getOperation()->getOpOperand(
+        getNumControlOperands() + opResult.getResultNumber());
     }
 
     /// Return operands used when entering the region at 'index'. These operands
@@ -307,6 +395,10 @@ def IfOp : SCF_Op<"if",
       return results().empty() ? OpBuilder::atBlockTerminator(body, listener)
                                : OpBuilder::atBlockEnd(body, listener);
     }
+    Block* thenBlock();
+    YieldOp thenYield();
+    Block* elseBlock();
+    YieldOp elseYield();
   }];
 
   let hasCanonicalizer = 1;
@@ -481,8 +573,8 @@ def WhileOp : SCF_Op<"while",
     of the `scf.condition` terminator either to the "after" region if the
     control flow is transferred there or to results of the `scf.while` operation
     otherwise. The "after" region takes as arguments the values produced by the
-    "before" region and uses `scf.yield` to supply new arguments for the "after"
-    region, into which it transfers the control flow unconditionally.
+    "before" region and uses `scf.yield` to supply new arguments for the
+    "before" region, into which it transfers the control flow unconditionally.
 
     A simple "while" loop can be represented as follows.
 
@@ -582,12 +674,16 @@ def WhileOp : SCF_Op<"while",
 
   let extraClassDeclaration = [{
     OperandRange getSuccessorEntryOperands(unsigned index);
+    ConditionOp getConditionOp();
+    Block::BlockArgListType getAfterArguments();
   }];
+
+  let hasCanonicalizer = 1;
 }
 
 def YieldOp : SCF_Op<"yield", [NoSideEffect, ReturnLike, Terminator,
-                               ParentOneOf<["IfOp, ForOp", "ParallelOp",
-                                            "WhileOp"]>]> {
+                               ParentOneOf<["ExecuteRegionOp, ForOp",
+                                            "IfOp, ParallelOp, WhileOp"]>]> {
   let summary = "loop yield and termination operation";
   let description = [{
     "scf.yield" yields an SSA value from the SCF dialect op region and

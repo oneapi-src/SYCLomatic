@@ -286,6 +286,10 @@ public:
   VendorExtQualType(const Node *Ty_, StringView Ext_, const Node *TA_)
       : Node(KVendorExtQualType), Ty(Ty_), Ext(Ext_), TA(TA_) {}
 
+  const Node *getTy() const { return Ty; }
+  StringView getExt() const { return Ext; }
+  const Node *getTA() const { return TA; }
+
   template <typename Fn> void match(Fn F) const { F(Ty, Ext, TA); }
 
   void printLeft(OutputStream &S) const override {
@@ -333,6 +337,9 @@ public:
       : Node(KQualType, Child_->RHSComponentCache,
              Child_->ArrayCache, Child_->FunctionCache),
         Quals(Quals_), Child(Child_) {}
+
+  Qualifiers getQuals() const { return Quals; }
+  const Node *getChild() const { return Child; }
 
   template<typename Fn> void match(Fn F) const { F(Child, Quals); }
 
@@ -489,6 +496,8 @@ public:
   PointerType(const Node *Pointee_)
       : Node(KPointerType, Pointee_->RHSComponentCache),
         Pointee(Pointee_) {}
+
+  const Node *getPointee() const { return Pointee; }
 
   template<typename Fn> void match(Fn F) const { F(Pointee); }
 
@@ -914,6 +923,9 @@ public:
   VectorType(const Node *BaseType_, Node *Dimension_)
       : Node(KVectorType), BaseType(BaseType_),
         Dimension(Dimension_) {}
+
+  const Node *getBaseType() const { return BaseType; }
+  const Node *getDimension() const { return Dimension; }
 
   template<typename Fn> void match(Fn F) const { F(BaseType, Dimension); }
 
@@ -3898,10 +3910,21 @@ Node *AbstractManglingParser<Derived, Alloc>::parseType() {
     case 'f':
       First += 2;
       return make<NameType>("decimal32");
+    //                ::= DF <number> _
+    //            # ISO/IEC TS 18661 binary floating point type _FloatN (N bits)
+    case 'F': {
+      First += 2;
+      StringView N = parseNumber(false /*disallow negatives*/);
+      if (N.size() == 0 || look() != '_')
+        return nullptr;
+      assert((N == "16") && "Unknown FP type");
+      First += 1;                        // consume '_'
+      return make<NameType>("_Float16"); // use FE-supoprted spelling
+    }
     //                ::= Dh   # IEEE 754r half-precision floating point (16 bits)
     case 'h':
       First += 2;
-      return make<NameType>("decimal16");
+      return make<NameType>("half");
     //                ::= Di   # char32_t
     case 'i':
       First += 2;
@@ -5253,14 +5276,18 @@ Node *AbstractManglingParser<Derived, Alloc>::parseEncoding() {
   class SaveTemplateParams {
     AbstractManglingParser *Parser;
     decltype(TemplateParams) OldParams;
+    decltype(OuterTemplateParams) OldOuterParams;
 
   public:
     SaveTemplateParams(AbstractManglingParser *TheParser) : Parser(TheParser) {
       OldParams = std::move(Parser->TemplateParams);
+      OldOuterParams = std::move(Parser->OuterTemplateParams);
       Parser->TemplateParams.clear();
+      Parser->OuterTemplateParams.clear();
     }
     ~SaveTemplateParams() {
       Parser->TemplateParams = std::move(OldParams);
+      Parser->OuterTemplateParams = std::move(OldOuterParams);
     }
   } SaveTemplateParams(this);
 

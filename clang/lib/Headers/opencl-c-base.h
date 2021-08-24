@@ -21,6 +21,11 @@
 #define cl_khr_subgroup_shuffle 1
 #define cl_khr_subgroup_shuffle_relative 1
 #define cl_khr_subgroup_clustered_reduce 1
+#define cl_khr_extended_bit_ops 1
+#define cl_khr_integer_dot_product 1
+#define __opencl_c_integer_dot_product_input_4x8bit 1
+#define __opencl_c_integer_dot_product_input_4x8bit_packed 1
+
 #endif // defined(__SPIR__)
 #endif // (defined(__OPENCL_CPP_VERSION__) || __OPENCL_C_VERSION__ >= 200)
 
@@ -38,6 +43,14 @@
 #define __opencl_c_program_scope_global_variables 1
 #define __opencl_c_images 1
 #endif
+
+// Define header-only feature macros for OpenCL C 3.0.
+#if (__OPENCL_C_VERSION__ == 300)
+// For the SPIR target all features are supported.
+#if defined(__SPIR__)
+#define __opencl_c_atomic_scope_all_devices 1
+#endif // defined(__SPIR__)
+#endif // (__OPENCL_C_VERSION__ == 300)
 
 // built-in scalar data types:
 
@@ -156,7 +169,9 @@ typedef double double8 __attribute__((ext_vector_type(8)));
 typedef double double16 __attribute__((ext_vector_type(16)));
 #endif
 
-#if defined(__OPENCL_CPP_VERSION__) || (__OPENCL_C_VERSION__ >= CL_VERSION_2_0)
+#if defined(__OPENCL_CPP_VERSION__)
+#define NULL nullptr
+#elif defined(__OPENCL_C_VERSION__)
 #define NULL ((void*)0)
 #endif
 
@@ -312,8 +327,19 @@ typedef enum memory_scope {
   memory_scope_work_item = __OPENCL_MEMORY_SCOPE_WORK_ITEM,
   memory_scope_work_group = __OPENCL_MEMORY_SCOPE_WORK_GROUP,
   memory_scope_device = __OPENCL_MEMORY_SCOPE_DEVICE,
+#if defined(__opencl_c_atomic_scope_all_devices)
   memory_scope_all_svm_devices = __OPENCL_MEMORY_SCOPE_ALL_SVM_DEVICES,
-#if defined(cl_intel_subgroups) || defined(cl_khr_subgroups)
+#if (__OPENCL_C_VERSION__ >= CL_VERSION_3_0)
+  memory_scope_all_devices = memory_scope_all_svm_devices,
+#endif // __OPENCL_C_VERSION__ >= CL_VERSION_3_0
+#endif // defined(__opencl_c_atomic_scope_all_devices)
+/**
+ * Subgroups have different requirements on forward progress, so just test
+ * all the relevant macros.
+ * CL 3.0 sub-groups "they are not guaranteed to make independent forward progress"
+ * KHR subgroups "Subgroups within a workgroup are independent, make forward progress with respect to each other"
+ */
+#if defined(cl_intel_subgroups) || defined(cl_khr_subgroups) || defined(__opencl_c_subgroups)
   memory_scope_sub_group = __OPENCL_MEMORY_SCOPE_SUB_GROUP
 #endif
 } memory_scope;
@@ -337,7 +363,9 @@ typedef enum memory_order
   memory_order_acquire = __ATOMIC_ACQUIRE,
   memory_order_release = __ATOMIC_RELEASE,
   memory_order_acq_rel = __ATOMIC_ACQ_REL,
+#if defined(__opencl_c_atomic_order_seq_cst)
   memory_order_seq_cst = __ATOMIC_SEQ_CST
+#endif
 } memory_order;
 
 #endif // defined(__OPENCL_CPP_VERSION__) || (__OPENCL_C_VERSION__ >= CL_VERSION_2_0)
@@ -550,6 +578,26 @@ typedef struct {
 #define as_intptr_t(x) __builtin_astype((x), intptr_t)
 #define as_uintptr_t(x) __builtin_astype((x), uintptr_t)
 
+// C++ for OpenCL - __remove_address_space
+#if defined(__OPENCL_CPP_VERSION__)
+template <typename _Tp> struct __remove_address_space { using type = _Tp; };
+template <typename _Tp> struct __remove_address_space<__generic _Tp> {
+  using type = _Tp;
+};
+template <typename _Tp> struct __remove_address_space<__global _Tp> {
+  using type = _Tp;
+};
+template <typename _Tp> struct __remove_address_space<__private _Tp> {
+  using type = _Tp;
+};
+template <typename _Tp> struct __remove_address_space<__local _Tp> {
+  using type = _Tp;
+};
+template <typename _Tp> struct __remove_address_space<__constant _Tp> {
+  using type = _Tp;
+};
+#endif
+
 // OpenCL v1.1 s6.9, v1.2/2.0 s6.10 - Function qualifiers
 
 #define __kernel_exec(X, typen) __kernel \
@@ -567,7 +615,6 @@ int printf(__constant const char* st, ...) __attribute__((format(printf, 1, 2)))
 #endif
 
 #ifdef cl_intel_device_side_avc_motion_estimation
-#pragma OPENCL EXTENSION cl_intel_device_side_avc_motion_estimation : begin
 
 #define CLK_AVC_ME_MAJOR_16x16_INTEL 0x0
 #define CLK_AVC_ME_MAJOR_16x8_INTEL 0x1
@@ -701,7 +748,6 @@ int printf(__constant const char* st, ...) __attribute__((format(printf, 1, 2)))
 #define CLK_AVC_IME_RESULT_DUAL_REFERENCE_STREAMOUT_INITIALIZE_INTEL 0x0
 #define CLK_AVC_IME_RESULT_DUAL_REFERENCE_STREAMIN_INITIALIZE_INTEL 0x0
 
-#pragma OPENCL EXTENSION cl_intel_device_side_avc_motion_estimation : end
 #endif // cl_intel_device_side_avc_motion_estimation
 
 // Disable any extensions we may have enabled previously.

@@ -19,7 +19,7 @@
 
 using namespace mlir;
 
-Identifier Builder::getIdentifier(StringRef str) {
+Identifier Builder::getIdentifier(const Twine &str) {
   return Identifier::get(str, context);
 }
 
@@ -52,6 +52,8 @@ FloatType Builder::getF128Type() { return FloatType::getF128(context); }
 IndexType Builder::getIndexType() { return IndexType::get(context); }
 
 IntegerType Builder::getI1Type() { return IntegerType::get(context, 1); }
+
+IntegerType Builder::getI8Type() { return IntegerType::get(context, 8); }
 
 IntegerType Builder::getI32Type() { return IntegerType::get(context, 32); }
 
@@ -117,6 +119,12 @@ DenseIntElementsAttr Builder::getI32VectorAttr(ArrayRef<int32_t> values) {
 DenseIntElementsAttr Builder::getI64VectorAttr(ArrayRef<int64_t> values) {
   return DenseIntElementsAttr::get(
       VectorType::get(static_cast<int64_t>(values.size()), getIntegerType(64)),
+      values);
+}
+
+DenseIntElementsAttr Builder::getIndexVectorAttr(ArrayRef<int64_t> values) {
+  return DenseIntElementsAttr::get(
+      VectorType::get(static_cast<int64_t>(values.size()), getIndexType()),
       values);
 }
 
@@ -194,7 +202,7 @@ FloatAttr Builder::getFloatAttr(Type type, const APFloat &value) {
   return FloatAttr::get(type, value);
 }
 
-StringAttr Builder::getStringAttr(StringRef bytes) {
+StringAttr Builder::getStringAttr(const Twine &bytes) {
   return StringAttr::get(context, bytes);
 }
 
@@ -365,13 +373,13 @@ Operation *OpBuilder::insert(Operation *op) {
 /// end of it. The block is inserted at the provided insertion point of
 /// 'parent'.
 Block *OpBuilder::createBlock(Region *parent, Region::iterator insertPt,
-                              TypeRange argTypes) {
+                              TypeRange argTypes, ArrayRef<Location> locs) {
   assert(parent && "expected valid parent region");
   if (insertPt == Region::iterator())
     insertPt = parent->end();
 
   Block *b = new Block();
-  b->addArguments(argTypes);
+  b->addArguments(argTypes, locs);
   parent->getBlocks().insert(insertPt, b);
   setInsertionPointToEnd(b);
 
@@ -382,10 +390,11 @@ Block *OpBuilder::createBlock(Region *parent, Region::iterator insertPt,
 
 /// Add new block with 'argTypes' arguments and set the insertion point to the
 /// end of it.  The block is placed before 'insertBefore'.
-Block *OpBuilder::createBlock(Block *insertBefore, TypeRange argTypes) {
+Block *OpBuilder::createBlock(Block *insertBefore, TypeRange argTypes,
+                              ArrayRef<Location> locs) {
   assert(insertBefore && "expected valid insertion block");
   return createBlock(insertBefore->getParent(), Region::iterator(insertBefore),
-                     argTypes);
+                     argTypes, locs);
 }
 
 /// Create an operation given the fields represented as an OperationState.

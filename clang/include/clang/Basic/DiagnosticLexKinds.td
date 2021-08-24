@@ -304,6 +304,13 @@ def pp_pragma_once_in_main_file : Warning<"#pragma once in main file">,
 def pp_pragma_sysheader_in_main_file : Warning<
   "#pragma system_header ignored in main file">,
   InGroup<DiagGroup<"pragma-system-header-outside-header">>;
+
+def err_pragma_include_instead_not_sysheader : Error<
+  "'#pragma clang include_instead' cannot be used outside of system headers">;
+def err_pragma_include_instead_system_reserved : Error<
+  "header '%0' is an implementation detail; #include %select{'%2'|either '%2' "
+  "or '%3'|one of %2}1 instead">;
+
 def pp_poisoning_existing_macro : Warning<"poisoning existing macro">;
 def pp_out_of_date_dependency : Warning<
   "current file is older than dependency %0">;
@@ -459,9 +466,11 @@ def err_pp_malformed_ident : Error<"invalid #ident directive">;
 def err_pp_unterminated_conditional : Error<
   "unterminated conditional directive">;
 def pp_err_else_after_else : Error<"#else after #else">;
-def pp_err_elif_after_else : Error<"#elif after #else">;
+def pp_err_elif_after_else : Error<
+  "%select{#elif|#elifdef|#elifndef}0 after #else">;
 def pp_err_else_without_if : Error<"#else without #if">;
-def pp_err_elif_without_if : Error<"#elif without #if">;
+def pp_err_elif_without_if : Error<
+  "%select{#elif|#elifdef|#elifndef}0 without #if">;
 def err_pp_endif_without_if : Error<"#endif without #if">;
 def err_pp_expected_value_in_expr : Error<"expected value in expression">;
 def err_pp_expected_rparen : Error<"expected ')' in preprocessor expression">;
@@ -520,6 +529,11 @@ def warn_pragma_warning_push_level :
 def warn_pragma_warning_expected_number :
   ExtWarn<"#pragma warning expected a warning number">,
   InGroup<UnknownPragmas>;
+
+// - #pragma deprecated(...)
+def warn_pragma_deprecated_macro_use :
+  ExtWarn<"macro %0 has been marked as deprecated%select{|: %2}1">,
+  InGroup<DeprecatedPragma>;
 
 // - #pragma execution_character_set(...)
 def warn_pragma_exec_charset_expected :

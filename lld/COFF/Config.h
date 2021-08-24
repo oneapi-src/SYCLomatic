@@ -74,10 +74,12 @@ enum class DebugType {
   Fixup = 0x4,  /// Relocation Table
 };
 
-enum class GuardCFLevel {
-  Off,
-  NoLongJmp, // Emit gfids but no longjmp tables
-  Full,      // Enable all protections.
+enum GuardCFLevel {
+  Off     = 0x0,
+  CF      = 0x1, /// Emit gfids tables
+  LongJmp = 0x2, /// Emit longjmp tables
+  EHCont  = 0x4, /// Emit ehcont tables
+  All     = 0x7  /// Enable all protections
 };
 
 enum class ICFLevel {
@@ -143,7 +145,7 @@ struct Configuration {
   bool saveTemps = false;
 
   // /guard:cf
-  GuardCFLevel guardCF = GuardCFLevel::Off;
+  int guardCF = GuardCFLevel::Off;
 
   // Used for SafeSEH.
   bool safeSEH = false;
@@ -221,6 +223,9 @@ struct Configuration {
   // Used for /lto-cs-profile-path
   llvm::StringRef ltoCSProfileFile;
 
+  // Used for /lto-pgo-warn-mismatch:
+  bool ltoPGOWarnMismatch = true;
+
   // Used for /call-graph-ordering-file:
   llvm::MapVector<std::pair<const SectionChunk *, const SectionChunk *>,
                   uint64_t>
@@ -261,6 +266,7 @@ struct Configuration {
   bool warnLocallyDefinedImported = true;
   bool warnDebugInfoUnusable = true;
   bool warnLongSectionNames = true;
+  bool warnStdcallFixup = true;
   bool incremental = true;
   bool integrityCheck = false;
   bool killAt = false;
@@ -271,6 +277,7 @@ struct Configuration {
   bool thinLTOIndexOnly;
   bool autoImport = false;
   bool pseudoRelocs = false;
+  bool stdcallFixup = false;
 };
 
 extern Configuration *config;

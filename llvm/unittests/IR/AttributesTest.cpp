@@ -7,8 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/IR/Attributes.h"
-#include "llvm/IR/LLVMContext.h"
+#include "llvm/AsmParser/Parser.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Support/SourceMgr.h"
 #include "gtest/gtest.h"
 using namespace llvm;
 
@@ -154,7 +158,7 @@ TEST(Attributes, AddMatchingAlignAttr) {
   AL = AL.addAttributes(C, AttributeList::FirstArgIndex, B);
   EXPECT_EQ(Align(8), AL.getParamAlignment(0));
   EXPECT_EQ(Align(32), AL.getParamAlignment(1));
-  EXPECT_TRUE(AL.hasParamAttribute(0, Attribute::NonNull));
+  EXPECT_TRUE(AL.hasParamAttr(0, Attribute::NonNull));
 }
 
 TEST(Attributes, EmptyGet) {
@@ -182,6 +186,114 @@ TEST(Attributes, StringRepresentation) {
 
   A = Attribute::getWithByValType(C, Type::getInt32Ty(C));
   EXPECT_EQ(A.getAsString(), "byval(i32)");
+}
+
+TEST(Attributes, HasParentContext) {
+  LLVMContext C1, C2;
+
+  {
+    Attribute Attr1 = Attribute::get(C1, Attribute::AlwaysInline);
+    Attribute Attr2 = Attribute::get(C2, Attribute::AlwaysInline);
+    EXPECT_TRUE(Attr1.hasParentContext(C1));
+    EXPECT_FALSE(Attr1.hasParentContext(C2));
+    EXPECT_FALSE(Attr2.hasParentContext(C1));
+    EXPECT_TRUE(Attr2.hasParentContext(C2));
+  }
+
+  {
+    AttributeSet AS1 = AttributeSet::get(
+        C1, makeArrayRef(Attribute::get(C1, Attribute::NoReturn)));
+    AttributeSet AS2 = AttributeSet::get(
+        C2, makeArrayRef(Attribute::get(C2, Attribute::NoReturn)));
+    EXPECT_TRUE(AS1.hasParentContext(C1));
+    EXPECT_FALSE(AS1.hasParentContext(C2));
+    EXPECT_FALSE(AS2.hasParentContext(C1));
+    EXPECT_TRUE(AS2.hasParentContext(C2));
+  }
+
+  {
+    AttributeList AL1 = AttributeList::get(C1, 1, Attribute::ZExt);
+    AttributeList AL2 = AttributeList::get(C2, 1, Attribute::ZExt);
+    EXPECT_TRUE(AL1.hasParentContext(C1));
+    EXPECT_FALSE(AL1.hasParentContext(C2));
+    EXPECT_FALSE(AL2.hasParentContext(C1));
+    EXPECT_TRUE(AL2.hasParentContext(C2));
+  }
+}
+
+TEST(Attributes, AttributeListPrinting) {
+  LLVMContext C;
+
+  {
+    std::string S;
+    raw_string_ostream OS(S);
+    AttributeList AL;
+    AL.addAttribute(C, AttributeList::FunctionIndex, Attribute::AlwaysInline)
+        .print(OS);
+    EXPECT_EQ(S, "AttributeList[\n"
+                 "  { function => alwaysinline }\n"
+                 "]\n");
+  }
+
+  {
+    std::string S;
+    raw_string_ostream OS(S);
+    AttributeList AL;
+    AL.addAttribute(C, AttributeList::ReturnIndex, Attribute::SExt).print(OS);
+    EXPECT_EQ(S, "AttributeList[\n"
+                 "  { return => signext }\n"
+                 "]\n");
+  }
+
+  {
+    std::string S;
+    raw_string_ostream OS(S);
+    AttributeList AL;
+    AL.addParamAttribute(C, 5, Attribute::ZExt).print(OS);
+    EXPECT_EQ(S, "AttributeList[\n"
+                 "  { arg(5) => zeroext }\n"
+                 "]\n");
+  }
+}
+
+TEST(Attributes, MismatchedABIAttrs) {
+  const char *IRString = R"IR(
+    declare void @f1(i32* byval(i32))
+    define void @g() {
+      call void @f1(i32* null)
+      ret void
+    }
+    declare void @f2(i32* preallocated(i32))
+    define void @h() {
+      call void @f2(i32* null)
+      ret void
+    }
+    declare void @f3(i32* inalloca(i32))
+    define void @i() {
+      call void @f3(i32* null)
+      ret void
+    }
+  )IR";
+
+  SMDiagnostic Err;
+  LLVMContext Context;
+  std::unique_ptr<Module> M = parseAssemblyString(IRString, Err, Context);
+  ASSERT_TRUE(M);
+
+  {
+    auto *I = cast<CallBase>(&M->getFunction("g")->getEntryBlock().front());
+    ASSERT_TRUE(I->isByValArgument(0));
+    ASSERT_TRUE(I->getParamByValType(0));
+  }
+  {
+    auto *I = cast<CallBase>(&M->getFunction("h")->getEntryBlock().front());
+    ASSERT_TRUE(I->getParamPreallocatedType(0));
+  }
+  {
+    auto *I = cast<CallBase>(&M->getFunction("i")->getEntryBlock().front());
+    ASSERT_TRUE(I->isInAllocaArgument(0));
+    ASSERT_TRUE(I->getParamInAllocaType(0));
+  }
 }
 
 } // end anonymous namespace

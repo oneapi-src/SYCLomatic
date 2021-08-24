@@ -1094,11 +1094,11 @@ static unsigned emitNop(MCStreamer &OS, unsigned NumBytes,
   if (Subtarget->is64Bit()) {
     // FIXME: We can use NOOPL on 32-bit targets with FeatureNOPL, but the
     // IndexReg/BaseReg below need to be updated.
-    if (Subtarget->hasFeature(X86::FeatureFast7ByteNOP))
+    if (Subtarget->hasFeature(X86::TuningFast7ByteNOP))
       MaxNopLength = 7;
-    else if (Subtarget->hasFeature(X86::FeatureFast15ByteNOP))
+    else if (Subtarget->hasFeature(X86::TuningFast15ByteNOP))
       MaxNopLength = 15;
-    else if (Subtarget->hasFeature(X86::FeatureFast11ByteNOP))
+    else if (Subtarget->hasFeature(X86::TuningFast11ByteNOP))
       MaxNopLength = 11;
     else
       MaxNopLength = 10;
@@ -2167,7 +2167,7 @@ static void addConstantComments(const MachineInstr *MI,
       const MachineOperand &DstOp = MI->getOperand(0);
       CS << X86ATTInstPrinter::getRegisterName(DstOp.getReg()) << " = ";
       if (auto *CF = dyn_cast<ConstantFP>(C)) {
-        CS << "0x" << CF->getValueAPF().bitcastToAPInt().toString(16, false);
+        CS << "0x" << toString(CF->getValueAPF().bitcastToAPInt(), 16, false);
         OutStreamer.AddComment(CS.str());
       }
     }

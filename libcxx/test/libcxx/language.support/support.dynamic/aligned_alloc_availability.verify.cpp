@@ -16,11 +16,7 @@
 // UNSUPPORTED: apple-clang-9, apple-clang-10
 // UNSUPPORTED: clang-5, clang-6, clang-7
 
-// REQUIRES: with_system_cxx_lib=macosx10.13 || \
-// REQUIRES: with_system_cxx_lib=macosx10.12 || \
-// REQUIRES: with_system_cxx_lib=macosx10.11 || \
-// REQUIRES: with_system_cxx_lib=macosx10.10 || \
-// REQUIRES: with_system_cxx_lib=macosx10.9
+// REQUIRES: use_system_cxx_lib && target={{.+}}-apple-macosx10.{{9|10|11|12|13}}
 
 #include <new>
 #include <cstddef>

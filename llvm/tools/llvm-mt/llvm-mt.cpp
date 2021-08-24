@@ -64,7 +64,7 @@ public:
 };
 } // namespace
 
-LLVM_ATTRIBUTE_NORETURN static void reportError(Twine Msg) {
+[[noreturn]] static void reportError(Twine Msg) {
   WithColor::error(errs(), "llvm-mt") << Msg << '\n';
   exit(1);
 }
@@ -109,7 +109,7 @@ int main(int Argc, const char **Argv) {
   }
 
   if (InputArgs.hasArg(OPT_help)) {
-    T.PrintHelp(outs(), "llvm-mt [options] file...", "Manifest Tool", false);
+    T.printHelp(outs(), "llvm-mt [options] file...", "Manifest Tool", false);
     return 0;
   }
 

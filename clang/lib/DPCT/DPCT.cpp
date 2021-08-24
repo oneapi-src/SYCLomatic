@@ -71,7 +71,7 @@ std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 } // namespace tooling
 namespace dpct {
-extern llvm::cl::OptionCategory DPCTCat;
+llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang

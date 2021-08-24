@@ -18,10 +18,20 @@
 // CHECK-DAG: sycl-spir64.bar
 // CHECK-NOT: undefined_func
 // CHECK-NOT: static_func
+// CHECK-NOT: static_used
+// CHECK-NOT: sycl-spir64.llvm.used
+// CHECK-NOT: sycl-spir64.llvm.compiler.used
+// CHECK-NOT: sycl-spir64.const_as
+
+const __attribute__((opencl_constant)) char const_as[] = "abc";
+
+extern void my_printf(__attribute__((opencl_constant)) const char *fmt);
 
 extern void undefined_func(void);
 
 void foo(void) {
+  // We aim to create a gep operator in LLVM IR to have a use of const_as
+  my_printf(&const_as[1]);
   undefined_func();
 }
 
@@ -31,3 +41,6 @@ static void static_func(void) {}
 void bar(void) {
   static_func();
 }
+
+static void static_used(void) __attribute__((used));
+static void static_used() {}

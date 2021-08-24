@@ -198,12 +198,14 @@ static cl::opt<bool>
                             "warnings about missing profile data for "
                             "functions."));
 
+namespace llvm {
 // Command line option to enable/disable the warning about a hash mismatch in
 // the profile data.
-static cl::opt<bool>
+cl::opt<bool>
     NoPGOWarnMismatch("no-pgo-warn-mismatch", cl::init(false), cl::Hidden,
                       cl::desc("Use this option to turn off/on "
                                "warnings about profile cfg mismatch."));
+} // namespace llvm
 
 // Command line option to enable/disable the warning about a hash mismatch in
 // the profile data for Comdat functions, which often turns out to be false
@@ -280,6 +282,7 @@ static cl::opt<unsigned> PGOVerifyBFICutoff(
     cl::desc("Set the threshold for pgo-verify-bfi -- skip the counts whose "
              "profile count value is below."));
 
+namespace llvm {
 // Command line option to turn on CFG dot dump after profile annotation.
 // Defined in Analysis/BlockFrequencyInfo.cpp:  -pgo-view-counts
 extern cl::opt<PGOViewCountsType> PGOViewCounts;
@@ -287,6 +290,7 @@ extern cl::opt<PGOViewCountsType> PGOViewCounts;
 // Command line option to specify the name of the function for CFG dump
 // Defined in Analysis/BlockFrequencyInfo.cpp:  -view-bfi-func-name=
 extern cl::opt<std::string> ViewBlockFreqFuncName;
+} // namespace llvm
 
 static cl::opt<bool>
     PGOOldCFGHashing("pgo-instr-old-cfg-hashing", cl::init(false), cl::Hidden,

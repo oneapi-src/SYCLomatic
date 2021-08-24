@@ -2400,8 +2400,9 @@ private:
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
-      return TL.getTypePtr()->getSize().toString(10, false);
-    return buildString(TL.getTypePtr()->getSize().toString(10, false), "/*",
+      return toString(TL.getTypePtr()->getSize(), 10, false,false);
+    return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
+                       "/*",
                        getStmtSpelling(TL.getSizeExpr()), "*/");
   }
 
@@ -3029,7 +3030,7 @@ public:
     Kind = TemplateArgument::Type;
   }
   void setAsNonType(const llvm::APInt &Int) {
-    setArgStr(Int.toString(10, true));
+    setArgStr(toString(Int, 10, true, false));
     Kind = TemplateArgument::Integral;
   }
   void setAsNonType(const Expr *E) {

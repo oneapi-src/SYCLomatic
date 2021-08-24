@@ -1,5 +1,14 @@
 // RUN: mlir-translate -mlir-to-llvmir -split-input-file %s | FileCheck %s
 
+// CHECK: @global_aligned32 = private global i64 42, align 32
+"llvm.mlir.global"() ({}) {sym_name = "global_aligned32", type = i64, value = 42 : i64, linkage = 0, alignment = 32} : () -> ()
+
+// CHECK: @global_aligned64 = private global i64 42, align 64
+llvm.mlir.global private @global_aligned64(42 : i64) {alignment = 64 : i64} : i64
+
+// CHECK: @global_aligned64_native = private global i64 42, align 64
+llvm.mlir.global private @global_aligned64_native(42 : i64) { alignment = 64 } : i64
+
 // CHECK: @i32_global = internal global i32 42
 llvm.mlir.global internal @i32_global(42: i32) : i32
 
@@ -8,6 +17,9 @@ llvm.mlir.global internal constant @i32_const(52: i53) : i53
 
 // CHECK: @int_global_array = internal global [3 x i32] [i32 62, i32 62, i32 62]
 llvm.mlir.global internal @int_global_array(dense<62> : vector<3xi32>) : !llvm.array<3 x i32>
+
+// CHECK: @int_global_array_zero_elements = internal constant [3 x [0 x [4 x float]]] zeroinitializer
+llvm.mlir.global internal constant @int_global_array_zero_elements(dense<> : tensor<3x0x4xf32>) : !llvm.array<3 x array<0 x array<4 x f32>>>
 
 // CHECK: @i32_global_addr_space = internal addrspace(7) global i32 62
 llvm.mlir.global internal @i32_global_addr_space(62: i32) {addr_space = 7 : i32} : i32
@@ -23,6 +35,12 @@ llvm.mlir.global internal constant @string_const("foobar") : !llvm.array<6 x i8>
 
 // CHECK: @int_global_undef = internal global i64 undef
 llvm.mlir.global internal @int_global_undef() : i64
+
+// CHECK: @explicit_undef = global i32 undef
+llvm.mlir.global external @explicit_undef() : i32 {
+  %0 = llvm.mlir.undef : i32
+  llvm.return %0 : i32
+}
 
 // CHECK: @int_gep = internal constant i32* getelementptr (i32, i32* @i32_global, i32 2)
 llvm.mlir.global internal constant @int_gep() : !llvm.ptr<i32> {
@@ -59,6 +77,30 @@ llvm.mlir.global weak_odr @weak_odr(42 : i32) : i32
 // CHECK: @external = external global i32
 llvm.mlir.global external @external() : i32
 
+//
+// UnnamedAddr attribute.
+//
+
+// CHECK: @no_unnamed_addr = private constant i64 42
+llvm.mlir.global private constant @no_unnamed_addr(42 : i64) : i64
+// CHECK: @local_unnamed_addr = private local_unnamed_addr constant i64 42
+llvm.mlir.global private local_unnamed_addr constant @local_unnamed_addr(42 : i64) : i64
+// CHECK: @unnamed_addr = private unnamed_addr constant i64 42
+llvm.mlir.global private unnamed_addr constant @unnamed_addr(42 : i64) : i64
+
+//
+// dso_local attribute.
+//
+
+llvm.mlir.global @has_dso_local(42 : i64) {dso_local} : i64
+// CHECK: @has_dso_local = dso_local global i64 42
+
+//
+// Section attribute.
+//
+
+// CHECK: @sectionvar = internal constant [10 x i8] c"teststring", section ".mysection"
+llvm.mlir.global internal constant @sectionvar("teststring")  {section = ".mysection"}: !llvm.array<10 x i8>
 
 //
 // Declarations of the allocation functions to be linked against. These are
@@ -399,6 +441,15 @@ llvm.func @more_imperfectly_nested_loops() {
 
 // CHECK: define internal void @func_internal
 llvm.func internal @func_internal() {
+  llvm.return
+}
+
+//
+// dso_local attribute.
+//
+
+// CHECK: define dso_local void @dso_local_func
+llvm.func @dso_local_func() attributes {dso_local} {
   llvm.return
 }
 
@@ -935,7 +986,7 @@ llvm.func @cond_br_arguments(%arg0: i1, %arg1: i1) {
 }
 
 // CHECK-LABEL: define void @llvm_noalias(float* noalias {{%*.}})
-llvm.func @llvm_noalias(%arg0: !llvm.ptr<f32> {llvm.noalias = true}) {
+llvm.func @llvm_noalias(%arg0: !llvm.ptr<f32> {llvm.noalias}) {
   llvm.return
 }
 
@@ -988,6 +1039,18 @@ llvm.func @stringconstant() -> !llvm.array<12 x i8> {
   %1 = llvm.mlir.constant("Hello world!") : !llvm.array<12 x i8>
   // CHECK: ret [12 x i8] c"Hello world!"
   llvm.return %1 : !llvm.array<12 x i8>
+}
+
+llvm.func @complexfpconstant() -> !llvm.struct<(f32, f32)> {
+  %1 = llvm.mlir.constant([-1.000000e+00 : f32, 0.000000e+00 : f32]) : !llvm.struct<(f32, f32)>
+  // CHECK: ret { float, float } { float -1.000000e+00, float 0.000000e+00 }
+  llvm.return %1 : !llvm.struct<(f32, f32)>
+}
+
+llvm.func @complexintconstant() -> !llvm.struct<(i32, i32)> {
+  %1 = llvm.mlir.constant([-1 : i32, 0 : i32]) : !llvm.struct<(i32, i32)>
+  // CHECK: ret { i32, i32 } { i32 -1, i32 0 }
+  llvm.return %1 : !llvm.struct<(i32, i32)>
 }
 
 llvm.func @noreach() {

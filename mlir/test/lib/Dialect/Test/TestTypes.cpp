@@ -13,6 +13,7 @@
 
 #include "TestTypes.h"
 #include "TestDialect.h"
+#include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/DialectImplementation.h"
 #include "mlir/IR/Types.h"
@@ -31,11 +32,14 @@ parseSignedness(DialectAsmParser &parser,
   auto loc = parser.getCurrentLocation();
   if (parser.parseKeyword(&signStr))
     return failure();
-  if (signStr.compare_lower("u") || signStr.compare_lower("unsigned"))
+  if (signStr.compare_insensitive("u") ||
+      signStr.compare_insensitive("unsigned"))
     result = TestIntegerType::SignednessSemantics::Unsigned;
-  else if (signStr.compare_lower("s") || signStr.compare_lower("signed"))
+  else if (signStr.compare_insensitive("s") ||
+           signStr.compare_insensitive("signed"))
     result = TestIntegerType::SignednessSemantics::Signed;
-  else if (signStr.compare_lower("n") || signStr.compare_lower("none"))
+  else if (signStr.compare_insensitive("n") ||
+           signStr.compare_insensitive("none"))
     result = TestIntegerType::SignednessSemantics::Signless;
   else
     return parser.emitError(loc, "expected signed, unsigned, or none");
@@ -57,6 +61,34 @@ static void printSignedness(DialectAsmPrinter &printer,
     break;
   }
 }
+
+// The functions don't need to be in the header file, but need to be in the mlir
+// namespace. Declare them here, then define them immediately below. Separating
+// the declaration and definition adheres to the LLVM coding standards.
+namespace mlir {
+namespace test {
+// FieldInfo is used as part of a parameter, so equality comparison is
+// compulsory.
+static bool operator==(const FieldInfo &a, const FieldInfo &b);
+// FieldInfo is used as part of a parameter, so a hash will be computed.
+static llvm::hash_code hash_value(const FieldInfo &fi); // NOLINT
+} // namespace test
+} // namespace mlir
+
+// FieldInfo is used as part of a parameter, so equality comparison is
+// compulsory.
+static bool mlir::test::operator==(const FieldInfo &a, const FieldInfo &b) {
+  return a.name == b.name && a.type == b.type;
+}
+
+// FieldInfo is used as part of a parameter, so a hash will be computed.
+static llvm::hash_code mlir::test::hash_value(const FieldInfo &fi) { // NOLINT
+  return llvm::hash_combine(fi.name, fi.type);
+}
+
+//===----------------------------------------------------------------------===//
+// CompoundAType
+//===----------------------------------------------------------------------===//
 
 Type CompoundAType::parse(MLIRContext *ctxt, DialectAsmParser &parser) {
   int widthOfSomething;
@@ -87,29 +119,9 @@ void CompoundAType::print(DialectAsmPrinter &printer) const {
   printer << "]>";
 }
 
-// The functions don't need to be in the header file, but need to be in the mlir
-// namespace. Declare them here, then define them immediately below. Separating
-// the declaration and definition adheres to the LLVM coding standards.
-namespace mlir {
-namespace test {
-// FieldInfo is used as part of a parameter, so equality comparison is
-// compulsory.
-static bool operator==(const FieldInfo &a, const FieldInfo &b);
-// FieldInfo is used as part of a parameter, so a hash will be computed.
-static llvm::hash_code hash_value(const FieldInfo &fi); // NOLINT
-} // namespace test
-} // namespace mlir
-
-// FieldInfo is used as part of a parameter, so equality comparison is
-// compulsory.
-static bool mlir::test::operator==(const FieldInfo &a, const FieldInfo &b) {
-  return a.name == b.name && a.type == b.type;
-}
-
-// FieldInfo is used as part of a parameter, so a hash will be computed.
-static llvm::hash_code mlir::test::hash_value(const FieldInfo &fi) { // NOLINT
-  return llvm::hash_combine(fi.name, fi.type);
-}
+//===----------------------------------------------------------------------===//
+// TestIntegerType
+//===----------------------------------------------------------------------===//
 
 // Example type validity checker.
 LogicalResult
@@ -122,18 +134,58 @@ TestIntegerType::verify(function_ref<InFlightDiagnostic()> emitError,
 }
 
 //===----------------------------------------------------------------------===//
-// Tablegen Generated Definitions
+// TestType
 //===----------------------------------------------------------------------===//
 
-#define GET_TYPEDEF_CLASSES
-#include "TestTypeDefs.cpp.inc"
+void TestType::printTypeC(Location loc) const {
+  emitRemark(loc) << *this << " - TestC";
+}
 
-LogicalResult TestTypeWithLayout::verifyEntries(DataLayoutEntryListRef params,
-                                                Location loc) const {
+//===----------------------------------------------------------------------===//
+// TestTypeWithLayout
+//===----------------------------------------------------------------------===//
+
+Type TestTypeWithLayoutType::parse(MLIRContext *ctx, DialectAsmParser &parser) {
+  unsigned val;
+  if (parser.parseLess() || parser.parseInteger(val) || parser.parseGreater())
+    return Type();
+  return TestTypeWithLayoutType::get(ctx, val);
+}
+
+void TestTypeWithLayoutType::print(DialectAsmPrinter &printer) const {
+  printer << "test_type_with_layout<" << getKey() << ">";
+}
+
+unsigned
+TestTypeWithLayoutType::getTypeSizeInBits(const DataLayout &dataLayout,
+                                          DataLayoutEntryListRef params) const {
+  return extractKind(params, "size");
+}
+
+unsigned
+TestTypeWithLayoutType::getABIAlignment(const DataLayout &dataLayout,
+                                        DataLayoutEntryListRef params) const {
+  return extractKind(params, "alignment");
+}
+
+unsigned TestTypeWithLayoutType::getPreferredAlignment(
+    const DataLayout &dataLayout, DataLayoutEntryListRef params) const {
+  return extractKind(params, "preferred");
+}
+
+bool TestTypeWithLayoutType::areCompatible(
+    DataLayoutEntryListRef oldLayout, DataLayoutEntryListRef newLayout) const {
+  unsigned old = extractKind(oldLayout, "alignment");
+  return old == 1 || extractKind(newLayout, "alignment") <= old;
+}
+
+LogicalResult
+TestTypeWithLayoutType::verifyEntries(DataLayoutEntryListRef params,
+                                      Location loc) const {
   for (DataLayoutEntryInterface entry : params) {
     // This is for testing purposes only, so assert well-formedness.
     assert(entry.isTypeEntry() && "unexpected identifier entry");
-    assert(entry.getKey().get<Type>().isa<TestTypeWithLayout>() &&
+    assert(entry.getKey().get<Type>().isa<TestTypeWithLayoutType>() &&
            "wrong type passed in");
     auto array = entry.getValue().dyn_cast<ArrayAttr>();
     assert(array && array.getValue().size() == 2 &&
@@ -149,8 +201,8 @@ LogicalResult TestTypeWithLayout::verifyEntries(DataLayoutEntryListRef params,
   return success();
 }
 
-unsigned TestTypeWithLayout::extractKind(DataLayoutEntryListRef params,
-                                         StringRef expectedKind) const {
+unsigned TestTypeWithLayoutType::extractKind(DataLayoutEntryListRef params,
+                                             StringRef expectedKind) const {
   for (DataLayoutEntryInterface entry : params) {
     ArrayRef<Attribute> pair = entry.getValue().cast<ArrayAttr>().getValue();
     StringRef kind = pair.front().cast<StringAttr>().getValue();
@@ -161,18 +213,33 @@ unsigned TestTypeWithLayout::extractKind(DataLayoutEntryListRef params,
 }
 
 //===----------------------------------------------------------------------===//
+// Tablegen Generated Definitions
+//===----------------------------------------------------------------------===//
+
+#define GET_TYPEDEF_CLASSES
+#include "TestTypeDefs.cpp.inc"
+
+//===----------------------------------------------------------------------===//
 // TestDialect
 //===----------------------------------------------------------------------===//
 
+namespace {
+
+struct PtrElementModel
+    : public LLVM::PointerElementTypeInterface::ExternalModel<PtrElementModel,
+                                                              SimpleAType> {};
+} // namespace
+
 void TestDialect::registerTypes() {
-  addTypes<TestType, TestTypeWithLayout, TestRecursiveType,
+  addTypes<TestRecursiveType,
 #define GET_TYPEDEF_LIST
 #include "TestTypeDefs.cpp.inc"
            >();
+  SimpleAType::attachInterface<PtrElementModel>(*getContext());
 }
 
 static Type parseTestType(MLIRContext *ctxt, DialectAsmParser &parser,
-                          llvm::SetVector<Type> &stack) {
+                          SetVector<Type> &stack) {
   StringRef typeTag;
   if (failed(parser.parseKeyword(&typeTag)))
     return Type();
@@ -182,17 +249,6 @@ static Type parseTestType(MLIRContext *ctxt, DialectAsmParser &parser,
     auto parseResult = generatedTypeParser(ctxt, parser, typeTag, genType);
     if (parseResult.hasValue())
       return genType;
-  }
-  if (typeTag == "test_type")
-    return TestType::get(parser.getBuilder().getContext());
-
-  if (typeTag == "test_type_with_layout") {
-    unsigned val;
-    if (parser.parseLess() || parser.parseInteger(val) ||
-        parser.parseGreater()) {
-      return Type();
-    }
-    return TestTypeWithLayout::get(parser.getBuilder().getContext(), val);
   }
 
   if (typeTag != "test_rec") {
@@ -226,23 +282,14 @@ static Type parseTestType(MLIRContext *ctxt, DialectAsmParser &parser,
 }
 
 Type TestDialect::parseType(DialectAsmParser &parser) const {
-  llvm::SetVector<Type> stack;
+  SetVector<Type> stack;
   return parseTestType(getContext(), parser, stack);
 }
 
 static void printTestType(Type type, DialectAsmPrinter &printer,
-                          llvm::SetVector<Type> &stack) {
+                          SetVector<Type> &stack) {
   if (succeeded(generatedTypePrinter(type, printer)))
     return;
-  if (type.isa<TestType>()) {
-    printer << "test_type";
-    return;
-  }
-
-  if (auto t = type.dyn_cast<TestTypeWithLayout>()) {
-    printer << "test_type_with_layout<" << t.getKey() << ">";
-    return;
-  }
 
   auto rec = type.cast<TestRecursiveType>();
   printer << "test_rec<" << rec.getName();
@@ -256,6 +303,6 @@ static void printTestType(Type type, DialectAsmPrinter &printer,
 }
 
 void TestDialect::printType(Type type, DialectAsmPrinter &printer) const {
-  llvm::SetVector<Type> stack;
+  SetVector<Type> stack;
   printTestType(type, printer, stack);
 }

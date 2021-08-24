@@ -17,19 +17,20 @@
 
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
-namespace INTEL {
-namespace gpu {
+
+namespace ext {
+namespace intel {
+namespace experimental {
+namespace esimd {
 namespace detail {
 // Forward declare a "back-door" access class to support ESIMD.
 class AccessorPrivateProxy;
 } // namespace detail
-} // namespace gpu
-} // namespace INTEL
-} // namespace sycl
-} // __SYCL_INLINE_NAMESPACE(cl)
+} // namespace esimd
+} // namespace experimental
+} // namespace intel
+} // namespace ext
 
-__SYCL_INLINE_NAMESPACE(cl) {
-namespace sycl {
 namespace detail {
 
 class Command;
@@ -128,7 +129,7 @@ public:
   bool MIsESIMDAcc;
 };
 
-using AccessorImplPtr = shared_ptr_class<AccessorImplHost>;
+using AccessorImplPtr = std::shared_ptr<AccessorImplHost>;
 
 class AccessorBaseHost {
 public:
@@ -136,7 +137,7 @@ public:
                    access::mode AccessMode, detail::SYCLMemObjI *SYCLMemObject,
                    int Dims, int ElemSize, int OffsetInBytes = 0,
                    bool IsSubBuffer = false) {
-    impl = shared_ptr_class<AccessorImplHost>(new AccessorImplHost(
+    impl = std::shared_ptr<AccessorImplHost>(new AccessorImplHost(
         Offset, AccessRange, MemoryRange, AccessMode, SYCLMemObject, Dims,
         ElemSize, OffsetInBytes, IsSubBuffer));
   }
@@ -163,7 +164,8 @@ protected:
   AccessorImplPtr impl;
 
 private:
-  friend class sycl::INTEL::gpu::detail::AccessorPrivateProxy;
+  friend class sycl::ext::intel::experimental::esimd::detail::
+      AccessorPrivateProxy;
 };
 
 class __SYCL_EXPORT LocalAccessorImplHost {
@@ -178,12 +180,12 @@ public:
   std::vector<char> MMem;
 };
 
-using LocalAccessorImplPtr = shared_ptr_class<LocalAccessorImplHost>;
+using LocalAccessorImplPtr = std::shared_ptr<LocalAccessorImplHost>;
 
 class LocalAccessorBaseHost {
 public:
   LocalAccessorBaseHost(sycl::range<3> Size, int Dims, int ElemSize) {
-    impl = shared_ptr_class<LocalAccessorImplHost>(
+    impl = std::shared_ptr<LocalAccessorImplHost>(
         new LocalAccessorImplHost(Size, Dims, ElemSize));
   }
   sycl::range<3> &getSize() { return impl->MSize; }
@@ -200,7 +202,7 @@ protected:
   template <class Obj>
   friend decltype(Obj::impl) getSyclObjImpl(const Obj &SyclObject);
 
-  shared_ptr_class<LocalAccessorImplHost> impl;
+  std::shared_ptr<LocalAccessorImplHost> impl;
 };
 
 using Requirement = AccessorImplHost;
@@ -212,7 +214,7 @@ void __SYCL_EXPORT addHostAccessorAndWait(Requirement *Req);
 template <typename MayBeTag1, typename MayBeTag2>
 constexpr access::mode deduceAccessMode() {
   // property_list = {} is not properly detected by deduction guide,
-  // when parameter is passed without curly braces: access(buffer, noinit)
+  // when parameter is passed without curly braces: access(buffer, no_init)
   // thus simplest approach is to check 2 last arguments for being a tag
   if constexpr (std::is_same<MayBeTag1,
                              mode_tag_t<access::mode::read>>::value ||

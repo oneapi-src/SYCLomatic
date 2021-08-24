@@ -30,6 +30,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/OptimizedStructLayout.h"
 #include "llvm/Support/circular_raw_ostream.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
@@ -160,6 +161,16 @@ struct SuspendCrossingInfo {
     }
 
     return isDefinitionAcrossSuspend(DefBB, U);
+  }
+
+  bool isDefinitionAcrossSuspend(Value &V, User *U) const {
+    if (auto *Arg = dyn_cast<Argument>(&V))
+      return isDefinitionAcrossSuspend(*Arg, U);
+    if (auto *Inst = dyn_cast<Instruction>(&V))
+      return isDefinitionAcrossSuspend(*Inst, U);
+
+    llvm_unreachable(
+        "Coroutine could only collect Argument and Instruction now.");
   }
 };
 } // end anonymous namespace
@@ -334,6 +345,28 @@ struct FrameDataInfo {
     FieldIndexMap[V] = Index;
   }
 
+  uint64_t getAlign(Value *V) const {
+    auto Iter = FieldAlignMap.find(V);
+    assert(Iter != FieldAlignMap.end());
+    return Iter->second;
+  }
+
+  void setAlign(Value *V, uint64_t Align) {
+    assert(FieldAlignMap.count(V) == 0);
+    FieldAlignMap.insert({V, Align});
+  }
+
+  uint64_t getOffset(Value *V) const {
+    auto Iter = FieldOffsetMap.find(V);
+    assert(Iter != FieldOffsetMap.end());
+    return Iter->second;
+  }
+
+  void setOffset(Value *V, uint64_t Offset) {
+    assert(FieldOffsetMap.count(V) == 0);
+    FieldOffsetMap.insert({V, Offset});
+  }
+
   // Remap the index of every field in the frame, using the final layout index.
   void updateLayoutIndex(FrameTypeBuilder &B);
 
@@ -345,6 +378,12 @@ private:
   // with their original insertion field index. After the frame is built, their
   // indexes will be updated into the final layout index.
   DenseMap<Value *, uint32_t> FieldIndexMap;
+  // Map from values to their alignment on the frame. They would be set after
+  // the frame is built.
+  DenseMap<Value *, uint64_t> FieldAlignMap;
+  // Map from values to their offset on the frame. They would be set after
+  // the frame is built.
+  DenseMap<Value *, uint64_t> FieldOffsetMap;
 };
 } // namespace
 
@@ -390,12 +429,15 @@ private:
   Align StructAlign;
   bool IsFinished = false;
 
+  Optional<Align> MaxFrameAlignment;
+
   SmallVector<Field, 8> Fields;
   DenseMap<Value*, unsigned> FieldIndexByKey;
 
 public:
-  FrameTypeBuilder(LLVMContext &Context, DataLayout const &DL)
-      : DL(DL), Context(Context) {}
+  FrameTypeBuilder(LLVMContext &Context, DataLayout const &DL,
+                   Optional<Align> MaxFrameAlignment)
+      : DL(DL), Context(Context), MaxFrameAlignment(MaxFrameAlignment) {}
 
   /// Add a field to this structure for the storage of an `alloca`
   /// instruction.
@@ -446,17 +488,32 @@ public:
 
   /// Add a field to this structure.
   LLVM_NODISCARD FieldIDType addField(Type *Ty, MaybeAlign FieldAlignment,
-                                      bool IsHeader = false) {
+                                      bool IsHeader = false,
+                                      bool IsSpillOfValue = false) {
     assert(!IsFinished && "adding fields to a finished builder");
     assert(Ty && "must provide a type for a field");
 
     // The field size is always the alloc size of the type.
     uint64_t FieldSize = DL.getTypeAllocSize(Ty);
 
+    // For an alloca with size=0, we don't need to add a field and they
+    // can just point to any index in the frame. Use index 0.
+    if (FieldSize == 0) {
+      return 0;
+    }
+
     // The field alignment might not be the type alignment, but we need
     // to remember the type alignment anyway to build the type.
-    Align TyAlignment = DL.getABITypeAlign(Ty);
-    if (!FieldAlignment) FieldAlignment = TyAlignment;
+    // If we are spilling values we don't need to worry about ABI alignment
+    // concerns.
+    auto ABIAlign = DL.getABITypeAlign(Ty);
+    Align TyAlignment =
+        (IsSpillOfValue && MaxFrameAlignment)
+            ? (*MaxFrameAlignment < ABIAlign ? *MaxFrameAlignment : ABIAlign)
+            : ABIAlign;
+    if (!FieldAlignment) {
+      FieldAlignment = TyAlignment;
+    }
 
     // Lay out header fields immediately.
     uint64_t Offset;
@@ -490,12 +547,20 @@ public:
     assert(IsFinished && "not yet finished!");
     return Fields[Id].LayoutFieldIndex;
   }
+
+  Field getLayoutField(FieldIDType Id) const {
+    assert(IsFinished && "not yet finished!");
+    return Fields[Id];
+  }
 };
 } // namespace
 
 void FrameDataInfo::updateLayoutIndex(FrameTypeBuilder &B) {
   auto Updater = [&](Value *I) {
-    setFieldIndex(I, B.getLayoutFieldIndex(getFieldIndex(I)));
+    auto Field = B.getLayoutField(getFieldIndex(I));
+    setFieldIndex(I, Field.LayoutFieldIndex);
+    setAlign(I, Field.Alignment.value());
+    setOffset(I, Field.Offset);
   };
   LayoutIndexUpdateStarted = true;
   for (auto &S : Spills)
@@ -710,6 +775,314 @@ void FrameTypeBuilder::finish(StructType *Ty) {
   IsFinished = true;
 }
 
+static void cacheDIVar(FrameDataInfo &FrameData,
+                       DenseMap<Value *, DILocalVariable *> &DIVarCache) {
+  for (auto *V : FrameData.getAllDefs()) {
+    if (DIVarCache.find(V) != DIVarCache.end())
+      continue;
+
+    auto DDIs = FindDbgDeclareUses(V);
+    auto *I = llvm::find_if(DDIs, [](DbgDeclareInst *DDI) {
+      return DDI->getExpression()->getNumElements() == 0;
+    });
+    if (I != DDIs.end())
+      DIVarCache.insert({V, (*I)->getVariable()});
+  }
+}
+
+/// Create name for Type. It uses MDString to store new created string to
+/// avoid memory leak.
+static StringRef solveTypeName(Type *Ty) {
+  if (Ty->isIntegerTy()) {
+    // The longest name in common may be '__int_128', which has 9 bits.
+    SmallString<16> Buffer;
+    raw_svector_ostream OS(Buffer);
+    OS << "__int_" << cast<IntegerType>(Ty)->getBitWidth();
+    auto *MDName = MDString::get(Ty->getContext(), OS.str());
+    return MDName->getString();
+  }
+
+  if (Ty->isFloatingPointTy()) {
+    if (Ty->isFloatTy())
+      return "__float_";
+    if (Ty->isDoubleTy())
+      return "__double_";
+    return "__floating_type_";
+  }
+
+  if (Ty->isPointerTy()) {
+    auto *PtrTy = cast<PointerType>(Ty);
+    Type *PointeeTy = PtrTy->getElementType();
+    auto Name = solveTypeName(PointeeTy);
+    if (Name == "UnknownType")
+      return "PointerType";
+    SmallString<16> Buffer;
+    Twine(Name + "_Ptr").toStringRef(Buffer);
+    auto *MDName = MDString::get(Ty->getContext(), Buffer.str());
+    return MDName->getString();
+  }
+
+  if (Ty->isStructTy()) {
+    if (!cast<StructType>(Ty)->hasName())
+      return "__LiteralStructType_";
+
+    auto Name = Ty->getStructName();
+
+    SmallString<16> Buffer(Name);
+    for_each(Buffer, [](auto &Iter) {
+      if (Iter == '.' || Iter == ':')
+        Iter = '_';
+    });
+    auto *MDName = MDString::get(Ty->getContext(), Buffer.str());
+    return MDName->getString();
+  }
+
+  return "UnknownType";
+}
+
+static DIType *solveDIType(DIBuilder &Builder, Type *Ty, DataLayout &Layout,
+                           DIScope *Scope, unsigned LineNum,
+                           DenseMap<Type *, DIType *> &DITypeCache) {
+  if (DIType *DT = DITypeCache.lookup(Ty))
+    return DT;
+
+  StringRef Name = solveTypeName(Ty);
+
+  DIType *RetType = nullptr;
+
+  if (Ty->isIntegerTy()) {
+    auto BitWidth = cast<IntegerType>(Ty)->getBitWidth();
+    RetType = Builder.createBasicType(Name, BitWidth, dwarf::DW_ATE_signed,
+                                      llvm::DINode::FlagArtificial);
+  } else if (Ty->isFloatingPointTy()) {
+    RetType = Builder.createBasicType(Name, Layout.getTypeSizeInBits(Ty),
+                                      dwarf::DW_ATE_float,
+                                      llvm::DINode::FlagArtificial);
+  } else if (Ty->isPointerTy()) {
+    // Construct BasicType instead of PointerType to avoid infinite
+    // search problem.
+    // For example, we would be in trouble if we traverse recursively:
+    //
+    //  struct Node {
+    //      Node* ptr;
+    //  };
+    RetType = Builder.createBasicType(Name, Layout.getTypeSizeInBits(Ty),
+                                      dwarf::DW_ATE_address,
+                                      llvm::DINode::FlagArtificial);
+  } else if (Ty->isStructTy()) {
+    auto *DIStruct = Builder.createStructType(
+        Scope, Name, Scope->getFile(), LineNum, Layout.getTypeSizeInBits(Ty),
+        Layout.getPrefTypeAlignment(Ty), llvm::DINode::FlagArtificial, nullptr,
+        llvm::DINodeArray());
+
+    auto *StructTy = cast<StructType>(Ty);
+    SmallVector<Metadata *, 16> Elements;
+    for (unsigned I = 0; I < StructTy->getNumElements(); I++) {
+      DIType *DITy = solveDIType(Builder, StructTy->getElementType(I), Layout,
+                                 Scope, LineNum, DITypeCache);
+      assert(DITy);
+      Elements.push_back(Builder.createMemberType(
+          Scope, DITy->getName(), Scope->getFile(), LineNum,
+          DITy->getSizeInBits(), DITy->getAlignInBits(),
+          Layout.getStructLayout(StructTy)->getElementOffsetInBits(I),
+          llvm::DINode::FlagArtificial, DITy));
+    }
+
+    Builder.replaceArrays(DIStruct, Builder.getOrCreateArray(Elements));
+
+    RetType = DIStruct;
+  } else {
+    LLVM_DEBUG(dbgs() << "Unresolved Type: " << *Ty << "\n";);
+    SmallString<32> Buffer;
+    raw_svector_ostream OS(Buffer);
+    OS << Name.str() << "_" << Layout.getTypeSizeInBits(Ty);
+    RetType = Builder.createBasicType(OS.str(), Layout.getTypeSizeInBits(Ty),
+                                      dwarf::DW_ATE_address,
+                                      llvm::DINode::FlagArtificial);
+  }
+
+  DITypeCache.insert({Ty, RetType});
+  return RetType;
+}
+
+/// Build artificial debug info for C++ coroutine frames to allow users to
+/// inspect the contents of the frame directly
+///
+/// Create Debug information for coroutine frame with debug name "__coro_frame".
+/// The debug information for the fields of coroutine frame is constructed from
+/// the following way:
+/// 1. For all the value in the Frame, we search the use of dbg.declare to find
+///    the corresponding debug variables for the value. If we can find the
+///    debug variable, we can get full and accurate debug information.
+/// 2. If we can't get debug information in step 1 and 2, we could only try to
+///    build the DIType by Type. We did this in solveDIType. We only handle
+///    integer, float, double, integer type and struct type for now.
+static void buildFrameDebugInfo(Function &F, coro::Shape &Shape,
+                                FrameDataInfo &FrameData) {
+  DISubprogram *DIS = F.getSubprogram();
+  // If there is no DISubprogram for F, it implies the Function are not compiled
+  // with debug info. So we also don't need to generate debug info for the frame
+  // neither.
+  if (!DIS || !DIS->getUnit() ||
+      !dwarf::isCPlusPlus(
+          (dwarf::SourceLanguage)DIS->getUnit()->getSourceLanguage()))
+    return;
+
+  assert(Shape.ABI == coro::ABI::Switch &&
+         "We could only build debug infomation for C++ coroutine now.\n");
+
+  DIBuilder DBuilder(*F.getParent(), /*AllowUnresolved*/ false);
+
+  AllocaInst *PromiseAlloca = Shape.getPromiseAlloca();
+  assert(PromiseAlloca &&
+         "Coroutine with switch ABI should own Promise alloca");
+
+  TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(PromiseAlloca);
+  if (DIs.empty())
+    return;
+
+  DbgDeclareInst *PromiseDDI = DIs.front();
+  DILocalVariable *PromiseDIVariable = PromiseDDI->getVariable();
+  DILocalScope *PromiseDIScope = PromiseDIVariable->getScope();
+  DIFile *DFile = PromiseDIScope->getFile();
+  DILocation *DILoc = PromiseDDI->getDebugLoc().get();
+  unsigned LineNum = PromiseDIVariable->getLine();
+
+  DICompositeType *FrameDITy = DBuilder.createStructType(
+      DIS, "__coro_frame_ty", DFile, LineNum, Shape.FrameSize * 8,
+      Shape.FrameAlign.value() * 8, llvm::DINode::FlagArtificial, nullptr,
+      llvm::DINodeArray());
+  StructType *FrameTy = Shape.FrameTy;
+  SmallVector<Metadata *, 16> Elements;
+  DataLayout Layout = F.getParent()->getDataLayout();
+
+  DenseMap<Value *, DILocalVariable *> DIVarCache;
+  cacheDIVar(FrameData, DIVarCache);
+
+  unsigned ResumeIndex = coro::Shape::SwitchFieldIndex::Resume;
+  unsigned DestroyIndex = coro::Shape::SwitchFieldIndex::Destroy;
+  unsigned IndexIndex = Shape.SwitchLowering.IndexField;
+
+  DenseMap<unsigned, StringRef> NameCache;
+  NameCache.insert({ResumeIndex, "__resume_fn"});
+  NameCache.insert({DestroyIndex, "__destroy_fn"});
+  NameCache.insert({IndexIndex, "__coro_index"});
+
+  Type *ResumeFnTy = FrameTy->getElementType(ResumeIndex),
+       *DestroyFnTy = FrameTy->getElementType(DestroyIndex),
+       *IndexTy = FrameTy->getElementType(IndexIndex);
+
+  DenseMap<unsigned, DIType *> TyCache;
+  TyCache.insert({ResumeIndex,
+                  DBuilder.createBasicType("__resume_fn",
+                                           Layout.getTypeSizeInBits(ResumeFnTy),
+                                           dwarf::DW_ATE_address)});
+  TyCache.insert(
+      {DestroyIndex, DBuilder.createBasicType(
+                         "__destroy_fn", Layout.getTypeSizeInBits(DestroyFnTy),
+                         dwarf::DW_ATE_address)});
+
+  /// FIXME: If we fill the field `SizeInBits` with the actual size of
+  /// __coro_index in bits, then __coro_index wouldn't show in the debugger.
+  TyCache.insert({IndexIndex, DBuilder.createBasicType(
+                                  "__coro_index",
+                                  (Layout.getTypeSizeInBits(IndexTy) < 8)
+                                      ? 8
+                                      : Layout.getTypeSizeInBits(IndexTy),
+                                  dwarf::DW_ATE_unsigned_char)});
+
+  for (auto *V : FrameData.getAllDefs()) {
+    if (DIVarCache.find(V) == DIVarCache.end())
+      continue;
+
+    auto Index = FrameData.getFieldIndex(V);
+
+    NameCache.insert({Index, DIVarCache[V]->getName()});
+    TyCache.insert({Index, DIVarCache[V]->getType()});
+  }
+
+  // Cache from index to (Align, Offset Pair)
+  DenseMap<unsigned, std::pair<unsigned, unsigned>> OffsetCache;
+  // The Align and Offset of Resume function and Destroy function are fixed.
+  OffsetCache.insert({ResumeIndex, {8, 0}});
+  OffsetCache.insert({DestroyIndex, {8, 8}});
+  OffsetCache.insert(
+      {IndexIndex,
+       {Shape.SwitchLowering.IndexAlign, Shape.SwitchLowering.IndexOffset}});
+
+  for (auto *V : FrameData.getAllDefs()) {
+    auto Index = FrameData.getFieldIndex(V);
+
+    OffsetCache.insert(
+        {Index, {FrameData.getAlign(V), FrameData.getOffset(V)}});
+  }
+
+  DenseMap<Type *, DIType *> DITypeCache;
+  // This counter is used to avoid same type names. e.g., there would be
+  // many i32 and i64 types in one coroutine. And we would use i32_0 and
+  // i32_1 to avoid the same type. Since it makes no sense the name of the
+  // fields confilicts with each other.
+  unsigned UnknownTypeNum = 0;
+  for (unsigned Index = 0; Index < FrameTy->getNumElements(); Index++) {
+    if (OffsetCache.find(Index) == OffsetCache.end())
+      continue;
+
+    std::string Name;
+    uint64_t SizeInBits;
+    uint32_t AlignInBits;
+    uint64_t OffsetInBits;
+    DIType *DITy = nullptr;
+
+    Type *Ty = FrameTy->getElementType(Index);
+    assert(Ty->isSized() && "We can't handle type which is not sized.\n");
+    SizeInBits = Layout.getTypeSizeInBits(Ty).getFixedSize();
+    AlignInBits = OffsetCache[Index].first * 8;
+    OffsetInBits = OffsetCache[Index].second * 8;
+
+    if (NameCache.find(Index) != NameCache.end()) {
+      Name = NameCache[Index].str();
+      DITy = TyCache[Index];
+    } else {
+      DITy = solveDIType(DBuilder, Ty, Layout, FrameDITy, LineNum, DITypeCache);
+      assert(DITy && "SolveDIType shouldn't return nullptr.\n");
+      Name = DITy->getName().str();
+      Name += "_" + std::to_string(UnknownTypeNum);
+      UnknownTypeNum++;
+    }
+
+    Elements.push_back(DBuilder.createMemberType(
+        FrameDITy, Name, DFile, LineNum, SizeInBits, AlignInBits, OffsetInBits,
+        llvm::DINode::FlagArtificial, DITy));
+  }
+
+  DBuilder.replaceArrays(FrameDITy, DBuilder.getOrCreateArray(Elements));
+
+  auto *FrameDIVar = DBuilder.createAutoVariable(PromiseDIScope, "__coro_frame",
+                                                 DFile, LineNum, FrameDITy,
+                                                 true, DINode::FlagArtificial);
+  assert(FrameDIVar->isValidLocationForIntrinsic(PromiseDDI->getDebugLoc()));
+
+  // Subprogram would have ContainedNodes field which records the debug
+  // variables it contained. So we need to add __coro_frame to the
+  // ContainedNodes of it.
+  //
+  // If we don't add __coro_frame to the RetainedNodes, user may get
+  // `no symbol __coro_frame in context` rather than `__coro_frame`
+  // is optimized out, which is more precise.
+  if (auto *SubProgram = dyn_cast<DISubprogram>(PromiseDIScope)) {
+    auto RetainedNodes = SubProgram->getRetainedNodes();
+    SmallVector<Metadata *, 32> RetainedNodesVec(RetainedNodes.begin(),
+                                                 RetainedNodes.end());
+    RetainedNodesVec.push_back(FrameDIVar);
+    SubProgram->replaceOperandWith(
+        7, (MDTuple::get(F.getContext(), RetainedNodesVec)));
+  }
+
+  DBuilder.insertDeclare(Shape.FramePtr, FrameDIVar,
+                         DBuilder.createExpression(), DILoc,
+                         Shape.FramePtr->getNextNode());
+}
+
 // Build a struct that will keep state for an active coroutine.
 //   struct f.frame {
 //     ResumeFnTy ResumeFnAddr;
@@ -728,7 +1101,11 @@ static StructType *buildFrameType(Function &F, coro::Shape &Shape,
     return StructType::create(C, Name);
   }();
 
-  FrameTypeBuilder B(C, DL);
+  // We will use this value to cap the alignment of spilled values.
+  Optional<Align> MaxFrameAlignment;
+  if (Shape.ABI == coro::ABI::Async)
+    MaxFrameAlignment = Shape.AsyncLowering.getContextAlignment();
+  FrameTypeBuilder B(C, DL, MaxFrameAlignment);
 
   AllocaInst *PromiseAlloca = Shape.getPromiseAlloca();
   Optional<FieldIDType> SwitchIndexFieldId;
@@ -775,7 +1152,14 @@ static StructType *buildFrameType(Function &F, coro::Shape &Shape,
         PromiseAlloca, DenseMap<Instruction *, llvm::Optional<APInt>>{}, false);
   // Create an entry for every spilled value.
   for (auto &S : FrameData.Spills) {
-    FieldIDType Id = B.addField(S.first->getType(), None);
+    Type *FieldType = S.first->getType();
+    // For byval arguments, we need to store the pointed value in the frame,
+    // instead of the pointer itself.
+    if (const Argument *A = dyn_cast<Argument>(S.first))
+      if (A->hasByValAttr())
+        FieldType = A->getParamByValType();
+    FieldIDType Id =
+        B.addField(FieldType, None, false /*header*/, true /*IsSpillOfValue*/);
     FrameData.setFieldIndex(S.first, Id);
   }
 
@@ -785,15 +1169,18 @@ static StructType *buildFrameType(Function &F, coro::Shape &Shape,
   Shape.FrameSize = B.getStructSize();
 
   switch (Shape.ABI) {
-  case coro::ABI::Switch:
+  case coro::ABI::Switch: {
     // In the switch ABI, remember the switch-index field.
-    Shape.SwitchLowering.IndexField =
-        B.getLayoutFieldIndex(*SwitchIndexFieldId);
+    auto IndexField = B.getLayoutField(*SwitchIndexFieldId);
+    Shape.SwitchLowering.IndexField = IndexField.LayoutFieldIndex;
+    Shape.SwitchLowering.IndexAlign = IndexField.Alignment.value();
+    Shape.SwitchLowering.IndexOffset = IndexField.Offset;
 
     // Also round the frame size up to a multiple of its alignment, as is
     // generally expected in C/C++.
     Shape.FrameSize = alignTo(Shape.FrameSize, Shape.FrameAlign);
     break;
+  }
 
   // In the retcon ABI, remember whether the frame is inline in the storage.
   case coro::ABI::Retcon:
@@ -1094,6 +1481,15 @@ static Instruction *splitBeforeCatchSwitch(CatchSwitchInst *CatchSwitch) {
   return CleanupRet;
 }
 
+static void createFramePtr(coro::Shape &Shape) {
+  auto *CB = Shape.CoroBegin;
+  IRBuilder<> Builder(CB->getNextNode());
+  StructType *FrameTy = Shape.FrameTy;
+  PointerType *FramePtrTy = FrameTy->getPointerTo();
+  Shape.FramePtr =
+      cast<Instruction>(Builder.CreateBitCast(CB, FramePtrTy, "FramePtr"));
+}
+
 // Replace all alloca and SSA values that are accessed across suspend points
 // with GetElementPointer from coroutine frame + loads and stores. Create an
 // AllocaSpillBB that will become the new entry block for the resume parts of
@@ -1120,11 +1516,9 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
                                  coro::Shape &Shape) {
   auto *CB = Shape.CoroBegin;
   LLVMContext &C = CB->getContext();
-  IRBuilder<> Builder(CB->getNextNode());
+  IRBuilder<> Builder(C);
   StructType *FrameTy = Shape.FrameTy;
-  PointerType *FramePtrTy = FrameTy->getPointerTo();
-  auto *FramePtr =
-      cast<Instruction>(Builder.CreateBitCast(CB, FramePtrTy, "FramePtr"));
+  Instruction *FramePtr = Shape.FramePtr;
   DominatorTree DT(*CB->getFunction());
   SmallDenseMap<llvm::Value *, llvm::AllocaInst *, 4> DbgPtrAllocaCache;
 
@@ -1168,9 +1562,11 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
 
   for (auto const &E : FrameData.Spills) {
     Value *Def = E.first;
+    auto SpillAlignment = Align(FrameData.getAlign(Def));
     // Create a store instruction storing the value into the
     // coroutine frame.
     Instruction *InsertPt = nullptr;
+    bool NeedToCopyArgPtrValue = false;
     if (auto *Arg = dyn_cast<Argument>(Def)) {
       // For arguments, we will place the store instruction right after
       // the coroutine frame pointer instruction, i.e. bitcast of
@@ -1180,6 +1576,9 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
       // If we're spilling an Argument, make sure we clear 'nocapture'
       // from the coroutine function.
       Arg->getParent()->removeParamAttr(Arg->getArgNo(), Attribute::NoCapture);
+
+      if (Arg->hasByValAttr())
+        NeedToCopyArgPtrValue = true;
 
     } else if (auto *CSI = dyn_cast<AnyCoroSuspendInst>(Def)) {
       // Don't spill immediately after a suspend; splitting assumes
@@ -1215,7 +1614,15 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
     Builder.SetInsertPoint(InsertPt);
     auto *G = Builder.CreateConstInBoundsGEP2_32(
         FrameTy, FramePtr, 0, Index, Def->getName() + Twine(".spill.addr"));
-    Builder.CreateStore(Def, G);
+    if (NeedToCopyArgPtrValue) {
+      // For byval arguments, we need to store the pointed value in the frame,
+      // instead of the pointer itself.
+      auto *Value =
+          Builder.CreateLoad(Def->getType()->getPointerElementType(), Def);
+      Builder.CreateAlignedStore(Value, G, SpillAlignment);
+    } else {
+      Builder.CreateAlignedStore(Def, G, SpillAlignment);
+    }
 
     BasicBlock *CurrentBlock = nullptr;
     Value *CurrentReload = nullptr;
@@ -1229,9 +1636,12 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
 
         auto *GEP = GetFramePointer(E.first);
         GEP->setName(E.first->getName() + Twine(".reload.addr"));
-        CurrentReload = Builder.CreateLoad(
-            FrameTy->getElementType(FrameData.getFieldIndex(E.first)), GEP,
-            E.first->getName() + Twine(".reload"));
+        if (NeedToCopyArgPtrValue)
+          CurrentReload = GEP;
+        else
+          CurrentReload = Builder.CreateAlignedLoad(
+              FrameTy->getElementType(FrameData.getFieldIndex(E.first)), GEP,
+              SpillAlignment, E.first->getName() + Twine(".reload"));
 
         TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(Def);
         for (DbgDeclareInst *DDI : DIs) {
@@ -1293,8 +1703,8 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
   }
 
   // If we found any alloca, replace all of their remaining uses with GEP
-  // instructions. Because new dbg.declare have been created for these alloca,
-  // we also delete the original dbg.declare and replace other uses with undef.
+  // instructions. To remain debugbility, we replace the uses of allocas for
+  // dbg.declares and dbg.values with the reload from the frame.
   // Note: We cannot replace the alloca with GEP instructions indiscriminately,
   // as some of the uses may not be dominated by CoroBegin.
   Builder.SetInsertPoint(&Shape.AllocaSpillBlock->front());
@@ -1312,16 +1722,10 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
     auto *G = GetFramePointer(Alloca);
     G->setName(Alloca->getName() + Twine(".reload.addr"));
 
-    TinyPtrVector<DbgDeclareInst *> DIs = FindDbgDeclareUses(Alloca);
-    if (!DIs.empty())
-      DIBuilder(*Alloca->getModule(),
-                /*AllowUnresolved*/ false)
-          .insertDeclare(G, DIs.front()->getVariable(),
-                         DIs.front()->getExpression(),
-                         DIs.front()->getDebugLoc(), DIs.front());
-    for (auto *DI : FindDbgDeclareUses(Alloca))
-      DI->eraseFromParent();
-    replaceDbgUsesWithUndef(Alloca);
+    SmallVector<DbgVariableIntrinsic *, 4> DIs;
+    findDbgUsers(DIs, Alloca);
+    for (auto *DVI : DIs)
+      DVI->replaceUsesOfWith(Alloca, G);
 
     for (Instruction *I : UsersToUpdate)
       I->replaceUsesOfWith(Alloca, G);
@@ -1347,7 +1751,7 @@ static Instruction *insertSpills(const FrameDataInfo &FrameData,
       auto *FramePtrRaw =
           Builder.CreateBitCast(FramePtr, Type::getInt8PtrTy(C));
       auto *AliasPtr = Builder.CreateGEP(
-          FramePtrRaw,
+          Type::getInt8Ty(C), FramePtrRaw,
           ConstantInt::get(Type::getInt64Ty(C), Alias.second.getValue()));
       auto *AliasPtrTyped =
           Builder.CreateBitCast(AliasPtr, Alias.first->getType());
@@ -1450,6 +1854,24 @@ static void rewritePHIsForCleanupPad(BasicBlock *CleanupPadBB,
     SetDispatchValuePN->addIncoming(SwitchConstant, Pred);
     SwitchOnDispatch->addCase(SwitchConstant, CaseBB);
     SwitchIndex++;
+  }
+}
+
+static void cleanupSinglePredPHIs(Function &F) {
+  SmallVector<PHINode *, 32> Worklist;
+  for (auto &BB : F) {
+    for (auto &Phi : BB.phis()) {
+      if (Phi.getNumIncomingValues() == 1) {
+        Worklist.push_back(&Phi);
+      } else
+        break;
+    }
+  }
+  while (!Worklist.empty()) {
+    auto *Phi = Worklist.back();
+    Worklist.pop_back();
+    auto *OriginalValue = Phi->getIncomingValue(0);
+    Phi->replaceAllUsesWith(OriginalValue);
   }
 }
 
@@ -1560,11 +1982,17 @@ static void rewriteMaterializableInstructions(IRBuilder<> &IRB,
     for (Instruction *U : E.second) {
       // If we have not seen this block, materialize the value.
       if (CurrentBlock != U->getParent()) {
+
+        bool IsInCoroSuspendBlock = isa<AnyCoroSuspendInst>(U);
         CurrentBlock = U->getParent();
+        auto *InsertBlock = IsInCoroSuspendBlock
+                                ? CurrentBlock->getSinglePredecessor()
+                                : CurrentBlock;
         CurrentMaterialization = cast<Instruction>(Def)->clone();
         CurrentMaterialization->setName(Def->getName());
         CurrentMaterialization->insertBefore(
-            &*CurrentBlock->getFirstInsertionPt());
+            IsInCoroSuspendBlock ? InsertBlock->getTerminator()
+                                 : &*InsertBlock->getFirstInsertionPt());
       }
       if (auto *PN = dyn_cast<PHINode>(U)) {
         assert(PN->getNumIncomingValues() == 1 &&
@@ -2073,21 +2501,21 @@ static void collectFrameAllocas(Function &F, coro::Shape &Shape,
 
 void coro::salvageDebugInfo(
     SmallDenseMap<llvm::Value *, llvm::AllocaInst *, 4> &DbgPtrAllocaCache,
-    DbgDeclareInst *DDI, bool ReuseFrameSlot) {
-  Function *F = DDI->getFunction();
+    DbgVariableIntrinsic *DVI, bool ReuseFrameSlot) {
+  Function *F = DVI->getFunction();
   IRBuilder<> Builder(F->getContext());
   auto InsertPt = F->getEntryBlock().getFirstInsertionPt();
   while (isa<IntrinsicInst>(InsertPt))
     ++InsertPt;
   Builder.SetInsertPoint(&F->getEntryBlock(), InsertPt);
-  DIExpression *Expr = DDI->getExpression();
+  DIExpression *Expr = DVI->getExpression();
   // Follow the pointer arithmetic all the way to the incoming
   // function argument and convert into a DIExpression.
   bool OutermostLoad = true;
-  Value *Storage = DDI->getAddress();
+  Value *Storage = DVI->getVariableLocationOp(0);
   Value *OriginalStorage = Storage;
-  while (Storage) {
-    if (auto *LdInst = dyn_cast<LoadInst>(Storage)) {
+  while (auto *Inst = dyn_cast<Instruction>(Storage)) {
+    if (auto *LdInst = dyn_cast<LoadInst>(Inst)) {
       Storage = LdInst->getOperand(0);
       // FIXME: This is a heuristic that works around the fact that
       // LLVM IR debug intrinsics cannot yet distinguish between
@@ -2098,26 +2526,23 @@ void coro::salvageDebugInfo(
       if (!OutermostLoad)
         Expr = DIExpression::prepend(Expr, DIExpression::DerefBefore);
       OutermostLoad = false;
-    } else if (auto *StInst = dyn_cast<StoreInst>(Storage)) {
+    } else if (auto *StInst = dyn_cast<StoreInst>(Inst)) {
       Storage = StInst->getOperand(0);
-    } else if (auto *GEPInst = dyn_cast<GetElementPtrInst>(Storage)) {
-      SmallVector<Value *> AdditionalValues;
-      DIExpression *SalvagedExpr = llvm::salvageDebugInfoImpl(
-          *GEPInst, Expr,
-          /*WithStackValue=*/false, 0, AdditionalValues);
-      // Debug declares cannot currently handle additional location
-      // operands.
-      if (!SalvagedExpr || !AdditionalValues.empty())
+    } else {
+      SmallVector<uint64_t, 16> Ops;
+      SmallVector<Value *, 0> AdditionalValues;
+      Value *Op = llvm::salvageDebugInfoImpl(
+          *Inst, Expr ? Expr->getNumLocationOperands() : 0, Ops,
+          AdditionalValues);
+      if (!Op || !AdditionalValues.empty()) {
+        // If salvaging failed or salvaging produced more than one location
+        // operand, give up.
         break;
-      Expr = SalvagedExpr;
-      Storage = GEPInst->getOperand(0);
-    } else if (auto *BCInst = dyn_cast<llvm::BitCastInst>(Storage))
-      Storage = BCInst->getOperand(0);
-    else
-      break;
+      }
+      Storage = Op;
+      Expr = DIExpression::appendOpsToArg(Expr, Ops, 0, /*StackValue*/ false);
+    }
   }
-  if (!Storage)
-    return;
 
   // Store a pointer to the coroutine frame object in an alloca so it
   // is available throughout the function when producing unoptimized
@@ -2145,12 +2570,16 @@ void coro::salvageDebugInfo(
       if (Expr && Expr->isComplex())
         Expr = DIExpression::prepend(Expr, DIExpression::DerefBefore);
     }
-  DDI->replaceVariableLocationOp(OriginalStorage, Storage);
-  DDI->setExpression(Expr);
-  if (auto *InsertPt = dyn_cast<Instruction>(Storage))
-    DDI->moveAfter(InsertPt);
-  else if (isa<Argument>(Storage))
-    DDI->moveAfter(F->getEntryBlock().getFirstNonPHI());
+
+  DVI->replaceVariableLocationOp(OriginalStorage, Storage);
+  DVI->setExpression(Expr);
+  /// It makes no sense to move the dbg.value intrinsic.
+  if (!isa<DbgValueInst>(DVI)) {
+    if (auto *InsertPt = dyn_cast<Instruction>(Storage))
+      DVI->moveAfter(InsertPt);
+    else if (isa<Argument>(Storage))
+      DVI->moveAfter(F->getEntryBlock().getFirstNonPHI());
+  }
 }
 
 void coro::buildCoroutineFrame(Function &F, Shape &Shape) {
@@ -2193,6 +2622,10 @@ void coro::buildCoroutineFrame(Function &F, Shape &Shape) {
     }
   }
 
+  // Later code makes structural assumptions about single predecessors phis e.g
+  // that they are not live accross a suspend point.
+  cleanupSinglePredPHIs(F);
+
   // Transforms multi-edge PHI Nodes, so that any value feeding into a PHI will
   // never has its definition separated from the PHI by the suspend point.
   rewritePHIs(F);
@@ -2210,10 +2643,18 @@ void coro::buildCoroutineFrame(Function &F, Shape &Shape) {
     for (int Repeat = 0; Repeat < 4; ++Repeat) {
       // See if there are materializable instructions across suspend points.
       for (Instruction &I : instructions(F))
-        if (materializable(I))
+        if (materializable(I)) {
           for (User *U : I.users())
             if (Checker.isDefinitionAcrossSuspend(I, U))
               Spills[&I].push_back(cast<Instruction>(U));
+
+          // Manually add dbg.value metadata uses of I.
+          SmallVector<DbgValueInst *, 16> DVIs;
+          findDbgValues(DVIs, &I);
+          for (auto *DVI : DVIs)
+            if (Checker.isDefinitionAcrossSuspend(I, DVI))
+              Spills[&I].push_back(DVI);
+        }
 
       if (Spills.empty())
         break;
@@ -2287,12 +2728,30 @@ void coro::buildCoroutineFrame(Function &F, Shape &Shape) {
         FrameData.Spills[&I].push_back(cast<Instruction>(U));
       }
   }
+
+  // We don't want the layout of coroutine frame to be affected
+  // by debug information. So we only choose to salvage DbgValueInst for
+  // whose value is already in the frame.
+  // We would handle the dbg.values for allocas specially
+  for (auto &Iter : FrameData.Spills) {
+    auto *V = Iter.first;
+    SmallVector<DbgValueInst *, 16> DVIs;
+    findDbgValues(DVIs, V);
+    llvm::for_each(DVIs, [&](DbgValueInst *DVI) {
+      if (Checker.isDefinitionAcrossSuspend(*V, DVI))
+        FrameData.Spills[V].push_back(DVI);
+    });
+  }
+
   LLVM_DEBUG(dumpSpills("Spills", FrameData.Spills));
   if (Shape.ABI == coro::ABI::Retcon || Shape.ABI == coro::ABI::RetconOnce ||
       Shape.ABI == coro::ABI::Async)
     sinkSpillUsesAfterCoroBegin(F, FrameData, Shape.CoroBegin);
   Shape.FrameTy = buildFrameType(F, Shape, FrameData);
-  Shape.FramePtr = insertSpills(FrameData, Shape);
+  createFramePtr(Shape);
+  // For now, this works for C++ programs only.
+  buildFrameDebugInfo(F, Shape, FrameData);
+  insertSpills(FrameData, Shape);
   lowerLocalAllocas(LocalAllocas, DeadInstructions);
 
   for (auto I : DeadInstructions)

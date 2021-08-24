@@ -1121,7 +1121,10 @@ void X86DAGToDAGISel::PreprocessISelDAG() {
       if (VT.isVector() || VT == MVT::f128)
         break;
 
-      MVT VecVT = VT == MVT::f64 ? MVT::v2f64 : MVT::v4f32;
+      MVT VecVT = VT == MVT::f64   ? MVT::v2f64
+                  : VT == MVT::f32 ? MVT::v4f32
+                                   : MVT::v8f16;
+
       SDLoc dl(N);
       SDValue Op0 = CurDAG->getNode(ISD::SCALAR_TO_VECTOR, dl, VecVT,
                                     N->getOperand(0));
@@ -3845,23 +3848,42 @@ bool X86DAGToDAGISel::tryShiftAmountMod(SDNode *N) {
   if (ShiftAmt->getOpcode() == ISD::ADD || ShiftAmt->getOpcode() == ISD::SUB) {
     SDValue Add0 = ShiftAmt->getOperand(0);
     SDValue Add1 = ShiftAmt->getOperand(1);
+    auto *Add0C = dyn_cast<ConstantSDNode>(Add0);
+    auto *Add1C = dyn_cast<ConstantSDNode>(Add1);
     // If we are shifting by X+/-N where N == 0 mod Size, then just shift by X
     // to avoid the ADD/SUB.
-    if (isa<ConstantSDNode>(Add1) &&
-        cast<ConstantSDNode>(Add1)->getZExtValue() % Size == 0) {
+    if (Add1C && Add1C->getAPIntValue().urem(Size) == 0) {
       NewShiftAmt = Add0;
-    // If we are shifting by N-X where N == 0 mod Size, then just shift by -X to
-    // generate a NEG instead of a SUB of a constant.
-    } else if (ShiftAmt->getOpcode() == ISD::SUB &&
-               isa<ConstantSDNode>(Add0) &&
-               cast<ConstantSDNode>(Add0)->getZExtValue() != 0 &&
-               cast<ConstantSDNode>(Add0)->getZExtValue() % Size == 0) {
+      // If we are shifting by N-X where N == 0 mod Size, then just shift by -X
+      // to generate a NEG instead of a SUB of a constant.
+    } else if (ShiftAmt->getOpcode() == ISD::SUB && Add0C &&
+               Add0C->getZExtValue() != 0) {
+      EVT SubVT = ShiftAmt.getValueType();
+      SDValue X;
+      if (Add0C->getZExtValue() % Size == 0)
+        X = Add1;
+      else if (ShiftAmt.hasOneUse() && Size == 64 &&
+               Add0C->getZExtValue() % 32 == 0) {
+        // We have a 64-bit shift by (n*32-x), turn it into -(x+n*32).
+        // This is mainly beneficial if we already compute (x+n*32).
+        if (Add1.getOpcode() == ISD::TRUNCATE) {
+          Add1 = Add1.getOperand(0);
+          SubVT = Add1.getValueType();
+        }
+        if (Add0.getValueType() != SubVT) {
+          Add0 = CurDAG->getZExtOrTrunc(Add0, DL, SubVT);
+          insertDAGNode(*CurDAG, OrigShiftAmt, Add0);
+        }
+
+        X = CurDAG->getNode(ISD::ADD, DL, SubVT, Add1, Add0);
+        insertDAGNode(*CurDAG, OrigShiftAmt, X);
+      } else
+        return false;
       // Insert a negate op.
       // TODO: This isn't guaranteed to replace the sub if there is a logic cone
       // that uses it that's not a shift.
-      EVT SubVT = ShiftAmt.getValueType();
       SDValue Zero = CurDAG->getConstant(0, DL, SubVT);
-      SDValue Neg = CurDAG->getNode(ISD::SUB, DL, SubVT, Zero, Add1);
+      SDValue Neg = CurDAG->getNode(ISD::SUB, DL, SubVT, Zero, X);
       NewShiftAmt = Neg;
 
       // Insert these operands into a valid topological order so they can
@@ -4598,10 +4620,13 @@ void X86DAGToDAGISel::Select(SDNode *Node) {
       ReplaceNode(Node, Res);
       return;
     }
-    case Intrinsic::x86_tileloadd64_internal: {
+    case Intrinsic::x86_tileloadd64_internal:
+    case Intrinsic::x86_tileloaddt164_internal: {
       if (!Subtarget->hasAMXTILE())
         break;
-      unsigned Opc = X86::PTILELOADDV;
+      unsigned Opc = IntNo == Intrinsic::x86_tileloadd64_internal
+                         ? X86::PTILELOADDV
+                         : X86::PTILELOADDT1V;
       // _tile_loadd_internal(row, col, buf, STRIDE)
       SDValue Base = Node->getOperand(4);
       SDValue Scale = getI8Imm(1, dl);
@@ -4737,7 +4762,8 @@ void X86DAGToDAGISel::Select(SDNode *Node) {
     }
     break;
   }
-  case ISD::BRIND: {
+  case ISD::BRIND:
+  case X86ISD::NT_BRIND: {
     if (Subtarget->isTargetNaCl())
       // NaCl has its own pass where jmp %r32 are converted to jmp %r64. We
       // leave the instruction alone.
@@ -4749,7 +4775,7 @@ void X86DAGToDAGISel::Select(SDNode *Node) {
       SDValue Target = Node->getOperand(1);
       assert(Target.getValueType() == MVT::i32 && "Unexpected VT!");
       SDValue ZextTarget = CurDAG->getZExtOrTrunc(Target, dl, MVT::i64);
-      SDValue Brind = CurDAG->getNode(ISD::BRIND, dl, MVT::Other,
+      SDValue Brind = CurDAG->getNode(Opcode, dl, MVT::Other,
                                       Node->getOperand(0), ZextTarget);
       ReplaceNode(Node, Brind.getNode());
       SelectCode(ZextTarget.getNode());
@@ -5347,24 +5373,20 @@ void X86DAGToDAGISel::Select(SDNode *Node) {
       break;
     }
 
-    SDValue Cmp;
     SDValue Chain =
         IsStrictCmp ? Node->getOperand(0) : CurDAG->getEntryNode();
+    SDValue Glue;
     if (IsStrictCmp) {
-      SDVTList VTs = CurDAG->getVTList(MVT::i16, MVT::Other);
-      Cmp = SDValue(CurDAG->getMachineNode(Opc, dl, VTs, {N0, N1, Chain}), 0);
-      Chain = Cmp.getValue(1);
+      SDVTList VTs = CurDAG->getVTList(MVT::Other, MVT::Glue);
+      Chain = SDValue(CurDAG->getMachineNode(Opc, dl, VTs, {N0, N1, Chain}), 0);
+      Glue = Chain.getValue(1);
     } else {
-      Cmp = SDValue(CurDAG->getMachineNode(Opc, dl, MVT::i16, N0, N1), 0);
+      Glue = SDValue(CurDAG->getMachineNode(Opc, dl, MVT::Glue, N0, N1), 0);
     }
 
     // Move FPSW to AX.
-    SDValue FPSW = CurDAG->getCopyToReg(Chain, dl, X86::FPSW, Cmp, SDValue());
-    Chain = FPSW;
     SDValue FNSTSW =
-        SDValue(CurDAG->getMachineNode(X86::FNSTSW16r, dl, MVT::i16, FPSW,
-                                       FPSW.getValue(1)),
-                0);
+        SDValue(CurDAG->getMachineNode(X86::FNSTSW16r, dl, MVT::i16, Glue), 0);
 
     // Extract upper 8-bits of AX.
     SDValue Extract =
@@ -5427,6 +5449,9 @@ void X86DAGToDAGISel::Select(SDNode *Node) {
       ConstantSDNode *C = dyn_cast<ConstantSDNode>(N0.getOperand(1));
       if (!C) break;
       uint64_t Mask = C->getZExtValue();
+      // We may have looked through a truncate so mask off any bits that
+      // shouldn't be part of the compare.
+      Mask &= maskTrailingOnes<uint64_t>(CmpVT.getScalarSizeInBits());
 
       // Check if we can replace AND+IMM64 with a shift. This is possible for
       // masks/ like 0xFF000000 or 0x00FFFFFF and if we care only about the zero

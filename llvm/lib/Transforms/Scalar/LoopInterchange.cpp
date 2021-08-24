@@ -656,6 +656,65 @@ bool LoopInterchangeLegality::isLoopStructureUnderstood(
       return false;
     }
   }
+
+  // TODO: Handle triangular loops of another form.
+  // e.g. for(int i=0;i<N;i++)
+  //        for(int j=0;j<i;j++)
+  // or,
+  //      for(int i=0;i<N;i++)
+  //        for(int j=0;j*i<N;j++)
+  BasicBlock *InnerLoopLatch = InnerLoop->getLoopLatch();
+  BranchInst *InnerLoopLatchBI =
+      dyn_cast<BranchInst>(InnerLoopLatch->getTerminator());
+  if (!InnerLoopLatchBI->isConditional())
+    return false;
+  if (CmpInst *InnerLoopCmp =
+          dyn_cast<CmpInst>(InnerLoopLatchBI->getCondition())) {
+    Value *Op0 = InnerLoopCmp->getOperand(0);
+    Value *Op1 = InnerLoopCmp->getOperand(1);
+
+    // LHS and RHS of the inner loop exit condition, e.g.,
+    // in "for(int j=0;j<i;j++)", LHS is j and RHS is i.
+    Value *Left = nullptr;
+    Value *Right = nullptr;
+
+    // Check if V only involves inner loop induction variable.
+    // Return true if V is InnerInduction, or a cast from
+    // InnerInduction, or a binary operator that involves
+    // InnerInduction and a constant.
+    std::function<bool(Value *)> IsPathToIndVar;
+    IsPathToIndVar = [&InnerInduction, &IsPathToIndVar](Value *V) -> bool {
+      if (V == InnerInduction)
+        return true;
+      if (isa<Constant>(V))
+        return true;
+      Instruction *I = dyn_cast<Instruction>(V);
+      if (!I)
+        return false;
+      if (isa<CastInst>(I))
+        return IsPathToIndVar(I->getOperand(0));
+      if (isa<BinaryOperator>(I))
+        return IsPathToIndVar(I->getOperand(0)) &&
+               IsPathToIndVar(I->getOperand(1));
+      return false;
+    };
+
+    if (IsPathToIndVar(Op0) && !isa<Constant>(Op0)) {
+      Left = Op0;
+      Right = Op1;
+    } else if (IsPathToIndVar(Op1) && !isa<Constant>(Op1)) {
+      Left = Op1;
+      Right = Op0;
+    }
+
+    if (Left == nullptr)
+      return false;
+
+    const SCEV *S = SE->getSCEV(Right);
+    if (!SE->isLoopInvariant(S, OuterLoop))
+      return false;
+  }
+
   return true;
 }
 
@@ -963,6 +1022,40 @@ static bool areOuterLoopExitPHIsSupported(Loop *OuterLoop, Loop *InnerLoop) {
   return true;
 }
 
+// In case of multi-level nested loops, it may occur that lcssa phis exist in
+// the latch of InnerLoop, i.e., when defs of the incoming values are further
+// inside the loopnest. Sometimes those incoming values are not available
+// after interchange, since the original inner latch will become the new outer
+// latch which may have predecessor paths that do not include those incoming
+// values.
+// TODO: Handle transformation of lcssa phis in the InnerLoop latch in case of
+// multi-level loop nests.
+static bool areInnerLoopLatchPHIsSupported(Loop *OuterLoop, Loop *InnerLoop) {
+  if (InnerLoop->getSubLoops().empty())
+    return true;
+  // If the original outer latch has only one predecessor, then values defined
+  // further inside the looploop, e.g., in the innermost loop, will be available
+  // at the new outer latch after interchange.
+  if (OuterLoop->getLoopLatch()->getUniquePredecessor() != nullptr)
+    return true;
+
+  // The outer latch has more than one predecessors, i.e., the inner
+  // exit and the inner header.
+  // PHI nodes in the inner latch are lcssa phis where the incoming values
+  // are defined further inside the loopnest. Check if those phis are used
+  // in the original inner latch. If that is the case then bail out since
+  // those incoming values may not be available at the new outer latch.
+  BasicBlock *InnerLoopLatch = InnerLoop->getLoopLatch();
+  for (PHINode &PHI : InnerLoopLatch->phis()) {
+    for (auto *U : PHI.users()) {
+      Instruction *UI = cast<Instruction>(U);
+      if (InnerLoopLatch == UI->getParent())
+        return false;
+    }
+  }
+  return true;
+}
+
 bool LoopInterchangeLegality::canInterchangeLoops(unsigned InnerLoopId,
                                                   unsigned OuterLoopId,
                                                   CharMatrix &DepMatrix) {
@@ -997,6 +1090,18 @@ bool LoopInterchangeLegality::canInterchangeLoops(unsigned InnerLoopId,
 
         return false;
       }
+
+  if (!areInnerLoopLatchPHIsSupported(OuterLoop, InnerLoop)) {
+    LLVM_DEBUG(dbgs() << "Found unsupported PHI nodes in inner loop latch.\n");
+    ORE->emit([&]() {
+      return OptimizationRemarkMissed(DEBUG_TYPE, "UnsupportedInnerLatchPHI",
+                                      InnerLoop->getStartLoc(),
+                                      InnerLoop->getHeader())
+             << "Cannot interchange loops because unsupported PHI nodes found "
+                "in inner loop latch.";
+    });
+    return false;
+  }
 
   // TODO: The loops could not be interchanged due to current limitations in the
   // transform module.
@@ -1470,6 +1575,13 @@ static void moveLCSSAPhis(BasicBlock *InnerExit, BasicBlock *InnerHeader,
       PHINode *NewPhi = dyn_cast<PHINode>(P.clone());
       NewPhi->setIncomingValue(0, P.getIncomingValue(0));
       NewPhi->setIncomingBlock(0, OuterLatch);
+      // We might have incoming edges from other BBs, i.e., the original outer
+      // header.
+      for (auto *Pred : predecessors(InnerLatch)) {
+        if (Pred == OuterLatch)
+          continue;
+        NewPhi->addIncoming(P.getIncomingValue(0), Pred);
+      }
       NewPhi->insertBefore(InnerLatch->getFirstNonPHI());
       P.setIncomingValue(0, NewPhi);
     }
@@ -1595,15 +1707,19 @@ bool LoopInterchangeTransform::adjustLoopBranches() {
   // replaced by Inners'.
   OuterLoopLatchSuccessor->replacePhiUsesWith(OuterLoopLatch, InnerLoopLatch);
 
+  auto &OuterInnerReductions = LIL.getOuterInnerReductions();
   // Now update the reduction PHIs in the inner and outer loop headers.
   SmallVector<PHINode *, 4> InnerLoopPHIs, OuterLoopPHIs;
-  for (PHINode &PHI : drop_begin(InnerLoopHeader->phis()))
+  for (PHINode &PHI : InnerLoopHeader->phis()) {
+    if (OuterInnerReductions.find(&PHI) == OuterInnerReductions.end())
+      continue;
     InnerLoopPHIs.push_back(cast<PHINode>(&PHI));
-  for (PHINode &PHI : drop_begin(OuterLoopHeader->phis()))
+  }
+  for (PHINode &PHI : OuterLoopHeader->phis()) {
+    if (OuterInnerReductions.find(&PHI) == OuterInnerReductions.end())
+      continue;
     OuterLoopPHIs.push_back(cast<PHINode>(&PHI));
-
-  auto &OuterInnerReductions = LIL.getOuterInnerReductions();
-  (void)OuterInnerReductions;
+  }
 
   // Now move the remaining reduction PHIs from outer to inner loop header and
   // vice versa. The PHI nodes must be part of a reduction across the inner and

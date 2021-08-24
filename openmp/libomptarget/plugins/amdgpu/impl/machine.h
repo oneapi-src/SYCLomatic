@@ -1,14 +1,15 @@
-/*===--------------------------------------------------------------------------
- *              ATMI (Asynchronous Task and Memory Interface)
- *
- * This file is distributed under the MIT License. See LICENSE.txt for details.
- *===------------------------------------------------------------------------*/
+//===--- amdgpu/impl/machine.h ------------------------------------ C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 #ifndef SRC_RUNTIME_INCLUDE_MACHINE_H_
 #define SRC_RUNTIME_INCLUDE_MACHINE_H_
 #include "atmi.h"
+#include "hsa_api.h"
 #include "internal.h"
-#include <hsa.h>
-#include <hsa_ext_amd.h>
 #include <vector>
 
 class ATLMemory;
@@ -66,9 +67,6 @@ public:
   }
   template <typename T> void addProcessor(const T &p);
   template <typename T> std::vector<T> &processors();
-  template <typename T> size_t processorCount() {
-    return processors<T>().size();
-  }
 
 private:
   std::vector<ATLCPUProcessor> cpu_processors_;
@@ -77,16 +75,5 @@ private:
 
 hsa_amd_memory_pool_t get_memory_pool(const ATLProcessor &proc,
                                       const int mem_id);
-
-extern ATLMachine g_atl_machine;
-template <typename T> T &get_processor(atmi_place_t place) {
-  int dev_id = place.device_id;
-  if (dev_id == -1) {
-    // user is asking runtime to pick a device
-    // best device of this type? pick 0 for now
-    dev_id = 0;
-  }
-  return g_atl_machine.processors<T>()[dev_id];
-}
 
 #endif // SRC_RUNTIME_INCLUDE_MACHINE_H_

@@ -1,10 +1,8 @@
 //===-- TestLineEntry.cpp -------------------------------------------------===//
 //
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -53,20 +51,23 @@ void LineEntryTest::SetUp() {
 }
 
 llvm::Expected<LineEntry> LineEntryTest::GetLineEntryForLine(uint32_t line) {
-  bool check_inlines = true;
-  bool exact = true;
+  // TODO: Handle SourceLocationSpec column information
   SymbolContextList sc_comp_units;
   SymbolContextList sc_line_entries;
   FileSpec file_spec("inlined-functions.cpp");
-  m_module_sp->ResolveSymbolContextsForFileSpec(file_spec, line, check_inlines,
-                                                lldb::eSymbolContextCompUnit,
-                                                sc_comp_units);
+  m_module_sp->ResolveSymbolContextsForFileSpec(
+      file_spec, line, /*check_inlines=*/true, lldb::eSymbolContextCompUnit,
+      sc_comp_units);
   if (sc_comp_units.GetSize() == 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "No comp unit found on the test object.");
+
+  SourceLocationSpec location_spec(file_spec, line, /*column=*/llvm::None,
+                                   /*check_inlines=*/true,
+                                   /*exact_match=*/true);
+
   sc_comp_units[0].comp_unit->ResolveSymbolContext(
-      file_spec, line, check_inlines, exact, eSymbolContextLineEntry,
-      sc_line_entries);
+      location_spec, eSymbolContextLineEntry, sc_line_entries);
   if (sc_line_entries.GetSize() == 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "No line entry found on the test object.");

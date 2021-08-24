@@ -283,12 +283,6 @@ public:
 
   /// Return the minimum required alignment in bytes for a spill slot for
   /// a register of this class.
-  unsigned getSpillAlignment(const TargetRegisterClass &RC) const {
-    return getRegClassInfo(RC).SpillAlignment / 8;
-  }
-
-  /// Return the minimum required alignment in bytes for a spill slot for
-  /// a register of this class.
   Align getSpillAlign(const TargetRegisterClass &RC) const {
     return Align(getRegClassInfo(RC).SpillAlignment / 8);
   }
@@ -298,6 +292,19 @@ public:
     for (auto I = legalclasstypes_begin(RC); *I != MVT::Other; ++I)
       if (MVT(*I) == T)
         return true;
+    return false;
+  }
+
+  /// Return true if the given TargetRegisterClass is compatible with LLT T.
+  bool isTypeLegalForClass(const TargetRegisterClass &RC, LLT T) const {
+    for (auto I = legalclasstypes_begin(RC); *I != MVT::Other; ++I) {
+      MVT VT(*I);
+      if (VT == MVT::Untyped)
+        return true;
+
+      if (LLT(VT) == T)
+        return true;
+    }
     return false;
   }
 
@@ -319,6 +326,13 @@ public:
   /// physreg.
   const TargetRegisterClass *getMinimalPhysRegClass(MCRegister Reg,
                                                     MVT VT = MVT::Other) const;
+
+  /// Returns the Register Class of a physical register of the given type,
+  /// picking the most sub register class of the right type that contains this
+  /// physreg. If there is no register class compatible with the given type,
+  /// returns nullptr.
+  const TargetRegisterClass *getMinimalPhysRegClassLLT(MCRegister Reg,
+                                                       LLT Ty = LLT()) const;
 
   /// Return the maximal subclass of the given register class that is
   /// allocatable or NULL.
@@ -856,6 +870,10 @@ public:
   /// targets affecting the performance of compiled code.
   /// (3) Bottom-up allocation is no longer guaranteed to optimally color.
   virtual bool reverseLocalAssignment() const { return false; }
+
+  /// Add the allocation priority to global and split ranges as well as the
+  /// local ranges when registers are added to the queue.
+  virtual bool addAllocPriorityToGlobalRanges() const { return false; }
 
   /// Allow the target to override the cost of using a callee-saved register for
   /// the first time. Default value of 0 means we will use a callee-saved

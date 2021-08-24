@@ -153,6 +153,16 @@ public:
   static Function *Create(FunctionType *Ty, LinkageTypes Linkage,
                           const Twine &N, Module &M);
 
+  /// Creates a function with some attributes recorded in llvm.module.flags
+  /// applied.
+  ///
+  /// Use this when synthesizing new functions that need attributes that would
+  /// have been set by command line options.
+  static Function *createWithDefaultAttr(FunctionType *Ty, LinkageTypes Linkage,
+                                         unsigned AddrSpace,
+                                         const Twine &N = "",
+                                         Module *M = nullptr);
+
   // Provide fast operand accessors.
   DECLARE_TRANSPARENT_OPERAND_ACCESSORS(Value);
 
@@ -437,7 +447,7 @@ public:
 
   /// check if an attributes is in the list of attributes.
   bool hasParamAttribute(unsigned ArgNo, Attribute::AttrKind Kind) const {
-    return getAttributes().hasParamAttribute(ArgNo, Kind);
+    return getAttributes().hasParamAttr(ArgNo, Kind);
   }
 
   /// gets the specified attribute from the list of attributes.
@@ -481,6 +491,10 @@ public:
 
   MaybeAlign getParamAlign(unsigned ArgNo) const {
     return AttributeSets.getParamAlignment(ArgNo);
+  }
+
+  MaybeAlign getParamStackAlign(unsigned ArgNo) const {
+    return AttributeSets.getParamStackAlignment(ArgNo);
   }
 
   /// Extract the byval type for a parameter.
@@ -678,8 +692,8 @@ public:
   /// Determine if the function returns a structure through first
   /// or second pointer argument.
   bool hasStructRetAttr() const {
-    return AttributeSets.hasParamAttribute(0, Attribute::StructRet) ||
-           AttributeSets.hasParamAttribute(1, Attribute::StructRet);
+    return AttributeSets.hasParamAttr(0, Attribute::StructRet) ||
+           AttributeSets.hasParamAttr(1, Attribute::StructRet);
   }
 
   /// Determine if the parameter or return value is marked with NoAlias
@@ -895,7 +909,7 @@ public:
   ///
   bool hasAddressTaken(const User ** = nullptr,
                        bool IgnoreCallbackUses = false,
-                       bool IgnoreAssumeLikeCalls = false,
+                       bool IgnoreAssumeLikeCalls = true,
                        bool IngoreLLVMUsed = false) const;
 
   /// isDefTriviallyDead - Return true if it is trivially safe to remove

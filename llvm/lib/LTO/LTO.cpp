@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/LTO/LTO.h"
+#include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringExtras.h"
@@ -35,6 +36,7 @@
 #include "llvm/Object/IRObjectFile.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
@@ -1397,6 +1399,11 @@ ThinBackend lto::createWriteIndexesThinBackend(
 
 Error LTO::runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
                       const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols) {
+  timeTraceProfilerBegin("ThinLink", StringRef(""));
+  auto TimeTraceScopeExit = llvm::make_scope_exit([]() {
+    if (llvm::timeTraceProfilerEnabled())
+      llvm::timeTraceProfilerEnd();
+  });
   if (ThinLTO.ModuleMap.empty())
     return Error::success();
 
@@ -1479,6 +1486,9 @@ Error LTO::runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
   for (auto &Def : ThinLTO.CombinedIndex.cfiFunctionDefs())
     ExportedGUIDs.insert(
         GlobalValue::getGUID(GlobalValue::dropLLVMManglingEscape(Def)));
+  for (auto &Decl : ThinLTO.CombinedIndex.cfiFunctionDecls())
+    ExportedGUIDs.insert(
+        GlobalValue::getGUID(GlobalValue::dropLLVMManglingEscape(Decl)));
 
   auto isExported = [&](StringRef ModuleIdentifier, ValueInfo VI) {
     const auto &ExportList = ExportLists.find(ModuleIdentifier);
@@ -1507,6 +1517,11 @@ Error LTO::runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
                                   recordNewLinkage, GUIDPreservedSymbols);
 
   generateParamAccessSummary(ThinLTO.CombinedIndex);
+
+  if (llvm::timeTraceProfilerEnabled())
+    llvm::timeTraceProfilerEnd();
+
+  TimeTraceScopeExit.release();
 
   std::unique_ptr<ThinBackendProc> BackendProc =
       ThinLTO.Backend(Conf, ThinLTO.CombinedIndex, ModuleToDefinedGVSummaries,

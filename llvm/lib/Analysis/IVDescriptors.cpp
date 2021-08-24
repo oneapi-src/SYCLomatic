@@ -34,6 +34,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/KnownBits.h"
 
+#include <set>
+
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
@@ -197,16 +199,14 @@ static bool checkOrderedReduction(RecurKind Kind, Instruction *ExactFPMathInst,
   if (Kind != RecurKind::FAdd)
     return false;
 
-  bool IsOrdered =
-      Exit->getOpcode() == Instruction::FAdd && Exit == ExactFPMathInst;
+  if (Exit->getOpcode() != Instruction::FAdd || Exit != ExactFPMathInst)
+    return false;
 
   // The only pattern accepted is the one in which the reduction PHI
   // is used as one of the operands of the exit instruction
   auto *LHS = Exit->getOperand(0);
   auto *RHS = Exit->getOperand(1);
-  IsOrdered &= ((LHS == Phi) || (RHS == Phi));
-
-  if (!IsOrdered)
+  if (LHS != Phi && RHS != Phi)
     return false;
 
   LLVM_DEBUG(dbgs() << "LV: Found an ordered reduction: Phi: " << *Phi
@@ -272,7 +272,7 @@ bool RecurrenceDescriptor::AddReductionVar(PHINode *Phi, RecurKind Kind,
   } else if (RecurrenceType->isIntegerTy()) {
     if (!isIntegerRecurrenceKind(Kind))
       return false;
-    if (isArithmeticRecurrenceKind(Kind))
+    if (!isMinMaxRecurrenceKind(Kind))
       Start = lookThroughAnd(Phi, RecurrenceType, VisitedInsts, CastInsts);
   } else {
     // Pointer min/max may exist, but it is not supported as a reduction op.
@@ -644,6 +644,7 @@ bool RecurrenceDescriptor::hasMultipleUsesOf(
 
   return false;
 }
+
 bool RecurrenceDescriptor::isReductionPHI(PHINode *Phi, Loop *TheLoop,
                                           RecurrenceDescriptor &RedDes,
                                           DemandedBits *DB, AssumptionCache *AC,
@@ -653,9 +654,9 @@ bool RecurrenceDescriptor::isReductionPHI(PHINode *Phi, Loop *TheLoop,
   Function &F = *Header->getParent();
   FastMathFlags FMF;
   FMF.setNoNaNs(
-      F.getFnAttribute("no-nans-fp-math").getValueAsString() == "true");
+      F.getFnAttribute("no-nans-fp-math").getValueAsBool());
   FMF.setNoSignedZeros(
-      F.getFnAttribute("no-signed-zeros-fp-math").getValueAsString() == "true");
+      F.getFnAttribute("no-signed-zeros-fp-math").getValueAsBool());
 
   if (AddReductionVar(Phi, RecurKind::Add, TheLoop, FMF, RedDes, DB, AC, DT)) {
     LLVM_DEBUG(dbgs() << "Found an ADD reduction PHI." << *Phi << "\n");
@@ -715,7 +716,7 @@ bool RecurrenceDescriptor::isReductionPHI(PHINode *Phi, Loop *TheLoop,
 
 bool RecurrenceDescriptor::isFirstOrderRecurrence(
     PHINode *Phi, Loop *TheLoop,
-    DenseMap<Instruction *, Instruction *> &SinkAfter, DominatorTree *DT) {
+    MapVector<Instruction *, Instruction *> &SinkAfter, DominatorTree *DT) {
 
   // Ensure the phi node is in the loop header and has two incoming values.
   if (Phi->getParent() != TheLoop->getHeader() ||
@@ -741,51 +742,76 @@ bool RecurrenceDescriptor::isFirstOrderRecurrence(
       SinkAfter.count(Previous)) // Cannot rely on dominance due to motion.
     return false;
 
-  // Ensure every user of the phi node is dominated by the previous value.
-  // The dominance requirement ensures the loop vectorizer will not need to
-  // vectorize the initial value prior to the first iteration of the loop.
-  // TODO: Consider extending this sinking to handle memory instructions and
-  // phis with multiple users.
+  // Ensure every user of the phi node (recursively) is dominated by the
+  // previous value. The dominance requirement ensures the loop vectorizer will
+  // not need to vectorize the initial value prior to the first iteration of the
+  // loop.
+  // TODO: Consider extending this sinking to handle memory instructions.
 
-  // Returns true, if all users of I are dominated by DominatedBy.
-  auto allUsesDominatedBy = [DT](Instruction *I, Instruction *DominatedBy) {
-    return all_of(I->uses(), [DT, DominatedBy](Use &U) {
-      return DT->dominates(DominatedBy, U);
-    });
+  // We optimistically assume we can sink all users after Previous. Keep a set
+  // of instructions to sink after Previous ordered by dominance in the common
+  // basic block. It will be applied to SinkAfter if all users can be sunk.
+  auto CompareByComesBefore = [](const Instruction *A, const Instruction *B) {
+    return A->comesBefore(B);
   };
+  std::set<Instruction *, decltype(CompareByComesBefore)> InstrsToSink(
+      CompareByComesBefore);
 
-  if (Phi->hasOneUse()) {
-    Instruction *I = Phi->user_back();
+  BasicBlock *PhiBB = Phi->getParent();
+  SmallVector<Instruction *, 8> WorkList;
+  auto TryToPushSinkCandidate = [&](Instruction *SinkCandidate) {
+    // Already sunk SinkCandidate.
+    if (SinkCandidate->getParent() == PhiBB &&
+        InstrsToSink.find(SinkCandidate) != InstrsToSink.end())
+      return true;
 
-    // If the user of the PHI is also the incoming value, we potentially have a
-    // reduction and which cannot be handled by sinking.
-    if (Previous == I)
+    // Cyclic dependence.
+    if (Previous == SinkCandidate)
       return false;
 
-    // We cannot sink terminator instructions.
-    if (I->getParent()->getTerminator() == I)
+    if (DT->dominates(Previous,
+                      SinkCandidate)) // We already are good w/o sinking.
+      return true;
+
+    if (SinkCandidate->getParent() != PhiBB ||
+        SinkCandidate->mayHaveSideEffects() ||
+        SinkCandidate->mayReadFromMemory() || SinkCandidate->isTerminator())
       return false;
 
     // Do not try to sink an instruction multiple times (if multiple operands
     // are first order recurrences).
     // TODO: We can support this case, by sinking the instruction after the
     // 'deepest' previous instruction.
-    if (SinkAfter.find(I) != SinkAfter.end())
+    if (SinkAfter.find(SinkCandidate) != SinkAfter.end())
       return false;
 
-    if (DT->dominates(Previous, I)) // We already are good w/o sinking.
+    // If we reach a PHI node that is not dominated by Previous, we reached a
+    // header PHI. No need for sinking.
+    if (isa<PHINode>(SinkCandidate))
       return true;
 
-    // We can sink any instruction without side effects, as long as all users
-    // are dominated by the instruction we are sinking after.
-    if (I->getParent() == Phi->getParent() && !I->mayHaveSideEffects() &&
-        allUsesDominatedBy(I, Previous)) {
-      SinkAfter[I] = Previous;
-      return true;
+    // Sink User tentatively and check its users
+    InstrsToSink.insert(SinkCandidate);
+    WorkList.push_back(SinkCandidate);
+    return true;
+  };
+
+  WorkList.push_back(Phi);
+  // Try to recursively sink instructions and their users after Previous.
+  while (!WorkList.empty()) {
+    Instruction *Current = WorkList.pop_back_val();
+    for (User *User : Current->users()) {
+      if (!TryToPushSinkCandidate(cast<Instruction>(User)))
+        return false;
     }
   }
 
-  return allUsesDominatedBy(Phi, Previous);
+  // We can sink all users of Phi. Update the mapping.
+  for (Instruction *I : InstrsToSink) {
+    SinkAfter[I] = Previous;
+    Previous = I;
+  }
+  return true;
 }
 
 /// This function returns the identity element (or neutral element) for

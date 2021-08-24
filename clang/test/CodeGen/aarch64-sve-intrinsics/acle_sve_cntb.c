@@ -1,13 +1,15 @@
 // REQUIRES: aarch64-registered-target
 // RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -emit-llvm -o - -x c++ %s | FileCheck %s
 // RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -o - %s >/dev/null
 #include <arm_sve.h>
 
 uint64_t test_svcntb()
 {
   // CHECK-LABEL: test_svcntb
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 31)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.vscale.i64()
+  // CHECK-NEXT: %[[RET:.*]] = shl i64 %[[INTRINSIC]], 4
+  // CHECK: ret i64 %[[RET]]
   return svcntb();
 }
 
@@ -22,72 +24,63 @@ uint64_t test_svcntb_pat()
 uint64_t test_svcntb_pat_1()
 {
   // CHECK-LABEL: test_svcntb_pat_1
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 1)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 1
   return svcntb_pat(SV_VL1);
 }
 
 uint64_t test_svcntb_pat_2()
 {
   // CHECK-LABEL: test_svcntb_pat_2
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 2)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 2
   return svcntb_pat(SV_VL2);
 }
 
 uint64_t test_svcntb_pat_3()
 {
   // CHECK-LABEL: test_svcntb_pat_3
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 3)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 3
   return svcntb_pat(SV_VL3);
 }
 
 uint64_t test_svcntb_pat_4()
 {
   // CHECK-LABEL: test_svcntb_pat_4
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 4)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 4
   return svcntb_pat(SV_VL4);
 }
 
 uint64_t test_svcntb_pat_5()
 {
   // CHECK-LABEL: test_svcntb_pat_5
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 5)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 5
   return svcntb_pat(SV_VL5);
 }
 
 uint64_t test_svcntb_pat_6()
 {
   // CHECK-LABEL: test_svcntb_pat_6
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 6)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 6
   return svcntb_pat(SV_VL6);
 }
 
 uint64_t test_svcntb_pat_7()
 {
   // CHECK-LABEL: test_svcntb_pat_7
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 7)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 7
   return svcntb_pat(SV_VL7);
 }
 
 uint64_t test_svcntb_pat_8()
 {
   // CHECK-LABEL: test_svcntb_pat_8
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 8)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 8
   return svcntb_pat(SV_VL8);
 }
 
 uint64_t test_svcntb_pat_9()
 {
   // CHECK-LABEL: test_svcntb_pat_9
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 9)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 16
   return svcntb_pat(SV_VL16);
 }
 
@@ -142,7 +135,8 @@ uint64_t test_svcntb_pat_15()
 uint64_t test_svcntb_pat_16()
 {
   // CHECK-LABEL: test_svcntb_pat_16
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntb(i32 31)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.vscale.i64()
+  // CHECK-NEXT: %[[RET:.*]] = shl i64 %[[INTRINSIC]], 4
+  // CHECK: ret i64 %[[RET]]
   return svcntb_pat(SV_ALL);
 }

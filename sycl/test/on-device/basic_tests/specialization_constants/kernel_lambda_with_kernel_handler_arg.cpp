@@ -1,13 +1,12 @@
 // RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
+//
+// Hits an assert in the Lower Work Group Scope Code pass on AMD:
+// XFAIL: rocm_amd
 
 // This test checks all possible scenarios of running single_task, parallel_for
 // and parallel_for_work_group to verify that this code compiles and runs
 // correctly with user's lambda with and without sycl::kernel_handler argument
-
-// TODO: enable cuda support when non-native spec constants started to be
-// supported
-// UNSUPPORTED: cuda
 
 #include <CL/sycl.hpp>
 

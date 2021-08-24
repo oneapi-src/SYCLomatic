@@ -90,6 +90,43 @@ func @condBranchDynamicType(
 
 // -----
 
+// Test case: See above.
+
+// CHECK-LABEL: func @condBranchUnrankedType
+func @condBranchUnrankedType(
+  %arg0: i1,
+  %arg1: memref<*xf32>,
+  %arg2: memref<*xf32>,
+  %arg3: index) {
+  cond_br %arg0, ^bb1, ^bb2(%arg3: index)
+^bb1:
+  br ^bb3(%arg1 : memref<*xf32>)
+^bb2(%0: index):
+  %1 = memref.alloc(%0) : memref<?xf32>
+  %2 = memref.cast %1 : memref<?xf32> to memref<*xf32>
+  test.buffer_based in(%arg1: memref<*xf32>) out(%2: memref<*xf32>)
+  br ^bb3(%2 : memref<*xf32>)
+^bb3(%3: memref<*xf32>):
+  test.copy(%3, %arg2) : (memref<*xf32>, memref<*xf32>)
+  return
+}
+
+// CHECK-NEXT: cond_br
+//      CHECK: %[[ALLOC0:.*]] = memref.clone
+// CHECK-NEXT: br ^bb3(%[[ALLOC0]]
+//      CHECK: ^bb2(%[[IDX:.*]]:{{.*}})
+// CHECK-NEXT: %[[ALLOC1:.*]] = memref.alloc(%[[IDX]])
+//      CHECK: test.buffer_based
+// CHECK-NEXT: %[[ALLOC2:.*]] = memref.clone
+// CHECK-NEXT: memref.dealloc %[[ALLOC1]]
+// CHECK-NEXT: br ^bb3
+// CHECK-NEXT: ^bb3(%[[ALLOC3:.*]]:{{.*}})
+//      CHECK: test.copy(%[[ALLOC3]],
+// CHECK-NEXT: memref.dealloc %[[ALLOC3]]
+// CHECK-NEXT: return
+
+// -----
+
 // Test Case:
 //      bb0
 //     /    \
@@ -1059,7 +1096,7 @@ func @loop_nested_alloc(
 // The BufferDeallocation transformation should fail on this explicit
 // control-flow loop since they are not supported.
 
-// expected-error@+1 {{Structured control-flow loops are supported only}}
+// expected-error@+1 {{Only structured control-flow loops are supported}}
 func @loop_dynalloc(
   %arg0 : i32,
   %arg1 : i32,
@@ -1092,7 +1129,7 @@ func @loop_dynalloc(
 // The BufferDeallocation transformation should fail on this explicit
 // control-flow loop since they are not supported.
 
-// expected-error@+1 {{Structured control-flow loops are supported only}}
+// expected-error@+1 {{Only structured control-flow loops are supported}}
 func @do_loop_alloc(
   %arg0 : i32,
   %arg1 : i32,
@@ -1169,4 +1206,19 @@ func @noRegionBranchOpInterface() {
     "test.yield"() : () -> ()
   }) : () -> (i32)
   "test.terminator"() : () -> ()
+}
+
+// -----
+
+// CHECK-LABEL: func @dealloc_existing_clones
+// CHECK: (%[[ARG0:.*]]: memref<?x?xf64>, %[[ARG1:.*]]: memref<?x?xf64>)
+// CHECK: %[[RES0:.*]] = memref.clone %[[ARG0]]
+// CHECK: %[[RES1:.*]] = memref.clone %[[ARG1]]
+// CHECK-NOT: memref.dealloc %[[RES0]]
+// CHECK: memref.dealloc %[[RES1]]
+// CHECK: return %[[RES0]]
+func @dealloc_existing_clones(%arg0: memref<?x?xf64>, %arg1: memref<?x?xf64>) -> memref<?x?xf64> {
+  %0 = memref.clone %arg0 : memref<?x?xf64> to memref<?x?xf64>
+  %1 = memref.clone %arg1 : memref<?x?xf64> to memref<?x?xf64>
+  return %0 : memref<?x?xf64>
 }

@@ -68,12 +68,149 @@ static Attr *handleSuppressAttr(Sema &S, Stmt *St, const ParsedAttr &A,
       S.Context, A, DiagnosticIdentifiers.data(), DiagnosticIdentifiers.size());
 }
 
-template <typename FPGALoopAttrT>
-static Attr *handleIntelFPGALoopAttr(Sema &S, Stmt *St, const ParsedAttr &A) {
+SYCLIntelFPGAMaxConcurrencyAttr *
+Sema::BuildSYCLIntelFPGAMaxConcurrencyAttr(const AttributeCommonInfo &CI,
+                                           Expr *E) {
+  if (!E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a non-negative value.
+    if (ArgVal < 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*non-negative*/ 1;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGAMaxConcurrencyAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGAMaxConcurrencyAttr(Sema &S, Stmt *St,
+                                                   const ParsedAttr &A) {
   S.CheckDeprecatedSYCLAttributeSpelling(A);
 
-  return S.BuildSYCLIntelFPGALoopAttr<FPGALoopAttrT>(
-      A, A.getNumArgs() ? A.getArgAsExpr(0) : nullptr);
+  Expr *E = A.getArgAsExpr(0);
+  return S.BuildSYCLIntelFPGAMaxConcurrencyAttr(A, E);
+}
+
+SYCLIntelFPGAInitiationIntervalAttr *
+Sema::BuildSYCLIntelFPGAInitiationIntervalAttr(const AttributeCommonInfo &CI,
+                                               Expr *E) {
+  if (!E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a strictly positive value.
+    if (ArgVal <= 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*positive*/ 0;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGAInitiationIntervalAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGAInitiationIntervalAttr(Sema &S, Stmt *St,
+                                                       const ParsedAttr &A) {
+  S.CheckDeprecatedSYCLAttributeSpelling(A);
+
+  Expr *E = A.getArgAsExpr(0);
+  return S.BuildSYCLIntelFPGAInitiationIntervalAttr(A, E);
+}
+
+SYCLIntelFPGAMaxInterleavingAttr *
+Sema::BuildSYCLIntelFPGAMaxInterleavingAttr(const AttributeCommonInfo &CI,
+                                            Expr *E) {
+  if (!E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a non-negative value.
+    if (ArgVal < 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*non-negative*/ 1;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGAMaxInterleavingAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGAMaxInterleavingAttr(Sema &S, Stmt *St,
+                                                    const ParsedAttr &A) {
+  S.CheckDeprecatedSYCLAttributeSpelling(A);
+
+  Expr *E = A.getArgAsExpr(0);
+  return S.BuildSYCLIntelFPGAMaxInterleavingAttr(A, E);
+}
+
+SYCLIntelFPGALoopCoalesceAttr *
+Sema::BuildSYCLIntelFPGALoopCoalesceAttr(const AttributeCommonInfo &CI,
+                                         Expr *E) {
+  if (E && !E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a strictly positive value.
+    if (ArgVal <= 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*positive*/ 0;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGALoopCoalesceAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGALoopCoalesceAttr(Sema &S, Stmt *St,
+                                                 const ParsedAttr &A) {
+  S.CheckDeprecatedSYCLAttributeSpelling(A);
+
+  Expr *E = A.isArgExpr(0) ? A.getArgAsExpr(0) : nullptr;
+  return S.BuildSYCLIntelFPGALoopCoalesceAttr(A, E);
+}
+
+SYCLIntelFPGASpeculatedIterationsAttr *
+Sema::BuildSYCLIntelFPGASpeculatedIterationsAttr(const AttributeCommonInfo &CI,
+                                                 Expr *E) {
+  if (!E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a non-negative value.
+    if (ArgVal < 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*non-negative*/ 1;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGASpeculatedIterationsAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGASpeculatedIterationsAttr(Sema &S, Stmt *St,
+                                                         const ParsedAttr &A) {
+  S.CheckDeprecatedSYCLAttributeSpelling(A);
+
+  Expr *E = A.getArgAsExpr(0);
+  return S.BuildSYCLIntelFPGASpeculatedIterationsAttr(A, E);
 }
 
 static Attr *handleSYCLIntelFPGADisableLoopPipeliningAttr(Sema &S, Stmt *,
@@ -243,6 +380,61 @@ static Attr *handleIntelFPGAIVDepAttr(Sema &S, Stmt *St, const ParsedAttr &A) {
       NumArgs == 2 ? A.getArgAsExpr(1) : nullptr);
 }
 
+static void
+CheckForDuplicateSYCLIntelLoopCountAttrs(Sema &S,
+                                         ArrayRef<const Attr *> Attrs) {
+  // Create a list of SYCLIntelFPGALoopCount attributes only.
+  SmallVector<const SYCLIntelFPGALoopCountAttr *, 8> OnlyLoopCountAttrs;
+  llvm::transform(
+      Attrs, std::back_inserter(OnlyLoopCountAttrs), [](const Attr *A) {
+        return dyn_cast_or_null<const SYCLIntelFPGALoopCountAttr>(A);
+      });
+  OnlyLoopCountAttrs.erase(
+      std::remove(OnlyLoopCountAttrs.begin(), OnlyLoopCountAttrs.end(),
+                  static_cast<const SYCLIntelFPGALoopCountAttr *>(nullptr)),
+      OnlyLoopCountAttrs.end());
+  if (OnlyLoopCountAttrs.empty())
+    return;
+
+  unsigned int MinCount = 0;
+  unsigned int MaxCount = 0;
+  unsigned int AvgCount = 0;
+  for (const auto *A : OnlyLoopCountAttrs) {
+    const auto *At = dyn_cast<SYCLIntelFPGALoopCountAttr>(A);
+    At->isMin() ? MinCount++ : At->isMax() ? MaxCount++ : AvgCount++;
+    if (MinCount > 1 || MaxCount > 1 || AvgCount > 1)
+      S.Diag(A->getLocation(), diag::err_sycl_loop_attr_duplication) << 1 << A;
+  }
+}
+
+SYCLIntelFPGALoopCountAttr *
+Sema::BuildSYCLIntelFPGALoopCountAttr(const AttributeCommonInfo &CI, Expr *E) {
+  if (!E->isValueDependent()) {
+    llvm::APSInt ArgVal;
+    ExprResult Res = VerifyIntegerConstantExpression(E, &ArgVal);
+    if (Res.isInvalid())
+      return nullptr;
+    E = Res.get();
+
+    // This attribute requires a non-negative value.
+    if (ArgVal < 0) {
+      Diag(E->getExprLoc(), diag::err_attribute_requires_positive_integer)
+          << CI << /*non-negative*/ 1;
+      return nullptr;
+    }
+  }
+
+  return new (Context) SYCLIntelFPGALoopCountAttr(Context, CI, E);
+}
+
+static Attr *handleSYCLIntelFPGALoopCountAttr(Sema &S, Stmt *St,
+                                              const ParsedAttr &A) {
+  S.CheckDeprecatedSYCLAttributeSpelling(A);
+
+  Expr *E = A.getArgAsExpr(0);
+  return S.BuildSYCLIntelFPGALoopCountAttr(A, E);
+}
+
 static Attr *handleIntelFPGANofusionAttr(Sema &S, Stmt *St,
                                          const ParsedAttr &A) {
   return new (S.Context) SYCLIntelFPGANofusionAttr(S.Context, A);
@@ -387,6 +579,12 @@ static Attr *handleNoMergeAttr(Sema &S, Stmt *St, const ParsedAttr &A,
   }
 
   return ::new (S.Context) NoMergeAttr(S.Context, A);
+}
+
+static Attr *handleMustTailAttr(Sema &S, Stmt *St, const ParsedAttr &A,
+                                SourceRange Range) {
+  // Validation is in Sema::ActOnAttributedStmt().
+  return ::new (S.Context) MustTailAttr(S.Context, A);
 }
 
 static Attr *handleLikely(Sema &S, Stmt *St, const ParsedAttr &A,
@@ -558,6 +756,7 @@ static void CheckForIncompatibleSYCLLoopAttributes(
                                                                          Attrs);
   CheckForDuplicationSYCLLoopAttribute<SYCLIntelFPGASpeculatedIterationsAttr>(
       S, Attrs);
+  CheckForDuplicateSYCLIntelLoopCountAttrs(S, Attrs);
   CheckForDuplicationSYCLLoopAttribute<LoopUnrollHintAttr>(S, Attrs, false);
   CheckRedundantSYCLIntelFPGAIVDepAttrs(S, Attrs);
   CheckForDuplicationSYCLLoopAttribute<SYCLIntelFPGANofusionAttr>(S, Attrs);
@@ -674,19 +873,19 @@ static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
   case ParsedAttr::AT_SYCLIntelFPGAIVDep:
     return handleIntelFPGAIVDepAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGAInitiationInterval:
-    return handleIntelFPGALoopAttr<SYCLIntelFPGAInitiationIntervalAttr>(S, St,
-                                                                        A);
+    return handleSYCLIntelFPGAInitiationIntervalAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGAMaxConcurrency:
-    return handleIntelFPGALoopAttr<SYCLIntelFPGAMaxConcurrencyAttr>(S, St, A);
+    return handleSYCLIntelFPGAMaxConcurrencyAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGALoopCoalesce:
-    return handleIntelFPGALoopAttr<SYCLIntelFPGALoopCoalesceAttr>(S, St, A);
+    return handleSYCLIntelFPGALoopCoalesceAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGADisableLoopPipelining:
     return handleSYCLIntelFPGADisableLoopPipeliningAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGAMaxInterleaving:
-    return handleIntelFPGALoopAttr<SYCLIntelFPGAMaxInterleavingAttr>(S, St, A);
+    return handleSYCLIntelFPGAMaxInterleavingAttr(S, St, A);
   case ParsedAttr::AT_SYCLIntelFPGASpeculatedIterations:
-    return handleIntelFPGALoopAttr<SYCLIntelFPGASpeculatedIterationsAttr>(S, St,
-                                                                          A);
+    return handleSYCLIntelFPGASpeculatedIterationsAttr(S, St, A);
+  case ParsedAttr::AT_SYCLIntelFPGALoopCount:
+    return handleSYCLIntelFPGALoopCountAttr(S, St, A);
   case ParsedAttr::AT_OpenCLUnrollHint:
   case ParsedAttr::AT_LoopUnrollHint:
     return handleLoopUnrollHint(S, St, A, Range);
@@ -694,6 +893,8 @@ static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
     return handleSuppressAttr(S, St, A, Range);
   case ParsedAttr::AT_NoMerge:
     return handleNoMergeAttr(S, St, A, Range);
+  case ParsedAttr::AT_MustTail:
+    return handleMustTailAttr(S, St, A, Range);
   case ParsedAttr::AT_Likely:
     return handleLikely(S, St, A, Range);
   case ParsedAttr::AT_Unlikely:

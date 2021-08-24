@@ -49,6 +49,8 @@ public:
     llvm::Expected<std::unique_ptr<NativeProcessProtocol>>
     Attach(lldb::pid_t pid, NativeDelegate &native_delegate,
            MainLoop &mainloop) const override;
+
+    Extension GetSupportedExtensions() const override;
   };
 
   // NativeProcessProtocol Interface
@@ -77,6 +79,12 @@ public:
                                               uint32_t permissions) override;
 
   llvm::Error DeallocateMemory(lldb::addr_t addr) override;
+
+  Status ReadMemoryTags(int32_t type, lldb::addr_t addr, size_t len,
+                        std::vector<uint8_t> &tags) override;
+
+  Status WriteMemoryTags(int32_t type, lldb::addr_t addr, size_t len,
+                         const std::vector<uint8_t> &tags) override;
 
   size_t UpdateThreads() override;
 
@@ -136,6 +144,7 @@ protected:
 private:
   MainLoop::SignalHandleUP m_sigchld_handle;
   ArchSpec m_arch;
+  MainLoop& m_main_loop;
 
   LazyBool m_supports_mem_region = eLazyBoolCalculate;
   std::vector<std::pair<MemoryRegionInfo, FileSpec>> m_mem_region_cache;

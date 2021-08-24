@@ -25,6 +25,10 @@ function(add_linalg_ods_tc_gen tc_filename output_file)
     ${MLIR_LINALG_ODS_GEN_EXE}
     ${MLIR_LINALG_ODS_GEN_TARGET}
     ${GEN_ODS_FILE} ${GEN_CPP_FILE})
+  # Setup the file dependencies needed for the subsequent tablegen step.
+  # TODO: Once there is only one way of generating named ops remove this parent
+  # scope manipulation and implement the tablegen generation in the same scope.
+  set(LLVM_TARGET_DEPENDS ${LLVM_TARGET_DEPENDS} ${GEN_ODS_FILE} PARENT_SCOPE)
 endfunction()
 
 # Declare a function to generate ODS with mlir-linalg-ods-yaml-gen
@@ -52,10 +56,17 @@ function(add_linalg_ods_yaml_gen yaml_ast_file output_file)
     ${MLIR_LINALG_ODS_YAML_GEN_EXE}
     ${MLIR_LINALG_ODS_YAML_GEN_TARGET}
     ${GEN_ODS_FILE} ${GEN_CPP_FILE})
+  # Setup the file dependencies needed for the subsequent tablegen step.
+  # TODO: Once there is only one way of generating named ops remove this parent
+  # scope manipulation and implement the tablegen generation in the same scope.
+  set(LLVM_TARGET_DEPENDS ${LLVM_TARGET_DEPENDS} ${GEN_ODS_FILE} PARENT_SCOPE)
 endfunction()
 
 # TODO: Delete tc generation and replace with the YAML variant once all ops are
-# ported.
+# ported. At the same time, move the YAML and TableGen generation to the same
+# scope to avoid the at a distance dependency manipulation via
+# LLVM_TARGET_DEPENDS.
+set(LLVM_TARGET_DEPENDS "")
 add_linalg_ods_tc_gen(LinalgNamedStructuredOpsSpec.tc LinalgNamedStructuredOps)
 add_linalg_ods_yaml_gen(LinalgNamedStructuredOps.yaml LinalgNamedStructuredOps)
 
@@ -70,7 +81,7 @@ add_dependencies(mlir-headers LinalgOdsGen)
 
 add_mlir_dialect(LinalgOps linalg)
 
-add_mlir_doc(LinalgDoc -gen-op-doc LinalgOps Dialects/)
+add_mlir_doc(LinalgDoc LinalgOps Dialects/ -gen-op-doc)
 add_dependencies(LinalgOpsDocGen LinalgOdsGen)
 
 set(LLVM_TARGET_DEFINITIONS LinalgStructuredOps.td)
@@ -79,12 +90,6 @@ mlir_tablegen(LinalgStructuredOps.cpp.inc -gen-op-defs)
 add_public_tablegen_target(MLIRLinalgStructuredOpsIncGen)
 add_dependencies(MLIRLinalgStructuredOpsIncGen LinalgOdsGen)
 add_dependencies(mlir-headers MLIRLinalgStructuredOpsIncGen)
-
-set(LLVM_TARGET_DEFINITIONS LinalgSparseOps.td)
-mlir_tablegen(LinalgSparseOps.h.inc -gen-op-decls)
-mlir_tablegen(LinalgSparseOps.cpp.inc -gen-op-defs)
-add_public_tablegen_target(MLIRLinalgSparseOpsIncGen)
-add_dependencies(mlir-headers MLIRLinalgSparseOpsIncGen)
 
 set(LLVM_TARGET_DEFINITIONS LinalgInterfaces.td)
 mlir_tablegen(LinalgInterfaces.h.inc -gen-op-interface-decls)

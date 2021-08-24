@@ -16,6 +16,8 @@
 #include "CodeGenModule.h"
 #include "TargetInfo.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Expr.h"
+#include "clang/AST/Stmt.h"
 #include "clang/AST/StmtVisitor.h"
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/DiagnosticSema.h"
@@ -206,6 +208,9 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   case Stmt::OMPTileDirectiveClass:
     EmitOMPTileDirective(cast<OMPTileDirective>(*S));
     break;
+  case Stmt::OMPUnrollDirectiveClass:
+    EmitOMPUnrollDirective(cast<OMPUnrollDirective>(*S));
+    break;
   case Stmt::OMPForDirectiveClass:
     EmitOMPForDirective(cast<OMPForDirective>(*S));
     break;
@@ -382,7 +387,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
     llvm_unreachable("Dispatch directive not supported yet.");
     break;
   case Stmt::OMPMaskedDirectiveClass:
-    llvm_unreachable("Masked directive not supported yet.");
+    EmitOMPMaskedDirective(cast<OMPMaskedDirective>(*S));
     break;
   }
 }
@@ -644,17 +649,30 @@ void CodeGenFunction::LexicalScope::rescopeLabels() {
 
 void CodeGenFunction::EmitLabelStmt(const LabelStmt &S) {
   EmitLabel(S.getDecl());
+
+  // IsEHa - emit eha.scope.begin if it's a side entry of a scope
+  if (getLangOpts().EHAsynch && S.isSideEntry())
+    EmitSehCppScopeBegin();
+
   EmitStmt(S.getSubStmt());
 }
 
 void CodeGenFunction::EmitAttributedStmt(const AttributedStmt &S) {
   bool nomerge = false;
-  for (const auto *A : S.getAttrs())
+  const CallExpr *musttail = nullptr;
+
+  for (const auto *A : S.getAttrs()) {
     if (A->getKind() == attr::NoMerge) {
       nomerge = true;
-      break;
     }
+    if (A->getKind() == attr::MustTail) {
+      const Stmt *Sub = S.getSubStmt();
+      const ReturnStmt *R = cast<ReturnStmt>(Sub);
+      musttail = cast<CallExpr>(R->getRetValue()->IgnoreParens());
+    }
+  }
   SaveAndRestore<bool> save_nomerge(InNoMergeAttributedStmt, nomerge);
+  SaveAndRestore<const CallExpr *> save_musttail(MustTailCall, musttail);
   EmitStmt(S.getSubStmt(), S.getAttrs());
 }
 
@@ -806,20 +824,14 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
 
   // while(1) is common, avoid extra exit blocks.  Be sure
   // to correctly handle break/continue though.
-  bool EmitBoolCondBranch = true;
-  bool LoopMustProgress = false;
-  if (llvm::ConstantInt *C = dyn_cast<llvm::ConstantInt>(BoolCondVal)) {
-    if (C->isOne()) {
-      EmitBoolCondBranch = false;
-      FnIsMustProgress = false;
-    }
-  } else if (LanguageRequiresProgress())
-    LoopMustProgress = true;
-
+  llvm::ConstantInt *C = dyn_cast<llvm::ConstantInt>(BoolCondVal);
+  bool CondIsConstInt = C != nullptr;
+  bool EmitBoolCondBranch = !CondIsConstInt || !C->isOne();
   const SourceRange &R = S.getSourceRange();
   LoopStack.push(LoopHeader.getBlock(), CGM.getContext(), CGM.getCodeGenOpts(),
                  WhileAttrs, SourceLocToDebugLoc(R.getBegin()),
-                 SourceLocToDebugLoc(R.getEnd()), LoopMustProgress);
+                 SourceLocToDebugLoc(R.getEnd()),
+                 checkIfLoopMustProgress(CondIsConstInt));
 
   // As long as the condition is true, go to the loop body.
   llvm::BasicBlock *LoopBody = createBasicBlock("while.body");
@@ -910,20 +922,15 @@ void CodeGenFunction::EmitDoStmt(const DoStmt &S,
 
   // "do {} while (0)" is common in macros, avoid extra blocks.  Be sure
   // to correctly handle break/continue though.
-  bool EmitBoolCondBranch = true;
-  bool LoopMustProgress = false;
-  if (llvm::ConstantInt *C = dyn_cast<llvm::ConstantInt>(BoolCondVal)) {
-    if (C->isZero())
-      EmitBoolCondBranch = false;
-    else if (C->isOne())
-      FnIsMustProgress = false;
-  } else if (LanguageRequiresProgress())
-    LoopMustProgress = true;
+  llvm::ConstantInt *C = dyn_cast<llvm::ConstantInt>(BoolCondVal);
+  bool CondIsConstInt = C;
+  bool EmitBoolCondBranch = !C || !C->isZero();
 
   const SourceRange &R = S.getSourceRange();
   LoopStack.push(LoopBody, CGM.getContext(), CGM.getCodeGenOpts(), DoAttrs,
                  SourceLocToDebugLoc(R.getBegin()),
-                 SourceLocToDebugLoc(R.getEnd()), LoopMustProgress);
+                 SourceLocToDebugLoc(R.getEnd()),
+                 checkIfLoopMustProgress(CondIsConstInt));
 
   // As long as the condition is true, iterate the loop.
   if (EmitBoolCondBranch) {
@@ -961,20 +968,15 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
   llvm::BasicBlock *CondBlock = CondDest.getBlock();
   EmitBlock(CondBlock);
 
-  bool LoopMustProgress = false;
   Expr::EvalResult Result;
-  if (LanguageRequiresProgress()) {
-    if (!S.getCond()) {
-      FnIsMustProgress = false;
-    } else if (!S.getCond()->EvaluateAsInt(Result, getContext())) {
-      LoopMustProgress = true;
-    }
-  }
+  bool CondIsConstInt =
+      !S.getCond() || S.getCond()->EvaluateAsInt(Result, getContext());
 
   const SourceRange &R = S.getSourceRange();
   LoopStack.push(CondBlock, CGM.getContext(), CGM.getCodeGenOpts(), ForAttrs,
                  SourceLocToDebugLoc(R.getBegin()),
-                 SourceLocToDebugLoc(R.getEnd()), LoopMustProgress);
+                 SourceLocToDebugLoc(R.getEnd()),
+                 checkIfLoopMustProgress(CondIsConstInt));
 
   // Create a cleanup scope for the condition variable cleanups.
   LexicalScope ConditionScope(*this, S.getSourceRange());
@@ -1022,10 +1024,6 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
     if (!Weights && CGM.getCodeGenOpts().OptimizationLevel)
       BoolCondVal = emitCondLikelihoodViaExpectIntrinsic(
           BoolCondVal, Stmt::getLikelihood(S.getBody()));
-
-    if (llvm::ConstantInt *C = dyn_cast<llvm::ConstantInt>(BoolCondVal))
-      if (C->isOne())
-        FnIsMustProgress = false;
 
     Builder.CreateCondBr(BoolCondVal, ForBody, ExitBlock, Weights);
 
@@ -1178,6 +1176,38 @@ struct SaveRetExprRAII {
 };
 } // namespace
 
+/// If we have 'return f(...);', where both caller and callee are SwiftAsync,
+/// codegen it as 'tail call ...; ret void;'.
+static void makeTailCallIfSwiftAsync(const CallExpr *CE, CGBuilderTy &Builder,
+                                     const CGFunctionInfo *CurFnInfo) {
+  auto calleeQualType = CE->getCallee()->getType();
+  const FunctionType *calleeType = nullptr;
+  if (calleeQualType->isFunctionPointerType() ||
+      calleeQualType->isFunctionReferenceType() ||
+      calleeQualType->isBlockPointerType() ||
+      calleeQualType->isMemberFunctionPointerType()) {
+    calleeType = calleeQualType->getPointeeType()->castAs<FunctionType>();
+  } else if (auto *ty = dyn_cast<FunctionType>(calleeQualType)) {
+    calleeType = ty;
+  } else if (auto CMCE = dyn_cast<CXXMemberCallExpr>(CE)) {
+    if (auto methodDecl = CMCE->getMethodDecl()) {
+      // getMethodDecl() doesn't handle member pointers at the moment.
+      calleeType = methodDecl->getType()->castAs<FunctionType>();
+    } else {
+      return;
+    }
+  } else {
+    return;
+  }
+  if (calleeType->getCallConv() == CallingConv::CC_SwiftAsync &&
+      (CurFnInfo->getASTCallingConvention() == CallingConv::CC_SwiftAsync)) {
+    auto CI = cast<llvm::CallInst>(&Builder.GetInsertBlock()->back());
+    CI->setTailCallKind(llvm::CallInst::TCK_MustTail);
+    Builder.CreateRetVoid();
+    Builder.ClearInsertionPoint();
+  }
+}
+
 /// EmitReturnStmt - Note that due to GCC extensions, this can have an operand
 /// if the function returns void, or may be missing one if the function returns
 /// non-void.  Fun stuff :).
@@ -1236,8 +1266,11 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
   } else if (!ReturnValue.isValid() || (RV && RV->getType()->isVoidType())) {
     // Make sure not to return anything, but evaluate the expression
     // for side effects.
-    if (RV)
+    if (RV) {
       EmitAnyExpr(RV);
+      if (auto *CE = dyn_cast<CallExpr>(RV))
+        makeTailCallIfSwiftAsync(CE, Builder, CurFnInfo);
+    }
   } else if (!RV) {
     // Do nothing (return value is left uninitialized)
   } else if (FnRetTy->isReferenceType()) {
@@ -2064,7 +2097,8 @@ CodeGenFunction::EmitAsmInputLValue(const TargetInfo::ConstraintInfo &Info,
     } else {
       llvm::Type *Ty = ConvertType(InputType);
       uint64_t Size = CGM.getDataLayout().getTypeSizeInBits(Ty);
-      if (Size <= 64 && llvm::isPowerOf2_64(Size)) {
+      if ((Size <= 64 && llvm::isPowerOf2_64(Size)) ||
+          getTargetHooks().isScalarizableAsmOperand(*this, Ty)) {
         Ty = llvm::IntegerType::get(getLLVMContext(), Size);
         Ty = llvm::PointerType::getUnqual(Ty);
 
@@ -2125,7 +2159,7 @@ static llvm::MDNode *getAsmSrcLocInfo(const StringLiteral *Str,
   SmallVector<llvm::Metadata *, 8> Locs;
   // Add the location of the first line to the MDNode.
   Locs.push_back(llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
-      CGF.Int32Ty, Str->getBeginLoc().getRawEncoding())));
+      CGF.Int64Ty, Str->getBeginLoc().getRawEncoding())));
   StringRef StrVal = Str->getString();
   if (!StrVal.empty()) {
     const SourceManager &SM = CGF.CGM.getContext().getSourceManager();
@@ -2140,7 +2174,7 @@ static llvm::MDNode *getAsmSrcLocInfo(const StringLiteral *Str,
       SourceLocation LineLoc = Str->getLocationOfByte(
           i + 1, SM, LangOpts, CGF.getTarget(), &StartToken, &ByteOffset);
       Locs.push_back(llvm::ConstantAsMetadata::get(
-          llvm::ConstantInt::get(CGF.Int32Ty, LineLoc.getRawEncoding())));
+          llvm::ConstantInt::get(CGF.Int64Ty, LineLoc.getRawEncoding())));
     }
   }
 
@@ -2148,13 +2182,15 @@ static llvm::MDNode *getAsmSrcLocInfo(const StringLiteral *Str,
 }
 
 static void UpdateAsmCallInst(llvm::CallBase &Result, bool HasSideEffect,
-                              bool ReadOnly, bool ReadNone, bool NoMerge,
-                              const AsmStmt &S,
+                              bool HasUnwindClobber, bool ReadOnly,
+                              bool ReadNone, bool NoMerge, const AsmStmt &S,
                               const std::vector<llvm::Type *> &ResultRegTypes,
                               CodeGenFunction &CGF,
                               std::vector<llvm::Value *> &RegResults) {
-  Result.addAttribute(llvm::AttributeList::FunctionIndex,
-                      llvm::Attribute::NoUnwind);
+  if (!HasUnwindClobber)
+    Result.addAttribute(llvm::AttributeList::FunctionIndex,
+                        llvm::Attribute::NoUnwind);
+
   if (NoMerge)
     Result.addAttribute(llvm::AttributeList::FunctionIndex,
                         llvm::Attribute::NoMerge);
@@ -2175,8 +2211,8 @@ static void UpdateAsmCallInst(llvm::CallBase &Result, bool HasSideEffect,
                        getAsmSrcLocInfo(gccAsmStmt->getAsmString(), CGF));
   else {
     // At least put the line number on MS inline asm blobs.
-    llvm::Constant *Loc = llvm::ConstantInt::get(CGF.Int32Ty,
-                                        S.getAsmLoc().getRawEncoding());
+    llvm::Constant *Loc =
+        llvm::ConstantInt::get(CGF.Int64Ty, S.getAsmLoc().getRawEncoding());
     Result.setMetadata("srcloc",
                        llvm::MDNode::get(CGF.getLLVMContext(),
                                          llvm::ConstantAsMetadata::get(Loc)));
@@ -2285,23 +2321,28 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
 
     // If this is a register output, then make the inline asm return it
     // by-value.  If this is a memory result, return the value by-reference.
-    bool isScalarizableAggregate =
-        hasAggregateEvaluationKind(OutExpr->getType());
-    if (!Info.allowsMemory() && (hasScalarEvaluationKind(OutExpr->getType()) ||
-                                 isScalarizableAggregate)) {
+    QualType QTy = OutExpr->getType();
+    const bool IsScalarOrAggregate = hasScalarEvaluationKind(QTy) ||
+                                     hasAggregateEvaluationKind(QTy);
+    if (!Info.allowsMemory() && IsScalarOrAggregate) {
+
       Constraints += "=" + OutputConstraint;
-      ResultRegQualTys.push_back(OutExpr->getType());
+      ResultRegQualTys.push_back(QTy);
       ResultRegDests.push_back(Dest);
-      ResultTruncRegTypes.push_back(ConvertTypeForMem(OutExpr->getType()));
-      if (Info.allowsRegister() && isScalarizableAggregate) {
-        ResultTypeRequiresCast.push_back(true);
-        unsigned Size = getContext().getTypeSize(OutExpr->getType());
-        llvm::Type *ConvTy = llvm::IntegerType::get(getLLVMContext(), Size);
-        ResultRegTypes.push_back(ConvTy);
-      } else {
-        ResultTypeRequiresCast.push_back(false);
-        ResultRegTypes.push_back(ResultTruncRegTypes.back());
+
+      llvm::Type *Ty = ConvertTypeForMem(QTy);
+      const bool RequiresCast = Info.allowsRegister() &&
+          (getTargetHooks().isScalarizableAsmOperand(*this, Ty) ||
+           Ty->isAggregateType());
+
+      ResultTruncRegTypes.push_back(Ty);
+      ResultTypeRequiresCast.push_back(RequiresCast);
+
+      if (RequiresCast) {
+        unsigned Size = getContext().getTypeSize(QTy);
+        Ty = llvm::IntegerType::get(getLLVMContext(), Size);
       }
+      ResultRegTypes.push_back(Ty);
       // If this output is tied to an input, and if the input is larger, then
       // we need to set the actual result type of the inline asm node to be the
       // same as the input type.
@@ -2501,13 +2542,18 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
   }
   Constraints += InOutConstraints;
 
+  bool HasUnwindClobber = false;
+
   // Clobbers
   for (unsigned i = 0, e = S.getNumClobbers(); i != e; i++) {
     StringRef Clobber = S.getClobber(i);
 
     if (Clobber == "memory")
       ReadOnly = ReadNone = false;
-    else if (Clobber != "cc") {
+    else if (Clobber == "unwind") {
+      HasUnwindClobber = true;
+      continue;
+    } else if (Clobber != "cc") {
       Clobber = getTarget().getNormalizedGCCRegisterName(Clobber);
       if (CGM.getCodeGenOpts().StackClashProtector &&
           getTarget().isSPRegName(Clobber)) {
@@ -2541,6 +2587,9 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
     Constraints += '}';
   }
 
+  assert(!(HasUnwindClobber && IsGCCAsmGoto) &&
+         "unwind clobber can't be used with asm goto");
+
   // Add machine specific clobbers
   std::string MachineClobbers = getTarget().getClobbers();
   if (!MachineClobbers.empty()) {
@@ -2563,23 +2612,28 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
   bool HasSideEffect = S.isVolatile() || S.getNumOutputs() == 0;
   llvm::InlineAsm::AsmDialect AsmDialect = isa<MSAsmStmt>(&S) ?
     llvm::InlineAsm::AD_Intel : llvm::InlineAsm::AD_ATT;
-  llvm::InlineAsm *IA =
-    llvm::InlineAsm::get(FTy, AsmString, Constraints, HasSideEffect,
-                         /* IsAlignStack */ false, AsmDialect);
+  llvm::InlineAsm *IA = llvm::InlineAsm::get(
+      FTy, AsmString, Constraints, HasSideEffect,
+      /* IsAlignStack */ false, AsmDialect, HasUnwindClobber);
   std::vector<llvm::Value*> RegResults;
   if (IsGCCAsmGoto) {
     llvm::CallBrInst *Result =
         Builder.CreateCallBr(IA, Fallthrough, Transfer, Args);
     EmitBlock(Fallthrough);
-    UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, ReadOnly,
-                      ReadNone, InNoMergeAttributedStmt, S, ResultRegTypes,
-                      *this, RegResults);
+    UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, false,
+                      ReadOnly, ReadNone, InNoMergeAttributedStmt, S,
+                      ResultRegTypes, *this, RegResults);
+  } else if (HasUnwindClobber) {
+    llvm::CallBase *Result = EmitCallOrInvoke(IA, Args, "");
+    UpdateAsmCallInst(*Result, HasSideEffect, true, ReadOnly, ReadNone,
+                      InNoMergeAttributedStmt, S, ResultRegTypes, *this,
+                      RegResults);
   } else {
     llvm::CallInst *Result =
         Builder.CreateCall(IA, Args, getBundlesForFunclet(IA));
-    UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, ReadOnly,
-                      ReadNone, InNoMergeAttributedStmt, S, ResultRegTypes,
-                      *this, RegResults);
+    UpdateAsmCallInst(cast<llvm::CallBase>(*Result), HasSideEffect, false,
+                      ReadOnly, ReadNone, InNoMergeAttributedStmt, S,
+                      ResultRegTypes, *this, RegResults);
   }
 
   assert(RegResults.size() == ResultRegTypes.size());
@@ -2590,11 +2644,11 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
   assert(ResultTypeRequiresCast.size() <= ResultRegDests.size());
   for (unsigned i = 0, e = RegResults.size(); i != e; ++i) {
     llvm::Value *Tmp = RegResults[i];
+    llvm::Type *TruncTy = ResultTruncRegTypes[i];
 
     // If the result type of the LLVM IR asm doesn't match the result type of
     // the expression, do the conversion.
     if (ResultRegTypes[i] != ResultTruncRegTypes[i]) {
-      llvm::Type *TruncTy = ResultTruncRegTypes[i];
 
       // Truncate the integer result to the right size, note that TruncTy can be
       // a pointer.
@@ -2624,6 +2678,11 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
       unsigned Size = getContext().getTypeSize(ResultRegQualTys[i]);
       Address A = Builder.CreateBitCast(Dest.getAddress(*this),
                                         ResultRegTypes[i]->getPointerTo());
+      if (getTargetHooks().isScalarizableAsmOperand(*this, TruncTy)) {
+        Builder.CreateStore(Tmp, A);
+        continue;
+      }
+
       QualType Ty = getContext().getIntTypeForBitwidth(Size, /*Signed*/ false);
       if (Ty.isNull()) {
         const Expr *OutExpr = S.getOutputExpr(i);

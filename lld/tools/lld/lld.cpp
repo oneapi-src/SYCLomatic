@@ -39,13 +39,7 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/PluginLoader.h"
-#include "llvm/Support/Signals.h"
 #include <cstdlib>
-
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
-#include <signal.h> // for raise
-#include <unistd.h> // for _exit
-#endif
 
 using namespace lld;
 using namespace llvm;
@@ -60,7 +54,7 @@ enum Flavor {
   Wasm,      // -flavor wasm
 };
 
-LLVM_ATTRIBUTE_NORETURN static void die(const Twine &s) {
+[[noreturn]] static void die(const Twine &s) {
   llvm::errs() << s << "\n";
   exit(1);
 }
@@ -137,7 +131,7 @@ static Flavor parseFlavor(std::vector<const char *> &v) {
 
   // Deduct the flavor from argv[0].
   StringRef arg0 = path::filename(v[0]);
-  if (arg0.endswith_lower(".exe"))
+  if (arg0.endswith_insensitive(".exe"))
     arg0 = arg0.drop_back(4);
   return parseProgname(arg0);
 }

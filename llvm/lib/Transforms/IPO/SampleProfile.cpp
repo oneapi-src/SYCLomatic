@@ -36,6 +36,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/BlockFrequencyInfoImpl.h"
 #include "llvm/Analysis/CallGraph.h"
 #include "llvm/Analysis/CallGraphSCCPass.h"
 #include "llvm/Analysis/InlineAdvisor.h"
@@ -196,18 +197,22 @@ cl::opt<int> SampleColdCallSiteThreshold(
     "sample-profile-cold-inline-threshold", cl::Hidden, cl::init(45),
     cl::desc("Threshold for inlining cold callsites"));
 
-static cl::opt<int> ProfileICPThreshold(
-    "sample-profile-icp-threshold", cl::Hidden, cl::init(5),
+static cl::opt<unsigned> ProfileICPRelativeHotness(
+    "sample-profile-icp-relative-hotness", cl::Hidden, cl::init(25),
     cl::desc(
-        "Relative hotness threshold for indirect "
+        "Relative hotness percentage threshold for indirect "
         "call promotion in proirity-based sample profile loader inlining."));
+
+static cl::opt<unsigned> ProfileICPRelativeHotnessSkip(
+    "sample-profile-icp-relative-hotness-skip", cl::Hidden, cl::init(1),
+    cl::desc(
+        "Skip relative hotness check for ICP up to given number of targets."));
 
 static cl::opt<bool> CallsitePrioritizedInline(
     "sample-profile-prioritized-inline", cl::Hidden, cl::ZeroOrMore,
     cl::init(false),
     cl::desc("Use call site prioritized inlining for sample profile loader."
              "Currently only CSSPGO is supported."));
-
 
 static cl::opt<std::string> ProfileInlineReplayFile(
     "sample-profile-inline-replay", cl::init(""), cl::value_desc("filename"),
@@ -221,6 +226,10 @@ static cl::opt<unsigned>
                      cl::ZeroOrMore,
                      cl::desc("Max number of promotions for a single indirect "
                               "call callsite in sample profile loader"));
+
+static cl::opt<bool> OverwriteExistingWeights(
+    "overwrite-existing-weights", cl::Hidden, cl::init(false),
+    cl::desc("Ignore existing branch weights on IR and always overwrite."));
 
 namespace {
 
@@ -411,9 +420,6 @@ protected:
   /// Name of the profile remapping file to load.
   std::string RemappingFilename;
 
-  /// Flag indicating whether the profile input loaded successfully.
-  bool ProfileIsValid = false;
-
   /// Flag indicating whether input profile is context-sensitive
   bool ProfileIsCS = false;
 
@@ -540,21 +546,30 @@ ErrorOr<uint64_t> SampleProfileLoader::getInstWeight(const Instruction &Inst) {
   return getInstWeightImpl(Inst);
 }
 
+// Here use error_code to represent: 1) The dangling probe. 2) Ignore the weight
+// of non-probe instruction. So if all instructions of the BB give error_code,
+// tell the inference algorithm to infer the BB weight.
 ErrorOr<uint64_t> SampleProfileLoader::getProbeWeight(const Instruction &Inst) {
   assert(FunctionSamples::ProfileIsProbeBased &&
          "Profile is not pseudo probe based");
   Optional<PseudoProbe> Probe = extractProbe(Inst);
+  // Ignore the non-probe instruction. If none of the instruction in the BB is
+  // probe, we choose to infer the BB's weight.
   if (!Probe)
     return std::error_code();
 
-  // Ignore danling probes since they are logically deleted and should not
-  // consume any profile samples.
-  if (Probe->isDangling())
-    return std::error_code();
-
   const FunctionSamples *FS = findFunctionSamples(Inst);
+  // If none of the instruction has FunctionSample, we choose to return zero
+  // value sample to indicate the BB is cold. This could happen when the
+  // instruction is from inlinee and no profile data is found.
+  // FIXME: This should not be affected by the source drift issue as 1) if the
+  // newly added function is top-level inliner, it won't match the CFG checksum
+  // in the function profile or 2) if it's the inlinee, the inlinee should have
+  // a profile, otherwise it wouldn't be inlined. For non-probe based profile,
+  // we can improve it by adding a switch for profile-sample-block-accurate for
+  // block level counts in the future.
   if (!FS)
-    return std::error_code();
+    return 0;
 
   // For non-CS profile, If a direct call/invoke instruction is inlined in
   // profile (findCalleeFunctionSamples returns non-empty result), but not
@@ -831,7 +846,10 @@ updateIDTMetaData(Instruction &Inst,
 ///
 /// \param F  Caller function.
 /// \param Candidate  ICP and inline candidate.
-/// \param Sum  Sum of target counts for indirect call.
+/// \param SumOrigin  Original sum of target counts for indirect call before
+///                   promoting given candidate.
+/// \param Sum        Prorated sum of remaining target counts for indirect call
+///                   after promoting given candidate.
 /// \param InlinedCallSite  Output vector for new call sites exposed after
 /// inlining.
 bool SampleProfileLoader::tryPromoteAndInlineCandidate(
@@ -866,13 +884,18 @@ bool SampleProfileLoader::tryPromoteAndInlineCandidate(
         CI, R->getValue(), Candidate.CallsiteCount, Sum, false, ORE);
     if (DI) {
       Sum -= Candidate.CallsiteCount;
-      // Prorate the indirect callsite distribution.
+      // Do not prorate the indirect callsite distribution since the original
+      // distribution will be used to scale down non-promoted profile target
+      // counts later. By doing this we lose track of the real callsite count
+      // for the leftover indirect callsite as a trade off for accurate call
+      // target counts.
+      // TODO: Ideally we would have two separate factors, one for call site
+      // counts and one is used to prorate call target counts.
       // Do not update the promoted direct callsite distribution at this
-      // point since the original distribution combined with the callee
-      // profile will be used to prorate callsites from the callee if
-      // inlined. Once not inlined, the direct callsite distribution should
-      // be prorated so that the it will reflect the real callsite counts.
-      setProbeDistributionFactor(CI, static_cast<float>(Sum) / SumOrigin);
+      // point since the original distribution combined with the callee profile
+      // will be used to prorate callsites from the callee if inlined. Once not
+      // inlined, the direct callsite distribution should be prorated so that
+      // the it will reflect the real callsite counts.
       Candidate.CallInstr = DI;
       if (isa<CallInst>(DI) || isa<InvokeInst>(DI)) {
         bool Inlined = tryInlineCandidate(Candidate, InlinedCallSite);
@@ -1156,6 +1179,10 @@ bool SampleProfileLoader::tryInlineCandidate(
   InlineFunctionInfo IFI(nullptr, GetAC);
   IFI.UpdateProfile = false;
   if (InlineFunction(CB, IFI).isSuccess()) {
+    // Merge the attributes based on the inlining.
+    AttributeFuncs::mergeAttributesForInlining(*BB->getParent(),
+                                               *CalledFunction);
+
     // The call to InlineFunction erases I, so we can't pass it here.
     emitInlinedInto(*ORE, DLoc, BB, *CalledFunction, *BB->getParent(), Cost,
                     true, CSINLINE_DEBUG);
@@ -1322,10 +1349,11 @@ bool SampleProfileLoader::inlineHotFunctionsWithPriority(
     if (CalledFunction == &F)
       continue;
     if (I->isIndirectCall()) {
-      uint64_t Sum;
+      uint64_t Sum = 0;
       auto CalleeSamples = findIndirectCallFunctionSamples(*I, Sum);
       uint64_t SumOrigin = Sum;
       Sum *= Candidate.CallsiteDistribution;
+      unsigned ICPCount = 0;
       for (const auto *FS : CalleeSamples) {
         // TODO: Consider disable pre-lTO ICP for MonoLTO as well
         if (LTOPhase == ThinOrFullLTOPhase::ThinLTOPreLink) {
@@ -1339,7 +1367,8 @@ bool SampleProfileLoader::inlineHotFunctionsWithPriority(
         // ICP isn't introducing excessive speculative checks even if individual
         // target looks beneficial to promote and inline. That means we should
         // only do ICP when there's a small number dominant targets.
-        if (EntryCountDistributed < SumOrigin / ProfileICPThreshold)
+        if (ICPCount >= ProfileICPRelativeHotnessSkip &&
+            EntryCountDistributed * 100 < SumOrigin * ProfileICPRelativeHotness)
           break;
         // TODO: Fix CallAnalyzer to handle all indirect calls.
         // For indirect call, we don't run CallAnalyzer to get InlineCost
@@ -1361,6 +1390,7 @@ bool SampleProfileLoader::inlineHotFunctionsWithPriority(
             if (getInlineCandidate(&NewCandidate, CB))
               CQueue.emplace(NewCandidate);
           }
+          ICPCount++;
           Changed = true;
         }
       }
@@ -1430,9 +1460,10 @@ void SampleProfileLoader::generateMDProfMetadata(Function &F) {
           auto T = FS->findCallTargetMapAt(CallSite);
           if (!T || T.get().empty())
             continue;
-          // Prorate the callsite counts to reflect what is already done to the
-          // callsite, such as ICP or calliste cloning.
           if (FunctionSamples::ProfileIsProbeBased) {
+            // Prorate the callsite counts based on the pre-ICP distribution
+            // factor to reflect what is already done to the callsite before
+            // ICP, such as calliste cloning.
             if (Optional<PseudoProbe> Probe = extractProbe(I)) {
               if (Probe->Factor < 1)
                 T = SampleRecord::adjustCallTargets(T.get(), Probe->Factor);
@@ -1453,16 +1484,29 @@ void SampleProfileLoader::generateMDProfMetadata(Function &F) {
                 Sum += NameFS.second.getEntrySamples();
             }
           }
-          if (!Sum)
-            continue;
-          updateIDTMetaData(I, SortedCallTargets, Sum);
+          if (Sum)
+            updateIDTMetaData(I, SortedCallTargets, Sum);
+          else if (OverwriteExistingWeights)
+            I.setMetadata(LLVMContext::MD_prof, nullptr);
         } else if (!isa<IntrinsicInst>(&I)) {
           I.setMetadata(LLVMContext::MD_prof,
                         MDB.createBranchWeights(
                             {static_cast<uint32_t>(BlockWeights[BB])}));
         }
       }
+    } else if (OverwriteExistingWeights) {
+      // Set profile metadata (possibly annotated by LTO prelink) to zero or
+      // clear it for cold code.
+      for (auto &I : BB->getInstList()) {
+        if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+          if (cast<CallBase>(I).isIndirectCall())
+            I.setMetadata(LLVMContext::MD_prof, nullptr);
+          else
+            I.setMetadata(LLVMContext::MD_prof, MDB.createBranchWeights(0));
+        }
+      }
     }
+
     Instruction *TI = BB->getTerminator();
     if (TI->getNumSuccessors() == 1)
       continue;
@@ -1504,20 +1548,28 @@ void SampleProfileLoader::generateMDProfMetadata(Function &F) {
     uint64_t TempWeight;
     // Only set weights if there is at least one non-zero weight.
     // In any other case, let the analyzer set weights.
-    // Do not set weights if the weights are present. In ThinLTO, the profile
-    // annotation is done twice. If the first annotation already set the
-    // weights, the second pass does not need to set it.
-    if (MaxWeight > 0 && !TI->extractProfTotalWeight(TempWeight)) {
+    // Do not set weights if the weights are present unless under
+    // OverwriteExistingWeights. In ThinLTO, the profile annotation is done
+    // twice. If the first annotation already set the weights, the second pass
+    // does not need to set it. With OverwriteExistingWeights, Blocks with zero
+    // weight should have their existing metadata (possibly annotated by LTO
+    // prelink) cleared.
+    if (MaxWeight > 0 &&
+        (!TI->extractProfTotalWeight(TempWeight) || OverwriteExistingWeights)) {
       LLVM_DEBUG(dbgs() << "SUCCESS. Found non-zero weights.\n");
-      TI->setMetadata(LLVMContext::MD_prof,
-                      MDB.createBranchWeights(Weights));
+      TI->setMetadata(LLVMContext::MD_prof, MDB.createBranchWeights(Weights));
       ORE->emit([&]() {
         return OptimizationRemark(DEBUG_TYPE, "PopularDest", MaxDestInst)
                << "most popular destination for conditional branches at "
                << ore::NV("CondBranchesLoc", BranchLoc);
       });
     } else {
-      LLVM_DEBUG(dbgs() << "SKIPPED. All branch weights are zero.\n");
+      if (OverwriteExistingWeights) {
+        TI->setMetadata(LLVMContext::MD_prof, nullptr);
+        LLVM_DEBUG(dbgs() << "CLEARED. All branch weights are zero.\n");
+      } else {
+        LLVM_DEBUG(dbgs() << "SKIPPED. All branch weights are zero.\n");
+      }
     }
   }
 }
@@ -1709,8 +1761,8 @@ bool SampleProfileLoader::doInitialization(Module &M,
                                            FunctionAnalysisManager *FAM) {
   auto &Ctx = M.getContext();
 
-  auto ReaderOrErr =
-      SampleProfileReader::create(Filename, Ctx, RemappingFilename);
+  auto ReaderOrErr = SampleProfileReader::create(
+      Filename, Ctx, FSDiscriminatorPass::Base, RemappingFilename);
   if (std::error_code EC = ReaderOrErr.getError()) {
     std::string Msg = "Could not open profile: " + EC.message();
     Ctx.diagnose(DiagnosticInfoSampleProfile(Filename, Msg));
@@ -1757,6 +1809,10 @@ bool SampleProfileLoader::doInitialization(Module &M,
       ProfileSizeInline = true;
     if (!CallsitePrioritizedInline.getNumOccurrences())
       CallsitePrioritizedInline = true;
+
+    // Enable iterative-BFI by default for CSSPGO.
+    if (!UseIterativeBFIInference.getNumOccurrences())
+      UseIterativeBFIInference = true;
 
     // Tracker for profiles under different context
     ContextTracker =

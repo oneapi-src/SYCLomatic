@@ -16,7 +16,6 @@
 // AppleClang9 and GCC 5 don't support C++17's implicitly synthesized
 // deduction guides from existing ctors, needed by default_searcher() below.
 // UNSUPPORTED: apple-clang-9
-// UNSUPPORTED: gcc-5
 
 // All entities to which libc++ applies [[nodiscard]] as an extension should
 // be tested here and in nodiscard_extensions.fail.cpp. They should also
@@ -46,7 +45,7 @@ void test_algorithms() {
   std::binary_search(std::begin(arr), std::end(arr), 1, std::greater<int>());
 #if TEST_STD_VER >= 17
   std::clamp(2, 1, 3);
-  std::clamp(2, 1, 3, std::greater<int>());
+  std::clamp(2, 3, 1, std::greater<int>());
 #endif
   std::count_if(std::begin(arr), std::end(arr), P());
   std::count(std::begin(arr), std::end(arr), 1);

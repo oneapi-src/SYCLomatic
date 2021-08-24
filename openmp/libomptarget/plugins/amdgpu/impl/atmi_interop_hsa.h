@@ -1,18 +1,22 @@
-/*===--------------------------------------------------------------------------
- *              ATMI (Asynchronous Task and Memory Interface)
- *
- * This file is distributed under the MIT License. See LICENSE.txt for details.
- *===------------------------------------------------------------------------*/
+//===--- amdgpu/impl/atmi_interop_hsa.h --------------------------- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 #ifndef INCLUDE_ATMI_INTEROP_HSA_H_
 #define INCLUDE_ATMI_INTEROP_HSA_H_
 
 #include "atmi_runtime.h"
-#include "hsa.h"
-#include "hsa_ext_amd.h"
+#include "hsa_api.h"
+#include "internal.h"
 
-#ifdef __cplusplus
+#include <map>
+#include <string>
+
 extern "C" {
-#endif
+
 /** \defgroup interop_hsa_functions ATMI-HSA Interop
  *  @{
  */
@@ -36,18 +40,15 @@ extern "C" {
  * @param[in] var_size Pointer to a non-NULL @p uint variable that will
  * hold the size of the global symbol object.
  *
- * @retval ::ATMI_STATUS_SUCCESS The function has executed successfully.
+ * @retval ::HSA_STATUS_SUCCESS The function has executed successfully.
  *
- * @retval ::ATMI_STATUS_ERROR If @p symbol, @p var_addr or @p var_size are
+ * @retval ::HSA_STATUS_ERROR If @p symbol, @p var_addr or @p var_size are
  * invalid
  * location in the current node, or if ATMI is not initialized.
- *
- * @retval ::ATMI_STATUS_UNKNOWN The function encountered errors.
  */
-atmi_status_t atmi_interop_hsa_get_symbol_info(atmi_mem_place_t place,
-                                               const char *symbol,
-                                               void **var_addr,
-                                               unsigned int *var_size);
+hsa_status_t atmi_interop_hsa_get_symbol_info(
+    const std::map<std::string, atl_symbol_info_t> &SymbolInfoTable,
+    int DeviceId, const char *symbol, void **var_addr, unsigned int *var_size);
 
 /**
  * @brief Get the HSA-specific kernel info from a kernel name
@@ -66,21 +67,19 @@ atmi_status_t atmi_interop_hsa_get_symbol_info(atmi_mem_place_t place,
  * @param[in] value Pointer to a non-NULL @p uint variable that will
  * hold the return value of the kernel property.
  *
- * @retval ::ATMI_STATUS_SUCCESS The function has executed successfully.
+ * @retval ::HSA_STATUS_SUCCESS The function has executed successfully.
  *
- * @retval ::ATMI_STATUS_ERROR If @p symbol, @p var_addr or @p var_size are
+ * @retval ::HSA_STATUS_ERROR If @p symbol, @p var_addr or @p var_size are
  * invalid
  * location in the current node, or if ATMI is not initialized.
- *
- * @retval ::ATMI_STATUS_UNKNOWN The function encountered errors.
  */
-atmi_status_t atmi_interop_hsa_get_kernel_info(
-    atmi_mem_place_t place, const char *kernel_name,
-    hsa_executable_symbol_info_t info, uint32_t *value);
+hsa_status_t atmi_interop_hsa_get_kernel_info(
+    const std::map<std::string, atl_kernel_info_t> &KernelInfoTable,
+    int DeviceId, const char *kernel_name, hsa_executable_symbol_info_t info,
+    uint32_t *value);
+
 /** @} */
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif // INCLUDE_ATMI_INTEROP_HSA_H_

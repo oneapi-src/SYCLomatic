@@ -25,10 +25,10 @@ def note_fe_source_mgr : Note<"%0">, CatSourceMgr;
 def err_fe_cannot_link_module : Error<"cannot link module '%0': %1">,
   DefaultFatal;
 
-def warn_fe_frame_larger_than : Warning<"stack frame size of %0 bytes in %q1">,
-    BackendInfo, InGroup<BackendFrameLargerThanEQ>;
+def warn_fe_frame_larger_than : Warning<"stack frame size (%0) exceeds limit (%1) in %q2">,
+    BackendInfo, InGroup<BackendFrameLargerThan>;
 def warn_fe_backend_frame_larger_than: Warning<"%0">,
-    BackendInfo, InGroup<BackendFrameLargerThanEQ>;
+    BackendInfo, InGroup<BackendFrameLargerThan>;
 def err_fe_backend_frame_larger_than: Error<"%0">, BackendInfo;
 def note_fe_backend_frame_larger_than: Note<"%0">, BackendInfo;
 
@@ -116,7 +116,7 @@ def err_fe_action_not_available : Error<
 def err_fe_invalid_alignment : Error<
     "invalid value '%1' in '%0'; alignment must be a power of 2">;
 def err_fe_invalid_exception_model
-   : Error<"invalid exception model '%select{none|dwarf|sjlj|arm|seh|wasm|aix}0' for target '%1'">;
+   : Error<"invalid exception model '%select{none|sjlj|seh|dwarf|wasm}0' for target '%1'">;
 def warn_fe_concepts_ts_flag : Warning<
   "-fconcepts-ts is deprecated - use '-std=c++20' for Concepts support">,
   InGroup<Deprecated>;
@@ -237,6 +237,8 @@ def remark_module_build : Remark<"building module '%0' as '%1'">,
   InGroup<ModuleBuild>;
 def remark_module_build_done : Remark<"finished building module '%0'">,
   InGroup<ModuleBuild>;
+def remark_module_lock : Remark<"locking '%0' to build module '%1'">,
+  InGroup<ModuleLock>;
 def err_modules_embed_file_not_found :
   Error<"file '%0' specified by '-fmodules-embed-file=' not found">,
   DefaultFatal;
@@ -253,7 +255,7 @@ def err_invalid_vfs_overlay : Error<
   "invalid virtual filesystem overlay file '%0'">, DefaultFatal;
 
 def warn_option_invalid_ocl_version : Warning<
-  "OpenCL version %0 does not support the option '%1'">, InGroup<Deprecated>;
+  "%0 does not support the option '%1'">, InGroup<Deprecated>;
 
 def err_builtin_needs_feature : Error<"%0 needs target feature %1">;
 def err_function_needs_feature : Error<

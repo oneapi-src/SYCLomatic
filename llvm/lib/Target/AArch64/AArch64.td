@@ -174,9 +174,6 @@ foreach i = {8-15,18} in
     def FeatureCallSavedX#i : SubtargetFeature<"call-saved-x"#i,
          "CustomCallSavedXRegs["#i#"]", "true", "Make X"#i#" callee saved.">;
 
-def FeatureUseAA : SubtargetFeature<"use-aa", "UseAA", "true",
-                                    "Use alias analysis during codegen">;
-
 def FeatureBalanceFPOps : SubtargetFeature<"balance-fp-ops", "BalanceFPOps",
     "true",
     "balance mix of odd and even D-registers for fp multiply(-accumulate) ops">;
@@ -429,6 +426,23 @@ def FeatureEnhancedCounterVirtualization :
       SubtargetFeature<"ecv", "HasEnhancedCounterVirtualization",
       "true", "Enable enhanced counter virtualization extension">;
 
+def FeatureRME : SubtargetFeature<"rme", "HasRME",
+    "true", "Enable Realm Management Extension">;
+
+// A subset of SVE(2) instructions are legal in Streaming SVE execution mode
+// defined by SME.
+def FeatureStreamingSVE : SubtargetFeature<"streaming-sve",
+                                           "HasStreamingSVE", "true",
+  "Enable subset of SVE(2) instructions for Streaming SVE execution mode">;
+def FeatureSME : SubtargetFeature<"sme", "HasSME", "true",
+  "Enable Scalable Matrix Extension (SME)", [FeatureStreamingSVE, FeatureBF16]>;
+
+def FeatureSMEF64 : SubtargetFeature<"sme-f64", "HasSMEF64", "true",
+  "Enable Scalable Matrix Extension (SME) F64F64 instructions", [FeatureSME]>;
+
+def FeatureSMEI64 : SubtargetFeature<"sme-i64", "HasSMEI64", "true",
+  "Enable Scalable Matrix Extension (SME) I16I64 instructions", [FeatureSME]>;
+
 //===----------------------------------------------------------------------===//
 // Architectures.
 //
@@ -526,6 +540,9 @@ def FeatureHardenSlsRetBr : SubtargetFeature<"harden-sls-retbr",
 def FeatureHardenSlsBlr : SubtargetFeature<"harden-sls-blr",
   "HardenSlsBlr", "true",
   "Harden against straight line speculation across BLR instructions">;
+def FeatureHardenSlsNoComdat : SubtargetFeature<"harden-sls-nocomdat",
+  "HardenSlsNoComdat", "true",
+  "Generate thunk code for SLS mitigation in the normal text section">;
 
 //===----------------------------------------------------------------------===//
 // AArch64 Processors supported.
@@ -539,11 +556,15 @@ class AArch64Unsupported { list<Predicate> F; }
 
 def SVEUnsupported : AArch64Unsupported {
   let F = [HasSVE, HasSVE2, HasSVE2AES, HasSVE2SM4, HasSVE2SHA3,
-           HasSVE2BitPerm];
+           HasSVE2BitPerm, HasSVEorStreamingSVE, HasSVE2orStreamingSVE];
 }
 
 def PAUnsupported : AArch64Unsupported {
   let F = [HasPAuth];
+}
+
+def SMEUnsupported : AArch64Unsupported {
+  let F = [HasSME, HasSMEF64, HasSMEI64];
 }
 
 include "AArch64SchedA53.td"
@@ -581,7 +602,6 @@ def ProcA53     : SubtargetFeature<"a53", "ARMProcFamily", "CortexA53",
                                    FeatureNEON,
                                    FeaturePerfMon,
                                    FeaturePostRAScheduler,
-                                   FeatureUseAA
                                    ]>;
 
 def ProcA55     : SubtargetFeature<"a55", "ARMProcFamily", "CortexA55",
@@ -596,7 +616,6 @@ def ProcA55     : SubtargetFeature<"a55", "ARMProcFamily", "CortexA55",
                                    FeatureRCPC,
                                    FeaturePerfMon,
                                    FeaturePostRAScheduler,
-                                   FeatureUseAA
                                    ]>;
 
 def ProcA57     : SubtargetFeature<"a57", "ARMProcFamily", "CortexA57",
@@ -730,7 +749,6 @@ def ProcR82 : SubtargetFeature<"cortex-r82", "ARMProcFamily",
                                "CortexR82",
                                "Cortex-R82 ARM Processors", [
                                FeaturePostRAScheduler,
-                               FeatureUseAA,
                                // All other features are implied by v8_0r ops:
                                HasV8_0rOps,
                                ]>;
@@ -979,7 +997,6 @@ def ProcNeoverseE1 : SubtargetFeature<"neoversee1", "ARMProcFamily",
                                       FeatureRCPC,
                                       FeatureSSBS,
                                       FeaturePostRAScheduler,
-                                      FeatureUseAA,
                                       FeatureFuseAES,
                                       ]>;
 
@@ -996,7 +1013,6 @@ def ProcNeoverseN1 : SubtargetFeature<"neoversen1", "ARMProcFamily",
                                       FeatureSPE,
                                       FeatureSSBS,
                                       FeaturePostRAScheduler,
-                                      FeatureUseAA,
                                       FeatureFuseAES,
                                       ]>;
 
@@ -1012,7 +1028,6 @@ def ProcNeoverseN2 : SubtargetFeature<"neoversen2", "ARMProcFamily",
                                       FeatureSVE2BitPerm,
                                       FeatureTRBE,
                                       FeaturePostRAScheduler,
-                                      FeatureUseAA,
                                       FeatureCrypto,
                                       FeatureFuseAES,
                                       ]>;
@@ -1032,7 +1047,6 @@ def ProcNeoverseV1 : SubtargetFeature<"neoversev1", "ARMProcFamily",
                                       FeatureNEON,
                                       FeaturePerfMon,
                                       FeaturePostRAScheduler,
-                                      FeatureUseAA,
                                       FeatureRandGen,
                                       FeatureSPE,
                                       FeatureSSBS,
@@ -1079,7 +1093,6 @@ def ProcThunderX3T110  : SubtargetFeature<"thunderx3t110", "ARMProcFamily",
                                           FeaturePredictableSelectIsExpensive,
                                           FeatureLSE,
                                           FeaturePAuth,
-                                          FeatureUseAA,
                                           FeatureBalanceFPOps,
                                           FeaturePerfMon,
                                           FeatureStrictAlign,
@@ -1208,12 +1221,15 @@ def : ProcessorModel<"apple-a12", CycloneModel, [ProcAppleA12]>;
 def : ProcessorModel<"apple-a13", CycloneModel, [ProcAppleA13]>;
 def : ProcessorModel<"apple-a14", CycloneModel, [ProcAppleA14]>;
 
+// Mac CPUs
+def : ProcessorModel<"apple-m1", CycloneModel, [ProcAppleA14]>;
+
 // watch CPUs.
 def : ProcessorModel<"apple-s4", CycloneModel, [ProcAppleA12]>;
 def : ProcessorModel<"apple-s5", CycloneModel, [ProcAppleA12]>;
 
 // Alias for the latest Apple processor model supported by LLVM.
-def : ProcessorModel<"apple-latest", CycloneModel, [ProcAppleA13]>;
+def : ProcessorModel<"apple-latest", CycloneModel, [ProcAppleA14]>;
 
 // Fujitsu A64FX
 def : ProcessorModel<"a64fx", A64FXModel, [ProcA64FX]>;

@@ -66,8 +66,6 @@ feature_test_macros = [ add_version_header(x) for x in [
     "name": "__cpp_lib_addressof_constexpr",
     "values": { "c++17": 201603 },
     "headers": ["memory"],
-    "test_suite_guard": "TEST_HAS_BUILTIN(__builtin_addressof) || TEST_GCC_VER >= 700",
-    "libcxx_guard": "!defined(_LIBCPP_HAS_NO_BUILTIN_ADDRESSOF)",
   }, {
     "name": "__cpp_lib_allocator_traits_is_always_equal",
     "values": { "c++17": 201411 },
@@ -138,7 +136,6 @@ feature_test_macros = [ add_version_header(x) for x in [
     "headers": ["atomic", "memory"],
     "test_suite_guard": "!defined(_LIBCPP_HAS_NO_THREADS)",
     "libcxx_guard": "!defined(_LIBCPP_HAS_NO_THREADS)",
-    "unimplemented": True,
   }, {
     "name": "__cpp_lib_atomic_wait",
     "values": { "c++20": 201907 },
@@ -187,7 +184,7 @@ feature_test_macros = [ add_version_header(x) for x in [
     "values": { "c++20": 201811 },
     "headers": ["atomic", "filesystem", "istream", "limits", "locale", "ostream", "string", "string_view"],
     "test_suite_guard": "defined(__cpp_char8_t)",
-    "libcxx_guard": "!defined(_LIBCPP_NO_HAS_CHAR8_T)",
+    "libcxx_guard": "!defined(_LIBCPP_HAS_NO_CHAR8_T)",
   }, {
     "name": "__cpp_lib_chrono",
     "values": { "c++17": 201611 },
@@ -300,6 +297,8 @@ feature_test_macros = [ add_version_header(x) for x in [
     "name": "__cpp_lib_format",
     "values": { "c++20": 201907 },
     "headers": ["format"],
+    "test_suite_guard": "!defined(_LIBCPP_AVAILABILITY_DISABLE_FTM___cpp_lib_format)",
+    "libcxx_guard": "!defined(_LIBCPP_AVAILABILITY_DISABLE_FTM___cpp_lib_format)",
     "unimplemented": True,
   }, {
     "name": "__cpp_lib_gcd_lcm",
@@ -322,8 +321,6 @@ feature_test_macros = [ add_version_header(x) for x in [
     "name": "__cpp_lib_has_unique_object_representations",
     "values": { "c++17": 201606 },
     "headers": ["type_traits"],
-    "test_suite_guard": "TEST_HAS_BUILTIN_IDENTIFIER(__has_unique_object_representations) || TEST_GCC_VER >= 700",
-    "libcxx_guard": "defined(_LIBCPP_HAS_UNIQUE_OBJECT_REPRESENTATIONS)",
   }, {
     "name": "__cpp_lib_hypot",
     "values": { "c++17": 201603 },
@@ -340,7 +337,8 @@ feature_test_macros = [ add_version_header(x) for x in [
     "name": "__cpp_lib_integer_comparison_functions",
     "values": { "c++20": 202002 },
     "headers": ["utility"],
-    "unimplemented": True,
+    "test_suite_guard": "defined(__cpp_concepts) && __cpp_concepts >= 201907L",
+    "libcxx_guard": "!defined(_LIBCPP_HAS_NO_CONCEPTS)",
   }, {
     "name": "__cpp_lib_integer_sequence",
     "values": { "c++14": 201304 },
@@ -361,14 +359,10 @@ feature_test_macros = [ add_version_header(x) for x in [
     "name": "__cpp_lib_is_aggregate",
     "values": { "c++17": 201703 },
     "headers": ["type_traits"],
-    "test_suite_guard": "TEST_HAS_BUILTIN_IDENTIFIER(__is_aggregate) || TEST_GCC_VER_NEW >= 7001",
-    "libcxx_guard": "!defined(_LIBCPP_HAS_NO_IS_AGGREGATE)",
   }, {
     "name": "__cpp_lib_is_constant_evaluated",
     "values": { "c++20": 201811 },
     "headers": ["type_traits"],
-    "test_suite_guard": "TEST_HAS_BUILTIN(__builtin_is_constant_evaluated) || TEST_GCC_VER >= 900",
-    "libcxx_guard": "!defined(_LIBCPP_HAS_NO_BUILTIN_IS_CONSTANT_EVALUATED)",
   }, {
     "name": "__cpp_lib_is_final",
     "values": { "c++14": 201402 },
@@ -682,11 +676,13 @@ lit_markup = {
   "atomic": ["UNSUPPORTED: libcpp-has-no-threads"],
   "barrier": ["UNSUPPORTED: libcpp-has-no-threads"],
   "filesystem": ["UNSUPPORTED: libcpp-has-no-filesystem-library"],
+  "format": ["UNSUPPORTED: libcpp-has-no-incomplete-format"],
   "iomanip": ["UNSUPPORTED: libcpp-has-no-localization"],
   "istream": ["UNSUPPORTED: libcpp-has-no-localization"],
   "latch": ["UNSUPPORTED: libcpp-has-no-threads"],
   "locale": ["UNSUPPORTED: libcpp-has-no-localization"],
   "ostream": ["UNSUPPORTED: libcpp-has-no-localization"],
+  "ranges": ["UNSUPPORTED: libcpp-has-no-incomplete-ranges"],
   "regex": ["UNSUPPORTED: libcpp-has-no-localization"],
   "semaphore": ["UNSUPPORTED: libcpp-has-no-threads"],
   "shared_mutex": ["UNSUPPORTED: libcpp-has-no-threads"],
