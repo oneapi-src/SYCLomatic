@@ -99,7 +99,7 @@ def capture(args):
         entries = []
         for entry in itertools.chain(previous, current):
             # add linker entry information into compilation database
-            if  (not ('file' in entry)) and (args.linker_entry != 0):
+            if  (not ('file' in entry)) and (args.no_linker_entry == 0):
                 entries.append(entry)
             elif 'file' in entry and os.path.exists(entry['file']) and not duplicate(entry):
                 entries.append(entry)
@@ -262,7 +262,8 @@ def format_entry(exec_trace):
             'c' : 'cc',
             'c++' : 'c++',
             'cuda' : 'nvcc',
-            'mpich' : 'c++'
+            'mpich' : 'c++',
+            'ld' : 'ld'
         }[compilation.compiler]
 
         if len(compilation.files) == 0:

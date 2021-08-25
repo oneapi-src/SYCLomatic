@@ -578,6 +578,9 @@ def split_command(command):
     if result.files:
         return result
     # linker command should be added into compilation database
+    elif len(result.files) == 0 and result.compiler == 'ld':
+        return result
+    # linker command should be added into compilation database
     elif len(result.files) == 0 and result.compiler == 'cuda':
         return result
     # linker command should be added into compilation database
@@ -629,4 +632,6 @@ def compiler_language(command):
             return 'cuda'
         if executable == 'intercept-stub':
             return 'cuda'
+        if executable == 'ld':
+            return 'ld'
     return None

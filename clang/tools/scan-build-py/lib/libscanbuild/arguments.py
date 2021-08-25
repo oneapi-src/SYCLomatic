@@ -34,6 +34,9 @@ def parse_args_for_intercept_build():
     if len(args.cdb)>4095:
         print('intercept-build exited (Error: File name specified by --cdb option is too long)')
         sys.exit(-1)
+    if args.no_linker_entry > 0 and args.linker_entry > 0:
+        print('intercept-build exited (Error: --linker-entry conflicts with --no-linker-entry)')
+        sys.exit(-1)
     #INTEL_CUSTOMIZATION end
 
     reconfigure_logging(args.verbose)
@@ -151,6 +154,7 @@ def create_intercept_parser():
     parser = create_default_parser()
     parser_add_cdb(parser)
     parser_add_linker_entry(parser)
+    parser_add_no_linker_entry(parser)
 
     parser_add_prefer_wrapper(parser)
     parser_add_compilers(parser)
@@ -456,8 +460,16 @@ def parser_add_linker_entry(parser):
         '--linker-entry',
         action='count',
         default=0,
-        help="""Generate linker entry in compilation database 
+        help="""Generate linker entry in compilation database
         if '--linker-entry' option is present.""")
+
+def parser_add_no_linker_entry(parser):
+    parser.add_argument(
+        '--no-linker-entry',
+        action='count',
+        default=0,
+        help="""Do not generate linker entry in compilation database
+        if '--no-linker-entry' option is present.""")
 
 def parser_add_prefer_wrapper(parser):
     parser.add_argument(
