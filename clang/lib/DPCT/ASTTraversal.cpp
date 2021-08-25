@@ -13288,7 +13288,7 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   //1. assemble api name
   //2. emit warning for unmigrated api
   QualType ObjType = MC->getObjectType().getCanonicalType();
-  if (isTypeInRoot(ObjType.getTypePtr())) {
+  if (isTypeInRoot(ObjType.getTypePtr()) || !MC->getMethodDecl()) {
     return;
   }
   std::string ObjNameSpace, ObjName;
