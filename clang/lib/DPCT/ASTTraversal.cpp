@@ -2598,7 +2598,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
   // signatures). If the next token of the tye is comma or r_paren, it is
   // just a name.
   // It matters for migration of cudaStream_t.
-  bool IsTokenAfterTypeCommaOrRParen = false;
+  bool IsTokenAfterTypeCommaRParenOrRef = false;
 
   if (Tok2Ptr.hasValue()) {
     auto Tok2 = Tok2Ptr.getValue();
@@ -2616,10 +2616,11 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
         if (TokAfterTypePtr.hasValue()) {
           TokAfterType = TokAfterTypePtr.getValue();
           if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren)
-            IsTokenAfterTypeCommaOrRParen = true;
+              TokAfterType.getKind() == tok::r_paren ||
+              TokAfterType.getKind() == tok::amp)
+            IsTokenAfterTypeCommaRParenOrRef = true;
         }
-        if (IsTokenAfterTypeCommaOrRParen) {
+        if (IsTokenAfterTypeCommaRParenOrRef) {
           emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
           std::string T{MapNames::getClNamespace() + "queue "};
           T += PointerType;
@@ -2641,10 +2642,11 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
         if (TokAfterTypePtr.hasValue()) {
           TokAfterType = TokAfterTypePtr.getValue();
           if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren)
-            IsTokenAfterTypeCommaOrRParen = true;
+              TokAfterType.getKind() == tok::r_paren ||
+              TokAfterType.getKind() == tok::amp)
+            IsTokenAfterTypeCommaRParenOrRef = true;
         }
-        if (IsTokenAfterTypeCommaOrRParen) {
+        if (IsTokenAfterTypeCommaRParenOrRef) {
           std::string T{MapNames::getClNamespace() + "queue "};
           T += PointerType;
           emplaceTransformation(
@@ -2670,10 +2672,11 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
         if (TokAfterTypePtr.hasValue()) {
           TokAfterType = TokAfterTypePtr.getValue();
           if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren)
-            IsTokenAfterTypeCommaOrRParen = true;
+              TokAfterType.getKind() == tok::r_paren ||
+              TokAfterType.getKind() == tok::amp)
+            IsTokenAfterTypeCommaRParenOrRef = true;
         }
-        if (IsTokenAfterTypeCommaOrRParen) {
+        if (IsTokenAfterTypeCommaRParenOrRef) {
           emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
           std::string T{MapNames::getClNamespace() + "queue "};
           T += PointerType;
