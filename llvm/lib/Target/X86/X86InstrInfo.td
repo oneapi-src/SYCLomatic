@@ -204,6 +204,11 @@ def X86call    : SDNode<"X86ISD::CALL",     SDT_X86Call,
                         [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                          SDNPVariadic]>;
 
+def X86call_rvmarker  : SDNode<"X86ISD::CALL_RVMARKER",     SDT_X86Call,
+                        [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
+                         SDNPVariadic]>;
+
+
 def X86NoTrackCall : SDNode<"X86ISD::NT_CALL", SDT_X86Call,
                             [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                              SDNPVariadic]>;
@@ -416,6 +421,7 @@ def i64mem  : X86MemOperand<"printqwordmem",  X86Mem64AsmOperand>;
 def i128mem : X86MemOperand<"printxmmwordmem", X86Mem128AsmOperand>;
 def i256mem : X86MemOperand<"printymmwordmem", X86Mem256AsmOperand>;
 def i512mem : X86MemOperand<"printzmmwordmem", X86Mem512AsmOperand>;
+def f16mem  : X86MemOperand<"printwordmem",   X86Mem16AsmOperand>;
 def f32mem  : X86MemOperand<"printdwordmem",  X86Mem32AsmOperand>;
 def f64mem  : X86MemOperand<"printqwordmem",  X86Mem64AsmOperand>;
 def f80mem  : X86MemOperand<"printtbytemem",  X86Mem80AsmOperand>;
@@ -914,6 +920,7 @@ def PKU        : Predicate<"Subtarget->hasPKU()">;
 def HasVNNI    : Predicate<"Subtarget->hasVNNI()">;
 def HasVP2INTERSECT : Predicate<"Subtarget->hasVP2INTERSECT()">;
 def HasBF16      : Predicate<"Subtarget->hasBF16()">;
+def HasFP16      : Predicate<"Subtarget->hasFP16()">;
 def HasAVXVNNI : Predicate <"Subtarget->hasAVXVNNI()">;
 def NoVLX_Or_NoVNNI : Predicate<"!Subtarget->hasVLX() || !Subtarget->hasVNNI()">;
 
@@ -1188,6 +1195,7 @@ def loadi32 : PatFrag<(ops node:$ptr), (i32 (unindexedload node:$ptr)), [{
 }]>;
 
 def loadi64  : PatFrag<(ops node:$ptr), (i64 (load node:$ptr))>;
+def loadf16  : PatFrag<(ops node:$ptr), (f16 (load node:$ptr))>;
 def loadf32  : PatFrag<(ops node:$ptr), (f32 (load node:$ptr))>;
 def loadf64  : PatFrag<(ops node:$ptr), (f64 (load node:$ptr))>;
 def loadf80  : PatFrag<(ops node:$ptr), (f80 (load node:$ptr))>;
@@ -2962,14 +2970,15 @@ let Uses = [EAX], SchedRW = [WriteSystem] in
 //===----------------------------------------------------------------------===//
 // SERIALIZE Instruction
 //
-def SERIALIZE : I<0x01, MRM_E8, (outs), (ins), "serialize",
-                  [(int_x86_serialize)]>, PS,
-                  Requires<[HasSERIALIZE]>;
+let SchedRW = [WriteSystem] in
+  def SERIALIZE : I<0x01, MRM_E8, (outs), (ins), "serialize",
+                    [(int_x86_serialize)]>, PS,
+                    Requires<[HasSERIALIZE]>;
 
 //===----------------------------------------------------------------------===//
 // TSXLDTRK - TSX Suspend Load Address Tracking
 //
-let Predicates = [HasTSXLDTRK] in {
+let Predicates = [HasTSXLDTRK], SchedRW = [WriteSystem] in {
   def XSUSLDTRK : I<0x01, MRM_E8, (outs), (ins), "xsusldtrk",
                     [(int_x86_xsusldtrk)]>, XD;
   def XRESLDTRK : I<0x01, MRM_E9, (outs), (ins), "xresldtrk",
@@ -2979,7 +2988,7 @@ let Predicates = [HasTSXLDTRK] in {
 //===----------------------------------------------------------------------===//
 // UINTR Instructions
 //
-let Predicates = [HasUINTR, In64BitMode] in {
+let Predicates = [HasUINTR, In64BitMode], SchedRW = [WriteSystem] in {
   def UIRET : I<0x01, MRM_EC, (outs), (ins), "uiret",
                []>, XS;
   def CLUI : I<0x01, MRM_EE, (outs), (ins), "clui",

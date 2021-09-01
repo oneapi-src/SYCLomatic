@@ -1,12 +1,11 @@
-! RUN: %S/test_errors.sh %s %t %f18 -fopenmp
+! RUN: %S/test_errors.sh %s %t %flang_fc1 -fopenmp
+! REQUIRES: shell
 use omp_lib
 ! Check OpenMP clause validity for the following directives:
 !
 !    2.5 PARALLEL construct
 !    2.7.1 Loop construct
 !    ...
-
-! TODO: all the internal errors
 
   integer :: b = 128
   integer :: z, c = 32
@@ -86,7 +85,7 @@ use omp_lib
   do i = 1, N
      z = 2
   enddo
-   !$omp end target data
+  !$omp end target data
 
   !ERROR: SCHEDULE clause is not allowed on the PARALLEL directive
   !$omp parallel schedule(static)
@@ -176,7 +175,7 @@ use omp_lib
       exit outofparallel
     end do inner
   end do outer
-  !$end omp do
+  !$omp end do
   !$omp end parallel
   end do outofparallel
 
@@ -215,7 +214,6 @@ use omp_lib
      a = 3.14
   enddo
 
-  !ERROR: Clause LINEAR is not allowed if clause ORDERED appears on the DO directive
   !ERROR: Clause LINEAR is not allowed if clause ORDERED appears on the DO directive
   !ERROR: The parameter of the ORDERED clause must be a constant positive integer expression
   !$omp do ordered(1-1) private(b) linear(b) linear(a)
@@ -495,9 +493,6 @@ use omp_lib
   !$omp flush seq_cst
   !ERROR: RELAXED clause is not allowed on the FLUSH directive
   !$omp flush relaxed
-
-  !$omp cancel DO
-  !$omp cancellation point parallel
 
 ! 2.13.2 critical Construct
 

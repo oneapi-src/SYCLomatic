@@ -125,6 +125,10 @@
 # define __has_attribute(x) 0
 #endif
 
+#if !defined(__has_cpp_attribute)
+#  define __has_cpp_attribute(x) 0
+#endif
+
 // For portability reasons we do not include stddef.h, stdint.h or any other
 // system header, but we do need some basic types that are not defined
 // in a portable way by the language itself.
@@ -248,6 +252,12 @@ typedef u64 tid_t;
 # define NOEXCEPT noexcept
 #else
 # define NOEXCEPT throw()
+#endif
+
+#if __has_cpp_attribute(clang::fallthrough)
+#  define FALLTHROUGH [[clang::fallthrough]]
+#else
+#  define FALLTHROUGH
 #endif
 
 // Unaligned versions of basic types.
@@ -408,6 +418,15 @@ inline void Trap() {
     enable_fp = GET_CURRENT_FRAME();      \
     (void)enable_fp;                      \
   } while (0)
+
+// Internal thread identifier allocated by ThreadRegistry.
+typedef u32 Tid;
+constexpr Tid kInvalidTid = -1;
+constexpr Tid kMainTid = 0;
+
+// Stack depot stack identifier.
+typedef u32 StackID;
+const StackID kInvalidStackID = 0;
 
 }  // namespace __sanitizer
 

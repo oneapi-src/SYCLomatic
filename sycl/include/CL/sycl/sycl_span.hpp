@@ -7,6 +7,8 @@
 //
 //===---------------------------------------------------------------------===//
 
+#if __cplusplus >= 201703L
+
 #ifndef _SYCL_SPAN
 #define _SYCL_SPAN
 
@@ -144,7 +146,7 @@ using byte = unsigned char;
 #if defined(__SYCL_DEVICE_ONLY__)
 #define _SYCL_SPAN_ASSERT(x, m) ((void)0)
 #else
-#define _SYCL_SPAN_ASSERT(x, m) assert((x && m))
+#define _SYCL_SPAN_ASSERT(x, m) assert(((x) && m))
 #endif
 
 inline constexpr size_t dynamic_extent = SIZE_MAX;
@@ -623,3 +625,5 @@ span(const _Container &)->span<const typename _Container::value_type>;
 } // __SYCL_INLINE_NAMESPACE(cl)
 
 #endif // _SYCL_SPAN
+
+#endif // __cplusplus >= 201703L

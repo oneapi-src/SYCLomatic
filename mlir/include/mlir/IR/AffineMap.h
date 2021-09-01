@@ -135,9 +135,16 @@ public:
   /// Returns true if this affine map is a single result constant function.
   bool isSingleConstant() const;
 
+  /// Returns true if this affine map has only constant results.
+  bool isConstant() const;
+
   /// Returns the constant result of this map. This methods asserts that the map
   /// has a single constant result.
   int64_t getSingleConstantResult() const;
+
+  /// Returns the constant results of this map. This method asserts that the map
+  /// has all constant results.
+  SmallVector<int64_t> getConstantResults() const;
 
   // Prints affine map to 'os'.
   void print(raw_ostream &os) const;
@@ -188,6 +195,11 @@ public:
   /// with the specified number of dims and symbols.
   AffineMap replace(AffineExpr expr, AffineExpr replacement,
                     unsigned numResultDims, unsigned numResultSyms) const;
+
+  /// Sparse replace method. Apply AffineExpr::replace(`map`) to each of the
+  /// results and return a new AffineMap with the new results and with inferred
+  /// number of dims and symbols.
+  AffineMap replace(const DenseMap<AffineExpr, AffineExpr> &map) const;
 
   /// Sparse replace method. Apply AffineExpr::replace(`map`) to each of the
   /// results and return a new AffineMap with the new results and with the
@@ -261,6 +273,9 @@ public:
 
   /// Returns the map consisting of the `resultPos` subset.
   AffineMap getSubMap(ArrayRef<unsigned> resultPos) const;
+
+  /// Returns the map consisting of `length` expressions starting from `start`.
+  AffineMap getSliceMap(unsigned start, unsigned length) const;
 
   /// Returns the map consisting of the most major `numResults` results.
   /// Returns the null AffineMap if `numResults` == 0.
@@ -401,6 +416,48 @@ AffineMap removeDuplicateExprs(AffineMap map);
 /// ```
 AffineMap inversePermutation(AffineMap map);
 
+/// Return the reverse map of a projected permutation where the projected
+/// dimensions are transformed into 0s.
+///
+/// Prerequisites: `map` must be a projected permuation.
+///
+/// Example 1:
+///
+/// ```mlir
+///    affine_map<(d0, d1, d2, d3) -> (d2, d0)>
+/// ```
+///
+/// returns:
+///
+/// ```mlir
+///    affine_map<(d0, d1) -> (d1, 0, d0, 0)>
+/// ```
+///
+/// Example 2:
+///
+/// ```mlir
+///    affine_map<(d0, d1, d2, d3) -> (d0, d3)>
+/// ```
+///
+/// returns:
+///
+/// ```mlir
+///    affine_map<(d0, d1) -> (d0, 0, 0, d1)>
+/// ```
+///
+/// Example 3:
+///
+/// ```mlir
+///    affine_map<(d0, d1, d2, d3) -> (d2)>
+/// ```
+///
+/// returns:
+///
+/// ```mlir
+///    affine_map<(d0) -> (0, 0, d0, 0)>
+/// ```
+AffineMap inverseAndBroadcastProjectedPermuation(AffineMap map);
+
 /// Concatenates a list of `maps` into a single AffineMap, stepping over
 /// potentially empty maps. Assumes each of the underlying map has 0 symbols.
 /// The resulting map has a number of dims equal to the max of `maps`' dims and
@@ -445,6 +502,20 @@ AffineMap concatAffineMaps(ArrayRef<AffineMap> maps);
 AffineMap
 getProjectedMap(AffineMap map,
                 const llvm::SmallDenseSet<unsigned> &projectedDimensions);
+
+/// Apply a permutation from `map` to `source` and return the result.
+template <typename T>
+SmallVector<T> applyPermutationMap(AffineMap map, llvm::ArrayRef<T> source) {
+  assert(map.isProjectedPermutation());
+  assert(map.getNumInputs() == source.size());
+  SmallVector<T> result;
+  result.reserve(map.getNumResults());
+  for (unsigned i = 0, e = map.getNumResults(); i < e; ++i) {
+    unsigned dim = map.getDimPosition(i);
+    result.push_back(source[dim]);
+  }
+  return result;
+}
 
 inline raw_ostream &operator<<(raw_ostream &os, AffineMap map) {
   map.print(os);

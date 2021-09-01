@@ -37,13 +37,8 @@ class Configuration(LibcxxConfiguration):
         self.libcxxabi_obj_root = self.get_lit_conf('libcxxabi_obj_root')
         super(Configuration, self).configure_obj_root()
 
-    def has_cpp_feature(self, feature, required_value):
-        return intMacroValue(self.cxx.dumpMacros().get('__cpp_' + feature, '0')) >= required_value
-
     def configure_features(self):
         super(Configuration, self).configure_features()
-        if not self.has_cpp_feature('noexcept_function_type', 201510):
-            self.config.available_features.add('libcxxabi-no-noexcept-function-type')
         if not self.get_lit_bool('llvm_unwinder', False):
             self.config.available_features.add('libcxxabi-has-system-unwinder')
 
@@ -69,6 +64,13 @@ class Configuration(LibcxxConfiguration):
         if not os.path.isdir(cxx_headers):
             self.lit_config.fatal("cxx_headers='%s' is not a directory."
                                   % cxx_headers)
+        (path, version) = os.path.split(cxx_headers)
+        (path, cxx) = os.path.split(path)
+        triple = self.get_lit_conf('target_triple', None)
+        if triple is not None:
+            cxx_target_headers = os.path.join(path, triple, cxx, version)
+            if os.path.isdir(cxx_target_headers):
+                self.cxx.compile_flags += ['-I' + cxx_target_headers]
         self.cxx.compile_flags += ['-I' + cxx_headers]
 
         libcxxabi_headers = self.get_lit_conf(

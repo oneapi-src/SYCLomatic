@@ -83,16 +83,8 @@ private:
 // array is determined by derivedType_->LenParameters().
 class DescriptorAddendum {
 public:
-  enum Flags {
-    StaticDescriptor = 0x001,
-    ImplicitAllocatable = 0x002, // compiler-created allocatable
-    DoNotFinalize = 0x004, // compiler temporary
-    Target = 0x008, // TARGET attribute
-  };
-
-  explicit DescriptorAddendum(
-      const typeInfo::DerivedType *dt = nullptr, std::uint64_t flags = 0)
-      : derivedType_{dt}, flags_{flags} {}
+  explicit DescriptorAddendum(const typeInfo::DerivedType *dt = nullptr)
+      : derivedType_{dt} {}
   DescriptorAddendum &operator=(const DescriptorAddendum &);
 
   const typeInfo::DerivedType *derivedType() const { return derivedType_; }
@@ -100,8 +92,6 @@ public:
     derivedType_ = dt;
     return *this;
   }
-  std::uint64_t &flags() { return flags_; }
-  const std::uint64_t &flags() const { return flags_; }
 
   std::size_t LenParameters() const;
 
@@ -109,8 +99,9 @@ public:
     return len_[which];
   }
   static constexpr std::size_t SizeInBytes(int lenParameters) {
-    return sizeof(DescriptorAddendum) - sizeof(typeInfo::TypeParameterValue) +
-        lenParameters * sizeof(typeInfo::TypeParameterValue);
+    // TODO: Don't waste that last word if lenParameters == 0
+    return sizeof(DescriptorAddendum) +
+        std::max(lenParameters - 1, 0) * sizeof(typeInfo::TypeParameterValue);
   }
   std::size_t SizeInBytes() const;
 
@@ -122,7 +113,6 @@ public:
 
 private:
   const typeInfo::DerivedType *derivedType_;
-  std::uint64_t flags_{0};
   typeInfo::TypeParameterValue len_[1]; // must be the last component
   // The LEN type parameter values can also include captured values of
   // specification expressions that were used for bounds and for LEN type
@@ -144,14 +134,7 @@ public:
   // Create() static member functions otherwise to dynamically allocate a
   // descriptor.
 
-  Descriptor() {
-    // Minimal initialization to prevent the destructor from running amuck
-    // later if the descriptor is never established.
-    raw_.base_addr = nullptr;
-    raw_.f18Addendum = false;
-  }
   Descriptor(const Descriptor &);
-  ~Descriptor();
   Descriptor &operator=(const Descriptor &);
 
   static constexpr std::size_t BytesFor(TypeCategory category, int kind) {
@@ -246,10 +229,18 @@ public:
     return nullptr;
   }
 
-  void GetLowerBounds(SubscriptValue subscript[]) const {
+  int GetLowerBounds(SubscriptValue subscript[]) const {
     for (int j{0}; j < raw_.rank; ++j) {
       subscript[j] = GetDimension(j).LowerBound();
     }
+    return raw_.rank;
+  }
+
+  int GetShape(SubscriptValue subscript[]) const {
+    for (int j{0}; j < raw_.rank; ++j) {
+      subscript[j] = GetDimension(j).Extent();
+    }
+    return raw_.rank;
   }
 
   // When the passed subscript vector contains the last (or first)
@@ -296,11 +287,20 @@ public:
 
   std::size_t Elements() const;
 
-  // TODO: SOURCE= and MOLD=
+  // Allocate() assumes Elements() and ElementBytes() work;
+  // define the extents of the dimensions and the element length
+  // before calling.  It (re)computes the byte strides after
+  // allocation.  Does not allocate automatic components or
+  // perform default component initialization.
   int Allocate();
-  int Allocate(const SubscriptValue lb[], const SubscriptValue ub[]);
-  int Deallocate(bool finalize = true);
-  void Destroy(bool finalize = true) const;
+
+  // Deallocates storage; does not call FINAL subroutines or
+  // deallocate allocatable/automatic components.
+  int Deallocate();
+
+  // Deallocates storage, including allocatable and automatic
+  // components.  Optionally invokes FINAL subroutines.
+  int Destroy(bool finalize = false);
 
   bool IsContiguous(int leadingDimensions = maxRank) const {
     auto bytes{static_cast<SubscriptValue>(ElementBytes())};
@@ -314,9 +314,13 @@ public:
     return true;
   }
 
-  void Check() const;
+  // Establishes a pointer to a section or element.
+  bool EstablishPointerSection(const Descriptor &source,
+      const SubscriptValue *lower = nullptr,
+      const SubscriptValue *upper = nullptr,
+      const SubscriptValue *stride = nullptr);
 
-  // TODO: creation of array sections
+  void Check() const;
 
   void Dump(FILE * = stdout) const;
 
@@ -343,10 +347,6 @@ public:
   static constexpr std::size_t byteSize{
       Descriptor::SizeInBytes(maxRank, hasAddendum, maxLengthTypeParameters)};
 
-  StaticDescriptor() { new (storage_) Descriptor{}; }
-
-  ~StaticDescriptor() { descriptor().~Descriptor(); }
-
   Descriptor &descriptor() { return *reinterpret_cast<Descriptor *>(storage_); }
   const Descriptor &descriptor() const {
     return *reinterpret_cast<const Descriptor *>(storage_);
@@ -366,7 +366,7 @@ public:
   }
 
 private:
-  char storage_[byteSize];
+  char storage_[byteSize]{};
 };
 } // namespace Fortran::runtime
 #endif // FORTRAN_RUNTIME_DESCRIPTOR_H_

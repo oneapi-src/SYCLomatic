@@ -273,9 +273,9 @@ static StringRef getPrettyScopeName(const DIScope *Scope) {
     return "<unnamed-tag>";
   case dwarf::DW_TAG_namespace:
     return "`anonymous namespace'";
+  default:
+    return StringRef();
   }
-
-  return StringRef();
 }
 
 const DISubprogram *CodeViewDebug::collectParentScopeNames(
@@ -804,6 +804,9 @@ void CodeViewDebug::emitCompilerInformation() {
   // The low byte of the flags indicates the source language.
   Flags = MapDWLangToCVLang(CU->getSourceLanguage());
   // TODO:  Figure out which other flags need to be set.
+  if (MMI->getModule()->getProfileSummary(/*IsCS*/ false) != nullptr) {
+    Flags |= static_cast<uint32_t>(CompileSym3Flags::PGO);
+  }
 
   OS.AddComment("Flags and language");
   OS.emitInt32(Flags);
@@ -1428,6 +1431,10 @@ void CodeViewDebug::beginFunctionImpl(const MachineFunction *MF) {
   if (Asm->TM.getOptLevel() != CodeGenOpt::None &&
       !GV.hasOptSize() && !GV.hasOptNone())
     FPO |= FrameProcedureOptions::OptimizedForSpeed;
+  if (GV.hasProfileData()) {
+    FPO |= FrameProcedureOptions::ValidProfileCounts;
+    FPO |= FrameProcedureOptions::ProfileGuidedOptimization;
+  }
   // FIXME: Set GuardCfg when it is implemented.
   CurFn->FrameProcOpts = FPO;
 
@@ -1480,6 +1487,9 @@ static bool shouldEmitUdt(const DIType *T) {
       case dwarf::DW_TAG_class_type:
       case dwarf::DW_TAG_union_type:
         return false;
+      default:
+          // do nothing.
+          ;
       }
     }
   }
@@ -2025,10 +2035,13 @@ static MethodKind translateMethodKindFlags(const DISubprogram *SP,
 
 static TypeRecordKind getRecordKind(const DICompositeType *Ty) {
   switch (Ty->getTag()) {
-  case dwarf::DW_TAG_class_type:     return TypeRecordKind::Class;
-  case dwarf::DW_TAG_structure_type: return TypeRecordKind::Struct;
+  case dwarf::DW_TAG_class_type:
+    return TypeRecordKind::Class;
+  case dwarf::DW_TAG_structure_type:
+    return TypeRecordKind::Struct;
+  default:
+    llvm_unreachable("unexpected tag");
   }
-  llvm_unreachable("unexpected tag");
 }
 
 /// Return ClassOptions that should be present on both the forward declaration
@@ -2103,6 +2116,7 @@ TypeIndex CodeViewDebug::lowerTypeEnum(const DICompositeType *Ty) {
       // We assume that the frontend provides all members in source declaration
       // order, which is what MSVC does.
       if (auto *Enumerator = dyn_cast_or_null<DIEnumerator>(Element)) {
+        // FIXME: Is it correct to always emit these as unsigned here?
         EnumeratorRecord ER(MemberAccess::Public,
                             APSInt(Enumerator->getValue(), true),
                             Enumerator->getName());
@@ -3144,6 +3158,27 @@ void CodeViewDebug::emitGlobalVariableList(ArrayRef<CVGlobalVariable> Globals) {
   }
 }
 
+void CodeViewDebug::emitConstantSymbolRecord(const DIType *DTy, APSInt &Value,
+                                             const std::string &QualifiedName) {
+  MCSymbol *SConstantEnd = beginSymbolRecord(SymbolKind::S_CONSTANT);
+  OS.AddComment("Type");
+  OS.emitInt32(getTypeIndex(DTy).getIndex());
+
+  OS.AddComment("Value");
+
+  // Encoded integers shouldn't need more than 10 bytes.
+  uint8_t Data[10];
+  BinaryStreamWriter Writer(Data, llvm::support::endianness::little);
+  CodeViewRecordIO IO(Writer);
+  cantFail(IO.mapEncodedInteger(Value));
+  StringRef SRef((char *)Data, Writer.getOffset());
+  OS.emitBinaryData(SRef);
+
+  OS.AddComment("Name");
+  emitNullTerminatedSymbolName(OS, QualifiedName);
+  endSymbolRecord(SConstantEnd);
+}
+
 void CodeViewDebug::emitStaticConstMemberList() {
   for (const DIDerivedType *DTy : StaticConstMembers) {
     const DIScope *Scope = DTy->getScope();
@@ -3159,24 +3194,8 @@ void CodeViewDebug::emitStaticConstMemberList() {
     else
       llvm_unreachable("cannot emit a constant without a value");
 
-    std::string QualifiedName = getFullyQualifiedName(Scope, DTy->getName());
-
-    MCSymbol *SConstantEnd = beginSymbolRecord(SymbolKind::S_CONSTANT);
-    OS.AddComment("Type");
-    OS.emitInt32(getTypeIndex(DTy->getBaseType()).getIndex());
-    OS.AddComment("Value");
-
-    // Encoded integers shouldn't need more than 10 bytes.
-    uint8_t Data[10];
-    BinaryStreamWriter Writer(Data, llvm::support::endianness::little);
-    CodeViewRecordIO IO(Writer);
-    cantFail(IO.mapEncodedInteger(Value));
-    StringRef SRef((char *)Data, Writer.getOffset());
-    OS.emitBinaryData(SRef);
-
-    OS.AddComment("Name");
-    emitNullTerminatedSymbolName(OS, QualifiedName);
-    endSymbolRecord(SConstantEnd);
+    emitConstantSymbolRecord(DTy->getBaseType(), Value,
+                             getFullyQualifiedName(Scope, DTy->getName()));
   }
 }
 
@@ -3240,22 +3259,6 @@ void CodeViewDebug::emitDebugInfoForGlobal(const CVGlobalVariable &CVGV) {
                           ? true
                           : DebugHandlerBase::isUnsignedDIType(DIGV->getType());
     APSInt Value(APInt(/*BitWidth=*/64, DIE->getElement(1)), isUnsigned);
-
-    MCSymbol *SConstantEnd = beginSymbolRecord(SymbolKind::S_CONSTANT);
-    OS.AddComment("Type");
-    OS.emitInt32(getTypeIndex(DIGV->getType()).getIndex());
-    OS.AddComment("Value");
-
-    // Encoded integers shouldn't need more than 10 bytes.
-    uint8_t data[10];
-    BinaryStreamWriter Writer(data, llvm::support::endianness::little);
-    CodeViewRecordIO IO(Writer);
-    cantFail(IO.mapEncodedInteger(Value));
-    StringRef SRef((char *)data, Writer.getOffset());
-    OS.emitBinaryData(SRef);
-
-    OS.AddComment("Name");
-    emitNullTerminatedSymbolName(OS, QualifiedName);
-    endSymbolRecord(SConstantEnd);
+    emitConstantSymbolRecord(DIGV->getType(), Value, QualifiedName);
   }
 }

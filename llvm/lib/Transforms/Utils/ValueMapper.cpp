@@ -369,7 +369,7 @@ Value *Mapper::mapValue(const Value *V) {
       if (NewTy != IA->getFunctionType())
         V = InlineAsm::get(NewTy, IA->getAsmString(), IA->getConstraintString(),
                            IA->hasSideEffects(), IA->isAlignStack(),
-                           IA->getDialect());
+                           IA->getDialect(), IA->canThrow());
     }
 
     return getVM()[V] = const_cast<Value *>(V);
@@ -1032,8 +1032,8 @@ void Mapper::mapAppendingVariable(GlobalVariable &GV, Constant *InitPrefix,
     Elements.push_back(NewV);
   }
 
-  GV.setInitializer(ConstantArray::get(
-      cast<ArrayType>(GV.getType()->getElementType()), Elements));
+  GV.setInitializer(
+      ConstantArray::get(cast<ArrayType>(GV.getValueType()), Elements));
 }
 
 void Mapper::scheduleMapGlobalInitializer(GlobalVariable &GV, Constant &Init,

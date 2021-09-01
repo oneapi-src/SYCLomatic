@@ -23,6 +23,42 @@
 
 using namespace mlir;
 
+namespace {
+/// ModuleTranslation stack frame for OpenMP operations. This keeps track of the
+/// insertion points for allocas.
+class OpenMPAllocaStackFrame
+    : public LLVM::ModuleTranslation::StackFrameBase<OpenMPAllocaStackFrame> {
+public:
+  explicit OpenMPAllocaStackFrame(llvm::OpenMPIRBuilder::InsertPointTy allocaIP)
+      : allocaInsertPoint(allocaIP) {}
+  llvm::OpenMPIRBuilder::InsertPointTy allocaInsertPoint;
+};
+} // namespace
+
+/// Find the insertion point for allocas given the current insertion point for
+/// normal operations in the builder.
+static llvm::OpenMPIRBuilder::InsertPointTy
+findAllocaInsertPoint(llvm::IRBuilderBase &builder,
+                      const LLVM::ModuleTranslation &moduleTranslation) {
+  // If there is an alloca insertion point on stack, i.e. we are in a nested
+  // operation and a specific point was provided by some surrounding operation,
+  // use it.
+  llvm::OpenMPIRBuilder::InsertPointTy allocaInsertPoint;
+  WalkResult walkResult = moduleTranslation.stackWalk<OpenMPAllocaStackFrame>(
+      [&](const OpenMPAllocaStackFrame &frame) {
+        allocaInsertPoint = frame.allocaInsertPoint;
+        return WalkResult::interrupt();
+      });
+  if (walkResult.wasInterrupted())
+    return allocaInsertPoint;
+
+  // Otherwise, insert to the entry block of the surrounding function.
+  llvm::BasicBlock &funcEntryBlock =
+      builder.GetInsertBlock()->getParent()->getEntryBlock();
+  return llvm::OpenMPIRBuilder::InsertPointTy(
+      &funcEntryBlock, funcEntryBlock.getFirstInsertionPt());
+}
+
 /// Converts the given region that appears within an OpenMP dialect operation to
 /// LLVM IR, creating a branch from the `sourceBlock` to the entry block of the
 /// region, and a branch from any block with an successor-less OpenMP terminator
@@ -44,7 +80,7 @@ static void convertOmpOpRegions(Region &region, StringRef blockName,
 
   // Convert blocks one by one in topological order to ensure
   // defs are converted before uses.
-  llvm::SetVector<Block *> blocks =
+  SetVector<Block *> blocks =
       LLVM::detail::getTopologicallySortedBlocks(region);
   for (Block *bb : blocks) {
     llvm::BasicBlock *llvmBB = moduleTranslation.lookupBlock(bb);
@@ -91,6 +127,11 @@ convertOmpParallel(Operation &opInst, llvm::IRBuilderBase &builder,
 
   auto bodyGenCB = [&](InsertPointTy allocaIP, InsertPointTy codeGenIP,
                        llvm::BasicBlock &continuationBlock) {
+    // Save the alloca insertion point on ModuleTranslation stack for use in
+    // nested regions.
+    LLVM::ModuleTranslation::SaveStack<OpenMPAllocaStackFrame> frame(
+        moduleTranslation, allocaIP);
+
     // ParallelOp has only one region associated with it.
     auto &region = cast<omp::ParallelOp>(opInst).getRegion();
     convertOmpOpRegions(region, "omp.par.region", *codeGenIP.getBlock(),
@@ -124,18 +165,14 @@ convertOmpParallel(Operation &opInst, llvm::IRBuilderBase &builder,
     pbKind = llvm::omp::getProcBindKind(bind.getValue());
   // TODO: Is the Parallel construct cancellable?
   bool isCancellable = false;
-  // TODO: Determine the actual alloca insertion point, e.g., the function
-  // entry or the alloca insertion point as provided by the body callback
-  // above.
-  llvm::OpenMPIRBuilder::InsertPointTy allocaIP(builder.saveIP());
-  if (failed(bodyGenStatus))
-    return failure();
+
   llvm::OpenMPIRBuilder::LocationDescription ompLoc(
       builder.saveIP(), builder.getCurrentDebugLocation());
   builder.restoreIP(moduleTranslation.getOpenMPBuilder()->createParallel(
-      ompLoc, allocaIP, bodyGenCB, privCB, finiCB, ifCond, numThreads, pbKind,
-      isCancellable));
-  return success();
+      ompLoc, findAllocaInsertPoint(builder, moduleTranslation), bodyGenCB,
+      privCB, finiCB, ifCond, numThreads, pbKind, isCancellable));
+
+  return bodyGenStatus;
 }
 
 /// Converts an OpenMP 'master' operation into LLVM IR using OpenMPIRBuilder.
@@ -167,6 +204,45 @@ convertOmpMaster(Operation &opInst, llvm::IRBuilderBase &builder,
   return success();
 }
 
+/// Converts an OpenMP 'critical' operation into LLVM IR using OpenMPIRBuilder.
+static LogicalResult
+convertOmpCritical(Operation &opInst, llvm::IRBuilderBase &builder,
+                   LLVM::ModuleTranslation &moduleTranslation) {
+  using InsertPointTy = llvm::OpenMPIRBuilder::InsertPointTy;
+  auto criticalOp = cast<omp::CriticalOp>(opInst);
+  // TODO: support error propagation in OpenMPIRBuilder and use it instead of
+  // relying on captured variables.
+  LogicalResult bodyGenStatus = success();
+
+  auto bodyGenCB = [&](InsertPointTy allocaIP, InsertPointTy codeGenIP,
+                       llvm::BasicBlock &continuationBlock) {
+    // CriticalOp has only one region associated with it.
+    auto &region = cast<omp::CriticalOp>(opInst).getRegion();
+    convertOmpOpRegions(region, "omp.critical.region", *codeGenIP.getBlock(),
+                        continuationBlock, builder, moduleTranslation,
+                        bodyGenStatus);
+  };
+
+  // TODO: Perform finalization actions for variables. This has to be
+  // called for variables which have destructors/finalizers.
+  auto finiCB = [&](InsertPointTy codeGenIP) {};
+
+  llvm::OpenMPIRBuilder::LocationDescription ompLoc(
+      builder.saveIP(), builder.getCurrentDebugLocation());
+  llvm::LLVMContext &llvmContext = moduleTranslation.getLLVMContext();
+  llvm::Constant *hint = nullptr;
+  if (criticalOp.hint().hasValue()) {
+    hint =
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvmContext),
+                               static_cast<int>(criticalOp.hint().getValue()));
+  } else {
+    hint = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvmContext), 0);
+  }
+  builder.restoreIP(moduleTranslation.getOpenMPBuilder()->createCritical(
+      ompLoc, bodyGenCB, finiCB, criticalOp.name().getValueOr(""), hint));
+  return success();
+}
+
 /// Converts an OpenMP workshare loop into LLVM IR using OpenMPIRBuilder.
 static LogicalResult
 convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
@@ -176,24 +252,11 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
   if (loop.lowerBound().empty())
     return failure();
 
-  if (loop.getNumLoops() != 1)
-    return opInst.emitOpError("collapsed loops not yet supported");
-
-  if (loop.schedule_val().hasValue() &&
-      omp::symbolizeClauseScheduleKind(loop.schedule_val().getValue()) !=
-          omp::ClauseScheduleKind::Static)
-    return opInst.emitOpError(
-        "only static (default) loop schedule is currently supported");
-
-  // Find the loop configuration.
-  llvm::Value *lowerBound = moduleTranslation.lookupValue(loop.lowerBound()[0]);
-  llvm::Value *upperBound = moduleTranslation.lookupValue(loop.upperBound()[0]);
-  llvm::Value *step = moduleTranslation.lookupValue(loop.step()[0]);
-  llvm::Type *ivType = step->getType();
-  llvm::Value *chunk =
-      loop.schedule_chunk_var()
-          ? moduleTranslation.lookupValue(loop.schedule_chunk_var())
-          : llvm::ConstantInt::get(ivType, 1);
+  // Static is the default.
+  omp::ClauseScheduleKind schedule = omp::ClauseScheduleKind::Static;
+  if (loop.schedule_val().hasValue())
+    schedule =
+        *omp::symbolizeClauseScheduleKind(loop.schedule_val().getValue());
 
   // Set up the source location value for OpenMP runtime.
   llvm::DISubprogram *subprogram =
@@ -203,22 +266,29 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
   llvm::OpenMPIRBuilder::LocationDescription ompLoc(builder.saveIP(),
                                                     llvm::DebugLoc(diLoc));
 
-  // Generator of the canonical loop body. Produces an SESE region of basic
-  // blocks.
+  // Generator of the canonical loop body.
   // TODO: support error propagation in OpenMPIRBuilder and use it instead of
   // relying on captured variables.
+  SmallVector<llvm::CanonicalLoopInfo *> loopInfos;
+  SmallVector<llvm::OpenMPIRBuilder::InsertPointTy> bodyInsertPoints;
   LogicalResult bodyGenStatus = success();
   auto bodyGen = [&](llvm::OpenMPIRBuilder::InsertPointTy ip, llvm::Value *iv) {
-    llvm::IRBuilder<>::InsertPointGuard guard(builder);
-
     // Make sure further conversions know about the induction variable.
-    moduleTranslation.mapValue(loop.getRegion().front().getArgument(0), iv);
+    moduleTranslation.mapValue(
+        loop.getRegion().front().getArgument(loopInfos.size()), iv);
 
+    // Capture the body insertion point for use in nested loops. BodyIP of the
+    // CanonicalLoopInfo always points to the beginning of the entry block of
+    // the body.
+    bodyInsertPoints.push_back(ip);
+
+    if (loopInfos.size() != loop.getNumLoops() - 1)
+      return;
+
+    // Convert the body of the loop.
     llvm::BasicBlock *entryBlock = ip.getBlock();
     llvm::BasicBlock *exitBlock =
         entryBlock->splitBasicBlock(ip.getPoint(), "omp.wsloop.exit");
-
-    // Convert the body of the loop.
     convertOmpOpRegions(loop.region(), "omp.wsloop.region", *entryBlock,
                         *exitBlock, builder, moduleTranslation, bodyGenStatus);
   };
@@ -227,25 +297,78 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
   // TODO: this currently assumes WsLoop is semantically similar to SCF loop,
   // i.e. it has a positive step, uses signed integer semantics. Reconsider
   // this code when WsLoop clearly supports more cases.
-  llvm::BasicBlock *insertBlock = builder.GetInsertBlock();
+  llvm::OpenMPIRBuilder *ompBuilder = moduleTranslation.getOpenMPBuilder();
+  for (unsigned i = 0, e = loop.getNumLoops(); i < e; ++i) {
+    llvm::Value *lowerBound =
+        moduleTranslation.lookupValue(loop.lowerBound()[i]);
+    llvm::Value *upperBound =
+        moduleTranslation.lookupValue(loop.upperBound()[i]);
+    llvm::Value *step = moduleTranslation.lookupValue(loop.step()[i]);
+
+    // Make sure loop trip count are emitted in the preheader of the outermost
+    // loop at the latest so that they are all available for the new collapsed
+    // loop will be created below.
+    llvm::OpenMPIRBuilder::LocationDescription loc = ompLoc;
+    llvm::OpenMPIRBuilder::InsertPointTy computeIP = ompLoc.IP;
+    if (i != 0) {
+      loc = llvm::OpenMPIRBuilder::LocationDescription(bodyInsertPoints.back(),
+                                                       llvm::DebugLoc(diLoc));
+      computeIP = loopInfos.front()->getPreheaderIP();
+    }
+    loopInfos.push_back(ompBuilder->createCanonicalLoop(
+        loc, bodyGen, lowerBound, upperBound, step,
+        /*IsSigned=*/true, loop.inclusive(), computeIP));
+
+    if (failed(bodyGenStatus))
+      return failure();
+  }
+
+  // Collapse loops. Store the insertion point because LoopInfos may get
+  // invalidated.
+  llvm::IRBuilderBase::InsertPoint afterIP = loopInfos.front()->getAfterIP();
   llvm::CanonicalLoopInfo *loopInfo =
-      moduleTranslation.getOpenMPBuilder()->createCanonicalLoop(
-          ompLoc, bodyGen, lowerBound, upperBound, step, /*IsSigned=*/true,
-          /*InclusiveStop=*/loop.inclusive());
-  if (failed(bodyGenStatus))
-    return failure();
+      ompBuilder->collapseLoops(diLoc, loopInfos, {});
 
-  // TODO: get the alloca insertion point from the parallel operation builder.
-  // If we insert the at the top of the current function, they will be passed as
-  // extra arguments into the function the parallel operation builder outlines.
-  // Put them at the start of the current block for now.
-  llvm::OpenMPIRBuilder::InsertPointTy allocaIP(
-      insertBlock, insertBlock->getFirstInsertionPt());
-  loopInfo = moduleTranslation.getOpenMPBuilder()->createStaticWorkshareLoop(
-      ompLoc, loopInfo, allocaIP, !loop.nowait(), chunk);
+  // Find the loop configuration.
+  llvm::Type *ivType = loopInfo->getIndVar()->getType();
+  llvm::Value *chunk =
+      loop.schedule_chunk_var()
+          ? moduleTranslation.lookupValue(loop.schedule_chunk_var())
+          : llvm::ConstantInt::get(ivType, 1);
+  llvm::OpenMPIRBuilder::InsertPointTy allocaIP =
+      findAllocaInsertPoint(builder, moduleTranslation);
+  if (schedule == omp::ClauseScheduleKind::Static) {
+    ompBuilder->applyStaticWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
+                                         !loop.nowait(), chunk);
+  } else {
+    llvm::omp::OMPScheduleType schedType;
+    switch (schedule) {
+    case omp::ClauseScheduleKind::Dynamic:
+      schedType = llvm::omp::OMPScheduleType::DynamicChunked;
+      break;
+    case omp::ClauseScheduleKind::Guided:
+      schedType = llvm::omp::OMPScheduleType::GuidedChunked;
+      break;
+    case omp::ClauseScheduleKind::Auto:
+      schedType = llvm::omp::OMPScheduleType::Auto;
+      break;
+    case omp::ClauseScheduleKind::Runtime:
+      schedType = llvm::omp::OMPScheduleType::Runtime;
+      break;
+    default:
+      llvm_unreachable("Unknown schedule value");
+      break;
+    }
 
-  // Continue building IR after the loop.
-  builder.restoreIP(loopInfo->getAfterIP());
+    ompBuilder->applyDynamicWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
+                                          schedType, !loop.nowait(), chunk);
+  }
+
+  // Continue building IR after the loop. Note that the LoopInfo returned by
+  // `collapseLoops` points inside the outermost loop and is intended for
+  // potential further loop transformations. Use the insertion point stored
+  // before collapsing loops instead.
+  builder.restoreIP(afterIP);
   return success();
 }
 
@@ -305,6 +428,9 @@ LogicalResult OpenMPDialectLLVMIRTranslationInterface::convertOperation(
       })
       .Case([&](omp::MasterOp) {
         return convertOmpMaster(*op, builder, moduleTranslation);
+      })
+      .Case([&](omp::CriticalOp) {
+        return convertOmpCritical(*op, builder, moduleTranslation);
       })
       .Case([&](omp::WsLoopOp) {
         return convertOmpWsLoop(*op, builder, moduleTranslation);

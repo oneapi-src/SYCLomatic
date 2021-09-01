@@ -12,6 +12,8 @@ add_clang_subdirectory(clang-offload-bundler)
 add_clang_subdirectory(clang-offload-deps)
 add_clang_subdirectory(clang-offload-wrapper)
 add_clang_subdirectory(clang-scan-deps)
+add_clang_subdirectory(clang-offload-extract)
+add_clang_subdirectory(clang-repl)
 
 add_clang_subdirectory(c-index-test)
 
@@ -32,6 +34,7 @@ if(CLANG_ENABLE_STATIC_ANALYZER)
   add_clang_subdirectory(clang-check)
   add_clang_subdirectory(clang-extdef-mapping)
   add_clang_subdirectory(scan-build)
+  add_clang_subdirectory(scan-build-py)
   add_clang_subdirectory(scan-view)
 endif()
 
@@ -47,3 +50,4 @@ add_clang_subdirectory(libclang)
 
 add_clang_subdirectory(dpct)
 add_clang_subdirectory(scan-build-py)
+add_clang_subdirectory(amdgpu-arch)

@@ -1,16 +1,25 @@
+if(${CMAKE_VERSION} VERSION_LESS 3.14)
+    macro(FetchContent_MakeAvailable NAME)
+        FetchContent_GetProperties(${NAME})
+        if(NOT ${NAME}_POPULATED)
+            FetchContent_Populate(${NAME})
+            add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR})
+        endif()
+    endmacro()
+endif()
+
 # Lowering of SYCL ESIMD kernels depends on vc-intrinsics
 # NOTE: could have been added earlier from llvm/projects
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set( LLVMGenXIntrinsics_GIT_REPO
          https://github.com/intel/vc-intrinsics.git )
-    set( LLVMGENXIntrinsics_GIT_TAG b831d10e49e1fb8fcd92b5b50e2cdc8f9cb6277b)
+    set( LLVMGENXIntrinsics_GIT_TAG 19e6ddafc545bc96ceaacbf7c81cacbff59a39b6)
     if( INTEL_CUSTOMIZATION )
       if( DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "" )
         set( LLVMGenXIntrinsics_GIT_REPO
              $ENV{ICS_GIT_MIRROR}/dpd_icl-vc-intrinsics.git )
         STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO "${LLVMGenXIntrinsics_GIT_REPO}")
-	#set( LLVMGENXIntrinsics_GIT_TAG 4143fa153a471c4d54969a10bca472a53088f556)
       endif()
     endif(INTEL_CUSTOMIZATION)
 

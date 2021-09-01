@@ -1,5 +1,6 @@
 add_sycl_unittest(SchedulerTests OBJECT
     BlockedCommands.cpp
+    Commands.cpp
     FailedCommands.cpp
     FinishedCmdCleanup.cpp
     LeafLimit.cpp
@@ -12,5 +13,6 @@ add_sycl_unittest(SchedulerTests OBJECT
     StreamInitDependencyOnHost.cpp
     InOrderQueueDeps.cpp
     AllocaLinking.cpp
+    RequiredWGSize.cpp
     utils.cpp
 )

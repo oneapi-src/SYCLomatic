@@ -33,10 +33,20 @@ Example of a message:
 .. code:
    foo.cpp:42: void foo(int): global id: [0,0,0], local id: [0,0,0] Assertion `buf[wiID] == 0 && "Invalid value"` failed.
 
+See also: assert_extension_.
+.. _assert_extension: ../Assert/SYCL_ONEAPI_ASSERT.asciidoc)
+
 cl_intel_devicelib_math
 ==========================
 
 .. code:
+   int    __devicelib_abs(int x);
+   int    __devicelib_labs(long int x);
+   int    __devicelib_llabs(long long int x);
+   int    __devicelib_div(int x, int y);
+   int    __devicelib_ldiv(long int x, long int y);
+   int    __devicelib_lldiv(long long int x, long long int y);
+   float  __devicelib_scalbnf(float x, int n);
    float  __devicelib_logf(float x);
    float  __devicelib_sinf(float x);
    float  __devicelib_cosf(float x);
@@ -90,6 +100,7 @@ cl_intel_devicelib_math_fp64
 ==========================
 
 .. code:
+   double __devicelib_scalbn(double x, int exp);
    double __devicelib_log(double x);
    double __devicelib_sin(double x);
    double __devicelib_cos(double x);
@@ -218,3 +229,19 @@ Those __devicelib_* functions have the same argument type and return type as cor
 complex math functions from <complex.h>, please refer to ISO/IEC 14882:2011 for details. The
 "double __complex__" type is C99 complex type and it is an alias to "struct {double, double}"
 in LLVM IR and SPIR-V.
+
+cl_intel_devicelib_cstring
+==========================
+
+.. code:
+   void *__devicelib_memcpy(void *dest, const void *src, size_t n);
+   void *__devicelib_memset(void *dest, int c, size_t n);
+   int __devicelib_memcmp(const void *s1, const void *s2, size_t n);
+
+Semantic:
+Those __devicelib_* functions perform the same operation as the corresponding C string
+library functions.
+
+Arguments:
+Those __devicelib_* functions have the same argument type and return type as corresponding
+string functions from <string.h>, please refer to ISO/IEC 14882:2011 for details.

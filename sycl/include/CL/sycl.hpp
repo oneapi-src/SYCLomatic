@@ -8,17 +8,10 @@
 
 #pragma once
 
-#include <CL/sycl/ONEAPI/atomic.hpp>
-#include <CL/sycl/ONEAPI/experimental/builtins.hpp>
-#include <CL/sycl/ONEAPI/filter_selector.hpp>
-#include <CL/sycl/ONEAPI/function_pointer.hpp>
-#include <CL/sycl/ONEAPI/group_algorithm.hpp>
-#include <CL/sycl/ONEAPI/matrix/matrix.hpp>
-#include <CL/sycl/ONEAPI/reduction.hpp>
-#include <CL/sycl/ONEAPI/sub_group.hpp>
 #include <CL/sycl/accessor.hpp>
 #include <CL/sycl/aspects.hpp>
 #include <CL/sycl/atomic.hpp>
+#include <CL/sycl/atomic_fence.hpp>
 #include <CL/sycl/backend.hpp>
 #include <CL/sycl/buffer.hpp>
 #include <CL/sycl/builtins.hpp>
@@ -28,7 +21,9 @@
 #include <CL/sycl/event.hpp>
 #include <CL/sycl/exception.hpp>
 #include <CL/sycl/feature_test.hpp>
+#include <CL/sycl/functional.hpp>
 #include <CL/sycl/group.hpp>
+#include <CL/sycl/group_algorithm.hpp>
 #include <CL/sycl/group_local_memory.hpp>
 #include <CL/sycl/handler.hpp>
 #include <CL/sycl/id.hpp>
@@ -52,6 +47,15 @@
 #include <CL/sycl/sampler.hpp>
 #include <CL/sycl/specialization_id.hpp>
 #include <CL/sycl/stream.hpp>
+#include <CL/sycl/sub_group.hpp>
 #include <CL/sycl/types.hpp>
 #include <CL/sycl/usm.hpp>
 #include <CL/sycl/version.hpp>
+#include <sycl/ext/oneapi/atomic.hpp>
+#include <sycl/ext/oneapi/experimental/builtins.hpp>
+#include <sycl/ext/oneapi/filter_selector.hpp>
+#include <sycl/ext/oneapi/function_pointer.hpp>
+#include <sycl/ext/oneapi/group_algorithm.hpp>
+#include <sycl/ext/oneapi/matrix/matrix.hpp>
+#include <sycl/ext/oneapi/reduction.hpp>
+#include <sycl/ext/oneapi/sub_group.hpp>

@@ -16,6 +16,7 @@
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/GVMaterializer.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/PseudoProbe.h"
 #include "llvm/IR/TypeFinder.h"
 #include "llvm/Object/ModuleSymbolTable.h"
 #include "llvm/Support/Error.h"
@@ -610,15 +611,16 @@ Value *IRLinker::materialize(Value *V, bool ForIndirectSymbol) {
       return New;
   }
 
-  // When linking a global for an indirect symbol, it will always be linked.
-  // However we need to check if it was not already scheduled to satisfy a
-  // reference from a regular global value initializer. We know if it has been
-  // schedule if the "New" GlobalValue that is mapped here for the indirect
-  // symbol is the same as the one already mapped. If there is an entry in the
+  // If the global is being linked for an indirect symbol, it may have already
+  // been scheduled to satisfy a regular symbol. Similarly, a global being linked
+  // for a regular symbol may have already been scheduled for an indirect
+  // symbol. Check for these cases by looking in the other value map and
+  // confirming the same value has been scheduled.  If there is an entry in the
   // ValueMap but the value is different, it means that the value already had a
   // definition in the destination module (linkonce for instance), but we need a
-  // new definition for the indirect symbol ("New" will be different.
-  if (ForIndirectSymbol && ValueMap.lookup(SGV) == New)
+  // new definition for the indirect symbol ("New" will be different).
+  if ((ForIndirectSymbol && ValueMap.lookup(SGV) == New) ||
+      (!ForIndirectSymbol && IndirectSymbolValueMap.lookup(SGV) == New))
     return New;
 
   if (ForIndirectSymbol || shouldLink(New, *SGV))
@@ -1206,6 +1208,10 @@ void IRLinker::linkNamedMDNodes() {
     // Don't link module flags here. Do them separately.
     if (&NMD == SrcModFlags)
       continue;
+    // Don't import pseudo probe descriptors here for thinLTO. They will be
+    // emitted by the originating module.
+    if (IsPerformingImport && NMD.getName() == PseudoProbeDescMetadataName)
+      continue;
     NamedMDNode *DestNMD = DstM.getOrInsertNamedMetadata(NMD.getName());
     // Add Src elements into Dest node.
     for (const MDNode *Op : NMD.operands())
@@ -1507,6 +1513,20 @@ Error IRLinker::run() {
         DstM.appendModuleInlineAsm(S);
       }
     });
+  }
+
+  // Reorder the globals just added to the destination module to match their
+  // original order in the source module.
+  Module::GlobalListType &Globals = DstM.getGlobalList();
+  for (GlobalVariable &GV : SrcM->globals()) {
+    if (GV.hasAppendingLinkage())
+      continue;
+    Value *NewValue = Mapper.mapValue(GV);
+    if (NewValue) {
+      auto *NewGV = dyn_cast<GlobalVariable>(NewValue->stripPointerCasts());
+      if (NewGV)
+        Globals.splice(Globals.end(), Globals, NewGV->getIterator());
+    }
   }
 
   // Merge the module flags into the DstM module.

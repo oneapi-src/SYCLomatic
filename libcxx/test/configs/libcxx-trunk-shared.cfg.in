@@ -1,10 +1,12 @@
 @AUTO_GEN_COMMENT@
 
+@SERIALIZED_LIT_PARAMS@
+
 LIBCXX_ROOT = "@LIBCXX_SOURCE_DIR@"
 INSTALL_ROOT = "@CMAKE_BINARY_DIR@"
 COMPILER = "@CMAKE_CXX_COMPILER@"
 EXEC_ROOT = "@LIBCXX_BINARY_DIR@"
-CMAKE_OSX_SYSROOT = "@CMAKE_OSX_SYSROOT@";
+CMAKE_OSX_SYSROOT = "@CMAKE_OSX_SYSROOT@"
 
 import os
 import pipes
@@ -35,7 +37,7 @@ config.substitutions.append(('%{compile_flags}',
         os.path.join(LIBCXX_ROOT, 'test', 'support'))
 ))
 config.substitutions.append(('%{link_flags}',
-    '-nostdlib++ -L {0} -lc++ -Wl,-rpath,{0}'.format(
+    '-nostdlib++ -L {0} -lc++ -Wl,-rpath,{0} -pthread'.format(
         os.path.join(INSTALL_ROOT, 'lib'))
 ))
 config.substitutions.append(('%{exec}',

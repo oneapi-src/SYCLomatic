@@ -113,6 +113,8 @@ bool IsStaticallyInitialized(const Symbol &, bool ignoreDATAstatements = false);
 // Is the symbol explicitly or implicitly initialized in any way?
 bool IsInitialized(const Symbol &, bool ignoreDATAstatements = false,
     const Symbol *derivedType = nullptr);
+// Is the symbol a component subject to deallocation or finalization?
+bool IsDestructible(const Symbol &, const Symbol *derivedType = nullptr);
 bool HasIntrinsicTypeName(const Symbol &);
 bool IsSeparateModuleProcedureInterface(const Symbol *);
 bool IsAutomatic(const Symbol &);
@@ -140,6 +142,9 @@ inline bool IsAllocatable(const Symbol &symbol) {
 inline bool IsAllocatableOrPointer(const Symbol &symbol) {
   return IsPointer(symbol) || IsAllocatable(symbol);
 }
+inline bool IsSave(const Symbol &symbol) {
+  return symbol.attrs().test(Attr::SAVE);
+}
 inline bool IsNamedConstant(const Symbol &symbol) {
   return symbol.attrs().test(Attr::PARAMETER);
 }
@@ -161,8 +166,10 @@ inline bool IsProtected(const Symbol &symbol) {
 inline bool IsImpliedDoIndex(const Symbol &symbol) {
   return symbol.owner().kind() == Scope::Kind::ImpliedDos;
 }
-bool IsFinalizable(const Symbol &);
-bool IsFinalizable(const DerivedTypeSpec &);
+bool IsFinalizable(
+    const Symbol &, std::set<const DerivedTypeSpec *> * = nullptr);
+bool IsFinalizable(
+    const DerivedTypeSpec &, std::set<const DerivedTypeSpec *> * = nullptr);
 bool HasImpureFinal(const DerivedTypeSpec &);
 bool IsCoarray(const Symbol &);
 bool IsInBlankCommon(const Symbol &);
@@ -248,6 +255,10 @@ const Symbol *FindExternallyVisibleObject(
       [&](const auto &x) { return FindExternallyVisibleObject(x, scope); },
       expr.u);
 }
+
+// Apply GetUltimate(), then if the symbol is a generic procedure shadowing a
+// specific procedure of the same name, return it instead.
+const Symbol &BypassGeneric(const Symbol &);
 
 using SomeExpr = evaluate::Expr<evaluate::SomeType>;
 
@@ -459,7 +470,10 @@ public:
       name_iterator &nameIterator() { return nameIterator_; }
       name_iterator nameEnd() { return nameEnd_; }
       const Symbol &GetTypeSymbol() const { return derived_->typeSymbol(); }
-      const Scope &GetScope() const { return DEREF(derived_->scope()); }
+      const Scope &GetScope() const {
+        return derived_->scope() ? *derived_->scope()
+                                 : DEREF(GetTypeSymbol().scope());
+      }
       bool operator==(const ComponentPathNode &that) const {
         return &*derived_ == &*that.derived_ &&
             nameIterator_ == that.nameIterator_ &&

@@ -324,6 +324,9 @@ public:
   /// name is not found.
   GlobalValue *getNamedValue(StringRef Name) const;
 
+  /// Return the number of global values in the module.
+  unsigned getNumNamedValues() const;
+
   /// Return a unique non-zero ID for the specified metadata kind. This ID is
   /// uniqued across modules in the current LLVMContext.
   unsigned getMDKindID(StringRef Name) const;
@@ -885,6 +888,33 @@ public:
 
   /// Set that PLT should be avoid for RTLib calls.
   void setRtLibUseGOT();
+
+  /// Get/set whether synthesized functions should get the uwtable attribute.
+  bool getUwtable() const;
+  void setUwtable();
+
+  /// Get/set whether synthesized functions should get the "frame-pointer"
+  /// attribute.
+  FramePointerKind getFramePointer() const;
+  void setFramePointer(FramePointerKind Kind);
+
+  /// Get/set what kind of stack protector guard to use.
+  StringRef getStackProtectorGuard() const;
+  void setStackProtectorGuard(StringRef Kind);
+
+  /// Get/set which register to use as the stack protector guard register. The
+  /// empty string is equivalent to "global". Other values may be "tls" or
+  /// "sysreg".
+  StringRef getStackProtectorGuardReg() const;
+  void setStackProtectorGuardReg(StringRef Reg);
+
+  /// Get/set what offset from the stack protector to use.
+  int getStackProtectorGuardOffset() const;
+  void setStackProtectorGuardOffset(int Offset);
+
+  /// Get/set the stack alignment overridden from the default.
+  unsigned getOverrideStackAlignment() const;
+  void setOverrideStackAlignment(unsigned Align);
 
   /// @name Utility functions for querying and setting the build SDK version
   /// @{

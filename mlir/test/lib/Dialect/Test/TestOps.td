@@ -25,11 +25,13 @@ include "TestInterfaces.td"
 def Test_Dialect : Dialect {
   let name = "test";
   let cppNamespace = "::mlir::test";
+  let hasCanonicalizer = 1;
   let hasConstantMaterializer = 1;
   let hasOperationAttrVerify = 1;
   let hasRegionArgAttrVerify = 1;
   let hasRegionResultAttrVerify = 1;
   let hasOperationInterfaceFallback = 1;
+  let hasNonDefaultDestructor = 1;
   let dependentDialects = ["::mlir::DLTIDialect"];
 
   let extraClassDeclaration = [{
@@ -46,8 +48,6 @@ def Test_Dialect : Dialect {
       getParseOperationHook(StringRef opName) const override;
     LogicalResult printOperation(Operation *op,
                                  OpAsmPrinter &printer) const override;
-
-    ~TestDialect();
   private:
     // Storage for a custom fallback interface.
     void *fallbackEffectOpInterfaces;
@@ -337,13 +337,22 @@ def SizedRegionOp : TEST_Op<"sized_region_op", []> {
 // NoTerminator Operation
 //===----------------------------------------------------------------------===//
 
-def SingleNoTerminatorOp : TEST_Op<"single_no_terminator_op", GraphRegionNoTerminator.traits> {
+def SingleNoTerminatorOp : TEST_Op<"single_no_terminator_op",
+                                   GraphRegionNoTerminator.traits> {
   let regions = (region SizedRegion<1>:$my_region);
 
   let assemblyFormat = "attr-dict `:` $my_region";
 }
 
-def VariadicNoTerminatorOp : TEST_Op<"variadic_no_terminator_op", GraphRegionNoTerminator.traits> {
+def SingleNoTerminatorCustomAsmOp : TEST_Op<"single_no_terminator_custom_asm_op",
+                                            [SingleBlock, NoTerminator]> {
+  let regions = (region SizedRegion<1>);
+  let parser = [{ return ::parseSingleNoTerminatorCustomAsmOp(parser, result); }];
+  let printer = [{ return ::print(*this, p); }];
+}
+
+def VariadicNoTerminatorOp : TEST_Op<"variadic_no_terminator_op",
+                                     GraphRegionNoTerminator.traits> {
   let regions = (region VariadicRegion<SizedRegion<1>>:$my_regions);
 
   let assemblyFormat = "attr-dict `:` $my_regions";
@@ -556,14 +565,21 @@ def OpWithInferTypeInterfaceOp : TEST_Op<"op_with_infer_type_if", [
 }
 
 def OpWithShapedTypeInferTypeInterfaceOp : TEST_Op<"op_with_shaped_type_infer_type_if",
-      InferTensorTypeWithReify.traits> {
+      [InferTensorTypeWithReify]> {
   let arguments = (ins AnyTensor, AnyTensor);
   let results = (outs AnyTensor);
 }
 
-def OpWithResultShapePerDimInterfaceOp : TEST_Op<"op_with_result_shape_per_dim_interface",
+def OpWithResultShapeInterfaceOp : TEST_Op<"op_with_result_shape_interface",
       [DeclareOpInterfaceMethods<InferShapedTypeOpInterface,
-           ["reifyReturnTypeShapesPerResultDim"]>]> {
+          ["reifyReturnTypeShapes"]>]> {
+  let arguments = (ins AnyRankedTensor:$operand1, AnyRankedTensor:$operand2);
+  let results = (outs AnyRankedTensor:$result1, AnyRankedTensor:$result2);
+}
+
+def OpWithResultShapePerDimInterfaceOp :
+    TEST_Op<"op_with_result_shape_per_dim_interface",
+        [DeclareOpInterfaceMethods<ReifyRankedShapedTypeOpInterface>]> {
   let arguments = (ins AnyRankedTensor:$operand1, AnyRankedTensor:$operand2);
   let results = (outs AnyRankedTensor:$result1, AnyRankedTensor:$result2);
 }
@@ -700,6 +716,13 @@ def TestEqualArgsPattern : Pat<(OpN $a, $a), (OpO $a)>;
 def TestNestedOpEqualArgsPattern :
   Pat<(OpN $b, (OpP $a, $b, $c, $d, $e, $f)), (replaceWithValue $b)>;
 
+// Test when equality is enforced on same op and same operand but at different
+// depth. We only bound one of the $x to the second operand of outer OpN and
+// left another be the default value (which is the value of first operand of
+// outer OpN). As a result, it ended up comparing wrong values in some cases.
+def TestNestedSameOpAndSameArgEqualityPattern :
+  Pat<(OpN (OpN $_, $x), $x), (replaceWithValue $x)>;
+
 // Test multiple equal arguments check enforced.
 def TestMultipleEqualArgsPattern :
   Pat<(OpP $a, $b, $a, $a, $b, $c), (OpN $c, $b)>;
@@ -834,8 +857,35 @@ def OpNativeCodeCall3 : TEST_Op<"native_code_call3"> {
 // Test that NativeCodeCall is not ignored if it is not used to directly
 // replace the matched root op.
 def : Pattern<(OpNativeCodeCall3 $input),
-              [(NativeCodeCall<"createOpI($_builder, $_loc, $0)"> $input),
+              [(NativeCodeCallVoid<"createOpI($_builder, $_loc, $0)"> $input),
                (OpK)]>;
+
+def OpNativeCodeCall4 : TEST_Op<"native_code_call4"> {
+  let arguments = (ins AnyType:$input1);
+  let results = (outs I32:$output1, I32:$output2);
+}
+def OpNativeCodeCall5 : TEST_Op<"native_code_call5"> {
+  let arguments = (ins I32:$input1, I32:$input2);
+  let results = (outs I32:$output1, I32:$output2);
+}
+
+def GetFirstI32Result : NativeCodeCall<"success(getFirstI32Result($_self, $0))">;
+def BindNativeCodeCallResult : NativeCodeCall<"bindNativeCodeCallResult($0)">;
+def : Pat<(OpNativeCodeCall4 (GetFirstI32Result $ret)),
+          (OpNativeCodeCall5 (BindNativeCodeCallResult:$native $ret), $native)>;
+
+def OpNativeCodeCall6 : TEST_Op<"native_code_call6"> {
+  let arguments = (ins I32:$input1, I32:$input2);
+  let results = (outs I32:$output1, I32:$output2);
+}
+def OpNativeCodeCall7 : TEST_Op<"native_code_call7"> {
+  let arguments = (ins I32:$input);
+  let results = (outs I32);
+}
+def BindMultipleNativeCodeCallResult : NativeCodeCall<"bindMultipleNativeCodeCallResult($0, $1)", 2>;
+def : Pattern<(OpNativeCodeCall6 $arg1, $arg2),
+              [(OpNativeCodeCall7 (BindMultipleNativeCodeCallResult:$native__0 $arg1, $arg2)),
+               (OpNativeCodeCall7 $native__1)]>;
 
 // Test AllAttrConstraintsOf.
 def OpAllAttrConstraint1 : TEST_Op<"all_attr_constraint_of1"> {
@@ -952,6 +1002,11 @@ def TestPassthroughFold : TEST_Op<"passthrough_fold"> {
   let hasFolder = 1;
 }
 
+def TestDialectCanonicalizerOp : TEST_Op<"dialect_canonicalizable"> {
+  let arguments = (ins);
+  let results = (outs I32);
+}
+
 //===----------------------------------------------------------------------===//
 // Test Patterns (Symbol Binding)
 
@@ -991,7 +1046,7 @@ def OpSymbolBindingNoResult : TEST_Op<"symbol_binding_no_result", []> {
 
 // Test that we can bind to an op without results and reference it later.
 def : Pat<(OpSymbolBindingNoResult:$op $operand),
-          (NativeCodeCall<"handleNoResultOp($_builder, $0)"> $op)>;
+          (NativeCodeCallVoid<"handleNoResultOp($_builder, $0)"> $op)>;
 
 //===----------------------------------------------------------------------===//
 // Test Patterns (Attributes)
@@ -1847,6 +1902,15 @@ def FormatTypesMatchAttrOp : TEST_Op<"format_types_match_attr", [
   let assemblyFormat = "attr-dict $value";
 }
 
+def FormatTypesMatchContextOp : TEST_Op<"format_types_match_context", [
+    TypesMatchWith<"tuple result type matches operand type", "value", "result",
+        "::mlir::TupleType::get($_ctxt, $_self)">
+  ]> {
+  let arguments = (ins AnyType:$value);
+  let results = (outs AnyType:$result);
+  let assemblyFormat = "attr-dict $value `:` type($value)";
+}
+
 //===----------------------------------------------------------------------===//
 // Test SideEffects
 //===----------------------------------------------------------------------===//
@@ -1865,8 +1929,8 @@ def CopyOp : TEST_Op<"copy", [CopyOpInterface]> {
   let description = [{
     Represents a copy operation.
   }];
-  let arguments = (ins Res<AnyMemRef, "", [MemRead]>:$source,
-                   Res<AnyMemRef, "", [MemWrite]>:$target);
+  let arguments = (ins Res<AnyRankedOrUnrankedMemRef, "", [MemRead]>:$source,
+                   Res<AnyRankedOrUnrankedMemRef, "", [MemWrite]>:$target);
   let assemblyFormat = [{
     `(` $source `,` $target `)` `:` `(` type($source) `,` type($target) `)`
      attr-dict
@@ -1901,7 +1965,8 @@ class BufferBasedOpBase<string mnemonic, list<OpTrait> traits>
   let description = [{
     A buffer based operation, that uses memRefs as input and output.
   }];
-  let arguments = (ins AnyMemRef:$input, AnyMemRef:$output);
+  let arguments = (ins AnyRankedOrUnrankedMemRef:$input,
+                       AnyRankedOrUnrankedMemRef:$output);
 }
 
 def BufferBasedOp : BufferBasedOpBase<"buffer_based", []>{
@@ -2082,5 +2147,20 @@ def DataLayoutQueryOp : TEST_Op<"data_layout_query"> {
 
   let results = (outs AnyType:$res);
 }
+
+//===----------------------------------------------------------------------===//
+// Test Reducer Patterns
+//===----------------------------------------------------------------------===//
+
+def OpCrashLong : TEST_Op<"op_crash_long"> {
+  let arguments = (ins I32, I32, I32);
+  let results = (outs I32);
+}
+
+def OpCrashShort : TEST_Op<"op_crash_short"> {
+  let results = (outs I32);
+}
+
+def : Pat<(OpCrashLong $_, $_, $_), (OpCrashShort)>;
 
 #endif // TEST_OPS

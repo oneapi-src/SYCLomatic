@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/thrust-transform-if %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++17
+// RUN: dpct --format-range=none -out-root %T/thrust-transform-if %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-transform-if/thrust-transform-if.dp.cpp --match-full-lines %s
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>

@@ -177,19 +177,21 @@ static void convertToParamAS(Value *OldUser, Value *Param) {
     }
     if (auto *GEP = dyn_cast<GetElementPtrInst>(I.OldInstruction)) {
       SmallVector<Value *, 4> Indices(GEP->indices());
-      auto *NewGEP = GetElementPtrInst::Create(nullptr, I.NewParam, Indices,
+      auto *NewGEP = GetElementPtrInst::Create(GEP->getSourceElementType(),
+                                               I.NewParam, Indices,
                                                GEP->getName(), GEP);
       NewGEP->setIsInBounds(GEP->isInBounds());
       return NewGEP;
     }
     if (auto *BC = dyn_cast<BitCastInst>(I.OldInstruction)) {
-      auto *NewBCType = BC->getType()->getPointerElementType()->getPointerTo(
-          ADDRESS_SPACE_PARAM);
+      auto *NewBCType = PointerType::getWithSamePointeeType(
+          cast<PointerType>(BC->getType()), ADDRESS_SPACE_PARAM);
       return BitCastInst::Create(BC->getOpcode(), I.NewParam, NewBCType,
                                  BC->getName(), BC);
     }
     if (auto *ASC = dyn_cast<AddrSpaceCastInst>(I.OldInstruction)) {
       assert(ASC->getDestAddressSpace() == ADDRESS_SPACE_PARAM);
+      (void)ASC;
       // Just pass through the argument, the old ASC is no longer needed.
       return I.NewParam;
     }
@@ -314,8 +316,9 @@ void NVPTXLowerArgs::markPointerAsGlobal(Value *Ptr) {
   }
 
   Instruction *PtrInGlobal = new AddrSpaceCastInst(
-      Ptr, PointerType::get(Ptr->getType()->getPointerElementType(),
-                            ADDRESS_SPACE_GLOBAL),
+      Ptr,
+      PointerType::getWithSamePointeeType(cast<PointerType>(Ptr->getType()),
+                                          ADDRESS_SPACE_GLOBAL),
       Ptr->getName(), &*InsertPt);
   Value *PtrInGeneric = new AddrSpaceCastInst(PtrInGlobal, Ptr->getType(),
                                               Ptr->getName(), &*InsertPt);

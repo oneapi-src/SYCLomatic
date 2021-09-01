@@ -313,6 +313,14 @@ private:
           Addend = *(const little32_t *)FixupContent - 4;
           Kind = x86_64::RequestGOTAndTransformToDelta32;
           break;
+        case MachOPCRel32TLV:
+          if (auto TargetSymbolOrErr = findSymbolByIndex(RI.r_symbolnum))
+            TargetSymbol = TargetSymbolOrErr->GraphSymbol;
+          else
+            return TargetSymbolOrErr.takeError();
+          Addend = *(const little32_t *)FixupContent;
+          Kind = x86_64::RequestTLVPAndTransformToPCRel32TLVPLoadRelaxable;
+          break;
         case MachOPointer32:
           if (auto TargetSymbolOrErr = findSymbolByIndex(RI.r_symbolnum))
             TargetSymbol = TargetSymbolOrErr->GraphSymbol;
@@ -392,9 +400,6 @@ private:
           assert(TargetSymbol && "No target symbol from parsePairRelocation?");
           break;
         }
-        case MachOPCRel32TLV:
-          return make_error<JITLinkError>(
-              "MachO TLV relocations not yet supported");
         }
 
         LLVM_DEBUG({
@@ -522,9 +527,8 @@ static Error optimizeMachO_x86_64_GOTAndStubs(LinkGraph &G) {
           E.setTarget(GOTTarget);
           E.setKind(x86_64::Delta32);
           E.setAddend(E.getAddend() - 4);
-          auto *BlockData = reinterpret_cast<uint8_t *>(
-              const_cast<char *>(B->getContent().data()));
-          BlockData[E.getOffset() - 2] = 0x8d;
+          char *BlockData = B->getMutableContent(G).data();
+          BlockData[E.getOffset() - 2] = (char)0x8d;
           LLVM_DEBUG({
             dbgs() << "  Replaced GOT load wih LEA:\n    ";
             printEdge(dbgs(), *B, E, x86_64::getEdgeKindName(E.getKind()));
@@ -577,9 +581,8 @@ public:
       : JITLinker(std::move(Ctx), std::move(G), std::move(PassConfig)) {}
 
 private:
-  Error applyFixup(LinkGraph &G, Block &B, const Edge &E,
-                   char *BlockWorkingMem) const {
-    return x86_64::applyFixup(G, B, E, BlockWorkingMem);
+  Error applyFixup(LinkGraph &G, Block &B, const Edge &E) const {
+    return x86_64::applyFixup(G, B, E, nullptr);
   }
 };
 
@@ -598,11 +601,8 @@ void link_MachO_x86_64(std::unique_ptr<LinkGraph> G,
 
   if (Ctx->shouldAddDefaultTargetPasses(G->getTargetTriple())) {
     // Add eh-frame passses.
-    StringRef EHFrameSectionName = "__TEXT,__eh_frame";
-    Config.PrePrunePasses.push_back(EHFrameSplitter(EHFrameSectionName));
-    Config.PrePrunePasses.push_back(
-        EHFrameEdgeFixer(EHFrameSectionName, G->getPointerSize(),
-                         x86_64::Delta64, x86_64::Delta32, x86_64::NegDelta32));
+    Config.PrePrunePasses.push_back(createEHFrameSplitterPass_MachO_x86_64());
+    Config.PrePrunePasses.push_back(createEHFrameEdgeFixerPass_MachO_x86_64());
 
     // Add a mark-live pass.
     if (auto MarkLive = Ctx->getMarkLivePass(G->getTargetTriple()))
@@ -623,6 +623,15 @@ void link_MachO_x86_64(std::unique_ptr<LinkGraph> G,
 
   // Construct a JITLinker and run the link function.
   MachOJITLinker_x86_64::link(std::move(Ctx), std::move(G), std::move(Config));
+}
+
+LinkGraphPassFunction createEHFrameSplitterPass_MachO_x86_64() {
+  return EHFrameSplitter("__TEXT,__eh_frame");
+}
+
+LinkGraphPassFunction createEHFrameEdgeFixerPass_MachO_x86_64() {
+  return EHFrameEdgeFixer("__TEXT,__eh_frame", x86_64::PointerSize,
+                          x86_64::Delta64, x86_64::Delta32, x86_64::NegDelta32);
 }
 
 } // end namespace jitlink

@@ -77,7 +77,7 @@ bool CompilerInstance::shouldBuildGlobalModuleIndex() const {
   return (BuildGlobalModuleIndex ||
           (TheASTReader && TheASTReader->isGlobalIndexUnavailable() &&
            getFrontendOpts().GenerateGlobalModuleIndex)) &&
-         !ModuleBuildFailed;
+         !DisableGeneratingGlobalModuleIndex;
 }
 
 void CompilerInstance::setDiagnostics(DiagnosticsEngine *Value) {
@@ -133,17 +133,23 @@ bool CompilerInstance::createTarget() {
     // FIXME: can we disable FEnvAccess?
   }
 
+  // We should do it here because target knows nothing about
+  // language options when it's being created.
+  if (getLangOpts().OpenCL &&
+      !getTarget().validateOpenCLTarget(getLangOpts(), getDiagnostics()))
+    return false;
+
   // Inform the target of the language options.
   //
   // FIXME: We shouldn't need to do this, the target should be immutable once
   // created. This complexity should be lifted elsewhere.
-  getTarget().adjust(getLangOpts());
+  getTarget().adjust(getDiagnostics(), getLangOpts());
 
   // Adjust target options based on codegen options.
   getTarget().adjustTargetOptions(getCodeGenOpts(), getTargetOpts());
 
   if (auto *Aux = getAuxTarget()) {
-    Aux->adjust(getLangOpts());
+    Aux->adjust(getDiagnostics(), getLangOpts());
     getTarget().setAuxTarget(Aux);
   }
 
@@ -454,7 +460,7 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
                                       getSourceManager(), *HeaderInfo, *this,
                                       /*IdentifierInfoLookup=*/nullptr,
                                       /*OwnsHeaderSearch=*/true, TUKind);
-  getTarget().adjust(getLangOpts());
+  getTarget().adjust(getDiagnostics(), getLangOpts());
   PP->Initialize(getTarget(), getAuxTarget());
 
   if (PPOpts.DetailedRecord)
@@ -548,7 +554,7 @@ void CompilerInstance::createASTContext() {
   Preprocessor &PP = getPreprocessor();
   auto *Context = new ASTContext(getLangOpts(), PP.getSourceManager(),
                                  PP.getIdentifierTable(), PP.getSelectorTable(),
-                                 PP.getBuiltinInfo());
+                                 PP.getBuiltinInfo(), PP.TUKind);
   Context->InitBuiltinTypes(getTarget(), getAuxTarget());
   setASTContext(Context);
 }
@@ -700,31 +706,37 @@ void CompilerInstance::createSema(TranslationUnitKind TUKind,
 // Output Files
 
 void CompilerInstance::clearOutputFiles(bool EraseFiles) {
+  // Ignore errors that occur when trying to discard the temp file.
   for (OutputFile &OF : OutputFiles) {
     if (EraseFiles) {
-      if (!OF.TempFilename.empty()) {
-        llvm::sys::fs::remove(OF.TempFilename);
-        continue;
-      }
+      if (OF.File)
+        consumeError(OF.File->discard());
       if (!OF.Filename.empty())
         llvm::sys::fs::remove(OF.Filename);
       continue;
     }
 
-    if (OF.TempFilename.empty())
+    if (!OF.File)
       continue;
+
+    if (OF.File->TmpName.empty()) {
+      consumeError(OF.File->discard());
+      continue;
+    }
 
     // If '-working-directory' was passed, the output filename should be
     // relative to that.
     SmallString<128> NewOutFile(OF.Filename);
     FileMgr->FixupRelativePath(NewOutFile);
-    std::error_code EC = llvm::sys::fs::rename(OF.TempFilename, NewOutFile);
-    if (!EC)
-      continue;
-    getDiagnostics().Report(diag::err_unable_to_rename_temp)
-        << OF.TempFilename << OF.Filename << EC.message();
 
-    llvm::sys::fs::remove(OF.TempFilename);
+    llvm::Error E = OF.File->keep(NewOutFile);
+    if (!E)
+      continue;
+
+    getDiagnostics().Report(diag::err_unable_to_rename_temp)
+        << OF.File->TmpName << OF.Filename << std::move(E);
+
+    llvm::sys::fs::remove(OF.File->TmpName);
   }
   OutputFiles.clear();
   if (DeleteBuiltModules) {
@@ -734,11 +746,9 @@ void CompilerInstance::clearOutputFiles(bool EraseFiles) {
   }
 }
 
-std::unique_ptr<raw_pwrite_stream>
-CompilerInstance::createDefaultOutputFile(bool Binary, StringRef InFile,
-                                          StringRef Extension,
-                                          bool RemoveFileOnSignal,
-                                          bool CreateMissingDirectories) {
+std::unique_ptr<raw_pwrite_stream> CompilerInstance::createDefaultOutputFile(
+    bool Binary, StringRef InFile, StringRef Extension, bool RemoveFileOnSignal,
+    bool CreateMissingDirectories, bool ForceUseTemporary) {
   StringRef OutputPath = getFrontendOpts().OutputFile;
   Optional<SmallString<128>> PathStorage;
   if (OutputPath.empty()) {
@@ -751,9 +761,8 @@ CompilerInstance::createDefaultOutputFile(bool Binary, StringRef InFile,
     }
   }
 
-  // Force a temporary file if RemoveFileOnSignal was disabled.
   return createOutputFile(OutputPath, Binary, RemoveFileOnSignal,
-                          getFrontendOpts().UseTemporary || !RemoveFileOnSignal,
+                          getFrontendOpts().UseTemporary || ForceUseTemporary,
                           CreateMissingDirectories);
 }
 
@@ -806,7 +815,7 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
     }
   }
 
-  std::string TempFile;
+  Optional<llvm::sys::fs::TempFile> Temp;
   if (UseTemporary) {
     // Create a temporary file.
     // Insert -%%%%%%%% before the extension (if any), and because some tools
@@ -818,25 +827,34 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
     TempPath += "-%%%%%%%%";
     TempPath += OutputExtension;
     TempPath += ".tmp";
-    int fd;
-    std::error_code EC = llvm::sys::fs::createUniqueFile(
-        TempPath, fd, TempPath,
-        Binary ? llvm::sys::fs::OF_None : llvm::sys::fs::OF_Text);
+    Expected<llvm::sys::fs::TempFile> ExpectedFile =
+        llvm::sys::fs::TempFile::create(
+            TempPath, llvm::sys::fs::all_read | llvm::sys::fs::all_write,
+            Binary ? llvm::sys::fs::OF_None : llvm::sys::fs::OF_Text);
 
-    if (CreateMissingDirectories &&
-        EC == llvm::errc::no_such_file_or_directory) {
-      StringRef Parent = llvm::sys::path::parent_path(OutputPath);
-      EC = llvm::sys::fs::create_directories(Parent);
-      if (!EC) {
-        EC = llvm::sys::fs::createUniqueFile(TempPath, fd, TempPath,
-                                             Binary ? llvm::sys::fs::OF_None
-                                                    : llvm::sys::fs::OF_Text);
-      }
-    }
+    llvm::Error E = handleErrors(
+        ExpectedFile.takeError(), [&](const llvm::ECError &E) -> llvm::Error {
+          std::error_code EC = E.convertToErrorCode();
+          if (CreateMissingDirectories &&
+              EC == llvm::errc::no_such_file_or_directory) {
+            StringRef Parent = llvm::sys::path::parent_path(OutputPath);
+            EC = llvm::sys::fs::create_directories(Parent);
+            if (!EC) {
+              ExpectedFile = llvm::sys::fs::TempFile::create(TempPath);
+              if (!ExpectedFile)
+                return llvm::errorCodeToError(
+                    llvm::errc::no_such_file_or_directory);
+            }
+          }
+          return llvm::errorCodeToError(EC);
+        });
 
-    if (!EC) {
-      OS.reset(new llvm::raw_fd_ostream(fd, /*shouldClose=*/true));
-      OSFile = TempFile = std::string(TempPath.str());
+    if (E) {
+      consumeError(std::move(E));
+    } else {
+      Temp = std::move(ExpectedFile.get());
+      OS.reset(new llvm::raw_fd_ostream(Temp->FD, /*shouldClose=*/false));
+      OSFile = Temp->TmpName;
     }
     // If we failed to create the temporary, fallback to writing to the file
     // directly. This handles the corner case where we cannot write to the
@@ -853,14 +871,10 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
       return llvm::errorCodeToError(EC);
   }
 
-  // Make sure the out stream file gets removed if we crash.
-  if (RemoveFileOnSignal)
-    llvm::sys::RemoveFileOnSignal(*OSFile);
-
   // Add the output file -- but don't try to remove "-", since this means we are
   // using stdin.
   OutputFiles.emplace_back(((OutputPath != "-") ? OutputPath : "").str(),
-                           std::move(TempFile));
+                           std::move(Temp));
 
   if (!Binary || OS->supportsSeeking())
     return std::move(OS);
@@ -1046,6 +1060,15 @@ compileModuleImpl(CompilerInstance &ImportingInstance, SourceLocation ImportLoc,
                   llvm::function_ref<void(CompilerInstance &)> PostBuildStep =
                       [](CompilerInstance &) {}) {
   llvm::TimeTraceScope TimeScope("Module Compile", ModuleName);
+
+  // Never compile a module that's already finalized - this would cause the
+  // existing module to be freed, causing crashes if it is later referenced
+  if (ImportingInstance.getModuleCache().isPCMFinal(ModuleFileName)) {
+    ImportingInstance.getDiagnostics().Report(
+        ImportLoc, diag::err_module_rebuild_finalized)
+        << ModuleName;
+    return false;
+  }
 
   // Construct a compiler invocation for creating this module.
   auto Invocation =
@@ -1248,23 +1271,75 @@ static bool compileModule(CompilerInstance &ImportingInstance,
   return Result;
 }
 
+/// Read the AST right after compiling the module.
+static bool readASTAfterCompileModule(CompilerInstance &ImportingInstance,
+                                      SourceLocation ImportLoc,
+                                      SourceLocation ModuleNameLoc,
+                                      Module *Module, StringRef ModuleFileName,
+                                      bool *OutOfDate) {
+  DiagnosticsEngine &Diags = ImportingInstance.getDiagnostics();
+
+  unsigned ModuleLoadCapabilities = ASTReader::ARR_Missing;
+  if (OutOfDate)
+    ModuleLoadCapabilities |= ASTReader::ARR_OutOfDate;
+
+  // Try to read the module file, now that we've compiled it.
+  ASTReader::ASTReadResult ReadResult =
+      ImportingInstance.getASTReader()->ReadAST(
+          ModuleFileName, serialization::MK_ImplicitModule, ImportLoc,
+          ModuleLoadCapabilities);
+  if (ReadResult == ASTReader::Success)
+    return true;
+
+  // The caller wants to handle out-of-date failures.
+  if (OutOfDate && ReadResult == ASTReader::OutOfDate) {
+    *OutOfDate = true;
+    return false;
+  }
+
+  // The ASTReader didn't diagnose the error, so conservatively report it.
+  if (ReadResult == ASTReader::Missing || !Diags.hasErrorOccurred())
+    Diags.Report(ModuleNameLoc, diag::err_module_not_built)
+      << Module->Name << SourceRange(ImportLoc, ModuleNameLoc);
+
+  return false;
+}
+
 /// Compile a module in a separate compiler instance and read the AST,
 /// returning true if the module compiles without errors.
+static bool compileModuleAndReadASTImpl(CompilerInstance &ImportingInstance,
+                                        SourceLocation ImportLoc,
+                                        SourceLocation ModuleNameLoc,
+                                        Module *Module,
+                                        StringRef ModuleFileName) {
+  if (!compileModule(ImportingInstance, ModuleNameLoc, Module,
+                     ModuleFileName)) {
+    ImportingInstance.getDiagnostics().Report(ModuleNameLoc,
+                                              diag::err_module_not_built)
+        << Module->Name << SourceRange(ImportLoc, ModuleNameLoc);
+    return false;
+  }
+
+  return readASTAfterCompileModule(ImportingInstance, ImportLoc, ModuleNameLoc,
+                                   Module, ModuleFileName,
+                                   /*OutOfDate=*/nullptr);
+}
+
+/// Compile a module in a separate compiler instance and read the AST,
+/// returning true if the module compiles without errors, using a lock manager
+/// to avoid building the same module in multiple compiler instances.
 ///
 /// Uses a lock file manager and exponential backoff to reduce the chances that
 /// multiple instances will compete to create the same module.  On timeout,
 /// deletes the lock file in order to avoid deadlock from crashing processes or
 /// bugs in the lock file manager.
-static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
-                                    SourceLocation ImportLoc,
-                                    SourceLocation ModuleNameLoc,
-                                    Module *Module, StringRef ModuleFileName) {
+static bool compileModuleAndReadASTBehindLock(
+    CompilerInstance &ImportingInstance, SourceLocation ImportLoc,
+    SourceLocation ModuleNameLoc, Module *Module, StringRef ModuleFileName) {
   DiagnosticsEngine &Diags = ImportingInstance.getDiagnostics();
 
-  auto diagnoseBuildFailure = [&] {
-    Diags.Report(ModuleNameLoc, diag::err_module_not_built)
-        << Module->Name << SourceRange(ImportLoc, ModuleNameLoc);
-  };
+  Diags.Report(ModuleNameLoc, diag::remark_module_lock)
+      << ModuleFileName << Module->Name;
 
   // FIXME: have LockFileManager return an error_code so that we can
   // avoid the mkdir when the directory already exists.
@@ -1272,7 +1347,6 @@ static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
   llvm::sys::fs::create_directories(Dir);
 
   while (1) {
-    unsigned ModuleLoadCapabilities = ASTReader::ARR_Missing;
     llvm::LockFileManager Locked(ModuleFileName);
     switch (Locked) {
     case llvm::LockFileManager::LFS_Error:
@@ -1286,56 +1360,62 @@ static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
       LLVM_FALLTHROUGH;
     case llvm::LockFileManager::LFS_Owned:
       // We're responsible for building the module ourselves.
-      if (!compileModule(ImportingInstance, ModuleNameLoc, Module,
-                         ModuleFileName)) {
-        diagnoseBuildFailure();
-        return false;
-      }
-      break;
+      return compileModuleAndReadASTImpl(ImportingInstance, ImportLoc,
+                                         ModuleNameLoc, Module, ModuleFileName);
 
     case llvm::LockFileManager::LFS_Shared:
-      // Someone else is responsible for building the module. Wait for them to
-      // finish.
-      switch (Locked.waitForUnlock()) {
-      case llvm::LockFileManager::Res_Success:
-        ModuleLoadCapabilities |= ASTReader::ARR_OutOfDate;
-        break;
-      case llvm::LockFileManager::Res_OwnerDied:
-        continue; // try again to get the lock.
-      case llvm::LockFileManager::Res_Timeout:
-        // Since ModuleCache takes care of correctness, we try waiting for
-        // another process to complete the build so clang does not do it done
-        // twice. If case of timeout, build it ourselves.
-        Diags.Report(ModuleNameLoc, diag::remark_module_lock_timeout)
-            << Module->Name;
-        // Clear the lock file so that future invocations can make progress.
-        Locked.unsafeRemoveLockFile();
-        continue;
-      }
-      break;
+      break; // The interesting case.
     }
 
-    // Try to read the module file, now that we've compiled it.
-    ASTReader::ASTReadResult ReadResult =
-        ImportingInstance.getASTReader()->ReadAST(
-            ModuleFileName, serialization::MK_ImplicitModule, ImportLoc,
-            ModuleLoadCapabilities);
-
-    if (ReadResult == ASTReader::OutOfDate &&
-        Locked == llvm::LockFileManager::LFS_Shared) {
-      // The module may be out of date in the presence of file system races,
-      // or if one of its imports depends on header search paths that are not
-      // consistent with this ImportingInstance.  Try again...
+    // Someone else is responsible for building the module. Wait for them to
+    // finish.
+    switch (Locked.waitForUnlock()) {
+    case llvm::LockFileManager::Res_Success:
+      break; // The interesting case.
+    case llvm::LockFileManager::Res_OwnerDied:
+      continue; // try again to get the lock.
+    case llvm::LockFileManager::Res_Timeout:
+      // Since ModuleCache takes care of correctness, we try waiting for
+      // another process to complete the build so clang does not do it done
+      // twice. If case of timeout, build it ourselves.
+      Diags.Report(ModuleNameLoc, diag::remark_module_lock_timeout)
+          << Module->Name;
+      // Clear the lock file so that future invocations can make progress.
+      Locked.unsafeRemoveLockFile();
       continue;
-    } else if (ReadResult == ASTReader::Missing) {
-      diagnoseBuildFailure();
-    } else if (ReadResult != ASTReader::Success &&
-               !Diags.hasErrorOccurred()) {
-      // The ASTReader didn't diagnose the error, so conservatively report it.
-      diagnoseBuildFailure();
     }
-    return ReadResult == ASTReader::Success;
+
+    // Read the module that was just written by someone else.
+    bool OutOfDate = false;
+    if (readASTAfterCompileModule(ImportingInstance, ImportLoc, ModuleNameLoc,
+                                  Module, ModuleFileName, &OutOfDate))
+      return true;
+    if (!OutOfDate)
+      return false;
+
+    // The module may be out of date in the presence of file system races,
+    // or if one of its imports depends on header search paths that are not
+    // consistent with this ImportingInstance.  Try again...
   }
+}
+
+/// Compile a module in a separate compiler instance and read the AST,
+/// returning true if the module compiles without errors, potentially using a
+/// lock manager to avoid building the same module in multiple compiler
+/// instances.
+static bool compileModuleAndReadAST(CompilerInstance &ImportingInstance,
+                                    SourceLocation ImportLoc,
+                                    SourceLocation ModuleNameLoc,
+                                    Module *Module, StringRef ModuleFileName) {
+  return ImportingInstance.getInvocation()
+                 .getFrontendOpts()
+                 .BuildingImplicitModuleUsesLock
+             ? compileModuleAndReadASTBehindLock(ImportingInstance, ImportLoc,
+                                                 ModuleNameLoc, Module,
+                                                 ModuleFileName)
+             : compileModuleAndReadASTImpl(ImportingInstance, ImportLoc,
+                                           ModuleNameLoc, Module,
+                                           ModuleFileName);
 }
 
 /// Diagnose differences between the current definition of the given
@@ -1685,9 +1765,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
     // We can't find a module, error out here.
     getDiagnostics().Report(ModuleNameLoc, diag::err_module_not_found)
         << ModuleName << SourceRange(ImportLoc, ModuleNameLoc);
-    ModuleBuildFailed = true;
-    // FIXME: Why is this not cached?
-    return ModuleLoadResult::OtherUncachedFailure;
+    return nullptr;
   }
   if (ModuleFilename.empty()) {
     if (M && M->HasIncompatibleModuleFile) {
@@ -1698,9 +1776,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
 
     getDiagnostics().Report(ModuleNameLoc, diag::err_module_build_disabled)
         << ModuleName;
-    ModuleBuildFailed = true;
-    // FIXME: Why is this not cached?
-    return ModuleLoadResult::OtherUncachedFailure;
+    return nullptr;
   }
 
   // Create an ASTReader on demand.
@@ -1746,7 +1822,6 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
         if (*ModuleFile == M->getASTFile())
           return M;
 
-    ModuleBuildFailed = true;
     getDiagnostics().Report(ModuleNameLoc, diag::err_module_prebuilt)
         << ModuleName;
     return ModuleLoadResult();
@@ -1768,14 +1843,12 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
     LLVM_FALLTHROUGH;
   case ASTReader::VersionMismatch:
   case ASTReader::HadErrors:
-    // FIXME: Should this set ModuleBuildFailed = true?
     ModuleLoader::HadFatalFailure = true;
     // FIXME: The ASTReader will already have complained, but can we shoehorn
     // that diagnostic information into a more useful form?
     return ModuleLoadResult();
 
   case ASTReader::Failure:
-    // FIXME: Should this set ModuleBuildFailed = true?
     ModuleLoader::HadFatalFailure = true;
     return ModuleLoadResult();
   }
@@ -1785,7 +1858,6 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
     // We don't know the desired configuration for this module and don't
     // necessarily even have a module map. Since ReadAST already produces
     // diagnostics for these two cases, we simply error out here.
-    ModuleBuildFailed = true;
     return ModuleLoadResult();
   }
 
@@ -1810,9 +1882,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
 
     getDiagnostics().Report(ModuleNameLoc, diag::err_module_cycle)
         << ModuleName << CyclePath;
-    // FIXME: Should this set ModuleBuildFailed = true?
-    // FIXME: Why is this not cached?
-    return ModuleLoadResult::OtherUncachedFailure;
+    return nullptr;
   }
 
   // Check whether we have already attempted to build this module (but
@@ -1821,9 +1891,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
       getPreprocessorOpts().FailedModules->hasAlreadyFailed(ModuleName)) {
     getDiagnostics().Report(ModuleNameLoc, diag::err_module_not_built)
         << ModuleName << SourceRange(ImportLoc, ModuleNameLoc);
-    ModuleBuildFailed = true;
-    // FIXME: Why is this not cached?
-    return ModuleLoadResult::OtherUncachedFailure;
+    return nullptr;
   }
 
   // Try to compile and then read the AST.
@@ -1833,9 +1901,7 @@ ModuleLoadResult CompilerInstance::findOrCompileModuleAndReadAST(
            "undiagnosed error in compileModuleAndReadAST");
     if (getPreprocessorOpts().FailedModules)
       getPreprocessorOpts().FailedModules->addFailed(ModuleName);
-    ModuleBuildFailed = true;
-    // FIXME: Why is this not cached?
-    return ModuleLoadResult::OtherUncachedFailure;
+    return nullptr;
   }
 
   // Okay, we've rebuilt and now loaded the module.
@@ -1878,22 +1944,19 @@ CompilerInstance::loadModule(SourceLocation ImportLoc,
     //if (Module == nullptr) {
     //  getDiagnostics().Report(ModuleNameLoc, diag::err_module_not_found)
     //    << ModuleName;
-    //  ModuleBuildFailed = true;
+    //  DisableGeneratingGlobalModuleIndex = true;
     //  return ModuleLoadResult();
     //}
     MM.cacheModuleLoad(*Path[0].first, Module);
   } else {
     ModuleLoadResult Result = findOrCompileModuleAndReadAST(
         ModuleName, ImportLoc, ModuleNameLoc, IsInclusionDirective);
-    // FIXME: Can we pull 'ModuleBuildFailed = true' out of the return
-    // sequences for findOrCompileModuleAndReadAST and do it here (as long as
-    // the result is not a config mismatch)?  See FIXMEs there.
     if (!Result.isNormal())
       return Result;
+    if (!Result)
+      DisableGeneratingGlobalModuleIndex = true;
     Module = Result;
     MM.cacheModuleLoad(*Path[0].first, Module);
-    if (!Module)
-      return Module;
   }
 
   // If we never found the module, fail.  Otherwise, verify the module and link

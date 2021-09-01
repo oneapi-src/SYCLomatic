@@ -724,7 +724,7 @@ std::string printTemplateArgument(const TemplateArgument &Arg,
                                   const PrintingPolicy &PP) {
   std::string Out;
   llvm::raw_string_ostream OS(Out);
-  Arg.print(PP, OS);
+  Arg.print(PP, OS, false);
   return OS.str();
 }
 

@@ -9,26 +9,37 @@
 #ifndef __CLANG_HIP_MATH_H__
 #define __CLANG_HIP_MATH_H__
 
-#if !defined(__HIP__)
+#if !defined(__HIP__) && !defined(__OPENMP_AMDGCN__)
 #error "This file is for HIP and OpenMP AMDGCN device compilation only."
 #endif
 
+#if !defined(__HIPCC_RTC__)
 #if defined(__cplusplus)
 #include <algorithm>
 #endif
 #include <limits.h>
 #include <stdint.h>
+#endif // !defined(__HIPCC_RTC__)
 
 #pragma push_macro("__DEVICE__")
+
+#ifdef __OPENMP_AMDGCN__
+#define __DEVICE__ static inline __attribute__((always_inline, nothrow))
+#else
 #define __DEVICE__ static __device__ inline __attribute__((always_inline))
+#endif
 
 // A few functions return bool type starting only in C++11.
 #pragma push_macro("__RETURN_TYPE")
+#ifdef __OPENMP_AMDGCN__
+#define __RETURN_TYPE int
+#else
 #if defined(__cplusplus)
 #define __RETURN_TYPE bool
 #else
 #define __RETURN_TYPE int
 #endif
+#endif // __OPENMP_AMDGCN__
 
 #if defined (__cplusplus) && __cplusplus < 201103L
 // emulate static_assert on type sizes
@@ -36,7 +47,7 @@ template<bool>
 struct __compare_result{};
 template<>
 struct __compare_result<true> {
-  static const bool valid;
+  static const __device__ bool valid;
 };
 
 __DEVICE__
@@ -1260,6 +1271,7 @@ float min(float __x, float __y) { return fminf(__x, __y); }
 __DEVICE__
 double min(double __x, double __y) { return fmin(__x, __y); }
 
+#if !defined(__HIPCC_RTC__) && !defined(__OPENMP_AMDGCN__)
 __host__ inline static int min(int __arg1, int __arg2) {
   return std::min(__arg1, __arg2);
 }
@@ -1267,6 +1279,7 @@ __host__ inline static int min(int __arg1, int __arg2) {
 __host__ inline static int max(int __arg1, int __arg2) {
   return std::max(__arg1, __arg2);
 }
+#endif // !defined(__HIPCC_RTC__) && !defined(__OPENMP_AMDGCN__)
 #endif
 
 #pragma pop_macro("__DEVICE__")

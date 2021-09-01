@@ -401,7 +401,12 @@ Retry:
     return HandlePragmaCaptured();
 
   case tok::annot_pragma_openmp:
+    // Prohibit attributes that are not OpenMP attributes, but only before
+    // processing a #pragma omp clause.
     ProhibitAttributes(Attrs);
+    LLVM_FALLTHROUGH;
+  case tok::annot_attr_openmp:
+    // Do not prohibit attributes if they were OpenMP attributes.
     return ParseOpenMPDeclarativeOrExecutableDirective(StmtCtx);
 
   case tok::annot_pragma_ms_pointers_to_members:
@@ -648,18 +653,12 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributesWithRange &attrs,
     // attributes as part of a statement in that case). That looks like a bug.
     if (!getLangOpts().CPlusPlus || Tok.is(tok::semi))
       attrs.takeAllFrom(TempAttrs);
-    else if (isDeclarationStatement()) {
+    else {
       StmtVector Stmts;
-      // FIXME: We should do this whether or not we have a declaration
-      // statement, but that doesn't work correctly (because ProhibitAttributes
-      // can't handle GNU attributes), so only call it in the one case where
-      // GNU attributes are allowed.
       SubStmt = ParseStatementOrDeclarationAfterAttributes(Stmts, StmtCtx,
                                                            nullptr, TempAttrs);
       if (!TempAttrs.empty() && !SubStmt.isInvalid())
         SubStmt = Actions.ActOnAttributedStmt(TempAttrs, SubStmt.get());
-    } else {
-      Diag(Tok, diag::err_expected_after) << "__attribute__" << tok::semi;
     }
   }
 

@@ -34,7 +34,7 @@
 
 extern "C" {
 
-/// \cond INGORE_BLOCK_IN_DOXYGEN
+/// \cond IGNORE_BLOCK_IN_DOXYGEN
 pi_result cuda_piContextRetain(pi_context );
 pi_result cuda_piContextRelease(pi_context );
 pi_result cuda_piDeviceRelease(pi_device );
@@ -64,12 +64,17 @@ struct _pi_platform {
 /// and implements the reference counting semantics since
 /// CUDA objects are not refcounted.
 ///
-class _pi_device {
+struct _pi_device {
+private:
   using native_type = CUdevice;
 
   native_type cuDevice_;
   std::atomic_uint32_t refCount_;
   pi_platform platform_;
+
+  static constexpr pi_uint32 max_work_item_dimensions = 3u;
+  size_t max_work_item_sizes[max_work_item_dimensions];
+  int max_work_group_size;
 
 public:
   _pi_device(native_type cuDevice, pi_platform platform)
@@ -80,6 +85,22 @@ public:
   pi_uint32 get_reference_count() const noexcept { return refCount_; }
 
   pi_platform get_platform() const noexcept { return platform_; };
+
+  void save_max_work_item_sizes(size_t size,
+                                size_t *save_max_work_item_sizes) noexcept {
+    memcpy(max_work_item_sizes, save_max_work_item_sizes, size);
+  };
+
+  void save_max_work_group_size(int value) noexcept {
+    max_work_group_size = value;
+  };
+
+  void get_max_work_item_sizes(size_t ret_size,
+                               size_t *ret_max_work_item_sizes) const noexcept {
+    memcpy(ret_max_work_item_sizes, max_work_item_sizes, ret_size);
+  };
+
+  int get_max_work_group_size() const noexcept { return max_work_group_size; };
 };
 
 /// PI context mapping to a CUDA context object.
@@ -239,7 +260,7 @@ struct _pi_mem {
 
       void *get_map_ptr() const noexcept { return mapPtr_; }
 
-      size_t get_map_offset(void *ptr) const noexcept { return mapOffset_; }
+      size_t get_map_offset(void *) const noexcept { return mapOffset_; }
 
       /// Returns a pointer to data visible on the host that contains
       /// the data on the device associated with this allocation.
@@ -259,7 +280,7 @@ struct _pi_mem {
       }
 
       /// Detach the allocation from the host memory.
-      void unmap(void *ptr) noexcept {
+      void unmap(void *) noexcept {
         assert(mapPtr_ != nullptr);
 
         if (mapPtr_ != hostPtr_) {
@@ -312,6 +333,9 @@ struct _pi_mem {
   _pi_mem(pi_context ctxt, CUarray array, CUsurfObject surf,
           pi_mem_type image_type, void *host_ptr)
       : context_{ctxt}, refCount_{1}, mem_type_{mem_type::surface} {
+    // Ignore unused parameter
+    (void)host_ptr;
+
     mem_.surface_mem_.array_ = array;
     mem_.surface_mem_.surfObj_ = surf;
     mem_.surface_mem_.imageType_ = image_type;
@@ -388,7 +412,7 @@ typedef void (*pfn_notify)(pi_event event, pi_int32 eventCommandStatus,
                            void *userData);
 /// PI Event mapping to CUevent
 ///
-class _pi_event {
+struct _pi_event {
 public:
   using native_type = CUevent;
 
@@ -500,6 +524,10 @@ struct _pi_program {
   std::atomic_uint32_t refCount_;
   _pi_context *context_;
 
+  // Metadata
+  std::unordered_map<std::string, std::tuple<uint32_t, uint32_t, uint32_t>>
+      kernelReqdWorkGroupSizeMD_;
+
   constexpr static size_t MAX_LOG_SIZE = 8192u;
 
   char errorLog_[MAX_LOG_SIZE], infoLog_[MAX_LOG_SIZE];
@@ -508,6 +536,9 @@ struct _pi_program {
 
   _pi_program(pi_context ctxt);
   ~_pi_program();
+
+  pi_result set_metadata(const pi_device_binary_property *metadata,
+                         size_t length);
 
   pi_result set_binary(const char *binary, size_t binarySizeInBytes);
 
@@ -612,7 +643,7 @@ struct _pi_kernel {
       std::fill(std::begin(offsetPerIndex_), std::end(offsetPerIndex_), 0);
     }
 
-    args_index_t get_indices() const noexcept { return indices_; }
+    const args_index_t &get_indices() const noexcept { return indices_; }
 
     pi_uint32 get_local_size() const {
       return std::accumulate(std::begin(offsetPerIndex_),
@@ -678,7 +709,7 @@ struct _pi_kernel {
     args_.set_implicit_offset(size, implicitOffset);
   }
 
-  arguments::args_index_t get_arg_indices() const {
+  const arguments::args_index_t &get_arg_indices() const {
     return args_.get_indices();
   }
 

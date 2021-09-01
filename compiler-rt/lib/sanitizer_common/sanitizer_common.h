@@ -222,8 +222,8 @@ void CatastrophicErrorWrite(const char *buffer, uptr length);
 void RawWrite(const char *buffer);
 bool ColorizeReports();
 void RemoveANSIEscapeSequencesFromString(char *buffer);
-void Printf(const char *format, ...);
-void Report(const char *format, ...);
+void Printf(const char *format, ...) FORMAT(1, 2);
+void Report(const char *format, ...) FORMAT(1, 2);
 void SetPrintfAndReportCallback(void (*callback)(const char *));
 #define VReport(level, ...)                                              \
   do {                                                                   \
@@ -237,10 +237,16 @@ void SetPrintfAndReportCallback(void (*callback)(const char *));
 // Lock sanitizer error reporting and protects against nested errors.
 class ScopedErrorReportLock {
  public:
-  ScopedErrorReportLock();
-  ~ScopedErrorReportLock();
+  ScopedErrorReportLock() ACQUIRE(mutex_) { Lock(); }
+  ~ScopedErrorReportLock() RELEASE(mutex_) { Unlock(); }
 
-  static void CheckLocked();
+  static void Lock() ACQUIRE(mutex_);
+  static void Unlock() RELEASE(mutex_);
+  static void CheckLocked() CHECK_LOCKED(mutex_);
+
+ private:
+  static atomic_uintptr_t reporting_thread_;
+  static StaticSpinMutex mutex_;
 };
 
 extern uptr stoptheworld_tracer_pid;
@@ -288,8 +294,8 @@ void InitTlsSize();
 uptr GetTlsSize();
 
 // Other
-void SleepForSeconds(int seconds);
-void SleepForMillis(int millis);
+void SleepForSeconds(unsigned seconds);
+void SleepForMillis(unsigned millis);
 u64 NanoTime();
 u64 MonotonicNanoTime();
 int Atexit(void (*function)(void));
@@ -304,8 +310,8 @@ void NORETURN ReportMmapFailureAndDie(uptr size, const char *mem_type,
                                       const char *mmap_type, error_t err,
                                       bool raw_report = false);
 
-// Specific tools may override behavior of "Die" and "CheckFailed" functions
-// to do tool-specific job.
+// Specific tools may override behavior of "Die" function to do tool-specific
+// job.
 typedef void (*DieCallbackType)(void);
 
 // It's possible to add several callbacks that would be run when "Die" is
@@ -317,9 +323,7 @@ bool RemoveDieCallback(DieCallbackType callback);
 
 void SetUserDieCallback(DieCallbackType callback);
 
-typedef void (*CheckFailedCallbackType)(const char *, int, const char *,
-                                       u64, u64);
-void SetCheckFailedCallback(CheckFailedCallbackType callback);
+void SetCheckUnwindCallback(void (*callback)());
 
 // Callback will be called if soft_rss_limit_mb is given and the limit is
 // exceeded (exceeded==true) or if rss went down below the limit
@@ -614,7 +618,7 @@ class InternalScopedString {
     buffer_.resize(1);
     buffer_[0] = '\0';
   }
-  void append(const char *format, ...);
+  void append(const char *format, ...) FORMAT(2, 3);
   const char *data() const { return buffer_.data(); }
   char *data() { return buffer_.data(); }
 
@@ -1062,7 +1066,7 @@ class ArrayRef {
 }  // namespace __sanitizer
 
 inline void *operator new(__sanitizer::operator_new_size_type size,
-                          __sanitizer::LowLevelAllocator &alloc) {  // NOLINT
+                          __sanitizer::LowLevelAllocator &alloc) {
   return alloc.Allocate(size);
 }
 

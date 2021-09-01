@@ -195,6 +195,11 @@ void Parser::ParseGNUAttributes(ParsedAttributesWithRange &Attrs,
       // Expect an identifier or declaration specifier (const, int, etc.)
       if (Tok.isAnnotation())
         break;
+      if (Tok.is(tok::code_completion)) {
+        cutOffParsing();
+        Actions.CodeCompleteAttribute(AttributeCommonInfo::Syntax::AS_GNU);
+        break;
+      }
       IdentifierInfo *AttrName = Tok.getIdentifierInfo();
       if (!AttrName)
         break;
@@ -713,6 +718,12 @@ void Parser::ParseMicrosoftDeclSpecs(ParsedAttributes &Attrs,
       // Attribute not present.
       if (TryConsumeToken(tok::comma))
         continue;
+
+      if (Tok.is(tok::code_completion)) {
+        cutOffParsing();
+        Actions.CodeCompleteAttribute(AttributeCommonInfo::AS_Declspec);
+        return;
+      }
 
       // We expect either a well-known identifier or a generic string.  Anything
       // else is a malformed declspec.
@@ -1647,6 +1658,13 @@ void Parser::ProhibitCXX11Attributes(ParsedAttributesWithRange &Attrs,
       Diag(AL.getLoc(), DiagID) << AL;
       AL.setInvalid();
     }
+  }
+}
+
+void Parser::DiagnoseCXX11AttributeExtension(ParsedAttributesWithRange &Attrs) {
+  for (const ParsedAttr &PA : Attrs) {
+    if (PA.isCXX11Attribute() || PA.isC2xAttribute())
+      Diag(PA.getLoc(), diag::ext_cxx11_attr_placement) << PA << PA.getRange();
   }
 }
 
@@ -3072,6 +3090,25 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
 
     SourceLocation Loc = Tok.getLocation();
 
+    // Helper for image types in OpenCL.
+    auto handleOpenCLImageKW = [&] (StringRef Ext, TypeSpecifierType ImageTypeSpec) {
+      // Check if the image type is supported and otherwise turn the keyword into an identifier
+      // because image types from extensions are not reserved identifiers.
+      if (!StringRef(Ext).empty() && !getActions().getOpenCLOptions().isSupported(Ext, getLangOpts())) {
+        Tok.getIdentifierInfo()->revertTokenIDToIdentifier();
+        Tok.setKind(tok::identifier);
+        return false;
+      }
+      isInvalid = DS.SetTypeSpecType(ImageTypeSpec, Loc, PrevSpec, DiagID, Policy);
+      return true;
+    };
+
+    // Turn off usual access checking for template specializations and
+    // instantiations.
+    bool IsTemplateSpecOrInst =
+        (TemplateInfo.Kind == ParsedTemplateInfo::ExplicitInstantiation ||
+         TemplateInfo.Kind == ParsedTemplateInfo::ExplicitSpecialization);
+
     switch (Tok.getKind()) {
     default:
     DoneWithDeclSpec:
@@ -3242,12 +3279,21 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
           isConstructorDeclarator(/*Unqualified*/ false))
         goto DoneWithDeclSpec;
 
+      // C++20 [temp.spec] 13.9/6.
+      // This disables the access checking rules for function template explicit
+      // instantiation and explicit specialization:
+      // - `return type`.
+      SuppressAccessChecks SAC(*this, IsTemplateSpecOrInst);
+
       ParsedType TypeRep =
           Actions.getTypeName(*Next.getIdentifierInfo(), Next.getLocation(),
                               getCurScope(), &SS, false, false, nullptr,
                               /*IsCtorOrDtorName=*/false,
                               /*WantNontrivialTypeSourceInfo=*/true,
                               isClassTemplateDeductionContext(DSContext));
+
+      if (IsTemplateSpecOrInst)
+        SAC.done();
 
       // If the referenced identifier is not a type, then this declspec is
       // erroneous: We already checked about that it has no type specifier, and
@@ -3358,10 +3404,24 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       // In C++, check to see if this is a scope specifier like foo::bar::, if
       // so handle it as such.  This is important for ctor parsing.
       if (getLangOpts().CPlusPlus) {
-        if (TryAnnotateCXXScopeToken(EnteringContext)) {
+        // C++20 [temp.spec] 13.9/6.
+        // This disables the access checking rules for function template
+        // explicit instantiation and explicit specialization:
+        // - `return type`.
+        SuppressAccessChecks SAC(*this, IsTemplateSpecOrInst);
+
+        const bool Success = TryAnnotateCXXScopeToken(EnteringContext);
+
+        if (IsTemplateSpecOrInst)
+          SAC.done();
+
+        if (Success) {
+          if (IsTemplateSpecOrInst)
+            SAC.redelay();
           DS.SetTypeSpecError();
           goto DoneWithDeclSpec;
         }
+
         if (!Tok.is(tok::identifier))
           continue;
       }
@@ -3931,15 +3991,23 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
         // OpenCL 2.0 and later define this keyword. OpenCL 1.2 and earlier
         // should support the "pipe" word as identifier.
         Tok.getIdentifierInfo()->revertTokenIDToIdentifier();
+        Tok.setKind(tok::identifier);
         goto DoneWithDeclSpec;
-      }
-      isInvalid = DS.SetTypePipe(true, Loc, PrevSpec, DiagID, Policy);
+      } else if (!getLangOpts().OpenCLPipes) {
+        DiagID = diag::err_opencl_unknown_type_specifier;
+        PrevSpec = Tok.getIdentifierInfo()->getNameStart();
+        isInvalid = true;
+      } else
+        isInvalid = DS.SetTypePipe(true, Loc, PrevSpec, DiagID, Policy);
       break;
-#define GENERIC_IMAGE_TYPE(ImgType, Id) \
-  case tok::kw_##ImgType##_t: \
-    isInvalid = DS.SetTypeSpecType(DeclSpec::TST_##ImgType##_t, Loc, PrevSpec, \
-                                   DiagID, Policy); \
-    break;
+// We only need to enumerate each image type once.
+#define IMAGE_READ_WRITE_TYPE(Type, Id, Ext)
+#define IMAGE_WRITE_TYPE(Type, Id, Ext)
+#define IMAGE_READ_TYPE(ImgType, Id, Ext) \
+    case tok::kw_##ImgType##_t: \
+      if (!handleOpenCLImageKW(Ext, DeclSpec::TST_##ImgType##_t)) \
+        goto DoneWithDeclSpec; \
+      break;
 #include "clang/Basic/OpenCLImageTypes.def"
     case tok::kw___unknown_anytype:
       isInvalid = DS.SetTypeSpecType(TST_unknown_anytype, Loc,
@@ -4049,6 +4117,8 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
     case tok::kw___generic:
       // generic address space is introduced only in OpenCL v2.0
       // see OpenCL C Spec v2.0 s6.5.5
+      // OpenCL v3.0 introduces __opencl_c_generic_address_space
+      // feature macro to indicate if generic address space is supported
       if (!Actions.getLangOpts().OpenCLGenericAddressSpace) {
         DiagID = diag::err_opencl_unknown_type_specifier;
         PrevSpec = Tok.getIdentifierInfo()->getNameStart();
@@ -4113,9 +4183,8 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
                           << FixItHint::CreateRemoval(
                                  SourceRange(Loc, DS.getEndLoc()));
       else if (DiagID == diag::err_opencl_unknown_type_specifier) {
-        Diag(Loc, DiagID) << getLangOpts().OpenCLCPlusPlus
-                          << getLangOpts().getOpenCLVersionTuple().getAsString()
-                          << PrevSpec << isStorageClass;
+        Diag(Loc, DiagID) << getLangOpts().getOpenCLVersionString() << PrevSpec
+                          << isStorageClass;
       } else
         Diag(Loc, DiagID) << PrevSpec;
     }
@@ -4278,7 +4347,7 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
       continue;
     }
 
-    if (Tok.is(tok::annot_pragma_openmp)) {
+    if (Tok.isOneOf(tok::annot_pragma_openmp, tok::annot_attr_openmp)) {
       // Result can be ignored, because it must be always empty.
       AccessSpecifier AS = AS_none;
       ParsedAttributesWithRange Attrs(AttrFactory);
@@ -5101,8 +5170,10 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
   switch (Tok.getKind()) {
   default: return false;
 
+  // OpenCL 2.0 and later define this keyword.
   case tok::kw_pipe:
-    return getLangOpts().OpenCLPipe;
+    return (getLangOpts().OpenCL && getLangOpts().OpenCLVersion >= 200) ||
+           getLangOpts().OpenCLCPlusPlus;
 
   case tok::identifier:   // foo::bar
     // Unfortunate hack to support "Class.factoryMethod" notation.
@@ -5631,7 +5702,9 @@ static bool isPtrOperatorToken(tok::TokenKind Kind, const LangOptions &Lang,
   if (Kind == tok::star || Kind == tok::caret)
     return true;
 
-  if (Kind == tok::kw_pipe && Lang.OpenCLPipe)
+  // OpenCL 2.0 and later define this keyword.
+  if (Kind == tok::kw_pipe &&
+      ((Lang.OpenCL && Lang.OpenCLVersion >= 200) || Lang.OpenCLCPlusPlus))
     return true;
 
   if (!Lang.CPlusPlus)
@@ -7318,6 +7391,7 @@ bool Parser::TryAltiVecVectorTokenOutOfLine() {
   case tok::kw_float:
   case tok::kw_double:
   case tok::kw_bool:
+  case tok::kw__Bool:
   case tok::kw___bool:
   case tok::kw___pixel:
     Tok.setKind(tok::kw___vector);
@@ -7327,7 +7401,8 @@ bool Parser::TryAltiVecVectorTokenOutOfLine() {
       Tok.setKind(tok::kw___vector);
       return true;
     }
-    if (Next.getIdentifierInfo() == Ident_bool) {
+    if (Next.getIdentifierInfo() == Ident_bool ||
+        Next.getIdentifierInfo() == Ident_Bool) {
       Tok.setKind(tok::kw___vector);
       return true;
     }
@@ -7352,6 +7427,7 @@ bool Parser::TryAltiVecTokenOutOfLine(DeclSpec &DS, SourceLocation Loc,
     case tok::kw_float:
     case tok::kw_double:
     case tok::kw_bool:
+    case tok::kw__Bool:
     case tok::kw___bool:
     case tok::kw___pixel:
       isInvalid = DS.SetTypeAltiVecVector(true, Loc, PrevSpec, DiagID, Policy);
@@ -7361,8 +7437,10 @@ bool Parser::TryAltiVecTokenOutOfLine(DeclSpec &DS, SourceLocation Loc,
         isInvalid = DS.SetTypeAltiVecVector(true, Loc, PrevSpec, DiagID,Policy);
         return true;
       }
-      if (Next.getIdentifierInfo() == Ident_bool) {
-        isInvalid = DS.SetTypeAltiVecVector(true, Loc, PrevSpec, DiagID,Policy);
+      if (Next.getIdentifierInfo() == Ident_bool ||
+          Next.getIdentifierInfo() == Ident_Bool) {
+        isInvalid =
+            DS.SetTypeAltiVecVector(true, Loc, PrevSpec, DiagID, Policy);
         return true;
       }
       break;

@@ -66,7 +66,9 @@ enum class HighlightingModifier {
   Readonly,
   Static,
   Abstract,
+  Virtual,
   DependentName,
+  DefaultLibrary,
 
   FunctionScope,
   ClassScope,

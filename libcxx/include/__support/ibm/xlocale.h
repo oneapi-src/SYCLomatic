@@ -10,9 +10,9 @@
 #ifndef _LIBCPP_SUPPORT_IBM_XLOCALE_H
 #define _LIBCPP_SUPPORT_IBM_XLOCALE_H
 
-#include <stdarg.h>
 #include <__support/ibm/locale_mgmt_aix.h>
 #include <__support/ibm/locale_mgmt_zos.h>
+#include <stdarg.h>
 
 #include "cstdlib"
 
@@ -310,7 +310,12 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
   }
 
   va_list ap_copy;
+  // va_copy may not be provided by the C library in C++ 03 mode.
+#if defined(_LIBCPP_CXX03_LANG) && __has_builtin(__builtin_va_copy)
+  __builtin_va_copy(ap_copy, ap);
+#else
   va_copy(ap_copy, ap);
+#endif
   int str_size = vsnprintf(*strp, buff_size, fmt,  ap_copy);
   va_end(ap_copy);
 

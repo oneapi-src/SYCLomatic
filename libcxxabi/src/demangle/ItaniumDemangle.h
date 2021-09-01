@@ -3883,7 +3883,7 @@ Node *AbstractManglingParser<Derived, Alloc>::parseType() {
     //                ::= Dh   # IEEE 754r half-precision floating point (16 bits)
     case 'h':
       First += 2;
-      return make<NameType>("decimal16");
+      return make<NameType>("half");
     //                ::= Di   # char32_t
     case 'i':
       First += 2;
@@ -5235,14 +5235,18 @@ Node *AbstractManglingParser<Derived, Alloc>::parseEncoding() {
   class SaveTemplateParams {
     AbstractManglingParser *Parser;
     decltype(TemplateParams) OldParams;
+    decltype(OuterTemplateParams) OldOuterParams;
 
   public:
     SaveTemplateParams(AbstractManglingParser *TheParser) : Parser(TheParser) {
       OldParams = std::move(Parser->TemplateParams);
+      OldOuterParams = std::move(Parser->OuterTemplateParams);
       Parser->TemplateParams.clear();
+      Parser->OuterTemplateParams.clear();
     }
     ~SaveTemplateParams() {
       Parser->TemplateParams = std::move(OldParams);
+      Parser->OuterTemplateParams = std::move(OldOuterParams);
     }
   } SaveTemplateParams(this);
 

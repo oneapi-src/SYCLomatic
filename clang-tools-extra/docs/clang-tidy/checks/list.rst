@@ -30,6 +30,7 @@ Clang-Tidy Checks
    `abseil-time-comparison <abseil-time-comparison.html>`_, "Yes"
    `abseil-time-subtraction <abseil-time-subtraction.html>`_, "Yes"
    `abseil-upgrade-duration-conversions <abseil-upgrade-duration-conversions.html>`_, "Yes"
+   `altera-id-dependent-backward-branch <altera-id-dependent-backward-branch.html>`_,
    `altera-kernel-name-restriction <altera-kernel-name-restriction.html>`_,
    `altera-single-work-item-barrier <altera-single-work-item-barrier.html>`_,
    `altera-struct-pack-align <altera-struct-pack-align.html>`_, "Yes"
@@ -58,10 +59,12 @@ Clang-Tidy Checks
    `bugprone-copy-constructor-init <bugprone-copy-constructor-init.html>`_, "Yes"
    `bugprone-dangling-handle <bugprone-dangling-handle.html>`_,
    `bugprone-dynamic-static-initializers <bugprone-dynamic-static-initializers.html>`_,
+   `bugprone-easily-swappable-parameters <bugprone-easily-swappable-parameters.html>`_,
    `bugprone-exception-escape <bugprone-exception-escape.html>`_,
    `bugprone-fold-init-type <bugprone-fold-init-type.html>`_,
    `bugprone-forward-declaration-namespace <bugprone-forward-declaration-namespace.html>`_,
    `bugprone-forwarding-reference-overload <bugprone-forwarding-reference-overload.html>`_,
+   `bugprone-implicit-widening-of-multiplication-result <bugprone-implicit-widening-of-multiplication-result.html>`_, "Yes"
    `bugprone-inaccurate-erase <bugprone-inaccurate-erase.html>`_, "Yes"
    `bugprone-incorrect-roundings <bugprone-incorrect-roundings.html>`_,
    `bugprone-infinite-loop <bugprone-infinite-loop.html>`_,
@@ -100,6 +103,7 @@ Clang-Tidy Checks
    `bugprone-too-small-loop-variable <bugprone-too-small-loop-variable.html>`_,
    `bugprone-undefined-memory-manipulation <bugprone-undefined-memory-manipulation.html>`_,
    `bugprone-undelegated-constructor <bugprone-undelegated-constructor.html>`_,
+   `bugprone-unhandled-exception-at-new <bugprone-unhandled-exception-at-new.html>`_,
    `bugprone-unhandled-self-assignment <bugprone-unhandled-self-assignment.html>`_,
    `bugprone-unused-raii <bugprone-unused-raii.html>`_, "Yes"
    `bugprone-unused-return-value <bugprone-unused-return-value.html>`_,
@@ -284,6 +288,7 @@ Clang-Tidy Checks
    `readability-else-after-return <readability-else-after-return.html>`_, "Yes"
    `readability-function-cognitive-complexity <readability-function-cognitive-complexity.html>`_,
    `readability-function-size <readability-function-size.html>`_,
+   `readability-identifier-length <readability-identifier-length.html>`_,
    `readability-identifier-naming <readability-identifier-naming.html>`_, "Yes"
    `readability-implicit-bool-conversion <readability-implicit-bool-conversion.html>`_, "Yes"
    `readability-inconsistent-declaration-parameter-name <readability-inconsistent-declaration-parameter-name.html>`_, "Yes"
@@ -309,6 +314,7 @@ Clang-Tidy Checks
    `readability-static-accessed-through-instance <readability-static-accessed-through-instance.html>`_, "Yes"
    `readability-static-definition-in-anonymous-namespace <readability-static-definition-in-anonymous-namespace.html>`_, "Yes"
    `readability-string-compare <readability-string-compare.html>`_, "Yes"
+   `readability-suspicious-call-argument <readability-suspicious-call-argument.html>`_,
    `readability-uniqueptr-delete-release <readability-uniqueptr-delete-release.html>`_, "Yes"
    `readability-uppercase-literal-suffix <readability-uppercase-literal-suffix.html>`_, "Yes"
    `readability-use-anyofallof <readability-use-anyofallof.html>`_,

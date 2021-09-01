@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct -out-root %T/thrust-for-hypre %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
+// RUN: dpct -out-root %T/thrust-for-hypre %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-for-hypre/thrust-for-hypre.dp.cpp --match-full-lines %s
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>

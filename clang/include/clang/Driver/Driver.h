@@ -84,6 +84,9 @@ class Driver {
   /// LTO mode selected via -f(no-)?lto(=.*)? options.
   LTOKind LTOMode;
 
+  /// LTO mode selected via -f(no-offload-)?lto(=.*)? options.
+  LTOKind OffloadLTOMode;
+
 public:
   enum OpenMPRuntimeKind {
     /// An unknown OpenMP runtime. We can't generate effective OpenMP code
@@ -377,12 +380,6 @@ public:
   /// to determine if an error occurred.
   Compilation *BuildCompilation(ArrayRef<const char *> Args);
 
-  /// @name Driver Steps
-  /// @{
-
-  /// ParseDriverMode - Look for and handle the driver mode option in Args.
-  void ParseDriverMode(StringRef ProgramName, ArrayRef<const char *> Args);
-
   /// ParseArgStrings - Parse the given list of strings into an
   /// ArgList.
   llvm::opt::InputArgList ParseArgStrings(ArrayRef<const char *> Args,
@@ -571,10 +568,14 @@ public:
   bool ShouldEmitStaticLibrary(const llvm::opt::ArgList &Args) const;
 
   /// Returns true if we are performing any kind of LTO.
-  bool isUsingLTO() const { return LTOMode != LTOK_None; }
+  bool isUsingLTO(bool IsOffload = false) const {
+    return getLTOMode(IsOffload) != LTOK_None;
+  }
 
   /// Get the specific kind of LTO being performed.
-  LTOKind getLTOMode() const { return LTOMode; }
+  LTOKind getLTOMode(bool IsOffload = false) const {
+    return IsOffload ? OffloadLTOMode : LTOMode;
+  }
 
 private:
 
@@ -589,9 +590,9 @@ private:
   /// \returns true, if error occurred while reading.
   bool readConfigFile(StringRef FileName);
 
-  /// Set the driver mode (cl, gcc, etc) from an option string of the form
-  /// --driver-mode=<mode>.
-  void setDriverModeFromOption(StringRef Opt);
+  /// Set the driver mode (cl, gcc, etc) from the value of the `--driver-mode`
+  /// option.
+  void setDriverMode(StringRef DriverModeValue);
 
   /// Parse the \p Args list for LTO options and record the type of LTO
   /// compilation based on which -f(no-)?lto(=.*)? option occurs last.
@@ -648,6 +649,21 @@ private:
     FPGAEmulationMode = IsEmulation;
   }
 
+  /// The inclusion of the default SYCL device triple is dependent on either
+  /// the discovery of an existing object/archive that contains the device code
+  /// or if a user explicitly turns this on with -fsycl-add-spirv.
+  /// We need to keep track of this so any use of any generic target option
+  /// setting is only applied to the user specified triples.
+  bool SYCLDefaultTripleImplied = false;
+  void setSYCLDefaultTriple(bool IsDefaultImplied) {
+    SYCLDefaultTripleImplied = IsDefaultImplied;
+  }
+
+  /// Returns true if an offload binary is found that contains the default
+  /// triple for SYCL (spir64)
+  bool checkForSYCLDefaultDevice(Compilation &C,
+                                 llvm::opt::DerivedArgList &Args) const;
+
   /// Returns true if an offload static library is found.
   bool checkForOffloadStaticLib(Compilation &C,
                                 llvm::opt::DerivedArgList &Args) const;
@@ -658,7 +674,13 @@ private:
   /// A list of inputs and their corresponding integration headers. These
   /// files are generated during the device compilation and are consumed
   /// by the host compilation.
-  mutable llvm::StringMap<StringRef> IntegrationFileList;
+  mutable llvm::StringMap<const std::pair<StringRef, StringRef>>
+      IntegrationFileList;
+
+  /// Unique ID used for SYCL compilations.  Each file will use a different
+  /// unique ID, but the same ID will be used for different compilation
+  /// targets.
+  mutable llvm::StringMap<StringRef> SYCLUniqueIDList;
 
 public:
   /// GetReleaseVersion - Parse (([0-9]+)(.([0-9]+)(.([0-9]+)?))?)? and
@@ -701,14 +723,37 @@ public:
   /// FPGA Emulation.  This is only used for SYCL offloading to FPGA device.
   bool isFPGAEmulationMode() const { return FPGAEmulationMode; };
 
+  /// isSYCLDefaultTripleImplied - The default SYCL triple (spir64) has been
+  /// added or should be added given proper criteria.
+  bool isSYCLDefaultTripleImplied() const { return SYCLDefaultTripleImplied; };
+
   /// addIntegrationFiles - Add the integration files that will be populated
   /// by the device compilation and used by the host compile.
-  void addIntegrationFiles(StringRef IntHeaderName, StringRef FileName) const {
-    IntegrationFileList.insert({FileName, IntHeaderName});
+  void addIntegrationFiles(StringRef IntHeaderName, StringRef IntFooterName,
+                           StringRef FileName) const {
+    IntegrationFileList.insert(
+        {FileName, std::make_pair(IntHeaderName, IntFooterName)});
   }
   /// getIntegrationHeader - Get the integration header file
   StringRef getIntegrationHeader(StringRef FileName) const {
-    return IntegrationFileList[FileName];
+    return IntegrationFileList[FileName].first;
+  }
+  /// getIntegrationFooter - Get the integration footer file
+  StringRef getIntegrationFooter(StringRef FileName) const {
+    return IntegrationFileList[FileName].second;
+  }
+  /// createAppendedFooterInput - Create new source file.
+  void createAppendedFooterInput(Action *&Input, Compilation &C,
+                                 const llvm::opt::ArgList &Args) const;
+
+  /// setSYCLUniqueID - set the Unique ID that is used for all FE invocations
+  /// when performing compilations for SYCL.
+  void addSYCLUniqueID(StringRef UniqueID, StringRef FileName) const {
+    SYCLUniqueIDList.insert({FileName, UniqueID});
+  }
+  /// getSYCLUniqueID - Get the Unique ID associated with the file.
+  StringRef getSYCLUniqueID(StringRef FileName) const {
+    return SYCLUniqueIDList[FileName];
   }
 };
 
@@ -724,6 +769,16 @@ bool isStaticArchiveFile(const StringRef &FileName);
 
 /// \return True if the argument combination will end up generating remarks.
 bool willEmitRemarks(const llvm::opt::ArgList &Args);
+
+/// Returns the driver mode option's value, i.e. `X` in `--driver-mode=X`. If \p
+/// Args doesn't mention one explicitly, tries to deduce from `ProgName`.
+/// Returns empty on failure.
+/// Common values are "gcc", "g++", "cpp", "cl" and "flang". Returned value need
+/// not be one of these.
+llvm::StringRef getDriverMode(StringRef ProgName, ArrayRef<const char *> Args);
+
+/// Checks whether the value produced by getDriverMode is for CL mode.
+bool IsClangCL(StringRef DriverMode);
 
 } // end namespace driver
 } // end namespace clang

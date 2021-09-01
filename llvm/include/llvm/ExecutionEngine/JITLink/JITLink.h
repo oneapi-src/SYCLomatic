@@ -35,6 +35,7 @@
 namespace llvm {
 namespace jitlink {
 
+class LinkGraph;
 class Symbol;
 class Section;
 
@@ -135,6 +136,12 @@ private:
   JITTargetAddress Address = 0;
   uint64_t IsDefined : 1;
   uint64_t IsAbsolute : 1;
+
+protected:
+  // bitfields for Block, allocated here to improve packing.
+  uint64_t ContentMutable : 1;
+  uint64_t P2Align : 5;
+  uint64_t AlignmentOffset : 56;
 };
 
 using SectionOrdinal = unsigned;
@@ -147,26 +154,49 @@ private:
   /// Create a zero-fill defined addressable.
   Block(Section &Parent, JITTargetAddress Size, JITTargetAddress Address,
         uint64_t Alignment, uint64_t AlignmentOffset)
-      : Addressable(Address, true), Parent(Parent), Size(Size) {
+      : Addressable(Address, true), Parent(&Parent), Size(Size) {
     assert(isPowerOf2_64(Alignment) && "Alignment must be power of 2");
     assert(AlignmentOffset < Alignment &&
            "Alignment offset cannot exceed alignment");
     assert(AlignmentOffset <= MaxAlignmentOffset &&
            "Alignment offset exceeds maximum");
+    ContentMutable = false;
     P2Align = Alignment ? countTrailingZeros(Alignment) : 0;
     this->AlignmentOffset = AlignmentOffset;
   }
 
   /// Create a defined addressable for the given content.
+  /// The Content is assumed to be non-writable, and will be copied when
+  /// mutations are required.
   Block(Section &Parent, ArrayRef<char> Content, JITTargetAddress Address,
         uint64_t Alignment, uint64_t AlignmentOffset)
-      : Addressable(Address, true), Parent(Parent), Data(Content.data()),
+      : Addressable(Address, true), Parent(&Parent), Data(Content.data()),
         Size(Content.size()) {
     assert(isPowerOf2_64(Alignment) && "Alignment must be power of 2");
     assert(AlignmentOffset < Alignment &&
            "Alignment offset cannot exceed alignment");
     assert(AlignmentOffset <= MaxAlignmentOffset &&
            "Alignment offset exceeds maximum");
+    ContentMutable = false;
+    P2Align = Alignment ? countTrailingZeros(Alignment) : 0;
+    this->AlignmentOffset = AlignmentOffset;
+  }
+
+  /// Create a defined addressable for the given content.
+  /// The content is assumed to be writable, and the caller is responsible
+  /// for ensuring that it lives for the duration of the Block's lifetime.
+  /// The standard way to achieve this is to allocate it on the Graph's
+  /// allocator.
+  Block(Section &Parent, MutableArrayRef<char> Content,
+        JITTargetAddress Address, uint64_t Alignment, uint64_t AlignmentOffset)
+      : Addressable(Address, true), Parent(&Parent), Data(Content.data()),
+        Size(Content.size()) {
+    assert(isPowerOf2_64(Alignment) && "Alignment must be power of 2");
+    assert(AlignmentOffset < Alignment &&
+           "Alignment offset cannot exceed alignment");
+    assert(AlignmentOffset <= MaxAlignmentOffset &&
+           "Alignment offset exceeds maximum");
+    ContentMutable = true;
     P2Align = Alignment ? countTrailingZeros(Alignment) : 0;
     this->AlignmentOffset = AlignmentOffset;
   }
@@ -182,7 +212,7 @@ public:
   Block &operator=(Block &&) = delete;
 
   /// Return the parent section for this block.
-  Section &getSection() const { return Parent; }
+  Section &getSection() const { return *Parent; }
 
   /// Returns true if this is a zero-fill block.
   ///
@@ -205,7 +235,43 @@ public:
   void setContent(ArrayRef<char> Content) {
     Data = Content.data();
     Size = Content.size();
+    ContentMutable = false;
   }
+
+  /// Get mutable content for this block.
+  ///
+  /// If this Block's content is not already mutable this will trigger a copy
+  /// of the existing immutable content to a new, mutable buffer allocated using
+  /// LinkGraph::allocateContent.
+  MutableArrayRef<char> getMutableContent(LinkGraph &G);
+
+  /// Get mutable content for this block.
+  ///
+  /// This block's content must already be mutable. It is a programmatic error
+  /// to call this on a block with immutable content -- consider using
+  /// getMutableContent instead.
+  MutableArrayRef<char> getAlreadyMutableContent() {
+    assert(ContentMutable && "Content is not mutable");
+    return MutableArrayRef<char>(const_cast<char *>(Data), Size);
+  }
+
+  /// Set mutable content for this block.
+  ///
+  /// The caller is responsible for ensuring that the memory pointed to by
+  /// MutableContent is not deallocated while pointed to by this block.
+  void setMutableContent(MutableArrayRef<char> MutableContent) {
+    Data = MutableContent.data();
+    Size = MutableContent.size();
+    ContentMutable = true;
+  }
+
+  /// Returns true if this block's content is mutable.
+  ///
+  /// This is primarily useful for asserting that a block is already in a
+  /// mutable state prior to modifying the content. E.g. when applying
+  /// fixups we expect the block to already be mutable as it should have been
+  /// copied to working memory.
+  bool isContentMutable() const { return ContentMutable; }
 
   /// Get the alignment for this content.
   uint64_t getAlignment() const { return 1ull << P2Align; }
@@ -263,11 +329,11 @@ public:
   }
 
 private:
-  static constexpr uint64_t MaxAlignmentOffset = (1ULL << 57) - 1;
+  static constexpr uint64_t MaxAlignmentOffset = (1ULL << 56) - 1;
 
-  uint64_t P2Align : 5;
-  uint64_t AlignmentOffset : 57;
-  Section &Parent;
+  void setSection(Section &Parent) { this->Parent = &Parent; }
+
+  Section *Parent;
   const char *Data = nullptr;
   size_t Size = 0;
   std::vector<Edge> Edges;
@@ -620,6 +686,8 @@ public:
     return make_range(Blocks.begin(), Blocks.end());
   }
 
+  BlockSet::size_type blocks_size() const { return Blocks.size(); }
+
   /// Returns an iterator over the symbols defined in this section.
   iterator_range<symbol_iterator> symbols() {
     return make_range(Symbols.begin(), Symbols.end());
@@ -631,7 +699,7 @@ public:
   }
 
   /// Return the number of symbols in this section.
-  SymbolSet::size_type symbols_size() { return Symbols.size(); }
+  SymbolSet::size_type symbols_size() const { return Symbols.size(); }
 
 private:
   void addSymbol(Symbol &Sym) {
@@ -652,6 +720,17 @@ private:
   void removeBlock(Block &B) {
     assert(Blocks.count(&B) && "Block is not in this section");
     Blocks.erase(&B);
+  }
+
+  void transferContentTo(Section &DstSection) {
+    if (&DstSection == this)
+      return;
+    for (auto *S : Symbols)
+      DstSection.addSymbol(*S);
+    for (auto *B : Blocks)
+      DstSection.addBlock(*B);
+    Symbols.clear();
+    Blocks.clear();
   }
 
   StringRef Name;
@@ -852,13 +931,19 @@ public:
 
   const char *getEdgeKindName(Edge::Kind K) const { return GetEdgeKindName(K); }
 
+  /// Allocate a mutable buffer of the given size using the LinkGraph's
+  /// allocator.
+  MutableArrayRef<char> allocateBuffer(size_t Size) {
+    return {Allocator.Allocate<char>(Size), Size};
+  }
+
   /// Allocate a copy of the given string using the LinkGraph's allocator.
   /// This can be useful when renaming symbols or adding new content to the
   /// graph.
-  ArrayRef<char> allocateString(ArrayRef<char> Source) {
+  MutableArrayRef<char> allocateContent(ArrayRef<char> Source) {
     auto *AllocatedBuffer = Allocator.Allocate<char>(Source.size());
     llvm::copy(Source, AllocatedBuffer);
-    return ArrayRef<char>(AllocatedBuffer, Source.size());
+    return MutableArrayRef<char>(AllocatedBuffer, Source.size());
   }
 
   /// Allocate a copy of the given string using the LinkGraph's allocator.
@@ -868,12 +953,12 @@ public:
   /// Note: This Twine-based overload requires an extra string copy and an
   /// extra heap allocation for large strings. The ArrayRef<char> overload
   /// should be preferred where possible.
-  ArrayRef<char> allocateString(Twine Source) {
+  MutableArrayRef<char> allocateString(Twine Source) {
     SmallString<256> TmpBuffer;
     auto SourceStr = Source.toStringRef(TmpBuffer);
     auto *AllocatedBuffer = Allocator.Allocate<char>(SourceStr.size());
     llvm::copy(SourceStr, AllocatedBuffer);
-    return ArrayRef<char>(AllocatedBuffer, SourceStr.size());
+    return MutableArrayRef<char>(AllocatedBuffer, SourceStr.size());
   }
 
   /// Create a section with the given name, protection flags, and alignment.
@@ -893,6 +978,15 @@ public:
                             uint64_t Address, uint64_t Alignment,
                             uint64_t AlignmentOffset) {
     return createBlock(Parent, Content, Address, Alignment, AlignmentOffset);
+  }
+
+  /// Create a content block with initially mutable data.
+  Block &createMutableContentBlock(Section &Parent,
+                                   MutableArrayRef<char> MutableContent,
+                                   uint64_t Address, uint64_t Alignment,
+                                   uint64_t AlignmentOffset) {
+    return createBlock(Parent, MutableContent, Address, Alignment,
+                       AlignmentOffset);
   }
 
   /// Create a zero-fill block.
@@ -918,12 +1012,21 @@ public:
   ///
   /// Notes:
   ///
-  /// 1. The newly introduced block will have a new ordinal which will be
+  /// 1. splitBlock must be used with care. Splitting a block may cause
+  ///    incoming edges to become invalid if the edge target subexpression
+  ///    points outside the bounds of the newly split target block (E.g. an
+  ///    edge 'S + 10 : Pointer64' where S points to a newly split block
+  ///    whose size is less than 10). No attempt is made to detect invalidation
+  ///    of incoming edges, as in general this requires context that the
+  ///    LinkGraph does not have. Clients are responsible for ensuring that
+  ///    splitBlock is not used in a way that invalidates edges.
+  ///
+  /// 2. The newly introduced block will have a new ordinal which will be
   ///    higher than any other ordinals in the section. Clients are responsible
   ///    for re-assigning block ordinals to restore a compatible order if
   ///    needed.
   ///
-  /// 2. The cache is not automatically updated if new symbols are introduced
+  /// 3. The cache is not automatically updated if new symbols are introduced
   ///    between calls to splitBlock. Any newly introduced symbols may be
   ///    added to the cache manually (descending offset order must be
   ///    preserved), or the cache can be set to None and rebuilt by
@@ -1013,6 +1116,8 @@ public:
     return make_range(section_iterator(Sections.begin()),
                       section_iterator(Sections.end()));
   }
+
+  SectionList::size_type sections_size() const { return Sections.size(); }
 
   /// Returns the section with the given name if it exists, otherwise returns
   /// null.
@@ -1120,6 +1225,66 @@ public:
     destroyAddressable(OldBase);
   }
 
+  /// Transfer a defined symbol from one block to another.
+  ///
+  /// The symbol's offset within DestBlock is set to NewOffset.
+  ///
+  /// If ExplicitNewSize is given as None then the size of the symbol will be
+  /// checked and auto-truncated to at most the size of the remainder (from the
+  /// given offset) of the size of the new block.
+  ///
+  /// All other symbol attributes are unchanged.
+  void transferDefinedSymbol(Symbol &Sym, Block &DestBlock,
+                             JITTargetAddress NewOffset,
+                             Optional<JITTargetAddress> ExplicitNewSize) {
+    Sym.setBlock(DestBlock);
+    Sym.setOffset(NewOffset);
+    if (ExplicitNewSize)
+      Sym.setSize(*ExplicitNewSize);
+    else {
+      JITTargetAddress RemainingBlockSize = DestBlock.getSize() - NewOffset;
+      if (Sym.getSize() > RemainingBlockSize)
+        Sym.setSize(RemainingBlockSize);
+    }
+  }
+
+  /// Transfers the given Block and all Symbols pointing to it to the given
+  /// Section.
+  ///
+  /// No attempt is made to check compatibility of the source and destination
+  /// sections. Blocks may be moved between sections with incompatible
+  /// permissions (e.g. from data to text). The client is responsible for
+  /// ensuring that this is safe.
+  void transferBlock(Block &B, Section &NewSection) {
+    auto &OldSection = B.getSection();
+    if (&OldSection == &NewSection)
+      return;
+    SmallVector<Symbol *> AttachedSymbols;
+    for (auto *S : OldSection.symbols())
+      if (&S->getBlock() == &B)
+        AttachedSymbols.push_back(S);
+    for (auto *S : AttachedSymbols) {
+      OldSection.removeSymbol(*S);
+      NewSection.addSymbol(*S);
+    }
+    OldSection.removeBlock(B);
+    NewSection.addBlock(B);
+  }
+
+  /// Move all blocks and symbols from the source section to the destination
+  /// section.
+  ///
+  /// If PreserveSrcSection is true (or SrcSection and DstSection are the same)
+  /// then SrcSection is preserved, otherwise it is removed (the default).
+  void mergeSections(Section &DstSection, Section &SrcSection,
+                     bool PreserveSrcSection = false) {
+    if (&DstSection == &SrcSection)
+      return;
+    SrcSection.transferContentTo(DstSection);
+    if (!PreserveSrcSection)
+      removeSection(SrcSection);
+  }
+
   /// Removes an external symbol. Also removes the underlying Addressable.
   void removeExternalSymbol(Symbol &Sym) {
     assert(!Sym.isDefined() && !Sym.isAbsolute() &&
@@ -1158,7 +1323,8 @@ public:
     destroySymbol(Sym);
   }
 
-  /// Remove a block.
+  /// Remove a block. The block reference is defunct after calling this
+  /// function and should no longer be used.
   void removeBlock(Block &B) {
     assert(llvm::none_of(B.getSection().symbols(),
                          [&](const Symbol *Sym) {
@@ -1167,6 +1333,16 @@ public:
            "Block still has symbols attached");
     B.getSection().removeBlock(B);
     destroyBlock(B);
+  }
+
+  /// Remove a section. The section reference is defunct after calling this
+  /// function and should no longer be used.
+  void removeSection(Section &Sec) {
+    auto I = llvm::find_if(Sections, [&Sec](const std::unique_ptr<Section> &S) {
+      return S.get() == &Sec;
+    });
+    assert(I != Sections.end() && "Section does not appear in this graph");
+    Sections.erase(I);
   }
 
   /// Dump the graph.
@@ -1186,6 +1362,12 @@ private:
   ExternalSymbolSet ExternalSymbols;
   ExternalSymbolSet AbsoluteSymbols;
 };
+
+inline MutableArrayRef<char> Block::getMutableContent(LinkGraph &G) {
+  if (!ContentMutable)
+    setMutableContent(G.allocateContent({Data, Size}));
+  return MutableArrayRef<char>(const_cast<char *>(Data), Size);
+}
 
 /// Enables easy lookup of blocks by addresses.
 class BlockAddressMap {

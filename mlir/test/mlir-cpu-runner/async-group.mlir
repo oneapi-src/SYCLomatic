@@ -1,5 +1,6 @@
-// RUN:   mlir-opt %s -async-ref-counting                                      \
-// RUN:               -async-to-async-runtime                                  \
+// RUN:   mlir-opt %s -async-to-async-runtime                                  \
+// RUN:               -async-runtime-ref-counting                              \
+// RUN:               -async-runtime-ref-counting-opt                          \
 // RUN:               -convert-async-to-llvm                                   \
 // RUN:               -convert-std-to-llvm                                     \
 // RUN: | mlir-cpu-runner                                                      \
@@ -10,7 +11,10 @@
 // RUN: | FileCheck %s
 
 func @main() {
-  %group = async.create_group
+  %c1 = constant 1 : index
+  %c5 = constant 5 : index
+
+  %group = async.create_group %c5 : !async.group
 
   %token0 = async.execute { async.yield }
   %token1 = async.execute { async.yield }
@@ -29,7 +33,7 @@ func @main() {
     async.yield
   }
 
-  %group0 = async.create_group
+  %group0 = async.create_group %c1 : !async.group
   %5 = async.add_to_group %token5, %group0 : !async.token
   async.await_all %group0
 

@@ -107,7 +107,7 @@ __global__ void bar() {
           dvdzn);
 }
 
-int main() {
+int foo_bar() {
     bar<<<1, 2>>>();
     return 0;
 }

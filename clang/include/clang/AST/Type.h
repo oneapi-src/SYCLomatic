@@ -486,22 +486,27 @@ public:
            // allocated on device, which are a subset of __global.
            (A == LangAS::opencl_global && (B == LangAS::opencl_global_device ||
                                            B == LangAS::opencl_global_host)) ||
+           (A == LangAS::sycl_global && (B == LangAS::sycl_global_device ||
+                                         B == LangAS::sycl_global_host)) ||
            // Consider pointer size address spaces to be equivalent to default.
            ((isPtrSizeAddressSpace(A) || A == LangAS::Default) &&
-            (isPtrSizeAddressSpace(B) || B == LangAS::Default));
+            (isPtrSizeAddressSpace(B) || B == LangAS::Default)) ||
+           // Default is a superset of SYCL address spaces.
+           (A == LangAS::Default &&
+            (B == LangAS::sycl_private || B == LangAS::sycl_local ||
+             B == LangAS::sycl_global || B == LangAS::sycl_global_device ||
+             B == LangAS::sycl_global_host)) ||
+           // In HIP device compilation, any cuda address space is allowed
+           // to implicitly cast into the default address space.
+           (A == LangAS::Default &&
+            (B == LangAS::cuda_constant || B == LangAS::cuda_device ||
+             B == LangAS::cuda_shared));
   }
 
   /// Returns true if the address space in these qualifiers is equal to or
   /// a superset of the address space in the argument qualifiers.
   bool isAddressSpaceSupersetOf(Qualifiers other) const {
-    return isAddressSpaceSupersetOf(getAddressSpace(),
-                                    other.getAddressSpace()) ||
-           (!hasAddressSpace() &&
-            (other.getAddressSpace() == LangAS::opencl_private ||
-             other.getAddressSpace() == LangAS::opencl_local ||
-             other.getAddressSpace() == LangAS::opencl_global ||
-             other.getAddressSpace() == LangAS::opencl_global_device ||
-             other.getAddressSpace() == LangAS::opencl_global_host));
+    return isAddressSpaceSupersetOf(getAddressSpace(), other.getAddressSpace());
   }
 
   /// Determines if these qualifiers compatibly include another set.

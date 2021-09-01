@@ -232,6 +232,7 @@ function(runtime_default_target)
                                       -DLLVM_DEFAULT_TARGET_TRIPLE=${TARGET_TRIPLE}
                                       -DLLVM_ENABLE_PROJECTS_USED=${LLVM_ENABLE_PROJECTS_USED}
                                       -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=${LLVM_ENABLE_PER_TARGET_RUNTIME_DIR_default}
+                                      -DLLVM_BUILD_TOOLS=${LLVM_BUILD_TOOLS}
                                       -DCMAKE_C_COMPILER_WORKS=ON
                                       -DCMAKE_CXX_COMPILER_WORKS=ON
                                       -DCMAKE_ASM_COMPILER_WORKS=ON
@@ -401,6 +402,11 @@ if(runtimes)
         add_dependencies(install-${runtime_name} install-${runtime_name}-${name})
         add_dependencies(install-${runtime_name}-stripped install-${runtime_name}-${name}-stripped)
       endforeach()
+      foreach(component ${LLVM_RUNTIME_DISTRIBUTION_COMPONENTS})
+        add_dependencies(${component} ${component}-${name})
+        add_dependencies(install-${component} install-${component}-${name})
+        add_dependencies(install-${component}-stripped install-${component}-${name}-stripped)
+      endforeach()
     endforeach()
 
     foreach(multilib ${LLVM_RUNTIME_MULTILIBS})
@@ -417,6 +423,11 @@ if(runtimes)
           add_dependencies(${runtime_name} ${runtime_name}-${name}+${multilib})
           add_dependencies(install-${runtime_name} install-${runtime_name}-${name}+${multilib})
           add_dependencies(install-${runtime_name}-stripped install-${runtime_name}-${name}+${multilib}-stripped)
+        endforeach()
+        foreach(component ${LLVM_RUNTIME_DISTRIBUTION_COMPONENTS})
+          add_dependencies(${component} ${component}-${name}+${multilib})
+          add_dependencies(install-${component} install-${component}-${name}+${multilib})
+          add_dependencies(install-${component}-stripped install-${component}-${name}+${multilib}-stripped)
         endforeach()
       endforeach()
     endforeach()

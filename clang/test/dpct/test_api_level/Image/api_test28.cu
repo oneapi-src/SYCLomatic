@@ -6,7 +6,7 @@
 // CHECK: 21
 // TEST_FEATURE: Image_image_data_get_data_type
 
-void foo(CUresourcetype res21) {}
+void foo(cudaResourceType res21) {}
 
 int main() {
   cudaResourceDesc res21;

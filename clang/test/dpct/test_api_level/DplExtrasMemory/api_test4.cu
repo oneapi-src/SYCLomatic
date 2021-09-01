@@ -11,7 +11,8 @@
 #include <thrust/device_ptr.h>
 #include <thrust/device_free.h>
 int main() {
-  thrust::device_ptr<double> d_ptr(1);
+  double *a;
+  thrust::device_ptr<double> d_ptr(a);
   thrust::device_free(d_ptr);
   return 0;
 }

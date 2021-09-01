@@ -1,6 +1,4 @@
 set(LLVM_LINK_COMPONENTS
-  Core
-  MC
   Support
   )
 
@@ -44,6 +42,7 @@ add_clang_library(clangBasic
   CharInfo.cpp
   CodeGenOptions.cpp
   Cuda.cpp
+  DarwinSDKInfo.cpp
   Diagnostic.cpp
   DiagnosticIDs.cpp
   DiagnosticOptions.cpp

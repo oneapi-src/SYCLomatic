@@ -119,3 +119,16 @@ int main() {
 #endif
 #if defined(__CUDA_RUNTIME_H__)
 #endif
+
+int foo(int num) {
+//CHECK: #if 0x7FFFFFFF >= 4000
+//CHECK-NEXT: dpct::get_current_device().reset();
+//CHECK-NEXT: #else
+//CHECK-NEXT: cudaThreadExit();
+//CHECK-NEXT: #endif
+#if CUDART_VERSION >= 4000
+  cudaDeviceReset();
+#else
+  cudaThreadExit();
+#endif
+}

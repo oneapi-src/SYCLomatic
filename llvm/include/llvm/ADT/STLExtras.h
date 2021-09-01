@@ -17,6 +17,7 @@
 #define LLVM_ADT_STLEXTRAS_H
 
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/STLForwardCompat.h"
 #include "llvm/ADT/iterator.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/Config/abi-breaking.h"
@@ -59,15 +60,6 @@ using ValueOfRange = typename std::remove_reference<decltype(
 //===----------------------------------------------------------------------===//
 //     Extra additions to <type_traits>
 //===----------------------------------------------------------------------===//
-
-template <typename T>
-struct negation : std::integral_constant<bool, !bool(T::value)> {};
-
-template <typename...> struct conjunction : std::true_type {};
-template <typename B1> struct conjunction<B1> : B1 {};
-template <typename B1, typename... Bn>
-struct conjunction<B1, Bn...>
-    : std::conditional<bool(B1::value), conjunction<Bn...>, B1>::type {};
 
 template <typename T> struct make_const_ptr {
   using type =
@@ -194,9 +186,8 @@ public:
   function_ref(
       Callable &&callable,
       // This is not the copy-constructor.
-      std::enable_if_t<
-          !std::is_same<std::remove_cv_t<std::remove_reference_t<Callable>>,
-                        function_ref>::value> * = nullptr,
+      std::enable_if_t<!std::is_same<remove_cvref_t<Callable>,
+                                     function_ref>::value> * = nullptr,
       // Functor must be callable and return a suitable type.
       std::enable_if_t<std::is_void<Ret>::value ||
                        std::is_convertible<decltype(std::declval<Callable>()(
@@ -639,6 +630,14 @@ protected:
     return std::tuple<Iters...>(std::prev(std::get<Ns>(iterators))...);
   }
 
+  template <size_t... Ns>
+  bool test_all_equals(const zip_common &other,
+            std::index_sequence<Ns...>) const {
+    return all_of(std::initializer_list<bool>{std::get<Ns>(this->iterators) ==
+                                              std::get<Ns>(other.iterators)...},
+                  identity<bool>{});
+  }
+
 public:
   zip_common(Iters &&... ts) : iterators(std::forward<Iters>(ts)...) {}
 
@@ -658,6 +657,11 @@ public:
                   "All inner iterators must be at least bidirectional.");
     iterators = tup_dec(std::index_sequence_for<Iters...>{});
     return *reinterpret_cast<ZipType *>(this);
+  }
+
+  /// Return true if all the iterator are matching `other`'s iterators.
+  bool all_equals(zip_common &other) {
+    return test_all_equals(other, std::index_sequence_for<Iters...>{});
   }
 };
 
@@ -1300,27 +1304,65 @@ template <> struct rank<0> {};
 
 /// traits class for checking whether type T is one of any of the given
 /// types in the variadic list.
-template <typename T, typename... Ts> struct is_one_of {
-  static const bool value = false;
-};
-
-template <typename T, typename U, typename... Ts>
-struct is_one_of<T, U, Ts...> {
-  static const bool value =
-      std::is_same<T, U>::value || is_one_of<T, Ts...>::value;
-};
+template <typename T, typename... Ts>
+using is_one_of = disjunction<std::is_same<T, Ts>...>;
 
 /// traits class for checking whether type T is a base class for all
 ///  the given types in the variadic list.
-template <typename T, typename... Ts> struct are_base_of {
-  static const bool value = true;
+template <typename T, typename... Ts>
+using are_base_of = conjunction<std::is_base_of<T, Ts>...>;
+
+namespace detail {
+template <typename... Ts> struct Visitor;
+
+template <typename HeadT, typename... TailTs>
+struct Visitor<HeadT, TailTs...> : remove_cvref_t<HeadT>, Visitor<TailTs...> {
+  explicit constexpr Visitor(HeadT &&Head, TailTs &&...Tail)
+      : remove_cvref_t<HeadT>(std::forward<HeadT>(Head)),
+        Visitor<TailTs...>(std::forward<TailTs>(Tail)...) {}
+  using remove_cvref_t<HeadT>::operator();
+  using Visitor<TailTs...>::operator();
 };
 
-template <typename T, typename U, typename... Ts>
-struct are_base_of<T, U, Ts...> {
-  static const bool value =
-      std::is_base_of<T, U>::value && are_base_of<T, Ts...>::value;
+template <typename HeadT> struct Visitor<HeadT> : remove_cvref_t<HeadT> {
+  explicit constexpr Visitor(HeadT &&Head)
+      : remove_cvref_t<HeadT>(std::forward<HeadT>(Head)) {}
+  using remove_cvref_t<HeadT>::operator();
 };
+} // namespace detail
+
+/// Returns an opaquely-typed Callable object whose operator() overload set is
+/// the sum of the operator() overload sets of each CallableT in CallableTs.
+///
+/// The type of the returned object derives from each CallableT in CallableTs.
+/// The returned object is constructed by invoking the appropriate copy or move
+/// constructor of each CallableT, as selected by overload resolution on the
+/// corresponding argument to makeVisitor.
+///
+/// Example:
+///
+/// \code
+/// auto visitor = makeVisitor([](auto) { return "unhandled type"; },
+///                            [](int i) { return "int"; },
+///                            [](std::string s) { return "str"; });
+/// auto a = visitor(42);    // `a` is now "int".
+/// auto b = visitor("foo"); // `b` is now "str".
+/// auto c = visitor(3.14f); // `c` is now "unhandled type".
+/// \endcode
+///
+/// Example of making a visitor with a lambda which captures a move-only type:
+///
+/// \code
+/// std::unique_ptr<FooHandler> FH = /* ... */;
+/// auto visitor = makeVisitor(
+///     [FH{std::move(FH)}](Foo F) { return FH->handle(F); },
+///     [](int i) { return i; },
+///     [](std::string s) { return atoi(s); });
+/// \endcode
+template <typename... CallableTs>
+constexpr decltype(auto) makeVisitor(CallableTs &&...Callables) {
+  return detail::Visitor<CallableTs...>(std::forward<CallableTs>(Callables)...);
+}
 
 //===----------------------------------------------------------------------===//
 //     Extra additions for arrays
@@ -1654,6 +1696,18 @@ auto partition_point(R &&Range, Predicate P) {
   return std::partition_point(adl_begin(Range), adl_end(Range), P);
 }
 
+template<typename Range, typename Predicate>
+auto unique(Range &&R, Predicate P) {
+  return std::unique(adl_begin(R), adl_end(R), P);
+}
+
+/// Wrapper function around std::equal to detect if pair-wise elements between
+/// two ranges are the same.
+template <typename L, typename R> bool equal(L &&LRange, R &&RRange) {
+  return std::equal(adl_begin(LRange), adl_end(LRange), adl_begin(RRange),
+                    adl_end(RRange));
+}
+
 /// Wrapper function around std::equal to detect if all elements
 /// in a container are same.
 template <typename R>
@@ -1943,6 +1997,45 @@ decltype(auto) apply_tuple(F &&f, Tuple &&t) {
 
   return detail::apply_tuple_impl(std::forward<F>(f), std::forward<Tuple>(t),
                                   Indices{});
+}
+
+namespace detail {
+
+template <typename Predicate, typename... Args>
+bool all_of_zip_predicate_first(Predicate &&P, Args &&...args) {
+  auto z = zip(args...);
+  auto it = z.begin();
+  auto end = z.end();
+  while (it != end) {
+    if (!apply_tuple([&](auto &&...args) { return P(args...); }, *it))
+      return false;
+    ++it;
+  }
+  return it.all_equals(end);
+}
+
+// Just an adaptor to switch the order of argument and have the predicate before
+// the zipped inputs.
+template <typename... ArgsThenPredicate, size_t... InputIndexes>
+bool all_of_zip_predicate_last(
+    std::tuple<ArgsThenPredicate...> argsThenPredicate,
+    std::index_sequence<InputIndexes...>) {
+  auto constexpr OutputIndex =
+      std::tuple_size<decltype(argsThenPredicate)>::value - 1;
+  return all_of_zip_predicate_first(std::get<OutputIndex>(argsThenPredicate),
+                             std::get<InputIndexes>(argsThenPredicate)...);
+}
+
+} // end namespace detail
+
+/// Compare two zipped ranges using the provided predicate (as last argument).
+/// Return true if all elements satisfy the predicate and false otherwise.
+//  Return false if the zipped iterator aren't all at end (size mismatch).
+template <typename... ArgsAndPredicate>
+bool all_of_zip(ArgsAndPredicate &&...argsAndPredicate) {
+  return detail::all_of_zip_predicate_last(
+      std::forward_as_tuple(argsAndPredicate...),
+      std::make_index_sequence<sizeof...(argsAndPredicate) - 1>{});
 }
 
 /// Return true if the sequence [Begin, End) has exactly N items. Runs in O(N)

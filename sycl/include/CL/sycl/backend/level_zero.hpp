@@ -31,6 +31,10 @@ template <> struct interop<backend::level_zero, queue> {
   using type = ze_command_queue_handle_t;
 };
 
+template <> struct interop<backend::level_zero, event> {
+  using type = ze_event_handle_t;
+};
+
 template <> struct interop<backend::level_zero, program> {
   using type = ze_module_handle_t;
 };
@@ -49,8 +53,15 @@ struct interop<backend::level_zero, accessor<DataT, Dimensions, AccessMode,
   using type = char *;
 };
 
+template <typename DataT, int Dimensions, access::mode AccessMode>
+struct interop<backend::level_zero,
+               accessor<DataT, Dimensions, AccessMode, access::target::image,
+                        access::placeholder::false_t>> {
+  using type = ze_image_handle_t;
+};
+
 namespace detail {
-template <> class BackendReturn<backend::level_zero, kernel> {
+template <> struct BackendReturn<backend::level_zero, kernel> {
   using type = ze_kernel_handle_t;
 };
 
@@ -59,7 +70,7 @@ template <> struct InteropFeatureSupportMap<backend::level_zero> {
   static constexpr bool MakeDevice = false;
   static constexpr bool MakeContext = false;
   static constexpr bool MakeQueue = false;
-  static constexpr bool MakeEvent = false;
+  static constexpr bool MakeEvent = true;
   static constexpr bool MakeBuffer = false;
   static constexpr bool MakeKernel = false;
   static constexpr bool MakeKernelBundle = false;
@@ -79,13 +90,17 @@ enum class ownership { transfer, keep };
 __SYCL_EXPORT platform make_platform(pi_native_handle NativeHandle);
 __SYCL_EXPORT device make_device(const platform &Platform,
                                  pi_native_handle NativeHandle);
-__SYCL_EXPORT context make_context(const vector_class<device> &DeviceList,
+__SYCL_EXPORT context make_context(const std::vector<device> &DeviceList,
                                    pi_native_handle NativeHandle,
                                    bool keep_ownership = false);
 __SYCL_EXPORT program make_program(const context &Context,
                                    pi_native_handle NativeHandle);
 __SYCL_EXPORT queue make_queue(const context &Context,
-                               pi_native_handle InteropHandle);
+                               pi_native_handle InteropHandle,
+                               bool keep_ownership = false);
+__SYCL_EXPORT event make_event(const context &Context,
+                               pi_native_handle InteropHandle,
+                               bool keep_ownership = false);
 
 // Construction of SYCL platform.
 template <typename T, typename detail::enable_if_t<
@@ -113,7 +128,7 @@ T make(const platform &Platform,
 ///
 template <typename T, typename std::enable_if<
                           std::is_same<T, context>::value>::type * = nullptr>
-T make(const vector_class<device> &DeviceList,
+T make(const std::vector<device> &DeviceList,
        typename interop<backend::level_zero, T>::type Interop,
        ownership Ownership = ownership::transfer) {
   return make_context(DeviceList, detail::pi::cast<pi_native_handle>(Interop),
@@ -132,8 +147,20 @@ T make(const context &Context,
 template <typename T, typename detail::enable_if_t<
                           std::is_same<T, queue>::value> * = nullptr>
 T make(const context &Context,
-       typename interop<backend::level_zero, T>::type Interop) {
-  return make_queue(Context, reinterpret_cast<pi_native_handle>(Interop));
+       typename interop<backend::level_zero, T>::type Interop,
+       ownership Ownership = ownership::transfer) {
+  return make_queue(Context, reinterpret_cast<pi_native_handle>(Interop),
+                    Ownership == ownership::keep);
+}
+
+// Construction of SYCL event.
+template <typename T, typename detail::enable_if_t<
+                          std::is_same<T, event>::value> * = nullptr>
+T make(const context &Context,
+       typename interop<backend::level_zero, T>::type Interop,
+       ownership Ownership = ownership::transfer) {
+  return make_event(Context, reinterpret_cast<pi_native_handle>(Interop),
+                    Ownership == ownership::keep);
 }
 
 } // namespace level_zero

@@ -3,7 +3,6 @@
 
 ; Test SIMD loads and stores
 
-target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
 target triple = "wasm32-unknown-unknown"
 
 ; ==============================================================================
@@ -923,8 +922,7 @@ define void @store_narrowing_v8i16(<8 x i8> %v, <8 x i8>* %p) {
 ; CHECK:         .functype store_narrowing_v8i16 (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -956,8 +954,7 @@ define void @store_narrowing_v8i16_with_folded_offset(<8 x i8> %v, <8 x i8>* %p)
 ; CHECK:         .functype store_narrowing_v8i16_with_folded_offset (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -990,8 +987,7 @@ define void @store_narrowing_v8i16_with_folded_gep_offset(<8 x i8> %v, <8 x i8>*
 ; CHECK:         .functype store_narrowing_v8i16_with_folded_gep_offset (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1026,8 +1022,7 @@ define void @store_narrowing_v8i16_with_unfolded_gep_negative_offset(<8 x i8> %v
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const -8
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1064,8 +1059,7 @@ define void @store_narrowing_v8i16_with_unfolded_offset(<8 x i8> %v, <8 x i8>* %
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const 16
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1102,8 +1096,7 @@ define void @store_narrowing_v8i16_with_unfolded_gep_offset(<8 x i8> %v, <8 x i8
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const 8
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1134,8 +1127,7 @@ define void @store_narrowing_v8i16_to_numeric_address(<8 x i8> %v, <8 x i8>* %p)
 ; CHECK:         .functype store_narrowing_v8i16_to_numeric_address (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    i32.const 0
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1165,8 +1157,7 @@ define void @store_narrowing_v8i16_to_global_address(<8 x i8> %v) {
 ; CHECK:         .functype store_narrowing_v8i16_to_global_address (v128) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    i32.const 0
-; CHECK-NEXT:    i32.const 16711935
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 255, 255, 255, 255, 255, 255, 255, 255
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1753,8 +1744,7 @@ define void @store_narrowing_v4i32(<4 x i16> %v, <4 x i16>* %p) {
 ; CHECK:         .functype store_narrowing_v4i32 (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1786,8 +1776,7 @@ define void @store_narrowing_v4i32_with_folded_offset(<4 x i16> %v, <4 x i16>* %
 ; CHECK:         .functype store_narrowing_v4i32_with_folded_offset (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1820,8 +1809,7 @@ define void @store_narrowing_v4i32_with_folded_gep_offset(<4 x i16> %v, <4 x i16
 ; CHECK:         .functype store_narrowing_v4i32_with_folded_gep_offset (v128, i32) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    local.get 1
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1856,8 +1844,7 @@ define void @store_narrowing_v4i32_with_unfolded_gep_negative_offset(<4 x i16> %
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const -8
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1894,8 +1881,7 @@ define void @store_narrowing_v4i32_with_unfolded_offset(<4 x i16> %v, <4 x i16>*
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const 16
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1932,8 +1918,7 @@ define void @store_narrowing_v4i32_with_unfolded_gep_offset(<4 x i16> %v, <4 x i
 ; CHECK-NEXT:    local.get 1
 ; CHECK-NEXT:    i32.const 8
 ; CHECK-NEXT:    i32.add
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1964,8 +1949,7 @@ define void @store_narrowing_v4i32_to_numeric_address(<4 x i16> %v) {
 ; CHECK:         .functype store_narrowing_v4i32_to_numeric_address (v128) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    i32.const 0
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0
@@ -1995,8 +1979,7 @@ define void @store_narrowing_v4i32_to_global_address(<4 x i16> %v) {
 ; CHECK:         .functype store_narrowing_v4i32_to_global_address (v128) -> ()
 ; CHECK-NEXT:  # %bb.0:
 ; CHECK-NEXT:    i32.const 0
-; CHECK-NEXT:    i32.const 65535
-; CHECK-NEXT:    i32x4.splat
+; CHECK-NEXT:    v128.const 65535, 65535, 65535, 65535
 ; CHECK-NEXT:    local.get 0
 ; CHECK-NEXT:    v128.and
 ; CHECK-NEXT:    local.get 0

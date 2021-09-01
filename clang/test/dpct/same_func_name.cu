@@ -80,9 +80,9 @@ void kernel(int i, int j)
 
 // CHECK:template <typename ValueType>
 // CHECK-NEXT:void kernel_2(sycl::nd_item<3> item_ct1)
-{
-    auto tidx = item_ct1.get_local_id(2);
-}
+// CHECK-NEXT:{
+// CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:}
 template <typename ValueType>
 __global__ void kernel_2()
 {
@@ -92,9 +92,9 @@ __global__ void kernel_2()
 // CHECK:template <typename ValueType>
 // CHECK-NEXT:void kernel_2(int a,
 // CHECK-NEXT:              sycl::nd_item<3> item_ct1)
-{
-    auto tidx = item_ct1.get_local_id(2);
-}
+// CHECK-NEXT:{
+// CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:}
 template <typename ValueType>
 __global__ void kernel_2(int a)
 {

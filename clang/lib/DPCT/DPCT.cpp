@@ -71,7 +71,7 @@ std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 } // namespace tooling
 namespace dpct {
-extern llvm::cl::OptionCategory DPCTCat;
+llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
@@ -444,7 +444,6 @@ static bits<ExperimentalFeatures> Experimentals(
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 // clang-format on
-
 
 // TODO: implement one of this for each source language.
 std::string CudaPath;

@@ -3,12 +3,15 @@
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
 // RUN: %GPU_RUN_PLACEHOLDER %t.out
 // RUN: %ACC_RUN_PLACEHOLDER %t.out
+//
+// Missing __spirv_GroupIAdd on AMD:
+// XFAIL: rocm_amd
 
 #include <CL/sycl.hpp>
 #include <numeric>
 #include <vector>
 using namespace cl::sycl;
-using namespace cl::sycl::ONEAPI;
+using namespace cl::sycl::ext::oneapi;
 
 class back_to_back;
 
@@ -47,9 +50,9 @@ int main() {
         auto g = it.get_group();
         // Loop to increase number of back-to-back calls
         for (int r = 0; r < 10; ++r) {
-          Sum[i] = reduce(g, Input[i], plus<>());
-          EScan[i] = exclusive_scan(g, Input[i], plus<>());
-          IScan[i] = inclusive_scan(g, Input[i], plus<>());
+          Sum[i] = reduce(g, Input[i], sycl::plus<>());
+          EScan[i] = exclusive_scan(g, Input[i], sycl::plus<>());
+          IScan[i] = inclusive_scan(g, Input[i], sycl::plus<>());
         }
       });
     });

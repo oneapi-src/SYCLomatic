@@ -30,11 +30,19 @@ struct MeasurementVisitor {
 // Custom Consumer Actions
 //===----------------------------------------------------------------------===//
 
+class PluginParseTreeAction : public FrontendAction {
+  void ExecuteAction() override;
+};
+
 class InputOutputTestAction : public FrontendAction {
   void ExecuteAction() override;
 };
 
 class EmitObjAction : public FrontendAction {
+  void ExecuteAction() override;
+};
+
+class InitOnlyAction : public FrontendAction {
   void ExecuteAction() override;
 };
 
@@ -112,7 +120,15 @@ class DebugDumpParseTreeAction : public PrescanAndSemaAction {
   void ExecuteAction() override;
 };
 
+class DebugDumpAllAction : public PrescanAndSemaAction {
+  void ExecuteAction() override;
+};
+
 class DebugPreFIRTreeAction : public PrescanAndSemaAction {
+  void ExecuteAction() override;
+};
+
+class GetDefinitionAction : public PrescanAndSemaAction {
   void ExecuteAction() override;
 };
 

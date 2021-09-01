@@ -415,5 +415,5 @@ void foo14() {
   //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
   //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftDestroy was removed because the function call is redundant in DPC++.
-  cutttDestroy(plan);
+  cufftDestroy(plan);
 }

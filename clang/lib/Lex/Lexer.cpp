@@ -592,7 +592,7 @@ PreambleBounds Lexer::ComputePreamble(StringRef Buffer,
   // Create a lexer starting at the beginning of the file. Note that we use a
   // "fake" file source location at offset 1 so that the lexer will track our
   // position within the file.
-  const unsigned StartOffset = 1;
+  const SourceLocation::UIntTy StartOffset = 1;
   SourceLocation FileLoc = SourceLocation::getFromRawEncoding(StartOffset);
   Lexer TheLexer(FileLoc, LangOpts, Buffer.begin(), Buffer.begin(),
                  Buffer.end());
@@ -686,6 +686,8 @@ PreambleBounds Lexer::ComputePreamble(StringRef Buffer,
               .Case("ifdef", PDK_Skipped)
               .Case("ifndef", PDK_Skipped)
               .Case("elif", PDK_Skipped)
+              .Case("elifdef", PDK_Skipped)
+              .Case("elifndef", PDK_Skipped)
               .Case("else", PDK_Skipped)
               .Case("endif", PDK_Skipped)
               .Default(PDK_Unknown);
@@ -879,6 +881,14 @@ static CharSourceRange makeRangeFromFileLocs(CharSourceRange Range,
   return CharSourceRange::getCharRange(Begin, End);
 }
 
+// Assumes that `Loc` is in an expansion.
+static bool isInExpansionTokenRange(const SourceLocation Loc,
+                                    const SourceManager &SM) {
+  return SM.getSLocEntry(SM.getFileID(Loc))
+      .getExpansion()
+      .isExpansionTokenRange();
+}
+
 CharSourceRange Lexer::makeFileCharRange(CharSourceRange Range,
                                          const SourceManager &SM,
                                          const LangOptions &LangOpts) {
@@ -898,10 +908,12 @@ CharSourceRange Lexer::makeFileCharRange(CharSourceRange Range,
   }
 
   if (Begin.isFileID() && End.isMacroID()) {
-    if ((Range.isTokenRange() && !isAtEndOfMacroExpansion(End, SM, LangOpts,
-                                                          &End)) ||
-        (Range.isCharRange() && !isAtStartOfMacroExpansion(End, SM, LangOpts,
-                                                           &End)))
+    if (Range.isTokenRange()) {
+      if (!isAtEndOfMacroExpansion(End, SM, LangOpts, &End))
+        return {};
+      // Use the *original* end, not the expanded one in `End`.
+      Range.setTokenRange(isInExpansionTokenRange(Range.getEnd(), SM));
+    } else if (!isAtStartOfMacroExpansion(End, SM, LangOpts, &End))
       return {};
     Range.setEnd(End);
     return makeRangeFromFileLocs(Range, SM, LangOpts);
@@ -916,6 +928,9 @@ CharSourceRange Lexer::makeFileCharRange(CharSourceRange Range,
                                                          &MacroEnd)))) {
     Range.setBegin(MacroBegin);
     Range.setEnd(MacroEnd);
+    // Use the *original* `End`, not the expanded one in `MacroEnd`.
+    if (Range.isTokenRange())
+      Range.setTokenRange(isInExpansionTokenRange(End, SM));
     return makeRangeFromFileLocs(Range, SM, LangOpts);
   }
 
@@ -2453,56 +2468,70 @@ static bool isEndOfBlockCommentWithEscapedNewLine(const char *CurPtr,
                                                   Lexer *L) {
   assert(CurPtr[0] == '\n' || CurPtr[0] == '\r');
 
-  // Back up off the newline.
-  --CurPtr;
+  // Position of the first trigraph in the ending sequence.
+  const char *TrigraphPos = 0;
+  // Position of the first whitespace after a '\' in the ending sequence.
+  const char *SpacePos = 0;
 
-  // If this is a two-character newline sequence, skip the other character.
-  if (CurPtr[0] == '\n' || CurPtr[0] == '\r') {
-    // \n\n or \r\r -> not escaped newline.
-    if (CurPtr[0] == CurPtr[1])
-      return false;
-    // \n\r or \r\n -> skip the newline.
+  while (true) {
+    // Back up off the newline.
     --CurPtr;
+
+    // If this is a two-character newline sequence, skip the other character.
+    if (CurPtr[0] == '\n' || CurPtr[0] == '\r') {
+      // \n\n or \r\r -> not escaped newline.
+      if (CurPtr[0] == CurPtr[1])
+        return false;
+      // \n\r or \r\n -> skip the newline.
+      --CurPtr;
+    }
+
+    // If we have horizontal whitespace, skip over it.  We allow whitespace
+    // between the slash and newline.
+    while (isHorizontalWhitespace(*CurPtr) || *CurPtr == 0) {
+      SpacePos = CurPtr;
+      --CurPtr;
+    }
+
+    // If we have a slash, this is an escaped newline.
+    if (*CurPtr == '\\') {
+      --CurPtr;
+    } else if (CurPtr[0] == '/' && CurPtr[-1] == '?' && CurPtr[-2] == '?') {
+      // This is a trigraph encoding of a slash.
+      TrigraphPos = CurPtr - 2;
+      CurPtr -= 3;
+    } else {
+      return false;
+    }
+
+    // If the character preceding the escaped newline is a '*', then after line
+    // splicing we have a '*/' ending the comment.
+    if (*CurPtr == '*')
+      break;
+
+    if (*CurPtr != '\n' && *CurPtr != '\r')
+      return false;
   }
 
-  // If we have horizontal whitespace, skip over it.  We allow whitespace
-  // between the slash and newline.
-  bool HasSpace = false;
-  while (isHorizontalWhitespace(*CurPtr) || *CurPtr == 0) {
-    --CurPtr;
-    HasSpace = true;
-  }
-
-  // If we have a slash, we know this is an escaped newline.
-  if (*CurPtr == '\\') {
-    if (CurPtr[-1] != '*') return false;
-  } else {
-    // It isn't a slash, is it the ?? / trigraph?
-    if (CurPtr[0] != '/' || CurPtr[-1] != '?' || CurPtr[-2] != '?' ||
-        CurPtr[-3] != '*')
-      return false;
-
-    // This is the trigraph ending the comment.  Emit a stern warning!
-    CurPtr -= 2;
-
+  if (TrigraphPos) {
     // If no trigraphs are enabled, warn that we ignored this trigraph and
     // ignore this * character.
     if (!L->getLangOpts().Trigraphs) {
       if (!L->isLexingRawMode())
-        L->Diag(CurPtr, diag::trigraph_ignored_block_comment);
+        L->Diag(TrigraphPos, diag::trigraph_ignored_block_comment);
       return false;
     }
     if (!L->isLexingRawMode())
-      L->Diag(CurPtr, diag::trigraph_ends_block_comment);
+      L->Diag(TrigraphPos, diag::trigraph_ends_block_comment);
   }
 
   // Warn about having an escaped newline between the */ characters.
   if (!L->isLexingRawMode())
-    L->Diag(CurPtr, diag::escaped_newline_block_comment_end);
+    L->Diag(CurPtr + 1, diag::escaped_newline_block_comment_end);
 
   // If there was space between the backslash and newline, warn about it.
-  if (HasSpace && !L->isLexingRawMode())
-    L->Diag(CurPtr, diag::backslash_newline_space);
+  if (SpacePos && !L->isLexingRawMode())
+    L->Diag(SpacePos, diag::backslash_newline_space);
 
   return true;
 }
@@ -2774,6 +2803,11 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
 
   if (PP->isRecordingPreamble() && PP->isInPrimaryFile()) {
     PP->setRecordedPreambleConditionalStack(ConditionalStack);
+    // If the preamble cuts off the end of a header guard, consider it guarded.
+    // The guard is valid for the preamble content itself, and for tools the
+    // most useful answer is "yes, this file has a header guard".
+    if (!ConditionalStack.empty())
+      MIOpt.ExitTopLevelConditional();
     ConditionalStack.clear();
   }
 
@@ -2787,11 +2821,11 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
     ConditionalStack.pop_back();
   }
 
+  SourceLocation EndLoc = getSourceLocation(BufferEnd);
   // C99 5.1.1.2p2: If the file is non-empty and didn't end in a newline, issue
   // a pedwarn.
   if (CurPtr != BufferStart && (CurPtr[-1] != '\n' && CurPtr[-1] != '\r')) {
     DiagnosticsEngine &Diags = PP->getDiagnostics();
-    SourceLocation EndLoc = getSourceLocation(BufferEnd);
     unsigned DiagID;
 
     if (LangOpts.CPlusPlus11) {
@@ -2814,7 +2848,7 @@ bool Lexer::LexEndOfFile(Token &Result, const char *CurPtr) {
   BufferPtr = CurPtr;
 
   // Finally, let the preprocessor handle this.
-  return PP->HandleEndOfFile(Result, isPragmaLexer());
+  return PP->HandleEndOfFile(Result, EndLoc, isPragmaLexer());
 }
 
 /// isNextPPTokenLParen - Return 1 if the next unexpanded token lexed from

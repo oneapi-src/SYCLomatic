@@ -66,8 +66,6 @@ enum ChunkTag {
   kIgnored = 3
 };
 
-const u32 kInvalidTid = (u32) -1;
-
 struct Flags {
 #define LSAN_FLAG(Type, Name, DefaultValue, Description) Type Name;
 #include "lsan_flags.inc"
@@ -223,8 +221,8 @@ void UnlockAllocator();
 // Returns true if [addr, addr + sizeof(void *)) is poisoned.
 bool WordIsPoisoned(uptr addr);
 // Wrappers for ThreadRegistry access.
-void LockThreadRegistry();
-void UnlockThreadRegistry();
+void LockThreadRegistry() NO_THREAD_SAFETY_ANALYSIS;
+void UnlockThreadRegistry() NO_THREAD_SAFETY_ANALYSIS;
 ThreadRegistry *GetThreadRegistryLocked();
 bool GetThreadRangesLocked(tid_t os_id, uptr *stack_begin, uptr *stack_end,
                            uptr *tls_begin, uptr *tls_end, uptr *cache_begin,

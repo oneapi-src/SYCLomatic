@@ -145,20 +145,20 @@ static cl::opt<bool>
 /// This is needed to support legacy tests that don't contain
 /// !vcall_visibility metadata (the mere presense of type tests
 /// previously implied hidden visibility).
-cl::opt<bool>
+static cl::opt<bool>
     WholeProgramVisibility("whole-program-visibility", cl::init(false),
                            cl::Hidden, cl::ZeroOrMore,
                            cl::desc("Enable whole program visibility"));
 
 /// Provide a way to force disable whole program for debugging or workarounds,
 /// when enabled via the linker.
-cl::opt<bool> DisableWholeProgramVisibility(
+static cl::opt<bool> DisableWholeProgramVisibility(
     "disable-whole-program-visibility", cl::init(false), cl::Hidden,
     cl::ZeroOrMore,
     cl::desc("Disable whole program visibility (overrides enabling options)"));
 
 /// Provide way to prevent certain function from being devirtualized
-cl::list<std::string>
+static cl::list<std::string>
     SkipFunctionNames("wholeprogramdevirt-skip",
                       cl::desc("Prevent function(s) from being devirtualized"),
                       cl::Hidden, cl::ZeroOrMore, cl::CommaSeparated);
@@ -166,7 +166,7 @@ cl::list<std::string>
 /// Mechanism to add runtime checking of devirtualization decisions, trapping on
 /// any that are not correct. Useful for debugging undefined behavior leading to
 /// failures with WPD.
-cl::opt<bool>
+static cl::opt<bool>
     CheckDevirt("wholeprogramdevirt-check", cl::init(false), cl::Hidden,
                 cl::ZeroOrMore,
                 cl::desc("Add code to trap on incorrect devirtualizations"));
@@ -517,6 +517,11 @@ struct DevirtModule {
   function_ref<OptimizationRemarkEmitter &(Function *)> OREGetter;
 
   MapVector<VTableSlot, VTableSlotInfo> CallSlots;
+
+  // Calls that have already been optimized. We may add a call to multiple
+  // VTableSlotInfos if vtable loads are coalesced and need to make sure not to
+  // optimize a call more than once.
+  SmallPtrSet<CallBase *, 8> OptimizedCalls;
 
   // This map keeps track of the number of "unsafe" uses of a loaded function
   // pointer. The key is the associated llvm.type.test intrinsic call generated
@@ -1064,10 +1069,14 @@ void DevirtModule::applySingleImplDevirt(VTableSlotInfo &SlotInfo,
     return;
   auto Apply = [&](CallSiteInfo &CSInfo) {
     for (auto &&VCallSite : CSInfo.CallSites) {
+      if (!OptimizedCalls.insert(&VCallSite.CB).second)
+        continue;
+
       if (RemarksEnabled)
         VCallSite.emitRemark("single-impl",
                              TheFn->stripPointerCasts()->getName(), OREGetter);
       auto &CB = VCallSite.CB;
+      assert(!CB.getCalledFunction() && "devirtualizing direct call?");
       IRBuilder<> Builder(&CB);
       Value *Callee =
           Builder.CreateBitCast(TheFn, CB.getCalledOperand()->getType());
@@ -1406,10 +1415,13 @@ bool DevirtModule::tryEvaluateFunctionsWithArgs(
 
 void DevirtModule::applyUniformRetValOpt(CallSiteInfo &CSInfo, StringRef FnName,
                                          uint64_t TheRetVal) {
-  for (auto Call : CSInfo.CallSites)
+  for (auto Call : CSInfo.CallSites) {
+    if (!OptimizedCalls.insert(&Call.CB).second)
+      continue;
     Call.replaceAndErase(
         "uniform-ret-val", FnName, RemarksEnabled, OREGetter,
         ConstantInt::get(cast<IntegerType>(Call.CB.getType()), TheRetVal));
+  }
   CSInfo.markDevirt();
 }
 
@@ -1515,6 +1527,8 @@ void DevirtModule::applyUniqueRetValOpt(CallSiteInfo &CSInfo, StringRef FnName,
                                         bool IsOne,
                                         Constant *UniqueMemberAddr) {
   for (auto &&Call : CSInfo.CallSites) {
+    if (!OptimizedCalls.insert(&Call.CB).second)
+      continue;
     IRBuilder<> B(&Call.CB);
     Value *Cmp =
         B.CreateICmp(IsOne ? ICmpInst::ICMP_EQ : ICmpInst::ICMP_NE, Call.VTable,
@@ -1583,6 +1597,8 @@ bool DevirtModule::tryUniqueRetValOpt(
 void DevirtModule::applyVirtualConstProp(CallSiteInfo &CSInfo, StringRef FnName,
                                          Constant *Byte, Constant *Bit) {
   for (auto Call : CSInfo.CallSites) {
+    if (!OptimizedCalls.insert(&Call.CB).second)
+      continue;
     auto *RetType = cast<IntegerType>(Call.CB.getType());
     IRBuilder<> B(&Call.CB);
     Value *Addr =

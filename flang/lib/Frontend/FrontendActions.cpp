@@ -21,6 +21,7 @@
 #include "flang/Semantics/semantics.h"
 #include "flang/Semantics/unparse-with-symbols.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/ErrorHandling.h"
 #include <clang/Basic/Diagnostic.h>
 #include <memory>
 
@@ -44,27 +45,39 @@ bool reportFatalSemanticErrors(const Fortran::semantics::Semantics &semantics,
   return false;
 }
 
+template <unsigned N>
+static bool reportFatalErrors(
+    const FrontendAction *act, const char (&message)[N]) {
+  CompilerInstance &ci = act->instance();
+  if (!ci.parsing().messages().empty() &&
+      (ci.invocation().warnAsErr() ||
+          ci.parsing().messages().AnyFatalError())) {
+    const unsigned diagID = ci.diagnostics().getCustomDiagID(
+        clang::DiagnosticsEngine::Error, message);
+    ci.diagnostics().Report(diagID) << act->GetCurrentFileOrBufferName();
+    ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
+    return true;
+  }
+  return false;
+}
+
+inline bool reportFatalScanningErrors(const FrontendAction *act) {
+  return reportFatalErrors(act, "Could not scan %0");
+}
+
+inline bool reportFatalParsingErrors(const FrontendAction *act) {
+  return reportFatalErrors(act, "Could not parse %0");
+}
+
 bool PrescanAction::BeginSourceFileAction(CompilerInstance &c1) {
   CompilerInstance &ci = this->instance();
   std::string currentInputPath{GetCurrentFileOrBufferName()};
   Fortran::parser::Options parserOptions = ci.invocation().fortranOpts();
 
-
   // Prescan. In case of failure, report and return.
   ci.parsing().Prescan(currentInputPath, parserOptions);
 
-  if (!ci.parsing().messages().empty() &&
-      (ci.invocation().warnAsErr() ||
-          ci.parsing().messages().AnyFatalError())) {
-    const unsigned diagID = ci.diagnostics().getCustomDiagID(
-        clang::DiagnosticsEngine::Error, "Could not scan %0");
-    ci.diagnostics().Report(diagID) << GetCurrentFileOrBufferName();
-    ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
-
-    return false;
-  }
-
-  return true;
+  return !reportFatalScanningErrors(this);
 }
 
 bool PrescanAndParseAction::BeginSourceFileAction(CompilerInstance &c1) {
@@ -74,7 +87,7 @@ bool PrescanAndParseAction::BeginSourceFileAction(CompilerInstance &c1) {
 
   Fortran::parser::Options parserOptions = ci.invocation().fortranOpts();
 
-  if (ci.invocation().frontendOpts().fortranForm_ == FortranForm::Unknown) {
+  if (ci.invocation().frontendOpts().fortranForm == FortranForm::Unknown) {
     // Switch between fixed and free form format based on the input file
     // extension.
     //
@@ -88,27 +101,14 @@ bool PrescanAndParseAction::BeginSourceFileAction(CompilerInstance &c1) {
   // Prescan. In case of failure, report and return.
   ci.parsing().Prescan(currentInputPath, parserOptions);
 
-  if (ci.parsing().messages().AnyFatalError()) {
-    const unsigned diagID = ci.diagnostics().getCustomDiagID(
-        clang::DiagnosticsEngine::Error, "Could not scan %0");
-    ci.diagnostics().Report(diagID) << GetCurrentFileOrBufferName();
-    ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
-
+  if (reportFatalScanningErrors(this))
     return false;
-  }
 
   // Parse. In case of failure, report and return.
   ci.parsing().Parse(llvm::outs());
 
-  if (ci.parsing().messages().AnyFatalError()) {
-    unsigned diagID = ci.diagnostics().getCustomDiagID(
-        clang::DiagnosticsEngine::Error, "Could not parse %0");
-    ci.diagnostics().Report(diagID) << GetCurrentFileOrBufferName();
-
-    ci.parsing().messages().Emit(
-        llvm::errs(), this->instance().allCookedSources());
+  if (reportFatalParsingErrors(this))
     return false;
-  }
 
   // Report the diagnostics from parsing
   ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
@@ -124,31 +124,14 @@ bool PrescanAndSemaAction::BeginSourceFileAction(CompilerInstance &c1) {
   // Prescan. In case of failure, report and return.
   ci.parsing().Prescan(currentInputPath, parserOptions);
 
-  if (!ci.parsing().messages().empty() &&
-      (ci.invocation().warnAsErr() ||
-          ci.parsing().messages().AnyFatalError())) {
-    const unsigned diagID = ci.diagnostics().getCustomDiagID(
-        clang::DiagnosticsEngine::Error, "Could not scan %0");
-    ci.diagnostics().Report(diagID) << GetCurrentFileOrBufferName();
-    ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
-
+  if (reportFatalScanningErrors(this))
     return false;
-  }
 
   // Parse. In case of failure, report and return.
   ci.parsing().Parse(llvm::outs());
 
-  if (!ci.parsing().messages().empty() &&
-      (ci.invocation().warnAsErr() ||
-          ci.parsing().messages().AnyFatalError())) {
-    unsigned diagID = ci.diagnostics().getCustomDiagID(
-        clang::DiagnosticsEngine::Error, "Could not parse %0");
-    ci.diagnostics().Report(diagID) << GetCurrentFileOrBufferName();
-
-    ci.parsing().messages().Emit(
-        llvm::errs(), this->instance().allCookedSources());
+  if (reportFatalParsingErrors(this))
     return false;
-  }
 
   // Report the diagnostics from parsing
   ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
@@ -158,7 +141,7 @@ bool PrescanAndSemaAction::BeginSourceFileAction(CompilerInstance &c1) {
   // Prepare semantics
   setSemantics(std::make_unique<Fortran::semantics::Semantics>(
       ci.invocation().semanticsContext(), parseTree,
-      ci.parsing().cooked().AsCharBlock(), ci.invocation().debugModuleDir()));
+      ci.invocation().debugModuleDir()));
   auto &semantics = this->semantics();
 
   // Run semantic checks
@@ -208,9 +191,14 @@ void PrintPreprocessedAction::ExecuteAction() {
   std::string buf;
   llvm::raw_string_ostream outForPP{buf};
 
-  // Run the preprocessor
+  // Format or dump the prescanner's output
   CompilerInstance &ci = this->instance();
-  ci.parsing().DumpCookedChars(outForPP);
+  if (ci.invocation().preprocessorOpts().noReformat) {
+    ci.parsing().DumpCookedChars(outForPP);
+  } else {
+    ci.parsing().EmitPreprocessedSource(
+        outForPP, !ci.invocation().preprocessorOpts().noLineDirectives);
+  }
 
   // If a pre-defined output stream exists, dump the preprocessed content there
   if (!ci.IsOutputStreamNull()) {
@@ -219,7 +207,7 @@ void PrintPreprocessedAction::ExecuteAction() {
     return;
   }
 
-  // Print diagnostics from the preprocessor
+  // Print diagnostics from the prescanner
   ci.parsing().messages().Emit(llvm::errs(), ci.allCookedSources());
 
   // Create a file and save the preprocessed output there
@@ -228,7 +216,6 @@ void PrintPreprocessedAction::ExecuteAction() {
     (*os) << outForPP.str();
   } else {
     llvm::errs() << "Unable to create the output file\n";
-    return;
   }
 }
 
@@ -242,28 +229,31 @@ void ParseSyntaxOnlyAction::ExecuteAction() {
 }
 
 void DebugUnparseNoSemaAction::ExecuteAction() {
+  auto &invoc = this->instance().invocation();
   auto &parseTree{instance().parsing().parseTree()};
-
-  Fortran::parser::AnalyzedObjectsAsFortran asFortran =
-      Fortran::frontend::getBasicAsFortran();
 
   // TODO: Options should come from CompilerInvocation
   Unparse(llvm::outs(), *parseTree,
       /*encoding=*/Fortran::parser::Encoding::UTF_8,
       /*capitalizeKeywords=*/true, /*backslashEscapes=*/false,
-      /*preStatement=*/nullptr, &asFortran);
+      /*preStatement=*/nullptr,
+      invoc.useAnalyzedObjectsForUnparse() ? &invoc.asFortran() : nullptr);
 }
 
 void DebugUnparseAction::ExecuteAction() {
+  auto &invoc = this->instance().invocation();
   auto &parseTree{instance().parsing().parseTree()};
-  Fortran::parser::AnalyzedObjectsAsFortran asFortran =
-      Fortran::frontend::getBasicAsFortran();
+
+  CompilerInstance &ci = this->instance();
+  auto os{ci.CreateDefaultOutputFile(
+      /*Binary=*/false, /*InFile=*/GetCurrentFileOrBufferName())};
 
   // TODO: Options should come from CompilerInvocation
-  Unparse(llvm::outs(), *parseTree,
+  Unparse(*os, *parseTree,
       /*encoding=*/Fortran::parser::Encoding::UTF_8,
       /*capitalizeKeywords=*/true, /*backslashEscapes=*/false,
-      /*preStatement=*/nullptr, &asFortran);
+      /*preStatement=*/nullptr,
+      invoc.useAnalyzedObjectsForUnparse() ? &invoc.asFortran() : nullptr);
 
   // Report fatal semantic errors
   reportFatalSemanticErrors(semantics(), this->instance().diagnostics(),
@@ -282,31 +272,79 @@ void DebugUnparseWithSymbolsAction::ExecuteAction() {
 }
 
 void DebugDumpSymbolsAction::ExecuteAction() {
+  CompilerInstance &ci = this->instance();
   auto &semantics = this->semantics();
+
+  auto tables{Fortran::semantics::BuildRuntimeDerivedTypeTables(
+      instance().invocation().semanticsContext())};
+  // The runtime derived type information table builder may find and report
+  // semantic errors. So it is important that we report them _after_
+  // BuildRuntimeDerivedTypeTables is run.
+  reportFatalSemanticErrors(
+      semantics, this->instance().diagnostics(), GetCurrentFileOrBufferName());
+
+  if (!tables.schemata) {
+    unsigned DiagID =
+        ci.diagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "could not find module file for __fortran_type_info");
+    ci.diagnostics().Report(DiagID);
+    llvm::errs() << "\n";
+  }
 
   // Dump symbols
   semantics.DumpSymbols(llvm::outs());
-  // Report fatal semantic errors
+}
+
+void DebugDumpAllAction::ExecuteAction() {
+  CompilerInstance &ci = this->instance();
+
+  // Dump parse tree
+  auto &parseTree{instance().parsing().parseTree()};
+  llvm::outs() << "========================";
+  llvm::outs() << " Flang: parse tree dump ";
+  llvm::outs() << "========================\n";
+  Fortran::parser::DumpTree(
+      llvm::outs(), parseTree, &ci.invocation().asFortran());
+
+  auto &semantics = this->semantics();
+  auto tables{Fortran::semantics::BuildRuntimeDerivedTypeTables(
+      instance().invocation().semanticsContext())};
+  // The runtime derived type information table builder may find and report
+  // semantic errors. So it is important that we report them _after_
+  // BuildRuntimeDerivedTypeTables is run.
   reportFatalSemanticErrors(
       semantics, this->instance().diagnostics(), GetCurrentFileOrBufferName());
+
+  if (!tables.schemata) {
+    unsigned DiagID =
+        ci.diagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "could not find module file for __fortran_type_info");
+    ci.diagnostics().Report(DiagID);
+    llvm::errs() << "\n";
+  }
+
+  // Dump symbols
+  llvm::outs() << "=====================";
+  llvm::outs() << " Flang: symbols dump ";
+  llvm::outs() << "=====================\n";
+  semantics.DumpSymbols(llvm::outs());
 }
 
 void DebugDumpParseTreeNoSemaAction::ExecuteAction() {
   auto &parseTree{instance().parsing().parseTree()};
-  Fortran::parser::AnalyzedObjectsAsFortran asFortran =
-      Fortran::frontend::getBasicAsFortran();
 
   // Dump parse tree
-  Fortran::parser::DumpTree(llvm::outs(), parseTree, &asFortran);
+  Fortran::parser::DumpTree(
+      llvm::outs(), parseTree, &this->instance().invocation().asFortran());
 }
 
 void DebugDumpParseTreeAction::ExecuteAction() {
   auto &parseTree{instance().parsing().parseTree()};
-  Fortran::parser::AnalyzedObjectsAsFortran asFortran =
-      Fortran::frontend::getBasicAsFortran();
 
   // Dump parse tree
-  Fortran::parser::DumpTree(llvm::outs(), parseTree, &asFortran);
+  Fortran::parser::DumpTree(
+      llvm::outs(), parseTree, &this->instance().invocation().asFortran());
+
   // Report fatal semantic errors
   reportFatalSemanticErrors(semantics(), this->instance().diagnostics(),
       GetCurrentFileOrBufferName());
@@ -371,6 +409,53 @@ void DebugDumpParsingLogAction::ExecuteAction() {
   ci.parsing().DumpParsingLog(llvm::outs());
 }
 
+void GetDefinitionAction::ExecuteAction() {
+  // Report and exit if fatal semantic errors are present
+  if (reportFatalSemanticErrors(semantics(), this->instance().diagnostics(),
+          GetCurrentFileOrBufferName()))
+    return;
+
+  CompilerInstance &ci = this->instance();
+  parser::AllCookedSources &cs = ci.allCookedSources();
+  unsigned diagID = ci.diagnostics().getCustomDiagID(
+      clang::DiagnosticsEngine::Error, "Symbol not found");
+
+  auto gdv = ci.invocation().frontendOpts().getDefVals;
+  auto charBlock{cs.GetCharBlockFromLineAndColumns(
+      gdv.line, gdv.startColumn, gdv.endColumn)};
+  if (!charBlock) {
+    ci.diagnostics().Report(diagID);
+    return;
+  }
+
+  llvm::outs() << "String range: >" << charBlock->ToString() << "<\n";
+
+  auto *symbol{ci.invocation()
+                   .semanticsContext()
+                   .FindScope(*charBlock)
+                   .FindSymbol(*charBlock)};
+  if (!symbol) {
+    ci.diagnostics().Report(diagID);
+    return;
+  }
+
+  llvm::outs() << "Found symbol name: " << symbol->name().ToString() << "\n";
+
+  auto sourceInfo{cs.GetSourcePositionRange(symbol->name())};
+  if (!sourceInfo) {
+    llvm_unreachable(
+        "Failed to obtain SourcePosition."
+        "TODO: Please, write a test and replace this with a diagnostic!");
+    return;
+  }
+
+  llvm::outs() << "Found symbol name: " << symbol->name().ToString() << "\n";
+  llvm::outs() << symbol->name().ToString() << ": "
+               << sourceInfo->first.file.path() << ", "
+               << sourceInfo->first.line << ", " << sourceInfo->first.column
+               << "-" << sourceInfo->second.column << "\n";
+}
+
 void GetSymbolsSourcesAction::ExecuteAction() {
   // Report and exit if fatal semantic errors are present
   if (reportFatalSemanticErrors(semantics(), this->instance().diagnostics(),
@@ -386,3 +471,13 @@ void EmitObjAction::ExecuteAction() {
       clang::DiagnosticsEngine::Error, "code-generation is not available yet");
   ci.diagnostics().Report(DiagID);
 }
+
+void InitOnlyAction::ExecuteAction() {
+  CompilerInstance &ci = this->instance();
+  unsigned DiagID =
+      ci.diagnostics().getCustomDiagID(clang::DiagnosticsEngine::Warning,
+          "Use `-init-only` for testing purposes only");
+  ci.diagnostics().Report(DiagID);
+}
+
+void PluginParseTreeAction::ExecuteAction() {}

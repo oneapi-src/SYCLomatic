@@ -61,7 +61,6 @@ private:
   /// Stack of Module description, enough to print the module after a given
   /// pass.
   SmallVector<PrintModuleDesc, 2> ModuleDescStack;
-  bool StoreModuleDesc = false;
 };
 
 class OptNoneInstrumentation {
@@ -80,14 +79,28 @@ public:
   void registerCallbacks(PassInstrumentationCallbacks &PIC);
 };
 
+struct PrintPassOptions {
+  /// Print adaptors and pass managers.
+  bool Verbose = false;
+  /// Don't print information for analyses.
+  bool SkipAnalyses = false;
+  /// Indent based on hierarchy.
+  bool Indent = false;
+};
+
 // Debug logging for transformation and analysis passes.
 class PrintPassInstrumentation {
+  raw_ostream &print();
+
 public:
-  PrintPassInstrumentation(bool DebugLogging) : DebugLogging(DebugLogging) {}
+  PrintPassInstrumentation(bool Enabled, PrintPassOptions Opts)
+      : Enabled(Enabled), Opts(Opts) {}
   void registerCallbacks(PassInstrumentationCallbacks &PIC);
 
 private:
-  bool DebugLogging;
+  bool Enabled;
+  PrintPassOptions Opts;
+  int Indent = 0;
 };
 
 class PreservedCFGCheckerInstrumentation {
@@ -131,7 +144,7 @@ public:
                     FunctionAnalysisManager::Invalidator &);
   };
 
-#ifndef NDEBUG
+#ifdef LLVM_ENABLE_ABI_BREAKING_CHECKS
   SmallVector<StringRef, 8> PassStack;
 #endif
 
@@ -413,7 +426,8 @@ class StandardInstrumentations {
   bool VerifyEach;
 
 public:
-  StandardInstrumentations(bool DebugLogging, bool VerifyEach = false);
+  StandardInstrumentations(bool DebugLogging, bool VerifyEach = false,
+                           PrintPassOptions PrintPassOpts = PrintPassOptions());
 
   // Register all the standard instrumentation callbacks. If \p FAM is nullptr
   // then PreservedCFGChecker is not enabled.

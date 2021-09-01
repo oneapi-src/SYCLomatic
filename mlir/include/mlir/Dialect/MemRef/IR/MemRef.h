@@ -9,9 +9,12 @@
 #ifndef MLIR_DIALECT_MEMREF_IR_MEMREF_H_
 #define MLIR_DIALECT_MEMREF_IR_MEMREF_H_
 
+#include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Dialect/Utils/ReshapeOpsUtils.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/Interfaces/CallInterfaces.h"
 #include "mlir/Interfaces/CastInterfaces.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Interfaces/CopyOpInterface.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
 #include "mlir/Interfaces/ViewLikeInterface.h"
@@ -28,10 +31,6 @@ raw_ostream &operator<<(raw_ostream &os, Range &range);
 /// with `b` at location `loc`.
 SmallVector<Range, 8> getOrCreateRanges(OffsetSizeAndStrideOpInterface op,
                                         OpBuilder &b, Location loc);
-
-/// Given an operation, retrieves the value of each dynamic dimension through
-/// constructing the necessary DimOp operators.
-SmallVector<Value, 4> getDynOperands(Location loc, Value val, OpBuilder &b);
 } // namespace mlir
 
 //===----------------------------------------------------------------------===//
@@ -62,7 +61,9 @@ namespace memref {
 // 'index' type, and specify a stride for the slower memory space (memory space
 // with a lower memory space id), transferring chunks of
 // number_of_elements_per_stride every stride until %num_elements are
-// transferred. Either both or no stride arguments should be specified.
+// transferred. Either both or no stride arguments should be specified. If the
+// source and destination locations overlap the behavior of this operation is
+// not defined.
 //
 // For example, a DmaStartOp operation that transfers 256 elements of a memref
 // '%src' in memory space 0 at indices [%i, %j] to memref '%dst' in memory space
@@ -90,6 +91,7 @@ class DmaStartOp
     : public Op<DmaStartOp, OpTrait::VariadicOperands, OpTrait::ZeroResult> {
 public:
   using Op::Op;
+  static ArrayRef<StringRef> getAttributeNames() { return {}; }
 
   static void build(OpBuilder &builder, OperationState &result, Value srcMemRef,
                     ValueRange srcIndices, Value destMemRef,
@@ -213,6 +215,7 @@ class DmaWaitOp
     : public Op<DmaWaitOp, OpTrait::VariadicOperands, OpTrait::ZeroResult> {
 public:
   using Op::Op;
+  static ArrayRef<StringRef> getAttributeNames() { return {}; }
 
   static void build(OpBuilder &builder, OperationState &result, Value tagMemRef,
                     ValueRange tagIndices, Value numElements);

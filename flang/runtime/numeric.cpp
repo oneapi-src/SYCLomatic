@@ -109,7 +109,7 @@ template <typename T> inline T SetExponent(T x, std::int64_t p) {
   } else if (x == 0) {
     return 0; // 0 -> 0
   } else {
-    int expo{std::ilogb(x)};
+    int expo{std::ilogb(x) + 1};
     auto ip{static_cast<int>(p - expo)};
     if (ip != p - expo) {
       ip = p < 0 ? std::numeric_limits<int>::min()
@@ -505,6 +505,38 @@ CppTypeFor<TypeCategory::Real, 10> RTNAME(Fraction10)(
 CppTypeFor<TypeCategory::Real, 16> RTNAME(Fraction16)(
     CppTypeFor<TypeCategory::Real, 16> x) {
   return Fraction(x);
+}
+#endif
+
+bool RTNAME(IsFinite4)(CppTypeFor<TypeCategory::Real, 4> x) {
+  return std::isfinite(x);
+}
+bool RTNAME(IsFinite8)(CppTypeFor<TypeCategory::Real, 8> x) {
+  return std::isfinite(x);
+}
+#if LONG_DOUBLE == 80
+bool RTNAME(IsFinite10)(CppTypeFor<TypeCategory::Real, 10> x) {
+  return std::isfinite(x);
+}
+#elif LONG_DOUBLE == 128
+bool RTNAME(IsFinite16)(CppTypeFor<TypeCategory::Real, 16> x) {
+  return std::isfinite(x);
+}
+#endif
+
+bool RTNAME(IsNaN4)(CppTypeFor<TypeCategory::Real, 4> x) {
+  return std::isnan(x);
+}
+bool RTNAME(IsNaN8)(CppTypeFor<TypeCategory::Real, 8> x) {
+  return std::isnan(x);
+}
+#if LONG_DOUBLE == 80
+bool RTNAME(IsNaN10)(CppTypeFor<TypeCategory::Real, 10> x) {
+  return std::isnan(x);
+}
+#elif LONG_DOUBLE == 128
+bool RTNAME(IsNaN16)(CppTypeFor<TypeCategory::Real, 16> x) {
+  return std::isnan(x);
 }
 #endif
 

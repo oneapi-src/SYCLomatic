@@ -32,20 +32,19 @@ context_impl::context_impl(const device &Device, async_handler AsyncHandler,
   MKernelProgramCache.setContextPtr(this);
 }
 
-context_impl::context_impl(const vector_class<cl::sycl::device> Devices,
+context_impl::context_impl(const std::vector<cl::sycl::device> Devices,
                            async_handler AsyncHandler,
                            const property_list &PropList)
     : MAsyncHandler(AsyncHandler), MDevices(Devices), MContext(nullptr),
       MPlatform(), MPropList(PropList), MHostContext(false) {
   MPlatform = detail::getSyclObjImpl(MDevices[0].get_platform());
-  vector_class<RT::PiDevice> DeviceIds;
+  std::vector<RT::PiDevice> DeviceIds;
   for (const auto &D : MDevices) {
     DeviceIds.push_back(getSyclObjImpl(D)->getHandleRef());
   }
 
   const auto Backend = getPlugin().getBackend();
   if (Backend == backend::cuda) {
-#if USE_PI_CUDA
     const bool UseCUDAPrimaryContext =
         MPropList.has_property<property::context::cuda::use_primary_context>();
     const pi_context_properties Props[] = {
@@ -55,10 +54,6 @@ context_impl::context_impl(const vector_class<cl::sycl::device> Devices,
 
     getPlugin().call<PiApiKind::piContextCreate>(
         Props, DeviceIds.size(), DeviceIds.data(), nullptr, nullptr, &MContext);
-#else
-    cl::sycl::detail::pi::die(
-        "CUDA support was not enabled at compilation time");
-#endif
   } else {
     getPlugin().call<PiApiKind::piContextCreate>(nullptr, DeviceIds.size(),
                                                  DeviceIds.data(), nullptr,
@@ -73,7 +68,7 @@ context_impl::context_impl(RT::PiContext PiContext, async_handler AsyncHandler,
     : MAsyncHandler(AsyncHandler), MDevices(), MContext(PiContext), MPlatform(),
       MHostContext(false) {
 
-  vector_class<RT::PiDevice> DeviceIds;
+  std::vector<RT::PiDevice> DeviceIds;
   size_t DevicesNum = 0;
   // TODO catch an exception and put it to list of asynchronous exceptions
   Plugin.call<PiApiKind::piContextGetInfo>(
@@ -147,9 +142,26 @@ template <> platform context_impl::get_info<info::context::platform>() const {
   return createSyclObjFromImpl<platform>(MPlatform);
 }
 template <>
-vector_class<cl::sycl::device>
+std::vector<cl::sycl::device>
 context_impl::get_info<info::context::devices>() const {
   return MDevices;
+}
+template <>
+std::vector<cl::sycl::memory_order>
+context_impl::get_info<info::context::atomic_memory_order_capabilities>()
+    const {
+  if (is_host())
+    return {cl::sycl::memory_order::relaxed, cl::sycl::memory_order::acquire,
+            cl::sycl::memory_order::release, cl::sycl::memory_order::acq_rel,
+            cl::sycl::memory_order::seq_cst};
+
+  pi_memory_order_capabilities Result;
+  getPlugin().call<PiApiKind::piContextGetInfo>(
+      MContext,
+      pi::cast<pi_context_info>(
+          info::context::atomic_memory_order_capabilities),
+      sizeof(Result), &Result, nullptr);
+  return readMemoryOrderBitfield(Result);
 }
 
 RT::PiContext &context_impl::getHandleRef() { return MContext; }
@@ -160,7 +172,7 @@ KernelProgramCache &context_impl::getKernelProgramCache() const {
 }
 
 bool context_impl::hasDevice(
-    shared_ptr_class<detail::device_impl> Device) const {
+    std::shared_ptr<detail::device_impl> Device) const {
   for (auto D : MDevices)
     if (getSyclObjImpl(D) == Device)
       return true;

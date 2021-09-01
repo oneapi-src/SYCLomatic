@@ -1,13 +1,15 @@
 // REQUIRES: aarch64-registered-target
 // RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -emit-llvm -o - -x c++ %s | FileCheck %s
 // RUN: %clang_cc1 -triple aarch64-none-linux-gnu -target-feature +sve -fallow-half-arguments-and-returns -S -O1 -Werror -Wall -o - %s >/dev/null
 #include <arm_sve.h>
 
 uint64_t test_svcntw()
 {
   // CHECK-LABEL: test_svcntw
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 31)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.vscale.i64()
+  // CHECK-NEXT: %[[RET:.*]] = shl i64 %[[INTRINSIC]], 2
+  // CHECK: ret i64 %[[RET]]
   return svcntw();
 }
 
@@ -22,32 +24,28 @@ uint64_t test_svcntw_pat()
 uint64_t test_svcntw_pat_1()
 {
   // CHECK-LABEL: test_svcntw_pat_1
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 1)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 1
   return svcntw_pat(SV_VL1);
 }
 
 uint64_t test_svcntw_pat_2()
 {
   // CHECK-LABEL: test_svcntw_pat_2
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 2)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 2
   return svcntw_pat(SV_VL2);
 }
 
 uint64_t test_svcntw_pat_3()
 {
   // CHECK-LABEL: test_svcntw_pat_3
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 3)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 3
   return svcntw_pat(SV_VL3);
 }
 
 uint64_t test_svcntw_pat_4()
 {
   // CHECK-LABEL: test_svcntw_pat_4
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 4)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: ret i64 4
   return svcntw_pat(SV_VL4);
 }
 
@@ -142,7 +140,8 @@ uint64_t test_svcntw_pat_15()
 uint64_t test_svcntw_pat_16()
 {
   // CHECK-LABEL: test_svcntw_pat_16
-  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.aarch64.sve.cntw(i32 31)
-  // CHECK: ret i64 %[[INTRINSIC]]
+  // CHECK: %[[INTRINSIC:.*]] = call i64 @llvm.vscale.i64()
+  // CHECK-NEXT: %[[RET:.*]] = shl i64 %[[INTRINSIC]], 2
+  // CHECK: ret i64 %[[RET]]
   return svcntw_pat(SV_ALL);
 }

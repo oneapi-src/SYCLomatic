@@ -20,7 +20,7 @@ std::unique_ptr<OperationPass<FuncOp>> createConvertElementwiseToLinalgPass();
 
 std::unique_ptr<OperationPass<FuncOp>> createLinalgFoldUnitExtentDimsPass();
 
-std::unique_ptr<Pass> createLinalgFusionOfTensorOpsPass();
+std::unique_ptr<Pass> createLinalgElementwiseOpFusionPass();
 std::unique_ptr<Pass> createFoldReshapeOpsByLinearizationPass();
 
 std::unique_ptr<OperationPass<FuncOp>>
@@ -30,8 +30,18 @@ std::unique_ptr<OperationPass<FuncOp>>
 createLinalgTilingToParallelLoopsPass(ArrayRef<int64_t> tileSizes = {});
 
 std::unique_ptr<OperationPass<FuncOp>>
+createLinalgTilingToTiledLoopPass(ArrayRef<int64_t> tileSizes = {},
+                                  ArrayRef<StringRef> distributionTypes = {});
+
+std::unique_ptr<OperationPass<FuncOp>>
 createLinalgPromotionPass(bool dynamicBuffers, bool useAlloca);
 std::unique_ptr<OperationPass<FuncOp>> createLinalgPromotionPass();
+
+std::unique_ptr<OperationPass<FuncOp>> createLinalgInlineScalarOperandsPass();
+
+/// Create a pass to convert Linalg tiled loops to `scf.for` and `scf.parallel`
+/// loops and memref.load/memref.store accesses.
+std::unique_ptr<OperationPass<FuncOp>> createConvertLinalgTiledLoopsToSCFPass();
 
 /// Create a pass to convert Linalg operations to scf.for loops and
 /// memref.load/memref.store accesses.
@@ -45,6 +55,15 @@ std::unique_ptr<OperationPass<FuncOp>> createConvertLinalgToParallelLoopsPass();
 /// affine_load/affine_store accesses.
 /// Placeholder for now, this is NYI.
 std::unique_ptr<OperationPass<FuncOp>> createConvertLinalgToAffineLoopsPass();
+
+/// This pass implements a cross-dialect bufferization approach and performs an
+/// analysis to determine which op operands and results may be bufferized in the
+/// same buffers. The analysis is performed on topologically sorted CallOp and
+/// FuncOp within a module. It provides analyses and bufferization across
+/// function boundaries. Within a function boundary, the analysis is performed
+/// on SSA use-def chains starting from function operands that are annotated
+/// with the 'inplaceable' attribute.
+std::unique_ptr<Pass> createLinalgComprehensiveModuleBufferizePass();
 
 /// Create a pass to convert Linalg operations which work on tensors to use
 /// buffers instead.

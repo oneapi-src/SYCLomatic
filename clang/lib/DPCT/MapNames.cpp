@@ -457,6 +457,7 @@ void MapNames::setExplicitNamespaceMap() {
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
+#include "APINames_CUB.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
@@ -465,7 +466,6 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
-#include "APINames_CUB.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -3366,6 +3366,7 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
+    {"CUDART_VERSION", "0x7FFFFFFF"},
     //...
 };
 
@@ -3442,6 +3443,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
+#include "APINames_CUB.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
@@ -3450,7 +3452,6 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
-#include "APINames_CUB.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };

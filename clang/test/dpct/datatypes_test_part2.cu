@@ -222,7 +222,7 @@ cufftResult_t &&var4 = std::move(var1);
 {
 // CHECK: sycl::queue *var1;
 // CHECK-NEXT: sycl::queue **var2;
-// CHECK-NEXT: sycl::queue *&var3 = var1;
+// CHECK-NEXT: sycl::queue * &var3 = var1;
 // CHECK-NEXT: sycl::queue *&&var4 = std::move(var1);
 cudaStream_t var1;
 cudaStream_t *var2;
@@ -1875,3 +1875,11 @@ void foo_struct(void) {
 struct cudaDeviceProp d_t;
 }
 
+// CHECK: void foo(sycl::queue *& stream) {
+// CHECK-NEXT:   sycl::queue *s0;
+// CHECK-NEXT:   sycl::queue * &s1 = s0;
+// CHECK-NEXT: }
+void foo(cudaStream_t& stream) {
+  cudaStream_t s0;
+  cudaStream_t &s1 = s0;
+}

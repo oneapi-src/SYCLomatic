@@ -1033,9 +1033,9 @@ bool FastISel::lowerCallTo(CallLoweringInfo &CLI) {
   for (auto &Arg : CLI.getArgs()) {
     Type *FinalType = Arg.Ty;
     if (Arg.IsByVal)
-      FinalType = cast<PointerType>(Arg.Ty)->getElementType();
+      FinalType = Arg.IndirectType;
     bool NeedsRegBlock = TLI.functionArgumentNeedsConsecutiveRegisters(
-        FinalType, CLI.CallConv, CLI.IsVarArg);
+        FinalType, CLI.CallConv, CLI.IsVarArg, DL);
 
     ISD::ArgFlagsTy Flags;
     if (Arg.IsZExt)
@@ -1048,6 +1048,8 @@ bool FastISel::lowerCallTo(CallLoweringInfo &CLI) {
       Flags.setSRet();
     if (Arg.IsSwiftSelf)
       Flags.setSwiftSelf();
+    if (Arg.IsSwiftAsync)
+      Flags.setSwiftAsync();
     if (Arg.IsSwiftError)
       Flags.setSwiftError();
     if (Arg.IsCFGuardTarget)
@@ -1072,26 +1074,24 @@ bool FastISel::lowerCallTo(CallLoweringInfo &CLI) {
       // preallocated handling in the various CC lowering callbacks.
       Flags.setByVal();
     }
+    MaybeAlign MemAlign = Arg.Alignment;
     if (Arg.IsByVal || Arg.IsInAlloca || Arg.IsPreallocated) {
-      PointerType *Ty = cast<PointerType>(Arg.Ty);
-      Type *ElementTy = Ty->getElementType();
-      unsigned FrameSize =
-          DL.getTypeAllocSize(Arg.ByValType ? Arg.ByValType : ElementTy);
+      unsigned FrameSize = DL.getTypeAllocSize(Arg.IndirectType);
 
       // For ByVal, alignment should come from FE. BE will guess if this info
       // is not there, but there are cases it cannot get right.
-      MaybeAlign FrameAlign = Arg.Alignment;
-      if (!FrameAlign)
-        FrameAlign = Align(TLI.getByValTypeAlignment(ElementTy, DL));
+      if (!MemAlign)
+        MemAlign = Align(TLI.getByValTypeAlignment(Arg.IndirectType, DL));
       Flags.setByValSize(FrameSize);
-      Flags.setByValAlign(*FrameAlign);
+    } else if (!MemAlign) {
+      MemAlign = DL.getABITypeAlign(Arg.Ty);
     }
+    Flags.setMemAlign(*MemAlign);
     if (Arg.IsNest)
       Flags.setNest();
     if (NeedsRegBlock)
       Flags.setInConsecutiveRegs();
     Flags.setOrigAlign(DL.getABITypeAlign(Arg.Ty));
-
     CLI.OutVals.push_back(Arg.Val);
     CLI.OutFlags.push_back(Flags);
   }
@@ -1144,7 +1144,7 @@ bool FastISel::lowerCall(const CallInst *CI) {
     IsTailCall = false;
   if (IsTailCall && MF->getFunction()
                             .getFnAttribute("disable-tail-calls")
-                            .getValueAsString() == "true")
+                            .getValueAsBool())
     IsTailCall = false;
 
   CallLoweringInfo CLI;
@@ -1256,9 +1256,21 @@ bool FastISel::selectIntrinsicCall(const IntrinsicInst *II) {
              "Expected inlined-at fields to agree");
       // A dbg.declare describes the address of a source variable, so lower it
       // into an indirect DBG_VALUE.
-      BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,
-              TII.get(TargetOpcode::DBG_VALUE), /*IsIndirect*/ true,
-              *Op, DI->getVariable(), DI->getExpression());
+      auto Builder =
+          BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,
+                  TII.get(TargetOpcode::DBG_VALUE), /*IsIndirect*/ true, *Op,
+                  DI->getVariable(), DI->getExpression());
+
+      // If using instruction referencing, mutate this into a DBG_INSTR_REF,
+      // to be later patched up by finalizeDebugInstrRefs. Tack a deref onto
+      // the expression, we don't have an "indirect" flag in DBG_INSTR_REF.
+      if (TM.Options.ValueTrackingVariableLocations && Op->isReg()) {
+        Builder->setDesc(TII.get(TargetOpcode::DBG_INSTR_REF));
+        Builder->getOperand(1).ChangeToImmediate(0);
+        auto *NewExpr =
+           DIExpression::prepend(DI->getExpression(), DIExpression::DerefBefore);
+        Builder->getOperand(3).setMetadata(NewExpr);
+      }
     } else {
       // We can't yet handle anything else here because it would require
       // generating code, thus altering codegen because of debug info.
@@ -1274,24 +1286,28 @@ bool FastISel::selectIntrinsicCall(const IntrinsicInst *II) {
     const Value *V = DI->getValue();
     assert(DI->getVariable()->isValidLocationForIntrinsic(DbgLoc) &&
            "Expected inlined-at fields to agree");
-    if (!V || isa<UndefValue>(V)) {
-      // Currently the optimizer can produce this; insert an undef to
-      // help debugging.
+    if (!V || isa<UndefValue>(V) || DI->hasArgList()) {
+      // DI is either undef or cannot produce a valid DBG_VALUE, so produce an
+      // undef DBG_VALUE to terminate any prior location.
       BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II, false, 0U,
               DI->getVariable(), DI->getExpression());
     } else if (const auto *CI = dyn_cast<ConstantInt>(V)) {
+      // See if there's an expression to constant-fold.
+      DIExpression *Expr = DI->getExpression();
+      if (Expr)
+        std::tie(Expr, CI) = Expr->constantFold(CI);
       if (CI->getBitWidth() > 64)
         BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II)
             .addCImm(CI)
             .addImm(0U)
             .addMetadata(DI->getVariable())
-            .addMetadata(DI->getExpression());
+            .addMetadata(Expr);
       else
         BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II)
             .addImm(CI->getZExtValue())
             .addImm(0U)
             .addMetadata(DI->getVariable())
-            .addMetadata(DI->getExpression());
+            .addMetadata(Expr);
     } else if (const auto *CF = dyn_cast<ConstantFP>(V)) {
       BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II)
           .addFPImm(CF)
@@ -1301,8 +1317,16 @@ bool FastISel::selectIntrinsicCall(const IntrinsicInst *II) {
     } else if (Register Reg = lookUpRegForValue(V)) {
       // FIXME: This does not handle register-indirect values at offset 0.
       bool IsIndirect = false;
-      BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II, IsIndirect, Reg,
-              DI->getVariable(), DI->getExpression());
+      auto Builder =
+          BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II, IsIndirect, Reg,
+                  DI->getVariable(), DI->getExpression());
+
+      // If using instruction referencing, mutate this into a DBG_INSTR_REF,
+      // to be later patched up by finalizeDebugInstrRefs.
+      if (TM.Options.ValueTrackingVariableLocations) {
+        Builder->setDesc(TII.get(TargetOpcode::DBG_INSTR_REF));
+        Builder->getOperand(1).ChangeToImmediate(0);
+      }
     } else {
       // We don't know how to handle other cases, so we drop.
       LLVM_DEBUG(dbgs() << "Dropping debug info for " << *DI << "\n");
