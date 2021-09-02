@@ -76,4 +76,14 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 #undef NDRANGE_CTOR
 #undef RANGE_CTOR
 #undef RANGES_CTOR
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Kernel_get_kernel_function_info,
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuFuncGetAttribute", DEREF(0),
+                            makeMemberExprCreator(
+                                CALL(MapNames::getDpctNamespace() +
+                                    "get_kernel_function_info",
+                                    CAST(ARG("const void *"), ARG(2))),
+                                false,
+                                ARG(1)))))
 

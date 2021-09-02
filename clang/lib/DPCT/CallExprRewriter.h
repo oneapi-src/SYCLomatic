@@ -908,6 +908,18 @@ public:
             C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
 };
 
+template <class BaseT, class MemberT>
+class MemberExprRewriter
+  : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT>> {
+public:
+  MemberExprRewriter(
+    const CallExpr *C, StringRef Source,
+    const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
+    const std::function<MemberT(const CallExpr *)> &MemberCreator)
+    : PrinterRewriter<MemberExprPrinter<BaseT, MemberT>>(
+      C, Source, BaseCreator(C), IsArrow, MemberCreator(C)) {}
+};
+
 template <class BaseT, class... ArgsT>
 class MemberCallExprRewriter
     : public PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>> {

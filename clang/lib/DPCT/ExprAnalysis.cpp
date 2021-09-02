@@ -409,6 +409,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                                                       ECD->getName().str());
       if (!ReplBLASEnum.empty())
         addReplacement(DRE, ReplBLASEnum);
+      else {
+        auto &ReplFuncAttrEnum = MapNames::findReplacedName(MapNames::FunctionAttrMap,
+          ECD->getName().str());
+        if (!ReplFuncAttrEnum.empty())
+          addReplacement(DRE, ReplFuncAttrEnum);
+      }
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&

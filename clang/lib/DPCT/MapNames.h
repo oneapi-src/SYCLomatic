@@ -358,6 +358,7 @@ public:
       BLASTGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
+  static const MapTy DriverEnumsMap;
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
       SOLVERFuncReplInfoMap;
 
@@ -392,6 +393,7 @@ public:
   }
 
   static const MapNames::MapTy MemberNamesMap;
+  static const MapNames::MapTy FunctionAttrMap;
   static const MapNames::SetTy HostAllocSet;
   static MapNames::MapTy MathRewriterMap;
 

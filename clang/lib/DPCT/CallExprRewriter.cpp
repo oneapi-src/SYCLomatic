@@ -1403,6 +1403,16 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
+template <class BaseT, class MemberT>
+std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
+makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
+                      std::function<MemberT(const CallExpr *)> Member) {
+  return PrinterCreator<MemberExprPrinter<BaseT, MemberT>,
+                        std::function<BaseT(const CallExpr *)>, bool,
+                        std::function<MemberT(const CallExpr *)>>(Base, IsArrow,
+                                                                  Member);
+}
+
 template <class TypeInfoT, class SubExprT>
 std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
@@ -1648,6 +1658,24 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatAssignExprRewriterFactory(
       SourceName,
       std::forward<std::function<LValue(const CallExpr *)>>(LValueCreator),
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
+}
+
+
+template <class BaseT, class MemberT>
+std::shared_ptr<CallExprRewriterFactoryBase> creatMemberExprRewriterFactory(
+  const std::string &SourceName,
+  std::function<BaseT(const CallExpr *)> &&BaseCreator,
+  bool IsArrow,
+  std::function<MemberT(const CallExpr *)> &&MemberCreator) {
+  return std::make_shared<
+    CallExprRewriterFactory<MemberExprRewriter<BaseT, MemberT>,
+    std::function<BaseT(const CallExpr *)>,
+    bool,
+    std::function<MemberT(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<BaseT(const CallExpr *)>>(BaseCreator),
+      IsArrow,
+      std::forward<std::function<MemberT(const CallExpr *)>>(MemberCreator));
 }
 
 /// Create CallExprRewriterFactory with given argumens.
@@ -2106,6 +2134,8 @@ public:
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
   {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
+#define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
+  {FuncName, creatMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
   {FuncName, creatCallExprRewriterFactory(FuncName, C)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \

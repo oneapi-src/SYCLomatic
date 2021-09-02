@@ -93,7 +93,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"half", getClNamespace() + "half"},
       {"half2", getClNamespace() + "half2"},
       {"cudaEvent_t", getClNamespace() + "event"},
+      {"CUevent", getClNamespace() + "event"},
       {"CUevent_st", getClNamespace() + "event"},
+      {"CUfunc_cache", "int"},
       {"cudaStream_t", getClNamespace() + "queue *"},
       {"CUstream", getClNamespace() + "queue *"},
       {"CUstream_st", getClNamespace() + "queue"},
@@ -3416,6 +3418,11 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"totalGlobalMem", "global_mem_size"},
     {"sharedMemPerBlock", "local_mem_size"},
     {"maxGridSize", "max_nd_range_size"},
+    // ...
+};
+
+const MapNames::MapTy MapNames::FunctionAttrMap{
+    {"CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK", "max_work_group_size"},
     // ...
 };
 

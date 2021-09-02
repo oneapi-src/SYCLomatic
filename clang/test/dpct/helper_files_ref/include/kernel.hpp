@@ -27,6 +27,14 @@ static void get_kernel_function_info(kernel_function_info *kernel_info,
           .current_device()
           .get_info<cl::sycl::info::device::max_work_group_size>();
 }
+static kernel_function_info get_kernel_function_info(const void *function) {
+  kernel_function_info kernel_info;
+  kernel_info.max_work_group_size =
+      dpct::dev_mgr::instance()
+          .current_device()
+          .get_info<cl::sycl::info::device::max_work_group_size>();
+  return kernel_info;
+}
 
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__

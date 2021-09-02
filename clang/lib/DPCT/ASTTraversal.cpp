@@ -2506,7 +2506,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cusolverDnHandle_t", "device_malloc_allocator", "divides",
                   "tuple", "maximum", "multiplies", "plus", "cudaDataType_t",
                   "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
-                  "cublasStatus_t", "cuComplex", "cuDoubleComplex",
+                  "cublasStatus_t", "cuComplex", "cuDoubleComplex", "CUevent",
                   "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
                   "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
                   "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
@@ -4257,15 +4257,23 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
         auto RHSCall = dyn_cast<CallExpr>(BO->getRHS()->IgnoreImpCasts());
 
         if ((LHSCall && LHSCall->getDirectCallee() &&
-             LHSCall->getDirectCallee()
-                     ->getNameInfo()
-                     .getName()
-                     .getAsString() == "cudaEventQuery") ||
+             (LHSCall->getDirectCallee()
+                      ->getNameInfo()
+                      .getName()
+                      .getAsString() == "cudaEventQuery" ||
+              LHSCall->getDirectCallee()
+                      ->getNameInfo()
+                      .getName()
+                      .getAsString() == "cuEventQuery")) ||
             (RHSCall && RHSCall->getDirectCallee() &&
-             RHSCall->getDirectCallee()
-                     ->getNameInfo()
-                     .getName()
-                     .getAsString() == "cudaEventQuery")) {
+             (RHSCall->getDirectCallee()
+                      ->getNameInfo()
+                      .getName()
+                      .getAsString() == "cudaEventQuery" ||
+              RHSCall->getDirectCallee()
+                      ->getNameInfo()
+                      .getName()
+                      .getAsString() == "cuEventQuery"))) {
           MatchFunction = true;
           break;
         }
@@ -8285,7 +8293,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64", "__ldg",
-        "cudaFuncSetSharedMemConfig");
+        "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig");
   };
 
   MF.addMatcher(
@@ -8587,7 +8595,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     report(CE->getBeginLoc(), Diagnostics::DEVICE_LIMIT_NOT_SUPPORTED, false);
   } else if (FuncName == "cudaDeviceSetSharedMemConfig" ||
              FuncName == "cudaFuncSetSharedMemConfig" ||
-             FuncName == "cudaFuncSetCacheConfig") {
+             FuncName == "cudaFuncSetCacheConfig" ||
+             FuncName == "cuFuncSetCacheConfig") {
     std::string Msg = "DPC++ currently does not support configuring shared "
                       "memory on devices.";
     if (IsAssigned) {
@@ -8666,7 +8675,9 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaEventCreate", "cudaEventCreateWithFlags",
                       "cudaEventDestroy", "cudaEventRecord",
                       "cudaEventElapsedTime", "cudaEventSynchronize",
-                      "cudaEventQuery");
+                      "cudaEventQuery", "cuEventCreate", "cuEventRecord",
+                      "cuEventSynchronize", "cuEventQuery",
+                      "cuEventElapsedTime");
   };
 
   MF.addMatcher(
@@ -8725,7 +8736,7 @@ bool EventQueryTraversal::isEventQuery(const CallExpr *Call) {
   if (!Call)
     return false;
   if (auto Callee = Call->getDirectCallee())
-    if (Callee->getName() == "cudaEventQuery")
+    if (Callee->getName() == "cudaEventQuery" || Callee->getName() == "cuEventQuery")
       return QueryCallUsed = true;
   return false;
 }
@@ -8963,6 +8974,10 @@ bool EventAPICallRule::isEventElapsedTimeFollowed(const CallExpr *Expr) {
 
     const CallExpr *Call = nullptr;
     findEventAPI(*It, Call, "cudaEventElapsedTime");
+    if (!Call) {
+      findEventAPI(*It, Call, "cuEventElapsedTime");
+    }
+
     if (Call) {
       // To check the argment of "cudaEventQuery" is same as the second argument
       // of "cudaEventElapsedTime", in the code pieces:
@@ -8996,7 +9011,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
-      FuncName == "cudaEventDestroy") {
+      FuncName == "cudaEventDestroy" || FuncName == "cuEventCreate") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -9011,7 +9026,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, ""));
     }
-  } else if (FuncName == "cudaEventQuery") {
+  } else if (FuncName == "cudaEventQuery" || FuncName == "cuEventQuery") {
     if (getEventQueryTraversal().startFromQuery(CE))
       return;
 
@@ -9025,7 +9040,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       reset();
       TimeElapsedCE = CE;
-      updateAsyncRange(FuncBody, "cudaEventCreate");
+      if (FuncName == "cudaEventQuery") {
+        updateAsyncRange(FuncBody, "cudaEventCreate");
+      }
+      else {
+        updateAsyncRange(FuncBody, "cuEventCreate");
+      }
       if (RecordBegin && RecordEnd) {
         processAsyncJob(FuncBody);
 
@@ -9041,15 +9061,15 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
                           MapNames::getClNamespace() +
                           "info::event::command_execution_status>()";
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
-  } else if (FuncName == "cudaEventRecord") {
+  } else if (FuncName == "cudaEventRecord" || FuncName == "cuEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
-  } else if (FuncName == "cudaEventElapsedTime") {
+  } else if (FuncName == "cudaEventElapsedTime" || FuncName == "cuEventElapsedTime") {
     // Reset from last migration on time measurement.
     // Do NOT delete me.
     reset();
     TimeElapsedCE = CE;
     handleEventElapsedTime(IsAssigned);
-  } else if (FuncName == "cudaEventSynchronize") {
+  } else if (FuncName == "cudaEventSynchronize" || FuncName == "cuEventSynchronize") {
     bool NeedReport = false;
     std::string ReplStr{getStmtSpelling(CE->getArg(0))};
     ReplStr += ".wait_and_throw()";
@@ -9344,6 +9364,10 @@ const Expr *EventAPICallRule::findNextRecordedEvent(const Stmt *Node,
 
     const CallExpr *Call = nullptr;
     findEventAPI(*Iter, Call, "cudaEventRecord");
+
+    if(!Call)
+      findEventAPI(*Iter, Call, "cuEventRecord");
+
     if (Call) {
       if (SM.getExpansionLoc(Call->getBeginLoc()).getRawEncoding() > KCallLoc)
         return Call->getArg(0);
@@ -9444,7 +9468,7 @@ void EventAPICallRule::updateAsyncRangRecursive(
       return;
     }
 
-    if (EventAPIName == "cudaEventRecord") {
+    if (EventAPIName == "cudaEventRecord" || EventAPIName == "cuEventRecord") {
       const CallExpr *Call = nullptr;
       findEventAPI(*Iter, Call, EventAPIName);
 
@@ -9459,7 +9483,7 @@ void EventAPICallRule::updateAsyncRangRecursive(
         }
       }
 
-    } else if (EventAPIName == "cudaEventCreate") {
+    } else if (EventAPIName == "cudaEventCreate" || EventAPIName == "cuEventCreate") {
 
       const CallExpr *Call = nullptr;
       findEventAPI(*Iter, Call, EventAPIName);
@@ -9481,6 +9505,8 @@ void EventAPICallRule::updateAsyncRangRecursive(
       // To update RecordEnd
       Call = nullptr;
       findEventAPI(*Iter, Call, "cudaEventRecord");
+      if(!Call)
+        findEventAPI(*Iter, Call, "cuEventRecord");
 
       if (Call) {
         auto Arg0 = getStmtSpelling(Call->getArg(0));
@@ -9577,6 +9603,7 @@ void EventAPICallRule::handleTimeMeasurement() {
     return;
 
   updateAsyncRange(FuncBody, "cudaEventRecord");
+  updateAsyncRange(FuncBody, "cuEventRecord");
 
   if (!RecordBegin || !RecordEnd) {
     return;
@@ -9646,18 +9673,27 @@ void EventAPICallRule::handleTargetCalls(const Stmt *Node, const Stmt *Last) {
       if (Loc > RecordEndLoc && Loc < TimeElapsedLoc) {
 
         const CallExpr *Call = nullptr;
+        std::string OriginalAPIName = "";
         findEventAPI(*It, Call, "cudaEventSynchronize");
+        if (Call) {
+          OriginalAPIName = "cudaEventSynchronize";
+        }
+        else {
+          findEventAPI(*It, Call, "cuEventSynchronize");
+          if (Call)
+            OriginalAPIName = "cuEventSynchronize";
+        }
 
         if (Call) {
           if (const clang::Stmt *S = getRedundantParenExpr(Call)) {
             // To remove statement like "(cudaEventSynchronize(stop));"
             emplaceTransformation(
-                new ReplaceStmt(S, false, std::string("cudaEventSynchronize"),
+                new ReplaceStmt(S, false, OriginalAPIName,
                                 false, true, ""));
           }
 
           const auto &TM =
-              ReplaceStmt(Call, false, std::string("cudaEventSynchronize"), "");
+              ReplaceStmt(Call, false, OriginalAPIName, "");
           auto &Context = dpct::DpctGlobalInfo::getContext();
           auto R = TM.getReplacement(Context);
           DpctGlobalInfo::getInstance().updateEventSyncTypeInfo(R);
@@ -9851,7 +9887,8 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
                       "cudaStreamEndCapture", "cudaStreamIsCapturing",
                       "cudaStreamQuery", "cudaStreamWaitEvent",
-                      "cudaStreamAddCallback");
+                      "cudaStreamAddCallback", "cuStreamCreate",
+                      "cuStreamSynchronize", "cuStreamWaitEvent");
   };
 
   MF.addMatcher(
@@ -9890,6 +9927,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   if (FuncName == "cudaStreamCreate" ||
+      FuncName == "cuStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
       FuncName == "cudaStreamCreateWithPriority") {
     std::string ReplStr;
@@ -9930,7 +9968,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
-  } else if (FuncName == "cudaStreamSynchronize") {
+  } else if (FuncName == "cudaStreamSynchronize" || FuncName == "cuStreamSynchronize") {
     auto StmtStr = getStmtSpelling(CE->getArg(0));
     std::string ReplStr;
     if (StmtStr == "0" || StmtStr == "cudaStreamDefault" ||
@@ -9998,7 +10036,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
-  } else if (FuncName == "cudaStreamWaitEvent") {
+  } else if (FuncName == "cudaStreamWaitEvent" || FuncName == "cuStreamWaitEvent") {
     std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
@@ -11851,7 +11889,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       emplaceTransformation(new ReplaceCalleeName(
           C, MapNames::getDpctNamespace() + "dpct_free", Name));
     }
-  } else if (Name == "cudaFreeHost") {
+  } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (USMLevel == UsmLevel::UL_Restricted) {
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -12197,7 +12235,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
         "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
         "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
+        "cudaMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc", "cuMemFreeHost",
         "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2");
@@ -12375,6 +12413,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaFree", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
+          {"cuMemFreeHost", &MemoryMigrationRule::freeMigration},
           {"cublasFree", &MemoryMigrationRule::freeMigration},
           {"cudaMemset", &MemoryMigrationRule::memsetMigration},
           {"cudaMemsetAsync", &MemoryMigrationRule::memsetMigration},
@@ -13102,10 +13141,14 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       varDecl(hasType(recordDecl(hasName("cudaFuncAttributes")))).bind("decl"),
       this);
-  MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName("cudaFuncGetAttributes"))))
-          .bind("call"),
-      this);
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
+                             "cudaFuncGetAttributes"))))
+                    .bind("call"),
+                this);
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
+    "cuFuncGetAttribute"))))
+    .bind("callFuncGetAttribute"),
+    this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(
                                recordDecl(hasName("cudaFuncAttributes")))))
                     .bind("member"),
@@ -13125,6 +13168,10 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
+  } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {
+    ExprAnalysis EA;
+    EA.analyze(C);
+    emplaceTransformation(EA.getReplacement());
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "member")) {
     auto MemberName = M->getMemberNameInfo();
     auto NameMap = AttributesNamesMap.find(MemberName.getAsString());

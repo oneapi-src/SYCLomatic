@@ -40,5 +40,6 @@ int main(){
 
     //CHECK: FreeLibrary(M);
     cuModuleUnload(M);
+
     return 0;
 }
