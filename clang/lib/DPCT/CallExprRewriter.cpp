@@ -1110,6 +1110,7 @@ DerefExpr DerefExpr::create(const Expr *E) {
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
   D.E = getDereferencedExpr(E);
   if (D.E) {
+    D.E = D.E->IgnoreParens();
     D.AddrOfRemoved = true;
   } else {
     D.E = E;
@@ -1468,6 +1469,7 @@ getDerefedType(size_t Idx) {
       NeedDeref = false;
       TE = DE;
     }
+    TE = TE->IgnoreParens();
 
     QualType DerefQT;
     if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(TE)) {

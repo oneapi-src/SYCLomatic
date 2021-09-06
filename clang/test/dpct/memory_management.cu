@@ -7,21 +7,23 @@
 
 __constant__ float constData[1234567 * 4];
 
-// CHECK: template<typename ntype>
+// CHECK: template<typename T>
 //CHECK-NEXT: void test(){
 //CHECK-NEXT:   int i = 0;
-//CHECK-NEXT:   ntype** ptr;
-//CHECK-NEXT:   ntype* array[10];
-//CHECK-NEXT:   ptr[i] = (ntype *)dpct::dpct_malloc(10 * sizeof(ntype));
-//CHECK-NEXT:   array[i] = (ntype *)dpct::dpct_malloc(10 * sizeof(ntype));
+//CHECK-NEXT:   T** ptr;
+//CHECK-NEXT:   T* array[10];
+//CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
+//CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
+//CHECK-NEXT:   array[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
 //CHECK-NEXT: }
-template<typename ntype>
+template<typename T>
 void test(){
   int i = 0;
-  ntype** ptr;
-  ntype* array[10];
-  cudaMalloc(&ptr[i], 10 * sizeof(ntype));
-  cudaMalloc(&array[i], 10 * sizeof(ntype));
+  T** ptr;
+  T* array[10];
+  cudaMalloc(&ptr[i], 10 * sizeof(T));
+  cudaMalloc(&(ptr[i]), 10 * sizeof(T));
+  cudaMalloc(&array[i], 10 * sizeof(T));
 }
 
 void fooo() {

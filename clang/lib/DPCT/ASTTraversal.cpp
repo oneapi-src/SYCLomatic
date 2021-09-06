@@ -11246,6 +11246,7 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
       NeedDerefOp = false;
     }
   }
+  E = E->IgnoreParens();
 
   std::unique_ptr<ParensPrinter<std::ostream>> PP;
   if (NeedDerefOp) {
