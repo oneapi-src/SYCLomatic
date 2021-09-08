@@ -52,7 +52,27 @@ def getTestSuite(item, litConfig, cache):
         # configuration to load instead.
         config_map = litConfig.params.get('config_map')
         if config_map:
-            cfgpath = os.path.realpath(cfgpath)
+            # INTEL_CUSTOMIZATION begin
+            # Patch 8e62797963875e0cf93fcabda9e18bc0eff5da11 replaced
+            # os.path.abspath() with pathlib.resolve() in LLVM_LIT_PATH_FUNCTION
+            # variable in llvm/cmake/modules/AddLLVM.cmake file. This change will
+            # affect the pathes saved in config_map. https://reviews.llvm.org/D103014
+            #
+            # If user map the folder C:\abc to a network drive Z:\, pathlib.resolve()
+            # will expand the path Z:\def to the real path C:\abc\def. But both
+            # os.path.abspath() and os.path.realpath() will keep the network drive
+            # path as Z:\def.
+            #
+            # Here, if we still use os.path.realpath(), the cfgpath and the path saved
+            # in config_map will not be consistent.
+            #
+            # So replace the os.path.realpath() with pathlib.resolve() to expand the
+            # network drive.
+            from pathlib import Path
+            cfgpath = Path(cfgpath).resolve()
+            # INTEL_CUSTOMIZATION else
+            # cfgpath = os.path.realpath(cfgpath)
+            # INTEL_CUSTOMIZATION end
             target = config_map.get(os.path.normcase(cfgpath))
             if target:
                 cfgpath = target
