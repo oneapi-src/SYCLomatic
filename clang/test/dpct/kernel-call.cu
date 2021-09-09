@@ -36,6 +36,8 @@ __global__ void testKernel(int L, int M, int N = 0);
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
 // CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
+  L[0];
+  M[0];
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
@@ -291,6 +293,7 @@ private:
 int *g_a;
 
 __global__ void foo_kernel3(int *d) {
+  d[0];
 }
 //CHECK:void run_foo(cl::sycl::range<3> c, cl::sycl::range<3> d) {
 //CHECK-NEXT:  if (1)
@@ -528,7 +531,9 @@ struct A{
   }
 };
 
-__global__ void k(int *p){}
+__global__ void k(int *p){
+  p[0];
+}
 
 //CHECK:int run_foo9() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -745,7 +750,9 @@ void foo2() {
   k12<TT><<<1,1>>>(a);
 }
 
-__global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){}
+__global__ void my_kernel4(int a, int* b, int c, int d, int e, int f, int g){
+  b[0];
+}
 int run_foo12() {
   static int aa;
   static int *bb;
@@ -776,6 +783,7 @@ int run_foo12() {
 
 template<typename T>
 __global__ void my_kernel5(T** a_dev){
+  a_dev[0];
   __shared__ T* aa;
 }
 
@@ -795,4 +803,15 @@ void run_foo13(float* a_host[]) {
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   my_kernel5<<<1, 1>>>(a_host);
+}
+
+__global__ void my_kernel6(float* a) {}
+
+void run_foo14(float* aa) {
+//CHECK:dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel6_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:  cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:  [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:    my_kernel6(nullptr);
+//CHECK-NEXT:  });
+  my_kernel6<<<1, 1>>>(aa);
 }

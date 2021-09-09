@@ -168,7 +168,11 @@ void foo_test_2() {
 #define NSTREAM 4
 #define BDIM 128
 
-__global__ void sumArrays(float *A, float *B, float *C, const int NN) {}
+__global__ void sumArrays(float *A, float *B, float *C, const int NN) {
+  A[0];
+  B[0];
+  C[0];
+}
 
 void foo_test_3() {
   int nElem = 1 << 18;
@@ -254,9 +258,15 @@ void foo_usm() {
   cudaEventElapsedTime(&Time, start, stop);
 }
 
-__global__ void readTexels(int n, float *d_out, int width){}
-__global__ void readTexelsFoo1(int n, float *d_out){}
-__global__ void readTexelsFoo2(int n, float *d_out, int width, int height){}
+__global__ void readTexels(int n, float *d_out, int width){
+  d_out[0];
+}
+__global__ void readTexelsFoo1(int n, float *d_out){
+  d_out[0];
+}
+__global__ void readTexelsFoo2(int n, float *d_out, int width, int height){
+  d_out[0];
+}
 texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
@@ -505,7 +515,10 @@ int foo_test_4()
 template <class T, int blockSize>
 __global__ void
 reduce(const T* __restrict__ g_idata, T* __restrict__ g_odata,
-       int n) {}
+       int n) {
+  g_idata[0];
+  g_odata[0];
+}
 
 template <class T, class vecT>
 void RunTest()
@@ -572,12 +585,20 @@ int foo_test_5() {
 
 __global__ void foo_kernel_1(unsigned short* blk_sad, unsigned short* frame,
                             int mb_width, int mb_height,
-                            unsigned short* img_ref) {}
+                            unsigned short* img_ref) {
+  blk_sad[0];
+  frame[0];
+  img_ref[0];
+}
 __global__ void foo_kernel_2(unsigned short* blk_sad, int mb_width,
-                                  int mb_height) {}
+                                  int mb_height) {
+  blk_sad[0];
+}
 
 __global__ void foo_kernel_3(unsigned short* blk_sad, int mb_width,
-                                   int mb_height) {}
+                                   int mb_height) {
+  blk_sad[0];
+}
 
 void ctst_1999(void* ref_image, void* cur_image,
                     float* sad_calc_ms, float* sad_calc_8_ms,

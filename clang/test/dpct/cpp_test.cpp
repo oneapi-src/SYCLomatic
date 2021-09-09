@@ -233,6 +233,8 @@ __device__ void test_00();
 
 
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
+  L[0];
+  M[0];
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 

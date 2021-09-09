@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 __global__ void simple_kernel(float *d_array) {
+  d_array[0];
   return;
 }
 

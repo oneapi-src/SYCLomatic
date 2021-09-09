@@ -6,7 +6,9 @@
 // CHECK: 28
 // TEST_FEATURE: Memory_access_wrapper
 
-__global__ void foo(float* f) {}
+__global__ void foo(float* f) {
+  f[0];
+}
 
 int main() {
   float* f;

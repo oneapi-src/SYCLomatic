@@ -9,8 +9,10 @@ void func3(int2 a, int2 b, int2 c) {
 // CHECK: void fun(sycl::int2 a) {}
 void fun(int2 a) {}
 
-// CHECK: void kernel(sycl::int2* data) {}
-__global__ void kernel(int2* data) {}
+// CHECK: void kernel(sycl::int2* data) {
+__global__ void kernel(int2* data) {
+  data[0];
+}
 
 int main() {
   // range default constructor does the right thing.

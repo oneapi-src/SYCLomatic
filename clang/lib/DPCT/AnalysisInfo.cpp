@@ -785,31 +785,38 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
 
-      if (Arg.IsUsedAsLvalueAfterMalloc) {
-        requestFeature(HelperFeatureEnum::Memory_access_wrapper, getFilePath());
-        if (Arg.IsDefinedOnDevice) {
-          requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                         getFilePath());
-        }
-        SubmitStmtsList.AccessorList.emplace_back(buildString(
-            MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
-            Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
-            Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
-        KernelArgs +=
-            buildString(Arg.getIdStringWithSuffix("acc"), ".get_raw_pointer()");
+      if (getFuncInfo() &&
+          getFuncInfo()->getParametersProps().size() > ArgCounter &&
+          !(getFuncInfo()->getParametersProps()[ArgCounter].IsReferenced)) {
+        KernelArgs += buildString("nullptr");
       } else {
-        requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
-        if (Arg.IsDefinedOnDevice) {
-          requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+        if (Arg.IsUsedAsLvalueAfterMalloc) {
+          requestFeature(HelperFeatureEnum::Memory_access_wrapper,
                          getFilePath());
+          if (Arg.IsDefinedOnDevice) {
+            requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+                           getFilePath());
+          }
+          SubmitStmtsList.AccessorList.emplace_back(buildString(
+              MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
+              Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
+              Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
+          KernelArgs += buildString(Arg.getIdStringWithSuffix("acc"),
+                                    ".get_raw_pointer()");
+        } else {
+          requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
+          if (Arg.IsDefinedOnDevice) {
+            requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
+                           getFilePath());
+          }
+          SubmitStmtsList.AccessorList.emplace_back(buildString(
+              "auto ", Arg.getIdStringWithSuffix("acc"),
+              " = " + MapNames::getDpctNamespace() + "get_access(",
+              Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
+              ", cgh);"));
+          KernelArgs += buildString("(", TypeStr, ")(&",
+                                    Arg.getIdStringWithSuffix("acc"), "[0])");
         }
-        SubmitStmtsList.AccessorList.emplace_back(
-            buildString("auto ", Arg.getIdStringWithSuffix("acc"),
-                        " = " + MapNames::getDpctNamespace() + "get_access(",
-                        Arg.getArgString(),
-                        Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
-        KernelArgs += buildString("(", TypeStr, ")(&",
-                                  Arg.getIdStringWithSuffix("acc"), "[0])");
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       SubmitStmtsList.CommandGroupList.emplace_back(buildString(

@@ -27,9 +27,13 @@ struct EEE {
 
 __global__ void k1(AAA a){}
 
-__global__ void k2(AAA* a){}
+__global__ void k2(AAA* a){
+  a[0];
+}
 
-__global__ void k3(int **a){}
+__global__ void k3(int **a){
+  a[0];
+}
 
 __global__ void k4(BBB b){}
 

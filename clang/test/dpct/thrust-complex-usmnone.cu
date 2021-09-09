@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/thrust-complex/thrust-complex-usmnone.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <CL/sycl.hpp>
@@ -25,6 +25,9 @@ void bar(thrust::complex<double> *p);
 // CHECK: void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
 // CHECK-NEXT:  std::complex<sycl::double2> *s) {
 __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, thrust::complex<double> *d) {
+  p[0];
+  c[0];
+  d[0];
   __shared__ thrust::complex<struct double2> s[10];
 }
 
@@ -118,12 +121,11 @@ int main() {
 // CHECK:   q_ct1.submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       sycl::accessor<std::complex<int>, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
-// CHECK-NEXT:       dpct::access_wrapper<int *> d_i_acc_ct0(d_i, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           template_kernel<int>(d_i_acc_ct0.get_raw_pointer(), s_acc_ct1.get_pointer());
+// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.get_pointer());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   template_kernel<int><<<1, 256>>>(d_i);

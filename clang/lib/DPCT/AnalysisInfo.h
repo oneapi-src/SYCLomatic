@@ -3722,11 +3722,16 @@ public:
 // device function info includes parameters num, memory variable and call
 // expression in the function.
 class DeviceFunctionInfo {
+  struct ParameterProps {
+    bool IsReferenced = true;
+  };
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
-        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
+        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {
+    ParametersProps.resize(ParamsNum);
+  }
 
   bool ConstructGraphVisited = false;
 
@@ -3801,6 +3806,9 @@ public:
   getSubGroupSize() {
     return RequiredSubGroupSize;
   }
+  std::vector<ParameterProps> &getParametersProps() {
+    return ParametersProps;
+  }
 
 private:
   void mergeCalledTexObj(
@@ -3820,6 +3828,7 @@ private:
   MemVarMap VarMap;
 
   std::vector<std::shared_ptr<TextureTypeInfo>> TextureObjectTypeList;
+  std::vector<ParameterProps> ParametersProps;
 };
 
 class KernelPrinter {

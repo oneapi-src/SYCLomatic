@@ -9,7 +9,8 @@
 // CHECK:   /* DPCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
 // CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-
+  L[0];
+  M[0];
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
   // CHECK-NEXT:   int gtid = item_ct1.get_group(2) /*comments*/ * item_ct1.get_local_range().get(2) /*comments
   // CHECK-NEXT:  comments*/
@@ -280,6 +281,8 @@ __global__ static void foo_2(unsigned int *g_odata,
                         int blockIndex,
                         int baseIndex)
 {
+    g_idata[0];
+    g_blockSums[0];
     int ai, bi, mem_ai, mem_bi, bankOffsetA, bankOffsetB;
     extern __shared__ unsigned int s_data[];
     foo_1<isNP2>(g_odata, s_data, n,

@@ -5,6 +5,7 @@
 template<typename T>
 __global__ void foo_kernel(T** R)
 {
+  R[0];
 }
 
 

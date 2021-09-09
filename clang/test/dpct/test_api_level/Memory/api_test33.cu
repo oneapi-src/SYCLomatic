@@ -6,7 +6,9 @@
 // CHECK: 27
 // TEST_FEATURE: Memory_get_access
 
-__global__ void foo(float* f) {}
+__global__ void foo(float* f) {
+  f[0];
+}
 
 int main() {
   float* f;
