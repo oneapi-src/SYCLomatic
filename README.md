@@ -1,37 +1,31 @@
-# Intel Project for LLVM\* technology
+NOTICE TO USERS: THE SOURCE CODE OF THE INTEL® DPC++ COMPATIBILITY TOOL IS INTEL CONFIDENTIAL INFORMATION AND SHOULD NOT BE DISCLOSED OUTSIDE OF [INNERSOURCE](https://github.com/intel-innersource).
+Do not copy the source code of the Compatibility Tool to other projects without first contacting your Intel legal representative for your business unit. The source code was developed under certain strict guardrails and any proposed use will require separate legal approval.
+If you have any technical (non-legal) questions about the Compatibility Tool, please contact the product owner, Yury Plyakhin (yury.plyakhin@intel.com) or product manager, Jie Jane Zhang (jie.jane.zhang@intel.com).
+
+# Intel® DPC++ Compatibility Tool
 
 ## Introduction
 
-Intel staging area for llvm.org contribution.
-Home for Intel LLVM-based projects:
+Intel® DPC++ Compatibility Tool is a new tool that will assist developers in migrating some portion of their existing code written in CUDA\* to the newly developed DPC++ language. Our experience has shown that this can vary
+greatly, but on average, about 80-90% of CUDA\* code in applications can be migrated by this tool. Completion of the code and verification of the final code is expected to be manual process done by the developer.
 
-* oneAPI Data Parallel C++ compiler - see
-  [sycl](https://github.com/intel/llvm/tree/sycl) branch. More information on
-  oneAPI and DPC++ is available at
+Intel® DPC++ Compatibility Tool is to make it as easy as possible for customers to migrate their existing CUDA\* codebase to DPC++. DPC++ is an open specification for a portable, architecture-neutral language for expressing parallelism, which is based on industry standards. The DPC++ specification can be implemented by anybody for any platform. Once a customer migrates their code to DPC++, they are no longer tied to a single platform.
+
+
+* Intel® DPC++ Compatibility Tool [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
+* Intel® DPC++ Compatibility [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
+* Intel® DPC++ Compatibility Video [Intel DPC++ Compatibility Tool](https://www.youtube.com/watch?v=Y8iEd2AFI8k),  [Get Started with the Intel® DPC++ Compatibility Tool](https://www.youtube.com/watch?v=H8Etp9FcHbQ)
+* Intel® DPC++ Compatibility development branch is syclct branch
+* oneAPI Data Parallel C++ compiler - See
+  [DPC++ Documentation](https://intel.github.io/llvm-docs/)
+* More information on oneAPI and DPC++ is available at
   [https://www.oneapi.com/](https://www.oneapi.com/)
-  * [![Linux Post Commit Checks](https://github.com/intel/llvm/workflows/Linux%20Post%20Commit%20Checks/badge.svg)](https://github.com/intel/llvm/actions?query=workflow%3A%22Linux+Post+Commit+Checks%22)
-    [![Generate Doxygen documentation](https://github.com/intel/llvm/workflows/Generate%20Doxygen%20documentation/badge.svg)](https://github.com/intel/llvm/actions?query=workflow%3A%22Generate+Doxygen+documentation%22)
-* Late-outline OpenMP\* and OpenMP\* Offload - see
-  [openmp](https://github.com/intel/llvm/tree/openmp) branch.
 
 ## License
 
-See [LICENSE.txt](sycl/LICENSE.TXT) for details.
+See [LICENSE.txt](clang/lib/DPCT/LICENSE.TXT) for details.
 
-## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## Sub-projects Documentation
-
-* oneAPI Data Parallel C++ compiler - See
-  [DPC++ Documentation](https://intel.github.io/llvm-docs/)
-* Late-outline OpenMP\* and OpenMP\* Offload - TBD
-
-## DPC++ extensions
-
-DPC++ is an open, cross-architecture language built upon the ISO C++ and Khronos
-SYCL\* standards. DPC++ extends these standards with a number of extensions,
-which can be found in [sycl/doc/extensions](sycl/doc/extensions) directory.
 
 *\*Other names and brands may be claimed as the property of others.*
