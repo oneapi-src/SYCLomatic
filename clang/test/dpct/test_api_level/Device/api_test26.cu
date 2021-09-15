@@ -18,6 +18,7 @@
 // array type is not assignable
 // WORK_AROUND_TEST_FEATURE: Device_device_info_set_name
 // WORK_AROUND_TEST_FEATURE: Device_device_info_set_max_nd_range_size
+// WORK_AROUND_TEST_FEATURE: Device_device_info_set_max_work_item_sizes
 
 int main() {
   cudaDeviceProp deviceProp;

@@ -4055,30 +4055,71 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (MemberName == "sharedMemPerBlock") {
-    report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false);
-  } else if (MemberName == "maxGridSize") {
-    report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
-  } else if (MemberName == "deviceOverlap" ||
-             MemberName == "concurrentKernels") {
-    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
+
+  // unmigrated properties
+  if (MemberName == "regsPerBlock") {
+    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+           MemberName);
+    return;
+  }
+
+  // not functionally compatible properties
+  if (MemberName == "deviceOverlap" || MemberName == "concurrentKernels") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
            MemberName, "true");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "true"));
     return;
-  } else if (MemberName == "canMapHostMemory") {
-    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
-           "canMapHostMemory", "false");
+  } else if (MemberName == "canMapHostMemory" ||
+             MemberName == "kernelExecTimeoutEnabled") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "false");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "false"));
     return;
   } else if (MemberName == "pciDomainID" || MemberName == "pciBusID" ||
              MemberName == "pciDeviceID") {
-    report(ME->getBeginLoc(), Diagnostics::UNSUPPORTED_DEVICE_PROP, false,
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
            MemberName, "-1");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "-1"));
     return;
+  } else if (MemberName == "memPitch") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "INT_MAX");
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "INT_MAX"));
+    return;
+  } else if (MemberName == "totalConstMem") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "0");
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "0"));
+    return;
+  } else if (MemberName == "textureAlignment") {
+    requestFeature(HelperFeatureEnum::Device_get_current_device, ME);
+    std::string Repl =
+        MapNames::getDpctNamespace() + "get_current_device().get_info<" +
+        MapNames::getClNamespace() + "info::device::mem_base_addr_align>()";
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, Repl);
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
+    return;
+  } else if (MemberName == "ECCEnabled") {
+    requestFeature(HelperFeatureEnum::Device_get_current_device, ME);
+    std::string Repl =
+        MapNames::getDpctNamespace() + "get_current_device().get_info<" +
+        MapNames::getClNamespace() + "info::device::error_correction_support>()";
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
+    return;
+  }
+
+  if (MemberName == "sharedMemPerBlock") {
+    report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false);
+  } else if (MemberName == "maxGridSize") {
+    report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
   }
 
   auto Search = PropNamesMap.find(MemberName);
@@ -4138,7 +4179,7 @@ void EnumConstantRule::handleComputeMode(std::string EnumName,
       if (ME) {
         auto MD = ME->getMemberDecl();
         auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
-            ME->getBase()->getType().getUnqualifiedType(),
+            ME->getBase()->getType().getCanonicalType(),
             DpctGlobalInfo::getContext());
         if (MD->getNameAsString() == "computeMode" &&
             BaseTy == "cudaDeviceProp") {

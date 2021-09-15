@@ -1244,6 +1244,8 @@ const std::unordered_map<std::string, HelperFeatureEnum>
          HelperFeatureEnum::Device_device_info_get_local_mem_size},
         {"maxGridSize",
          HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
+        {"maxThreadsDim",
+         HelperFeatureEnum::Device_device_info_get_max_work_item_sizes},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
@@ -1269,6 +1271,8 @@ const std::unordered_map<std::string, HelperFeatureEnum>
          HelperFeatureEnum::Device_device_info_set_local_mem_size},
         {"maxGridSize",
          HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
+        {"maxThreadsDim",
+         HelperFeatureEnum::Device_device_info_set_max_work_item_sizes},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>

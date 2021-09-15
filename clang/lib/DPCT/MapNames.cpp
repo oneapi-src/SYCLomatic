@@ -3418,6 +3418,7 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"totalGlobalMem", "global_mem_size"},
     {"sharedMemPerBlock", "local_mem_size"},
     {"maxGridSize", "max_nd_range_size"},
+    {"maxThreadsDim", "max_work_item_sizes"},
     // ...
 };
 

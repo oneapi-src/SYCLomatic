@@ -140,3 +140,36 @@ void test2() {
   int j = cudaThreadSetLimit(limit, 0);
 }
 
+void test3() {
+  //CHECK:dpct::device_info deviceProp;
+  cudaDeviceProp deviceProp;
+  //CHECK:int a1 = deviceProp.get_max_work_item_sizes()[2];
+  int a1 = deviceProp.maxThreadsDim[2];
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with memPitch. It was migrated to INT_MAX. You may need to rewrite the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int a2 = INT_MAX;
+  int a2 = deviceProp.memPitch;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with totalConstMem. It was migrated to 0. You may need to rewrite the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int a3 = 0;
+  int a3 = deviceProp.totalConstMem;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1090:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
+  int a4 = deviceProp.regsPerBlock;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int a5 = dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
+  int a5 = deviceProp.textureAlignment;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to rewrite the code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:int a6 = false;
+  int a6 = deviceProp.kernelExecTimeoutEnabled;
+  //CHECK:int a7 = dpct::get_current_device().get_info<sycl::info::device::error_correction_support>();
+  int a7 = deviceProp.ECCEnabled;
+}

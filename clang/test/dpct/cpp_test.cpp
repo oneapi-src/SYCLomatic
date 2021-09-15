@@ -10,7 +10,7 @@
 
 #include <cuda_runtime.h>
 #include <vector_types.h>
-
+#include <vector>
 int main()
 {
   // CHECK: dpct::device_info deviceProp;
@@ -83,6 +83,15 @@ int main()
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProp.computeMode != cudaComputeModeExclusiveProcess) {
+    return 0;
+  }
+  std::vector<cudaDeviceProp> deviceProps;
+  int i;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if (true) {
+  if (deviceProps[i].computeMode != cudaComputeModeExclusiveProcess) {
     return 0;
   }
 
