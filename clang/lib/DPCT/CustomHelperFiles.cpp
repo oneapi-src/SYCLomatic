@@ -1024,6 +1024,9 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
               .SubFeatureMap[Entry.first.second]
               .CallerSrcFiles.push_back(CallerFileName);
         }
+
+        updateAPIName(Entry.first, TUR.FeatureMap[FileName][ParentFeatureName]
+                                       .SubFeatureMap[Entry.first.second]);
       }
     }
   }
