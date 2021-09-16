@@ -3012,7 +3012,9 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     }
     // Mark the TSTL TypeLoc as having been processed
     ProcessedTypeLocs.insert(TSTL);
-    if (isTransformIterator(TL)) {
+    if (isTransformIterator(TL) &&
+      TSTL.getArgLoc(0).getArgument().getKind() == TemplateArgument::Type &&
+      TSTL.getArgLoc(1).getArgument().getKind() == TemplateArgument::Type) {
       // Two template arguments must be swapped
       auto Arg1 = TSTL.getArgLoc(0).getTypeSourceInfo()->getTypeLoc();
       auto Arg2 = TSTL.getArgLoc(1).getTypeSourceInfo()->getTypeLoc();
@@ -3023,8 +3025,15 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     // Recurse down through the template arguments
     std::string NewTypeStr = NewBaseTypeStr + "<";
     for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
-      auto ArgLoc = TSTL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc();
-      std::string ArgStr = getNewTypeStr(&ArgLoc);
+      std::string ArgStr;
+      if (TSTL.getArgLoc(i).getArgument().getKind() == TemplateArgument::Type) {
+        auto ArgLoc = TSTL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc();
+        ArgStr = getNewTypeStr(&ArgLoc);
+      } else {
+        ExprAnalysis EA;
+        EA.analyze(TSTL.getArgLoc(i));
+        ArgStr = EA.getReplacedString();
+      }
       if (i != 0)
         NewTypeStr += ", ";
       NewTypeStr += ArgStr;
@@ -13402,6 +13411,8 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
       ObjNameSpace = NSD->getName().str() + "::";
     }
   }
+  if (!MC->getMethodDecl())
+    return;
   ObjName = ObjNameSpace + ObjDecl->getNameAsString() + ".";
   std::string FuncName = MC->getMethodDecl()->getNameAsString();
   std::string APIName = ObjName + FuncName;

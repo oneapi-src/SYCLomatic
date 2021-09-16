@@ -1366,11 +1366,11 @@ void deduceTemplateArgumentFromTemplateArgs(
     }
     break;
   case TemplateArgument::Type:
-    if (Arg.getKind() != TemplateArgument::Type)
-      return;
     if (ArgLoc.getArgument().isNull()) {
       deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
                                      Arg.getAsType());
+    } else if (ArgLoc.getArgument().getKind() != TemplateArgument::Type) {
+      return;
     } else {
       deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
                                      ArgLoc.getTypeSourceInfo()->getType(),
