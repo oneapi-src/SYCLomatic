@@ -273,7 +273,7 @@ __device__ uint32_t* func(uint32_t *in){
 // CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:  p_4=func(p_3);
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_4" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_4" points to the global memory address space. If it points to a local memory address space, replace "sycl::global_ptr" with "sycl::local_ptr".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_4)).fetch_add(1);
 // CHECK-NEXT:}
@@ -331,7 +331,7 @@ extern __shared__ uint32_t share[];
 // CHECK-NEXT:  else
 // CHECK-NEXT:    p_2 = p_3;
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_2" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_2" points to the global memory address space. If it points to a local memory address space, replace "sycl::global_ptr" with "sycl::local_ptr".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(p_2)).fetch_add(1);
 // CHECK-NEXT:}
@@ -537,7 +537,7 @@ __global__ static void vlc_encode_kernel_sm64huff() {
 
 // CHECK:void addByte(unsigned int *s_WarpHist, unsigned int data) {
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "s_WarpHist + data" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "s_WarpHist + data" points to the global memory address space. If it points to a local memory address space, replace "sycl::global_ptr" with "sycl::local_ptr".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(s_WarpHist + data)).fetch_add(1);
 // CHECK-NEXT:}

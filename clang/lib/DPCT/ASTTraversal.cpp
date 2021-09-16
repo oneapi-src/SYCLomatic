@@ -1913,15 +1913,6 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   bool HasSharedAttr = false;
   bool NeedReport = false;
   getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
-  std::string ClNamespace = ExplicitClNamespace ? "cl::sycl" : "sycl";
-  std::string SpaceName = ClNamespace + "::access::address_space::local_space";
-  std::string ReplAtomicFuncNameWithSpace =
-      ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
-  auto SL = CE->getArg(0)->getBeginLoc();
-  if (NeedReport)
-    report(SL, Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
-           getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
-           ReplAtomicFuncNameWithSpace);
 
   // Inline the code for ingeter types
   static std::unordered_map<std::string, std::string> AtomicMap = {
@@ -1935,6 +1926,13 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   auto Iter = AtomicMap.find(AtomicFuncName);
   if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
       Iter != AtomicMap.end()) {
+    if (NeedReport)
+      report(CE->getArg(0)->getBeginLoc(),
+             Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
+             getStmtSpelling(CE->getArg(0)),
+             MapNames::getClNamespace() + "global_ptr",
+             MapNames::getClNamespace() + "local_ptr");
+
     std::string ReplStr{MapNames::getClNamespace(true)};
     ReplStr += "atomic<";
     ReplStr += TypeName;
@@ -2001,6 +1999,15 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     return;
   }
+
+  std::string SpaceName =
+      MapNames::getClNamespace() + "access::address_space::local_space";
+  std::string ReplAtomicFuncNameWithSpace =
+      ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
+  if (NeedReport)
+    report(CE->getArg(0)->getBeginLoc(), Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+           false, getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
+           ReplAtomicFuncNameWithSpace);
 
   if (HasSharedAttr) {
     ReplacedAtomicFuncName = ReplAtomicFuncNameWithSpace;
