@@ -3369,6 +3369,7 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
     {"CUDART_VERSION", "0x7FFFFFFF"},
+    {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     //...
 };
 

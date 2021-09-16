@@ -1001,3 +1001,21 @@ __global__ void foo24(){
   int i;
   SHFL(i, i, 16);
 }
+
+
+#include <cublas_v2.h>
+int foo25(){
+//CHECK: #if defined(MKL_SYCL_HPP)
+#if defined(CUBLAS_V2_H_)
+#endif
+
+//CHECK: #ifndef MKL_SYCL_HPP
+//CHECK-NEXT: #define CUBLAS_V2_H_
+#ifndef CUBLAS_V2_H_
+#define CUBLAS_V2_H_
+float *h_a, *h_b, *h_c;
+float *d_C_S;
+int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
+#endif
+return 0;
+}
