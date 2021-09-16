@@ -100,36 +100,42 @@ SUBGROUPSIZE_FACTORY(
 
 //__shfl_sync
 SUBGROUPSIZE_FACTORY(
-    3, "shuffle",
+    3, "select_from_group",
     WARNING_FACTORY_ENTRY(
         "__shfl_sync",
-        MEMBER_CALL_FACTORY_ENTRY("__shfl_sync", SUBGROUP, false, "shuffle",
-                                  makeCallArgCreatorWithCall(1),
-                                  makeCallArgCreatorWithCall(2)),
-        Diagnostics::MASK_UNSUPPORTED, ARG("shuffle")))
+        CALL_FACTORY_ENTRY("__shfl_sync",
+                           CALL(MapNames::getClNamespace() + "select_from_group",
+                                SUBGROUP, makeCallArgCreatorWithCall(1),
+                                makeCallArgCreatorWithCall(2))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "select_from_group")))
 // __shfl
-SUBGROUPSIZE_FACTORY(2, "shuffle",
-                     MEMBER_CALL_FACTORY_ENTRY("__shfl", SUBGROUP, false,
-                                               "shuffle",
-                                               makeCallArgCreatorWithCall(0),
-                                               makeCallArgCreatorWithCall(1)))
+SUBGROUPSIZE_FACTORY(
+    2, "select_from_group",
+    CALL_FACTORY_ENTRY("__shfl",
+                       CALL(MapNames::getClNamespace() + "select_from_group",
+                            SUBGROUP, makeCallArgCreatorWithCall(0),
+                            makeCallArgCreatorWithCall(1))))
 
 // __shfl_xor_sync
 SUBGROUPSIZE_FACTORY(
-    3, "shuffle_xor",
+    3, "permute_group_by_xor",
     WARNING_FACTORY_ENTRY(
         "__shfl_xor_sync",
-        MEMBER_CALL_FACTORY_ENTRY("__shfl_xor_sync", SUBGROUP, false,
-                                  "shuffle_xor", makeCallArgCreatorWithCall(1),
-                                  makeCallArgCreatorWithCall(2)),
-        Diagnostics::MASK_UNSUPPORTED, ARG("shuffle_xor")))
+        CALL_FACTORY_ENTRY("__shfl_xor_sync",
+                           CALL(MapNames::getClNamespace() + "permute_group_by_xor",
+                                SUBGROUP, makeCallArgCreatorWithCall(1),
+                                makeCallArgCreatorWithCall(2))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "permute_group_by_xor")))
 
 // __shfl_xor
-SUBGROUPSIZE_FACTORY(2, "shuffle_xor",
-                     MEMBER_CALL_FACTORY_ENTRY("__shfl_xor", SUBGROUP, false,
-                                               "shuffle_xor",
-                                               makeCallArgCreatorWithCall(0),
-                                               makeCallArgCreatorWithCall(1)))
+SUBGROUPSIZE_FACTORY(
+    2, "permute_group_by_xor",
+    CALL_FACTORY_ENTRY("__shfl_xor",
+                       CALL(MapNames::getClNamespace() + "permute_group_by_xor",
+                            SUBGROUP, makeCallArgCreatorWithCall(0),
+                            makeCallArgCreatorWithCall(1))))
 
 WARNING_FACTORY_ENTRY("__activemask",
                       CALL_FACTORY_ENTRY("__activemask", CALL("__activemask")),

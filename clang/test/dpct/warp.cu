@@ -55,7 +55,7 @@ __global__ void kernel6() {
 __global__ void kernel7() {
   int val;
   int srcLane;
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane);
 }
 
@@ -64,9 +64,9 @@ __global__ void kernel8() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::select_from_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK-NEXT: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
 }
 
@@ -75,9 +75,9 @@ __global__ void kernel9() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::select_from_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK-NEXT: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);
 }
 
@@ -142,7 +142,7 @@ __global__ void kernel15() {
 __global__ void kernel16() {
   int laneMask;
   int val;
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor(val, laneMask);
 }
 
@@ -151,9 +151,9 @@ __global__ void kernel17() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::permute_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK-NEXT: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask);
 }
 
@@ -162,9 +162,9 @@ __global__ void kernel18() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::permute_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK-NEXT: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
 }
 
@@ -198,7 +198,7 @@ __global__ void kernel22() {
 __global__ void kernel23() {
   int val;
   int srcLane;
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane, 16);
 }
 
@@ -207,9 +207,9 @@ __global__ void kernel24() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::select_from_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK-NEXT: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane, 16);
 }
 
@@ -252,7 +252,7 @@ __global__ void kernel28() {
 __global__ void kernel29() {
   int val;
   int laneMask;
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor(val, laneMask, 16);
 }
 
@@ -261,9 +261,9 @@ __global__ void kernel30() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::permute_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK-NEXT: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, 16);
 }
 
@@ -271,7 +271,7 @@ __global__ void kernel31() {
   unsigned mask;
   int val;
   int srcLane;
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  // CHECK: sycl::select_from_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane, 16);
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::shift_group_left.
@@ -289,9 +289,9 @@ __global__ void kernel32() {
   int laneMask;
   int warpSize;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::permute_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK-NEXT: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
 }
 
@@ -301,9 +301,9 @@ __global__ void kernel33() {
   int laneMask;
   int WS;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::permute_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  // CHECK-NEXT: sycl::permute_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, WS);
 }
 
