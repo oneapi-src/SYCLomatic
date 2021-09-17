@@ -13536,15 +13536,27 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(RecognizeAPINameRule)
 
 void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto TypeTable = MigrationStatistics::GetTypeTable();
+  std::vector<std::string> UnsupportedType;
+  std::vector<std::string> UnsupportedPointerType;
+  for (auto &Type : TypeTable) {
+    if (!Type.second) {
+      if (Type.first.find("*") != std::string::npos) {
+        UnsupportedPointerType.push_back(
+            Type.first.substr(0, Type.first.length() - 1));
+      } else {
+        UnsupportedType.push_back(Type.first);
+      }
+    }
+  }
   MF.addMatcher(
-      typeLoc(anyOf(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                        "cusparseSolvePolicy_t", "CUexternalMemory",
-                        "CUexternalSemaphore", "CUgraph", "CUgraphExec",
-                        "CUgraphNode", "CUgraphicsResource", "nvmlReturn_t",
-                        "nvmlDevice_t"))))),
-                    loc(pointerType(pointee(qualType(hasDeclaration(
-                        namedDecl(hasAnyName("cudaMemcpy3DParms",
-                                             "CUDA_ARRAY_DESCRIPTOR")))))))))
+      typeLoc(
+          anyOf(loc(qualType(
+                    hasDeclaration(namedDecl(internal::Matcher<NamedDecl>(
+                        new internal::HasNameMatcher(UnsupportedType)))))),
+                loc(pointerType(pointee(qualType(hasDeclaration(namedDecl(
+                    internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
+                        UnsupportedPointerType))))))))))
           .bind("typeloc"),
       this);
 }

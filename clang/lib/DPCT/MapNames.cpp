@@ -3461,8 +3461,16 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_NVML.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
+};
+
+std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
+#define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#TYPENAME, VALUE},
+#include "TypeNames.inc"
+#undef ENTRY_TYPE
 };
 
 bool MigrationStatistics::IsMigrated(const std::string &APIName) {
@@ -3488,6 +3496,9 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   }
 
   return AllAPINames;
+}
+std::map<std::string, bool> &MigrationStatistics::GetTypeTable(void) {
+ return TypeMigrationTable;
 }
 
 MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},

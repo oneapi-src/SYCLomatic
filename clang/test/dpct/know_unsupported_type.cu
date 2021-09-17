@@ -88,6 +88,21 @@ int main(int argc, char **argv) {
     // CHECK-NEXT: */
     // CHECK-NEXT: nvmlReturn_t nvmlr;
     nvmlReturn_t nvmlr;
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: The type nvmlMemory_t was not migrated because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: nvmlMemory_t nvmlm;
+    nvmlMemory_t nvmlm;
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: The type nvmlValueType_t was not migrated because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: nvmlValueType_t nvmlvt;
+    nvmlValueType_t nvmlvt;
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: The type nvmlValue_t was not migrated because the Intel(R) DPC++ Compatibility Tool doesn't support migration of this type.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: nvmlValue_t nvmlv;
+    nvmlValue_t nvmlv;
 
     return 0;
 }
