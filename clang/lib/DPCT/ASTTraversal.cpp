@@ -7523,12 +7523,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "make_cuComplex" ||
              FuncName == "make_cuDoubleComplex") {
-    if (FuncName == "make_cuDoubleComplex")
-      emplaceTransformation(new ReplaceCalleeName(
-          CE, MapNames::getClNamespace() + "double2", FuncName));
-    else
-      emplaceTransformation(new ReplaceCalleeName(
-          CE, MapNames::getClNamespace() + "float2", FuncName));
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   } else {
     assert(0 && "Unknown function name");
   }

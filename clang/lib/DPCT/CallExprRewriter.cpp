@@ -2252,6 +2252,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"
+#include "APINamesComplex.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

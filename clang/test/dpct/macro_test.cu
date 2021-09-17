@@ -1022,3 +1022,24 @@ int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
 #endif
 return 0;
 }
+
+//     CHECK:#define AAAAA_Z_MAKE(r, i) sycl::double2(0.0, 0.0)
+//CHECK-NEXT:#define AAAAA_Z_ZERO AAAAA_Z_MAKE(0.0, 0.0)
+//CHECK-NEXT:void aaaaa_zprint_vector() {
+//CHECK-NEXT:  sycl::double2 z_zero = AAAAA_Z_ZERO;
+//CHECK-NEXT:#ifdef COMPLEX
+//CHECK-NEXT:#define AAA
+//CHECK-NEXT:#else
+//CHECK-NEXT:#define BBB
+//CHECK-NEXT:#endif
+//CHECK-NEXT:}
+#define AAAAA_Z_MAKE(r, i) make_cuDoubleComplex(r, i)
+#define AAAAA_Z_ZERO AAAAA_Z_MAKE(0.0, 0.0)
+void aaaaa_zprint_vector() {
+  cuDoubleComplex z_zero = AAAAA_Z_ZERO;
+#ifdef COMPLEX
+#define AAA
+#else
+#define BBB
+#endif
+}
