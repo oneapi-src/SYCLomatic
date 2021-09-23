@@ -69,8 +69,13 @@ int main(){
   a6 = CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED;
   a6 = CUSPARSE_STATUS_ZERO_PIVOT;
 
+#define VAL(x) NULL
   //CHECK: oneapi::mkl::index_base a7;
+  //CHECK-NEXT: oneapi::mkl::index_base descrL;
+  //CHECK-NEXT: oneapi::mkl::index_base descrU;
   cusparseMatDescr_t a7;
+  cusparseMatDescr_t descrL=VAL(1);
+  cusparseMatDescr_t descrU=NULL;
 
   //CHECK: sycl::queue* a8;
   cusparseHandle_t a8;

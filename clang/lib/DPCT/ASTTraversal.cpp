@@ -3223,12 +3223,12 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             // cusparseMatDescr_t descr = InitExpr ;
             //                         |          |
             //                       Begin       End
-            SourceLocation End =
-                IE->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-                    SM->getExpansionLoc(IE->getEndLoc()), *SM,
-                    DpctGlobalInfo::getContext().getLangOpts()));
+            auto End = SM->getExpansionRange(IE->getEndLoc()).getEnd();
+            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+                End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+            SourceLocation Begin =
+                SM->getExpansionRange(IE->getBeginLoc()).getBegin();
 
-            SourceLocation Begin = IE->getEndLoc().getLocWithOffset(-1);
             auto C = SM->getCharacterData(Begin);
             int Offset = 0;
             while (*C != '=') {
@@ -3236,8 +3236,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
               Offset--;
             }
             Begin = Begin.getLocWithOffset(Offset);
-            unsigned int Len = SM->getDecomposedLoc(End).second -
-                               SM->getDecomposedLoc(Begin).second;
+
+            int Len = SM->getDecomposedLoc(End).second -
+                      SM->getDecomposedLoc(Begin).second;
+            assert(Len > 0);
             emplaceTransformation(new ReplaceText(Begin, Len, ""));
           }
         }
