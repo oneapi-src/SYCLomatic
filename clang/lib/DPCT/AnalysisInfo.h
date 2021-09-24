@@ -3488,7 +3488,7 @@ public:
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
-
+  bool IsAllTemplateArgsSpecified = false;
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
@@ -3723,8 +3723,9 @@ public:
 // expression in the function.
 class DeviceFunctionInfo {
   struct ParameterProps {
-    bool IsReferenced = true;
+    bool IsReferenced = false;
   };
+
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
@@ -3806,8 +3807,16 @@ public:
   getSubGroupSize() {
     return RequiredSubGroupSize;
   }
-  std::vector<ParameterProps> &getParametersProps() {
-    return ParametersProps;
+  bool isParameterReferenced(unsigned int Index) {
+    if (Index >= ParametersProps.size())
+      return true;
+    return ParametersProps[Index].IsReferenced;
+  }
+  void setParameterReferencedStatus(unsigned int Index, bool IsReferenced) {
+    if (Index >= ParametersProps.size())
+      return;
+    ParametersProps[Index].IsReferenced =
+        ParametersProps[Index].IsReferenced || IsReferenced;
   }
 
 private:

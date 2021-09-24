@@ -786,9 +786,13 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
 
       if (getFuncInfo() &&
-          getFuncInfo()->getParametersProps().size() > ArgCounter &&
-          !(getFuncInfo()->getParametersProps()[ArgCounter].IsReferenced)) {
-        KernelArgs += buildString("nullptr");
+          !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
+        // Typecast can be removed only when it is a template function and
+        // all template arguments are specified explicitly.
+        if (IsAllTemplateArgsSpecified)
+          KernelArgs += buildString("nullptr");
+        else
+          KernelArgs += buildString("(", TypeStr, ")nullptr");
       } else {
         if (Arg.IsUsedAsLvalueAfterMalloc) {
           requestFeature(HelperFeatureEnum::Memory_access_wrapper,
@@ -1564,16 +1568,16 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
 }
 
 template <class CallT>
-void deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
+bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (!FTD)
-    return;
+    return false;
 
   if (!DpctGlobalInfo::isInRoot(FTD->getBeginLoc()))
-    return;
+    return false;
   auto &TemplateParmsList = *FTD->getTemplateParameters();
   if (TAIList.size() == TemplateParmsList.size())
-    return;
+    return true;
 
   TAIList.resize(TemplateParmsList.size());
 
@@ -1598,27 +1602,30 @@ void deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
         Arg.setAsNonType(NTTPD->getDefaultArgument());
     }
   }
+  return false;
 }
 
 template <class CallT>
-void deduceTemplateArguments(const CallT *C, const FunctionDecl *FD,
+bool deduceTemplateArguments(const CallT *C, const FunctionDecl *FD,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (FD)
     return deduceTemplateArguments(C, FD->getPrimaryTemplate(), TAIList);
+  return false;
 }
 
 template <class CallT>
-void deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
+bool deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
                              std::vector<TemplateArgumentInfo> &TAIList) {
   if (!ND)
-    return;
+    return false;
   if (auto FTD = dyn_cast<FunctionTemplateDecl>(ND)) {
-    deduceTemplateArguments(C, FTD, TAIList);
+    return deduceTemplateArguments(C, FTD, TAIList);
   } else if (auto FD = dyn_cast<FunctionDecl>(ND)) {
-    deduceTemplateArguments(C, FD, TAIList);
+    return deduceTemplateArguments(C, FD, TAIList);
   } else if (auto UD = dyn_cast<UsingShadowDecl>(ND)) {
-    deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList);
+    return deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList);
   }
+  return false;
 }
 
 /// This function gets the \p FD name with the necessary qualified namespace at
@@ -1718,7 +1725,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   auto CtorDecl = Ctor->getConstructor();
   Name = getName(CtorDecl);
   setFuncInfo(DeviceFunctionDecl::LinkRedecls(CtorDecl));
-  deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
+  IsAllTemplateArgsSpecified = deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -1749,13 +1756,13 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
-    deduceTemplateArguments(CE, FD, TemplateArgs);
+    IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
     HasImplicitArg = isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(FD);
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
     if (Unresolved->getNumDecls())
-      deduceTemplateArguments(CE, Unresolved->decls_begin().getDecl(),
-                              TemplateArgs);
+      IsAllTemplateArgsSpecified = deduceTemplateArguments(
+          CE, Unresolved->decls_begin().getDecl(), TemplateArgs);
   }
 
   if (HasImplicitArg) {

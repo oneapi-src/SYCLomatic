@@ -10368,12 +10368,11 @@ void DeviceFunctionDeclRule::runRule(
   if (!FuncInfo)
     return;
 
-  if (FD->doesThisDeclarationHaveABody() &&
-      FuncInfo->getParametersProps().size() == FD->param_size()) {
+  if (FD->doesThisDeclarationHaveABody()) {
     size_t ParamCounter = 0;
     for (auto &Param : FD->parameters()) {
-      FuncInfo->getParametersProps()[ParamCounter].IsReferenced =
-          Param->isReferenced();
+      FuncInfo->setParameterReferencedStatus(ParamCounter,
+                                             Param->isReferenced());
       ParamCounter++;
     }
   }
