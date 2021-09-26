@@ -35,7 +35,9 @@ int loadFromYaml(llvm::StringRef Input,
 int save2Yaml(
     llvm::StringRef YamlFile, llvm::StringRef SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest);
+    const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
+    const std::map<std::string, std::vector<clang::tooling::CompilationInfo>> &CompileTargets);
+
 void mergeAndUniqueReps(
     clang::tooling::Replacements &Replaces,
     const std::vector<clang::tooling::Replacement> &PreRepls);

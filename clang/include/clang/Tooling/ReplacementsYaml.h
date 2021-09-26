@@ -24,6 +24,9 @@ LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::HelperFuncForYaml)
 using FeatureOfFileMapTy = std::map<std::string/*feature name*/, clang::tooling::HelperFuncForYaml>;
 LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::CompilationInfo)
+LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
+
 #endif
 
 namespace llvm {
@@ -150,6 +153,39 @@ template <> struct MappingTraits<std::pair<std::string, std::string>> {
   }
 };
 
+template <> struct MappingTraits<clang::tooling::CompilationInfo> {
+  struct NormalizedCompileCmds {
+
+    NormalizedCompileCmds(const IO &)
+        : MigratedFileName(""), CompileOptions(""), Compiler(""){}
+
+    NormalizedCompileCmds(const IO &, clang::tooling::CompilationInfo &CmpInfo)
+        : MigratedFileName(CmpInfo.MigratedFileName),
+          CompileOptions(CmpInfo.CompileOptions),
+          Compiler(CmpInfo.Compiler) {}
+
+    clang::tooling::CompilationInfo denormalize(const IO &) {
+      clang::tooling::CompilationInfo CmpInfo;
+      CmpInfo.MigratedFileName = MigratedFileName;
+      CmpInfo.CompileOptions = CompileOptions;
+      CmpInfo.Compiler = Compiler;
+      return CmpInfo;
+    }
+
+    std::string MigratedFileName;
+    std::string CompileOptions;
+    std::string Compiler;
+  };
+
+  static void mapping(IO &Io, clang::tooling::CompilationInfo &CmpInfo) {
+    MappingNormalization<NormalizedCompileCmds, clang::tooling::CompilationInfo>
+        Keys(Io, CmpInfo);
+    Io.mapRequired("MigratedFileName", Keys->MigratedFileName);
+    Io.mapRequired("CompileOptions", Keys->CompileOptions);
+    Io.mapRequired("Compiler", Keys->Compiler);
+  }
+};
+
 template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
   struct NormalizedHelperFuncForYaml {
     NormalizedHelperFuncForYaml(const IO &)
@@ -201,6 +237,7 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapRequired("MainHelperFileName", Doc.MainHelperFileName);
     Io.mapRequired("USMLevel", Doc.USMLevel);
     Io.mapRequired("FeatureMap", Doc.FeatureMap);
+    Io.mapRequired("CompileTargets", Doc.CompileTargets);
 #endif
   }
 };

@@ -12,7 +12,9 @@
 #include "SaveNewFiles.h"
 #include "AnalysisInfo.h"
 #include "Checkpoint.h"
+#include "Diagnostics.h"
 #include "ExternalReplacement.h"
+#include "GenMakefile.h"
 #include "Statics.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -114,8 +116,8 @@ static bool formatFile(StringRef FileName,
 // TODO: it's global variable,  refine in future.
 std::map<std::string, bool> IncludeFileMap;
 
-static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
-                       const StringRef OutRoot) {
+void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
+                const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
 
@@ -163,16 +165,16 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   FilePath = NewFilePath;
 }
 
-static void rewriteFileName(SmallString<512> &FilePath) {
-  SourceProcessType FileType = GetSourceFileType(FilePath.str());
+void rewriteFileName(SmallString<512> &FileName) {
+  SourceProcessType FileType = GetSourceFileType(FileName.str());
 
   if (FileType & SPT_CudaSource) {
-    path::replace_extension(FilePath, "dp.cpp");
+    path::replace_extension(FileName, "dp.cpp");
   } else if (FileType & SPT_CppSource) {
-    auto Extension = path::extension(FilePath);
-    path::replace_extension(FilePath, Extension + ".dp.cpp");
+    auto Extension = path::extension(FileName);
+    path::replace_extension(FileName, Extension + ".dp.cpp");
   } else if (FileType & SPT_CudaHeader) {
-    path::replace_extension(FilePath, "dp.hpp");
+    path::replace_extension(FileName, "dp.hpp");
   }
 }
 
@@ -267,6 +269,52 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
   }
 }
 
+extern llvm::cl::opt<std::string> BuildScriptFile;
+extern llvm::cl::opt<bool> GenBuildScript;
+
+static void getMainSrcFilesRepls(
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
+  auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+  for (const auto &Entry : FileRelpsMap)
+    for (const auto &Repl : Entry.second)
+      MainSrcFilesRepls.push_back(Repl);
+}
+static void getMainSrcFilesDigest(
+    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
+  auto &DigestMap = DpctGlobalInfo::getDigestMap();
+  for (const auto &Entry : DigestMap)
+    MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+}
+
+static void saveUpdatedMigrationDataIntoYAML(
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
+    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
+    std::string YamlFile, std::string SrcFile,
+    std::unordered_map<std::string, bool> &MainSrcFileMap) {
+  // Save history repls to yaml file.
+  auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+  for (const auto &Entry : FileRelpsMap) {
+    if (MainSrcFileMap[Entry.first])
+      continue;
+    for (const auto &Repl : Entry.second) {
+      MainSrcFilesRepls.push_back(Repl);
+    }
+  }
+
+  // Save history main src file and its content md5 hash to yaml file.
+  auto &DigestMap = DpctGlobalInfo::getDigestMap();
+  for (const auto &Entry : DigestMap) {
+    if (!MainSrcFileMap[Entry.first]) {
+      MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+    }
+  }
+
+  if (!MainSrcFilesRepls.empty() || !MainSrcFilesDigest.empty() ||
+      !CompileCmdsPerTarget.empty()) {
+    save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest,
+              CompileCmdsPerTarget);
+  }
+}
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
 ///
@@ -313,6 +361,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         // in current migration.
         MainSrcFileMap[FileDigest.first] = false;
       }
+
+      for (const auto &Entry : PreTU->CompileTargets)
+        CompileCmdsPerTarget[Entry.first] = Entry.second;
     }
   }
 
@@ -324,6 +375,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     // There are no rules applying on the *.cpp files,
     // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
+
+    getMainSrcFilesRepls(MainSrcFilesRepls);
+    getMainSrcFilesDigest(MainSrcFilesDigest);
   } else {
     std::unordered_map<std::string, std::vector<clang::tooling::Range>>
         FileRangesMap;
@@ -438,26 +492,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     }
 
     generateHelperFunctions();
-
-    // Save history repls to yaml file.
-    auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
-    for (const auto &Entry : FileRelpsMap) {
-      if (MainSrcFileMap[Entry.first])
-        continue;
-      for (const auto &Repl : Entry.second) {
-        MainSrcFilesRepls.push_back(Repl);
-      }
-    }
-
-    // Save history main src file and its content md5 hash to yaml file.
-    auto &DigestMap = DpctGlobalInfo::getDigestMap();
-    for (const auto &Entry : DigestMap) {
-      if (!MainSrcFileMap[Entry.first]) {
-        MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
-      }
-    }
-
-    save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest);
 
     extern bool ProcessAllFlag;
     // Print the in-root path and the number of processed files
@@ -608,6 +642,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           .write(Stream);
     }
   }
+
+  std::string ScriptFineName = "Makefile.dpct";
+  if (!BuildScriptFile.empty())
+    ScriptFineName = BuildScriptFile;
+  if (GenBuildScript)
+    genBuildScript(Tool, InRoot, OutRoot, ScriptFineName);
+
+  saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
+                                   YamlFile, SrcFile, MainSrcFileMap);
 
   if (!AppliedAll) {
     llvm::errs() << "Skipped some replacements.\n";

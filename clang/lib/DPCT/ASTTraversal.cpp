@@ -852,6 +852,9 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(
           HashLoc, HT_MKL_BLAS_Solver_Without_Util);
     }
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -863,6 +866,7 @@ void IncludesCallbacks::InclusionDirective(
   if ((FileName.compare(StringRef("curand.h")) == 0) ||
       (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+    DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -882,6 +886,9 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
                                                  HT_MKL_SPBLAS_Without_Util);
     }
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -890,6 +897,9 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cufft.h")) == 0) {
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),

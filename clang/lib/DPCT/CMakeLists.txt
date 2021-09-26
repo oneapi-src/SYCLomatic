@@ -70,6 +70,7 @@ add_clang_library(DPCT
   GAnalytics.cpp
   LibraryAPIMigration.cpp
   CustomHelperFiles.cpp
+  GenMakefile.cpp
 
   DEPENDS
   ClangDriverOptions

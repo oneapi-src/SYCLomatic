@@ -36,10 +36,12 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
-int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
-              const std::vector<clang::tooling::Replacement> &Replaces,
-              const std::vector<std::pair<std::string, std::string>>
-                  &MainSrcFilesDigest) {
+int save2Yaml(
+    StringRef YamlFile, StringRef SrcFileName,
+    const std::vector<clang::tooling::Replacement> &Replaces,
+    const std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
+    const std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+        &CompileTargets) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
   llvm::yaml::Output YAMLOut(YamlContentStream);
@@ -53,6 +55,10 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
   TUR.MainSourceFilesDigest.insert(TUR.MainSourceFilesDigest.end(),
                                    MainSrcFilesDigest.begin(),
                                    MainSrcFilesDigest.end());
+
+  for (const auto &Entry : CompileTargets) {
+    TUR.CompileTargets[Entry.first] = Entry.second;
+  }
 
   clang::dpct::updateTUR(TUR);
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
@@ -163,7 +169,9 @@ int mergeExternalReps(std::string InRootSrcFilePath,
                                                  Replaces.end());
 
   std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
+  std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
+      CompileTargets;
   save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls,
-            MainSrcFilesDigest);
+            MainSrcFilesDigest, CompileTargets);
   return 0;
 }

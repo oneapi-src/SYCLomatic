@@ -17,6 +17,7 @@
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "GAnalytics.h"
+#include "GenMakefile.h"
 #include "SaveNewFiles.h"
 #include "SignalProcess.h"
 #include "Statics.h"
@@ -425,6 +426,7 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore,
     llvm::cl::cb<void, DPCPPExtensions>(DpctGlobalInfo::setExtensionUnused));
+
 static bits<ExperimentalFeatures> Experimentals(
   "use-experimental-features",
   llvm::cl::desc(
@@ -443,6 +445,17 @@ static bits<ExperimentalFeatures> Experimentals(
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
+opt<bool> GenBuildScript(
+    "gen-build-script",
+    llvm::cl::desc("Generates makefile for migrated file(s) in -out-root directory. Default: off."),
+    cat(DPCTCat), init(false));
+
+opt<std::string>
+    BuildScriptFile("build-script-file",
+               desc("Specifies the name of generated makefile for migrated file(s).\n"
+                    "Default name: Makefile.dpct."),
+               value_desc("file"), cat(DPCTCat),
+               llvm::cl::Optional);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -988,6 +1001,7 @@ int runDPCT(int argc, const char **argv) {
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompiationDB(
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
   clang::tooling::SetModuleFiles(dpct::DpctGlobalInfo::getModuleFiles());
@@ -1148,6 +1162,11 @@ int runDPCT(int argc, const char **argv) {
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());
+
+  if (GenBuildScript) {
+    clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
+  }
+
   std::string CompilationsDir = OptParser->getCompilationsDir();
   if (!CompilationsDir.empty()) {
     // To convert the relative path to absolute path.
@@ -1225,6 +1244,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+  DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
@@ -1266,6 +1286,7 @@ int runDPCT(int argc, const char **argv) {
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }
+
   auto &Global = DpctGlobalInfo::getInstance();
   int RunCount = 0;
   do {
@@ -1320,6 +1341,7 @@ int runDPCT(int argc, const char **argv) {
         llvm::errs() << FaultMsg;
       }
     }
+
     CHECKPOINT_ReplacementPostProcess_EXIT();
   } while (DpctGlobalInfo::isNeedRunAgain());
 
@@ -1344,6 +1366,7 @@ int runDPCT(int argc, const char **argv) {
       return MigrationSucceeded;
     }
   }
+
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
   ShowStatus(Status);

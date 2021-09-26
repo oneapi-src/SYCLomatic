@@ -46,7 +46,9 @@ format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
+bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -939,7 +941,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     }
   }
   Printer.indent();
-  if(!SubGroupSizeWarning.empty()) {
+  if (!SubGroupSizeWarning.empty()) {
     Printer << "/*" << getNL();
     Printer.indent();
     Printer << SubGroupSizeWarning << getNL();
@@ -2723,7 +2725,6 @@ std::string MemVarInfo::getDeclarationReplacement() {
     return "";
   }
 }
-
 
 std::string MemVarInfo::getSyclAccessorType() {
   std::string Ret;

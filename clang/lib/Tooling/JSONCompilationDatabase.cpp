@@ -227,6 +227,16 @@ JSONCompilationDatabase::loadFromBuffer(StringRef DatabaseString,
 
 std::vector<CompileCommand>
 JSONCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+#ifdef INTEL_CUSTOMIZATION
+  if (FilePath == "LinkerEntry") {
+    const auto CommandsRefI = IndexByFile.find(FilePath);
+    if (CommandsRefI == IndexByFile.end())
+      return {};
+    std::vector<CompileCommand> Commands;
+    getCommands(CommandsRefI->getValue(), Commands);
+    return Commands;
+  }
+#endif
   SmallString<128> NativeFilePath;
   llvm::sys::path::native(FilePath, NativeFilePath);
 
@@ -323,7 +333,13 @@ void JSONCompilationDatabase::getCommands(
     auto Output = std::get<3>(CommandRef);
     Commands.emplace_back(
         std::get<0>(CommandRef)->getValue(DirectoryStorage),
+#ifdef INTEL_CUSTOMIZATION
+        std::get<1>(CommandRef)
+            ? std::get<1>(CommandRef)->getValue(FilenameStorage)
+            : "LinkerEntry",
+#else
         std::get<1>(CommandRef)->getValue(FilenameStorage),
+#endif
         nodeToCommandLine(Syntax, std::get<2>(CommandRef)),
         Output ? Output->getValue(OutputStorage) : "");
   }
@@ -419,8 +435,13 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
     }
 
 #ifdef INTEL_CUSTOMIZATION
-    //ignore linker entry
-    if(!File && Command && Directory) {
+    if (!File && Command && Directory) {
+      // Parse linker entry
+      SmallString<128> NativeFilePath = llvm::StringRef("LinkerEntry");
+      auto Cmd = CompileCommandRef(Directory, nullptr, *Command, Output);
+      IndexByFile[NativeFilePath].push_back(Cmd);
+      AllCommands.push_back(Cmd);
+      MatchTrie.insert(NativeFilePath);
       continue;
     }
 #endif

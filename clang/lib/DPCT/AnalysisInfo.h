@@ -261,8 +261,7 @@ struct MemcpyOrderAnalysisInfo {
           MemcpyOrderVec,
       std::vector<unsigned int> DREOffsetVec)
       : MemcpyOrderVec(MemcpyOrderVec), DREOffsetVec(DREOffsetVec) {}
-  MemcpyOrderAnalysisInfo()
-      : MemcpyOrderVec({}), DREOffsetVec({}) {}
+  MemcpyOrderAnalysisInfo() : MemcpyOrderVec({}), DREOffsetVec({}) {}
 
   std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
       MemcpyOrderVec;
@@ -1184,6 +1183,10 @@ public:
   }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
+  inline static bool isGenBuildScript() { return GenBuildScript; }
+  inline static void setGenBuildScriptEnabled(bool Enable = true) {
+    GenBuildScript = Enable;
+  }
   inline static bool isCommentsEnabled() { return EnableComments; }
   inline static void setCommentsEnabled(bool Enable = true) {
     EnableComments = Enable;
@@ -1194,6 +1197,11 @@ public:
   }
   inline static std::unordered_set<FFTTypeEnum> &getFFTTypeSet() {
     return FFTTypeSet;
+  }
+
+  inline static bool isMKLHeaderUsed() { return IsMLKHeaderUsed; }
+  inline static void setMKLHeaderUsed(bool Used = true) {
+    IsMLKHeaderUsed = Used;
   }
 
   // This set collects all the different vector size of the return value of the
@@ -2210,6 +2218,8 @@ private:
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
+  static bool IsMLKHeaderUsed;
+  static bool GenBuildScript;
   static bool EnableComments;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
@@ -2400,10 +2410,9 @@ private:
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
-      return toString(TL.getTypePtr()->getSize(), 10, false,false);
+      return toString(TL.getTypePtr()->getSize(), 10, false, false);
     return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
-                       "/*",
-                       getStmtSpelling(TL.getSizeExpr()), "*/");
+                       "/*", getStmtSpelling(TL.getSizeExpr()), "*/");
   }
 
   // Get original array size expression.

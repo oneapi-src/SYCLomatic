@@ -39,6 +39,7 @@ struct DiagnosticsMessage;
 
 extern std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 extern std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
+extern std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 
 extern std::set<int> WarningIDs;
 
@@ -97,6 +98,13 @@ enum class Warnings {
   END
 };
 
+#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+enum class MakefileMsgs {
+#include "DiagnosticsBuildScript.inc"
+#undef DEF_COMMENT
+  END
+};
+
 namespace DiagnosticsUtils {
 
 extern unsigned int UniqueID;
@@ -104,7 +112,8 @@ extern unsigned int UniqueID;
 template <typename... Ts> static void applyReport(DiagnosticBuilder &B) {}
 
 template <typename FTy, typename... Ts>
-static void applyReport(DiagnosticBuilder &B, const FTy &F, const Ts &...Rest) {
+static void applyReport(DiagnosticBuilder &B, const FTy &F,
+                        const Ts &... Rest) {
   B << F;
   applyReport<Ts...>(B, Rest...);
 }
@@ -115,7 +124,7 @@ static inline std::string getMessagePrefix(int ID) {
 
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
-                   const CompilerInstance &CI, Ts &&...Vals) {
+                   const CompilerInstance &CI, Ts &&... Vals) {
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
 
@@ -178,7 +187,7 @@ template <typename... Ts>
 TextModification *insertCommentPrevLine(SourceLocation SL,
                                         const DiagnosticsMessage &Msg,
                                         const CompilerInstance &CI,
-                                        bool UseTextBegin, Ts &&...Vals) {
+                                        bool UseTextBegin, Ts &&... Vals) {
   auto StartLoc =
       getStartOfLine(SL, CI.getSourceManager(), LangOptions(), UseTextBegin);
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
@@ -220,11 +229,29 @@ std::string getWarningText(IDTy MsgID, Ts &&...Vals) {
   return Text;
 }
 
+/// This function is used to get text for the generated makefile,
+/// and should only be called by function genMakefile()
+template <typename IDTy, typename... Ts>
+std::string getMsgText(IDTy MsgID, Ts &&... Vals) {
+  std::string Text;
+  if (MsgIDTable.find((int)MsgID) != MsgIDTable.end()) {
+    DiagnosticsMessage Msg = MsgIDTable[(int)MsgID];
+    auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << getMessagePrefix(Msg.ID);
+    OS << Formatted;
+    Text = OS.str();
+    UniqueID++;
+  }
+  return Text;
+}
+
 /// If this function is used to get text to inline warning into replacement,
 /// then this function should only be called when the return value of report()
 /// is true.
 template <typename IDTy, typename... Ts>
-std::string getWarningTextAndUpdateUniqueID(IDTy MsgID, Ts &&...Vals) {
+std::string getWarningTextAndUpdateUniqueID(IDTy MsgID, Ts &&... Vals) {
   std::string Text = getWarningText(MsgID, std::forward<Ts>(Vals)...);
   UniqueID++;
   return Text;
@@ -232,7 +259,7 @@ std::string getWarningTextAndUpdateUniqueID(IDTy MsgID, Ts &&...Vals) {
 
 template <typename IDTy, typename... Ts>
 std::string getCommentToInsert(SourceLocation StartLoc, SourceManager &SM,
-                               IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+                               IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
   std::string OrigIndent = getIndent(StartLoc, SM).str();
   std::string Comment;
   if (UseTextBegin)

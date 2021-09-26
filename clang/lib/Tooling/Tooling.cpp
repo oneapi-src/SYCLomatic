@@ -73,6 +73,7 @@ namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static std::map<std::string, std::vector<std::string>> *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
@@ -91,6 +92,11 @@ void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
   FileSetInCompiationDBPtr = &FileSetInCompiationDB;
 }
 
+void SetCompileTargetsMap(
+    std::map<std::string, std::vector<std::string>> &CompileTargetsMap) {
+  CompileTargetsMapPtr = &CompileTargetsMap;
+}
+
 void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
   FileProcessHandle = Handle;
   InRoot = In;
@@ -100,6 +106,12 @@ void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
 void CollectFileFromDB(std::string FileName) {
   if (FileSetInCompiationDBPtr != nullptr) {
     (*FileSetInCompiationDBPtr).insert(FileName);
+  }
+}
+
+void CollectCompileTarget(std::string Target, std::vector<std::string> Options) {
+  if (CompileTargetsMapPtr != nullptr) {
+    (*CompileTargetsMapPtr)[Target] = Options;
   }
 }
 
@@ -659,13 +671,15 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     CurFileParseErrCnt=0;
     CurFileSigErrCnt=0;
     int Ret=SETJMP(CPFileEnter);
-    if(Ret == 0) {
-      const std::string Msg = "Processing: " + File.str()  +  "\n";
-      DoPrintHandle(Msg, false);
-    } else {
-      const std::string Msg = "Skipping: " + File.str()  +  "\n";
-      DoPrintHandle(Msg, false);
-      return -1;
+    if(File != "LinkerEntry") {
+      if(Ret == 0) {
+        const std::string Msg = "Processing: " + File.str()  +  "\n";
+        DoPrintHandle(Msg, false);
+      } else {
+        const std::string Msg = "Skipping: " + File.str()  +  "\n";
+        DoPrintHandle(Msg, false);
+        return -1;
+      }
     }
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
@@ -739,6 +753,21 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
           llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
           Filename = std::string(AbsPath.str());
       }
+
+      std::vector<std::string> Options;
+      // The first place is used to store the directory where the compile command runs
+      Options.push_back(CompileCommand.Directory.c_str());
+      for (size_t Index = 0; Index < CommandLine.size(); Index++)
+        Options.push_back(CommandLine[Index]);
+
+      // Skip parsing Linker command
+      if (CompileCommand.Filename == "LinkerEntry") {
+        static size_t Idx = 0;
+        auto NewKey = CompileCommand.Filename + std::to_string(Idx++);
+        CollectCompileTarget(NewKey, Options);
+        continue;
+      }
+      CollectCompileTarget(CompileCommand.Filename.c_str(), Options);
 
       if (!llvm::sys::path::has_filename(CompileCommand.Filename)) {
         std::string CommandField = "";

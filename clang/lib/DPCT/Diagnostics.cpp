@@ -60,6 +60,12 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 #undef DEF_WARNING
 #undef DEF_COMMENT
 
+std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
+#define DEF_COMMENT(NAME, ID, MSG)                                             \
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note, MSG);
+#include "DiagnosticsBuildScript.inc"
+#undef DEF_COMMENT
+
 void reportInvalidWarningID(const std::string &Str) {
   DpctLog() << "Invalid warning ID or range: " << Str << "\n";
   ShowStatus(MigrationErrorInvalidWarningID);

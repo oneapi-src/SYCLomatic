@@ -384,6 +384,13 @@ struct HelperFuncForYaml {
   std::string APIName;
   std::map<std::string, HelperFuncForYaml> SubFeatureMap;
 };
+
+struct CompilationInfo {
+    CompilationInfo(){}
+    std::string MigratedFileName;
+    std::string CompileOptions;
+    std::string Compiler;
+};
 #endif
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
@@ -396,6 +403,7 @@ struct TranslationUnitReplacements {
   std::string USMLevel = "";
 
   std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
+  std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
 #endif
   std::vector<Replacement> Replacements;
 };
