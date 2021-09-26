@@ -17,6 +17,7 @@ set(dpct_rt_dpstd_files
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/algorithm.h
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/numeric.h
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/vector.h
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_extras/dpcpp_extensions.h
 )
 
 add_custom_target(dpct-headers ALL DEPENDS dpct_helper_headers_and_inc)

@@ -21,5 +21,6 @@
 #include "dpl_extras/numeric.h"
 #include "dpl_extras/iterators.h"
 #include "dpl_extras/vector.h"
+#include "dpl_extras/dpcpp_extensions.h"
 
 #endif // __DPL_UTILS_HPP

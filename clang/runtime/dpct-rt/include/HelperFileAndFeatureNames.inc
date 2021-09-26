@@ -24,6 +24,7 @@ HELPERFILE(dpl_extras/iterators.h.inc, DplExtrasIterators)
 HELPERFILE(dpl_extras/memory.h.inc, DplExtrasMemory)
 HELPERFILE(dpl_extras/numeric.h.inc, DplExtrasNumeric)
 HELPERFILE(dpl_extras/vector.h.inc, DplExtrasVector)
+HELPERFILE(dpl_extras/dpcpp_extensions.h.inc, DplExtrasDpcppExtensions)
 
 // The message emitted will use the API name. If a feature does not have
 // related item in the map, use the feature name in message.

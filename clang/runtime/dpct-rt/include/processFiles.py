@@ -18,12 +18,12 @@ cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 content_files_list = ["atomic", "blas_utils", "device",
                       "dpct", "dpl_utils", "image", "kernel", "memory", "util"]
 dpl_extras_content_files_list = [
-    "algorithm", "functional", "iterators", "memory", "numeric", "vector"]
+    "algorithm", "functional", "iterators", "memory", "numeric", "vector", "dpcpp_extensions"]
 
 content_files_name_list = ["Atomic", "BlasUtils", "Device",
                            "Dpct", "DplUtils", "Image", "Kernel", "Memory", "Util"]
 dpl_extras_content_files_name_list = [
-    "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector"]
+    "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector", "DpcppExtensions"]
 
 is_os_win = False
 
