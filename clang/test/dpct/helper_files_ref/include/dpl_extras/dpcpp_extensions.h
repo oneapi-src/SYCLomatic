@@ -20,14 +20,13 @@ namespace detail {
 template <typename... _Args>
 constexpr auto __reduce_over_group(_Args... __args) {
 #if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
-    return sycl::reduce_over_group(__args...);
+  return sycl::reduce_over_group(__args...);
 #else
-    return sycl::ONEAPI::reduce(__args...);
+  return sycl::ONEAPI::reduce(__args...);
 #endif
 }
 
-template <typename... _Args>
-constexpr auto __group_broadcast(_Args... __args) {
+template <typename... _Args> constexpr auto __group_broadcast(_Args... __args) {
 #if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::group_broadcast(__args...);
 #else
@@ -55,6 +54,16 @@ constexpr auto __inclusive_scan_over_group(_Args... __args) {
 
 } // end namespace detail
 
+/// Perform an exclusive scan over the values of inputs from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param inputs Pointer to the input data for the scan operation.
+/// \param outputs Pointer to the location where scan results will be stored.
+/// \param init initial value of the scan result.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan.
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
 __attribute__((always_inline)) void
@@ -86,6 +95,17 @@ exclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
   }
 }
 
+/// Perform an exclusive scan over the values of input from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param input Input data for the scan operation.
+/// \param init initial value of the scan result.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \param group_aggregate group-wide aggregate of all inputs
+/// in the work-items of the group. \returns exclusive scan of the first i
+/// work-items where item is the i-th work item.
 template <typename Item, typename T, class BinaryOperation>
 __attribute__((always_inline)) T
 exclusive_scan(const Item &item, T input, T init, BinaryOperation binary_op,
@@ -101,6 +121,18 @@ exclusive_scan(const Item &item, T input, T init, BinaryOperation binary_op,
   return output;
 }
 
+/// Perform an exclusive scan over the values of input from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param input Input data for the scan operation.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \param prefix_callback_op functor invoked by the first
+/// work-item in the group that returns the
+///        initial value in the resulting scan of the work-items in the group.
+/// \returns exclusive scan of the input elements assigned to work-items in the
+/// group.
 template <typename Item, typename T, class BinaryOperation,
           class GroupPrefixCallbackOperation>
 __attribute__((always_inline)) T
@@ -270,9 +302,9 @@ private:
     packed_counter_type raking_partial = upsweep(item);
 
     prefix_callback callback;
-    packed_counter_type exclusive_partial =
-        exclusive_scan(item, raking_partial,
-                       sycl::ext::oneapi::plus<packed_counter_type>(), callback);
+    packed_counter_type exclusive_partial = exclusive_scan(
+        item, raking_partial, sycl::ext::oneapi::plus<packed_counter_type>(),
+        callback);
 
     exclusive_downsweep(item, exclusive_partial);
   }
@@ -346,6 +378,10 @@ inline uint32_t shr_add(uint32_t x, uint32_t shift,
 
 } // namespace detail
 
+/// Implements scatter to blocked exchange pattern used in radix sort algorithm.
+///
+/// \tparam T type of the data elements exchanges
+/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
 template <typename T, int VALUES_PER_THREAD> class exchange {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
@@ -358,6 +394,7 @@ public:
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
 
+  /// Rearrange elements from rank order to blocked order
   template <typename Item>
   __attribute__((always_inline)) void
   scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD],
@@ -392,6 +429,13 @@ private:
   uint8_t *_local_memory;
 };
 
+/// Implements radix sort to sort integer data elements assigned to all threads
+/// in the group.
+///
+/// \tparam T type of the data elements exchanges
+/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
+/// \tparam DECENDING boolean value indicating if data elements are sorted in
+/// decending order.
 template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
 class radix_sort {
 public:
@@ -449,6 +493,13 @@ private:
   uint8_t *_local_memory;
 };
 
+/// Perform a reduction of the data elements assigned to all threads in the
+/// group.
+///
+/// \param item A work-item in a group.
+/// \param inputs Pointer to the input data for the reduce operation.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \returns value of the reduction using binary_op
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
 __attribute__((always_inline)) T
@@ -462,6 +513,16 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
   return detail::__reduce_over_group(item.get_group(), result, binary_op);
 }
 
+/// Perform an inclusive scan over the values of inputs from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param inputs Pointer to the input data for the scan operation.
+/// \param outputs Pointer to the location where scan results will be stored.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \returns inclusive scan of the input elements assigned to
+/// work-items in the group.
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
 __attribute__((always_inline)) void
@@ -489,6 +550,16 @@ inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
   }
 }
 
+/// Perform an inclusive scan over the values of inputs from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param input Pointer to the input data for the scan operation.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \param group_aggregate group-wide aggregate of all inputs
+/// in the work-items of the group. \returns inclusive scan of the input
+/// elements assigned to work-items in the group.
 template <typename Item, typename T, class BinaryOperation>
 __attribute__((always_inline)) T inclusive_scan(const Item &item, T input,
                                                 BinaryOperation binary_op,
@@ -504,6 +575,18 @@ __attribute__((always_inline)) T inclusive_scan(const Item &item, T input,
   return output;
 }
 
+/// Perform an inclusive scan over the values of input from all work-items in
+/// the group using the operator binary_op, which must be one of the SYCL 2020
+/// group algorithms library function objects.
+///
+/// \param item A work-item in a group.
+/// \param input Input data for the scan operation.
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \param prefix_callback_op functor invoked by the first
+/// work-item in the group that returns the
+///        initial value in the resulting scan of the work-items in the group.
+/// \returns inclusive scan of the input elements assigned to work-items in the
+/// group.
 template <typename Item, typename T, class BinaryOperation,
           class GroupPrefixCallbackOperation>
 __attribute__((always_inline)) T
@@ -533,6 +616,18 @@ template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
 
 } // namespace detail
 
+/// Perform an reduce on each of the segments specified within data stored on
+/// the device.
+///
+/// \param queue Command queue used to access device used for reduction
+/// \param inputs Pointer to the data elements on the device to be reduced
+/// \param outputs Pointer to the storage where the reduced value for each
+/// segment will be stored \param segment_count number of segments to be reduced
+/// \param begin_offsets Pointer to the set of indices that are the first
+/// element in each segment \param end_offsets Pointer to the set of indices
+/// that are one past the last element in each segment \param binary_op functor
+/// that implements the binary operation used to perform the scan. \param init
+/// initial value of the reduction for each segment.
 template <int GROUP_SIZE, typename T, class BinaryOperation>
 void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
                       size_t segment_count, uint32_t *begin_offsets,
@@ -556,9 +651,9 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 
           sycl::multi_ptr<T, sycl::access::address_space::global_space>
               input_ptr = inputs;
-          T group_aggregate =
-              detail::__joint_reduce(item.get_group(), input_ptr + segment_begin,
-                                   input_ptr + segment_end, init, binary_op);
+          T group_aggregate = detail::__joint_reduce(
+              item.get_group(), input_ptr + segment_begin,
+              input_ptr + segment_end, init, binary_op);
 
           if (item.get_local_linear_id() == 0) {
             outputs[item.get_group_linear_id()] = group_aggregate;

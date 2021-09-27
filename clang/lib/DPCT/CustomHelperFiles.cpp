@@ -113,13 +113,14 @@ void addDependencyIncludeDirectives(
         FileID == clang::dpct::HelperFileEnum::DplExtrasIterators ||
         FileID == clang::dpct::HelperFileEnum::DplExtrasMemory ||
         FileID == clang::dpct::HelperFileEnum::DplExtrasNumeric ||
-        FileID == clang::dpct::HelperFileEnum::DplExtrasVector) {
+        FileID == clang::dpct::HelperFileEnum::DplExtrasVector ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions) {
       return true;
     }
     return false;
   };
 
-  bool IsCurrentFileInDpExtra = isDplFile(FileID);
+  bool IsCurrentFileInDplExtra = isDplFile(FileID);
 
   auto Iter = HelperNameContentMap.find(
       std::make_pair(FileID, "local_include_dependency"));
@@ -152,7 +153,7 @@ void addDependencyIncludeDirectives(
   for (const auto &Item : FileDependency) {
     if (Item == FileID)
       continue;
-    if (IsCurrentFileInDpExtra) {
+    if (IsCurrentFileInDplExtra) {
       if (isDplFile(Item))
         Directives = Directives + "#include \"" +
                      HelperFileNameMap.at(Item) + "\"" + getNL();
@@ -185,6 +186,94 @@ std::string getCode(const HelperFunc &Item) {
   }
 }
 
+/// This class maintains a namespace state variable "PreviousNamespace".
+/// If the input namespace is different from "PreviousNamespace", this class
+/// can generate open/close statement(s) of namespace to meet the requirement.
+/// E.g.,
+/// PreviousNamespace is A::B::C, input namespace is A::D,
+/// then the generated code will be:
+/// \code
+/// } // namespace C
+/// } // namespace B
+/// namespace D {
+/// \endcode
+class NamespaceGenerator {
+public:
+  std::string genCodeForNamespace(const std::string &CurrentNamespaceStr) {
+    auto CurrentNamespace = splitNamespace(CurrentNamespaceStr);
+    std::vector<std::string> CurrentNamespaceRemovedCommon;
+    std::vector<std::string> PreviousNamespaceRemovedCommon;
+    removeCommonNamespace(CurrentNamespace, CurrentNamespaceRemovedCommon,
+                          PreviousNamespaceRemovedCommon);
+
+    std::string Result;
+    for (auto Iter = PreviousNamespaceRemovedCommon.rbegin();
+         Iter != PreviousNamespaceRemovedCommon.rend(); Iter++) {
+      Result = Result + "} // namespace " + *Iter + getNL() + getNL();
+    }
+    for (auto Iter = CurrentNamespaceRemovedCommon.begin();
+         Iter != CurrentNamespaceRemovedCommon.end(); Iter++) {
+      Result = Result + "namespace " + *Iter + " {" + getNL() + getNL();
+    }
+    PreviousNamespace = CurrentNamespace;
+    return Result;
+  }
+private:
+  bool findStr(const std::string &Str,
+               const std::string::size_type &StartPosition,
+               std::string::size_type &ResultPosition) {
+    ResultPosition = Str.find("::", StartPosition);
+    if (ResultPosition == std::string::npos)
+      return false;
+    else
+      return true;
+  }
+  std::vector<std::string> splitNamespace(const std::string &Namespace) {
+    std::vector<std::string> Splited;
+    std::string::size_type StartPosition = 0;
+    std::string::size_type ResultPosition = std::string::npos;
+    while (findStr(Namespace, StartPosition, ResultPosition)) {
+      Splited.push_back(
+          Namespace.substr(StartPosition, ResultPosition - StartPosition));
+      StartPosition = ResultPosition + std::strlen("::");
+    }
+    if (StartPosition < Namespace.size()) {
+      Splited.push_back(Namespace.substr(StartPosition));
+    }
+    return Splited;
+  }
+  void removeCommonNamespace(
+      const std::vector<std::string> &CurrentNamespace,
+      std::vector<std::string> &CurrentNamespaceRemovedCommon,
+      std::vector<std::string> &PreviousNamespaceRemovedCommon) {
+    CurrentNamespaceRemovedCommon.clear();
+    PreviousNamespaceRemovedCommon.clear();
+    size_t Index = 0;
+    while (true) {
+      if (Index >= CurrentNamespace.size() ||
+          Index >= PreviousNamespace.size()) {
+        break;
+      }
+      if (CurrentNamespace[Index] != PreviousNamespace[Index]) {
+        break;
+      }
+      ++Index;
+    }
+    auto CurrentNamespaceIter = CurrentNamespace.begin();
+    auto PreviousNamespaceIter = PreviousNamespace.begin();
+    std::advance(CurrentNamespaceIter, Index);
+    std::advance(PreviousNamespaceIter, Index);
+    CurrentNamespaceRemovedCommon.insert(CurrentNamespaceRemovedCommon.end(),
+                                         CurrentNamespaceIter,
+                                         CurrentNamespace.end());
+    PreviousNamespaceRemovedCommon.insert(PreviousNamespaceRemovedCommon.end(),
+                                          PreviousNamespaceIter,
+                                          PreviousNamespace.end());
+  }
+
+  std::vector<std::string> PreviousNamespace;
+};
+
 std::string
 getHelperFileContent(const clang::dpct::HelperFileEnum File,
                      std::vector<clang::dpct::HelperFunc> ContentVec) {
@@ -208,106 +297,15 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
   };
   std::sort(ContentVec.begin(), ContentVec.end(), CompareAsc);
 
-  std::string CurrentNamespace;
+  NamespaceGenerator NSG;
   for (const auto &Item : ContentVec) {
-    if (Item.Namespace.empty()) {
-      // no namespace
-      if (CurrentNamespace == "dpct") {
-        ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::detail") {
-        ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
-        ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::internal") {
-        ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
-        ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::experimental") {
-        ContentStr =
-            ContentStr + "} // namespace experimental" + getNL() + getNL();
-        ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-      }
-
-      CurrentNamespace = "";
-      std::string Code = getCode(Item);
-      replaceEndOfLine(Code);
-      ContentStr = ContentStr + Code + getNL();
-    } else if (Item.Namespace == "dpct") {
-      // dpct namespace
-      if (CurrentNamespace.empty()) {
-        ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::detail") {
-        ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::internal") {
-        ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::experimental") {
-        ContentStr =
-            ContentStr + "} // namespace experimental" + getNL() + getNL();
-      }
-
-      CurrentNamespace = "dpct";
-      std::string Code = getCode(Item);
-      replaceEndOfLine(Code);
-      ContentStr = ContentStr + Code + getNL();
-    } else if (Item.Namespace == "dpct::detail") {
-      // dpct::detail namespace
-      if (CurrentNamespace.empty()) {
-        ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
-        ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct") {
-        ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::experimental") {
-        ContentStr =
-            ContentStr + "} // namespace experimental" + getNL() + getNL();
-        ContentStr = ContentStr + "namespace detail {" + getNL() + getNL();
-      }
-      CurrentNamespace = "dpct::detail";
-      std::string Code = getCode(Item);
-      replaceEndOfLine(Code);
-      ContentStr = ContentStr + Code + getNL();
-    } else if (Item.Namespace == "dpct::internal") {
-      // dpct::internal namespace
-      if (CurrentNamespace.empty()) {
-        ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
-        ContentStr = ContentStr + "namespace internal {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct") {
-        ContentStr = ContentStr + "namespace internal {" + getNL() + getNL();
-      }
-      CurrentNamespace = "dpct::internal";
-      std::string Code = getCode(Item);
-      replaceEndOfLine(Code);
-      ContentStr = ContentStr + Code + getNL();
-    } else if (Item.Namespace == "dpct::experimental") {
-      // dpct::experimental namespace
-      if (CurrentNamespace.empty()) {
-        ContentStr = ContentStr + "namespace dpct {" + getNL() + getNL();
-        ContentStr =
-            ContentStr + "namespace experimental {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct") {
-        ContentStr =
-            ContentStr + "namespace experimental {" + getNL() + getNL();
-      } else if (CurrentNamespace == "dpct::detail") {
-        ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
-        ContentStr =
-            ContentStr + "namespace experimental {" + getNL() + getNL();
-      }
-      CurrentNamespace = "dpct::experimental";
-      std::string Code = getCode(Item);
-      replaceEndOfLine(Code);
-      ContentStr = ContentStr + Code + getNL();
-    }
+    ContentStr = ContentStr + NSG.genCodeForNamespace(Item.Namespace);
+    std::string Code = getCode(Item);
+    replaceEndOfLine(Code);
+    ContentStr = ContentStr + Code + getNL();
   }
 
-  if (CurrentNamespace == "dpct") {
-    ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-  } else if (CurrentNamespace == "dpct::detail") {
-    ContentStr = ContentStr + "} // namespace detail" + getNL() + getNL();
-    ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-  } else if (CurrentNamespace == "dpct::internal") {
-    ContentStr = ContentStr + "} // namespace internal" + getNL() + getNL();
-    ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-  } else if (CurrentNamespace == "dpct::experimental") {
-    ContentStr = ContentStr + "} // namespace experimental" + getNL() + getNL();
-    ContentStr = ContentStr + "} // namespace dpct" + getNL() + getNL();
-  }
+  ContentStr = ContentStr + NSG.genCodeForNamespace("");
 
   ContentStr = ContentStr + getHeaderGuardPair(File).second + getNL();
   return ContentStr;
@@ -394,6 +392,7 @@ void generateAllHelperFiles() {
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector)
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasDpcppExtensions)
 #undef GENERATE_ALL_FILE_CONTENT
 #undef GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT
 }
@@ -484,6 +483,7 @@ void generateHelperFunctions() {
   std::vector<clang::dpct::HelperFunc> DplExtrasMemoryFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasNumericFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasVectorFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasDpcppExtensionsFileContent;
 
   std::vector<bool> FileUsedFlagVec(
       (unsigned int)clang::dpct::HelperFileEnum::HelperFileEnumTypeSize, false);
@@ -593,6 +593,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(DplExtrasMemory)
       UPDATE_FILE(DplExtrasNumeric)
       UPDATE_FILE(DplExtrasVector)
+      UPDATE_FILE(DplExtrasDpcppExtensions)
     default:
       assert(0 && "unknown helper file ID");
     }
@@ -612,7 +613,8 @@ void generateHelperFunctions() {
       !DplExtrasIteratorsFileContent.empty() ||
       !DplExtrasMemoryFileContent.empty() ||
       !DplExtrasNumericFileContent.empty() ||
-      !DplExtrasVectorFileContent.empty()) {
+      !DplExtrasVectorFileContent.empty() ||
+      !DplExtrasDpcppExtensionsFileContent.empty()) {
     if (!llvm::sys::fs::is_directory(Twine(ToPath + "/dpl_extras")))
       llvm::sys::fs::create_directory(Twine(ToPath + "/dpl_extras"));
 
@@ -638,6 +640,7 @@ void generateHelperFunctions() {
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasMemory)
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasNumeric)
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasVector)
+    ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasDpcppExtensions)
 #undef ADD_INCLUDE_DIRECTIVE_FOR_DPL
 
     auto Item = HelperNameContentMap.at(std::make_pair(
@@ -725,6 +728,7 @@ void generateHelperFunctions() {
   GENERATE_DPL_EXTRAS_FILE(DplExtrasMemory)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasNumeric)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasVector)
+  GENERATE_DPL_EXTRAS_FILE(DplExtrasDpcppExtensions)
 #undef GENERATE_FILE
 #undef GENERATE_DPL_EXTRAS_FILE
 }
@@ -1078,6 +1082,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
 #include "clang/DPCT/dpl_extras/memory.inc"
 #include "clang/DPCT/dpl_extras/numeric.inc"
 #include "clang/DPCT/dpl_extras/vector.inc"
+#include "clang/DPCT/dpl_extras/dpcpp_extensions.inc"
 #include "clang/DPCT/dpl_utils.inc"
 #include "clang/DPCT/image.inc"
 #include "clang/DPCT/kernel.inc"
@@ -1088,41 +1093,43 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
 #undef DPCT_CONTENT_END
     };
 
-std::unordered_map<clang::dpct::HelperFileEnum, std::string>
-    HelperFileNameMap{
-        {clang::dpct::HelperFileEnum::Dpct, "dpct.hpp"},
-        {clang::dpct::HelperFileEnum::Atomic, "atomic.hpp"},
-        {clang::dpct::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
-        {clang::dpct::HelperFileEnum::Device, "device.hpp"},
-        {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
-        {clang::dpct::HelperFileEnum::Image, "image.hpp"},
-        {clang::dpct::HelperFileEnum::Kernel, "kernel.hpp"},
-        {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
-        {clang::dpct::HelperFileEnum::Util, "util.hpp"},
-        {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasMemory, "memory.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
-        {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"}};
+std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
+    {clang::dpct::HelperFileEnum::Dpct, "dpct.hpp"},
+    {clang::dpct::HelperFileEnum::Atomic, "atomic.hpp"},
+    {clang::dpct::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
+    {clang::dpct::HelperFileEnum::Device, "device.hpp"},
+    {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
+    {clang::dpct::HelperFileEnum::Image, "image.hpp"},
+    {clang::dpct::HelperFileEnum::Kernel, "kernel.hpp"},
+    {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
+    {clang::dpct::HelperFileEnum::Util, "util.hpp"},
+    {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasMemory, "memory.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
+     "dpcpp_extensions.h"}};
 
-std::unordered_map<std::string, clang::dpct::HelperFileEnum>
-    HelperFileIDMap{
-        {"dpct.hpp", clang::dpct::HelperFileEnum::Dpct},
-        {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
-        {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
-        {"device.hpp", clang::dpct::HelperFileEnum::Device},
-        {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
-        {"image.hpp", clang::dpct::HelperFileEnum::Image},
-        {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
-        {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
-        {"util.hpp", clang::dpct::HelperFileEnum::Util},
-        {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
-        {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
-        {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
-        {"memory.h", clang::dpct::HelperFileEnum::DplExtrasMemory},
-        {"numeric.h", clang::dpct::HelperFileEnum::DplExtrasNumeric},
-        {"vector.h", clang::dpct::HelperFileEnum::DplExtrasVector}};
+std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
+    {"dpct.hpp", clang::dpct::HelperFileEnum::Dpct},
+    {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
+    {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
+    {"device.hpp", clang::dpct::HelperFileEnum::Device},
+    {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
+    {"image.hpp", clang::dpct::HelperFileEnum::Image},
+    {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
+    {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
+    {"util.hpp", clang::dpct::HelperFileEnum::Util},
+    {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
+    {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
+    {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
+    {"memory.h", clang::dpct::HelperFileEnum::DplExtrasMemory},
+    {"numeric.h", clang::dpct::HelperFileEnum::DplExtrasNumeric},
+    {"vector.h", clang::dpct::HelperFileEnum::DplExtrasVector},
+    {"dpcpp_extensions.h",
+     clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions}};
 
 const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap{
@@ -1143,7 +1150,9 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
          "__DPCT_ITERATORS_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasMemory, "__DPCT_MEMORY_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasNumeric, "__DPCT_NUMERIC_H__"},
-        {clang::dpct::HelperFileEnum::DplExtrasVector, "__DPCT_VECTOR_H__"}};
+        {clang::dpct::HelperFileEnum::DplExtrasVector, "__DPCT_VECTOR_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
+         "__DPCT_DPCPP_EXTENSIONS_H__"}};
 
 const std::unordered_map<clang::dpct::HelperFileEnum,
                          std::vector<clang::dpct::HelperFileEnum>>
@@ -1209,6 +1218,9 @@ const std::string DplExtrasNumericAllContentStr =
     ;
 const std::string DplExtrasVectorAllContentStr =
 #include "clang/DPCT/dpl_extras/vector.all.inc"
+    ;
+const std::string DplExtrasDpcppExtensionsAllContentStr =
+#include "clang/DPCT/dpl_extras/dpcpp_extensions.all.inc"
     ;
 
 const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>

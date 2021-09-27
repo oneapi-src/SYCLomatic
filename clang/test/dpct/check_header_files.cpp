@@ -74,6 +74,11 @@
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %S/helper_files_ref/include/dpl_extras/dpcpp_extensions.h  %T/../../../runtime/dpct-rt/include/dpl_extras/dpcpp_extensions.h >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
 // RUN: rm -rf %T/check_header_files
 
 // CHECK: begin

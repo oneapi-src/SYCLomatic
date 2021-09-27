@@ -134,6 +134,7 @@ extern const std::string DplExtrasIteratorsAllContentStr;
 extern const std::string DplExtrasMemoryAllContentStr;
 extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
+extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 
 extern const std::map<clang::dpct::HelperFeatureIDTy, std::string>
     FeatureNameToAPINameMap;
