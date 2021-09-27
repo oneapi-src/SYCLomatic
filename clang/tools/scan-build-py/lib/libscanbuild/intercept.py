@@ -109,7 +109,7 @@ def capture(args):
         occur_set = set()
         for entry in entries:
             if not ('file' in entry):
-                key = entry['directory']
+                key = entry['directory'] + entry['command']
                 if key not in occur_set:
                     occur_set.add(key)
                     entries_post.append(entry)
@@ -263,6 +263,7 @@ def format_entry(exec_trace):
             'c++' : 'c++',
             'cuda' : 'nvcc',
             'mpich' : 'c++',
+            'ar' : 'ar',
             'ld' : 'ld'
         }[compilation.compiler]
 

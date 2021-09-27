@@ -586,6 +586,8 @@ def split_command(command):
     # linker command should be added into compilation database
     elif len(result.files) == 0 and result.compiler == 'mpich':
         return result
+    elif len(result.files) == 0 and result.compiler == 'ar':
+        return result
     else:
         return None
 
@@ -634,4 +636,6 @@ def compiler_language(command):
             return 'cuda'
         if executable == 'ld':
             return 'ld'
+        if executable == 'ar':
+            return 'ar'
     return None
