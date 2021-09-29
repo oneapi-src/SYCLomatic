@@ -273,10 +273,10 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
 /// \param value Value to be set.
 /// \param size Memory region size.
 /// \returns An event list representing the memset operations..
-static inline cl::sycl::vector_class<cl::sycl::event>
+static inline std::vector<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
             cl::sycl::range<3> size) {
-  cl::sycl::vector_class<cl::sycl::event> event_list;
+  std::vector<cl::sycl::event> event_list;
   size_t slice = data.get_pitch() * data.get_y();
   unsigned char *data_surface = (unsigned char *)data.get_data_ptr();
   for (size_t z = 0; z < size.get(2); ++z) {
@@ -291,7 +291,7 @@ dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
 }
 
 /// memset 2D matrix with pitch.
-static inline cl::sycl::vector_class<cl::sycl::event>
+static inline std::vector<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
             size_t y) {
   return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
@@ -442,12 +442,12 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
 
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
-static inline cl::sycl::vector_class<cl::sycl::event>
+static inline std::vector<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
             cl::sycl::range<3> to_range, cl::sycl::range<3> from_range,
             cl::sycl::id<3> to_id, cl::sycl::id<3> from_id,
             cl::sycl::range<3> size, memcpy_direction direction) {
-  cl::sycl::vector_class<cl::sycl::event> event_list;
+  std::vector<cl::sycl::event> event_list;
 
   size_t to_slice = to_range.get(1) * to_range.get(0),
          from_slice = from_range.get(1) * from_range.get(0);
@@ -484,7 +484,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 }
 
 /// memcpy 2D/3D matrix specified by pitched_data.
-static inline cl::sycl::vector_class<cl::sycl::event>
+static inline std::vector<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
             pitched_data from, cl::sycl::id<3> from_id, cl::sycl::range<3> size,
             memcpy_direction direction = automatic) {
@@ -495,7 +495,7 @@ dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
 }
 
 /// memcpy 2D matrix with pitch.
-static inline cl::sycl::vector_class<cl::sycl::event>
+static inline std::vector<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
             size_t to_pitch, size_t from_pitch, size_t x, size_t y,
             memcpy_direction direction = automatic) {
