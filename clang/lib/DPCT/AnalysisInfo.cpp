@@ -186,7 +186,7 @@ private:
       if (Dimension) {
         OS << Dimension;
       } else {
-        OS << "Placeholder /* Fix the dimension manually */";
+        OS << "dpct_placeholder /* Fix the dimension manually */";
       }
       OS << '>';
     }

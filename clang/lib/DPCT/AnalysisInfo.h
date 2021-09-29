@@ -3083,7 +3083,7 @@ public:
     if (isNull()) {
       static std::shared_ptr<TemplateDependentStringInfo> Placeholder =
           std::make_shared<TemplateDependentStringInfo>(
-              "PlaceHolder/*Fix the type mannually*/");
+              "dpct_placeholder/*Fix the type mannually*/");
       return Placeholder;
     }
     return DependentStr;

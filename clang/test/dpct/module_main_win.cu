@@ -11,14 +11,14 @@ int main(){
     CUfunction F;
     std::string Path, FunctionName;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "Placeholder" with the file path of the dynamic library.
+    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "dpct_placeholder" with the file path of the dynamic library.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = LoadLibraryA(PlaceHolder/*Fix the module file name manually*/);
+    //CHECK-NEXT: M = LoadLibraryA(dpct_placeholder/*Fix the module file name manually*/);
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "Placeholder" with the file path of the dynamic library.
+    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "dpct_placeholder" with the file path of the dynamic library.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = LoadLibraryA(PlaceHolder/*Fix the module file name manually*/);
+    //CHECK-NEXT: M = LoadLibraryA(dpct_placeholder/*Fix the module file name manually*/);
     cuModuleLoadData(&M, Data.c_str());
     //CHECK: F = (dpct::kernel_functor)GetProcAddress(M, (std::string(FunctionName.c_str()) + "_wrapper").c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());

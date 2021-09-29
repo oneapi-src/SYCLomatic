@@ -348,7 +348,7 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, size), sycl::range<3>(1, 1, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel(ptr.dPtr);
@@ -364,7 +364,7 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel(ptr.dPtr);
@@ -405,7 +405,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
-// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
@@ -417,7 +417,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
-// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
@@ -429,7 +429,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
-// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);
@@ -441,7 +441,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 // CHECK-NEXT:    auto base_t_alpha_ct0 = base_t::alpha;
 // CHECK-NEXT:    auto base_t_crsmat_rows_ct1 = base_t::crsmat->rows;
 // CHECK-EMPTY:
-// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, PlaceHolder/*Fix the type mannually*/>>(
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, base_t::crsmat->rows), sycl::range<3>(1, 1, base_t::crsmat->rows)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:        my_kernel2(base_t_alpha_ct0, base_t_crsmat_rows_ct1);

@@ -14,12 +14,12 @@
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoad", DEREF(0),
     CALL("LoadLibraryA",
-         ARG("PlaceHolder/*Fix the module file name manually*/")))
+         ARG("dpct_placeholder/*Fix the module file name manually*/")))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadData", DEREF(0),
     CALL("LoadLibraryA",
-         ARG("PlaceHolder/*Fix the module file name manually*/")))
+         ARG("dpct_placeholder/*Fix the module file name manually*/")))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
                      CALL("(dpct::kernel_functor)GetProcAddress", ARG(1),
@@ -37,12 +37,12 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("FreeLibrary", ARG(0)))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoad", DEREF(0),
-    CALL("dlopen", ARG("PlaceHolder/*Fix the module file name manually*/"),
+    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
          ARG("RTLD_LAZY")))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadData", DEREF(0),
-    CALL("dlopen", ARG("PlaceHolder/*Fix the module file name manually*/"),
+    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
          ARG("RTLD_LAZY")))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
