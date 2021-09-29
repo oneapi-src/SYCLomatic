@@ -17,7 +17,7 @@ __global__ void picount(int *totals) {
   // CHECK: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
   // CHECK: oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/> rng;
   // CHECK: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
-  // CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/>(clock64(), {1234 * dpct_placeholder/*Fix the vec_size manually*/, static_cast<std::uint64_t>(tid * 8)});
+  // CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<dpct_placeholder/*Fix the vec_size manually*/>(clock64(), {1234, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 

@@ -3057,11 +3057,8 @@ void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
 void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
                                         unsigned int Offset) {
   std::string VecSizeStr;
-  bool IsOneNumber = false;
   if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
     int VecSize = *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin();
-    if (VecSize == 1)
-      IsOneNumber = true;
     VecSizeStr = std::to_string(VecSize);
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
@@ -3071,15 +3068,22 @@ void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
 
   std::string FirstOffsetArg, SecondOffsetArg;
   if (IsRNGOffsetLiteral) {
-    FirstOffsetArg = RNGOffset + (IsOneNumber ? "" : " * " + VecSizeStr);
+    FirstOffsetArg = RNGOffset;
   } else {
-    FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset +
-                     (IsOneNumber ? "" : " * " + VecSizeStr) + ")";
+    FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
   }
+
+  std::string Factor = "8";
+  if (GeneratorType == "oneapi::mkl::rng::device::philox4x32x10" &&
+      OriginalGeneratorType == "curandStatePhilox4_32_10_t") {
+    Factor = "4";
+  }
+
   if (IsRNGSubseqLiteral) {
-    SecondOffsetArg = RNGSubseq + " * 8";
+    SecondOffsetArg = RNGSubseq + " * " + Factor;
   } else {
-    SecondOffsetArg = "static_cast<std::uint64_t>(" + RNGSubseq + " * 8)";
+    SecondOffsetArg =
+        "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
   }
 
   std::string ReplStr = RNGStateName + " = " + GeneratorType + "<" +

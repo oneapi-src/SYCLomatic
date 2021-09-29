@@ -160,11 +160,13 @@ struct DeviceRandomStateTypeInfo {
 // This struct saves all arguments info of the init API.
 struct DeviceRandomInitAPIInfo {
   DeviceRandomInitAPIInfo(unsigned int Length, std::string GeneratorType,
+                          std::string OriginalGeneratorType,
                           std::string RNGSeed, std::string RNGSubseq,
                           bool IsRNGSubseqLiteral, std::string RNGOffset,
                           bool IsRNGOffsetLiteral, std::string RNGStateName,
                           std::string IndentStr)
-      : Length(Length), GeneratorType(GeneratorType), RNGSeed(RNGSeed),
+      : Length(Length), GeneratorType(GeneratorType),
+        OriginalGeneratorType(OriginalGeneratorType), RNGSeed(RNGSeed),
         RNGSubseq(RNGSubseq), IsRNGSubseqLiteral(IsRNGSubseqLiteral),
         RNGOffset(RNGOffset), IsRNGOffsetLiteral(IsRNGOffsetLiteral),
         RNGStateName(RNGStateName), IndentStr(IndentStr) {}
@@ -172,6 +174,7 @@ struct DeviceRandomInitAPIInfo {
 
   unsigned int Length;
   std::string GeneratorType;
+  std::string OriginalGeneratorType;
   std::string RNGSeed;
   std::string RNGSubseq;
   bool IsRNGSubseqLiteral = false;
@@ -1662,21 +1665,20 @@ public:
       return nullptr;
   }
 
-  void
-  insertDeviceRandomInitAPIInfo(SourceLocation SL, unsigned int Length,
-                                std::string GeneratorType, std::string RNGSeed,
-                                std::string RNGSubseq, bool IsRNGSubseqLiteral,
-                                std::string RNGOffset, bool IsRNGOffsetLiteral,
-                                std::string StateName, std::string IndentStr) {
+  void insertDeviceRandomInitAPIInfo(
+      SourceLocation SL, unsigned int Length, std::string GeneratorType,
+      std::string OriginalGeneratorType, std::string RNGSeed,
+      std::string RNGSubseq, bool IsRNGSubseqLiteral, std::string RNGOffset,
+      bool IsRNGOffsetLiteral, std::string StateName, std::string IndentStr) {
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &M = FileInfo->getDeviceRandomInitAPIMap();
     if (M.find(LocInfo.second) == M.end()) {
       M.insert(std::make_pair(
-          LocInfo.second,
-          DeviceRandomInitAPIInfo(Length, GeneratorType, RNGSeed, RNGSubseq,
-                                  IsRNGSubseqLiteral, RNGOffset,
-                                  IsRNGOffsetLiteral, StateName, IndentStr)));
+          LocInfo.second, DeviceRandomInitAPIInfo(
+                              Length, GeneratorType, OriginalGeneratorType,
+                              RNGSeed, RNGSubseq, IsRNGSubseqLiteral, RNGOffset,
+                              IsRNGOffsetLiteral, StateName, IndentStr)));
     }
   }
   void insertDeviceRandomGenerateAPIInfo(

@@ -5454,9 +5454,10 @@ void DeviceRandomFunctionCallRule::runRule(
     DpctGlobalInfo::getInstance().insertDeviceRandomInitAPIInfo(
         FuncNameBegin, FuncCallLength,
         MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second,
-        EARNGSeed.getReplacedString(), EARNGSubseq.getReplacedString(),
-        IsLiteral(CE->getArg(1)), EARNGOffset.getReplacedString(),
-        IsLiteral(CE->getArg(2)), getDrefName(CE->getArg(3)), IndentStr);
+        DRefArg3Type, EARNGSeed.getReplacedString(),
+        EARNGSubseq.getReplacedString(), IsLiteral(CE->getArg(1)),
+        EARNGOffset.getReplacedString(), IsLiteral(CE->getArg(2)),
+        getDrefName(CE->getArg(3)), IndentStr);
   } else {
     const CompoundStmt *CS = findImmediateBlock(CE);
     if (!CS || !(CS->body_front()))
@@ -5477,19 +5478,19 @@ void DeviceRandomFunctionCallRule::runRule(
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::uniform", "float", DistrIndentStr,
+          "oneapi::mkl::rng::device::gaussian", "float", DistrIndentStr,
           DrefedStateName, IndentStr);
     } else if (FuncName == "curand_normal2_double") {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::uniform", "double", DistrIndentStr,
+          "oneapi::mkl::rng::device::gaussian", "double", DistrIndentStr,
           DrefedStateName, IndentStr);
     } else if (FuncName == "curand_normal_double") {
       DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
       DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
           FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::uniform", "double", DistrIndentStr,
+          "oneapi::mkl::rng::device::gaussian", "double", DistrIndentStr,
           DrefedStateName, IndentStr);
     }
   }

@@ -62,7 +62,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
 //CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *States)
 {
-  //CHECK: oneapi::mkl::rng::device::uniform<double> distr_ct{{[0-9]+}};
+  //CHECK: oneapi::mkl::rng::device::gaussian<double> distr_ct{{[0-9]+}};
   int tid = threadIdx.x;
   int bid = blockIdx.x;
 

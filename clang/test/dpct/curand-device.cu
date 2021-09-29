@@ -21,14 +21,14 @@ __global__ void picount(int *totals) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   //CHECK: oneapi::mkl::rng::device::philox4x32x10<2> rng;
-  //CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<2>(clock64(), {10 * 2, static_cast<std::uint64_t>(tid * 8)});
+  //CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<2>(clock64(), {10, static_cast<std::uint64_t>(tid * 4)});
   curandStatePhilox4_32_10_t rng;
   curand_init(clock64(), tid, 10, &rng);
 
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: oneapi::mkl::rng::device::uniform<float> distr_ct{{[0-9]+}};
+    //CHECK: oneapi::mkl::rng::device::gaussian<float> distr_ct{{[0-9]+}};
     //CHECK-NEXT: sycl::float2 x = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
     //CHECK-NEXT: sycl::float2 y = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
     float2 x = curand_normal2(&rng);
@@ -54,7 +54,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *S
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: States[id] = oneapi::mkl::rng::device::mrg32k3a<2>(seed, {10 * 2, static_cast<std::uint64_t>(pixel * 8)});
+  //CHECK: States[id] = oneapi::mkl::rng::device::mrg32k3a<2>(seed, {10, static_cast<std::uint64_t>(pixel * 8)});
   curand_init(seed, pixel, 10, &States[id]);
 }
 
@@ -62,7 +62,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *S
 //CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double2 *Image, curandStateMRG32k3a_t *States)
 {
-  //CHECK: oneapi::mkl::rng::device::uniform<double> distr_ct{{[0-9]+}};
+  //CHECK: oneapi::mkl::rng::device::gaussian<double> distr_ct{{[0-9]+}};
   int tid = threadIdx.x;
   int bid = blockIdx.x;
 
