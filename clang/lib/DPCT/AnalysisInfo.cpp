@@ -131,7 +131,8 @@ unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
-
+std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
+    DpctGlobalInfo::PriorityReplInfoMap;
 class FreeQueriesInfo {
 public:
   enum FreeQueriesKind {

@@ -1462,7 +1462,7 @@ QualType DerefQualType(QualType QT) {
     DerefQT = dyn_cast<ArrayType>(QT.getTypePtr())->getElementType();
   }
   return DerefQT;
-};
+}
 
 // Get the derefed type name of an arg while getDereferencedExpr is get the derefed expr.
 std::function<std::string(const CallExpr*C)>

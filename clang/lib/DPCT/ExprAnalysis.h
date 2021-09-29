@@ -323,6 +323,9 @@ public:
   }
 
   void applyAllSubExprRepl();
+  inline std::vector<std::shared_ptr<ExtReplacement>> &getSubExprRepl() {
+    return SubExprRepl;
+  };
   // Replace a sub template arg
   inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
     auto LocInfo = getOffsetAndLength(E);

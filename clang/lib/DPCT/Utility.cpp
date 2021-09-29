@@ -2981,7 +2981,10 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
 /// Determine whether a variable represented by DeclRefExpr is unmodified
 /// 1. func(..., T Val(pass by value), ...)
 /// 2. ... = Val
-/// The varibale is unmodified in above two cases
+/// 3. { ...
+///      Val; 
+///      ...}
+/// The varibale is unmodified in above cases
 /// \param [in] DRE Input DeclRefExpr
 /// \returns If variable not modified, return false
 bool isModifiedRef(const clang::DeclRefExpr *DRE) {
@@ -3007,6 +3010,8 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
   } else if (auto BO = CT.getParents(*P)[0].get<BinaryOperator>()) {
     if (BO->getRHS()->IgnoreImplicit() == DRE)
       return false;
+  } else if (CT.getParents(*P)[0].get<CompoundStmt>()) {
+    return false;
   }
   return true;
 }
@@ -3742,4 +3747,100 @@ bool isCubVar(const VarDecl *VD) {
 const std::string &getItemName() {
   const static std::string ItemName = "item" + getCTFixedSuffix();
   return ItemName;
+}
+
+/// This function finds all variable reference in declaration scope.
+/// \param [in] DRE The input variable reference
+/// \param [out] MatchResult The vector contains all variable reference
+/// \param [in] IsGlobalVariableAllowed Whether find reference for global
+/// variable
+void findAllVarRef(const clang::DeclRefExpr *DRE,
+                   std::vector<const clang::DeclRefExpr *> &MatchResult,
+                   bool IsGlobalVariableAllowed) {
+  if (!DRE) {
+    return;
+  }
+  using namespace ast_matchers;
+  llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> RefMatchResult;
+  if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    if (auto Scope = dpct::DpctGlobalInfo::findAncestor<CompoundStmt>(VD)) {
+      auto RefMatcher = compoundStmt(forEachDescendant(
+          declRefExpr(to(varDecl(hasName(VD->getNameAsString()))))
+              .bind("Reference")));
+      RefMatchResult = ast_matchers::match(RefMatcher, *Scope,
+                                           dpct::DpctGlobalInfo::getContext());
+    } else {
+      if (!IsGlobalVariableAllowed) {
+        return;
+      } else if (auto Scope =
+                     dpct::DpctGlobalInfo::findAncestor<TranslationUnitDecl>(
+                         VD)) {
+        auto RefMatcher = translationUnitDecl(forEachDescendant(
+            declRefExpr(to(varDecl(hasName(VD->getNameAsString()))))
+                .bind("Reference")));
+        RefMatchResult = ast_matchers::match(
+            RefMatcher, *Scope, dpct::DpctGlobalInfo::getContext());
+      }
+    }
+
+    for (auto &Element : RefMatchResult) {
+      if (auto MatchedDRE = Element.getNodeAs<DeclRefExpr>("Reference")) {
+        MatchResult.push_back(MatchedDRE);
+      }
+    }
+  }
+  return;
+}
+
+/// Check if this Exprssion's value used or not
+/// \param [in] E The input Expression
+/// \param [out] Result The check result
+/// \return return true if the check result is valid
+bool isExprUsed(const clang::Expr *E, bool &Result) {
+  if (!E) {
+    return false;
+  }
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*E);
+  if (Parents.size() != 1) {
+    return false;
+  }
+  auto ParentNode = Context.getParents(*E)[0];
+  if (ParentNode.get<CompoundStmt>()) {
+    Result = false;
+  } else if (auto P = ParentNode.get<ForStmt>()) {
+    if (P->getBody() == E ||
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
+      Result = false;
+    }
+  } else if (auto P = ParentNode.get<WhileStmt>()) {
+    if (P->getBody() == E ||
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
+      Result = false;
+    }
+  } else if (auto P = ParentNode.get<SwitchStmt>()) {
+    if (P->getBody() == E ||
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
+      Result = false;
+    }
+  } else if (auto P = ParentNode.get<DoStmt>()) {
+    if (P->getBody() == E ||
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
+      Result = false;
+    }
+  } else if (auto P = ParentNode.get<IfStmt>()) {
+    if (P->getCond() == E ||
+        dpct::DpctGlobalInfo::isAncestor(P->getCond(), E)) {
+      Result = true;
+    } else {
+      Result = false;
+    }
+  } else if (auto P = ParentNode.get<CaseStmt>()) {
+    if (P->getRHS() == E || dpct::DpctGlobalInfo::isAncestor(P->getRHS(), E)) {
+      Result = false;
+    }
+  } else {
+    Result = true;
+  }
+  return true;
 }

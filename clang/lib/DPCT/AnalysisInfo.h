@@ -58,6 +58,14 @@ enum class KernelArgType : int {
   KAT_Default,
   KAT_MaxParameterSize
 };
+// This struct defines a set of Repls with priority.
+// The priority designated by a unsigned number, the
+// higher the number, the higher the priority.
+struct PriorityReplInfo {
+  std::vector<std::shared_ptr<ExtReplacement>> Repls;
+  std::vector<std::function<void(void)>> RelatedAction;
+  unsigned int Priority = 0;
+};
 
 class CudaMallocInfo;
 class RandomEngineInfo;
@@ -409,6 +417,8 @@ enum HeaderType {
   HT_MKL_FFT,
   HT_Chrono,
   HT_DL,
+  HT_STD_Numeric_Limits,
+  HT_DPL_Utils,
 };
 
 enum UsingType {
@@ -590,6 +600,13 @@ public:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<dlfcn.h>");
 #endif
+    case HT_STD_Numeric_Limits:
+      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
+                          "<limits>");
+    case HT_DPL_Utils:
+      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dpl_utils.hpp>");
     }
   }
 
@@ -1293,6 +1310,17 @@ public:
     return findAncestor<TargetTy>(
         Node, [](const DynTypedNode &Cur) -> bool { return true; });
   }
+
+  template <typename TargetTy, typename NodeTy>
+  static bool isAncestor(TargetTy *AncestorNode, NodeTy *Node) {
+    return findAncestor<TargetTy>(Node, [&](const DynTypedNode &Cur) -> bool {
+      if (Cur.get<TargetTy>() == AncestorNode) {
+        return true;
+      } else {
+        return false;
+      };
+    });
+  }
   template <class NodeTy>
   inline static const clang::FunctionDecl *
   getParentFunction(const NodeTy *Node) {
@@ -1469,6 +1497,16 @@ public:
   // Build kernel and device function declaration replacements and store
   // them.
   void buildReplacements() {
+    // add PriorityRepl into ReplMap and execute related action, e.g., 
+    // request feature or emit warning. 
+    for (auto &ReplInfo : PriorityReplInfoMap) {
+      for (auto &Repl : ReplInfo.second->Repls) {
+        addReplacement(Repl);
+      }
+      for (auto &Action : ReplInfo.second->RelatedAction) {
+        Action();
+      }
+    }
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
@@ -2115,6 +2153,30 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
+  static inline std::unordered_map<std::string,
+                                   std::shared_ptr<PriorityReplInfo>> &
+  getPriorityReplInfoMap() {
+    return PriorityReplInfoMap;
+  }
+  // For PriorityRelpInfo with same key, the Info with low priority will
+  // be filtered and the Info with same priority will be merged.
+  static inline void
+  addPriorityReplInfo(std::string Key, std::shared_ptr<PriorityReplInfo> Info) {
+    if (PriorityReplInfoMap.count(Key)) {
+      if (PriorityReplInfoMap[Key]->Priority == Info->Priority) {
+        PriorityReplInfoMap[Key]->Repls.insert(
+            PriorityReplInfoMap[Key]->Repls.end(), Info->Repls.begin(),
+            Info->Repls.end());
+        PriorityReplInfoMap[Key]->RelatedAction.insert(
+            PriorityReplInfoMap[Key]->RelatedAction.end(),
+            Info->RelatedAction.begin(), Info->RelatedAction.end());
+      } else if (PriorityReplInfoMap[Key]->Priority < Info->Priority) {
+        PriorityReplInfoMap[Key] = Info;
+      }
+    } else {
+      PriorityReplInfoMap[Key] = Info;
+    }
+  }
 
 private:
   DpctGlobalInfo();
@@ -2300,6 +2362,8 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
+  static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
+      PriorityReplInfoMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

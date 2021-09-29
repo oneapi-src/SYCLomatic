@@ -198,3 +198,7 @@ DEF_WARNING(SUBGROUP_SIZE_NOT_EVALUATED, 1089, "The value of subgroup size attri
 DEF_COMMENT(SUBGROUP_SIZE_NOT_EVALUATED, 1089, "The value of subgroup size attribute argument '{0}' cannot be evaluated by the Intel(R) DPC++ Compatibility Tool. Replace \"dpct_placeholder\" with an integral constant expression.")
 DEF_WARNING(UNMIGRATED_DEVICE_PROP, 1090, "DPC++ does not support the device property that would be functionally compatible with %0. It was not migrated. You need to rewrite the code.")
 DEF_COMMENT(UNMIGRATED_DEVICE_PROP, 1090, "DPC++ does not support the device property that would be functionally compatible with {0}. It was not migrated. You need to rewrite the code.")
+DEF_WARNING(UNSUPPORTED_BINARY_OPERATION, 1091, "The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace \"dpct_placeholder\" with a DPC++ native binary operation.")
+DEF_COMMENT(UNSUPPORTED_BINARY_OPERATION, 1091, "The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace \"dpct_placeholder\" with a DPC++ native binary operation.")
+DEF_WARNING(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 128 with differnt value for specific hardware for better performance.")
+DEF_COMMENT(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 128 with differnt value for specific hardware for better performance.")

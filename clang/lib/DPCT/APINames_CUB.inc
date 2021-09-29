@@ -141,11 +141,11 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortPairs, SortPairs, false
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortPairsDescending, SortPairsDescending, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortKeys, SortKeys, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortKeysDescending, SortKeysDescending, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Reduce, Reduce, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Sum, Sum, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Min, Min, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Reduce, Reduce, true, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Sum, Sum, true, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Min, Min, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMin, ArgMin, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Max, Max, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Max, Max, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMax, ArgMax, false, NO_FLAG, P4, "Comment")
 
 // Thread and thread block I/O
