@@ -68,7 +68,7 @@ __global__ void simple_kernel(float *d_array) {
 }
 
 // CHECK: dpct::constant_memory<float, 0> const_one;
-__constant__ float const_one;
+__device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::constant_buffer> const_float,
@@ -235,7 +235,7 @@ __global__ void foo(float d, float y){
 
 // CHECK: dpct::constant_memory<int, 0> d_a0(1);
 // CHECK-NEXT: dpct::constant_memory<int, 0> d_a1(2);
-// CHECK-NEXT: dpct::global_memory<int, 1> const_array(10);
+// CHECK-NEXT: dpct::constant_memory<int, 1> const_array(10);
 __constant__ int d_a0 = 1;
 __constant__ int d_a1 = 2;
 __device__ __constant__ int const_array[10];

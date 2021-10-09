@@ -69,7 +69,7 @@ __global__ void simple_kernel(float *d_array) {
 }
 
 // CHECK: dpct::constant_memory<float, 0> const_one;
-__constant__ float const_one;
+__device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,

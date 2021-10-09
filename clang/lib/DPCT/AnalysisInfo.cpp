@@ -2606,21 +2606,19 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 }
 
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
+  VarAttrKind Attr = Host;
   for (auto VarAttr : Attrs) {
     auto Kind = VarAttr->getKind();
     if (Kind == attr::HIPManaged)
       return Managed;
-  }
-  for (auto VarAttr : Attrs) {
-    auto Kind = VarAttr->getKind();
     if (Kind == attr::CUDAConstant)
       return Constant;
-    else if (Kind == attr::CUDADevice)
-      return Device;
-    else if (Kind == attr::CUDAShared)
+    if (Kind == attr::CUDAShared)
       return Shared;
+    if (Kind == attr::CUDADevice)
+      Attr = Device;
   }
-  return Host;
+  return Attr;
 }
 
 std::string MemVarInfo::getMemoryType() {
