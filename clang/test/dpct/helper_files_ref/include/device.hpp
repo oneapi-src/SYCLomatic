@@ -274,10 +274,11 @@ public:
   }
   void destroy_queue(cl::sycl::queue *&queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::remove_if(_queues.begin(), _queues.end(),
-                   [=](const std::shared_ptr<cl::sycl::queue> &q) -> bool {
-                     return q.get() == queue;
-                   });
+    _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
+                                  [=](const std::shared_ptr<cl::sycl::queue> &q) -> bool {
+                                    return q.get() == queue;
+                                  }),
+                   _queues.end());
     queue = nullptr;
   }
   void set_saved_queue(cl::sycl::queue* q) {
