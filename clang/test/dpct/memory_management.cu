@@ -865,6 +865,25 @@ void testCommas_in_global_memory() {
   // CHECK: cuCheckError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
   cuCheckError(cuMemGetInfo(&result1, &result2));
 
+  // CHECK: /*
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ currently does not support getting the available memory on the current device. You may need to adjust the code.
+  // CHECK: */
+  // CHECK: result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
+  cudaMemGetInfo(&result1, &result2);
+
+  CUresult cu_err;
+  // CHECK: /*
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ currently does not support getting the available memory on the current device. You may need to adjust the code.
+  // CHECK: */
+  // CHECK: cu_err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
+  cu_err = cudaMemGetInfo(&result1, &result2);
+
+  // CHECK: /*
+  // CHECK: DPCT1072:{{[0-9]+}}: DPC++ currently does not support getting the available memory on the current device. You may need to adjust the code.
+  // CHECK: */
+  // CHECK: cuCheckError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
+  cuCheckError(cudaMemGetInfo(&result1, &result2));
+
   int* a;
   cudaStream_t stream;
   int deviceID = 0;

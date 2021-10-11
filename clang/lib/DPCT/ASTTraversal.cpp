@@ -12185,7 +12185,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     OS << " = " << ExprAnalysis::ref(C->getArg(1)) << "->get_channel()";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::Image_image_matrix_get_channel, C);
-  } else if (Name == "cuMemGetInfo_v2") {
+  } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
     auto &SM = DpctGlobalInfo::getSourceManager();
     std::ostringstream OS;
     if (IsAssigned)
@@ -12338,7 +12338,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
         "cuMemFreeHost", "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
-        "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2");
+        "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
+        "cudaMemGetInfo");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12409,7 +12410,7 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaMallocPitch") && Name.compare("cudaMalloc3D") &&
         Name.compare("cublasAlloc") && Name.compare("cuMemGetInfo_v2") &&
         Name.compare("cudaHostAlloc") && Name.compare("cudaMallocHost") &&
-        Name.compare("cuMemHostAlloc")) {
+        Name.compare("cuMemHostAlloc") && Name.compare("cudaMemGetInfo")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -12533,7 +12534,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
           {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration},
           {"cuMemHostAlloc", &MemoryMigrationRule::mallocMigration},
-          {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration}};
+          {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
+          {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
