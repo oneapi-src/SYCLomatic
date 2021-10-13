@@ -53,14 +53,22 @@ enum class ReportTypeEnum {
   RTE_Diags
 };
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
-enum class ExplicitNamespace { EN_None, EN_CL, EN_SYCL, EN_SYCL_Math, EN_DPCT };
-enum class DPCPPExtensions {
-  Ext_EnqueueBarrier = 0x01,
+enum class ExplicitNamespace : unsigned int {
+  EN_None = 0,
+  EN_CL = 1,
+  EN_SYCL = 2,
+  EN_SYCL_Math = 3,
+  EN_DPCT = 4
 };
-enum class ExperimentalFeatures {
+enum class DPCPPExtensions : unsigned int {
+  Ext_EnqueueBarrier = 0x01,
+  Ext_DPCPPExtensionsEnumSize
+};
+enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 1, // Using nd_range_barrier.
   Exp_FreeQueries = 2, // Using free queries functions, like this_nd_item,
                            // this_group, this_subgroup.
+  Exp_ExperimentalFeaturesEnumSize
 };
 
 bool makeInRootCanonicalOrSetDefaults(

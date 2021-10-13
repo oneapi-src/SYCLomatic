@@ -71,6 +71,7 @@ add_clang_library(DPCT
   LibraryAPIMigration.cpp
   CustomHelperFiles.cpp
   GenMakefile.cpp
+  IncrementalMigrationUtility.cpp
 
   DEPENDS
   ClangDriverOptions

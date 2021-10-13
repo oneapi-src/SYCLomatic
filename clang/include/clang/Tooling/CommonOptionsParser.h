@@ -90,6 +90,10 @@ public:
 #ifdef INTEL_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
   std::string &getCompilationsDir() { return CompilationsDir; }
+  bool isPSpecified() { return IsPSpecified; }
+#ifdef _WIN32
+  bool isVcxprojfileSpecified() { return IsVcxprojfileSpecified; }
+#endif
 #endif
   /// Returns a reference to the loaded compilations database.
   CompilationDatabase &getCompilations() {
@@ -118,6 +122,10 @@ private:
   std::unique_ptr<CompilationDatabase> Compilations;
 #ifdef INTEL_CUSTOMIZATION
   std::string CompilationsDir = "";
+  bool IsPSpecified = false;
+#ifdef _WIN32
+  bool IsVcxprojfileSpecified = false;
+#endif
 #endif
   std::vector<std::string> SourcePathList;
   ArgumentsAdjuster Adjuster;

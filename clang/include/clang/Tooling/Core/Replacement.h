@@ -384,12 +384,18 @@ struct HelperFuncForYaml {
   std::string APIName;
   std::map<std::string, HelperFuncForYaml> SubFeatureMap;
 };
-
 struct CompilationInfo {
     CompilationInfo(){}
     std::string MigratedFileName;
     std::string CompileOptions;
     std::string Compiler;
+};
+struct OptionInfo {
+  OptionInfo() {}
+  OptionInfo(std::string Value, bool Specified)
+      : Value(Value), Specified(Specified) {}
+  std::string Value;
+  bool Specified = true;
 };
 #endif
 /// Collection of Replacements generated from a single translation unit.
@@ -400,10 +406,11 @@ struct TranslationUnitReplacements {
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
   std::string DpctVersion = "";
   std::string MainHelperFileName = "";
-  std::string USMLevel = "";
+  std::string USMLevel = ""; // deprecated
 
   std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
+  std::map<std::string, OptionInfo> OptionMap;
 #endif
   std::vector<Replacement> Replacements;
 };

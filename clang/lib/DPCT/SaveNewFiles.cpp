@@ -345,26 +345,24 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   std::string YamlFile =
       OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
   std::string SrcFile = "MainSrcFiles_placehold";
-  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
 
-  if (llvm::sys::fs::exists(YamlFile)) {
-    if (loadFromYaml(YamlFile, *PreTU, true) == 0) {
-      for (const auto &Repl : PreTU->Replacements) {
-        auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
-        FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
-      }
-      for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
-        auto &DigestMap = DpctGlobalInfo::getDigestMap();
-        DigestMap[FileDigest.first] = FileDigest.second;
-
-        // Mark all the main src files loaded from yaml file are not processed
-        // in current migration.
-        MainSrcFileMap[FileDigest.first] = false;
-      }
-
-      for (const auto &Entry : PreTU->CompileTargets)
-        CompileCmdsPerTarget[Entry.first] = Entry.second;
+  if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
+    for (const auto &Repl : PreTU->Replacements) {
+      auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+      FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
     }
+    for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
+      auto &DigestMap = DpctGlobalInfo::getDigestMap();
+      DigestMap[FileDigest.first] = FileDigest.second;
+
+      // Mark all the main src files loaded from yaml file are not processed
+      // in current migration.
+      MainSrcFileMap[FileDigest.first] = false;
+    }
+
+    for (const auto &Entry : PreTU->CompileTargets)
+      CompileCmdsPerTarget[Entry.first] = Entry.second;
   }
 
   bool AppliedAll = true;
@@ -674,9 +672,13 @@ void loadYAMLIntoFileInfo(std::string Path) {
   std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
-    if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
-      DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(OriginPath,
-                                                                     PreTU);
+    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+      if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
+        DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
+            OriginPath, PreTU);
+      } else {
+        llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+      }
     }
   }
 }

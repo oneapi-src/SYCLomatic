@@ -1,5 +1,3 @@
-// CHECK: USMLevel:        none
-
 // CHECK:  device_info:
 // CHECK-NEXT:    IsCalled:        true
 // CHECK-NEXT:    CallerSrcFiles:

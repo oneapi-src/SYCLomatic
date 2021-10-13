@@ -193,8 +193,10 @@ llvm::Error CommonOptionsParser::init(
   }
   DatabaseStatus ErrCode =
       CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
+  IsPSpecified = BuildPath.getNumOccurrences();
 #if _WIN32
   VcxprojFilePath = VcxprojFile;
+  IsVcxprojfileSpecified = VcxprojFile.getNumOccurrences();
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
   // -1 (.i.e MigrationError).

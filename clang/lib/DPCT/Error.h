@@ -52,13 +52,16 @@ enum ProcessStatus {
   MigrationErrorCustomHelperFileNameContainInvalidChar = -34,
   MigrationErrorCustomHelperFileNameTooLong = -35,
   MigrationErrorCustomHelperFileNamePathTooLong = -36,
+  MigrationErrorDifferentOptSet = -37,
 };
 
 namespace clang {
 namespace dpct {
 
 void ShowStatus(int Status, std::string Message = "");
-}
+std::string getLoadYamlFailWarning(std::string YamlPath);
+std::string getCheckVersionFailWarning();
+} // namespace dpct
 } // namespace clang
 
 #endif // DPCT_ERROR_H

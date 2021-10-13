@@ -64,11 +64,7 @@ int save2Yaml(
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
   TUR.MainHelperFileName =
       clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
-  if (clang::dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-    TUR.USMLevel = "none";
-  } else {
-    TUR.USMLevel = "restricted";
-  }
+  TUR.OptionMap = clang::dpct::DpctGlobalInfo::getCurrentOptMap();
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
@@ -93,25 +89,14 @@ int loadFromYaml(StringRef Input,
   llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
   YAMLIn >> TU;
 
-  // Do not return if YAMLIn.error(), we still need set other values.
+  if (YAMLIn.error()) {
+    // File doesn't appear to be a header change description. Ignore it.
+    TU = clang::tooling::TranslationUnitReplacements();
+    return -1;
+  }
 
   if (OverwriteHelperFilesInfo) {
-    clang::dpct::emitDpctVersionWarningIfNeed(TU.DpctVersion);
     clang::dpct::updateHelperNameContentMap(TU);
-    if (!TU.MainHelperFileName.empty() &&
-        TU.MainHelperFileName !=
-            clang::dpct::DpctGlobalInfo::getCustomHelperFileName()) {
-      clang::dpct::PrintMsg(
-          "Warning: The custom helper header file name in current migration is "
-          "different from the name in previous migration, you need to update "
-          "the previously migrated code.\n");
-    }
-    if (TU.USMLevel == "none")
-      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
-          UsmLevel::UL_None);
-    else if (TU.USMLevel == "restricted")
-      clang::dpct::DpctGlobalInfo::setPreviousMigrationUsmLevel(
-          UsmLevel::UL_Restricted);
   }
 
   return 0;

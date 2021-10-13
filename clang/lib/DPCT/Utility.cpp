@@ -3844,3 +3844,4 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
   }
   return true;
 }
+

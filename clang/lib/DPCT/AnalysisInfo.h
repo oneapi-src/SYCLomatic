@@ -39,7 +39,6 @@ void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr);
 
 namespace clang {
 namespace dpct {
-
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
@@ -998,7 +997,8 @@ public:
                         .getFilename(getSourceManager().getExpansionLoc(SL))
                         .str());
   }
-  static bool isInRoot(const std::string &FilePath, bool IsChildRelative = true) {
+  static bool isInRoot(const std::string &FilePath,
+                       bool IsChildRelative = true) {
     if (IsChildRelative) {
       std::string Path = removeSymlinks(getFileManager(), FilePath);
       makeCanonical(Path);
@@ -1125,12 +1125,8 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-  inline static UsmLevel getPreviousMigrationUsmLevel() {
-    return PreviousMigrationUsmLvl;
-  }
-  inline static void setPreviousMigrationUsmLevel(UsmLevel UL) {
-    PreviousMigrationUsmLvl = UL;
-  }
+  inline static bool isIncMigration() { return IsIncMigration; }
+  inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
   inline static unsigned int getAssumedNDRangeDim() {
     return AssumedNDRangeDim;
   }
@@ -1158,11 +1154,13 @@ public:
   inline static void setExtensionUnused(DPCPPExtensions Ext) {
     ExtensionFlag &= (~static_cast<unsigned>(Ext));
   }
+  inline static unsigned getExtensionFlag() { return ExtensionFlag; }
 
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
   }
   static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
+  static unsigned getExperimentalFlag() { return ExperimentalFlag; }
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
@@ -1500,8 +1498,8 @@ public:
   // Build kernel and device function declaration replacements and store
   // them.
   void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g., 
-    // request feature or emit warning. 
+    // add PriorityRepl into ReplMap and execute related action, e.g.,
+    // request feature or emit warning.
     for (auto &ReplInfo : PriorityReplInfoMap) {
       for (auto &Repl : ReplInfo.second->Repls) {
         addReplacement(Repl);
@@ -2179,6 +2177,18 @@ public:
       PriorityReplInfoMap[Key] = Info;
     }
   }
+  static inline std::map<std::string, clang::tooling::OptionInfo> &
+  getCurrentOptMap() {
+    return CurrentOptMap;
+  }
+  static inline void setMainSourceYamlTUR(
+      std::shared_ptr<clang::tooling::TranslationUnitReplacements> Ptr) {
+    MainSourceYamlTUR = Ptr;
+  }
+  static inline std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+  getMainSourceYamlTUR() {
+    return MainSourceYamlTUR;
+  }
 
 private:
   DpctGlobalInfo();
@@ -2265,13 +2275,14 @@ private:
   }
 
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
-
+  static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+      MainSourceYamlTUR;
   static std::string InRoot;
   static std::string OutRoot;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
-  static UsmLevel PreviousMigrationUsmLvl;
+  static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
@@ -2366,6 +2377,7 @@ private:
       CubPlaceholderIndexMap;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
+  static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -3564,6 +3576,7 @@ public:
                       bool isKernelCall = false);
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
   bool IsAllTemplateArgsSpecified = false;
+
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;

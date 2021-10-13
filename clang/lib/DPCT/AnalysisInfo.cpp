@@ -33,7 +33,7 @@ std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-UsmLevel DpctGlobalInfo::PreviousMigrationUsmLvl = UsmLevel::UL_Restricted;
+bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
@@ -133,6 +133,15 @@ std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
+std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
+
+/// This variable saved the info of previous migration from the
+/// MainSourceFiles.yaml file. This variable is valid after canContinueMigration()
+/// is called.
+std::shared_ptr<clang::tooling::TranslationUnitReplacements>
+    DpctGlobalInfo::MainSourceYamlTUR =
+        std::make_shared<clang::tooling::TranslationUnitReplacements>();
+
 class FreeQueriesInfo {
 public:
   enum FreeQueriesKind {

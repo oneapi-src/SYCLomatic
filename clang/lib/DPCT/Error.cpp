@@ -149,6 +149,17 @@ void ShowStatus(int Status, std::string Message) {
         "option values: \"" +
         Message + "\" is too long.";
     break;
+  case MigrationErrorDifferentOptSet:
+    StatusString =
+        "Error: Incremental migration requires the same option sets used "
+        "across different dpct invocations. Specify --no-incremental-migration "
+        "to disable incremental migration or use the same option set as in "
+        "previous migration: \"" +
+        Message +
+        "\". See "
+        "https://software.intel.com/content/www/us/en/develop/documentation/"
+        "intel-dpcpp-compatibility-tool-user-guide/top.html for more details.";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);
@@ -162,5 +173,21 @@ void ShowStatus(int Status, std::string Message) {
   llvm::dbgs() << getDpctLogStr() << "\n";
   return;
 }
+
+std::string getLoadYamlFailWarning(std::string YamlPath) {
+  return "Warning: Failed to load " + YamlPath +
+         ". Migration continues with incremental migration disabled. See "
+         "https://software.intel.com/content/www/us/en/develop/documentation/"
+         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "details.\n";
+}
+std::string getCheckVersionFailWarning() {
+  return "Warning: Incremental migration requires the same version of dpct. "
+         "Migration continues with incremental migration disabled. See "
+         "https://software.intel.com/content/www/us/en/develop/documentation/"
+         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "details.\n";
+}
+
 } // namespace dpct
 } // namespace clang

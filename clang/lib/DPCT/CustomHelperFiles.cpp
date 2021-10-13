@@ -319,30 +319,6 @@ std::string getDpctVersionStr() {
   return OS.str();
 }
 
-void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml) {
-  // If yaml file does not exist, this function will not be called.
-  std::string CurrentToolVersion = getDpctVersionStr();
-
-  if (VersionFromYaml.empty()) {
-    // This is an increamental migration, and the previous migration used 2021
-    // gold update1
-    clang::dpct::PrintMsg(
-        "NOTE: This is an incremental migration. Previous version of the tool "
-        "used: 2021.2.0, current version: " +
-        CurrentToolVersion + "." + getNL());
-  } else if (VersionFromYaml != CurrentToolVersion) {
-    // This is an increamental migration, and the previous migration used gold
-    // version
-    clang::dpct::PrintMsg(
-        "NOTE: This is an incremental migration. Previous version of the tool "
-        "used: " +
-        VersionFromYaml + ", current version: " + CurrentToolVersion + "." +
-        getNL());
-  }
-  // No previous migration, or previous migration using the same tool version:
-  // no warning emitted.
-}
-
 void generateAllHelperFiles() {
   std::string ToPath = clang::dpct::DpctGlobalInfo::getOutRoot() + "/include";
   if (!llvm::sys::fs::is_directory(ToPath))
@@ -764,166 +740,9 @@ std::string getCustomMainHelperFileName() {
   return dpct::DpctGlobalInfo::getCustomHelperFileName();
 }
 
-bool isOnlyContainDigit(const std::string &Str) {
-  for (const auto &C : Str) {
-    if (!std::isdigit(C))
-      return false;
-  }
-  return true;
-}
-
-/// The \p VersionStr style must be major.minor.patch
-bool convertToIntVersion(std::string VersionStr, unsigned int &Result) {
-  // get Major version
-  size_t FirstDotLoc = VersionStr.find('.');
-  if (FirstDotLoc == std::string::npos)
-    return false;
-  std::string MajorStr = VersionStr.substr(0, FirstDotLoc);
-  if (MajorStr.empty() || !isOnlyContainDigit(MajorStr))
-    return false;
-  int Major = std::stoi(MajorStr);
-
-  // get Minor version
-  ++FirstDotLoc;
-  size_t SecondDotLoc = VersionStr.find('.', FirstDotLoc);
-  if (SecondDotLoc == std::string::npos || FirstDotLoc > VersionStr.size())
-    return false;
-  std::string MinorStr =
-      VersionStr.substr(FirstDotLoc, SecondDotLoc - FirstDotLoc);
-  if (MinorStr.empty() || !isOnlyContainDigit(MinorStr))
-    return false;
-  int Minor = std::stoi(MinorStr);
-
-  // get Patch version
-  ++SecondDotLoc;
-  if (SecondDotLoc > VersionStr.size())
-    return false;
-  std::string PatchStr = VersionStr.substr(SecondDotLoc);
-  int Patch = 0;
-  if (!PatchStr.empty() && isOnlyContainDigit(PatchStr))
-    Patch = std::stoi(PatchStr);
-
-  Result = Major * 100 + Minor * 10 + Patch;
-  return true;
-}
-
-enum class VersionCmpResult {
-  VCR_CURRENT_IS_NEWER,
-  VCR_CURRENT_IS_OLDER,
-  VCR_VERSION_SAME,
-  VCR_CMP_FAILED
-};
-
-/// The \p VersionInYaml style must be major.minor.patch
-/// Return VCR_CMP_FAILED if meets error
-/// Return VCR_VERSION_SAME if \p VersionInYaml is same as current version
-/// Return VCR_CURRENT_IS_OLDER if \p VersionInYaml is later than current
-/// version Return VCR_CURRENT_IS_NEWER if \p VersionInYaml is earlier than
-/// current version
-VersionCmpResult compareToolVersion(std::string VersionInYaml) {
-  unsigned int PreviousVersion;
-  if (convertToIntVersion(VersionInYaml, PreviousVersion)) {
-    unsigned int CurrentVersion = std::stoi(DPCT_VERSION_MAJOR) * 100 +
-                                  std::stoi(DPCT_VERSION_MINOR) * 10 +
-                                  std::stoi(DPCT_VERSION_PATCH);
-    if (PreviousVersion > CurrentVersion)
-      return VersionCmpResult::VCR_CURRENT_IS_OLDER;
-    if (PreviousVersion < CurrentVersion)
-      return VersionCmpResult::VCR_CURRENT_IS_NEWER;
-    else
-      return VersionCmpResult::VCR_VERSION_SAME;
-  } else {
-    return VersionCmpResult::VCR_CMP_FAILED;
-  }
-}
-
-void emitHelperFeatureChangeWarning(
-    VersionCmpResult CompareResult, std::string PreviousMigrationToolVersion,
-    const std::map<std::string, std::set<std::string>>
-        &APINameCallerSrcFilesMap) {
-  if (CompareResult == VersionCmpResult::VCR_CMP_FAILED ||
-      CompareResult == VersionCmpResult::VCR_VERSION_SAME) {
-    return;
-  }
-
-  for (const auto &Item : APINameCallerSrcFilesMap) {
-    std::string APIName = Item.first;
-    std::string Text = "";
-    if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_OLDER) {
-      Text = "NOTE: The helper API \"" + APIName +
-             "\" used in the previous migration was added in Intel(R) DPC++ "
-             "Compatibility Tool " +
-             PreviousMigrationToolVersion +
-             " and is not available in Intel(R) DPC++ Compatibility Tool " +
-             getDpctVersionStr() +
-             " used for the current migration. Migrate all files with the same "
-             "version of the tool or update migrated files manually.\n";
-    } else {
-      // CompareResult == VersionCmpResult::VCR_CURRENT_IS_NEWER
-      Text = "NOTE: The helper API \"" + APIName +
-             "\" used in the previous migration was removed in "
-             "Intel(R) DPC++ Compatibility Tool " +
-             getDpctVersionStr() +
-             ". Migrate all files with the same version of the tool "
-             "or update migrated files manually.\n";
-    }
-    Text =
-        Text + "File(s) used \"" + APIName + "\" in the previous migration:\n";
-    for (const auto &File : Item.second) {
-      Text = Text + File + "\n";
-    }
-    clang::dpct::PrintMsg(Text);
-  }
-}
-
-void collectInfo(
-    std::pair<std::string, clang::tooling::HelperFuncForYaml> Feature,
-    VersionCmpResult CompareResult,
-    std::map<std::string, std::set<std::string>> &APINameCallerSrcFilesMap) {
-  if (Feature.second.CallerSrcFiles.empty() ||
-      Feature.second.CallerSrcFiles[0].empty()) {
-    return;
-  }
-
-  std::string APIName = Feature.second.APIName;
-  if (APIName.empty()) {
-    if (CompareResult == VersionCmpResult::VCR_CURRENT_IS_NEWER) {
-      // This code path is for case:
-      // Previous migration tool is 2021.3 and an API in 2021.3 is removed
-      // in current version.
-
-      // Currently, no API removed, so return directly.
-      return;
-      // In the future, if there is an API removed, below code should be
-      // enabled:
-      // auto FeatureID = std::make_pair(File, Feature.first);
-      // auto Iter = RemovedFeatureMap.find(FeatureID);
-      // if (Iter == RemovedFeatureMap.end()) {
-      //   return;
-      // } else {
-      //   APIName = Iter->second;
-      // }
-    } else {
-      // VCR_CURRENT_IS_OLDER || VCR_VERSION_SAME || VCR_CMP_FAILED
-      return;
-    }
-  }
-
-  auto Iter = APINameCallerSrcFilesMap.find(APIName);
-  if (Iter == APINameCallerSrcFilesMap.end()) {
-    std::set<std::string> FilesSet;
-    FilesSet.insert(Feature.second.CallerSrcFiles.begin(),
-                    Feature.second.CallerSrcFiles.end());
-    APINameCallerSrcFilesMap.insert(std::make_pair(APIName, FilesSet));
-  } else {
-    Iter->second.insert(Feature.second.CallerSrcFiles.begin(),
-                        Feature.second.CallerSrcFiles.end());
-  }
-}
-
 void processFeatureMap(
     const std::map<std::string, clang::tooling::HelperFuncForYaml> &FeatureMap,
-    HelperFileEnum CurrentFileID, VersionCmpResult CompareResult,
+    HelperFileEnum CurrentFileID,
     std::map<std::string, std::set<std::string>> &APINameCallerSrcFilesMap) {
   for (const auto &FeatureFromYaml : FeatureMap) {
     HelperFeatureIDTy FeatureKey(CurrentFileID, FeatureFromYaml.first);
@@ -938,11 +757,8 @@ void processFeatureMap(
       // Process sub-features
       if (!FeatureFromYaml.second.SubFeatureMap.empty()) {
         processFeatureMap(FeatureFromYaml.second.SubFeatureMap, CurrentFileID,
-                          CompareResult, APINameCallerSrcFilesMap);
+                          APINameCallerSrcFilesMap);
       }
-    } else {
-      // Feature added/removed, need emit warning
-      collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
     }
   }
 }
@@ -951,27 +767,18 @@ void processFeatureMap(
 void updateHelperNameContentMap(
     const clang::tooling::TranslationUnitReplacements &TUR) {
   std::map<std::string, std::set<std::string>> APINameCallerSrcFilesMap;
-  VersionCmpResult CompareResult = compareToolVersion(TUR.DpctVersion);
 
   for (const auto &FileFeatureMap : TUR.FeatureMap) {
     auto Iter = HelperFileIDMap.find(FileFeatureMap.first);
     if (Iter != HelperFileIDMap.end()) {
       auto CurrentFileID = Iter->second;
-      processFeatureMap(FileFeatureMap.second, CurrentFileID, CompareResult,
+      processFeatureMap(FileFeatureMap.second, CurrentFileID,
                         APINameCallerSrcFilesMap);
     } else if (FileFeatureMap.first == (TUR.MainHelperFileName + ".hpp")) {
       processFeatureMap(FileFeatureMap.second, HelperFileEnum::Dpct,
-                        CompareResult, APINameCallerSrcFilesMap);
-    } else {
-      // New helper file added, need emit warning
-      for (auto &FeatureFromYaml : FileFeatureMap.second) {
-        // Feature added, need emit warning
-        collectInfo(FeatureFromYaml, CompareResult, APINameCallerSrcFilesMap);
-      }
+                        APINameCallerSrcFilesMap);
     }
   }
-  emitHelperFeatureChangeWarning(CompareResult, TUR.DpctVersion,
-                                 APINameCallerSrcFilesMap);
 }
 
 // Update TUR from HelperNameContentMap

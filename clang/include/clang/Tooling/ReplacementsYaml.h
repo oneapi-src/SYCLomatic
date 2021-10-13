@@ -26,7 +26,7 @@ using FeatureOfFileMapTy = std::map<std::string/*feature name*/, clang::tooling:
 LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::CompilationInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
-
+LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
 #endif
 
 namespace llvm {
@@ -116,11 +116,11 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
     Io.mapRequired("Length", Keys->Length);
     Io.mapRequired("ReplacementText", Keys->ReplacementText);
 #ifdef INTEL_CUSTOMIZATION
-    Io.mapRequired("ConstantFlag", Keys->ConstantFlag);
-    Io.mapRequired("ConstantOffset", Keys->ConstantOffset);
-    Io.mapRequired("InitStr", Keys->InitStr);
-    Io.mapRequired("NewHostVarName", Keys->NewHostVarName);
-    Io.mapRequired("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
+    Io.mapOptional("ConstantFlag", Keys->ConstantFlag);
+    Io.mapOptional("ConstantOffset", Keys->ConstantOffset);
+    Io.mapOptional("InitStr", Keys->InitStr);
+    Io.mapOptional("NewHostVarName", Keys->NewHostVarName);
+    Io.mapOptional("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
 #endif
   }
 };
@@ -148,8 +148,8 @@ template <> struct MappingTraits<std::pair<std::string, std::string>> {
     MappingNormalization<NormalizedMainSourceFilesDigest,
                          std::pair<std::string, std::string>>
         Keys(Io, R);
-    Io.mapRequired("MainSourceFile", Keys->MainSourceFile);
-    Io.mapRequired("Digest", Keys->Digest);
+    Io.mapOptional("MainSourceFile", Keys->MainSourceFile);
+    Io.mapOptional("Digest", Keys->Digest);
   }
 };
 
@@ -180,9 +180,34 @@ template <> struct MappingTraits<clang::tooling::CompilationInfo> {
   static void mapping(IO &Io, clang::tooling::CompilationInfo &CmpInfo) {
     MappingNormalization<NormalizedCompileCmds, clang::tooling::CompilationInfo>
         Keys(Io, CmpInfo);
-    Io.mapRequired("MigratedFileName", Keys->MigratedFileName);
-    Io.mapRequired("CompileOptions", Keys->CompileOptions);
-    Io.mapRequired("Compiler", Keys->Compiler);
+    Io.mapOptional("MigratedFileName", Keys->MigratedFileName);
+    Io.mapOptional("CompileOptions", Keys->CompileOptions);
+    Io.mapOptional("Compiler", Keys->Compiler);
+  }
+};
+
+template <> struct MappingTraits<clang::tooling::OptionInfo> {
+  struct NormalizedOptionInfo {
+    NormalizedOptionInfo(const IO &) : Value(""), Specified(true) {}
+    NormalizedOptionInfo(const IO &, clang::tooling::OptionInfo &OptInfo)
+        : Value(OptInfo.Value), Specified(OptInfo.Specified) {}
+
+    clang::tooling::OptionInfo denormalize(const IO &) {
+      clang::tooling::OptionInfo OptInfo;
+      OptInfo.Value = Value;
+      OptInfo.Specified = Specified;
+      return OptInfo;
+    }
+
+    std::string Value;
+    bool Specified;
+  };
+
+  static void mapping(IO &Io, clang::tooling::OptionInfo &OptInfo) {
+    MappingNormalization<NormalizedOptionInfo, clang::tooling::OptionInfo> Keys(
+        Io, OptInfo);
+    Io.mapOptional("Value", Keys->Value);
+    Io.mapOptional("Specified", Keys->Specified);
   }
 };
 
@@ -215,9 +240,9 @@ template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
     MappingNormalization<NormalizedHelperFuncForYaml,
                          clang::tooling::HelperFuncForYaml>
         Keys(Io, HFFY);
-    Io.mapRequired("IsCalled", Keys->IsCalled);
-    Io.mapRequired("CallerSrcFiles", Keys->CallerSrcFiles);
-    Io.mapRequired("FeatureName", Keys->APIName);
+    Io.mapOptional("IsCalled", Keys->IsCalled);
+    Io.mapOptional("CallerSrcFiles", Keys->CallerSrcFiles);
+    Io.mapOptional("FeatureName", Keys->APIName);
     Io.mapOptional("SubFeatureMap", Keys->SubFeatureMap);
   }
 };
@@ -232,12 +257,13 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapRequired("MainSourceFile", Doc.MainSourceFile);
     Io.mapRequired("Replacements", Doc.Replacements);
 #ifdef INTEL_CUSTOMIZATION
-    Io.mapRequired("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
-    Io.mapRequired("DpctVersion", Doc.DpctVersion);
-    Io.mapRequired("MainHelperFileName", Doc.MainHelperFileName);
-    Io.mapRequired("USMLevel", Doc.USMLevel);
-    Io.mapRequired("FeatureMap", Doc.FeatureMap);
-    Io.mapRequired("CompileTargets", Doc.CompileTargets);
+    Io.mapOptional("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
+    Io.mapOptional("DpctVersion", Doc.DpctVersion);
+    Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
+    Io.mapOptional("USMLevel", Doc.USMLevel);
+    Io.mapOptional("FeatureMap", Doc.FeatureMap);
+    Io.mapOptional("CompileTargets", Doc.CompileTargets);
+    Io.mapOptional("OptionMap", Doc.OptionMap);
 #endif
   }
 };
