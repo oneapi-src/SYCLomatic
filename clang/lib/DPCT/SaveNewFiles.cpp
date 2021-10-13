@@ -178,6 +178,43 @@ void rewriteFileName(SmallString<512> &FileName) {
   }
 }
 
+static std::vector<std::string> FilesNotInCompilationDB;
+
+void processallOptionAction(StringRef InRoot, StringRef OutRoot) {
+
+  for (const auto &File : FilesNotInCompilationDB) {
+
+    if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
+      // Skip the files parsed by dpct parser.
+      continue;
+    }
+
+    std::ifstream In(File);
+    SmallString<512> OutputFile = llvm::StringRef(File);
+    rewriteDir(OutputFile, InRoot, OutRoot);
+    auto Parent = path::parent_path(OutputFile);
+    std::error_code EC;
+    EC = fs::create_directories(Parent);
+    if ((bool)EC) {
+      std::string ErrMsg =
+          "[ERROR] Create Directory : " + std::string(Parent.str()) +
+          " fail: " + EC.message() + "\n";
+      PrintMsg(ErrMsg);
+    }
+
+    std::ofstream Out(OutputFile.c_str());
+    if (Out.fail()) {
+      std::string ErrMsg =
+          "[ERROR] Create file : " + std::string(OutputFile.c_str()) +
+          " failure!\n";
+      PrintMsg(ErrMsg);
+    }
+    Out << In.rdbuf();
+    Out.close();
+    In.close();
+  }
+}
+
 void processAllFiles(StringRef InRoot, StringRef OutRoot,
                      std::vector<std::string> &FilesNotProcessed) {
   std::error_code EC;
@@ -223,29 +260,9 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
           // Only migrates isolated CUDA source files.
           FilesNotProcessed.push_back(FilePath);
         } else {
-          // Copy the rest files to the output directory.
-          std::ifstream In(FilePath);
-
-          auto Parent = path::parent_path(OutputFile);
-          std::error_code EC;
-          EC = fs::create_directories(Parent);
-          if ((bool)EC) {
-            std::string ErrMsg =
-                "[ERROR] Create Directory : " + std::string(Parent.str()) +
-                " fail: " + EC.message() + "\n";
-            PrintMsg(ErrMsg);
-          }
-
-          std::ofstream Out(OutputFile.c_str());
-          if (Out.fail()) {
-            std::string ErrMsg =
-                "[ERROR] Create file : " + std::string(OutputFile.c_str()) +
-                " failure!\n";
-            PrintMsg(ErrMsg);
-          }
-          Out << In.rdbuf();
-          Out.close();
-          In.close();
+          // Collect the rest files which are not in the compilation database or
+          // included by main source file in the complation databcase.
+          FilesNotInCompilationDB.push_back(FilePath);
         }
       }
 
@@ -632,7 +649,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
 
       llvm::raw_os_ostream Stream(File);
-
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
               Tool.getFiles().getFile(Entry.first).get(),
@@ -654,6 +670,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     llvm::errs() << "Skipped some replacements.\n";
     status = MigrationSkipped;
   }
+
+  processallOptionAction(InRoot, OutRoot);
+
   return status;
 }
 
