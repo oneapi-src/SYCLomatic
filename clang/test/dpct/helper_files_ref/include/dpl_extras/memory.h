@@ -164,7 +164,8 @@ public:
                 .buffer.template reinterpret<ValueType, 1>(sycl::range<1>(
                     dpct::detail::mem_mgr::instance().translate_ptr(ptr).size /
                     sizeof(ValueType)))),
-        idx() {}
+        idx(ptr - (ValueType*)dpct::detail::mem_mgr::instance()
+                .translate_ptr(ptr).alloc_ptr) {}
 #endif
   device_pointer_base(const std::size_t count)
       : buffer(sycl::range<1>(count / sizeof(ValueType))), idx() {}

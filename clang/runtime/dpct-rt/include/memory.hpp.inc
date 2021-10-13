@@ -48,6 +48,7 @@
 #include <map>
 #include <utility>
 #include <thread>
+#include <type_traits>
 
 #if defined(__linux__)
 #include <sys/mman.h>
@@ -773,8 +774,12 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 ///
 /// \param ptr The pointer to be checked.
 /// \returns true if \p ptr is a device pointer.
-static inline bool is_device_ptr(const void *ptr) {
-  return detail::mem_mgr::instance().is_device_ptr(ptr);
+template<class T>
+static inline bool is_device_ptr(T ptr) {
+  if constexpr (std::is_pointer<T>::value) {
+    return detail::mem_mgr::instance().is_device_ptr(ptr);
+  }
+  return false;
 }
 #endif
 // DPCT_LABEL_END
