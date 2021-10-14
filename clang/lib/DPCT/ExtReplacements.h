@@ -18,6 +18,9 @@
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/Rewrite/Core/RewriteBuffer.h"
+
+#include <unordered_set>
+
 namespace clang {
 namespace dpct {
 class DpctFileInfo;
@@ -125,6 +128,8 @@ private:
   void removeCommentsInSrcCode(StringRef SrcCode, std::string &Result,
                                bool &BlockComment);
 
+  void getLOCStaticFromCodeRepls(std::shared_ptr<DpctFileInfo> FileInfo);
+
   std::shared_ptr<ExtReplacement>
   buildOriginCodeReplacement(const SourceLineRange &LineRange,
                              std::shared_ptr<DpctFileInfo> FileInfo);
@@ -164,6 +169,8 @@ private:
   std::map<unsigned, std::shared_ptr<PairReplsStatus>> PairReplsMap;
 
   const static StringRef NullStr;
+
+  std::unordered_set<std::string> DuplicateFilter;
 };
 } // namespace dpct
 } // namespace clang

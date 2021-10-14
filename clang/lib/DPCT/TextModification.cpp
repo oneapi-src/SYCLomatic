@@ -27,41 +27,6 @@ using namespace clang;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
-static std::unordered_set<std::string> DuplicateFilterAPI;
-static std::unordered_set<std::string> DuplicateFilterSYCL;
-
-// This function is used to collect the number of LOC (Lines Of Code) to DPC++
-// and the number of LOC migrated to Compatibility API.
-// When a Compatibility API replacement and a non-API replacement happen in
-// the same line, only the LOC of Compatibility API is accumulated.
-void recordMigrationInfo(const ASTContext &Context, const SourceLocation &SL,
-                         bool IsCompatibilityAPI = false,
-                         std::string APIName = "") {
-  const SourceManager &SM = Context.getSourceManager();
-  if (SL.isValid()) {
-    const SourceLocation FileLoc = SM.getFileLoc(SL);
-    std::string SLStr = FileLoc.printToString(SM);
-    std::size_t PosCol = SLStr.rfind(':');
-    std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
-    std::string FileName = SLStr.substr(0, PosRow);
-    std::string LineNo = SLStr.substr(PosRow + 1, PosCol - PosRow - 1);
-    std::string Key = FileName + ":" + LineNo;
-
-    if (DuplicateFilterAPI.find(Key) == end(DuplicateFilterAPI) &&
-        IsCompatibilityAPI == true) {
-      LOCStaticsMap[FileName][0]++;
-      DuplicateFilterAPI.insert(Key);
-    }
-
-    if (DuplicateFilterSYCL.find(Key) == end(DuplicateFilterSYCL) &&
-        DuplicateFilterAPI.find(Key) == end(DuplicateFilterAPI) &&
-        IsCompatibilityAPI == false) {
-      LOCStaticsMap[FileName][1]++;
-      DuplicateFilterSYCL.insert(Key);
-    }
-  }
-}
-
 std::shared_ptr<ExtReplacement>
 ReplaceStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
@@ -69,16 +34,6 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
   auto Range = getDefinitionRange(TheStmt->getBeginLoc(), TheStmt->getEndLoc());
   SourceLocation Begin(Range.getBegin()), End(Range.getEnd());
-
-  // If ReplaceStmt replaces calls to compatibility APIs, record the
-  // OrigAPIName (not macro case)
-  if (!IsProcessMacro) {
-    if (IsReplaceCompatibilityAPI) {
-      recordMigrationInfo(Context, TheStmt->getBeginLoc(), true, OrigAPIName);
-    } else {
-      recordMigrationInfo(Context, TheStmt->getBeginLoc());
-    }
-  }
 
   if (IsProcessMacro) {
     if (Begin == End) {
@@ -303,7 +258,6 @@ ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
 
-  recordMigrationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), getStmtExpansionSourceRange(C).getBegin(),
       getCalleeName(C).size(), ReplStr, this);
@@ -315,10 +269,6 @@ std::shared_ptr<ExtReplacement>
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  if (DD)
-    recordMigrationInfo(Context, DD->getBeginLoc());
-  else
-    recordMigrationInfo(Context, SL);
 
   const SourceManager &SM = Context.getSourceManager();
   SourceLocation B = TL.getBeginLoc();
@@ -385,7 +335,7 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   auto Data = DataAfter[repLength];
   while (Data != ';')
     Data = DataAfter[++repLength];
-  recordMigrationInfo(Context, SR.getBegin());
+
   // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be
   // destructed
   ReplaceMap.erase(D->getBeginLoc().getRawEncoding());
@@ -403,7 +353,6 @@ ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   SourceRange SR = FD->getReturnTypeSourceRange();
-  recordMigrationInfo(Context, FD->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
                                           CharSourceRange(SR, true), T, this);
 }
@@ -412,7 +361,6 @@ std::shared_ptr<ExtReplacement>
 ReplaceToken::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  recordMigrationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
@@ -425,7 +373,6 @@ std::shared_ptr<ExtReplacement>
 InsertText::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  recordMigrationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
@@ -444,7 +391,6 @@ ReplaceCCast::getReplacement(const ASTContext &Context) const {
     return nullptr;
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();
-  recordMigrationInfo(Context, Cast->getBeginLoc());
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, End), true), TypeName, this);
@@ -462,7 +408,6 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
     Begin = ME->getBeginLoc();
     Begin = Begin.getLocWithOffset(PositionOfDot);
   }
-  recordMigrationInfo(Context, ME->getBeginLoc());
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), CharSourceRange(SourceRange(Begin, SL), true),
       T, this);
@@ -491,7 +436,6 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
       Loc = TokenBegin.getLocWithOffset(Len);
     }
   }
-  recordMigrationInfo(Context, Loc);
   auto R = std::make_shared<ExtReplacement>(SM, Loc, 0, T, this);
   R->setPairID(PairID);
   return R;
@@ -510,7 +454,6 @@ InsertAfterDecl::getReplacement(const ASTContext &Context) const {
   while (EndData && *EndData++ != ';')
     ++Len;
   Loc = Loc.getLocWithOffset(Len);
-  recordMigrationInfo(Context, Loc);
   auto R = std::make_shared<ExtReplacement>(SM, Loc, 0, T, this);
   return R;
 }
@@ -546,7 +489,6 @@ std::shared_ptr<ExtReplacement>
 ReplaceInclude::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  recordMigrationInfo(Context, Range.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
   if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
@@ -677,7 +619,6 @@ std::shared_ptr<ExtReplacement>
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  recordMigrationInfo(Context, CSR.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
   if (CSR.getBegin().isMacroID() || CSR.getEnd().isMacroID()) {
@@ -749,7 +690,6 @@ std::shared_ptr<ExtReplacement>
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  recordMigrationInfo(Context, CDecl->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
                                           getInsertLoc(), 0, T, this);
 }
@@ -761,7 +701,6 @@ InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
 
   SourceLocation Begin = getStmtExpansionSourceRange(S).getBegin();
 
-  recordMigrationInfo(Context, Begin);
   auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
@@ -783,7 +722,6 @@ RemoveArg::getReplacement(const ASTContext &Context) const {
   } else {
     End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(0);
   }
-  recordMigrationInfo(Context, CE->getBeginLoc());
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, End), false), "", this);
@@ -805,7 +743,6 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   Data = DataBegin[--i];
   while ((Data == ' ') || (Data == '\t') || (Data == '\n') || (Data == '\r'))
     Data = DataBegin[--i];
-  recordMigrationInfo(Context, CD->getBeginLoc());
   auto Repl = std::make_shared<ExtReplacement>(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);
@@ -818,11 +755,6 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   auto &SM = Context.getSourceManager();
-  if (IsReplaceCompatibilityAPI) {
-    recordMigrationInfo(Context, BeginLoc, true, OrigAPIName);
-  } else {
-    recordMigrationInfo(Context, BeginLoc);
-  }
   auto Repl = std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
   if (getNotFormatFlag())
     Repl->setNotFormatFlag();

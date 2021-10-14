@@ -1351,6 +1351,21 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
+      ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
+    // When option "--report-type=stats" or option " --report-type=all" is
+    // specified to get the migration status report, dpct namespace should be
+    // enabled temporarily to get LOC migrated to helper functions in function
+    // getLOCStaticFromCodeRepls() if it is not enabled.
+    auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
+    if (!NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
+      std::vector<ExplicitNamespace> ENVec;
+      ENVec.push_back(ExplicitNamespace::EN_DPCT);
+      DpctGlobalInfo::setExplicitNamespace(ENVec);
+      DpctGlobalInfo::setDPCTNamespaceTempEnabled();
+    }
+  }
+
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
 

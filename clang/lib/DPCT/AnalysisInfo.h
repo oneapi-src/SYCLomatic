@@ -1210,6 +1210,13 @@ public:
     EnableComments = Enable;
   }
 
+  inline static bool isDPCTNamespaceTempEnabled() {
+    return TempEnableDPCTNamespace;
+  }
+  inline static void setDPCTNamespaceTempEnabled() {
+    TempEnableDPCTNamespace = true;
+  }
+
   inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
     return PrecAndDomPairSet;
   }
@@ -2298,6 +2305,11 @@ private:
   static bool EnableComments;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
+
+  // This variable is only set true when option "--report-type=stats" or option
+  // " --report-type=all" is specified to get the migration status report, while
+  // dpct namespace is not enabled.
+  static bool TempEnableDPCTNamespace;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -4543,7 +4555,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     }
     concatHeader(RSO, std::forward<T>(Args)...);
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT)) {
+            ExplicitNamespace::EN_DPCT) ||
+        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
       RSO << "using namespace dpct;" << getNL();
     }
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(

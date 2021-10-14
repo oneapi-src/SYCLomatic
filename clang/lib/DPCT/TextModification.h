@@ -260,9 +260,6 @@ public:
 /// Replace a statement (w/o semicolon) with a specified string.
 class ReplaceStmt : public TextModification {
   const Stmt *TheStmt;
-  // If ReplaceStmt replaces calls to compatibility APIs
-  bool IsReplaceCompatibilityAPI;
-  std::string OrigAPIName;
   // If the callexpr need to migrate is a macro, IsProcessMacro should
   // be true and the migration will be done correctly.
   bool IsProcessMacro;
@@ -282,38 +279,25 @@ class ReplaceStmt : public TextModification {
 
 public:
   template <class... Args>
-  ReplaceStmt(const Stmt *E, Args &&...S)
-      : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(false), IsProcessMacro(false),
+  ReplaceStmt(const Stmt *E, Args &&... S)
+      : TextModification(TMID::ReplaceStmt), TheStmt(E), IsProcessMacro(false),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
-  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
-              std::string OrigAPIName, Args &&...S)
+  ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName), IsProcessMacro(false),
+        IsProcessMacro(IsNeedProcessMacro),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
-  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
-              std::string OrigAPIName, bool IsNeedProcessMacro, Args &&...S)
+  ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, bool IsNeedCleanup,
+              Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
-        ReplacementString(std::forward<Args>(S)...) {}
-
-  template <class... Args>
-  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
-              std::string OrigAPIName, bool IsNeedProcessMacro,
-              bool IsNeedCleanup, Args &&...S)
-      : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
+        IsProcessMacro(IsNeedProcessMacro),
         ReplacementString(std::forward<Args>(S)...), IsCleanup(IsNeedCleanup) {}
 
   template <class... Args>
-  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&...S)
+  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
     IsCleanup = false;
@@ -335,7 +319,7 @@ class ReplaceDecl : public TextModification {
 
 public:
   template <class... Args>
-  ReplaceDecl(const Decl *E, Args &&...S)
+  ReplaceDecl(const Decl *E, Args &&... S)
       : TextModification(TMID::ReplaceDecl), TheDecl(E),
         ReplacementString(std::forward<Args>(S)...) {}
 
@@ -349,13 +333,10 @@ public:
 class ReplaceCalleeName : public TextModification {
   const CallExpr *C;
   std::string ReplStr;
-  std::string OrigAPIName;
 
 public:
-  ReplaceCalleeName(const CallExpr *C, std::string &&S,
-                    const std::string &OrigAPIName)
-      : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S),
-        OrigAPIName(OrigAPIName) {}
+  ReplaceCalleeName(const CallExpr *C, std::string &&S)
+      : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
@@ -641,28 +622,18 @@ class ReplaceText : public TextModification {
   SourceLocation BeginLoc;
   unsigned Len;
   std::string T;
-  // If ReplaceText replaces calls to compatibility APIs
-  bool IsReplaceCompatibilityAPI;
-  std::string OrigAPIName;
 
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {
+        T(std::move(S)) {
     this->NotFormatFlag = false;
   }
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool NotFormatFlag)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {
+        T(std::move(S)) {
     this->NotFormatFlag = NotFormatFlag;
-  }
-  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
-              bool IsReplaceCompatibilityAPI, std::string OrigAPIName)
-      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName) {
-    this->NotFormatFlag = false;
   }
 
   std::shared_ptr<ExtReplacement>

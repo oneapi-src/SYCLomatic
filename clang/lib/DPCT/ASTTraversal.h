@@ -491,9 +491,8 @@ protected:
                   Strings.IndentStr + std::string("}()"),
               true);
         }
-        emplaceTransformation(
-            new ReplaceText(Locations.PrefixInsertLoc, Locations.Len,
-                            std::move(Strings.Repl), false, FuncName));
+        emplaceTransformation(new ReplaceText(
+            Locations.PrefixInsertLoc, Locations.Len, std::move(Strings.Repl)));
       }
     } else {
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
@@ -520,8 +519,7 @@ protected:
                true);
       }
 
-      emplaceTransformation(
-          new ReplaceStmt(CE, false, FuncName, true, Strings.Repl));
+      emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
     }
   }
 
@@ -1220,8 +1218,7 @@ public:
                      SourceLocation SuffixInsertLoc,
                      SourceLocation FuncNameBegin, SourceLocation FuncCallEnd,
                      unsigned int FuncCallLength, std::string IndentStr,
-                     std::string PrefixInsertStr, std::string SuffixInsertStr,
-                     bool IsHelperFunction = false, std::string FuncName = "") {
+                     std::string PrefixInsertStr, std::string SuffixInsertStr) {
     if (NeedUseLambda) {
       if (CanAvoidUsingLambda && !IsMacroArg) {
         std::string InsertStr;
@@ -1239,12 +1236,8 @@ public:
         report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
                OriginStmtType == "if" ? "an " + OriginStmtType
                                       : "a " + OriginStmtType);
-        if (IsHelperFunction)
-          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                                "0", true, FuncName));
-        else
-          emplaceTransformation(
-              new ReplaceText(FuncNameBegin, FuncCallLength, "0"));
+        emplaceTransformation(
+            new ReplaceText(FuncNameBegin, FuncCallLength, "0"));
       } else {
         if (IsAssigned) {
           report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA, false);
@@ -1262,13 +1255,9 @@ public:
                                 IndentStr + std::string("}()"),
                             true);
         }
-        if (IsHelperFunction)
-          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                                std::move(CallExprReplStr),
-                                                true, FuncName));
-        else
-          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                                std::move(CallExprReplStr)));
+
+        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                              std::move(CallExprReplStr)));
       }
     } else {
       if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
@@ -1283,13 +1272,9 @@ public:
                             std::move(PrefixInsertStr),
                             std::move(SuffixInsertStr), true);
       }
-      if (IsHelperFunction)
-        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                              std::move(CallExprReplStr), true,
-                                              FuncName));
-      else
-        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                              std::move(CallExprReplStr)));
+
+      emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                            std::move(CallExprReplStr)));
       if (IsAssigned) {
         insertAroundRange(FuncNameBegin, FuncCallEnd, "(", ", 0)");
         report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);

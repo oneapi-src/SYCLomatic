@@ -226,8 +226,7 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
-    return hasReplacement() ? new ReplaceStmt(E, false, std::string(), true,
-                                              getReplacedString())
+    return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
                             : nullptr;
   }
 

@@ -48,6 +48,7 @@ std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
+bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
@@ -1737,7 +1738,8 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   auto CtorDecl = Ctor->getConstructor();
   Name = getName(CtorDecl);
   setFuncInfo(DeviceFunctionDecl::LinkRedecls(CtorDecl));
-  IsAllTemplateArgsSpecified = deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
+  IsAllTemplateArgsSpecified =
+      deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
