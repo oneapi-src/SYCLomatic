@@ -612,6 +612,29 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                            false, RefString);
         } else {
           FCIMMR[LocStr] = ResultStr;
+
+          // When migrating thrust API with usmnone and raw-ptr,
+          // the CallExpr will be rewriten into an if-else stmt,
+          // DPCT needs to remove the following semicolon.
+          std::string EndBracket =
+              "}" + std::string(
+                        getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
+          if (ResultStr.length() > EndBracket.length() &&
+              ResultStr.substr(ResultStr.length() - EndBracket.length(),
+                               EndBracket.length()) == EndBracket) {
+            auto EndLoc = Lexer::getLocForEndOfToken(
+                getStmtExpansionSourceRange(CE).getEnd(), 0, SM,
+                DpctGlobalInfo::getContext().getLangOpts());
+            Token Tok;
+            Lexer::getRawToken(EndLoc, Tok, SM,
+                               DpctGlobalInfo::getContext().getLangOpts(),
+                               true);
+            if (Tok.getKind() == tok::semi) {
+              DpctGlobalInfo::getInstance().addReplacement(
+                  std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
+            }
+          }
+
           addReplacement(CE, ResultStr);
           Rewriter->Analyzer.applyAllSubExprRepl();
           return;

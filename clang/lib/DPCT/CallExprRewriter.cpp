@@ -1678,6 +1678,23 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatMemberExprRewriterFactory(
       std::forward<std::function<MemberT(const CallExpr *)>>(MemberCreator));
 }
 
+
+std::shared_ptr<CallExprRewriterFactoryBase> creatIfElseRewriterFactory(
+    const std::string &SourceName,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        PredCreator,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        IfCreator,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        ElseCreator,
+    int i) {
+  return std::make_shared<CallExprRewriterFactory<
+      IfElseRewriter, std::shared_ptr<CallExprRewriterFactoryBase>,
+      std::shared_ptr<CallExprRewriterFactoryBase>,
+      std::shared_ptr<CallExprRewriterFactoryBase>>>(
+      SourceName, PredCreator.second, IfCreator.second, ElseCreator.second);
+}
+
 /// Create CallExprRewriterFactory with given argumens.
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
@@ -2075,6 +2092,59 @@ public:
   }
 };
 
+class CheckIsPtr {
+  unsigned Idx;
+
+public:
+  CheckIsPtr(unsigned I) : Idx(I) {}
+  // Normally, we will deref the ptr after we know it's a ptr,
+  // so this check should return false in cases like template.
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx) {
+      if (!C->getDirectCallee())
+        return false;
+      if (!C->getDirectCallee()->getParamDecl(Idx))
+        return false;
+      return C->getDirectCallee()
+        ->getParamDecl(Idx)
+        ->getType()->isPointerType();
+    }
+    return false;
+  }
+};
+
+template<class F, class S>
+class CheckAnd {
+  F Fir;
+  S Sec;
+public:
+  CheckAnd(F Fir, S Sec): Fir(Fir), Sec(Sec){}
+  bool operator()(const CallExpr *C) {
+    return Fir(C) && Sec(C);
+  }
+};
+
+template<class F, class S>
+CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
+  return CheckAnd<F, S>(Fir, Sec);
+}
+
+template<class T>
+class CheckNot {
+  T Expr;
+
+public:
+  CheckNot(T Expr) : Expr(Expr) {}
+  bool operator()(const CallExpr *C) {
+    return !Expr(C);
+  }
+};
+
+template<class T>
+CheckNot<T> makeCheckNot(T Expr) {
+  return CheckNot<T>(Expr);
+}
+
 class CompareArgType {
   unsigned Idx1, Idx2;
 
@@ -2130,6 +2200,8 @@ public:
   makeTemplatedCalleeWithArgsCreator(FuncName, __VA_ARGS__)
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
+#define IFELSE_FACTORY_ENTRY(FuncName, Pred, IfBlock, ElseBlock)               \
+  {FuncName, creatIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \

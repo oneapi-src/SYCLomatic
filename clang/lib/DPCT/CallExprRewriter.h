@@ -230,6 +230,37 @@ public:
   }
 };
 
+class IfElseRewriter : public CallExprRewriter {
+  std::shared_ptr<CallExprRewriter> Pred;
+  std::shared_ptr<CallExprRewriter> IfBlock;
+  std::shared_ptr<CallExprRewriter> ElseBlock;
+  StringRef NL;
+  StringRef Indent;
+
+public:
+  IfElseRewriter(const CallExpr *C, StringRef SourceName,
+                 std::shared_ptr<CallExprRewriterFactoryBase> PredCreator,
+                 std::shared_ptr<CallExprRewriterFactoryBase> IfBlockCreator,
+                 std::shared_ptr<CallExprRewriterFactoryBase> ElseBlockCreator)
+      : CallExprRewriter(C, ""), Pred(PredCreator->create(C)),
+        IfBlock(IfBlockCreator->create(C)),
+        ElseBlock(ElseBlockCreator->create(C)) {
+    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+    NL = getNL(getStmtExpansionSourceRange(C).getBegin(), SM);
+    Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
+  }
+
+  Optional<std::string> rewrite() override {
+    Optional<std::string> &&PredStr = Pred->rewrite();
+    Optional<std::string> &&IfBlockStr = IfBlock->rewrite();
+    Optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
+    return "if(" + PredStr.getValue() + "){" + NL.str() + Indent.str() +
+      Indent.str() + IfBlockStr.getValue() + ";" + NL.str() +
+      Indent.str() + "} else {" + NL.str() + Indent.str() + Indent.str() +
+      ElseBlockStr.getValue() + ";" + NL.str() + Indent.str() + "}";
+  }
+};
+
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
 
