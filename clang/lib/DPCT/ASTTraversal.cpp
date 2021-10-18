@@ -11448,8 +11448,8 @@ void MemoryMigrationRule::mallocMigration(
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
       auto Info = std::make_shared<PriorityReplInfo>();
-      Info->Repls.push_back(
-          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));
+      if (auto TM = EA.getReplacement())
+        Info->Repls.push_back(TM->getReplacement(DpctGlobalInfo::getContext()));
       Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
@@ -11478,16 +11478,15 @@ void MemoryMigrationRule::mallocMigration(
       auto &Context = DpctGlobalInfo::getContext();
       Info->RelatedAction.emplace_back(Action);
       Info->Repls.emplace_back(
-          (new InsertBeforeStmt(C, OS.str()))->getReplacement(Context));
+          InsertBeforeStmt(C, OS.str()).getReplacement(Context));
       Info->Repls.emplace_back(
-          (new ReplaceCalleeName(C,
-                                 MapNames::getDpctNamespace() + "dpct_malloc"))
-              ->getReplacement(Context));
-      Info->Repls.emplace_back(
-          removeArg(C, 0, *Result.SourceManager)->getReplacement(Context));
+          ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_malloc")
+              .getReplacement(Context));
+      if (auto TM = removeArg(C, 0, *Result.SourceManager))
+        Info->Repls.push_back(TM->getReplacement(Context));
       if (IsAssigned) {
         Info->Repls.emplace_back(
-            (new InsertAfterStmt(C, ", 0)"))->getReplacement(Context));
+            InsertAfterStmt(C, ", 0)").getReplacement(Context));
       }
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first + std::to_string(LocInfo.second), Info);
@@ -16678,10 +16677,11 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getParamDecl(0)
                 ->getType()
                 ->isLValueReferenceType()) {
-          if (BlockMC->getMethodDecl()
-                  ->getPrimaryTemplate()
-                  ->getTemplateParameters()
-                  ->size() == 2) {
+          if (BlockMC->getMethodDecl()->getPrimaryTemplate() &&
+              BlockMC->getMethodDecl()
+                      ->getPrimaryTemplate()
+                      ->getTemplateParameters()
+                      ->size() == 2) {
             ExprAnalysis InitEA(FuncArgs[2]);
             InitRepl = InitEA.getReplacedString();
             GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
