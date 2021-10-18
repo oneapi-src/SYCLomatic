@@ -107,6 +107,7 @@ std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
 unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
 std::set<std::string> DpctGlobalInfo::ModuleFiles;
+bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
@@ -798,7 +799,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
 
-      if (getFuncInfo() &&
+      if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
           !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
         // Typecast can be removed only when it is a template function and
         // all template arguments are specified explicitly.

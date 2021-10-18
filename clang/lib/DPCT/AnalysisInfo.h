@@ -2184,6 +2184,12 @@ public:
       PriorityReplInfoMap[Key] = Info;
     }
   }
+
+  static void setOptimizeMigrationFlag(bool Flag) {
+    OptimizeMigrationFlag = Flag;
+  }
+  static bool isOptimizeMigration() { return OptimizeMigrationFlag; }
+
   static inline std::map<std::string, clang::tooling::OptionInfo> &
   getCurrentOptMap() {
     return CurrentOptMap;
@@ -2387,6 +2393,7 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
+  static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;

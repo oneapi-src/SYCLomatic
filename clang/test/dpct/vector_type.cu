@@ -11,8 +11,6 @@ void func_char1(char1 a) {
 }
 // CHECK: void kernel_char1(char *a, char *b) {
 __global__ void kernel_char1(char1 *a, char1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_char1() {
@@ -85,8 +83,6 @@ void func_char2(char2 a) {
 }
 // CHECK: void kernel_char2(sycl::char2 *a, sycl::char2 *b) {
 __global__ void kernel_char2(char2 *a, char2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_char2() {
@@ -159,8 +155,6 @@ void func_char3(char3 a) {
 }
 // CHECK: void kernel_char3(sycl::char3 *a, sycl::char3 *b) {
 __global__ void kernel_char3(char3 *a, char3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_char3() {
@@ -233,8 +227,6 @@ void func_char4(char4 a) {
 }
 // CHECK: void kernel_char4(sycl::char4 *a, sycl::char4 *b) {
 __global__ void kernel_char4(char4 *a, char4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_char4() {
@@ -307,8 +299,6 @@ void func_double1(double1 a) {
 }
 // CHECK: void kernel_double1(double *a, double *b) {
 __global__ void kernel_double1(double1 *a, double1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_double1() {
@@ -381,8 +371,6 @@ void func_double2(double2 a) {
 }
 // CHECK: void kernel_double2(sycl::double2 *a, sycl::double2 *b) {
 __global__ void kernel_double2(double2 *a, double2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_double2() {
@@ -455,8 +443,6 @@ void func_double3(double3 a) {
 }
 // CHECK: void kernel_double3(sycl::double3 *a, sycl::double3 *b) {
 __global__ void kernel_double3(double3 *a, double3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_double3() {
@@ -529,8 +515,6 @@ void func_double4(double4 a) {
 }
 // CHECK: void kernel_double4(sycl::double4 *a, sycl::double4 *b) {
 __global__ void kernel_double4(double4 *a, double4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_double4() {
@@ -603,8 +587,6 @@ void func_float1(float1 a) {
 }
 // CHECK: void kernel_float1(float *a, float *b) {
 __global__ void kernel_float1(float1 *a, float1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_float1() {
@@ -677,8 +659,6 @@ void func_float2(float2 a) {
 }
 // CHECK: void kernel_float2(sycl::float2 *a, sycl::float2 *b) {
 __global__ void kernel_float2(float2 *a, float2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_float2() {
@@ -751,8 +731,6 @@ void func_float3(float3 a) {
 }
 // CHECK: void kernel_float3(sycl::float3 *a, sycl::float3 *b) {
 __global__ void kernel_float3(float3 *a, float3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_float3() {
@@ -825,8 +803,6 @@ void func_float4(float4 a) {
 }
 // CHECK: void kernel_float4(sycl::float4 *a, sycl::float4 *b) {
 __global__ void kernel_float4(float4 *a, float4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_float4() {
@@ -899,8 +875,6 @@ void func_int1(int1 a) {
 }
 // CHECK: void kernel_int1(int *a, int *b) {
 __global__ void kernel_int1(int1 *a, int1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_int1() {
@@ -973,8 +947,6 @@ void func_int2(int2 a) {
 }
 // CHECK: void kernel_int2(sycl::int2 *a, sycl::int2 *b) {
 __global__ void kernel_int2(int2 *a, int2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_int2() {
@@ -1047,8 +1019,6 @@ void func_int3(int3 a) {
 }
 // CHECK: void kernel_int3(sycl::int3 *a, sycl::int3 *b) {
 __global__ void kernel_int3(int3 *a, int3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_int3() {
@@ -1121,8 +1091,6 @@ void func_int4(int4 a) {
 }
 // CHECK: void kernel_int4(sycl::int4 *a, sycl::int4 *b) {
 __global__ void kernel_int4(int4 *a, int4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_int4() {
@@ -1195,8 +1163,6 @@ void func_long1(long1 a) {
 }
 // CHECK: void kernel_long1(long *a, long *b) {
 __global__ void kernel_long1(long1 *a, long1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_long1() {
@@ -1269,8 +1235,6 @@ void func_long2(long2 a) {
 }
 // CHECK: void kernel_long2(sycl::long2 *a, sycl::long2 *b) {
 __global__ void kernel_long2(long2 *a, long2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_long2() {
@@ -1343,8 +1307,6 @@ void func_long3(long3 a) {
 }
 // CHECK: void kernel_long3(sycl::long3 *a, sycl::long3 *b) {
 __global__ void kernel_long3(long3 *a, long3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_long3() {
@@ -1417,8 +1379,6 @@ void func_long4(long4 a) {
 }
 // CHECK: void kernel_long4(sycl::long4 *a, sycl::long4 *b) {
 __global__ void kernel_long4(long4 *a, long4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_long4() {
@@ -1491,8 +1451,6 @@ void func_longlong1(longlong1 a) {
 }
 // CHECK: void kernel_longlong1(long long *a, long long *b) {
 __global__ void kernel_longlong1(longlong1 *a, longlong1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_longlong1() {
@@ -1565,8 +1523,6 @@ void func_longlong2(longlong2 a) {
 }
 // CHECK: void kernel_longlong2(sycl::longlong2 *a, sycl::longlong2 *b) {
 __global__ void kernel_longlong2(longlong2 *a, longlong2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_longlong2() {
@@ -1639,8 +1595,6 @@ void func_longlong3(longlong3 a) {
 }
 // CHECK: void kernel_longlong3(sycl::longlong3 *a, sycl::longlong3 *b) {
 __global__ void kernel_longlong3(longlong3 *a, longlong3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_longlong3() {
@@ -1713,8 +1667,6 @@ void func_longlong4(longlong4 a) {
 }
 // CHECK: void kernel_longlong4(sycl::longlong4 *a, sycl::longlong4 *b) {
 __global__ void kernel_longlong4(longlong4 *a, longlong4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_longlong4() {
@@ -1787,8 +1739,6 @@ void func_short1(short1 a) {
 }
 // CHECK: void kernel_short1(short *a, short *b) {
 __global__ void kernel_short1(short1 *a, short1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_short1() {
@@ -1861,8 +1811,6 @@ void func_short2(short2 a) {
 }
 // CHECK: void kernel_short2(sycl::short2 *a, sycl::short2 *b) {
 __global__ void kernel_short2(short2 *a, short2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_short2() {
@@ -1935,8 +1883,6 @@ void func_short3(short3 a) {
 }
 // CHECK: void kernel_short3(sycl::short3 *a, sycl::short3 *b) {
 __global__ void kernel_short3(short3 *a, short3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_short3() {
@@ -2009,8 +1955,6 @@ void func_short4(short4 a) {
 }
 // CHECK: void kernel_short4(sycl::short4 *a, sycl::short4 *b) {
 __global__ void kernel_short4(short4 *a, short4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_short4() {
@@ -2083,8 +2027,6 @@ void func_uchar1(uchar1 a) {
 }
 // CHECK: void kernel_uchar1(unsigned char *a, unsigned char *b) {
 __global__ void kernel_uchar1(uchar1 *a, uchar1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uchar1() {
@@ -2157,8 +2099,6 @@ void func_uchar2(uchar2 a) {
 }
 // CHECK: void kernel_uchar2(sycl::uchar2 *a, sycl::uchar2 *b) {
 __global__ void kernel_uchar2(uchar2 *a, uchar2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uchar2() {
@@ -2231,8 +2171,6 @@ void func_uchar3(uchar3 a) {
 }
 // CHECK: void kernel_uchar3(sycl::uchar3 *a, sycl::uchar3 *b) {
 __global__ void kernel_uchar3(uchar3 *a, uchar3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uchar3() {
@@ -2305,8 +2243,6 @@ void func_uchar4(uchar4 a) {
 }
 // CHECK: void kernel_uchar4(sycl::uchar4 *a, sycl::uchar4 *b) {
 __global__ void kernel_uchar4(uchar4 *a, uchar4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uchar4() {
@@ -2379,8 +2315,6 @@ void func_uint1(uint1 a) {
 }
 // CHECK: void kernel_uint1(unsigned int *a, unsigned int *b) {
 __global__ void kernel_uint1(uint1 *a, uint1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uint1() {
@@ -2453,8 +2387,6 @@ void func_uint2(uint2 a) {
 }
 // CHECK: void kernel_uint2(sycl::uint2 *a, sycl::uint2 *b) {
 __global__ void kernel_uint2(uint2 *a, uint2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uint2() {
@@ -2527,8 +2459,6 @@ void func_uint3(uint3 a) {
 }
 // CHECK: void kernel_uint3(sycl::uint3 *a, sycl::uint3 *b) {
 __global__ void kernel_uint3(uint3 *a, uint3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uint3() {
@@ -2601,8 +2531,6 @@ void func_uint4(uint4 a) {
 }
 // CHECK: void kernel_uint4(sycl::uint4 *a, sycl::uint4 *b) {
 __global__ void kernel_uint4(uint4 *a, uint4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_uint4() {
@@ -2675,8 +2603,6 @@ void func_ulong1(ulong1 a) {
 }
 // CHECK: void kernel_ulong1(unsigned long *a, unsigned long *b) {
 __global__ void kernel_ulong1(ulong1 *a, ulong1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulong1() {
@@ -2749,8 +2675,6 @@ void func_ulong2(ulong2 a) {
 }
 // CHECK: void kernel_ulong2(sycl::ulong2 *a, sycl::ulong2 *b) {
 __global__ void kernel_ulong2(ulong2 *a, ulong2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulong2() {
@@ -2823,8 +2747,6 @@ void func_ulong3(ulong3 a) {
 }
 // CHECK: void kernel_ulong3(sycl::ulong3 *a, sycl::ulong3 *b) {
 __global__ void kernel_ulong3(ulong3 *a, ulong3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulong3() {
@@ -2897,8 +2819,6 @@ void func_ulong4(ulong4 a) {
 }
 // CHECK: void kernel_ulong4(sycl::ulong4 *a, sycl::ulong4 *b) {
 __global__ void kernel_ulong4(ulong4 *a, ulong4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulong4() {
@@ -2971,8 +2891,6 @@ void func_ulonglong1(ulonglong1 a) {
 }
 // CHECK: void kernel_ulonglong1(unsigned long long *a, unsigned long long *b) {
 __global__ void kernel_ulonglong1(ulonglong1 *a, ulonglong1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulonglong1() {
@@ -3045,8 +2963,6 @@ void func_ulonglong2(ulonglong2 a) {
 }
 // CHECK: void kernel_ulonglong2(sycl::ulonglong2 *a, sycl::ulonglong2 *b) {
 __global__ void kernel_ulonglong2(ulonglong2 *a, ulonglong2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulonglong2() {
@@ -3119,8 +3035,6 @@ void func_ulonglong3(ulonglong3 a) {
 }
 // CHECK: void kernel_ulonglong3(sycl::ulonglong3 *a, sycl::ulonglong3 *b) {
 __global__ void kernel_ulonglong3(ulonglong3 *a, ulonglong3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulonglong3() {
@@ -3193,8 +3107,6 @@ void func_ulonglong4(ulonglong4 a) {
 }
 // CHECK: void kernel_ulonglong4(sycl::ulonglong4 *a, sycl::ulonglong4 *b) {
 __global__ void kernel_ulonglong4(ulonglong4 *a, ulonglong4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ulonglong4() {
@@ -3267,8 +3179,6 @@ void func_ushort1(ushort1 a) {
 }
 // CHECK: void kernel_ushort1(unsigned short *a, unsigned short *b) {
 __global__ void kernel_ushort1(ushort1 *a, ushort1 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ushort1() {
@@ -3341,8 +3251,6 @@ void func_ushort2(ushort2 a) {
 }
 // CHECK: void kernel_ushort2(sycl::ushort2 *a, sycl::ushort2 *b) {
 __global__ void kernel_ushort2(ushort2 *a, ushort2 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ushort2() {
@@ -3415,8 +3323,6 @@ void func_ushort3(ushort3 a) {
 }
 // CHECK: void kernel_ushort3(sycl::ushort3 *a, sycl::ushort3 *b) {
 __global__ void kernel_ushort3(ushort3 *a, ushort3 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ushort3() {
@@ -3489,8 +3395,6 @@ void func_ushort4(ushort4 a) {
 }
 // CHECK: void kernel_ushort4(sycl::ushort4 *a, sycl::ushort4 *b) {
 __global__ void kernel_ushort4(ushort4 *a, ushort4 *b) {
-  a[0];
-  b[0];
 }
 
 int main_ushort4() {

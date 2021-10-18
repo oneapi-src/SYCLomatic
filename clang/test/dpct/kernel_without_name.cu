@@ -4,8 +4,6 @@
 __global__ void testKernel(int L, int M, int N);
 
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  L[0];
-  M[0];
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
@@ -148,7 +146,6 @@ private:
 int *g_a;
 
 __global__ void foo_kernel3(int *d) {
-  d[0];
 }
 //CHECK:dpct::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {

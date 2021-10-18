@@ -11,7 +11,6 @@ void fun(int2 a) {}
 
 // CHECK: void kernel(sycl::int2* data) {
 __global__ void kernel(int2* data) {
-  data[0];
 }
 
 int main() {

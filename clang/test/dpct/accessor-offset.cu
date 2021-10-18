@@ -2,10 +2,8 @@
 // RUN: FileCheck --input-file %T/accessor-offset/accessor-offset.dp.cpp --match-full-lines %s
 
 __global__ void hello(int *d) {
-  d[0];
 }
 __global__ void hello(int *d, int i) {
-  d[0];
 }
 
 void mod(int **p) {
@@ -519,9 +517,6 @@ void foo() {
 
 __global__ void
 vectorAdd(const float *A, const float *B, float *C, int numElements) {
-  A[0];
-  B[0];
-  C[0];
 }
 
 int testVectorAdd(void)

@@ -272,6 +272,10 @@ bool printOptions(
                Value)
         Opts.emplace_back("--usm-level=none");
     }
+    if (Key == clang::dpct::OPTION_OptimizeMigration) {
+      if ("true" == Value)
+        Opts.emplace_back("--optimize-migration");
+    }
   }
 
   Msg = "";

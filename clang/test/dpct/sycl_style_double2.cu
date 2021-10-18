@@ -9,7 +9,6 @@ void fun(double2 a) {}
 
 // CHECK: void kernel(sycl::double2* data) {
 __global__ void kernel(double2* data) {
-  data[0];
 }
 
 // CHECK: // Removed.

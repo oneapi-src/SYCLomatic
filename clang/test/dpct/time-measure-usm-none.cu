@@ -170,9 +170,6 @@ void foo_test_2() {
 #define BDIM 128
 
 __global__ void sumArrays(float *A, float *B, float *C, const int NN) {
-  A[0];
-  B[0];
-  C[0];
 }
 
 void foo_test_3() {
@@ -267,13 +264,10 @@ void foo_usm() {
 }
 
 __global__ void readTexels(int n, float *d_out, int width){
-  d_out[0];
 }
 __global__ void readTexelsFoo1(int n, float *d_out){
-  d_out[0];
 }
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){
-  d_out[0];
 }
 texture<float4, 2, cudaReadModeElementType> texA;
 
@@ -527,8 +521,6 @@ template <class T, int blockSize>
 __global__ void
 reduce(const T* __restrict__ g_idata, T* __restrict__ g_odata,
        int n) {
-  g_idata[0];
-  g_odata[0];
 }
 
 template <class T, class vecT>
@@ -597,18 +589,13 @@ int foo_test_5() {
 __global__ void foo_kernel_1(unsigned short* blk_sad, unsigned short* frame,
                             int mb_width, int mb_height,
                             unsigned short* img_ref) {
-  blk_sad[0];
-  frame[0];
-  img_ref[0];
 }
 __global__ void foo_kernel_2(unsigned short* blk_sad, int mb_width,
                                   int mb_height) {
-  blk_sad[0];
 }
 
 __global__ void foo_kernel_3(unsigned short* blk_sad, int mb_width,
                                    int mb_height) {
-  blk_sad[0];
 }
 
 void ctst_1999(void* ref_image, void* cur_image,

@@ -38,6 +38,7 @@ const std::string OPTION_SyclNamedLambda = "SyclNamedLambda";
 const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
+const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 
 bool isOnlyContainDigit(const std::string &Str);
 bool convertToIntVersion(std::string VersionStr, unsigned int &Result);

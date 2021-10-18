@@ -90,8 +90,6 @@ template<class T> void runTest();
 template <class TName, unsigned N, class TData>
 // CHECK: void testKernelPtr(const TData *L, const TData *M, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
-  L[0];
-  M[0];
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
@@ -314,7 +312,6 @@ void convert(){
 // CHECK-NEXT:};
 // CHECK-NEXT:template <typename T>
 // CHECK-NEXT:void my_kernel(T *A) {
-// CHECK-NEXT:  A[0];
 // CHECK-NEXT:}
 template <typename T>
 class Image {
@@ -324,7 +321,6 @@ public:
 };
 template <typename T>
 __global__ void my_kernel(T *A) {
-  A[0];
 }
 
 // CHECK:template <typename T>

@@ -68,6 +68,9 @@ OptionMap:
   NoDRYPattern:
     Value:           'false'
     Specified:       false
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
   ProcessAll:
     Value:           'false'
     Specified:       false

@@ -7,7 +7,6 @@
 // TEST_FEATURE: Memory_access_wrapper
 
 __global__ void foo(float* f) {
-  f[0];
 }
 
 int main() {
