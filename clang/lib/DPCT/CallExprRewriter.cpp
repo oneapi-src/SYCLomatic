@@ -1566,7 +1566,8 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
     auto BO = dyn_cast<BinaryOperator>(SizeExpr);
     if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
       std::string Repl;
-      if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+      if (!isContainMacro(BO->getLHS()) &&
+          isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
         // case 1: sizeof(b) * a
         ArgumentAnalysis AASize;
         AASize.setCallSpelling(C);
@@ -1574,7 +1575,8 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
         Repl = AASize.getRewritePrefix() + AASize.getRewriteString() +
           AASize.getRewritePostfix();
         return Repl;
-      } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+      } else if (!isContainMacro(BO->getRHS()) &&
+                 isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
         // case 2: a * sizeof(b)
         ArgumentAnalysis AASize;
         AASize.setCallSpelling(C);
@@ -1587,7 +1589,8 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
       }
     } else {
       // case 3: sizeof(b)
-      if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+      if (!isContainMacro(SizeExpr) &&
+          isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
         return "1";
       }
     }
@@ -2004,6 +2007,7 @@ public:
 // 1. The Addr can be derefed twice. The derefed type is type_1
 // 2. The Size argement contains sizeof(type_2)
 // 3. type_1 and type_2 are the same
+// 4. The Size argement does not contain macro
 class CheckCanUseTemplateMalloc {
   unsigned AddrArgIdx;
   unsigned SizeArgIdx;
@@ -2035,15 +2039,17 @@ public:
     if (C->getNumArgs() <= SizeArgIdx)
       return false;
     auto SizeExpr = C->getArg(SizeArgIdx);
+
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
     auto BO = dyn_cast<BinaryOperator>(SizeExpr);
     if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
       std::string Repl;
-      if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+      if (!isContainMacro(BO->getLHS()) &&
+          isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
         // case 1: sizeof(b) * a
         return true;
-      }
-      else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+      } else if (!isContainMacro(BO->getRHS()) &&
+                 isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
         // case 2: a * sizeof(b)
         return true;
       }
@@ -2051,7 +2057,8 @@ public:
     }
     else {
       // case 3: sizeof(b)
-      if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+      if (!isContainMacro(SizeExpr) &&
+          isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
         return true;
       }
     }

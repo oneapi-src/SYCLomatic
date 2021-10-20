@@ -43,9 +43,9 @@ int main(){
 
 
 #define INT2 int2
-    // CHECK: d_data_int2 = sycl::malloc_device<sycl::int2>(100, q_ct1);
+    // CHECK: d_data_int2 = (sycl::int2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
     cudaMalloc(&d_data_int2, sizeof(INT2)*100);
-    // CHECK: d_data_int2 = sycl::malloc_device<sycl::int2>(100, q_ct1);
+    // CHECK: d_data_int2 = (sycl::int2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
     cudaMalloc((void **)&d_data_int2, sizeof(INT2)*100);
 }
 

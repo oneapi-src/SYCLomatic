@@ -1707,6 +1707,28 @@ bool isExprStraddle(const Stmt *S) {
   return isLocationStraddle(Range.getBegin(), Range.getEnd());
 }
 
+// Check if an Expr contains macro
+bool isContainMacro(const Expr* E) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Set = dpct::DpctGlobalInfo::getExpansionRangeBeginSet();
+  SourceLocation ExprBegin = getStmtExpansionSourceRange(E).getBegin();
+  SourceLocation ExprEnd = getStmtExpansionSourceRange(E).getEnd();
+
+  SourceLocation Loc = ExprBegin;
+  while (Loc <= ExprEnd) {
+    if (Set.find(getCombinedStrFromLoc(Loc)) != Set.end()) {
+      return true;
+    }
+    auto Tok = Lexer::findNextToken(
+        Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+    if (Tok.hasValue())
+      Loc = Tok.getValue().getLocation();
+    else
+      return false;
+  }
+  return false;
+}
+
 /// Get the dereference name of the expression \p E.
 std::string getDrefName(const Expr *E) {
   std::ostringstream OS;

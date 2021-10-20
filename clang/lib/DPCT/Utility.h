@@ -426,6 +426,7 @@ bool isInsideFunctionLikeMacro(
     const std::shared_ptr<clang::DynTypedNode> Parent);
 bool isLocationStraddle(clang::SourceLocation Begin, clang::SourceLocation End);
 bool isExprStraddle(const clang::Stmt *S);
+bool isContainMacro(const clang::Expr *E);
 std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
 getSiblingDecls(const clang::DeclaratorDecl *DD);

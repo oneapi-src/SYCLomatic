@@ -56,6 +56,7 @@ SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
+std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
@@ -138,8 +139,8 @@ std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
 std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 
 /// This variable saved the info of previous migration from the
-/// MainSourceFiles.yaml file. This variable is valid after canContinueMigration()
-/// is called.
+/// MainSourceFiles.yaml file. This variable is valid after
+/// canContinueMigration() is called.
 std::shared_ptr<clang::tooling::TranslationUnitReplacements>
     DpctGlobalInfo::MainSourceYamlTUR =
         std::make_shared<clang::tooling::TranslationUnitReplacements>();

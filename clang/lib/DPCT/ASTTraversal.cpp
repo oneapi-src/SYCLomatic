@@ -259,6 +259,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       HashKey = "InvalidLoc";
     }
 
+    dpct::DpctGlobalInfo::getExpansionRangeBeginSet().insert(
+            getCombinedStrFromLoc(Range.getBegin()));
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
@@ -10485,9 +10487,10 @@ void GlibcMemoryAPIRule::processMalloc(const Stmt *ReplStmt,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = DpctGlobalInfo::getSourceManager();
   std::string Repl;
-  if (auto BO = dyn_cast<BinaryOperator>(CE->getArg(0))) {
+  if (const BinaryOperator *BO = dyn_cast<BinaryOperator>(CE->getArg(0))) {
     if (BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
-      if (isSameSizeofTypeWithTypeStr(BO->getLHS(),
+      if (!isContainMacro(BO->getLHS()) &&
+          isSameSizeofTypeWithTypeStr(BO->getLHS(),
                                       MapNames::getClNamespace() + "event")) {
         // case 1: sizeof(b) * a
         ArgumentAnalysis AA;
@@ -10495,7 +10498,8 @@ void GlibcMemoryAPIRule::processMalloc(const Stmt *ReplStmt,
         AA.analyze(BO->getRHS());
         Repl = AA.getRewritePrefix() + AA.getRewriteString() +
                AA.getRewritePostfix();
-      } else if (isSameSizeofTypeWithTypeStr(
+      } else if (!isContainMacro(BO->getRHS()) &&
+                 isSameSizeofTypeWithTypeStr(
                      BO->getRHS(), MapNames::getClNamespace() + "event")) {
         // case 2: a * sizeof(b)
         ArgumentAnalysis AA;
@@ -11244,14 +11248,16 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
   auto BO = dyn_cast<BinaryOperator>(SizeExpr);
   if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
     std::string Repl;
-    if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+    if (!isContainMacro(BO->getLHS()) &&
+        isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
       // case 1: sizeof(b) * a
       ArgumentAnalysis AA;
       AA.setCallSpelling(BO);
       AA.analyze(BO->getRHS());
       Repl = AA.getRewritePrefix() + AA.getRewriteString() +
              AA.getRewritePostfix();
-    } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+    } else if (!isContainMacro(BO->getRHS()) &&
+               isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
       // case 2: a * sizeof(b)
       ArgumentAnalysis AA;
       AA.setCallSpelling(BO);
@@ -11274,7 +11280,8 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
     return true;
   } else {
     // case 3: sizeof(b)
-    if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+    if (!isContainMacro(SizeExpr) &&
+        isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
       SourceLocation RemoveBegin, RemoveEnd;
       SourceRange RemoveRange = getStmtExpansionSourceRange(SizeExpr);
       RemoveBegin = RemoveRange.getBegin();

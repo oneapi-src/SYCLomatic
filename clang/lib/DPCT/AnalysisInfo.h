@@ -1940,6 +1940,10 @@ public:
     insertFile(LocInfo.first)->insertHeader(Type);
   }
 
+  static std::unordered_set<std::string> &getExpansionRangeBeginSet() {
+    return ExpansionRangeBeginSet;
+  }
+
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
@@ -2326,6 +2330,7 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
+  static std::unordered_set<std::string> ExpansionRangeBeginSet;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
