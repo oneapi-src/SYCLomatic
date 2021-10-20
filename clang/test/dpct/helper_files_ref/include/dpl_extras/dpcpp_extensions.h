@@ -19,37 +19,21 @@ namespace detail {
 
 template <typename... _Args>
 constexpr auto __reduce_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::reduce_over_group(__args...);
-#else
-  return sycl::ONEAPI::reduce(__args...);
-#endif
 }
 
 template <typename... _Args> constexpr auto __group_broadcast(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::group_broadcast(__args...);
-#else
-  return sycl::ONEAPI::broadcast(__args...);
-#endif
 }
 
 template <typename... _Args>
 constexpr auto __exclusive_scan_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::exclusive_scan_over_group(__args...);
-#else
-  return sycl::ONEAPI::exclusive_scan(__args...);
-#endif
 }
 
 template <typename... _Args>
 constexpr auto __inclusive_scan_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::inclusive_scan_over_group(__args...);
-#else
-  return sycl::ONEAPI::inclusive_scan(__args...);
-#endif
 }
 
 } // end namespace detail
@@ -607,11 +591,7 @@ namespace device {
 namespace detail {
 
 template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::joint_reduce(__args...);
-#else
-  return sycl::ONEAPI::reduce(__args...);
-#endif
 }
 
 } // namespace detail

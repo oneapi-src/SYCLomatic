@@ -30,11 +30,7 @@ namespace detail {
 // DPCT_CODE
 template <typename... _Args>
 constexpr auto __reduce_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::reduce_over_group(__args...);
-#else
-  return sycl::ONEAPI::reduce(__args...);
-#endif
 }
 // DPCT_LABEL_END
 
@@ -42,11 +38,7 @@ constexpr auto __reduce_over_group(_Args... __args) {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename... _Args> constexpr auto __group_broadcast(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::group_broadcast(__args...);
-#else
-  return sycl::ONEAPI::broadcast(__args...);
-#endif
 }
 // DPCT_LABEL_END
 
@@ -55,20 +47,12 @@ template <typename... _Args> constexpr auto __group_broadcast(_Args... __args) {
 // DPCT_CODE
 template <typename... _Args>
 constexpr auto __exclusive_scan_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::exclusive_scan_over_group(__args...);
-#else
-  return sycl::ONEAPI::exclusive_scan(__args...);
-#endif
 }
 
 template <typename... _Args>
 constexpr auto __inclusive_scan_over_group(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::inclusive_scan_over_group(__args...);
-#else
-  return sycl::ONEAPI::inclusive_scan(__args...);
-#endif
 }
 // DPCT_LABEL_END
 
@@ -670,11 +654,7 @@ namespace detail {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
-#if (__LIBSYCL_MAJOR_VERSION >= 5 && __LIBSYCL_MINOR_VERSION >= 3)
   return sycl::joint_reduce(__args...);
-#else
-  return sycl::ONEAPI::reduce(__args...);
-#endif
 }
 // DPCT_LABEL_END
 
