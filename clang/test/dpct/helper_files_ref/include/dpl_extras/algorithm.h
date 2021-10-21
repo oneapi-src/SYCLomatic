@@ -64,16 +64,13 @@ remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 
   __buffer<ValueType> _tmp(std::distance(first, last));
 
-  typename internal::rebind_policy<policy_type, class RemoveIf1>::type policy1(
-      policy);
   auto end = std::copy_if(
-      policy1, make_zip_iterator(first, mask),
+      std::forward<Policy>(policy), make_zip_iterator(first, mask),
       make_zip_iterator(last, mask + std::distance(first, last)),
       make_zip_iterator(_tmp.get(), oneapi::dpl::discard_iterator()),
       internal::negate_predicate_key_fun<Pred>(p));
-  typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
-      policy);
-  return std::copy(policy2, _tmp.get(), std::get<0>(end.base()), first);
+  return std::copy(std::forward<Policy>(policy), _tmp.get(),
+                   std::get<0>(end.base()), first);
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
