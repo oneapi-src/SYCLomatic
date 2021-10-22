@@ -395,7 +395,7 @@ int main(){
   //CHECK-NEXT: if (dpct::is_device_ptr(device_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(device_ptr_A), dpct::device_pointer<float>(device_ptr_A + 10), dpct::device_pointer<float>(device_ptr_R), std::minus<float>());
   //CHECK-NEXT: } else {
-  //CHECK-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, device_ptr_A, device_ptr_A + 10, device_ptr_R, std::minus<float>());
+  //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, device_ptr_A, device_ptr_A + 10, device_ptr_R, std::minus<float>());
   //CHECK-NEXT: };
   //CHECK-NEXT: dpct::dpct_memcpy(host_ptr_R, device_ptr_R, 20 * sizeof(float), dpct::device_to_host);
   //CHECK-NEXT: host_ptr_A[0]= -5;

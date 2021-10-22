@@ -1278,6 +1278,24 @@ makeQueueStr() {
   };
 }
 
+std::function<std::string(const CallExpr *)>
+makeMappedThrustPolicyEnum(unsigned Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    auto E = C->getArg(Idx);
+    if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
+      if (auto DRE = dyn_cast<DeclRefExpr>(ICE->getSubExpr())) {
+        std::string EnumName = DRE->getNameInfo().getName().getAsString();
+        if (EnumName == "device") {
+          return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) + ")";
+        } else if (EnumName == "seq") {
+          return "oneapi::dpl::execution::seq";
+        }
+      }
+    }
+    return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) + ")";
+  };
+}
+
 template <class Printer, class... Ts> class PrinterCreator {
   std::tuple<Ts...> Creators;
 
