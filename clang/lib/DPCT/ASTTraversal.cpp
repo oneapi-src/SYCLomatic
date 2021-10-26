@@ -260,7 +260,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
 
     dpct::DpctGlobalInfo::getExpansionRangeBeginSet().insert(
-            getCombinedStrFromLoc(Range.getBegin()));
+        getCombinedStrFromLoc(Range.getBegin()));
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
@@ -2805,6 +2805,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   if (!Tok.isAnyIdentifier()) {
     return false;
   }
+
   auto TypeNameStr = Tok.getRawIdentifier().str();
   // skip to the next identifier after keyword "typename" or "const"
   if (TypeNameStr == "typename" || TypeNameStr == "const") {
@@ -2812,7 +2813,6 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     BeginLoc = Tok.getLocation();
   }
   auto LAngleLoc = TSL.getLAngleLoc();
-  BeginLoc = SM->getExpansionLoc(BeginLoc);
 
   const char *Start = SM->getCharacterData(BeginLoc);
   const char *End = SM->getCharacterData(LAngleLoc);
@@ -3171,10 +3171,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
       auto ETC = TL->getAs<ElaboratedTypeLoc>();
       auto NTL = ETC.getNamedTypeLoc();
-
       if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
         auto TSL =
             NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+
         if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
           return;
         }
@@ -3193,15 +3193,18 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
         }
       }
-    } else if (TL->getTypeLocClass() ==
-               clang::TypeLoc::TemplateSpecialization) {
+    } else if (TL->getTypeLocClass() == clang::TypeLoc::Qualified) {
       // To process the case like "typename
       // thrust::device_vector<int>::iterator itr;".
-      auto ND = DpctGlobalInfo::findAncestor<NamedDecl>(TL);
-      if (ND) {
-        auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
-        if (replaceTemplateSpecialization(SM, LOpts, ND->getBeginLoc(), TSL)) {
-          return;
+      auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
+      if (ETL) {
+        auto NTL = ETL.getNamedTypeLoc();
+        if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+          auto TSL =
+              NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
+          if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
+            return;
+          }
         }
       }
     }
