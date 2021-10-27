@@ -67,6 +67,7 @@ bool makeCanonical(SmallVectorImpl<char> &Path) {
     llvm::errs() << "Could not get absolute path from '" << Path << "'\n ";
     return false;
   }
+  path::native(Path);
   path::remove_dots(Path, /* remove_dot_dot= */ true);
   return true;
 }

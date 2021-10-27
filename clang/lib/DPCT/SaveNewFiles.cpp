@@ -256,6 +256,9 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
+        if(DpctGlobalInfo::isExcluded(FilePath, false)) {
+          continue;
+        }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
           // Only migrates isolated CUDA source files.
           FilesNotProcessed.push_back(FilePath);
@@ -351,7 +354,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       &DiagnosticPrinter, false);
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
-
+  extern bool ProcessAllFlag;
   SmallString<512> OutPath;
 
   // The variable defined here is assist to merge history records.
@@ -508,7 +511,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
     generateHelperFunctions();
 
-    extern bool ProcessAllFlag;
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
     if (ProcessAllFlag) {
@@ -607,7 +609,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     SmallString<512> FilePath = StringRef(Entry.first);
     if (!Entry.second) {
       makeCanonical(FilePath);
-
+      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath.str().str(), false);
+      if (IsExcluded) {
+        continue;
+      }
       // Awalys migrate *.cuh files to *.dp.hpp files,
       // Awalys migrate *.cu files to *.dp.cpp files.
       SourceProcessType FileType = GetSourceFileType(FilePath.str());

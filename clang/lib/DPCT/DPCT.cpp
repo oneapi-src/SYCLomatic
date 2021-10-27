@@ -462,6 +462,12 @@ opt<std::string>
                value_desc("file"), cat(DPCTCat),
                llvm::cl::Optional);
 
+static list<std::string> ExcludePathList(
+    "in-root-exclude",
+    llvm::cl::desc(
+        "Excludes directory or file from processing."),
+    value_desc("dir|file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
+
 static opt<bool> OptimizeMigration(
     "optimize-migration",
     llvm::cl::desc("Generate DPC++ code applying more aggressive assumptions that potentially\n"
@@ -1271,6 +1277,10 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
+
+  if (ExcludePathList.getNumOccurrences()) {
+    DpctGlobalInfo::setExcludePath(ExcludePathList);
+  }
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};

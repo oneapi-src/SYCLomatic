@@ -82,6 +82,7 @@ static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<std::string> *ModuleFiles = nullptr;
 static unsigned int *ColorOptionPtr = nullptr;
+static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
 extern std::string VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
@@ -203,6 +204,18 @@ void SetColorOptionPtr(unsigned int &ColorOption) {
 void SetColorOptionValue(unsigned int ColorOption) {
   if(ColorOptionPtr) {
     *ColorOptionPtr = ColorOption;
+  }
+}
+
+void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
+  IsExcludePathPtr = Func;
+}
+
+bool isExcludePath(const std::string &Path, bool IsRelative) {
+  if(IsExcludePathPtr) {
+    return IsExcludePathPtr(Path, IsRelative);
+  } else {
+    return false;
   }
 }
 
@@ -1053,6 +1066,9 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
+    if(isExcludePath(File.str(), true)) {
+      continue;
+    }
     int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
                             Action);
     if (Ret == -1)

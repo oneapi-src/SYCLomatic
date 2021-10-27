@@ -1,0 +1,1 @@
+([ -e $1 ] && echo "exist" || echo "not exist") >> $2/exist_check

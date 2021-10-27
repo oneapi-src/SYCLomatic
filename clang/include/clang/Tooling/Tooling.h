@@ -74,6 +74,9 @@ void SetModuleFiles(std::set<std::string> &MF);
 std::string getRealFilePath(std::string File, clang::FileManager *FM);
 void SetColorOptionPtr(unsigned int &ColorOption);
 void SetColorOptionValue(unsigned int ColorOption);
+void SetIsExcludePathHandler(
+    std::function<bool(const std::string &, bool)> Func);
+bool isExcludePath(const std::string &Path, bool IsRelative);
 } // namespace tooling
 } // namespace clang
 #endif

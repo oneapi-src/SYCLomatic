@@ -1002,12 +1002,44 @@ public:
     if (IsChildRelative) {
       std::string Path = removeSymlinks(getFileManager(), FilePath);
       makeCanonical(Path);
-      return isChildPath(InRoot, Path);
+      if(isChildPath(InRoot, Path)) {
+        return !isExcluded(Path);
+      } else {
+        return false;
+      }
     } else {
-      return isChildPath(InRoot, FilePath, IsChildRelative);
+      if (isChildPath(InRoot, FilePath, IsChildRelative)) {
+        return !isExcluded(FilePath, IsChildRelative);
+      } else {
+        return false;
+      }
     }
   }
 
+  static bool isExcluded(const std::string &FilePath,
+                         bool IsRelative = true) {
+    static std::map<std::string, bool> Cache;
+    if(FilePath.empty() || DpctGlobalInfo::getExcludePath().empty()) {
+      return false;
+    }
+    std::string CanonicalPath = FilePath;
+    if (IsRelative) {
+      if (!makeCanonical(CanonicalPath)) {
+        return false;
+      }
+    }
+    if(Cache.count(CanonicalPath)) {
+      return Cache[CanonicalPath];
+    }
+    for(auto &Path : DpctGlobalInfo::getExcludePath()) {
+      if(isChildOrSamePath(Path.first, CanonicalPath)) {
+        Cache[CanonicalPath] = true;
+        return true;
+      }
+    }
+    Cache[CanonicalPath] = false;
+    return false;
+  }
   // TODO: implement one of this for each source language.
   inline static bool isInCudaPath(SourceLocation SL) {
     return isInCudaPath(getSourceManager()
@@ -1166,6 +1198,71 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
+// Processing the folder or file by fowllowing rule:
+// Rule1: For {child path, parent path}, only parent path will be kept.
+// Rule2: Ignore invalid path.
+// Rule3: If path is not in --in-root, then ignore it.
+  inline static void setExcludePath(std::vector<std::string> ExcludePathVec) {
+    if (ExcludePathVec.empty()) {
+      return;
+    }
+    std::set<std::string> ProcessedPath;
+    for (auto Itr = ExcludePathVec.begin(); Itr != ExcludePathVec.end();
+         Itr++) {
+      if ((*Itr).empty()) {
+        continue;
+      }
+      std::string PathBuf = *Itr;
+      if (!makeCanonical(*Itr)) {
+        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+                              " is invalid and will be ignored by option "
+                              "--in-root-exclude.\n");
+        continue;
+      }
+      if (ProcessedPath.count(*Itr)) {
+        continue;
+      }
+      ProcessedPath.insert(*Itr);
+      bool IsDirectory;
+      if ((IsDirectory = llvm::sys::fs::is_directory(*Itr)) ||
+          llvm::sys::fs::is_regular_file(*Itr) ||
+          llvm::sys::fs::is_symlink_file(*Itr)) {
+        if (!isChildOrSamePath(InRoot, *Itr)) {
+          clang::dpct::PrintMsg("Note: Path " + PathBuf +
+                                " is not in --in-root directory and will be "
+                                "ignored by --in-root-exclude.\n");
+        } else {
+          bool IsNeedInsert = true;
+          for (auto EP_Itr = ExcludePath.begin();
+               EP_Itr != ExcludePath.end();) {
+            if ((EP_Itr->first == *Itr) ||
+                (EP_Itr->second && isChildOrSamePath(EP_Itr->first, *Itr))) {
+              // 1.If current path is child or same path of previous path, then
+              // we skip it.
+              IsNeedInsert = false;
+              break;
+            } else if (IsDirectory && isChildOrSamePath(*Itr, EP_Itr->first)) {
+              // 2.If previous path is child of current path, then
+              // we delete previous path.
+              EP_Itr = ExcludePath.erase(EP_Itr);
+            } else {
+              EP_Itr++;
+            }
+          }
+          if (IsNeedInsert) {
+            ExcludePath.insert({*Itr, IsDirectory});
+          }
+        }
+      } else {
+        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+                              " is invalid and will be ignored by option "
+                              "--in-root-exclude.\n");
+      }
+    }
+  }
+  inline static std::unordered_map<std::string, bool> getExcludePath() {
+    return ExcludePath;
+  }
   inline static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
     return ExplicitNamespaceSet;
   }
@@ -2401,6 +2498,7 @@ private:
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
+  static std::unordered_map<std::string, bool> ExcludePath;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
 };
 

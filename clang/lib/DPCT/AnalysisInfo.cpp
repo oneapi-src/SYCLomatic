@@ -136,6 +136,7 @@ std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
+std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
 std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 
 /// This variable saved the info of previous migration from the
@@ -287,6 +288,7 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
   tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
+  tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 
 std::shared_ptr<KernelCallExpr>

@@ -806,6 +806,7 @@ void IncludesCallbacks::InclusionDirective(
   std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
   bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
                         (isChildOrSamePath(InRoot, DirPath));
+  bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
 
   if (IsFileInInRoot) {
     auto FilePathWithoutSymlinks =
@@ -814,7 +815,8 @@ void IncludesCallbacks::InclusionDirective(
     dpct::DpctGlobalInfo::getIncludingFileSet().insert(FilePathWithoutSymlinks);
   }
 
-  if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
+  if ((!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) ||
+      IsExcluded) {
     return;
   }
 
