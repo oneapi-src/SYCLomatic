@@ -1273,6 +1273,9 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   // file has been created, else ret is set to 0.
   int ret = 0;
 
+  // To indicate whether the captured cmd is an ar static library command.
+  int is_ar_staticlib_cmd = 0;
+
   const char *command_cp = NULL;
   size_t it_cp = 0;
   // (CPATH=;command  args), need remove () around the command
@@ -1340,6 +1343,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         exit(EXIT_FAILURE);
       }
       flag_object = 1;
+      is_ar_staticlib_cmd = 1;
     }
 
     if (flag_optval == 1) {
@@ -1471,7 +1475,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         replace_binary_name(argv[it_cp], pos, compiler_idx, compiler_array);
   }
 
-  if (ret == 1 && it_cp == 0) {
+  if (ret == 1 && it_cp == 0 && !is_ar_staticlib_cmd) {
     exit(0);
   }
   return is_stub_need;
