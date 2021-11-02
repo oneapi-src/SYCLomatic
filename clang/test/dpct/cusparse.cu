@@ -1,5 +1,5 @@
-// UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4
-// UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4
+// UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4, , v11.5
+// UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5
 // RUN: dpct --format-range=none --usm-level=none --out-root %T/cusparse %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cusparse/cusparse.dp.cpp --match-full-lines %s
 #include <cstdio>
