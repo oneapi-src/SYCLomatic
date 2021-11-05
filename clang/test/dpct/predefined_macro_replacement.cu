@@ -121,7 +121,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if 0x7FFFFFFF >= 4000
+//CHECK: #if SYCL_LANGUAGE_VERSION >= 4000
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
@@ -130,5 +130,20 @@ int foo(int num) {
   cudaDeviceReset();
 #else
   cudaThreadExit();
+#endif
+}
+
+int foo1() {
+//CHECK: #ifdef SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: sycl::int2 a;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #ifndef SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: int2 b;
+//CHECK-NEXT: #endif
+#ifdef CUDART_VERSION
+int2 a;
+#endif
+#ifndef CUDART_VERSION
+int2 b;
 #endif
 }

@@ -3368,7 +3368,7 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
-    {"CUDART_VERSION", "0x7FFFFFFF"},
+    {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     //...
 };
