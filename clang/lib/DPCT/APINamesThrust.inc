@@ -340,12 +340,12 @@ CONDITIONAL_FACTORY_ENTRY(
       //Handling case: thrust::remove_copy_if(device.begin(), device.end(), stencil.begin(), result, pred);
       CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(1, "thrust::device_ptr"),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_if,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if,
           CALL_FACTORY_ENTRY("remove_copy_if",
                             CALL(MapNames::getDpctNamespace() + "remove_copy_if",
                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_if,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if,
           CALL_FACTORY_ENTRY("remove_copy_if",
                             CALL(MapNames::getDpctNamespace() + "remove_copy_if",
                                  ARG("oneapi::dpl::execution::seq"),
@@ -353,7 +353,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       CompareArgType(0, 1),
       //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), stencil.begin(), result, pred);
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_if,
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if,
         CALL_FACTORY_ENTRY("remove_copy_if",
                           CALL(MapNames::getDpctNamespace() + "remove_copy_if",
                                 makeMappedThrustPolicyEnum(0),
