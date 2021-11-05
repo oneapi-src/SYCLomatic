@@ -245,7 +245,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      const MacroDefinition &MD,
                                      SourceRange Range, const MacroArgs *Args) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
+  std::string InFile =
+      SM.getFilename(SM.getSpellingLoc(MacroNameTok.getLocation())).str();
   bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
 
   if (!MD.getMacroInfo())
@@ -407,8 +408,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
        Name == "__constant__" || Name == "__launch_bounds__" ||
        Name == "__shared__")) {
-    auto TM = removeMacroInvocationAndTrailingSpaces(Range);
-
+    auto TM = removeMacroInvocationAndTrailingSpaces(
+        SourceRange(SM.getSpellingLoc(Range.getBegin()),
+                    SM.getSpellingLoc(Range.getEnd())));
     if (Name == "__constant__") {
       if (!DpctGlobalInfo::getInstance().findConstantMacroTMInfo(
               SM.getExpansionLoc(Range.getBegin()))) {

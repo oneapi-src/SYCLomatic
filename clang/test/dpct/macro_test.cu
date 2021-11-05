@@ -1043,3 +1043,33 @@ void aaaaa_zprint_vector() {
 #define BBB
 #endif
 }
+
+namespace launch_bounds_test {
+constexpr uint32_t AAAAA_launch_bounds_test = 1024;
+constexpr uint32_t BBBBB_launch_bounds_test = 256;
+#define CCCCC_launch_bounds_test(val)          \
+  (((val) <= AAAAA_launch_bounds_test) ? (val) \
+      : BBBBB_launch_bounds_test)
+
+// CHECK: #define DDDDD_launch_bounds_test(max_threads_per_block) \
+// CHECK-NEXT: /*comment*/
+// CHECK-NEXT: template <typename T1, typename T2, int I>
+#define DDDDD_launch_bounds_test(max_threads_per_block) \
+  __launch_bounds__((CCCCC_launch_bounds_test((max_threads_per_block)))) /*comment*/
+template <typename T1, typename T2, int I>
+DDDDD_launch_bounds_test(512)
+__global__ void test() {}
+
+// CHECK: #define EEEEE_launch_bounds_test(max_threads_per_block) \
+// CHECK-EMPTY:
+// CHECK-NEXT: template <typename T1, typename T2, int I>
+#define EEEEE_launch_bounds_test(max_threads_per_block) \
+__launch_bounds__((CCCCC_launch_bounds_test((max_threads_per_block))))
+template <typename T1, typename T2, int I>
+EEEEE_launch_bounds_test(512)
+__global__ void test2() {}
+
+#undef CCCCC_launch_bounds_test
+#undef DDDDD_launch_bounds_test
+#undef EEEEE_launch_bounds_test
+}
