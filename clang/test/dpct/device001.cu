@@ -173,3 +173,15 @@ void test3() {
   //CHECK:int a7 = dpct::get_current_device().get_info<sycl::info::device::error_correction_support>();
   int a7 = deviceProp.ECCEnabled;
 }
+
+//CHECK:dpct::device_info* getcudaDevicePropPtr() {
+//CHECK-NEXT:  return (dpct::device_info*)0;
+//CHECK-NEXT:}
+cudaDeviceProp* getcudaDevicePropPtr() {
+  return (cudaDeviceProp*)0;
+}
+
+void test4() {
+  //CHECK:int a1 = getcudaDevicePropPtr()->get_max_compute_units();
+  int a1 = getcudaDevicePropPtr()->multiProcessorCount;
+}

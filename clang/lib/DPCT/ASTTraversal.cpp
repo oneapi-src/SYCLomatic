@@ -4075,8 +4075,12 @@ REGISTER_RULE(Dim3MemberFieldsRule)
 void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       memberExpr(
-          hasObjectExpression(hasType(qualType(hasCanonicalType(recordType(
-              hasDeclaration(cxxRecordDecl(hasName("cudaDeviceProp")))))))))
+          hasObjectExpression(anyOf(
+              hasType(qualType(hasCanonicalType(recordType(
+                  hasDeclaration(cxxRecordDecl(hasName("cudaDeviceProp"))))))),
+              hasType(
+                  pointsTo(qualType(hasCanonicalType(recordType(hasDeclaration(
+                      cxxRecordDecl(hasName("cudaDeviceProp")))))))))))
           .bind("DevicePropVar"),
       this);
 }
