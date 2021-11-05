@@ -24,9 +24,10 @@ __global__ void picount(int *totals) {
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: oneapi::mkl::rng::device::uniform<float> distr_ct{{[0-9]+}};
-    //CHECK-NEXT: float x = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
-    //CHECK-NEXT: sycl::float2 y = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
+    //CHECK: oneapi::mkl::rng::device::gaussian<float> distr_ct2;
+    //CHECK-NEXT: oneapi::mkl::rng::device::uniform<float> distr_ct1;
+    //CHECK-NEXT: float x = oneapi::mkl::rng::device::generate(distr_ct1, rng);
+    //CHECK-NEXT: sycl::float2 y = oneapi::mkl::rng::device::generate(distr_ct2, rng);
     float x = curand_uniform(&rng);
     float2 y = curand_normal2(&rng);
     counter[threadIdx.x] += 1 - int(x * x + y.x * y.x);

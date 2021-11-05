@@ -206,12 +206,14 @@ struct DeviceRandomGenerateAPIInfo {
 
 // This struct saves the info for building the definition of distr variables.
 struct DeviceRandomDistrInfo {
-  DeviceRandomDistrInfo(std::string DistrType, std::string ValueType,
-                        std::string DistrName, std::string IndentStr)
-      : DistrType(DistrType), ValueType(ValueType), DistrName(DistrName),
-        IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
+  DeviceRandomDistrInfo(unsigned int Offset, std::string DistrType,
+                        std::string ValueType, std::string DistrName,
+                        std::string IndentStr)
+      : Offset(Offset), DistrType(DistrType), ValueType(ValueType),
+        DistrName(DistrName), IndentStr(IndentStr) {}
+  void buildInfo(std::string FilePath);
 
+  unsigned int Offset;
   std::string DistrType;
   std::string ValueType;
   std::string DistrName;
@@ -755,8 +757,10 @@ public:
         NameMap.insert(std::make_pair(Key, Name));
         Info.second.DistrName = Name;
         DeviceRandomDistrDeclMap.insert(std::make_pair(
-            Info.second.DistrDeclOffset,
-            DeviceRandomDistrInfo(Info.second.DistrType, Info.second.ValueType,
+            Key,
+            DeviceRandomDistrInfo(
+                Info.second.DistrDeclOffset, Info.second.DistrType,
+                Info.second.ValueType,
                                   Name, Info.second.DistrIndentStr)));
         ID++;
       } else {
@@ -854,7 +858,7 @@ private:
   std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
   std::map<unsigned int, DeviceRandomGenerateAPIInfo>
       DeviceRandomGenerateAPIMap;
-  std::map<unsigned int, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
+  std::map<std::string, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;

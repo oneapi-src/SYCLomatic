@@ -461,7 +461,7 @@ void DpctFileInfo::buildReplacements() {
   for (auto &Info : DeviceRandomGenerateAPIMap)
     Info.second.buildInfo(FilePath, Info.first);
   for (auto &Info : DeviceRandomDistrDeclMap)
-    Info.second.buildInfo(FilePath, Info.first);
+    Info.second.buildInfo(FilePath);
 
   // DPCT need collect the information in curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
@@ -3115,8 +3115,7 @@ void DeviceRandomGenerateAPIInfo::buildInfo(std::string FilePath,
       FilePath, Offset, Length, ReplStr, nullptr));
 }
 
-void DeviceRandomDistrInfo::buildInfo(std::string FilePath,
-                                      unsigned int Offset) {
+void DeviceRandomDistrInfo::buildInfo(std::string FilePath) {
   std::string InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" +
                           getNL() + IndentStr;
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
