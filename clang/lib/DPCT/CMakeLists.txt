@@ -22,9 +22,50 @@ set(CONT_FILES
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/dpcpp_extensions.h.inc
   )
 
-add_custom_target(dpct_helper_headers_and_inc
+set(PROCESS_FILES_OUTPUT
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/algorithm.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/dpcpp_extensions.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/functional.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/iterators.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/memory.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/algorithm.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/dpcpp_extensions.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/functional.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/iterators.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/memory.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/HelperFeatureEnum.inc
+)
+
+add_custom_command(
+  DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/HelperFileAndFeatureNames.inc ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
+  OUTPUT  ${PROCESS_FILES_OUTPUT}
   COMMAND python3 ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
-  DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
+  )
+
+add_custom_target(dpct_helper_headers_and_inc
+  DEPENDS ${PROCESS_FILES_OUTPUT}
   )
 
 include_directories(
