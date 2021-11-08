@@ -810,6 +810,8 @@ void IncludesCallbacks::InclusionDirective(
                         (isChildOrSamePath(InRoot, DirPath));
   bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
 
+  bool NeedMigrate = !IsExcluded && IsFileInInRoot;
+
   if (IsFileInInRoot) {
     auto FilePathWithoutSymlinks =
         DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath);
@@ -940,7 +942,7 @@ void IncludesCallbacks::InclusionDirective(
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
 
     // Replace "#include "*.cuh"" with "include "*.dp.hpp""
-    if (!IsAngled && FileName.endswith(".cuh")) {
+    if (NeedMigrate && FileName.endswith(".cuh")) {
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
       std::string NewFileName = "#include \"" +
@@ -964,7 +966,7 @@ void IncludesCallbacks::InclusionDirective(
 
     // To generate replacement of replacing "#include "*.c"" with "include
     // "*.c.dp.cpp"".
-    if (!IsAngled && FileName.endswith(".c")) {
+    if (NeedMigrate && FileName.endswith(".c")) {
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
       std::string NewFileName = "#include \"" + FileName.str() + ".dp.cpp\"";

@@ -22,8 +22,10 @@
 #include "inc/header2.TPP"
 
 // CHECK: #include "inc/header3.c.dp.cpp"
+// CHECK-NEXT: #include "inc/header3.c.dp.cpp"
 // CHECK-NEXT: #include "inc/header4.c"
 #include "inc/header3.c"
+#include <inc/header3.c>
 #include "inc/header4.c"
 
 // CHECK: #ifdef CUDA
