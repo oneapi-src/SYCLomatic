@@ -96,7 +96,7 @@ std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
 int DpctGlobalInfo::HelperFuncReplInfoIndex = 1;
 std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
-std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
+std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 std::unordered_map<std::string, FFTExecAPIInfo>
@@ -271,7 +271,7 @@ void DpctGlobalInfo::resetInfo() {
   HelperFuncReplInfoMap.clear();
   HelperFuncReplInfoIndex = 1;
   TempVariableDeclCounterMap.clear();
-  TempVariableHandledSet.clear();
+  TempVariableHandledMap.clear();
   UsingDRYPattern = true;
   SpBLASUnsupportedMatrixTypeFlag = false;
   FFTExecAPIInfoMap.clear();

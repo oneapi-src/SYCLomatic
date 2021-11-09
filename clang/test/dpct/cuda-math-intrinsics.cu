@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
+#include <complex>
 
 #include <stdio.h>
 
@@ -2844,6 +2845,10 @@ void no_migration5() {
   std::acosh(f);
   std::asin(f);
   std::asinh(f);
+
+  int64_t a;
+  //CHECK: std::max<int64_t>(a, 1);
+  std::max<int64_t>(a, 1);
 }
 
 __device__ void do_migration5() {
@@ -2852,7 +2857,7 @@ __device__ void do_migration5() {
 
   //CHECK: sycl::max(i, i);
   //CHECK-NEXT: sycl::min(i, i);
-  //CHECK-NEXT:  sycl::fabs(f);
+  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */

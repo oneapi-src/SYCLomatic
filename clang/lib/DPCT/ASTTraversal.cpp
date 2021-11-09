@@ -2237,35 +2237,6 @@ void ThrustFunctionRule::thrustFuncMigration(
           ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
     else
       emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
-  } else if (ThrustFuncName == "transform_reduce") {
-    // The initial value and the reduce functor are provided before the
-    // transform functor in std::transform_reduce, which differs from
-    // thrust::transform_reduce.
-    if (NumArgs == 5) {
-      emplaceTransformation(removeArg(CE, 2, *Result.SourceManager));
-
-      dpct::ExprAnalysis EA;
-      EA.analyze(CE->getArg(2));
-      std::string Str = ", " + EA.getReplacedString();
-      emplaceTransformation(new InsertAfterStmt(CE->getArg(4), std::move(Str)));
-
-    } else if (NumArgs == 6) {
-      emplaceTransformation(removeArg(CE, 3, *Result.SourceManager));
-      dpct::ExprAnalysis EA;
-      EA.analyze(CE->getArg(3));
-      std::string Str = ", " + EA.getReplacedString();
-      emplaceTransformation(new InsertAfterStmt(CE->getArg(5), std::move(Str)));
-    }
-
-    if (hasExecutionPolicy) {
-      if (ULExpr) {
-        emplaceTransformation(new ReplaceToken(
-            ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
-      } else {
-        emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
-      }
-      return;
-    }
   } else if (ThrustFuncName == "make_zip_iterator") {
     // oneapi::dpl::make_zip_iterator expects the component iterators to be
     // passed directly instead of being wrapped in a tuple as
@@ -2387,7 +2358,7 @@ void ThrustFunctionRule::thrustFuncMigration(
       if (CE->getArg(0)->getType()->isPointerType()) {
         ExtraParam = "oneapi::dpl::execution::seq";
       } else {
-        if (checkWhetherIsDuplicate(CE, false))
+        if (isPlaceholderIdxDuplicated(CE))
           return;
         ExtraParam = makeDevicePolicy(CE);
       }
@@ -4636,7 +4607,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     Flags.NeedUseLambda = false;
     if (FuncName == "cusparseCreate") {
       std::string LHS = getDrefName(CE->getArg(0));
-      if (checkWhetherIsDuplicate(CE, false))
+      if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -5192,7 +5163,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd);
 
-    if (checkWhetherIsDuplicate(CE->getArg(0), false))
+    if (isPlaceholderIdxDuplicated(CE->getArg(0)))
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
@@ -7301,7 +7272,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (FuncName == "cublasCreate_v2") {
       std::string LHS = getDrefName(CE->getArg(0));
-      if (checkWhetherIsDuplicate(CE, false))
+      if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -7319,7 +7290,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       Repl = LHS + " = " + EA0.getReplacedString();
     } else if (FuncName == "cublasSetKernelStream") {
       dpct::ExprAnalysis EA(CE->getArg(0));
-      if (checkWhetherIsDuplicate(CE, false))
+      if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
@@ -8270,7 +8241,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string Repl;
     if (FuncName == "cusolverDnCreate") {
       std::string LHS = getDrefName(CE->getArg(0));
-      if (checkWhetherIsDuplicate(CE, false))
+      if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -8523,7 +8494,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-    if (checkWhetherIsDuplicate(CE, false))
+    if (isPlaceholderIdxDuplicated(CE))
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
@@ -8596,7 +8567,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     requestFeature(HelperFeatureEnum::Device_dev_mgr_current_device_id, CE);
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
-    if (checkWhetherIsDuplicate(CE, false))
+    if (isPlaceholderIdxDuplicated(CE))
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
@@ -9320,7 +9291,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     } else {
       std::string StmtStr;
       if (IsDefaultStream) {
-        if (checkWhetherIsDuplicate(CE, false))
+        if (isPlaceholderIdxDuplicated(CE))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -9368,7 +9339,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         ReplStr += "\\";
       }
       if (IsDefaultStream) {
-        if (checkWhetherIsDuplicate(CE, false))
+        if (isPlaceholderIdxDuplicated(CE))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -9914,7 +9885,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
       std::tuple<bool, std::string, const CallExpr *> T;
       if (IsDefaultStream && !DefaultQueueAdded) {
         DefaultQueueAdded = true;
-        if (checkWhetherIsDuplicate(Call, false))
+        if (isPlaceholderIdxDuplicated(Call))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         auto &SM = DpctGlobalInfo::getSourceManager();
@@ -10006,7 +9977,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     else
       ReplStr = "*(" + StmtStr0 + ")";
 
-    if (checkWhetherIsDuplicate(CE, false))
+    if (isPlaceholderIdxDuplicated(CE))
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
@@ -10024,7 +9995,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaStreamDestroy") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0));
-    if (checkWhetherIsDuplicate(CE, false))
+    if (isPlaceholderIdxDuplicated(CE))
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
@@ -10042,7 +10013,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
     if (StmtStr == "0" || StmtStr == "cudaStreamDefault" ||
         StmtStr == "cudaStreamPerThread" || StmtStr == "cudaStreamLegacy") {
-      if (checkWhetherIsDuplicate(CE, false))
+      if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -10118,7 +10089,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StmtStr0;
       if (IsDefaultStream) {
-        if (checkWhetherIsDuplicate(CE, false))
+        if (isPlaceholderIdxDuplicated(CE))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
@@ -11460,7 +11431,7 @@ void MemoryMigrationRule::mallocMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
-  if (checkWhetherIsDuplicate(C, false))
+  if (isPlaceholderIdxDuplicated(C))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
 
@@ -11697,7 +11668,7 @@ void MemoryMigrationRule::memcpyMigration(
         }
       }
       if (AsyncQueue.empty()) {
-        if (checkWhetherIsDuplicate(C, false))
+        if (isPlaceholderIdxDuplicated(C))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
@@ -11853,7 +11824,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
 
   std::string ReplaceStr;
   std::string StreamStr;
-  if (checkWhetherIsDuplicate(C, false))
+  if (isPlaceholderIdxDuplicated(C))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
@@ -11968,7 +11939,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
   } else {
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
-  if (checkWhetherIsDuplicate(C, false))
+  if (isPlaceholderIdxDuplicated(C))
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaFree" || Name == "cublasFree") {
@@ -12052,7 +12023,7 @@ void MemoryMigrationRule::memsetMigration(
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
       }
       if (AsyncQueue.empty()) {
-        if (checkWhetherIsDuplicate(C, false))
+        if (isPlaceholderIdxDuplicated(C))
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
@@ -15090,7 +15061,7 @@ void PreDefinedStreamHandleRule::runRule(
       auto Begin = getStmtExpansionSourceRange(E).getBegin();
       unsigned int Length = Lexer::MeasureTokenLength(
           Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (checkWhetherIsDuplicate(E, false))
+      if (isPlaceholderIdxDuplicated(E))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
@@ -15379,7 +15350,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
     if (!DD)
       return;
-    if (checkWhetherIsDuplicate(CE, false))
+    if (isPlaceholderIdxDuplicated(CE))
       return;
 
     Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();

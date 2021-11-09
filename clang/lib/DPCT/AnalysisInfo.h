@@ -2116,8 +2116,10 @@ public:
   getTempVariableDeclCounterMap() {
     return TempVariableDeclCounterMap;
   }
-  static std::unordered_set<std::string> &getTempVariableHandledSet() {
-    return TempVariableHandledSet;
+  /// Key: string: file:offset for a replacement.
+  /// Value: int: index of the placeholder in a replacement.
+  static std::unordered_map<std::string, int> &getTempVariableHandledMap() {
+    return TempVariableHandledMap;
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
@@ -2464,7 +2466,7 @@ private:
   static int HelperFuncReplInfoIndex;
   static std::unordered_map<std::string, TempVariableDeclCounter>
       TempVariableDeclCounterMap;
-  static std::unordered_set<std::string> TempVariableHandledSet;
+  static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
   static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
@@ -4740,29 +4742,53 @@ generateHelperFuncReplInfo(const T *S) {
   return Info;
 }
 
-template <typename T>
-bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
+/// If it is not duplicated, return 0.
+/// If it is duplicated, return the correct Index which is >= 1.
+template <typename T> int getPlaceholderIdx(const T *S) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   SourceLocation Loc = S->getBeginLoc();
   Loc = SM.getExpansionLoc(Loc);
 
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
   std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
-  auto Iter = DpctGlobalInfo::getTempVariableHandledSet().find(Key);
-  if (Iter != DpctGlobalInfo::getTempVariableHandledSet().end()) {
+  auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
+  if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
+    return Iter->second;
+  } else {
+    return 0;
+  }
+}
+
+/// return true: upadte success
+/// return false: key already there, map is not changed.
+template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  SourceLocation Loc = S->getBeginLoc();
+  Loc = SM.getExpansionLoc(Loc);
+
+  auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
+  auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
+  if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
     return true;
   } else {
-    if (UpdateSet) {
-      DpctGlobalInfo::getTempVariableHandledSet().insert(Key);
-    }
+    DpctGlobalInfo::getTempVariableHandledMap().insert(
+        std::make_pair(Key, Index));
     return false;
   }
 }
 
-// There are 2 maps and 1 set are used to record related information:
+template <typename T> int isPlaceholderIdxDuplicated(const T *S) {
+  if (getPlaceholderIdx(S) == 0)
+    return false;
+  else
+    return true;
+}
+
+// There are 3 maps are used to record related information:
 // unordered_map<int, HelperFuncReplInfo> HelperFuncReplInfoMap,
 // unordered_map<string, TempVariableDeclCounter> TempVariableDeclCounterMap and
-// unordered_set<string> TempVariableHandledSet.
+// unordered_map<string, int> TempVariableHandledMap.
 //
 // 1. HelperFuncReplInfoMap's key is the Index of each placeholder, its value is
 // a HelperFuncReplInfo struct which saved the decalaration insert location of
@@ -4770,9 +4796,9 @@ bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
 // 2. TempVariableDeclCounterMap's key is the decalaration insert location, it's
 // value is a TempVariableDeclCounter which counts how many device declaration
 // and queue declaration need be inserted here respectively.
-// 3. TempVariableHandledSet's key is the begin location of the decalaration or
-// statement of ecah placeholder. This set is to avoid one placeholder to be
-// counted more than once.
+// 3. TempVariableHandledMap's key is the begin location of the decalaration or
+// statement of ecah placeholder. This map is to avoid one placeholder to be
+// counted more than once. Its value is Index.
 //
 // The rule of inserting declaration:
 // If pair (m,n) means device counter value is n and queue counter value is n,
@@ -4784,7 +4810,7 @@ bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
 // (>=2,1) to (>=2,>=2) need add queue declaration
 template <typename T>
 inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
-  if (checkWhetherIsDuplicate(S)) {
+  if (UpdatePlaceholderIdxMap(S, Index)) {
     return;
   }
 

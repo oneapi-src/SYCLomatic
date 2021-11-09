@@ -936,3 +936,29 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
                              CALL(MapNames::getDpctNamespace() + "unique_copy",
                                 ARG("oneapi::dpl::execution::seq"),
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))))))
+
+// thrust::transform_reduce
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(5),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY(
+            "transform_reduce",
+            CALL("std::transform_reduce",
+                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                 ARG(0), ARG(1), ARG(3), ARG(4), ARG(2))),
+        CALL_FACTORY_ENTRY("transform_reduce",
+                           CALL("std::transform_reduce",
+                                ARG("oneapi::dpl::execution::seq"), ARG(0),
+                                ARG(1), ARG(3), ARG(4), ARG(2)))),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "thrust::device"),
+        CALL_FACTORY_ENTRY(
+            "transform_reduce",
+            CALL("std::transform_reduce",
+                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                 ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))),
+        CALL_FACTORY_ENTRY("transform_reduce",
+                           CALL("std::transform_reduce",
+                                ARG("oneapi::dpl::execution::seq"), ARG(1),
+                                ARG(2), ARG(4), ARG(5), ARG(3)))))
