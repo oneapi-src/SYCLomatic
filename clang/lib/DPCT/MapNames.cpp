@@ -3370,6 +3370,7 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
     {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
+    {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
     //...
 };
 

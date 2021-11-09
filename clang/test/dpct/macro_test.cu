@@ -1073,3 +1073,13 @@ __global__ void test2() {}
 #undef DDDDD_launch_bounds_test
 #undef EEEEE_launch_bounds_test
 }
+
+//     CHECK:#if (defined(DPCT_COMPATIBILITY_TEMP) &&                                       \
+//CHECK-NEXT:     !(defined(__clang__) && defined(SYCL_LANGUAGE_VERSION)))
+//CHECK-NEXT:__host__ __device__
+//CHECK-NEXT:#endif
+//CHECK-NEXT:void foo26 () {}
+#if (defined(__CUDA_ARCH__) && !(defined(__clang__) && defined(__CUDA__)))
+__host__ __device__
+#endif
+void foo26 () {}
