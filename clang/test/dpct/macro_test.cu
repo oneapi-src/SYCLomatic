@@ -1083,3 +1083,19 @@ __global__ void test2() {}
 __host__ __device__
 #endif
 void foo26 () {}
+
+// check not to assert
+//CHECK: namespace user_namespace {
+//CHECK-NEXT:   template <typename T> struct cufftDoubleComplex {};
+//CHECK-NEXT: }
+//CHECK-NEXT: #define MACRO_AA(ARG) ARG()
+//CHECK-NEXT: template <typename T> void bar() {}
+//CHECK-NEXT: #define MACRO_BB() void foo27() { return bar<user_namespace::cufftDoubleComplex<float>>(); }
+//CHECK-NEXT: MACRO_AA(MACRO_BB)
+namespace user_namespace {
+  template <typename T> struct cufftDoubleComplex {};
+}
+#define MACRO_AA(ARG) ARG()
+template <typename T> void bar() {}
+#define MACRO_BB() void foo27() { return bar<user_namespace::cufftDoubleComplex<float>>(); }
+MACRO_AA(MACRO_BB)

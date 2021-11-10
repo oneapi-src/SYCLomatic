@@ -27,6 +27,7 @@
 namespace clang {
 extern std::function<bool(SourceLocation)> IsInRootFunc;
 extern std::function<unsigned int()> GetRunRound;
+extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
@@ -284,6 +285,7 @@ void DpctGlobalInfo::resetInfo() {
 DpctGlobalInfo::DpctGlobalInfo() {
   IsInRootFunc = DpctGlobalInfo::checkInRoot;
   GetRunRound = DpctGlobalInfo::getRunRound;
+  RecordTokenSplit = DpctGlobalInfo::recordTokenSplit;
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);

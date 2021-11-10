@@ -73,8 +73,10 @@
 using namespace clang;
 #if INTEL_CUSTOMIZATION
 namespace clang {
+  inline void recordTokenSplit(SourceLocation, unsigned) {}
   extern std::function<bool(SourceLocation)> IsInRootFunc;
   extern std::function<unsigned int()> GetRunRound;
+  std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
 }
 #endif
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
@@ -504,6 +506,9 @@ void Preprocessor::CreateString(StringRef Str, Token &Tok,
 }
 
 SourceLocation Preprocessor::SplitToken(SourceLocation Loc, unsigned Length) {
+#if INTEL_CUSTOMIZATION
+  RecordTokenSplit(Loc, Length);
+#endif
   auto &SM = getSourceManager();
   SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
   std::pair<FileID, unsigned> LocInfo = SM.getDecomposedLoc(SpellingLoc);

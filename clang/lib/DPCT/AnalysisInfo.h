@@ -2321,6 +2321,17 @@ private:
   // Wrapper of isInRoot for std::function usage.
   static bool checkInRoot(SourceLocation SL) { return isInRoot(SL); }
 
+  // Record token split when it's in macro
+  static void recordTokenSplit(SourceLocation SL, unsigned Len) {
+    auto It = getExpansionRangeToMacroRecord().find(
+        getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
+    if (It != getExpansionRangeToMacroRecord().end()) {
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+        [getCombinedStrFromLoc(
+          SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
+    }
+  }
+
   // Find stored info by its corresponding AST node.
   // VarDecl=>MemVarInfo
   // FunctionDecl=>DeviceFunctionDecl
