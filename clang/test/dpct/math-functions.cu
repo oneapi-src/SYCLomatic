@@ -32,10 +32,46 @@ __device__ float4 fun() {
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
 
+#ifndef USE_STD
+#define USING(FUNC) using ::FUNC;
+#else
+#define USING(FUNC) using std::FUNC;
+#endif
+// CHECK: using sycl::abs;
+USING(abs)
 
 __global__ void kernel() {
-
+  // CHECK: using sycl::abs;
+  USING(abs)
 }
+
+void host() {
+#define USE_STD
+// CHECK: using sycl::abs;
+  USING(abs)
+#undef USE_STD
+}
+
+#ifndef USE_STD
+#define USING_1(FUNC) using ::FUNC; int a = 1;
+#else
+#define USING_1(FUNC) using std::FUNC; int a = 1;
+#endif
+// CHECK: USING_1(abs)
+USING_1(abs)
+
+__global__ void kernel_1() {
+  // CHECK: USING_1(abs)
+  USING_1(abs)
+}
+
+void host_1() {
+#define USE_STD
+// CHECK: USING_1(abs)
+  USING_1(abs)
+#undef USE_STD
+}
+
 
 void foo() {
   // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
