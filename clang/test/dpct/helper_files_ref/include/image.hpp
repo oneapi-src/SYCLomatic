@@ -644,7 +644,7 @@ public:
   /// Attach 2D data to this class.
   void attach(void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(data, x, y, pitch, channel));
+    image_wrapper_base::set_data(image_data(data, x * sizeof(T), y, pitch, channel));
   }
   /// Detach data.
   void detach() {
