@@ -52,7 +52,7 @@ __global__ void kernel() {
 
 int main() {
 
-  // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::cl_half>();
+  // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
 
   // CHECK: dpct::image_channel float4Chn = dpct::image_channel::create<sycl::float4>();

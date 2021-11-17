@@ -27,8 +27,8 @@ class image_wrapper_base;
 namespace detail {
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
-/// cl_float4 and cl_half4. The data type of accessors with 8bits/16bits channel
-/// width will be 32 bits. cl_harf is an exception.
+/// cl_float4 and sycl::half4. The data type of accessors with 8bits/16bits channel
+/// width will be 32 bits. sycl::half is an exception.
 template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
   template <int dimensions>
@@ -862,7 +862,7 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) 
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims) {
   switch (channel.get_channel_type()) {
   case cl::sycl::image_channel_type::fp16:
-    return create_image_wrapper<cl::sycl::cl_half>(channel.get_channel_num(), dims);
+    return create_image_wrapper<cl::sycl::half>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::fp32:
     return create_image_wrapper<cl::sycl::cl_float>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int8:

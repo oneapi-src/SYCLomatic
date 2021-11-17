@@ -25,7 +25,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_channel_create,
                                       MapNames::getDpctNamespace() +
                                           "image_channel::create<" +
                                           MapNames::getClNamespace() +
-                                          "cl_half>"))
+                                          "half>"))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper,
                         ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(

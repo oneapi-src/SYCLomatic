@@ -48,7 +48,7 @@ __global__ void kernel(float4 *out) {
 
 int main() {
 
-  // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::cl_half>();
+  // CHECK: dpct::image_channel halfChn = dpct::image_channel::create<sycl::half>();
   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
 
   // CHECK: sycl::float4 *d_data42;
