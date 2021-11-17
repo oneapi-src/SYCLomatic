@@ -1099,3 +1099,23 @@ namespace user_namespace {
 template <typename T> void bar() {}
 #define MACRO_BB() void foo27() { return bar<user_namespace::cufftDoubleComplex<float>>(); }
 MACRO_AA(MACRO_BB)
+
+
+
+
+
+
+#include<tuple>
+//CHECK: template<class F, std::size_t... INDEX>
+//CHECK-NEXT: void foo28(F f, std::index_sequence<INDEX...>){}
+template<class F, std::size_t... INDEX>
+__device__ __host__ void foo28(F f, std::index_sequence<INDEX...>){}
+
+//CHECK: int foo29(){
+//CHECK-NEXT:   foo28([](int a) { return 0; }, std::make_index_sequence<std::tuple_size<std::tuple<int>>::value>{});
+//CHECK-NEXT:   return 0;
+//CHECK-NEXT: }
+__device__ __host__ int foo29(){
+  foo28([](int a) { return 0; }, std::make_index_sequence<std::tuple_size<std::tuple<int>>::value>{});
+  return 0;
+}
