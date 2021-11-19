@@ -1488,11 +1488,24 @@ getDerefedType(size_t Idx) {
     if (DerefQT.isNull()) {
       DerefQT = TE->getType();
     }
+
+    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    if (TypeStr == "<dependent type>") {
+      if (NeedDeref) {
+        return "typename std::remove_pointer<decltype(" +
+                  ExprAnalysis::ref(TE) + ")>::type";
+      } else {
+        return "typename std::remove_reference<decltype(" +
+                  ExprAnalysis::ref(TE) + ")>::type";
+      }
+    }
+
     if (NeedDeref) {
       DerefQT = DerefQualType(DerefQT);
       if (DerefQT.isNull())
         return "";
     }
+
     return DpctGlobalInfo::getReplacedTypeName(DerefQT);
   };
 }

@@ -466,3 +466,18 @@ void foobar() {
   MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float)));
 }
 
+template <typename T>
+struct Data {
+  T *Pos1[2];
+  T **Pos2;
+};
+
+
+template <typename T>
+void foo(int a, int b) {
+  auto c = new Data<T>[a];
+  // CHECK: c[0].Pos1[0] = (typename std::remove_reference<decltype(c[0].Pos1[0])>::type)sycl::malloc_device(b, q_ct1);
+  // CHECK-NEXT: *(c[0].Pos2) = (typename std::remove_pointer<decltype(c[0].Pos2)>::type)sycl::malloc_device(b, q_ct1);
+  cudaMalloc((void **)&c[0].Pos1[0], b);
+  cudaMalloc((void **)c[0].Pos2, b);
+}
