@@ -480,3 +480,16 @@ template <typename IndexType = int> __global__ void kernel() {
   auto tidx_template = static_cast<IndexType>(threadIdx.x);
   auto tidx_int = static_cast<int>(threadIdx.x);
 }
+
+#define TEST_LAMBDA(x) [&](){x();}()
+
+template<class F>
+__host__ __device__ void apply(F f, int a) {
+        return f(a);
+}
+
+__device__ int lambda_call() {
+        int a;
+        TEST_LAMBDA([&](){apply([a] (int b) {},2);});
+        return 0;
+}

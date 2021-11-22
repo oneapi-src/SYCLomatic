@@ -1494,12 +1494,11 @@ public:
 
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
-    auto LocInfo =
-        SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
-
     if (SM->isMacroArgExpansion(Loc)) {
-      LocInfo = SM->getDecomposedLoc(SM->getSpellingLoc(Loc));
+      Loc = SM->getSpellingLoc(Loc);
     }
+    auto LocInfo =
+        SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
 
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
       // To avoid potential path inconsist issue,
@@ -2365,7 +2364,7 @@ private:
     return VD->getLocation();
   }
   static inline SourceLocation getLocation(const FunctionDecl *FD) {
-    return SM->getExpansionLoc(FD->getBeginLoc());
+    return FD->getBeginLoc();
   }
   static inline SourceLocation getLocation(const FieldDecl *FD) {
     return FD->getLocation();
