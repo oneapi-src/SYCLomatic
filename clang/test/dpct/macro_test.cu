@@ -894,7 +894,7 @@ void foo19(){
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
-//CHECK-NEXT:  start = q_ct1.submit_barrier();                         \
+//CHECK-NEXT:  start = q_ct1.ext_oneapi_submit_barrier();                         \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -912,7 +912,7 @@ void foo19(){
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
-//CHECK-NEXT:    stop = q_ct1.submit_barrier();                         \
+//CHECK-NEXT:    stop = q_ct1.ext_oneapi_submit_barrier();                         \
 //CHECK-NEXT:    stop.wait_and_throw();                                                     \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
 //CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \

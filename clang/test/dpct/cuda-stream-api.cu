@@ -233,7 +233,7 @@ static void func()
   MY_ERROR_CHECKER(cudaStreamAttachMemAsync(s0, nullptr));
 
   cudaEvent_t e;
-  // CHECK:  e = s0->submit_barrier({e});
+  // CHECK:  e = s0->ext_oneapi_submit_barrier({e});
   cudaStreamWaitEvent(s0, e, 0);
 
   // CHECK: /*
@@ -249,7 +249,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((e = s0->submit_barrier({e}), 0));
+  // CHECK-NEXT: MY_ERROR_CHECKER((e = s0->ext_oneapi_submit_barrier({e}), 0));
   MY_ERROR_CHECKER(cudaStreamWaitEvent(s0, e, 0));
 
   // CHECK: s0->wait();

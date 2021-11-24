@@ -19,7 +19,7 @@ void foo(){
   //CHECK: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventCreate was removed because this call is redundant in DPC++.
   //CHECK-NEXT: */
-  //CHECK-NEXT: e = s->submit_barrier({e});
+  //CHECK-NEXT: e = s->ext_oneapi_submit_barrier({e});
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
 
@@ -27,7 +27,7 @@ void foo(){
   //CHECK-NEXT: DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   //CHECK-NEXT: */
   //CHECK-NEXT: e_ct1 = std::chrono::steady_clock::now();
-  //CHECK-NEXT: e = s->submit_barrier();
+  //CHECK-NEXT: e = s->ext_oneapi_submit_barrier();
   //CHECK-NEXT: e.wait_and_throw();
   cuEventRecord(e, s);
   cuEventSynchronize(e);

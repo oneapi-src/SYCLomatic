@@ -9285,7 +9285,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 
   if (IsAssigned) {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
-      // submit_barrier is specified in the value of option
+      // ext_oneapi_submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       emplaceTransformation(new ReplaceStmt(CE, "0"));
     } else {
@@ -9296,11 +9296,11 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
 
-        std::string Str =
-            "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.submit_barrier()";
+        std::string Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+                          "}}.ext_oneapi_submit_barrier()";
         StmtStr = ArgName + " = " + Str;
       } else {
-        std::string Str = StreamName + "->" + "submit_barrier()";
+        std::string Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
         StmtStr = ArgName + " = " + Str;
       }
       StmtStr = "(" + StmtStr + ", 0)";
@@ -9325,7 +9325,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     emplaceTransformation(TM);
   } else {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
-      // submit_barrier is specified in the value of option
+      // ext_oneapi_submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       auto TM = new ReplaceStmt(CE, std::move(Repl.str()));
       TM->setInsertPosition(IP_Right);
@@ -9345,12 +9345,14 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
 
         std::string Str = ArgName + " = {{NEEDREPLACEQ" +
-                          std::to_string(Index) + "}}.submit_barrier()";
+                          std::to_string(Index) +
+                          "}}.ext_oneapi_submit_barrier()";
         ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       } else {
-        std::string Str = ArgName + " = " + StreamName + "->submit_barrier()";
+        std::string Str =
+            ArgName + " = " + StreamName + "->ext_oneapi_submit_barrier()";
         ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
@@ -10081,7 +10083,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
-      // submit_barrier is specified in the value of option
+      // ext_oneapi_submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
       ReplStr = StmtStr1 + ".wait()";
     } else {
@@ -10098,8 +10100,8 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
       }
-      ReplStr =
-          StmtStr1 + " = " + StmtStr0 + "submit_barrier({" + StmtStr1 + "})";
+      ReplStr = StmtStr1 + " = " + StmtStr0 + "ext_oneapi_submit_barrier({" +
+                StmtStr1 + "})";
     }
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";

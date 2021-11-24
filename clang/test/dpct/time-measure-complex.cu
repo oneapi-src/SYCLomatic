@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 
     // record start event
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK:     start = dpct::get_default_queue().submit_barrier();
+    // CHECK:     start = dpct::get_default_queue().ext_oneapi_submit_barrier();
     cudaEventRecord(start, 0);
 
     // dispatch job with depth first ordering
@@ -163,16 +163,16 @@ int main(int argc, char **argv)
         kernel_4<<<grid, block, 0, streams[i]>>>();
 
         // CHECK: kernelEvent_ct1_i = std::chrono::steady_clock::now();
-        // CHECK-NEXT:        kernelEvent[i] = streams[i]->submit_barrier();
+        // CHECK-NEXT:        kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier();
         cudaEventRecord(kernelEvent[i], streams[i]);
-        // CHECK: kernelEvent[i] = streams[n_streams - 1]->submit_barrier({kernelEvent[i]});
+        // CHECK: kernelEvent[i] = streams[n_streams - 1]->ext_oneapi_submit_barrier({kernelEvent[i]});
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
     // record stop event
     // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
+    // CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
     // CHECK-NEXT:    elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -316,7 +316,7 @@ int foo_test_2()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((start = dpct::get_default_queue().submit_barrier(), 0));
+// CHECK-NEXT:    CHECK((start = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
     CHECK(cudaEventRecord(start, 0));
 
     // dispatch job with depth first ordering
@@ -370,8 +370,8 @@ int foo_test_2()
 // CHECK-NEXT:        DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
-// CHECK-NEXT:         CHECK((kernelEvent[i] = streams[i]->submit_barrier(), 0));
-// CHECK-NEXT:         kernelEvent[i] = streams[n_streams - 1]->submit_barrier({kernelEvent[i]});
+// CHECK-NEXT:         CHECK((kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:         kernelEvent[i] = streams[n_streams - 1]->ext_oneapi_submit_barrier({kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
@@ -384,7 +384,7 @@ int foo_test_2()
 // CHECK-NEXT:    */
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((stop = dpct::get_default_queue().submit_barrier(), 0));
+// CHECK-NEXT:    CHECK((stop = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
 // CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -546,7 +546,7 @@ void foo_test_4() {
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    start = dpct::get_default_queue().submit_barrier();
+// CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:    */
@@ -560,7 +560,7 @@ void foo_test_4() {
 // CHECK-NEXT:    */
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
+// CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
@@ -572,7 +572,7 @@ void foo_test_4() {
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    start = dpct::get_default_queue().submit_barrier();
+// CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
 // CHECK-NEXT:    */
@@ -586,7 +586,7 @@ void foo_test_4() {
 // CHECK-NEXT:    */
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    stop = dpct::get_default_queue().submit_barrier();
+// CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);
