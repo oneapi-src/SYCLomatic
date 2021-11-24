@@ -3942,7 +3942,7 @@ public:
     buildWrapperInfo(FD);
     buildCallInfo(FD);
   }
-  void emplaceReplacement();
+  void emplaceReplacement() override;
 };
 
 // device function info includes parameters num, memory variable and call

@@ -1099,6 +1099,8 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
+    ANALYZE_EXPR(LambdaExpr)
+    ANALYZE_EXPR(MaterializeTemporaryExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1125,6 +1127,23 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
     }
   }
   return Size;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
+  KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
+}
+
+// This function is used to process code like:
+// my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
+// The "__device__" attribute need to be removed.
+void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  if (const CXXRecordDecl* CRD = LE->getLambdaClass()) {
+    if (const CXXMethodDecl* CMD = CRD->getLambdaCallOperator()) {
+      if (CMD->hasAttr<CUDADeviceAttr>()) {
+        addReplacement(CMD->getAttr<CUDADeviceAttr>()->getRange(), LE, "");
+      }
+    }
+  }
 }
 
 void KernelArgumentAnalysis::analyzeExpr(

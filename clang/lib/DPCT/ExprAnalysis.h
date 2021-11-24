@@ -321,6 +321,46 @@ public:
     }
   }
 
+  /// Replace the text in source range \p SR with \p Text.
+  /// \p ParentExpr is the parent expression contains \p SR which is used to
+  /// calculate the correct replacement location.
+  inline void addReplacement(SourceRange SR, const Expr *ParentExpr,
+                             std::string Text) {
+    auto ResultRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
+    auto LastTokenLength = Lexer::MeasureTokenLength(ResultRange.getEnd(), SM,
+                                                     Context.getLangOpts());
+    auto SpellingLocInfo = std::pair<SourceLocation, size_t>(
+        ResultRange.getBegin(),
+        SM.getCharacterData(ResultRange.getEnd()) -
+            SM.getCharacterData(ResultRange.getBegin()) + LastTokenLength);
+
+    if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
+        SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                SpellingLocInfo.second >
+            SrcBegin + SrcLength) {
+      // If the spelling location is not in the parent range, add ExtReplacement
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+    } else if (SM.getDecomposedLoc(SpellingLocInfo.first).first == FileId &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second == SrcBegin &&
+               SM.getDecomposedLoc(SpellingLocInfo.first).second +
+                       SpellingLocInfo.second ==
+                   SrcBegin + SrcLength) {
+      // If the spelling location is the same as the parent range, add both
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      auto LocInfo = getOffsetAndLength(SR.getBegin(), SR.getEnd(), ParentExpr);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    } else {
+      // If the spelling location is inside the parent range, add string
+      // replacement. The String replacement will be add to ExtReplacement other
+      // where.
+      auto LocInfo = getOffsetAndLength(SR.getBegin(), SR.getEnd(), ParentExpr);
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    }
+  }
+
   void applyAllSubExprRepl();
   inline std::vector<std::shared_ptr<ExtReplacement>> &getSubExprRepl() {
     return SubExprRepl;
@@ -631,7 +671,7 @@ class ManagedPointerAnalysis : public ExprAnalysis {
 
   void initAnalysisScope();
   void buildCallExprRepl();
-  void dispatch(const Stmt *Expression);
+  void dispatch(const Stmt *Expression) override;
   void dispatch(const Decl *Decleration);
   void addRepl();
   bool isInCudaPath(const Decl *Decleration);
@@ -740,6 +780,8 @@ private:
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
+  inline void analyzeExpr(const LambdaExpr *LE);
+  inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
 
   bool isNullPtr(const Expr *);
 

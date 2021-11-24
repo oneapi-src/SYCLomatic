@@ -1925,8 +1925,19 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
     if (WithScalarWrapped && (!TA.isType() && !TA.isNull())) {
       appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
       requestFeature(HelperFeatureEnum::Dpct_dpct_named_lambda, FilePath);
-    } else
-      appendString(OS, TA.getString(), ", ");
+    } else {
+      // This code path is used to process code like:
+      // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
+      // When generating kernel name for "my_kernel", the type of this lambda
+      // expr is "lambda at FilePath:Row:Col", which will cause compiling
+      // failure. Current solution: use the location's hash value as its type.
+      std::string Str = TA.getString();
+      StringRef StrRef(Str);
+      if (StrRef.startswith("(lambda at")) {
+        Str = "class lambda_" + getHashAsString(Str).substr(0, 6);
+      }
+      appendString(OS, Str, ", ");
+    }
   }
   OS.flush();
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
