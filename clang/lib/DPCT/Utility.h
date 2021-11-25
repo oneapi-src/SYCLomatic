@@ -32,6 +32,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 namespace path = llvm::sys::path;
 
 namespace llvm {
@@ -534,6 +535,9 @@ bool isTypeInRoot(const clang::Type *TypePtr);
 void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);
+llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U>
+findDREInScope(const clang::Stmt *Scope);
+
 enum class MemcpyOrderAnalysisNodeKind {
   MOANK_Memcpy = 0,
   MOANK_MemcpyInFlowControl,

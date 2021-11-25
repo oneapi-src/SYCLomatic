@@ -493,3 +493,29 @@ __device__ int lambda_call() {
         TEST_LAMBDA([&](){apply([a] (int b) {},2);});
         return 0;
 }
+
+class Stream {};
+namespace c10 {
+namespace cuda {
+class CUDAStream {
+public:
+  operator cudaStream_t() const {
+    cudaStream_t tt;
+    return tt;
+  }
+};
+CUDAStream getCurrentCUDAStream(int device_index = -1);
+} // namespace cuda
+} // namespace c10
+
+__global__ void kernel() {}
+void foo() {
+// CHECK:  auto stream = c10::cuda::getCurrentCUDAStream();
+// CHECK-NEXT:  ((sycl::queue*)(stream))->parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:      kernel();
+// CHECK-NEXT:    });
+  auto stream = c10::cuda::getCurrentCUDAStream();
+  kernel<<<1, 1, 0, stream>>>();
+}

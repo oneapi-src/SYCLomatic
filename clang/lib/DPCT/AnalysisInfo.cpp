@@ -607,6 +607,7 @@ int KernelCallExpr::calculateOriginArgsSize() const {
 
 template <class ArgsRange>
 void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
+  bool NeedTypeCast = true;
   int Idx = 0;
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
@@ -627,6 +628,21 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
         DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
                                  false);
+    } else if (Idx == 3) {
+      llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> DREResults;
+      DREResults = findDREInScope(Arg);
+      for (auto &Result : DREResults) {
+        const DeclRefExpr *MatchedDRE =
+            Result.getNodeAs<DeclRefExpr>("VarReference");
+        if (!MatchedDRE)
+          continue;
+        auto Type = MatchedDRE->getDecl()->getType().getAsString();
+
+        if (Type.find("cudaStream_t") != std::string::npos ||
+            dyn_cast_or_null<CXXDependentScopeMemberExpr>(
+                getParentStmt(MatchedDRE)))
+          NeedTypeCast = false;
+      }
     }
     ++Idx;
   }
@@ -655,6 +671,9 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
     ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::HFT_DefaultQueue);
+  } else if (NeedTypeCast) {
+    ExecutionConfig.Stream =
+        buildString("((sycl::queue*)(", ExecutionConfig.Stream, "))");
   }
 }
 
