@@ -11,8 +11,8 @@
 
 int main() {
   cublasHandle_t handle;
-  float alpha_S, *x_S, *result_S;
+  float *alpha_S, *x_S, *result_S;
   int incx, incy;
-  cublasSaxpy(handle, 10, &alpha_S, x_S, incx, result_S, incy);
+  cublasSaxpy(handle, 10, alpha_S, x_S, incx, result_S, incy);
   return 0;
 }

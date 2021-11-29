@@ -14,7 +14,7 @@
 int main() {
   cusparseHandle_t handle;
   cusparseMatDescr_t descrA;
-  double alpha;
+  double *alpha;
   const double* csrValA;
   const int* csrRowPtrA;
   const int* csrColIndA;
@@ -22,6 +22,6 @@ int main() {
   double beta;
   double* y;
   int aaaaa = 0;
-  cusparseDcsrmv(handle, (cusparseOperation_t)aaaaa, 2, 2, 2, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
+  cusparseDcsrmv(handle, (cusparseOperation_t)aaaaa, 2, 2, 2, alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
   return 0;
 }

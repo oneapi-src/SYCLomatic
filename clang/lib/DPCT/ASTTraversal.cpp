@@ -4541,6 +4541,47 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(SPBLASEnumsRule)
 
+/// The function returns the migrated arguments of the scalar parameters.
+/// In the original code, the type of this parameter is pointer.
+/// (1) If original type is float/double and argument is like "&alpha",
+///     this function will return "alpha".
+/// (2) If original type is float2/double2 and argument is like "&alpha",
+///     this function will return
+///     "std::complex<float/double>(alpha.x(), alpha.x())".
+/// (3) If original argument is like "alpha", this function will return
+///     "dpct::get_value(alpha, q)".
+/// \p Expr is used to distinguish case(1,2) and case(3)
+/// \p ExprStr and \p QueueStr are used for case(3)
+/// \p ValueType is used for case(2)
+std::string getValueStr(const Expr *Expr, std::string ExprStr,
+                        std::string QueueStr, std::string ValueType = "") {
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(Expr->IgnoreImpCasts())) {
+    if (UO->getOpcode() == UO_AddrOf && UO->getSubExpr()) {
+      ExprAnalysis EA;
+      std::string NewStr = EA.ref(UO->getSubExpr());
+      if (ValueType == "std::complex<float>" ||
+          ValueType == "std::complex<double>")
+        return ValueType + "(" + NewStr + ".x(), " + NewStr + ".y())";
+      else
+        return NewStr;
+    }
+  } else if (auto COCE =
+                 dyn_cast<CXXOperatorCallExpr>(Expr->IgnoreImpCasts())) {
+    if (COCE->getOperator() == OO_Amp && COCE->getArg(0)) {
+      ExprAnalysis EA;
+      std::string NewStr = EA.ref(COCE->getArg(0));
+      if (ValueType == "std::complex<float>" ||
+          ValueType == "std::complex<double>")
+        return ValueType + "(" + NewStr + ".x(), " + NewStr + ".y())";
+      else
+        return NewStr;
+    }
+  }
+  requestFeature(HelperFeatureEnum::BlasUtils_get_value, Expr);
+  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", *" +
+         QueueStr + ")";
+}
+
 // Rule for spBLAS function calls.
 void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -4811,34 +4852,37 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.Repl =
-          "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-          TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-          CallExprArguReplVec[5] + ", *" + CallExprArguReplVec[0] + "), " +
-          MatrixHandleName + ", " + X + ", " + MapNames::getDpctNamespace() +
-          "get_value(" + CallExprArguReplVec[11] + ", *" +
-          CallExprArguReplVec[0] + "), " + Y + ")";
+      ReplaceStrs.Repl = "oneapi::mkl::sparse::gemv(*" +
+                         CallExprArguReplVec[0] + ", " + TransStr + ", " +
+                         getValueStr(CE->getArg(5), CallExprArguReplVec[5],
+                                        CallExprArguReplVec[0], BufferType) +
+                         ", " + MatrixHandleName + ", " + X + ", " +
+                         getValueStr(CE->getArg(11), CallExprArguReplVec[11],
+                                        CallExprArguReplVec[0], BufferType) +
+                         ", " + Y + ")";
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-            TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[5] + ", *" + CallExprArguReplVec[0] + "), " +
-            MatrixHandleName + ", const_cast<" + BufferType + "*>(" + X +
-            "), " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] + "), " +
-            Y + ")";
+            TransStr + ", " +
+            getValueStr(CE->getArg(5), CallExprArguReplVec[5],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", const_cast<" + BufferType + "*>(" + X +
+            "), " +
+            getValueStr(CE->getArg(11), CallExprArguReplVec[11],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + Y + ")";
       else
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemv(*" + CallExprArguReplVec[0] + ", " +
-            TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[5] + ", *" + CallExprArguReplVec[0] + "), " +
-            MatrixHandleName + ", (" + BufferType + "*)" + X + ", " +
-            MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[11] + ", *" + CallExprArguReplVec[0] + "), (" +
-            BufferType + "*)" + Y + ")";
+            TransStr + ", " +
+            getValueStr(CE->getArg(5), CallExprArguReplVec[5],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", (" + BufferType + "*)" + X + ", " +
+            getValueStr(CE->getArg(11), CallExprArguReplVec[11],
+                           CallExprArguReplVec[0], BufferType) +
+            ", (" + BufferType + "*)" + Y + ")";
     }
   } else if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm" ||
              FuncName == "cusparseCcsrmm" || FuncName == "cusparseZcsrmm") {
@@ -4944,38 +4988,43 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         TransStr = CallExprArguReplVec[1];
       }
     }
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.Repl =
-          "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
-          TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-          CallExprArguReplVec[6] + ", *" + CallExprArguReplVec[0] + "), " +
-          MatrixHandleName + ", " + B + ", " + CallExprArguReplVec[3] + ", " +
-          CallExprArguReplVec[12] + ", " + MapNames::getDpctNamespace() +
-          "get_value(" + CallExprArguReplVec[13] + ", *" +
-          CallExprArguReplVec[0] + "), " + C + ", " + CallExprArguReplVec[15] +
-          ")";
+      ReplaceStrs.Repl = "oneapi::mkl::sparse::gemm(*" +
+                         CallExprArguReplVec[0] + ", " + TransStr + ", " +
+                         getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                                        CallExprArguReplVec[0], BufferType) +
+                         ", " + MatrixHandleName + ", " + B + ", " +
+                         CallExprArguReplVec[3] + ", " +
+                         CallExprArguReplVec[12] + ", " +
+                         getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                                        CallExprArguReplVec[0], BufferType) +
+                         ", " + C + ", " + CallExprArguReplVec[15] + ")";
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
-            TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[6] + ", *" + CallExprArguReplVec[0] + "), " +
-            MatrixHandleName + ", const_cast<" + BufferType + "*>(" + B +
+            TransStr + ", " +
+            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", const_cast<" + BufferType + "*>(" + B +
             "), " + CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] +
-            ", " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[13] + ", *" + CallExprArguReplVec[0] + "), " +
-            C + ", " + CallExprArguReplVec[15] + ")";
+            ", " +
+            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + C + ", " + CallExprArguReplVec[15] + ")";
       else
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] + ", " +
-            TransStr + ", " + MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[6] + ", *" + CallExprArguReplVec[0] + "), " +
-            MatrixHandleName + ", (" + BufferType + "*)" + B + ", " +
+            TransStr + ", " +
+            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                           CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", (" + BufferType + "*)" + B + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] + ", " +
-            MapNames::getDpctNamespace() + "get_value(" +
-            CallExprArguReplVec[13] + ", *" + CallExprArguReplVec[0] + "), (" +
-            BufferType + "*)" + C + ", " + CallExprArguReplVec[15] + ")";
+            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                           CallExprArguReplVec[0], BufferType) +
+            ", (" + BufferType + "*)" + C + ", " + CallExprArguReplVec[15] +
+            ")";
     }
   }
 
@@ -5804,11 +5853,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     // update the replacement of scalar arguments
     for (size_t i = 0; i < ReplInfo.PointerIndexInfo.size(); ++i) {
       int ScalarIndex = ReplInfo.PointerIndexInfo[i];
-      CallExprArguReplVec[ScalarIndex] = MapNames::getDpctNamespace() +
-                                         "get_value(" +
-                                         CallExprArguReplVec[ScalarIndex] +
-                                         ", *" + CallExprArguReplVec[0] + ")";
-      requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+      CallExprArguReplVec[ScalarIndex] = getValueStr(
+          CE->getArg(ScalarIndex), CallExprArguReplVec[ScalarIndex],
+          CallExprArguReplVec[0], BufferType);
+      // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
     }
 
     // Declare temp variables for
@@ -5933,14 +5981,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr = PrefixInsertStr + BufferDecl;
     }
 
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
     // update the replacement of two scalar arguments
-    CallExprArguReplVec[5] = MapNames::getDpctNamespace() + "get_value(" +
-                             CallExprArguReplVec[5] + ", *" +
-                             CallExprArguReplVec[0] + ")";
-    CallExprArguReplVec[10] = MapNames::getDpctNamespace() + "get_value(" +
-                              CallExprArguReplVec[10] + ", *" +
-                              CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[5] = getValueStr(CE->getArg(5), CallExprArguReplVec[5],
+                       CallExprArguReplVec[0], BufferType);
+    CallExprArguReplVec[10] = getValueStr(CE->getArg(10), CallExprArguReplVec[10],
+                       CallExprArguReplVec[0], BufferType);
 
     // update the replacement of the fillmode enmu argument
     const CStyleCastExpr *CSCE = nullptr;
@@ -6221,11 +6266,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+    // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
     // update the replacement of a scalar argument
-    CallExprArguReplVec[7] = MapNames::getDpctNamespace() + "get_value(" +
-                             CallExprArguReplVec[7] + ", *" +
-                             CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[7] =
+        getValueStr(CE->getArg(7), CallExprArguReplVec[7],
+                       CallExprArguReplVec[0], BufferType);
 
     // Remove arguments ptrB and ldb from CallExprArguReplVec
     CallExprArguReplVec.erase(CallExprArguReplVec.begin() + 10,
@@ -6339,14 +6384,14 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           "(" + TypeInfo.CType + "*)" + CallExprArguReplVec[12];
     }
 
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+    // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
     // update the replacement of two scalar arguments
-    CallExprArguReplVec[6] = MapNames::getDpctNamespace() + "get_value(" +
-                             CallExprArguReplVec[6] + ", *" +
-                             CallExprArguReplVec[0] + ")";
-    CallExprArguReplVec[11] = MapNames::getDpctNamespace() + "get_value(" +
-                              CallExprArguReplVec[11] + ", *" +
-                              CallExprArguReplVec[0] + ")";
+    CallExprArguReplVec[6] = getValueStr(
+        CE->getArg(6), CallExprArguReplVec[6], CallExprArguReplVec[0],
+        FuncName == "cublasCgemmEx" ? "std::complex<float>" : "");
+    CallExprArguReplVec[11] = getValueStr(
+        CE->getArg(13), CallExprArguReplVec[11], CallExprArguReplVec[0],
+        FuncName == "cublasCgemmEx" ? "std::complex<float>" : "");
     if (Key == "2:2") {
       CallExprArguReplVec[6] = MapNames::getClNamespace() + "vec<float, 1>{" +
                                CallExprArguReplVec[6] + "}.convert<" +
@@ -6380,19 +6425,20 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
+    // clang-format off
     // MKL API does not have computeType and algo parameters.
-    // computeType(alpha/beta)               AType/BType     CType
-    // IsSupportInMKL CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)
-    // CUDA_R_16F(2)   yes CUDA_R_32I(10)                        CUDA_R_8I(3)
-    // CUDA_R_32I(10)  no CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)
-    // CUDA_R_16F(2)   no (can cast alpha/beta to half) CUDA_R_32F(0)
-    // CUDA_R_8I(3)    CUDA_R_32I(10)  no CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)
-    // CUDA_R_16F(2)   CUDA_R_32F(0)   yes CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)
-    // CUDA_R_32F(0)   CUDA_R_32F(0)   yes CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)
-    // CUDA_R_64F(1)   CUDA_R_64F(1)   yes CUDA_C_32F(4) CUDA_C_8I(7)
-    // CUDA_C_32F(4)   no CUDA_C_32F(4)                         CUDA_C_32F(4)
-    // CUDA_C_32F(4)   yes CUDA_C_64F(5)                         CUDA_C_64F(5)
-    // CUDA_C_64F(5)   yes
+    // computeType(alpha/beta)               AType/BType     CType IsSupportInMKL
+    // CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)   CUDA_R_16F(2)   yes
+    // CUDA_R_32I(10)                        CUDA_R_8I(3)    CUDA_R_32I(10)  no
+    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_16F(2)   no (can cast alpha/beta to half)
+    // CUDA_R_32F(0)                         CUDA_R_8I(3)    CUDA_R_32I(10)  no
+    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_32F(0)   yes
+    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_32F(0)   CUDA_R_32F(0)   yes
+    // CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)  CUDA_R_64F(1)   CUDA_R_64F(1)   yes
+    // CUDA_C_32F(4)                         CUDA_C_8I(7)    CUDA_C_32F(4)   no
+    // CUDA_C_32F(4)                         CUDA_C_32F(4)   CUDA_C_32F(4)   yes
+    // CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
+    // clang-format on
 
     auto AType = CE->getArg(8);
     auto BType = CE->getArg(11);
@@ -6486,15 +6532,15 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     // update the replacement of two scalar arguments
-    requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
-    CallExprArguReplVec[6] = MapNames::getDpctNamespace() + "get_value((" +
-                             TypeInfo.OriginScalarType + "*)" +
-                             CallExprArguReplVec[6] + ", *" +
-                             CallExprArguReplVec[0] + ")";
-    CallExprArguReplVec[11] = MapNames::getDpctNamespace() + "get_value((" +
-                              TypeInfo.OriginScalarType + "*)" +
-                              CallExprArguReplVec[11] + ", *" +
-                              CallExprArguReplVec[0] + ")";
+    // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+    CallExprArguReplVec[6] = getValueStr(CE->getArg(6),
+                                            "(" + TypeInfo.OriginScalarType +
+                                                "*)" + CallExprArguReplVec[6],
+                                            CallExprArguReplVec[0]);
+    CallExprArguReplVec[11] = getValueStr(CE->getArg(11),
+                                             "(" + TypeInfo.OriginScalarType +
+                                                 "*)" + CallExprArguReplVec[11],
+                                             CallExprArguReplVec[0]);
     if (Key == "0:2:2" || Key == "68:2:2") {
       CallExprArguReplVec[6] = MapNames::getClNamespace() + "vec<float, 1>{" +
                                CallExprArguReplVec[6] + "}.convert<" +
@@ -6616,10 +6662,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
         ExprAnalysis EA(CE->getArg(i));
-        requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
-        CurrentArgumentRepl = MapNames::getDpctNamespace() + "get_value(" +
-                              EA.getReplacedString() + ", *" +
-                              CallExprArguReplVec[0] + ")";
+        CurrentArgumentRepl = getValueStr(
+            CE->getArg(i), EA.getReplacedString(), CallExprArguReplVec[0]);
       } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
@@ -6766,10 +6810,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
         ExprAnalysis EA(CE->getArg(i));
-        requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
-        CurrentArgumentRepl = MapNames::getDpctNamespace() + "get_value(" +
-                              EA.getReplacedString() + ", *" +
-                              CallExprArguReplVec[0] + ")";
+        // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
+        CurrentArgumentRepl = getValueStr(
+            CE->getArg(i), EA.getReplacedString(), CallExprArguReplVec[0],
+            ReplInfo.PointerTypeInfo[IndexTemp]);
       } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,

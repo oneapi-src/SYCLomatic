@@ -12,7 +12,7 @@
 int main() {
   cublasHandle_t handle;
   float* a;
-  float alpha;
-  cublasStrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, 4, 4, &alpha, a, 4, a, 4, a, 4);
+  float *alpha;
+  cublasStrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, 4, 4, alpha, a, 4, a, 4, a, 4);
   return 0;
 }

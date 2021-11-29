@@ -90,7 +90,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, dpct::get_transpose(aaaaa), dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), dpct::get_value(&beta, *handle), y);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, dpct::get_transpose(aaaaa), alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseCreate(&handle);
   cusparseCreateMatDescr(&descrA);
@@ -106,7 +106,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, dpct::get_value(&alpha_Z, *handle), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)y_Z);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, std::complex<double>(alpha_Z.x(), alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)y_Z);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseZcsrmv(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
 
@@ -116,7 +116,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), n, ldb, dpct::get_value(&beta, *handle), y, ldc);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), n, ldb, beta, y, ldc);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseDcsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
 
@@ -126,7 +126,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, dpct::get_value(&alpha_Z, *handle), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, n, ldb, dpct::get_value(&beta_Z, *handle), (std::complex<double>*)y_Z, ldc);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, std::complex<double>(alpha_Z.x(), alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, n, ldb, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)y_Z, ldc);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
@@ -139,7 +139,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), dpct::get_value(&beta, *handle), y);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
@@ -153,7 +153,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), dpct::get_value(&beta, *handle), y);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
@@ -167,7 +167,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), dpct::get_value(&beta, *handle), y);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
@@ -210,7 +210,7 @@ int foo(int aaaaa){
 //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-//CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, dpct::get_value(&alpha, *handle), mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), dpct::get_value(&beta, *handle), y);
+//CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
 //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
