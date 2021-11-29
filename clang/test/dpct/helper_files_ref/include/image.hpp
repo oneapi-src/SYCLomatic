@@ -26,9 +26,9 @@ class image_channel;
 class image_wrapper_base;
 namespace detail {
 /// Image object type traits, with accessor type and sampled data type defined.
-/// The data type of an image accessor must be one of cl_int4, cl_uint4,
-/// cl_float4 and sycl::half4. The data type of accessors with 8bits/16bits channel
-/// width will be 32 bits. sycl::half is an exception.
+/// The data type of an image accessor must be one of sycl::int4, sycl::uint4,
+/// sycl::float4 and sycl::half4. The data type of accessors with 8bits/16bits
+/// channel width will be 32 bits. sycl::half is an exception.
 template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
   template <int dimensions>
@@ -49,24 +49,24 @@ template <class T> struct image_trait {
   static constexpr int channel_num = 1;
 };
 template <>
-struct image_trait<cl::sycl::cl_uchar> : public image_trait<cl::sycl::cl_uint> {
-  using data_t = cl::sycl::cl_uchar;
+struct image_trait<std::uint8_t> : public image_trait<std::uint32_t> {
+  using data_t = std::uint8_t;
   using elem_t = data_t;
 };
 template <>
-struct image_trait<cl::sycl::cl_ushort>
-    : public image_trait<cl::sycl::cl_uint> {
-  using data_t = cl::sycl::cl_ushort;
+struct image_trait<std::uint16_t>
+    : public image_trait<std::uint32_t> {
+  using data_t = std::uint16_t;
   using elem_t = data_t;
 };
 template <>
-struct image_trait<cl::sycl::cl_char> : public image_trait<cl::sycl::cl_int> {
-  using data_t = cl::sycl::cl_char;
+struct image_trait<std::int8_t> : public image_trait<std::int32_t> {
+  using data_t = std::int8_t;
   using elem_t = data_t;
 };
 template <>
-struct image_trait<cl::sycl::cl_short> : public image_trait<cl::sycl::cl_int> {
-  using data_t = cl::sycl::cl_short;
+struct image_trait<std::int16_t> : public image_trait<std::int32_t> {
+  using data_t = std::int16_t;
   using elem_t = data_t;
 };
 template <>
@@ -864,19 +864,19 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
   case cl::sycl::image_channel_type::fp16:
     return create_image_wrapper<cl::sycl::half>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::fp32:
-    return create_image_wrapper<cl::sycl::cl_float>(channel.get_channel_num(), dims);
+    return create_image_wrapper<float>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int8:
-    return create_image_wrapper<cl::sycl::cl_char>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::int8_t>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int16:
-    return create_image_wrapper<cl::sycl::cl_short>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::int16_t>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::signed_int32:
-    return create_image_wrapper<cl::sycl::cl_int>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::int32_t>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int8:
-    return create_image_wrapper<cl::sycl::cl_uchar>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::uint8_t>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int16:
-    return create_image_wrapper<cl::sycl::cl_ushort>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::uint16_t>(channel.get_channel_num(), dims);
   case cl::sycl::image_channel_type::unsigned_int32:
-    return create_image_wrapper<cl::sycl::cl_uint>(channel.get_channel_num(), dims);
+    return create_image_wrapper<std::uint32_t>(channel.get_channel_num(), dims);
   default:
     return nullptr;
   }
