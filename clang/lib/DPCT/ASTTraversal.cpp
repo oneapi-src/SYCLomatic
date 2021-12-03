@@ -426,6 +426,11 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier && Name == "__forceinline__") {
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
+    requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, Range.getBegin());
+  } else if(TKind == tok::identifier && Name == "__align__") {
+    TransformSet.emplace_back(
+        new ReplaceToken(Range.getBegin(), "__dpct_align__"));
+    requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, Range.getBegin());
   } else if (TKind == tok::identifier && Name == "CUDART_CB") {
 #ifdef _WIN32
     TransformSet.emplace_back(
@@ -1748,54 +1753,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
 
 REGISTER_RULE(ErrorHandlingHostAPIRule)
 
-void AlignAttrsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(cxxRecordDecl(hasAttr(attr::Aligned)).bind("classDecl"), this);
-}
 
-void AlignAttrsRule::runRule(const MatchFinder::MatchResult &Result) {
-  auto C = getNodeAsType<CXXRecordDecl>(Result, "classDecl");
-  if (!C)
-    return;
-  auto &AV = C->getAttrs();
-
-  for (auto A : AV) {
-    if (A->getKind() == attr::Aligned) {
-      auto SM = Result.SourceManager;
-      auto ExpB = SM->getExpansionLoc(A->getLocation());
-      if (!strncmp(SM->getCharacterData(ExpB), "__align__(", 10))
-        emplaceTransformation(new ReplaceToken(ExpB, "__dpct_align__"));
-      requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, ExpB);
-    }
-  }
-}
-
-REGISTER_RULE(AlignAttrsRule)
-
-void FuncAttrsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(functionDecl(hasAttr(attr::AlwaysInline)).bind("funcDecl"),
-                this);
-}
-
-void FuncAttrsRule::runRule(const MatchFinder::MatchResult &Result) {
-  auto FD = getNodeAsType<FunctionDecl>(Result, "funcDecl");
-  auto SM = Result.SourceManager;
-  if (!FD)
-    return;
-  auto &FA = FD->getAttrs();
-  for (auto A : FA) {
-    if (A->getKind() == attr::AlwaysInline) {
-      // directly used
-      auto Loc =
-          getDefinitionRange(A->getRange().getBegin(), A->getRange().getEnd())
-              .getBegin();
-      if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
-        emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
-      requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, Loc);
-    }
-  }
-}
-
-REGISTER_RULE(FuncAttrsRule)
 
 void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AtomicFuncNames(MapNames::AtomicFuncNamesMap.size());
