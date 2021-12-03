@@ -1413,24 +1413,43 @@ void deduceTemplateArgumentFromTemplateArgs(
       deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
                                      Arg.getAsExpr()->getType());
       return;
-    default:
+    case TemplateArgument::Type:
       if (ArgLoc.getArgument().isNull()) {
         deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
           Arg.getAsType());
-      }
-      else if (ArgLoc.getArgument().getKind() != TemplateArgument::Type) {
-        return;
-      }
-      else {
+      } else {
         deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
           ArgLoc.getTypeSourceInfo()->getType(),
           ArgLoc.getTypeSourceInfo()->getTypeLoc());
       }
       break;
+    default:
+      // Currently dpct does not restore enough information
+      // to deduce from other kinds of template arguments.
+      // Stop the deduction.
+      return;
     }
   default:
     break;
   }
+}
+
+bool compareTemplateName(std::string N1, TemplateName N2) {
+  std::string NameStr;
+  llvm::raw_string_ostream OS(NameStr);
+  N2.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(), false);
+  OS.flush();
+  return N1.compare(NameStr);
+}
+
+// If the name of 2 template classes are different
+// the following deduction will be incorrect.
+bool compareTemplateName(TemplateName N1, TemplateName N2) {
+  std::string NameStr;
+  llvm::raw_string_ostream OS(NameStr);
+  N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(), false);
+  OS.flush();
+  return compareTemplateName(NameStr, N2);
 }
 
 void deduceTemplateArgumentFromTemplateSpecialization(
@@ -1442,12 +1461,15 @@ void deduceTemplateArgumentFromTemplateSpecialization(
   case Type::Record:
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
             ARG_TYPE_CAST(RecordType)->getDecl())) {
+      if (compareTemplateName(CTSD->getName().data(), ParmTST->getTemplateName())) {
+        return;
+      }
       if (CTSD->getTypeAsWritten() &&
           CTSD->getTypeAsWritten()->getType()->getTypeClass() ==
               Type::TemplateSpecialization) {
         auto TL = CTSD->getTypeAsWritten()->getTypeLoc();
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-        for (unsigned i = 0; i < ParmTST->getNumArgs(); ++i) {
+        for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
               TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
               TSTL.getArgLoc(i));
@@ -1456,31 +1478,39 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     }
     break;
   case Type::TemplateSpecialization:
-    if (TL) {
-      auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-      for (unsigned i = 0; i < ParmTST->getNumArgs(); ++i) {
-        deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
-                                               TSTL.getArgLoc(i).getArgument(),
-                                               TSTL.getArgLoc(i));
-      }
+  {
+    // To support following alias template cases:
+    // template<size_t N>
+    // using new_type = old_type<size_t, N>
+    // Since new_type(the ArgType) takes 1 arg and old_type(the ParmTST)
+    // takes 2 args, need to get the alias type of ArgType and recursively
+    // call deduceTemplateArgumentFromType
+    auto TST = ARG_TYPE_CAST(TemplateSpecializationType);
+    if (TST->isTypeAlias()) {
+      deduceTemplateArgumentFromType(TAIList, ParmType,
+        TST->getAliasedType());
+    } else if (compareTemplateName(TST->getTemplateName(),
+      ParmTST->getTemplateName())) {
+      return;
     } else {
-      auto TST = ARG_TYPE_CAST(TemplateSpecializationType);
-      // To support following alias template cases:
-      // template<size_t N>
-      // using new_type = old_type<size_t, N>
-      // Since new_type(the ArgType) takes 1 arg and old_type(the ParmTST) takes
-      // 2 args, need to get the alias type of ArgType and recursively call
-      // deduceTemplateArgumentFromType
-      if (TST->isTypeAlias()) {
-        deduceTemplateArgumentFromType(TAIList, ParmType, TST->getAliasedType());
-      } else {
-        for (unsigned i = 0; i < ParmTST->getNumArgs(); ++i) {
+      if (TL) {
+        auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
+        unsigned i;
+        for (i = 0; i < TSTL.getNumArgs(); ++i) {
+          deduceTemplateArgumentFromTemplateArgs(
+            TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+            TSTL.getArgLoc(i));
+        }
+      }
+      else {
+        for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
             TST->getArg(i));
         }
       }
     }
     break;
+  }
   default:
     break;
   }

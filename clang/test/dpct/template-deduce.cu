@@ -402,3 +402,80 @@ template<class T1, class T2, size_t S> void implicit_host() {
     kernel_dependent<<<1,1>>>(h_cpx_2);
 }
 
+#include<vector>
+template<class T1, class T2>
+class MyClass{};
+
+// Make sure no assert when there are default template arg.
+// std::vector has a default arg class Allocator:
+// template<class T, class Allocator = std::allocator<T>> class vector;
+// When deducing std::vector<MyClass<T, T>, std::allocator<MyClass<T, T>>>
+// from std::vector<T>, DPCT should use the #arg of std::vector<T>.
+template<class T>
+__device__ __host__ void foo2(
+  std::vector<MyClass<T, T>> t){}
+
+template<class T>
+__device__ __host__ void foo3(){
+  std::vector<T> a;
+  foo2(a);
+}
+
+__global__ void foo4(){
+  foo3<MyClass<int, int>>();
+}
+
+// Make sure stop deduction when the template names are different
+// MyClass2 inheritates MyClass, but AST does not show the mapping of
+// template args between MyClass and MyClass2.
+// DPCT should stop the deduction to prevent potential issues.
+template<class T, T N>
+class MyClass2 : public MyClass<T, float>{};
+
+template<class T>
+__device__ __host__ void foo5(MyClass<T, float> t){}
+
+template<class T>
+__device__ __host__ void foo6(){
+  MyClass2<T, 5> a;
+  foo5(a);
+}
+
+__global__ void foo7(){
+  foo6<int>();
+}
+
+// Make sure no assert when there are alias template deduction
+// using MakeMyClass3 = MyClass3<T, 5> will create an alias template
+// since MakeMyClass3 takes only 1 arg and MyClass3 takes 2 args,
+// DPCT needs to perform getAliasedType() before deduction.
+// Calling foo9<<<1,1,0>>>(m1) will trigger the deduction without typeloc
+// Calling foo8(input) will trigger the deduction with typeloc
+template<class T1, size_t T2>
+class MyClass3{};
+
+template<class T>
+using MakeMyClass3 = MyClass3<T, 5>;
+
+template<typename scalar_t>
+__device__ inline void foo8(MakeMyClass3<scalar_t> input) {}
+
+template<typename scalar_t>
+__global__ void foo9(MakeMyClass3<scalar_t> input){
+  foo8(input);
+}
+
+//CHECK: int foo10(){
+//CHECK-NEXT:   MakeMyClass3<int> m1;
+//CHECK-NEXT:   dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:         foo9(m1);
+//CHECK-NEXT:       });
+//CHECK-NEXT:   return 0;
+//CHECK-NEXT: }
+int foo10(){
+  MakeMyClass3<int> m1;
+  foo9<<<1,1,0>>>(m1);
+  return 0;
+}
