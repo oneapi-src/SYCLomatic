@@ -1109,6 +1109,8 @@ int main_int4() {
   int4 *int4_e;
   // CHECK: sycl::int4 *int4_f;
   int4 *int4_f;
+  // Check: int4_f->x() = int4_e->x();
+  int4_f->x = int4_e->x;
   // CHECK: int int4_g = int4_c.x();
   int int4_g = int4_c.x;
   // CHECK: int4_a.x() = int4_d.x();

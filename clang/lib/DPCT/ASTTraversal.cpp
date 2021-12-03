@@ -3503,10 +3503,17 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
                            isAssignmentOperator()))
           .bind("VecMemberExprAssignment"),
       this);
+
+  // int2 *a; a->x = 1;
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
+                     hasCanonicalType(recordType(hasDeclaration(cxxRecordDecl(
+                         hasAnyName(SUPPORTEDVECTORTYPENAMES)))))))))))
+          .bind("VecMemberExprArrow"),
+    this);
 }
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
-
   // To skip user-defined type.
   if (!ME || isTypeInRoot(ME->getBase()->getType().getTypePtr()))
     return;
@@ -3561,8 +3568,13 @@ void VectorTypeMemberAccessRule::runRule(
     renameMemberField(ME);
   }
 
-  if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS"))
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS")) {
     renameMemberField(ME);
+  }
+
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprArrow")) {
+    renameMemberField(ME);
+  }
 }
 
 REGISTER_RULE(VectorTypeMemberAccessRule)
