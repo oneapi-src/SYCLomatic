@@ -112,6 +112,7 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
 // Util|matrix_mem_copy
+// Util|DataType
 // Memory|memcpy_direction
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
