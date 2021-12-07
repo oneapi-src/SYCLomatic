@@ -499,53 +499,16 @@ class DPCTConsumer : public ASTConsumer {
 public:
   DPCTConsumer(ReplTy &R, CompilerInstance &CI, StringRef InFile)
       : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()), CI(CI) {
-    int RequiredRType = 0;
-    SourceProcessType FileType = GetSourceFileType(InFile);
-
-    if (FileType & (SPT_CudaSource | SPT_CudaHeader)) {
-      RequiredRType = RT_ApplyToCudaFile;
-    } else if (FileType & (SPT_CppSource | SPT_CppHeader)) {
-      RequiredRType = RT_ApplyToCppFile;
-    }
-
     if (Passes != "") {
       // Separate string into list by comma
       auto Names = split(Passes, ',');
 
-      std::vector<std::vector<std::string>> Rules;
-
       for (auto const &Name : Names) {
         auto *ID = ASTTraversalMetaInfo::getID(Name);
-        auto MapEntry = ASTTraversalMetaInfo::getConstructorTable()[ID];
-        auto RuleObj = (MigrationRule *)MapEntry();
-        CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
-        auto RType = RuleProperty.RType;
-        auto RulesDependon = RuleProperty.RulesDependon;
-
-        // Add rules should be run on the source file
-        if (RType & RequiredRType) {
-          std::vector<std::string> Vec;
-          Vec.push_back(Name);
-          for (auto const &RuleName : RulesDependon) {
-            Vec.push_back(RuleName);
-          }
-          Rules.push_back(Vec);
-        }
+        ATM.emplaceMigrationRule(ID);
       }
-
-      std::vector<std::string> SortedRules = ruleTopoSort(Rules);
-      for (std::vector<std::string>::reverse_iterator it = SortedRules.rbegin();
-           it != SortedRules.rend(); it++) {
-        auto *RuleID = ASTTraversalMetaInfo::getID(*it);
-        if (!RuleID) {
-          const std::string ErrMsg = "[ERROR] Rule\"" + *it + "\" not found\n";
-          PrintMsg(ErrMsg);
-        }
-        ATM.emplaceMigrationRule(RuleID);
-      }
-
     } else {
-      ATM.emplaceAllRules(RequiredRType);
+      ATM.emplaceAllRules();
     }
   }
 

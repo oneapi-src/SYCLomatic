@@ -284,17 +284,6 @@ enum SourceProcessType {
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
 
-/// Topology sort for rules
-/// For exmaple we have four rules named "A", "B", "C" and "D"
-/// "A" depends on "B" and "C"
-/// "B" depends on "D"
-/// "C" doesn't depend on anyone
-/// "D" depends on "C"
-/// Using topological sorting, it should output A -> B -> D -> C,
-/// and all rule dependencies will be met.
-std::vector<std::string>
-ruleTopoSort(std::vector<std::vector<std::string>> &TableRules);
-
 const std::string &getFmtEndStatement(void);
 const std::string &getFmtStatementIndent(std::string &BaseIndent);
 

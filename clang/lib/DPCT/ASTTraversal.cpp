@@ -12451,7 +12451,6 @@ void MemoryMigrationRule::getSymbolAddressMigration(
 }
 
 MemoryMigrationRule::MemoryMigrationRule() {
-  SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
   std::map<
       std::string,
       std::function<void(MemoryMigrationRule *,
@@ -17186,40 +17185,10 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
   CHECKPOINT_ASTMATCHER_RUN_EXIT();
 }
 
-void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
-  std::vector<std::vector<std::string>> Rules;
-
+void ASTTraversalManager::emplaceAllRules() {
   for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
-
-    auto RuleObj = (MigrationRule *)F.second();
-    CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
-
-    auto RType = RuleProperty.RType;
-    auto RulesDependon = RuleProperty.RulesDependon;
-
-    if (RType & SourceFileFlag) {
-      std::string CurrentRuleName = ASTTraversalMetaInfo::getName(F.first);
-      if (DpctGlobalInfo::getRunRound() == 1 &&
-          CurrentRuleName == "CudaArchMacroRule")
-        continue;
-      std::vector<std::string> Vec;
-      Vec.push_back(CurrentRuleName);
-      for (auto const &RuleName : RulesDependon) {
-        Vec.push_back(RuleName);
-      }
-      Rules.push_back(Vec);
-    }
-  }
-
-  std::vector<std::string> SortedRules = ruleTopoSort(Rules);
-
-  for (std::vector<std::string>::reverse_iterator it = SortedRules.rbegin();
-       it != SortedRules.rend(); it++) {
-    auto *ID = ASTTraversalMetaInfo::getID(*it);
-    if (!ID) {
-      llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
-      dpctExit(MigrationError);
-    }
+    std::string CurrentRuleName = ASTTraversalMetaInfo::getName(F.first);
+    auto *ID = ASTTraversalMetaInfo::getID(CurrentRuleName);
     emplaceMigrationRule(ID);
   }
 }

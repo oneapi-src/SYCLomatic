@@ -31,17 +31,6 @@
 namespace clang {
 namespace dpct {
 
-// TODO: implement one of this for each source language.
-enum RuleType {
-  RT_ApplyToCudaFile = 1,
-  RT_ApplyToCppFile = 2,
-};
-
-typedef struct {
-  int RType;
-  std::vector<std::string> RulesDependon;
-} CommonRuleProperty;
-
 class ASTTraversalManager;
 
 /// Migraiton rules at the pre-processing stages, e.g. macro rewriting and
@@ -195,7 +184,7 @@ public:
         ASTTraversalMetaInfo::getConstructorTable()[ID]()));
   }
 
-  void emplaceAllRules(int SourceFileFlag);
+  void emplaceAllRules();
 
   /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
   void matchAST(ASTContext &Context, TransformSetTy &TS, StmtStringMap &SSM);
@@ -336,32 +325,6 @@ public:
 
   void print(llvm::raw_ostream &OS);
   void printStatistics(llvm::raw_ostream &OS);
-
-  // @RulesDependent : rules are separated by ","
-  void SetRuleProperty(int RType, std::string RulesDependent = "") {
-    std::vector<std::string> RulesNames;
-    // Separate rule string into list by comma
-    if (RulesDependent != "") {
-      std::size_t Current, Previous = 0;
-      Current = RulesDependent.find(',');
-      while (Current != std::string::npos) {
-        RulesNames.push_back(
-            RulesDependent.substr(Previous, Current - Previous));
-        Previous = Current + 1;
-        Current = RulesDependent.find(',', Previous);
-      }
-      std::string Rule = RulesDependent.substr(Previous, Current - Previous);
-      Rule.erase(std::remove(Rule.begin(), Rule.end(), ' '),
-                 Rule.end()); // Remove space if exists
-      RulesNames.push_back(RulesDependent.substr(Previous, Current - Previous));
-    }
-    RuleProperty.RType = RType;
-    RuleProperty.RulesDependon = RulesNames;
-  }
-  CommonRuleProperty GetRuleProperty() { return RuleProperty; }
-
-private:
-  CommonRuleProperty RuleProperty;
 };
 
 /// Migration rules with names
@@ -552,9 +515,6 @@ template <typename T> const char NamedMigrationRule<T>::ID(0);
 class IterationSpaceBuiltinRule
     : public NamedMigrationRule<IterationSpaceBuiltinRule> {
 public:
-  IterationSpaceBuiltinRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -566,7 +526,6 @@ private:
 /// This rule replace __align__ class attributes to __dpct_align__.
 class AlignAttrsRule : public NamedMigrationRule<AlignAttrsRule> {
 public:
-  AlignAttrsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -575,7 +534,6 @@ public:
 /// This rule replace __forceinline__ class attributes to __dpct_inline__.
 class FuncAttrsRule : public NamedMigrationRule<FuncAttrsRule> {
 public:
-  FuncAttrsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -583,9 +541,6 @@ public:
 /// Migration rule for atomic functions.
 class AtomicFunctionRule : public NamedMigrationRule<AtomicFunctionRule> {
 public:
-  AtomicFunctionRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -598,9 +553,6 @@ private:
 /// Migration rule for thrust functions
 class ThrustFunctionRule : public NamedMigrationRule<ThrustFunctionRule> {
 public:
-  ThrustFunctionRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -614,9 +566,6 @@ private:
 /// Migration rule for thrust constructor expressions
 class ThrustCtorExprRule : public NamedMigrationRule<ThrustCtorExprRule> {
 public:
-  ThrustCtorExprRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -627,7 +576,6 @@ private:
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
 public:
-  TypeInDeclRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -665,9 +613,6 @@ private:
 class VectorTypeNamespaceRule
     : public NamedMigrationRule<VectorTypeNamespaceRule> {
 public:
-  VectorTypeNamespaceRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -676,9 +621,6 @@ public:
 class VectorTypeMemberAccessRule
     : public NamedMigrationRule<VectorTypeMemberAccessRule> {
 public:
-  VectorTypeMemberAccessRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -691,9 +633,6 @@ public:
 class VectorTypeOperatorRule
     : public NamedMigrationRule<VectorTypeOperatorRule> {
 public:
-  VectorTypeOperatorRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -712,9 +651,6 @@ private:
 /// Migration rule for vector type constructor and make_<vector type>()
 class VectorTypeCtorRule : public NamedMigrationRule<VectorTypeCtorRule> {
 public:
-  VectorTypeCtorRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -727,10 +663,6 @@ class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
       const ast_matchers::MatchFinder::MatchResult &Result);
 
 public:
-  ReplaceDim3CtorRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile,
-                    "Dim3MemberFieldsRule");
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -738,9 +670,6 @@ public:
 /// Migration rule for dim3 types member fields replacements.
 class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
 public:
-  Dim3MemberFieldsRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -752,7 +681,6 @@ private:
 /// Migration rule for return types replacements.
 class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:
-  ReturnTypeRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -761,9 +689,6 @@ public:
 class ErrorHandlingIfStmtRule
     : public NamedMigrationRule<ErrorHandlingIfStmtRule> {
 public:
-  ErrorHandlingIfStmtRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -772,9 +697,6 @@ public:
 class ErrorHandlingHostAPIRule
     : public NamedMigrationRule<ErrorHandlingHostAPIRule> {
 public:
-  ErrorHandlingHostAPIRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void insertTryCatch(const FunctionDecl *FD);
@@ -783,9 +705,6 @@ public:
 /// Migration rule for Device Property variables.
 class DevicePropVarRule : public NamedMigrationRule<DevicePropVarRule> {
 public:
-  DevicePropVarRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -796,9 +715,6 @@ public:
 /// Migration rule for enums constants.
 class EnumConstantRule : public NamedMigrationRule<EnumConstantRule> {
 public:
-  EnumConstantRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleComputeMode(std::string EnumName, const DeclRefExpr *E);
@@ -810,9 +726,6 @@ public:
 /// Migration rule for Error enums constants.
 class ErrorConstantsRule : public NamedMigrationRule<ErrorConstantsRule> {
 public:
-  ErrorConstantsRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -820,9 +733,6 @@ public:
 class ManualMigrateEnumsRule
     : public NamedMigrationRule<ManualMigrateEnumsRule> {
 public:
-  ManualMigrateEnumsRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -830,7 +740,6 @@ public:
 /// Migration rule for FFT enums.
 class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
 public:
-  FFTEnumsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -838,7 +747,6 @@ public:
 /// Migration rule for BLAS enums.
 class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:
-  BLASEnumsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -846,7 +754,6 @@ public:
 /// Migration rule for RANDOM enums.
 class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
 public:
-  RandomEnumsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -854,7 +761,6 @@ public:
 /// Migration rule for spBLAS enums.
 class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
 public:
-  SPBLASEnumsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -862,9 +768,6 @@ public:
 /// Migration rule for BLAS function calls.
 class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
-  BLASFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1287,9 +1190,6 @@ public:
 class RandomFunctionCallRule
     : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
-  RandomFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1298,9 +1198,6 @@ public:
 class DeviceRandomFunctionCallRule
     : public NamedMigrationRule<DeviceRandomFunctionCallRule> {
 public:
-  DeviceRandomFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1309,9 +1206,6 @@ public:
 class SPBLASFunctionCallRule
     : public NamedMigrationRule<SPBLASFunctionCallRule> {
 public:
-  SPBLASFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1319,7 +1213,6 @@ public:
 /// Migration rule for SOLVER enums.
 class SOLVEREnumsRule : public NamedMigrationRule<SOLVEREnumsRule> {
 public:
-  SOLVEREnumsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1328,9 +1221,6 @@ public:
 class SOLVERFunctionCallRule
     : public NamedMigrationRule<SOLVERFunctionCallRule> {
 public:
-  SOLVERFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1350,9 +1240,6 @@ public:
 /// Migration rule for general function calls.
 class FunctionCallRule : public NamedMigrationRule<FunctionCallRule> {
 public:
-  FunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   std::string findValueofAttrVar(const Expr *AttrArg, const CallExpr *CE);
@@ -1395,7 +1282,6 @@ public:
 class EventAPICallRule : public NamedMigrationRule<EventAPICallRule> {
 public:
   EventAPICallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
     CurrentRule = this;
   }
   ~EventAPICallRule() {
@@ -1478,9 +1364,6 @@ private:
 /// Migration rule for stream API calls
 class StreamAPICallRule : public NamedMigrationRule<StreamAPICallRule> {
 public:
-  StreamAPICallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1490,10 +1373,6 @@ class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
 
 public:
-  KernelCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile,
-                    "SharedMemVarRule, ConstantMemVarRule, DeviceMemVarRule");
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void
@@ -1505,9 +1384,6 @@ public:
 class DeviceFunctionDeclRule
     : public NamedMigrationRule<DeviceFunctionDeclRule> {
 public:
-  DeviceFunctionDeclRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1539,9 +1415,6 @@ public:
 // clang-format on
 class GlibcMemoryAPIRule : public NamedMigrationRule<GlibcMemoryAPIRule> {
 public:
-  GlibcMemoryAPIRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1555,7 +1428,6 @@ private:
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarRule : public NamedMigrationRule<MemVarRule> {
 public:
-  MemVarRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1782,16 +1654,12 @@ public:
            RemoveMember.end();
   }
 
-  MemoryDataTypeRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CMemoryAPIRule : public NamedMigrationRule<CMemoryAPIRule> {
 public:
-  CMemoryAPIRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1799,9 +1667,6 @@ public:
 /// Name all unnamed types.
 class UnnamedTypesRule : public NamedMigrationRule<UnnamedTypesRule> {
 public:
-  UnnamedTypesRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1809,9 +1674,6 @@ public:
 /// Guess original code indent width.
 class GuessIndentWidthRule : public NamedMigrationRule<GuessIndentWidthRule> {
 public:
-  GuessIndentWidthRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1819,9 +1681,6 @@ public:
 /// Migration for math functions
 class MathFunctionsRule : public NamedMigrationRule<MathFunctionsRule> {
 public:
-  MathFunctionsRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleExceptionalFunctions(
@@ -1842,9 +1701,6 @@ public:
 /// Migration for warp functions
 class WarpFunctionsRule : public NamedMigrationRule<WarpFunctionsRule> {
 public:
-  WarpFunctionsRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1854,7 +1710,6 @@ public:
 /// This rule replace __syncthreads() with item.barrier()
 class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
-  SyncThreadsRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -1865,9 +1720,6 @@ public:
 class KernelFunctionInfoRule
     : public NamedMigrationRule<KernelFunctionInfoRule> {
 public:
-  KernelFunctionInfoRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1877,9 +1729,6 @@ public:
 /// RecognizeAPINameRule to give comments for the api not in the record table
 class RecognizeAPINameRule : public NamedMigrationRule<RecognizeAPINameRule> {
 public:
-  RecognizeAPINameRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1895,18 +1744,12 @@ private:
 /// RecognizeTypeRule to emit warning message for known unsupported type
 class RecognizeTypeRule : public NamedMigrationRule<RecognizeTypeRule> {
 public:
-  RecognizeTypeRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class TextureMemberSetRule : public NamedMigrationRule<TextureMemberSetRule> {
 public:
-  TextureMemberSetRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void removeRange(SourceRange R);
@@ -1932,7 +1775,6 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
   static MapNames::MapTy ResourceTypeNames;
 
 public:
-  TextureRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -1981,30 +1823,24 @@ public:
 /// "new cudaStream_t" => "new queue_p"
 class CXXNewExprRule : public NamedMigrationRule<CXXNewExprRule> {
 public:
-  CXXNewExprRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class NamespaceRule : public NamedMigrationRule<NamespaceRule> {
 public:
-  NamespaceRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class RemoveBaseClassRule : public NamedMigrationRule<RemoveBaseClassRule> {
 public:
-  RemoveBaseClassRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class ThrustVarRule : public NamedMigrationRule<ThrustVarRule> {
 public:
-  ThrustVarRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -2012,18 +1848,12 @@ public:
 class PreDefinedStreamHandleRule
     : public NamedMigrationRule<PreDefinedStreamHandleRule> {
 public:
-  PreDefinedStreamHandleRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
 public:
-  FFTFunctionCallRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -2041,50 +1871,36 @@ private:
 
 class AsmRule : public NamedMigrationRule<AsmRule> {
 public:
-  AsmRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
 public:
-  DriverModuleAPIRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DriverDeviceAPIRule : public NamedMigrationRule<DriverDeviceAPIRule> {
 public:
-  DriverDeviceAPIRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DriverContextAPIRule : public NamedMigrationRule<DriverContextAPIRule> {
 public:
-  DriverContextAPIRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CudaArchMacroRule : public NamedMigrationRule<CudaArchMacroRule> {
 public:
-  CudaArchMacroRule() {
-    SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile);
-  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CubRule : public NamedMigrationRule<CubRule> {
 public:
-  CubRule() { SetRuleProperty(RT_ApplyToCudaFile | RT_ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
