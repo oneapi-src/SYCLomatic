@@ -47,7 +47,7 @@ __device__ float fx[2], fy[num_elements][4 * num_elements];
 const int size = 64;
 __device__ float tmp[size];
 // CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
-// CHECK:              sycl::accessor<float, 2, sycl::access_mode::read_write, sycl::access::target::global_buffer> fy,
+// CHECK:              sycl::accessor<float, 2, sycl::access_mode::read_write, sycl::access::target::device> fy,
 // CHECK:              float *tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];

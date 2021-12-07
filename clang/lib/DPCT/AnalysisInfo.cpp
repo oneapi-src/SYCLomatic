@@ -2846,7 +2846,7 @@ std::string MemVarInfo::getSyclAccessorType() {
     break;
   case VarAttrKind::Device:
   case VarAttrKind::Managed:
-    OS << "global_buffer";
+    OS << "device";
     break;
   default:
     break;

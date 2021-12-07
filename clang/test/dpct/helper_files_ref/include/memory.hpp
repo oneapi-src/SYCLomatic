@@ -210,7 +210,7 @@ public:
       (Memory == local)
           ? cl::sycl::access::target::local
           : ((Memory == constant) ? cl::sycl::access::target::constant_buffer
-                                  : cl::sycl::access::target::global_buffer);
+                                  : cl::sycl::access::target::device);
   static constexpr cl::sycl::access_mode mode =
       (Memory == constant) ? cl::sycl::access_mode::read
                            : cl::sycl::access_mode::read_write;
@@ -257,7 +257,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
     auto r = cl::sycl::range<1>(size);
     auto o = cl::sycl::id<1>(offset);
     cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
-                       cl::sycl::access::target::global_buffer>
+                       cl::sycl::access::target::device>
         acc(alloc.buffer, cgh, r, o);
     cgh.fill(acc, (byte_t)value);
   });
@@ -354,7 +354,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto o = cl::sycl::id<1>(offset);
         auto from_acc = from_buffer.get_access<cl::sycl::access_mode::read>(cgh);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             acc(alloc.buffer, cgh, r, o);
         cgh.parallel_for<class memcopyh2d>(r, [=](cl::sycl::id<1> idx) {
           acc[idx] = from_acc[idx];
@@ -365,7 +365,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
          cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             acc(alloc.buffer, cgh, r, o);
         cgh.copy(from_ptr, acc);
       });
@@ -381,7 +381,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto o = cl::sycl::id<1>(offset);
         auto to_acc = to_buffer.get_access<cl::sycl::access_mode::write>(cgh);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             acc(alloc.buffer, cgh, r, o);
         cgh.parallel_for<class memcopyd2h>(r, [=](cl::sycl::id<1> idx) {
           to_acc[idx] = acc[idx];
@@ -392,7 +392,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto r = cl::sycl::range<1>(size);
         auto o = cl::sycl::id<1>(offset);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             acc(alloc.buffer, cgh, r, o);
         cgh.copy(acc, to_ptr);
       });
@@ -409,10 +409,10 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto to_o = cl::sycl::id<1>(to_offset);
         auto from_o = cl::sycl::id<1>(from_offset);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             to_acc(to_alloc.buffer, cgh, r, to_o);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             from_acc(from_alloc.buffer, cgh, r, from_o);
         cgh.parallel_for<class memcopyd2d>(r, [=](cl::sycl::id<1> idx) {
           to_acc[idx] = from_acc[idx];
@@ -424,10 +424,10 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
         auto to_o = cl::sycl::id<1>(to_offset);
         auto from_o = cl::sycl::id<1>(from_offset);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             to_acc(to_alloc.buffer, cgh, r, to_o);
         cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
-                           cl::sycl::access::target::global_buffer>
+                           cl::sycl::access::target::device>
             from_acc(from_alloc.buffer, cgh, r, from_o);
         cgh.copy(from_acc, to_acc);
       });
