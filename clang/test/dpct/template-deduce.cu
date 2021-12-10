@@ -479,3 +479,18 @@ int foo10(){
   foo9<<<1,1,0>>>(m1);
   return 0;
 }
+
+
+
+#include<tuple>
+// Make sure no assert when the parmType of the deduction has parameter pack
+// template< class... Types > class tuple;
+// In the following case, 5 args cannot used to deduce 1 parmameter,
+// dpct should stop deducing.
+template<class... T>
+__global__ void foo11(std::tuple<T...> t){}
+
+int foo12(){
+  std::tuple<int, int, float, int, float> t{1, 1, 3.0f, 2, 2.0f};
+  foo11<<<1,1,0>>>(t);
+}

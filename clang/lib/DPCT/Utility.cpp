@@ -2454,6 +2454,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
     Begin = SM.getImmediateSpellingLoc(Begin);
     End = SM.getImmediateSpellingLoc(End);
   }
+
   // if there is still either one of begin/end is macro arg expansion
   if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
     // No precise range available which can be removed without delete extra

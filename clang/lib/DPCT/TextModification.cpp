@@ -543,9 +543,20 @@ void ReplaceDim3Ctor::setRange() {
         Begin = SM.getImmediateSpellingLoc(S->getBeginLoc());
         End = SM.getImmediateSpellingLoc(S->getEndLoc());
       }
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
       CSR = CharSourceRange::getTokenRange(Begin, End);
     } else {
-      CSR = CharSourceRange::getTokenRange(S->getSourceRange());
+      // Use getStmtExpansionSourceRange(S) to support cases like
+      // dim3 a = MACRO;
+      auto Range = getStmtExpansionSourceRange(S);
+      auto Begin = Range.getBegin();
+      auto End = Range.getEnd();
+      auto L = Lexer::MeasureTokenLength(End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      CSR = CharSourceRange::getTokenRange(
+          Begin,
+          End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())));
     }
   }
 }
@@ -619,19 +630,16 @@ std::shared_ptr<ExtReplacement>
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
-  // Make replacements for macros happen in expansion locations, rather than
-  // spelling locations
-  if (CSR.getBegin().isMacroID() || CSR.getEnd().isMacroID()) {
-    StringRef FilePath;
-    unsigned Offset, Length;
-    std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, CSR);
-    return std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                            getReplaceString(), this);
-  }
-
+  // Use getDefinitionRange in general cases,
+  // For cases like dim3 a = MACRO;
+  // CSR is already set to the expansion range.
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   ReplacementString = getReplaceString();
-  return std::make_shared<ExtReplacement>(
-      Context.getSourceManager(), CSR.getBegin(), 0, ReplacementString, this);
+  auto Range = getDefinitionRange(CSR.getBegin(), CSR.getEnd());
+  auto Length = SM.getDecomposedLoc(Range.getEnd()).second -
+                SM.getDecomposedLoc(Range.getBegin()).second;
+  return std::make_shared<ExtReplacement>(SM, Range.getBegin(), Length,
+                                          getReplaceString(), this);
 }
 
 std::shared_ptr<ExtReplacement>

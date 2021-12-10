@@ -1496,6 +1496,10 @@ void deduceTemplateArgumentFromTemplateSpecialization(
       if (TL) {
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         unsigned i;
+        // Parm uses template parameter pack, return
+        if (TSTL.getNumArgs() > ParmTST->getNumArgs()) {
+          return;
+        }
         for (i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
             TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
@@ -1503,6 +1507,10 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         }
       }
       else {
+        // Parm uses template parameter pack, return
+        if (TST->getNumArgs() > ParmTST->getNumArgs()) {
+          return;
+        }
         for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
             TST->getArg(i));

@@ -426,7 +426,6 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
   if (CtorClassName.find("thrust::") == 0) {

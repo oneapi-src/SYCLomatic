@@ -1100,3 +1100,13 @@ template <typename T> void bar() {}
 #define MACRO_BB() void foo27() { return bar<user_namespace::cufftDoubleComplex<float>>(); }
 MACRO_AA(MACRO_BB)
 
+
+#define CALL_K(...) __VA_ARGS__
+void foo28(){
+  //CHECK: CALL_K(dpct::get_default_queue().parallel_for(
+  //CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:     foo_kernel();
+  //CHECK-NEXT:   });)
+  CALL_K(foo_kernel<<<1,1,0>>>();)
+}

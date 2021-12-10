@@ -3873,10 +3873,6 @@ ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
 void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
   ReplaceDim3Ctor *R = getReplaceDim3Modification(Result);
   if (R) {
-    // add a transformation that will filter out all nested transformations
-    emplaceTransformation(R->getEmpty());
-    // all the nested transformations will be applied when R->getReplacement()
-    // is called
     emplaceTransformation(R);
   }
 
@@ -10251,11 +10247,7 @@ void KernelCallRule::removeTrailingSemicolon(
     const CallExpr *KCall,
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
-  auto KELoc = KCall->getEndLoc();
-  if (KELoc.isMacroID() && !isOuterMostMacro(KCall)) {
-    KELoc = SM.getImmediateSpellingLoc(KELoc);
-  }
-  KELoc = SM.getExpansionRange(KELoc).getEnd();
+  auto KELoc = getStmtExpansionSourceRange(KCall).getEnd();
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   if (Tok.is(tok::TokenKind::semi))
     emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
