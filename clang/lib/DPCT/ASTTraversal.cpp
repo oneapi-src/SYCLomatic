@@ -13425,6 +13425,9 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   auto ObjDecl = getNamedDecl(ObjType.getTypePtr());
   if (const auto *NSD = dyn_cast<NamespaceDecl>(ObjDecl->getDeclContext())) {
     if (!NSD->isInlineNamespace()) {
+      if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+        return;
+      }
       ObjNameSpace = NSD->getName().str() + "::";
     }
   }
@@ -13465,6 +13468,9 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
   if (ND) {
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
+      if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+        return;
+      }
       Namespace = NSD->getName().str();
     }
   }
