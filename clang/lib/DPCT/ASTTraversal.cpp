@@ -2177,7 +2177,8 @@ void ThrustFunctionRule::thrustFuncMigration(
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
       if (ThrustFuncName == "sort") {
-        report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "thrust::" + ThrustFuncName);
         return;
       } else if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
@@ -2238,9 +2239,9 @@ void ThrustFunctionRule::thrustFuncMigration(
     //
     // The logic in the above if condition filters out the ones
     // currently not supported and issues a warning
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false);
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           "thrust::" + ThrustFuncName);
     return;
-
   } else if (ThrustFuncName == "sort") {
     // Rule of thrust::sort migration
     //#. thrust api
@@ -8565,9 +8566,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
-    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access", false);
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           "cudaDeviceGetP2PAttribute");
   } else if (FuncName == "cudaDeviceGetPCIBusId") {
-    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "Get PCI BusId", false);
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           "cudaDeviceGetPCIBusId");
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
@@ -8635,7 +8638,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaDeviceGetLimit") {
     ExprAnalysis EA;
@@ -10237,7 +10240,12 @@ void KernelCallRule::runRule(
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
       removeTrailingSemicolon(LaunchKernelCall, Result);
     } else {
-      report(LaunchKernelCall->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      auto FuncName = LaunchKernelCall->getDirectCallee()
+                          ->getNameInfo()
+                          .getName()
+                          .getAsString();
+      report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             FuncName);
     }
   }
 }
@@ -12107,7 +12115,7 @@ void MemoryMigrationRule::prefetchMigration(
     }
     emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
   } else {
-    report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
+    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            "cudaMemPrefetchAsync");
   }
 }
@@ -12134,7 +12142,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       Repl << "*(" << Arg0Str << ") = " << Arg1Str;
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
+      report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
@@ -12244,7 +12252,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
                                         bool IsAssigned) {
   // Do nothing if USM is disabled
   if (USMLevel == UsmLevel::UL_None) {
-    report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
+    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, "cudaMemAdvise");
     return;
   }
   auto Arg2Expr = C->getArg(2);
@@ -14169,7 +14177,9 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
   }
   auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
   if (ReplField.empty()) {
-    report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, Field);
+    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+               "::" + Field);
     return;
   }
 
@@ -14503,7 +14513,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       if (MapNames::replaceName(EnumConstantRule::EnumNamesMap, EnumName)) {
         emplaceTransformation(new ReplaceStmt(DRE, EnumName));
       } else {
-        report(DRE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, EnumName);
+        report(DRE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
       }
     }
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texObj")) {
@@ -14541,8 +14551,9 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
   auto FieldName =
       ResourceTypeNames[TopMember->getMemberNameInfo().getAsString()];
   if (FieldName.empty()) {
-    report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
-           ME->getMemberDecl()->getName());
+    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+               "::" + ME->getMemberDecl()->getName().str());
   }
 
   if (FieldName == "channel") {
@@ -15684,7 +15695,8 @@ void DriverDeviceAPIRule::runRule(
       AttributeName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
-        report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "cuDeviceGetAttribute");
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName, CE);
@@ -16512,7 +16524,8 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
   std::string FuncName = DC->getNameAsString();
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
       return;
     }
   }
@@ -16661,7 +16674,8 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
         }
       }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
     }
   }
 }
@@ -16756,7 +16770,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                                                        HT_DPL_Utils);
             IsReferenceOutput = true;
           } else {
-            report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+            report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                   "cub::" + FuncName);
             return;
           }
         } else {
@@ -16804,7 +16819,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPL_Utils);
         } else {
-          report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+          report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                 "cub::" + FuncName);
           return;
         }
       }
@@ -16833,7 +16849,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getParamDecl(0)
                 ->getType()
                 ->isLValueReferenceType()) {
-          report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+          report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                 "cub::" + FuncName);
           return;
         }
         GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
@@ -16892,7 +16909,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
                                                      HT_DPL_Utils);
         } else {
-          report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+          report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                 "cub::" + FuncName);
           return;
         }
       }
@@ -16921,7 +16939,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getParamDecl(0)
                 ->getType()
                 ->isLValueReferenceType()) {
-          report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+          report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                 "cub::" + FuncName);
           return;
         }
         GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
@@ -16936,7 +16955,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                                                    HT_DPL_Utils);
       }
     } else {
-      report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
       return;
     }
     if (IsReferenceOutput) {
@@ -16972,7 +16992,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     } else if (FuncName == "Sum" && NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
     } else {
-      report(BlockMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
       return;
     }
     CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
@@ -17034,7 +17055,8 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
         InitRepl = ", " + InitEA.getReplacedString();
         OpRepl = getOpRepl(FuncArgs[3]);
       } else {
-        report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+        report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "cub::" + FuncName);
         return;
       }
       NewFuncName = "exclusive_scan_over_group";
@@ -17048,7 +17070,8 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       OpRepl = getOpRepl(nullptr);
       NewFuncName = "inclusive_scan_over_group";
     } else {
-      report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
       return;
     }
     ExprAnalysis InEA(InData);
@@ -17078,7 +17101,8 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     } else if (FuncName == "Sum" && NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
     } else {
-      report(WarpMC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+      report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
       return;
     }
     NewFuncName = "reduce_over_group";
@@ -17105,7 +17129,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
              ObjTypeStr.find("class cub::BlockReduce") == 0) {
     processBlockLevelMemberCall(MC);
   } else {
-    report(MC->getBeginLoc(), Diagnostics::NOTSUPPORTED, false);
+    report(MC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, ObjTypeStr);
     return;
   }
 }

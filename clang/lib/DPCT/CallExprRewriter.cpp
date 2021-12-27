@@ -514,7 +514,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 }
 
 Optional<std::string> MathUnsupportedRewriter::rewrite() {
-  report(Diagnostics::NOTSUPPORTED, false,
+  report(Diagnostics::API_NOT_MIGRATED, false,
          MapNames::ITFName.at(SourceCalleeName.str()));
   return Base::rewrite();
 }

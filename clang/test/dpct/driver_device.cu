@@ -58,7 +58,7 @@ int main(){
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuDeviceGetAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
   // CHECK-NEXT: */
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 

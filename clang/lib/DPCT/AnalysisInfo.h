@@ -1551,8 +1551,9 @@ public:
   /// qualifiers, this function will follow the behavior of
   /// clang::QualType.print(), in other words, the behavior is that the
   /// qualifiers(const, volatile...) will occur before the simple type(int,
-  /// bool...) regardless its order in origin code. \param [in] QT The input
-  /// qualified type which need migration. \param [in] Context The AST context.
+  /// bool...) regardless its order in origin code.
+  /// \param [in] QT The input qualified type which need migration.
+  /// \param [in] Context The AST context.
   /// \return The replaced type name string with qualifiers.
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
@@ -1568,6 +1569,20 @@ public:
   }
   static inline std::string getReplacedTypeName(QualType QT) {
     return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+  }
+  /// This function will return the original type name with qualifiers.
+  /// The order of original qualifiers will follow the behavior of
+  /// clang::QualType.print() regardless its order in origin code.
+  /// \param [in] QT The input qualified type.
+  /// \return The type name string with qualifiers.
+  static inline std::string getOriginalTypeName(QualType QT) {
+    std::string OriginalTypeStr;
+    llvm::raw_string_ostream OS(OriginalTypeStr);
+    clang::PrintingPolicy PP =
+        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+    QT.print(OS, PP);
+    OS.flush();
+    return OriginalTypeStr;
   }
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
   std::shared_ptr<TYPE> find##TYPE(const NODE_TYPE *Node) {                    \

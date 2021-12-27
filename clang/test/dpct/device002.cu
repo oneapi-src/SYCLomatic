@@ -138,19 +138,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
 // CHECK-NEXT:*/
 // CHECK-NEXT: accessSupported = 0;
 cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
 // CHECK-NEXT:*/
 // CHECK-NEXT: perfRank = 0;
 cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
 // CHECK-NEXT:*/
 // CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
@@ -158,7 +158,7 @@ cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported,
 
 char pciBusId[80];
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Compatible DPC++ code could not be generated.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetPCIBusId is not supported by the Intel(R) DPC++ Compatibility Tool.
 // CHECK-NEXT:*/
 cudaDeviceGetPCIBusId(pciBusId, 80, 0);
 

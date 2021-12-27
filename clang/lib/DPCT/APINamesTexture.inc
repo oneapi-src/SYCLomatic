@@ -97,7 +97,7 @@ FEATURE_REQUEST_FACTORY(
                                                  DEREF(1), DEREF(2)))))
 
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
-                  Diagnostics::NOTSUPPORTED)
+                  Diagnostics::API_NOT_MIGRATED)
 
 CONDITIONAL_FACTORY_ENTRY(
     CheckWarning1073(1),
@@ -111,7 +111,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
                             Diagnostics::CANNOT_CAPUTURE_AGUMENTS, ARG(1)))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
-ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::NOTSUPPORTED)
+ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_image_data,
     FEATURE_REQUEST_FACTORY(
