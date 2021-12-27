@@ -1393,6 +1393,10 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
+std::function<std::string(const CallExpr *)> makeLiteral(std::string Str) {
+  return [=](const CallExpr *) { return Str; };
+}
+
 template <class BaseT, class MemberT>
 std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
 makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
@@ -2204,6 +2208,7 @@ public:
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
+#define LITERAL(x) makeLiteral(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 #define TEMPLATED_CALLEE_WITH_ARGS(FuncName, ...)                              \

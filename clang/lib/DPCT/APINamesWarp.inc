@@ -138,8 +138,8 @@ SUBGROUPSIZE_FACTORY(
                             makeCallArgCreatorWithCall(1))))
 
 WARNING_FACTORY_ENTRY("__activemask",
-                      CALL_FACTORY_ENTRY("__activemask", CALL("__activemask")),
-                      Diagnostics::ACTIVE_MASK_NOT_SUPPORTED)
+                      TOSTRING_FACTORY_ENTRY("__activemask", LITERAL("0xffffffff")),
+                      Diagnostics::ACTIVE_MASK)
 
 // __ballot
 SUBGROUPSIZE_FACTORY(

@@ -17,9 +17,9 @@ __global__ void kernel1() {
 __global__ void kernel2() {
   int predicate;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: __activemask() is migrated to 0xffffffff. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::all_of_group(item_{{[0-9a-z]+}}.get_sub_group(), (~__activemask() & (0x1 << item_{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) || predicate);
+  //CHECK-NEXT: sycl::all_of_group(item_{{[0-9a-z]+}}.get_sub_group(), (~0xffffffff & (0x1 << item_{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) || predicate);
   __all_sync(__activemask(), predicate);
 }
 
@@ -39,9 +39,9 @@ __global__ void kernel4() {
 __global__ void kernel5() {
   int predicate;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: __activemask() is migrated to 0xffffffff. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::any_of_group(item_ct1.get_sub_group(), (__activemask() & (0x1 << item_ct1.get_sub_group().get_local_linear_id())) && predicate);
+  //CHECK-NEXT: sycl::any_of_group(item_ct1.get_sub_group(), (0xffffffff & (0x1 << item_ct1.get_sub_group().get_local_linear_id())) && predicate);
   __any_sync(__activemask(), predicate);
 }
 
@@ -176,7 +176,7 @@ __global__ void kernel19() {
 
 __global__ void kernel20() {
   unsigned mask;
-  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (__activemask() & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ext::oneapi::plus<>());
+  // CHECK: mask = sycl::reduce_over_group(item_ct{{[0-9a-z]+}}.get_sub_group(), (0xffffffff & (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id())) && item_ct{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS ? (0x1 << item_ct{{[0-9a-z]+}}.get_sub_group().get_local_linear_id()) : 0, sycl::ext::oneapi::plus<>());
   mask = __ballot_sync(__activemask(), threadIdx.x < NUM_ELEMENTS);
 }
 
@@ -189,9 +189,9 @@ __global__ void kernel21() {
 __global__ void kernel22() {
   unsigned mask;
   //CHECK: /*
-  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: Migration of __activemask is not supported. You may need to use 0xffffffff instead or adjust the code.
+  //CHECK-NEXT: DPCT1086:{{[0-9]+}}: __activemask() is migrated to 0xffffffff. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: mask = __activemask();
+  //CHECK-NEXT: mask = 0xffffffff;
   mask = __activemask();
 }
 
