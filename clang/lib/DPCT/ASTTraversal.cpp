@@ -13216,7 +13216,8 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__syncwarp") {
     std::string ReplStr;
-    ReplStr = DpctGlobalInfo::getItem(CE) + ".barrier()";
+    ReplStr = MapNames::getClNamespace() + "group_barrier(" +
+              DpctGlobalInfo::getSubGroup(CE) + ")";
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   }
 }

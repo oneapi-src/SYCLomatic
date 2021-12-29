@@ -66,7 +66,7 @@ __global__ void k() {
   // CHECK: item_ct1.barrier();
   // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
   __syncthreads_count(p);
-  // CHECK: item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
   __syncwarp(0xffffffff);
 
   // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p));
