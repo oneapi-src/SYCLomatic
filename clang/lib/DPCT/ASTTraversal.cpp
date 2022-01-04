@@ -13161,25 +13161,25 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE, FD)));
   } else if (FuncName == "__threadfence_block") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
-                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
-                          "ext::oneapi::memory_scope::work_group" + ")";
+    std::string ReplStr = CLNS + "atomic_fence(" + CLNS +
+                          "memory_order::acq_rel, " + CLNS +
+                          "memory_scope::work_group" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__threadfence") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
-                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
-                          "ext::oneapi::memory_scope::device" + ")";
+    std::string ReplStr = CLNS + "atomic_fence(" + CLNS +
+                          "memory_order::acq_rel, " + CLNS +
+                          "memory_scope::device" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else if (FuncName == "__threadfence_system") {
     std::string CLNS = MapNames::getClNamespace();
-    std::string ReplStr = CLNS + "ext::oneapi::atomic_fence(" + CLNS +
-                          "ext::oneapi::memory_order::acq_rel, " + CLNS +
-                          "ext::oneapi::memory_scope::system" + ")";
+    std::string ReplStr = CLNS + "atomic_fence(" + CLNS +
+                          "memory_order::acq_rel, " + CLNS +
+                          "memory_scope::system" + ")";
     report(CE->getBeginLoc(), Diagnostics::MEMORY_ORDER_PERFORMANCE_TUNNING,
            true);
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));

@@ -3595,9 +3595,9 @@ template <>
 inline ParameterStream &
 MemVarMap::getSync<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   static std::string SyncParamDecl =
-      MapNames::getClNamespace() + "ext::oneapi::atomic_ref<unsigned int," +
-      MapNames::getClNamespace() + "ext::oneapi::memory_order::seq_cst," +
-      MapNames::getClNamespace() + "ext::oneapi::memory_scope::device," +
+      MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
+      MapNames::getClNamespace() + "memory_order::seq_cst, " +
+      MapNames::getClNamespace() + "memory_scope::device, " +
       MapNames::getClNamespace() + "access::address_space::global_space> &" +
       DpctGlobalInfo::getSyncName();
   return PS << SyncParamDecl;

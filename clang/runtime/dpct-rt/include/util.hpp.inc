@@ -339,9 +339,9 @@ namespace experimental {
 template <int dimensions = 3>
 inline void
 nd_range_barrier(sycl::nd_item<dimensions> item,
-                 cl::sycl::ext::oneapi::atomic_ref<
-                     unsigned int, cl::sycl::ext::oneapi::memory_order::seq_cst,
-                     cl::sycl::ext::oneapi::memory_scope::device,
+                 cl::sycl::atomic_ref<
+                     unsigned int, cl::sycl::memory_order::seq_cst,
+                     cl::sycl::memory_scope::device,
                      cl::sycl::access::address_space::global_space> &counter) {
 
   static_assert(dimensions == 3, "dimensions must be 3.");
@@ -379,9 +379,9 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
 template <>
 inline void
 nd_range_barrier(sycl::nd_item<1> item,
-                 cl::sycl::ext::oneapi::atomic_ref<
-                     unsigned int, cl::sycl::ext::oneapi::memory_order::seq_cst,
-                     cl::sycl::ext::oneapi::memory_scope::device,
+                 cl::sycl::atomic_ref<
+                     unsigned int, cl::sycl::memory_order::seq_cst,
+                     cl::sycl::memory_scope::device,
                      cl::sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
 
