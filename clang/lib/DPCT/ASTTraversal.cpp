@@ -8515,6 +8515,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     requestFeature(HelperFeatureEnum::Device_device_ext_reset, CE);
   } else if (FuncName == "cudaSetDevice") {
     DpctGlobalInfo::setDeviceChangedFlag(true);
+    report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
+        getStmtSpelling(CE->getArg(0)));
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }

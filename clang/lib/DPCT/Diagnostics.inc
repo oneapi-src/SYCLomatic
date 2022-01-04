@@ -202,3 +202,5 @@ DEF_WARNING(UNSUPPORTED_BINARY_OPERATION, 1091, "The function dpct::segmented_re
 DEF_COMMENT(UNSUPPORTED_BINARY_OPERATION, 1091, "The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace \"dpct_placeholder\" with a DPC++ native binary operation.")
 DEF_WARNING(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 128 with differnt value for specific hardware for better performance.")
 DEF_COMMENT(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 128 with differnt value for specific hardware for better performance.")
+DEF_WARNING(DEVICE_ID_DIFFERENT, 1093, "The \"%0\" may not be the best XPU device. Adjust the \"%0\" if needed.")
+DEF_COMMENT(DEVICE_ID_DIFFERENT, 1093, "The \"{0}\" may not be the best XPU device. Adjust the \"{0}\" if needed.")

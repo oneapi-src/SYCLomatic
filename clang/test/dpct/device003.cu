@@ -54,6 +54,9 @@ checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, 
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));
 // CHECK:/*
+// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" may not be the best XPU device. Adjust the "device2" if needed.
+// CHECK-NEXT:*/
+// CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().select_device(device2), 0));
