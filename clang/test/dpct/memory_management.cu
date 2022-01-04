@@ -1012,8 +1012,6 @@ void test_segmentation_fault() {
   * "SizeExpr->getBeginLoc()" cannot get the real SourceLocation of "N*sizeof(float)",
   * and results in boundary violation in "dpctGlobalInfo::getSourceManager().getCharacterData(SizeBegin)"
   * and fails with segmentation fault.
-  * https://jira.devtools.intel.com/browse/CTST-527
-  * https://jira.devtools.intel.com/browse/CTST-528
   */
   cudaMalloc(&buffer, N*sizeof(float));
 }

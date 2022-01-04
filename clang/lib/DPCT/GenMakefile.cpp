@@ -449,9 +449,8 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   std::unordered_map<std::string /*objname*/, bool /*is in linker command ?*/>
       ObjNamesMap;
 
-  // TODO: Currentl implementation only supports one linker entry that appears
-  // in the compilation database. CTST-2306 is filed for the support of multiple
-  // linker entries
+  // TODO: Support of multiple linker entries.  Current implementation only
+  // supports one linker entry that appears in the compilation database.
 
   std::map<std::string /*traget name*/,
            std::vector<clang::tooling::CompilationInfo>>

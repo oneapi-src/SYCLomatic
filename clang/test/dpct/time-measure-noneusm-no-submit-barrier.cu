@@ -587,7 +587,7 @@ __global__ void foo_kernel_3(unsigned short* blk_sad, int mb_width,
                                    int mb_height) {
 }
 
-void ctst_1999(void* ref_image, void* cur_image,
+void test_1999(void* ref_image, void* cur_image,
                     float* sad_calc_ms, float* sad_calc_8_ms,
                     float* sad_calc_16_ms,
                     unsigned short** h_sads) {

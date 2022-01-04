@@ -271,7 +271,7 @@ int main() {
   }
 }
 
-// Before the patch for CTST-1078 is merged, when dpct parses device function foo(),
+// once when dpct parses device function foo(),
 // dpct parser will emit parser error: use of undeclared identifier '__nv_tex_surf_handler',
 // the patch is to fix this issue.
 __device__ void foo() {

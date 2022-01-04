@@ -990,7 +990,7 @@ void IncludesCallbacks::InclusionDirective(
     if (!DplHeaderInserted) {
       std::string Replacement =
           std::string("<" + getCustomMainHelperFileName() + "/dpl_utils.hpp>");
-      // CTST-2021:
+
       // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
       // previously added here.  However, due to some unfortunate include
       // dependencies introduced with the PSTL/TBB headers from the
@@ -2763,7 +2763,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
     if (RealTypeNameStr == "thrust::identity") {
-      // CTST-2049: For thrust::identity the template type argument must be
+      // For thrust::identity the template type argument must be
       // removed as well for correct mapping to oneapi::dpl::identity
       auto RAngleLoc = TSL.getRAngleLoc();
       TyLen = SM->getCharacterData(RAngleLoc) - Start + 1;

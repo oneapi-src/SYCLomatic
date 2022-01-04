@@ -71,11 +71,11 @@ int main() {
   }
 
   const size_t array_size = sizeof(float) * NUM_ELEMENTS;
-  // CTST-50
+
   cudaMemcpyToSymbol(in, h_in, array_size);
 
   const int h_a = 3;
-  // CTST-50
+
   cudaMemcpyToSymbol(al, &h_a, sizeof(int));
 
   float *d_out = NULL;

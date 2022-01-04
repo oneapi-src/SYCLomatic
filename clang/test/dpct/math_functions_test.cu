@@ -47,10 +47,10 @@ long long int test_abs(long long int a) { return abs(a); }
 // CHECK: long int test_abs(long int in) { return abs(in); }
 long int test_abs(long int in) { return abs(in); }
 
-// The check for this will be enabled, when the patch for CTST-689 is merged.
+
 float test_abs(float in) { return abs(in); }
 
-// The check for this will be enabled, when the patch for CTST-689 is merged.
+
 double test_abs(double in) { return abs(in); }
 
 // CHECK: float test_fabs(float in) { return fabs(in); }

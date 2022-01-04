@@ -13,22 +13,22 @@
    $ make install
 3  Windows build.
    a. start Visual Studio X64 command line
-   b. cd z:\libcurl\curl-7.79.1\windows-build\curl-7.79.1\winbuild
+   b. cd curl-7.79.1\windows-build\curl-7.79.1\winbuild
    c. change /MD to /MT and /MDd to /MTd in file winbuild\MakefileBuild.vc in line361 and line362
    e. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
-   f. check the result in z:\libcurl\curl-7.79.1\windows-build\curl-7.79.1\builds folder
+   f. check the result in curl-7.79.1\windows-build\curl-7.79.1\builds folder
 
 4. Update header file into dpct project
-   a. Copy header files from z:\libcurl\curl-7.79.1\windows-build\curl-7.79.1\builds\libcurl-vc-x64-release-static\include to dpd_icl-syclct/clang/lib/DPCT/libcurl/include folder
+   a. Copy header files from curl-7.79.1\windows-build\curl-7.79.1\builds\libcurl-vc-x64-release-static\include to  clang/lib/DPCT/libcurl/include folder
 5. Update static library into dpct project
-   a. Copy libcurl.a to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/linux
-   b. Copy libcurl_a.lib to dpd_icl-syclct/clang/lib/DPCT/libcurl/lib/win
+   a. Copy libcurl.a to clang/lib/DPCT/libcurl/lib/linux
+   b. Copy libcurl_a.lib to clang/lib/DPCT/libcurl/lib/win
 =====================================================================================================================
 
 2021.April.9: 
 Note:
 when do configure:  "--without-libgsasl" is extra added. 
-./configure --prefix=/home/zwang36/libcurl/curl-7.76.0/linux-install --without-ssl --without-ca-fallback --without-libidn2 --without-nghttp2 --without-libidn2 --without-mbedtls --without-zlib --disable-ldap --disable-ldaps  --without-libgsasl
+./configure --prefix=/path/to/libcurl/curl-7.76.0/linux-install --without-ssl --without-ca-fallback --without-libidn2 --without-nghttp2 --without-libidn2 --without-mbedtls --without-zlib --disable-ldap --disable-ldaps  --without-libgsasl
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 =====================================================================================================================
 2021.June.2:

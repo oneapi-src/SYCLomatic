@@ -378,7 +378,7 @@ __global__ void foo_kernel_2(unsigned short* blk_sad, int mb_width,
 __global__ void foo_kernel_3(unsigned short* blk_sad, int mb_width,
                                    int mb_height) {}
 
-void ctst_1999(void* ref_image, void* cur_image,
+void test_1999(void* ref_image, void* cur_image,
                     float* sad_calc_ms, float* sad_calc_8_ms,
                     float* sad_calc_16_ms,
                     unsigned short** h_sads) {
@@ -478,7 +478,7 @@ void ctst_1999(void* ref_image, void* cur_image,
 }
 
 __global__ void kernel() {}
-void foo_ctst1983() {
+void foo_test_1983() {
   cudaStream_t stream1;
   cudaStream_t stream2;
   cudaStreamCreate(&stream1);
@@ -506,10 +506,10 @@ void foo_ctst1983() {
   }
 }
 
-template <class T, class vecT> void foo_ctst2131();
-int foo_test_ctst2131() { foo_ctst2131<float, float4>(); }
+template <class T, class vecT> void foo_test_2131();
+int foo_test_2131_host() { foo_test_2131<float, float4>(); }
 
-template <class T, class vecT> void foo_ctst2131() {
+template <class T, class vecT> void foo_test_2131() {
   int size;
   int num_blocks = 64;
   int num_threads = 256;

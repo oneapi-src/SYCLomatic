@@ -291,7 +291,7 @@ __global__ static void foo_2(unsigned int *g_odata,
 __global__ static void foo_3(void){
 }
 
-int foo_ctst1358() {
+int foo_test_1358() {
  foo_2<true, true><<<1, 1>>>(NULL, NULL, NULL, 1, 2, 3);
  return 0;
 }

@@ -596,9 +596,9 @@ void foo_test_4() {
   }
 }
 
-__global__ void kernel_ctst2184() {}
+__global__ void kernel_test_2184() {}
 
-void foo_ctst2184() {
+void foo_test_2184() {
   int nbytes;
   float value = 10.0f;
   float gpu_time = 0.0f;
@@ -627,7 +627,7 @@ void foo_ctst2184() {
   // CHECK:  CHECK(0);
   CHECK(cudaEventRecord(start));
   CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
-  kernel_ctst2184<<<1, 1>>>();
+  kernel_test_2184<<<1, 1>>>();
   CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
   // CHECK: stop_q_ct1_2.wait();
