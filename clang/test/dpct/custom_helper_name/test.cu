@@ -3,7 +3,7 @@
 
 //      CHECK: //==---- aaa.hpp ----------------------------------*- C++ -*----------------==//
 // CHECK-NEXT: //
-// CHECK-NEXT: // Copyright (C) 2018 - 2021 Intel Corporation
+// CHECK-NEXT: // Copyright (C) Intel Corporation
 // CHECK-NEXT: // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // CHECK-NEXT: // See https://llvm.org/LICENSE.txt for license information.
 // CHECK-NEXT: //
