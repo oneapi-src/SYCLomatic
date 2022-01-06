@@ -1,9 +1,10 @@
-//     CHECK:template <typename T, cl::sycl::access::address_space addressSpace =
-//CHECK-NEXT:              cl::sycl::access::address_space::global_space>
-//CHECK-NEXT:inline T atomic_fetch_add(
-//CHECK-NEXT:    T *addr, T operand,
-//CHECK-NEXT:    cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
-//CHECK-NEXT:  cl::sycl::atomic<T, addressSpace> obj(
-//CHECK-NEXT:      (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-//CHECK-NEXT:  return cl::sycl::atomic_fetch_add(obj, operand, memoryOrder);
+// CHECK:template <typename T,
+//CHECK-NEXT:          cl::sycl::access::address_space addressSpace =
+//CHECK-NEXT:              cl::sycl::access::address_space::global_space,
+//CHECK-NEXT:          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
+//CHECK-NEXT:          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+//CHECK-NEXT:inline T atomic_fetch_add(T *addr, T operand) {
+//CHECK-NEXT:  auto atm =
+//CHECK-NEXT:      cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+//CHECK-NEXT:  return atm.fetch_add(operand);
 //CHECK-NEXT:}
