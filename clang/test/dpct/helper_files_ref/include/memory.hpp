@@ -299,54 +299,84 @@ dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
                      cl::sycl::range<3>(x, y, 1));
 }
 
-static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
-                                   const void *from_ptr, size_t size,
-                                   memcpy_direction direction) {
+enum class pointer_access_attribute {
+  host_only = 0,
+  device_only,
+  host_device,
+  end
+};
+
+static pointer_access_attribute get_pointer_attribute(cl::sycl::queue &q,
+                                                      const void *ptr) {
+#ifdef DPCT_USM_LEVEL_NONE
+  return mem_mgr::instance().is_device_ptr(ptr)
+             ? pointer_access_attribute::device_only
+             : pointer_access_attribute::host_only;
+#else
+  switch (cl::sycl::get_pointer_type(ptr, q.get_context())) {
+  case cl::sycl::usm::alloc::unknown:
+    return pointer_access_attribute::host_only;
+  case cl::sycl::usm::alloc::device:
+    return pointer_access_attribute::device_only;
+  case cl::sycl::usm::alloc::shared:
+  case cl::sycl::usm::alloc::host:
+    return pointer_access_attribute::host_device;
+  }
+#endif
+}
+
+static memcpy_direction deduce_memcpy_direction(cl::sycl::queue &q, void *to_ptr,
+                                             const void *from_ptr,
+                                             memcpy_direction dir) {
+  switch (dir) {
+  case memcpy_direction::host_to_host:
+  case memcpy_direction::host_to_device:
+  case memcpy_direction::device_to_host:
+  case memcpy_direction::device_to_device:
+    return dir;
+  case memcpy_direction::automatic: {
+    // table[to_attribute][from_attribute]
+    static const memcpy_direction
+        direction_table[static_cast<unsigned>(pointer_access_attribute::end)]
+                       [static_cast<unsigned>(pointer_access_attribute::end)] =
+                           {{memcpy_direction::host_to_host,
+                             memcpy_direction::device_to_host,
+                             memcpy_direction::host_to_host},
+                            {memcpy_direction::host_to_device,
+                             memcpy_direction::device_to_device,
+                             memcpy_direction::device_to_device},
+                            {memcpy_direction::host_to_host,
+                             memcpy_direction::device_to_device,
+                             memcpy_direction::device_to_device}};
+    return direction_table[static_cast<unsigned>(get_pointer_attribute(
+        q, to_ptr))][static_cast<unsigned>(get_pointer_attribute(q, from_ptr))];
+  }
+  default:
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
+  }
+}
+
+static cl::sycl::event
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
+            memcpy_direction direction,
+            const std::vector<cl::sycl::event> &dep_events = {}) {
   if (!size)
     return cl::sycl::event{};
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
-  memcpy_direction real_direction = direction;
-  switch (direction) {
-  case host_to_host:
-    assert(!mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
-    break;
-  case host_to_device:
-    assert(!mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
-    break;
-  case device_to_host:
-    assert(mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
-    break;
-  case device_to_device:
-    assert(mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
-    break;
-  case automatic:
-    bool from_device = mm.is_device_ptr(from_ptr);
-    bool to_device = mm.is_device_ptr(to_ptr);
-    if (from_device) {
-      if (to_device) {
-        real_direction = device_to_device;
-      } else {
-        real_direction = device_to_host;
-      }
-    } else {
-      if (to_device) {
-        real_direction = host_to_device;
-      } else {
-        real_direction = host_to_host;
-      }
-    }
-    break;
-  }
+  auto real_direction = deduce_memcpy_direction(q, to_ptr, from_ptr, direction);
 
   switch (real_direction) {
   case host_to_host:
-    std::memcpy(to_ptr, from_ptr, size);
-    return cl::sycl::event();
+    return q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
+      cgh.host_task([=] { std::memcpy(to_ptr, from_ptr, size); });
+    });
   case host_to_device: {
     auto alloc = mm.translate_ptr(to_ptr);
     size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
     return q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
@@ -359,6 +389,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     auto alloc = mm.translate_ptr(from_ptr);
     size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
     return q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
@@ -373,6 +404,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
     size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
     return q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
       auto r = cl::sycl::range<1>(size);
       auto to_o = cl::sycl::id<1>(to_offset);
       auto from_o = cl::sycl::id<1>(from_offset);
@@ -389,7 +421,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
     throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
 #else
-  return q.memcpy(to_ptr, from_ptr, size);
+  return q.memcpy(to_ptr, from_ptr, size, dep_events);
 #endif // DPCT_USM_LEVEL_NONE
 }
 
@@ -399,7 +431,8 @@ static inline std::vector<cl::sycl::event>
 dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
             cl::sycl::range<3> to_range, cl::sycl::range<3> from_range,
             cl::sycl::id<3> to_id, cl::sycl::id<3> from_id,
-            cl::sycl::range<3> size, memcpy_direction direction) {
+            cl::sycl::range<3> size, memcpy_direction direction,
+            const std::vector<cl::sycl::event> &dep_events = {}) {
   std::vector<cl::sycl::event> event_list;
 
   size_t to_slice = to_range.get(1) * to_range.get(0),
@@ -413,26 +446,91 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 
   if (to_slice == from_slice && to_slice == size.get(1) * size.get(0)) {
     return {dpct_memcpy(q, to_surface, from_surface, to_slice * size.get(2),
-                       direction)};
+                        direction, dep_events)};
   }
-  for (size_t z = 0; z < size.get(2); ++z) {
-    unsigned char *to_ptr = to_surface;
-    const unsigned char *from_ptr = from_surface;
-    if (to_range.get(0) == from_range.get(0) &&
-        to_range.get(0) == size.get(0)) {
-      event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr,
-                                       size.get(0) * size.get(1), direction));
-    } else {
-      for (size_t y = 0; y < size.get(1); ++y) {
-        event_list.push_back(
-            dpct_memcpy(q, to_ptr, from_ptr, size.get(0), direction));
-        to_ptr += to_range.get(0);
-        from_ptr += from_range.get(0);
+  direction = deduce_memcpy_direction(q, to_ptr, from_ptr, direction);
+  void *tmp_host_buf = nullptr;
+  size_t size_slice = size.get(1) * size.get(0);
+  switch (direction) {
+  case host_to_host:
+    for (size_t z = 0; z < size.get(2); ++z) {
+      unsigned char *to_ptr = to_surface;
+      const unsigned char *from_ptr = from_surface;
+      if (to_range.get(0) == from_range.get(0) &&
+          to_range.get(0) == size.get(0)) {
+        event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr, size_slice,
+                                         direction, dep_events));
+      } else {
+        for (size_t y = 0; y < size.get(1); ++y) {
+          event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr, size.get(0),
+                                           direction, dep_events));
+          to_ptr += to_range.get(0);
+          from_ptr += from_range.get(0);
+        }
       }
+      to_surface += to_slice;
+      from_surface += from_slice;
     }
-    to_surface += to_slice;
-    from_surface += from_slice;
+    break;
+  case host_to_device: {
+    tmp_host_buf = std::malloc(to_slice * size.get(2));
+    std::vector<cl::sycl::event> host_events;
+    if (to_slice == size_slice) {
+      // Copy host data to a temp host buffer with the shape of target.
+      host_events =
+          dpct_memcpy(q, tmp_host_buf, from_surface, to_range, from_range,
+                      sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size,
+                      host_to_host, dep_events);
+    } else {
+      // Copy host data to a temp host buffer with the shape of target.
+      host_events = dpct_memcpy(
+          q, tmp_host_buf, from_surface, to_range, from_range,
+          sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
+          // If has padding data, not sure whether it is useless. So fill temp
+          // buffer with it.
+          std::vector<cl::sycl::event>{
+              dpct_memcpy(q, tmp_host_buf, to_surface, to_slice * size.get(2),
+                          device_to_host, dep_events)});
+    }
+    // Copy from temp host buffer to device with only one submit.
+    event_list.push_back(dpct_memcpy(q, to_surface, tmp_host_buf,
+                                     to_slice * size.get(2), host_to_device,
+                                     host_events));
+    break;
   }
+  case device_to_host: {
+    tmp_host_buf = std::malloc(from_slice * size.get(2));
+    // Copy from host temp buffer to host target with reshaping.
+    event_list = dpct_memcpy(
+        q, to_surface, tmp_host_buf, to_range, from_range, sycl::id<3>(0, 0, 0),
+        sycl::id<3>(0, 0, 0), size, host_to_host,
+        // Copy from device to temp host buffer with only one submit.
+        std::vector<cl::sycl::event>{dpct_memcpy(q, tmp_host_buf, from_surface,
+                                                 from_slice * size.get(2),
+                                                 device_to_host, dep_events)});
+    break;
+  }
+  case device_to_device:
+    event_list.push_back(q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
+      cgh.parallel_for<class dpct_memcpy_3d_detail>(
+          sycl::range<3>(size.get(2), size.get(1), size.get(0)),
+          [=](cl::sycl::id<3> id) {
+            to_surface[to_slice * id.get(2) + to_range.get(0) * id.get(1) +
+                       id.get(0)] =
+                from_surface[from_slice * id.get(0) +
+                             from_range.get(0) * id.get(1) + id.get(2)];
+          });
+    }));
+    break;
+  default:
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
+  }
+  if (tmp_host_buf)
+    q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(event_list);
+      cgh.host_task([=] { std::free(tmp_host_buf); });
+    });
   return event_list;
 }
 

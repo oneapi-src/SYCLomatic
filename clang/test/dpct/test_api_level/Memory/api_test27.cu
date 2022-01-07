@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test27_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test27_out
 
-// CHECK: 48
+// CHECK: 51
 // TEST_FEATURE: Memory_device_memory_get_ptr
 
 __constant__ float constData[4];

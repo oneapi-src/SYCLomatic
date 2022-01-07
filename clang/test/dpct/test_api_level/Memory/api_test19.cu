@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test19_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test19_out
 
-// CHECK: 39
+// CHECK: 42
 // TEST_FEATURE: Memory_shared_memory_alias
 
 __managed__ float A[1024];

@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test36_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test36_out
 
-// CHECK: 37
+// CHECK: 40
 // TEST_FEATURE: Memory_dpct_memcpy
 // TEST_FEATURE: Memory_dpct_memcpy_2d
 // TEST_FEATURE: Memory_dpct_memcpy_3d

@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test21_out
 
-// CHECK: 52
+// CHECK: 55
 // TEST_FEATURE: Image_image_matrix_to_pitched_data
 
 int main() {

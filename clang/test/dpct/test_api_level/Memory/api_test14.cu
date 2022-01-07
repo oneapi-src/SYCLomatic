@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test14_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test14_out
 
-// CHECK: 45
+// CHECK: 48
 // TEST_FEATURE: Memory_global_memory_alias
 
 __device__ float A[1024];

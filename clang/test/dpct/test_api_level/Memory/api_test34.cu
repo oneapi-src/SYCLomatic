@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test34_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test34_out
 
-// CHECK: 27
+// CHECK: 30
 // TEST_FEATURE: Memory_async_dpct_memcpy
 
 int main() {
