@@ -13,7 +13,7 @@
 #define DPCT_CONFIG_H
 
 #define DPCT_VERSION_MAJOR "2022"
-#define DPCT_VERSION_MINOR "0"
+#define DPCT_VERSION_MINOR "1"
 #define DPCT_VERSION_PATCH "0"
 
 #endif
