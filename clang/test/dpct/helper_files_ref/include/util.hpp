@@ -229,6 +229,16 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
   return ret;
 }
 
+/// Find position of first least significant set bit in an integer.
+/// ffs(0) returns 0.
+///
+/// \param [in] a Input integer value
+/// \returns The position
+template <typename T> inline int ffs(T a) {
+  static_assert(std::is_integral<T>::value, "integer required");
+  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a DPC++ kernel.
 /// \param [in] item:  Represents a work group.

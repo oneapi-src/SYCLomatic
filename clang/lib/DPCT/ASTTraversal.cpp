@@ -13075,6 +13075,8 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
                        CE);
       } else if (Name == "__byte_perm") {
         requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
+      } else if (Name == "__ffs" || Name == "__ffsll") {
+        requestFeature(HelperFeatureEnum::Util_ffs, CE);
       }
     }
   }

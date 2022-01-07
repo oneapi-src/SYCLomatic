@@ -2374,13 +2374,9 @@ __global__ void testUnsupported() {
   ull = __brevll(ull);
   // CHECK: u = dpct::byte_level_permute(u, u, u);
   u = __byte_perm(u, u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ffs is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT: */
+  // CHECK: i = dpct::ffs<int>(i);
   i = __ffs(i);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ffsll is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT: */
+  // CHECK: i = dpct::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_l is not supported by the Intel(R) DPC++ Compatibility Tool.

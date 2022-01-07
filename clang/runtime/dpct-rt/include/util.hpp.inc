@@ -325,6 +325,20 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|ffs|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Find position of first least significant set bit in an integer.
+/// ffs(0) returns 0.
+///
+/// \param [in] a Input integer value
+/// \returns The position
+template <typename T> inline int ffs(T a) {
+  static_assert(std::is_integral<T>::value, "integer required");
+  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+}
+// DPCT_LABEL_END
+
 namespace experimental {
 // DPCT_LABEL_BEGIN|nd_range_barrier|dpct::experimental
 // DPCT_DEPENDENCY_EMPTY
