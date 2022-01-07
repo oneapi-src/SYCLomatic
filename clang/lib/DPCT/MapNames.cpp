@@ -3374,6 +3374,18 @@ const MapNames::MapTy MapNames::MacrosMap{
     //...
 };
 
+std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
+    {"__forceinline__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__forceinline__", "__dpct_inline__",
+                        HelperFeatureEnum::Dpct_dpct_align_and_inline)},
+    {"__align__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__align__", "__dpct_align__",
+                        HelperFeatureEnum::Dpct_dpct_align_and_inline)},
+    //...
+};
+
 // Files to not preprocess, i.e. ignore #include <file>
 const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/adjacent_difference.inl",

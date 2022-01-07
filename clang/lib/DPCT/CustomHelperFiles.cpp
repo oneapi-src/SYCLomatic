@@ -25,6 +25,9 @@ namespace clang {
 namespace dpct {
 
 void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
+  if (Feature == HelperFeatureEnum::no_feature_helper) {
+    return;
+  }
   if (!HelperFeatureEnumPairMap.count(Feature)) {
 #ifdef DPCT_DEBUG_BUILD
     std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;

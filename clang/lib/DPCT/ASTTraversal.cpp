@@ -423,15 +423,18 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 
-  if (TKind == tok::identifier && Name == "__forceinline__") {
+  auto ItRule = MapNames::MacroRuleMap.find(Name.str());
+  if (ItRule != MapNames::MacroRuleMap.end()) {
+    std::string OutStr = ItRule->second.Out;
     TransformSet.emplace_back(
-        new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
-    requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, Range.getBegin());
-  } else if(TKind == tok::identifier && Name == "__align__") {
-    TransformSet.emplace_back(
-        new ReplaceToken(Range.getBegin(), "__dpct_align__"));
-    requestFeature(HelperFeatureEnum::Dpct_dpct_align_and_inline, Range.getBegin());
-  } else if (TKind == tok::identifier && Name == "CUDART_CB") {
+      new ReplaceToken(Range.getBegin(), std::move(OutStr)));
+    requestFeature(ItRule->second.HelperFeature, Range.getBegin());
+    for (auto ItHeader = ItRule->second.Includes.begin(); ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
+    }
+  }
+
+  if (TKind == tok::identifier && Name == "CUDART_CB") {
 #ifdef _WIN32
     TransformSet.emplace_back(
         new ReplaceText(Range.getBegin(), 9, "__stdcall"));

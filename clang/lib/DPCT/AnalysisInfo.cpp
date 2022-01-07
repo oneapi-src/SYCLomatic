@@ -33,6 +33,7 @@ std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
+std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
@@ -535,6 +536,19 @@ void DpctFileInfo::buildReplacements() {
       DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
     }
   }
+
+  // insert header file of user defined rules
+  std::string InsertHeaderStr = "";
+  if (!InsertedHeaders.empty()) {
+    InsertHeaderStr += getNL();
+  }
+  for (std::string HeaderStr : InsertedHeaders) {
+    if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
+      HeaderStr = "\"" + HeaderStr + "\"";
+    }
+    InsertHeaderStr += "#include " + HeaderStr + getNL();
+  }
+  insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
 
   FreeQueriesInfo::buildInfo();
 }

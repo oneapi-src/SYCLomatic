@@ -15,6 +15,7 @@
 #include "CustomHelperFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
+#include "Rules.h"
 #include <map>
 #include <set>
 
@@ -327,6 +328,7 @@ public:
       TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
+  static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;

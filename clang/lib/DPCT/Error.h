@@ -53,6 +53,8 @@ enum ProcessStatus {
   MigrationErrorCustomHelperFileNameTooLong = -35,
   MigrationErrorCustomHelperFileNamePathTooLong = -36,
   MigrationErrorDifferentOptSet = -37,
+  MigrationErrorInvalidRuleFilePath = -38,
+  MigrationErrorCannotParseRuleFile = -39,
 };
 
 namespace clang {

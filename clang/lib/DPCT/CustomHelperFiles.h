@@ -41,6 +41,7 @@ enum class HelperFeatureDependencyKind : unsigned int {
 };
 
 enum class HelperFeatureEnum : unsigned int {
+  no_feature_helper,
 #define DPCT_FEATURE_ENUM
 #undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
 #include "clang/DPCT/HelperFeatureEnum.inc"

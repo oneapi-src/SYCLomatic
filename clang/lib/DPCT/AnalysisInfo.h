@@ -21,6 +21,7 @@
 #include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
+#include "Rules.h"
 #include <bitset>
 #include <unordered_set>
 #include <vector>
@@ -544,6 +545,13 @@ public:
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr));
   }
 
+  void insertCustomizedHeader(std::string &&Repl) {
+    if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
+        InsertedHeaders.end()) {
+      InsertedHeaders.push_back(Repl);
+    }
+  }
+
   // Insert one or more header inclusion directives at first or last inclusion
   // locations
   template <typename... T>
@@ -896,6 +904,7 @@ private:
   unsigned LastIncludeOffset = 0;
   bool HasInclusionDirective = false;
 
+  std::vector<std::string> InsertedHeaders;
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
@@ -1077,6 +1086,7 @@ public:
     assert(!CudaPath.empty());
     return CudaPath;
   }
+
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
@@ -1109,6 +1119,7 @@ public:
     FM = &(SM->getFileManager());
     Context->getParentMapContext().setTraversalKind(TK_AsIs);
   }
+  static void setRuleFile(const std::string &Path) { RuleFile = Path; }
   static CompilerInstance &getCompilerInstance() {
     assert(CI);
     return *CI;
@@ -2055,6 +2066,11 @@ public:
     insertFile(LocInfo.first)->insertHeader(Type);
   }
 
+  void insertHeader(SourceLocation Loc, std::string HeaderName) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
+  }
+
   static std::unordered_set<std::string> &getExpansionRangeBeginSet() {
     return ExpansionRangeBeginSet;
   }
@@ -2426,6 +2442,7 @@ private:
   static std::string OutRoot;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
+  static std::string RuleFile;
   static UsmLevel UsmLvl;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;

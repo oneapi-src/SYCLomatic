@@ -160,6 +160,12 @@ void ShowStatus(int Status, std::string Message) {
         "https://software.intel.com/content/www/us/en/develop/documentation/"
         "intel-dpcpp-compatibility-tool-user-guide/top.html for more details.";
     break;
+  case MigrationErrorInvalidRuleFilePath:
+    StatusString = "Error: The path for --rule-file is not valid";
+    break;
+  case MigrationErrorCannotParseRuleFile:
+    StatusString = "Error: Cannot parse rule file";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);
