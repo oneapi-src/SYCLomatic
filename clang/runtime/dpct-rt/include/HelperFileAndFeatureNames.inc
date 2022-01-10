@@ -35,6 +35,7 @@ HELPERFILE(dpl_extras/dpcpp_extensions.h.inc, DplExtrasDpcppExtensions)
 // dpct.hpp
 // features
 HELPER_FEATURE_MAP_TO_APINAME(Dpct, "dpct_align_and_inline", "__dpct_align__(n) and __dpct_inline__")
+HELPER_FEATURE_MAP_TO_APINAME(Dpct, "dpct_noinline", "__dpct_noinline__")
 HELPER_FEATURE_MAP_TO_APINAME(Dpct, "dpct_named_lambda", "dpct_kernel_name and dpct_kernel_scalar")
 HELPER_FEATURE_MAP_TO_APINAME(Dpct, "dpct_compatibility_temp", "DPCT_COMPATIBILITY_TEMP")
 HELPER_FEATURE_MAP_TO_APINAME(Dpct, "dpct_pi_f", "DPCT_PI_F")

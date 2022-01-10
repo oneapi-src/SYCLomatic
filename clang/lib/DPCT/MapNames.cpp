@@ -3383,6 +3383,10 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__align__", "__dpct_align__",
                         HelperFeatureEnum::Dpct_dpct_align_and_inline)},
+    {"__noinline__",
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                        "__noinline__", "__dpct_noinline__",
+                        HelperFeatureEnum::Dpct_dpct_noinline)},
     //...
 };
 

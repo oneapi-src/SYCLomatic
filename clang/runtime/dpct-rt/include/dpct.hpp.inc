@@ -73,6 +73,16 @@ template <int Arg> class dpct_kernel_scalar;
 #endif
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dpct_noinline|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+#if defined(_MSC_VER)
+#define __dpct_noinline__ __declspec(noinline)
+#else
+#define __dpct_noinline__ __attribute__((noinline))
+#endif
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|dpct_compatibility_temp|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

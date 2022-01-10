@@ -31,6 +31,12 @@ template <int Arg> class dpct_kernel_scalar;
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
 #endif
 
+#if defined(_MSC_VER)
+#define __dpct_noinline__ __declspec(noinline)
+#else
+#define __dpct_noinline__ __attribute__((noinline))
+#endif
+
 #define DPCT_COMPATIBILITY_TEMP (600)
 
 #define DPCT_PI_F (3.14159274101257f)

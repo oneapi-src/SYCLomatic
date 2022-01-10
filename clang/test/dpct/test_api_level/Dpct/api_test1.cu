@@ -3,10 +3,11 @@
 // RUN: FileCheck --input-file %T/Dpct/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Dpct/api_test1_out
 
-// CHECK: 2
+// CHECK: 3
 
 // TEST_FEATURE: Dpct_non_local_include_dependency
 // TEST_FEATURE: Dpct_dpct_align_and_inline
+// TEST_FEATURE: Dpct_dpct_noinline
 
 
 class __align__(8) T1 {
@@ -14,6 +15,8 @@ class __align__(8) T1 {
 };
 
 __forceinline__ void foo(){}
+
+__noinline__ void foo2(){}
 
 int main() {
   return 0;
