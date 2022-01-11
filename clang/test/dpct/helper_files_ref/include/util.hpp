@@ -249,7 +249,7 @@ namespace experimental {
 /// a DPC++ kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
 inline void
-nd_range_barrier(sycl::nd_item<dimensions> item,
+nd_range_barrier(cl::sycl::nd_item<dimensions> item,
                  cl::sycl::atomic_ref<
                      unsigned int, cl::sycl::memory_order::seq_cst,
                      cl::sycl::memory_scope::device,
@@ -289,7 +289,7 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
 /// a DPC++ kernel can be scheduled actively at the same time on a device.
 template <>
 inline void
-nd_range_barrier(sycl::nd_item<1> item,
+nd_range_barrier(cl::sycl::nd_item<1> item,
                  cl::sycl::atomic_ref<
                      unsigned int, cl::sycl::memory_order::seq_cst,
                      cl::sycl::memory_scope::device,

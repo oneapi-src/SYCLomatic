@@ -1700,7 +1700,7 @@ template <> struct image_creator<2> {
   }
 };
 template <> struct image_creator<3> {
-  sycl::image<3> *operator()(image_data data) {
+  cl::sycl::image<3> *operator()(image_data data) {
     assert(data.get_data_type() == image_data_type::matrix);
     return static_cast<image_matrix_p>(data.get_data_ptr())
         ->create_image<3>(data.get_channel());
