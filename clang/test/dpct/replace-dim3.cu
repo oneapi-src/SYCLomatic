@@ -7,6 +7,10 @@
 #include <algorithm>
 
 #define NUM 23
+#define CALL_FUNC(func) func()
+
+// CHECK: #define DIM3_DEFAULT_VAR(name) sycl::range<3> name
+#define DIM3_DEFAULT_VAR(name) dim3 name
 
 // CHECK: void func(sycl::range<3> a, sycl::range<3> b, sycl::range<3> c, sycl::range<3> d) {
 void func(dim3 a, dim3 b, dim3 c, dim3 d) {
@@ -254,3 +258,25 @@ __global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {
   }
 }
 
+// CHECK: void dim3_foo() {
+// CHECK-NEXT:     DIM3_DEFAULT_VAR(block0(1, 1, 1));
+// CHECK-NEXT:     CALL_FUNC( []() {
+// CHECK-NEXT:         sycl::range<3> block1(1, 1, 1);
+// CHECK-NEXT:         sycl::range<3> block2{1, 1, 1};
+// CHECK-NEXT:         sycl::range<3> block3(1, 1, 2);
+// CHECK-NEXT:         sycl::range<3> block4(1, 3, 2);
+// CHECK-NEXT:         sycl::range<3> block5(4, 3, 2);
+// CHECK-NEXT:         DIM3_DEFAULT_VAR(block6(1, 1, 1));
+// CHECK-NEXT:       });
+// CHECK-NEXT: }
+void dim3_foo() {
+    DIM3_DEFAULT_VAR(block0);
+    CALL_FUNC( []() {
+        dim3 block1;
+        dim3 block2{};
+        dim3 block3(2);
+        dim3 block4(2,3);
+        dim3 block5(2,3,4);
+        DIM3_DEFAULT_VAR(block6);
+      });
+}

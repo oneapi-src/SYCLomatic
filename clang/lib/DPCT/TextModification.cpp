@@ -517,10 +517,15 @@ void ReplaceDim3Ctor::setRange() {
   if (isDecl) {
     SourceRange SR = Ctor->getParenOrBraceRange();
     if (SR.isInvalid()) {
+      // convert to spelling location if the dim3 constructor is in a macro
+      // otherwise, Lexer::getLocForEndOfToken returns invalid source location
+      auto CtorLoc = Ctor->getLocation().isMacroID()
+                         ? SM.getSpellingLoc(Ctor->getLocation())
+                         : Ctor->getLocation();
       // dim3 a;
+      // MACRO(... dim3 a; ...)
       auto CtorEndLoc = Lexer::getLocForEndOfToken(
-          Ctor->getLocation(), 0, DpctGlobalInfo::getSourceManager(),
-          DpctGlobalInfo::getContext().getLangOpts());
+          CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
       CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
     } else {
       SourceRange SR1 =
