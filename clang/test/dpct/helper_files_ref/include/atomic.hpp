@@ -22,8 +22,8 @@ namespace dpct {
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_add(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -41,19 +41,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_add(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_add<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_add<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_add<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_add<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_add<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_add<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -66,8 +66,8 @@ inline T atomic_fetch_add(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_sub(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -85,19 +85,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_sub(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_sub<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_sub<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_sub<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_sub<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_sub<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_sub<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -110,8 +110,8 @@ inline T atomic_fetch_sub(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_and(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -129,19 +129,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_and(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_and<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_and<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_and<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_and<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_and<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_and<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -154,8 +154,8 @@ inline T atomic_fetch_and(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_or(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -173,19 +173,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_or(T *addr, T operand,
                          cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_or<T, addressSpace, sycl::memory_order::relaxed,
-                           cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_or<T, addressSpace, sycl::memory_order::acq_rel,
-                           cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_or<T, addressSpace, sycl::memory_order::seq_cst,
-                           cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_or<T, addressSpace, cl::sycl::memory_order::relaxed,
+                           cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_or<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                           cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_or<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                           cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -198,8 +198,8 @@ inline T atomic_fetch_or(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_xor(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -217,19 +217,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_xor(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_xor<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_xor<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_xor<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_xor<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_xor<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_xor<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -242,8 +242,8 @@ inline T atomic_fetch_xor(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_min(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -261,19 +261,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_min(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_min<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_min<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_min<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_min<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_min<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_min<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -286,8 +286,8 @@ inline T atomic_fetch_min(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_fetch_max(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -305,19 +305,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_fetch_max(T *addr, T operand,
                           cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_max<T, addressSpace, sycl::memory_order::relaxed,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_max<T, addressSpace, sycl::memory_order::acq_rel,
-                            cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_max<T, addressSpace, sycl::memory_order::seq_cst,
-                            cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_max<T, addressSpace, cl::sycl::memory_order::relaxed,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_max<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                            cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_max<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                            cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -329,8 +329,8 @@ inline T atomic_fetch_max(T *addr, T operand,
 /// \returns The old value stored in \p addr.
 template <cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline unsigned int atomic_fetch_compare_inc(unsigned int *addr,
                                              unsigned int operand) {
   auto atm = cl::sycl::atomic_ref<unsigned int, memoryOrder, memoryScope,
@@ -359,22 +359,22 @@ inline unsigned int
 atomic_fetch_compare_inc(unsigned int *addr, unsigned int operand,
                          cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_fetch_compare_inc<addressSpace, sycl::memory_order::relaxed,
-                                    cl::sycl::memory_scope_device>(addr,
+  case cl::sycl::memory_order::relaxed:
+    return atomic_fetch_compare_inc<addressSpace, cl::sycl::memory_order::relaxed,
+                                    cl::sycl::memory_scope::device>(addr,
                                                                    operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_fetch_compare_inc<addressSpace, sycl::memory_order::acq_rel,
-                                    cl::sycl::memory_scope_device>(addr,
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_fetch_compare_inc<addressSpace, cl::sycl::memory_order::acq_rel,
+                                    cl::sycl::memory_scope::device>(addr,
                                                                    operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_fetch_compare_inc<addressSpace, sycl::memory_order::seq_cst,
-                                    cl::sycl::memory_scope_device>(addr,
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_fetch_compare_inc<addressSpace, cl::sycl::memory_order::seq_cst,
+                                    cl::sycl::memory_scope::device>(addr,
                                                                    operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -386,8 +386,8 @@ atomic_fetch_compare_inc(unsigned int *addr, unsigned int operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 inline T atomic_exchange(T *addr, T operand) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -404,19 +404,19 @@ template <typename T, cl::sycl::access::address_space addressSpace =
 inline T atomic_exchange(T *addr, T operand,
                          cl::sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
-  case sycl::memory_order::relaxed:
-    return atomic_exchange<T, addressSpace, sycl::memory_order::relaxed,
-                           cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::acq_rel:
-    return atomic_exchange<T, addressSpace, sycl::memory_order::acq_rel,
-                           cl::sycl::memory_scope_device>(addr, operand);
-  case sycl::memory_order::seq_cst:
-    return atomic_exchange<T, addressSpace, sycl::memory_order::seq_cst,
-                           cl::sycl::memory_scope_device>(addr, operand);
+  case cl::sycl::memory_order::relaxed:
+    return atomic_exchange<T, addressSpace, cl::sycl::memory_order::relaxed,
+                           cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::acq_rel:
+    return atomic_exchange<T, addressSpace, cl::sycl::memory_order::acq_rel,
+                           cl::sycl::memory_scope::device>(addr, operand);
+  case cl::sycl::memory_order::seq_cst:
+    return atomic_exchange<T, addressSpace, cl::sycl::memory_order::seq_cst,
+                           cl::sycl::memory_scope::device>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
-                    "atomics are: sycl::memory_order::relaxed, "
-                    "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
+                    "atomics are: cl::sycl::memory_order::relaxed, "
+                    "cl::sycl::memory_order::acq_rel, cl::sycl::memory_order::seq_cst!");
   }
 }
 
@@ -432,17 +432,18 @@ inline T atomic_exchange(T *addr, T operand,
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 T atomic_compare_exchange_strong(
     cl::sycl::multi_ptr<T, cl::sycl::access::address_space::global_space> addr,
     T expected, T desired,
-    cl::sycl::memory_order success = cl::sycl::memory_order_relaxed,
-    cl::sycl::memory_order fail = cl::sycl::memory_order_relaxed) {
+    cl::sycl::memory_order success = cl::sycl::memory_order::relaxed,
+    cl::sycl::memory_order fail = cl::sycl::memory_order::relaxed) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(*addr);
 
-  return atm.compare_exchange_strong(expected, desired, success, fail);
+  atm.compare_exchange_strong(expected, desired, success, fail);
+  return expected;
 }
 
 /// Atomically compare the value at \p addr to the value expected and exchange
@@ -457,15 +458,16 @@ T atomic_compare_exchange_strong(
 template <typename T,
           cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
-          cl::sycl::memory_order memoryOrder = sycl::memory_order_relaxed,
-          cl::sycl::memory_scope memoryScope = sycl::memory_scope_device>
+          cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed,
+          cl::sycl::memory_scope memoryScope = cl::sycl::memory_scope::device>
 T atomic_compare_exchange_strong(
     T *addr, T expected, T desired,
-    cl::sycl::memory_order success = cl::sycl::memory_order_relaxed,
-    cl::sycl::memory_order fail = cl::sycl::memory_order_relaxed) {
+    cl::sycl::memory_order success = cl::sycl::memory_order::relaxed,
+    cl::sycl::memory_order fail = cl::sycl::memory_order::relaxed) {
   auto atm =
       cl::sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
-  return atm.compare_exchange_strong(expected, desired, success, fail);
+  atm.compare_exchange_strong(expected, desired, success, fail);
+  return expected;
 }
 
 } // namespace dpct
