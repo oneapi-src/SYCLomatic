@@ -692,6 +692,22 @@ template <typename Pointer> Pointer get_raw_pointer(const Pointer &ptr) {
   return ptr;
 }
 
+template <typename T> const T &get_raw_reference(const device_reference<T> &ref) {
+  return ref.value;
+}
+
+template <typename T> T &get_raw_reference(device_reference<T> &ref) {
+  return ref.value;
+}
+
+template <typename T> const T &get_raw_reference(const T &ref) {
+  return ref;
+}
+
+template <typename T> T &get_raw_reference(T &ref) {
+  return ref;
+}
+
 } // namespace dpct
 
 #endif

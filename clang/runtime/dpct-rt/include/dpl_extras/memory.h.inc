@@ -807,6 +807,28 @@ template <typename Pointer> Pointer get_raw_pointer(const Pointer &ptr) {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_raw_reference|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|device_reference
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> const T &get_raw_reference(const device_reference<T> &ref) {
+  return ref.value;
+}
+
+template <typename T> T &get_raw_reference(device_reference<T> &ref) {
+  return ref.value;
+}
+
+template <typename T> const T &get_raw_reference(const T &ref) {
+  return ref;
+}
+
+template <typename T> T &get_raw_reference(T &ref) {
+  return ref;
+}
+// DPCT_LABEL_END
+
 } // namespace dpct
 
 #endif
