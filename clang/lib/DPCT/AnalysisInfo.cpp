@@ -538,16 +538,18 @@ void DpctFileInfo::buildReplacements() {
   }
 
   // insert header file of user defined rules
-  std::string InsertHeaderStr = "";
+  std::string InsertHeaderStr;
+  llvm::raw_string_ostream HeaderOS(InsertHeaderStr);
   if (!InsertedHeaders.empty()) {
-    InsertHeaderStr += getNL();
+    HeaderOS << getNL();
   }
-  for (std::string HeaderStr : InsertedHeaders) {
+  for (auto &HeaderStr : InsertedHeaders) {
     if (HeaderStr[0] != '<' && HeaderStr[0] != '"') {
       HeaderStr = "\"" + HeaderStr + "\"";
     }
-    InsertHeaderStr += "#include " + HeaderStr + getNL();
+    HeaderOS << "#include " << HeaderStr << getNL();
   }
+  HeaderOS.flush();
   insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
 
   FreeQueriesInfo::buildInfo();
