@@ -114,6 +114,7 @@ add_clang_library(DPCT
   GenMakefile.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
+  MisleadingBidirectional.cpp
 
   DEPENDS
   ClangDriverOptions

@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "ASTTraversal.h"
+#include "MisleadingBidirectional.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
@@ -17109,6 +17110,8 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   }
 }
 REGISTER_RULE(CubRule)
+
+REGISTER_RULE(MisleadingBidirectionalRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

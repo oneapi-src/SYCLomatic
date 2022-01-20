@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "MisleadingBidirectional.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
@@ -243,6 +244,12 @@ static opt<bool, true>
     SyclNamedLambda("sycl-named-lambda",
                 llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
+
+bool MisleadingBidirectionalDetectionFlag = false;
+static opt<bool, true>
+    MisleadingBidirectionalDetection("misleading-bidirectional-detection",
+                llvm::cl::desc("Detects misleading bidirectional sequence. Default: off.\n"),
+                cat(DPCTCat), llvm::cl::location(MisleadingBidirectionalDetectionFlag));
 
 opt<OutputVerbosityLevel> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
@@ -564,6 +571,12 @@ public:
 
     PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
         TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
+
+    if (DpctGlobalInfo::getMisleadingBidirectionalDetectionFlag()) {
+      CommentHandler =
+          std::make_shared<MisleadingBidirectionalHandler>(TransformSet);
+      PP.addCommentHandler(CommentHandler.get());
+    }
   }
 
   void HandleCXXExplicitFunctionInstantiation(
@@ -596,6 +609,7 @@ private:
   ReplTy &Repl;
   Preprocessor &PP;
   CompilerInstance &CI;
+  std::shared_ptr<MisleadingBidirectionalHandler> CommentHandler;
 };
 
 class DPCTAction : public ASTFrontendAction {
@@ -1230,6 +1244,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
+  DpctGlobalInfo::setMisleadingBidirectionalDetectionFlag(
+    MisleadingBidirectionalDetectionFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";

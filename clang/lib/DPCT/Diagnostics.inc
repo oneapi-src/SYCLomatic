@@ -204,3 +204,5 @@ DEF_WARNING(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 1
 DEF_COMMENT(REDUCE_PERFORMANCE_TUNE, 1092, "Consider replacing work group size 128 with differnt value for specific hardware for better performance.")
 DEF_WARNING(DEVICE_ID_DIFFERENT, 1093, "The \"%0\" may not be the best XPU device. Adjust the \"%0\" if needed.")
 DEF_COMMENT(DEVICE_ID_DIFFERENT, 1093, "The \"{0}\" may not be the best XPU device. Adjust the \"{0}\" if needed.")
+DEF_WARNING(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirectional Unicode characters.")
+DEF_COMMENT(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirectional Unicode characters.")

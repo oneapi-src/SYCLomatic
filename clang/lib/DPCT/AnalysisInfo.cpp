@@ -58,6 +58,7 @@ SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
+bool DpctGlobalInfo::MisleadingBidirectionalDetectionFlag = false;
 std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;

@@ -1144,6 +1144,12 @@ public:
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
   }
+  inline static void setMisleadingBidirectionalDetectionFlag(bool MBD) {
+    MisleadingBidirectionalDetectionFlag = MBD;
+  }
+  inline static bool getMisleadingBidirectionalDetectionFlag() {
+    return MisleadingBidirectionalDetectionFlag;
+  }
   inline static bool getGuessIndentWidthMatcherFlag() {
     return GuessIndentWidthMatcherFlag;
   }
@@ -2476,6 +2482,7 @@ private:
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
   static std::unordered_set<std::string> ExpansionRangeBeginSet;
+  static bool MisleadingBidirectionalDetectionFlag;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
