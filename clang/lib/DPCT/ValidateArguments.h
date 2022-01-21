@@ -68,6 +68,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 1, // Using nd_range_barrier.
   Exp_FreeQueries = 2, // Using free queries functions, like this_nd_item,
                            // this_group, this_subgroup.
+  Exp_GroupSharedMemory = 3,
   Exp_ExperimentalFeaturesEnumSize
 };
 

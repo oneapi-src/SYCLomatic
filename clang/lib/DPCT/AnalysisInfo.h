@@ -2165,6 +2165,9 @@ public:
   static bool useFreeQueries() {
     return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
   }
+  static bool useGroupLocalMemory() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
   }
@@ -2720,10 +2723,10 @@ private:
 class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn,
-          const DeclaratorDecl *Var)
+          const DeclaratorDecl *Var, bool NeedFoldSize = false)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
         Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                        isLexicallyInLocalScope(Var))) {}
+                                        NeedFoldSize)) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
@@ -2817,7 +2820,7 @@ public:
     NewConstVarOffset = DpctGlobalInfo::getLocInfo(BeginLoc).second;
   }
 
-  std::string getDeclarationReplacement();
+  std::string getDeclarationReplacement(const VarDecl *);
 
   std::string getInitStmt() { return getInitStmt(""); }
   std::string getInitStmt(StringRef QueueString) {

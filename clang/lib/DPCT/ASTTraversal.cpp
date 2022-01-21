@@ -10614,7 +10614,7 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
                                        std::move(NewDecl)));
 
   if (auto DeviceRepl = ReplaceVarDecl::getVarDeclReplacement(
-          VD, MemVarInfo::buildMemVarInfo(VD)->getDeclarationReplacement())) {
+          VD, MemVarInfo::buildMemVarInfo(VD)->getDeclarationReplacement(VD))) {
     DeviceRepl->setConstantFlag(dpct::ConstantFlagType::HostDevice);
     DeviceRepl->setConstantOffset(R.getConstantOffset());
     DeviceRepl->setInitStr(InitStr);
@@ -10711,7 +10711,7 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
   } else if (auto DS = Info->getDeclStmtOfVarType()) {
     // remove var decl
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        MemVar, Info->getDeclarationReplacement()));
+        MemVar, Info->getDeclarationReplacement(MemVar)));
 
     Info->setLocalTypeName(Info->getType()->getBaseName());
     // add typecast for the __shared__ variable, since after migration the
@@ -10825,7 +10825,7 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       Info->setIgnoreFlag(false);
       TM->setIgnoreTM(true);
       auto RVD = ReplaceVarDecl::getVarDeclReplacement(
-          MemVar, Info->getDeclarationReplacement());
+          MemVar, Info->getDeclarationReplacement(MemVar));
       if (!RVD)
         return true;
       RVD->setConstantFlag(TM->getConstantFlag());
@@ -10952,7 +10952,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         report(MemVar->getBeginLoc(), Diagnostics::EXCEED_MAX_DIMENSION, true);
       }
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-          MemVar, Info->getDeclarationReplacement()));
+          MemVar, Info->getDeclarationReplacement(MemVar)));
     }
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
@@ -10973,10 +10973,24 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Var = Global.findMemVarInfo(VD);
     if (Func->hasAttr<CUDAGlobalAttr>() ||
         (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
-      if (Var)
-        DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
-      if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
-        processDeref(MemVarRef, *Result.Context);
+      if (DpctGlobalInfo::useGroupLocalMemory() &&
+          VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
+        if (!Var)
+          return;
+        if (auto B = dyn_cast_or_null<CompoundStmt>(Func->getBody())) {
+          if (B->body_empty())
+            return;
+          emplaceTransformation(new InsertBeforeStmt(
+            B->body_front(), Var->getDeclarationReplacement(VD)));
+          return;
+        }
+      } else {
+        if (Var) {
+          DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
+        }
+        if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
+          processDeref(MemVarRef, *Result.Context);
+        }
       }
     } else {
       if (Var && !VD->getType()->isArrayType() &&

@@ -458,6 +458,10 @@ static bits<ExperimentalFeatures> Experimentals(
     llvm::cl::OptionEnumValue{
         "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
         "The extension allows to get `id`, `item`, `nd_item`, `group`, `sub_group` instances globally.",
+        false },
+    llvm::cl::OptionEnumValue{
+        "local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
+        "The extension allows allocation of local memory objects at the kernel functor scope",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 

@@ -220,11 +220,12 @@ private:
   }
 
   void emplaceExtraDecl();
-  void printImmediateText(llvm::raw_ostream &, const Stmt *, FreeQueriesKind);
+  void printImmediateText(llvm::raw_ostream &, SourceLocation, FreeQueriesKind);
   std::string getReplaceString(FreeQueriesKind K);
 
 public:
-  static void printImmediateText(llvm::raw_ostream &, const Stmt *,
+  template<class Node>
+  static void printImmediateText(llvm::raw_ostream &, const Node *,
                                  const FunctionDecl *, FreeQueriesKind);
   static void buildInfo() {
     for (auto &Info : InfoList)
@@ -424,7 +425,7 @@ void DpctFileInfo::buildReplacements() {
       Entry.second->setName(Name + "_ct");
     }
 
-    std::string Repl = Entry.second->getDeclarationReplacement();
+    std::string Repl = Entry.second->getDeclarationReplacement(nullptr);
     auto FilePath = Entry.second->getFilePath();
     auto Offset = Entry.second->getNewConstVarOffset();
     auto Length = Entry.second->getNewConstVarLength();
@@ -2643,7 +2644,12 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
 
 MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                        const VarDecl *Var)
-    : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
+    : VarInfo(Offset, FilePath, Var,
+              !(DpctGlobalInfo::useGroupLocalMemory() &&
+                getAddressAttr(Var) == Shared &&
+                Var->getStorageClass() != SC_Extern) &&
+                  isLexicallyInLocalScope(Var)),
+      Attr(getAddressAttr(Var)),
       Scope(isLexicallyInLocalScope(Var)
                 ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                 : Global),
@@ -2721,7 +2727,9 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
       return std::shared_ptr<MemVarInfo>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
-    DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
+    if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
+        VI->isExtern())
+      DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
     return VI;
   }
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
@@ -2811,9 +2819,24 @@ const std::string &MemVarInfo::getMemoryAttr() {
   }
 }
 
-std::string MemVarInfo::getDeclarationReplacement() {
+std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
+    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+      std::string Ret;
+      llvm::raw_string_ostream OS(Ret);
+      OS << "auto &" << getName() << " = "
+         << "*" << MapNames::getClNamespace() << "ext::oneapi::group_local_memory<"
+         << getType()->getBaseName();
+      for (auto&ArraySize : getType()->getRange()) {
+        OS << "[" << ArraySize.getSize() << "]";
+      }
+      OS << ">(";
+      FreeQueriesInfo::printImmediateText(
+          OS, VD, nullptr, FreeQueriesInfo::FreeQueriesKind::Group);
+      OS << "); ";
+      return OS.str();
+    }
     return "";
   case clang::dpct::MemVarInfo::Extern:
     if (isShared() && getType()->getDimension() > 1) {
@@ -3353,7 +3376,8 @@ FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
   return std::shared_ptr<FreeQueriesInfo>();
 }
 
-void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
+template<class Node>
+void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
                                          const FunctionDecl *FD,
                                          FreeQueriesKind K) {
 #ifdef DPCT_DEBUG_BUILD
@@ -3366,7 +3390,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
 
   if (DpctGlobalInfo::useFreeQueries()) {
     if (auto Info = getInfo(FD)) {
-      return Info->printImmediateText(OS, S, K);
+      return Info->printImmediateText(OS, S->getBeginLoc(), K);
     }
 
 #ifdef DPCT_DEBUG_BUILD
@@ -3383,13 +3407,13 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
 static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
 
 /// Generate regex replacement as placeholder.
-void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
+void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, SourceLocation SL,
                                          FreeQueriesKind K) {
   unsigned Index = Idx;
-  auto IsMacro = S->getBeginLoc().isMacroID();
+  auto IsMacro = SL.isMacroID();
   if (IsMacro && K != SubGroup) {
     auto MacroLoc = DpctGlobalInfo::getLocInfo(
-        DpctGlobalInfo::getSourceManager().getSpellingLoc(S->getBeginLoc()));
+        DpctGlobalInfo::getSourceManager().getSpellingLoc(SL));
     auto Iter = std::find_if(MacroInfos.begin(), MacroInfos.end(),
                              [&](std::shared_ptr<MacroInfo> Info) -> bool {
                                return (MacroLoc.first == Info->FilePath) &&
@@ -3404,7 +3428,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Stmt *S,
     (*Iter)->Infos.push_back(Idx);
     Index = Iter - MacroInfos.begin();
   } else {
-    auto SLocInfo = DpctGlobalInfo::getLocInfo(S);
+    auto SLocInfo = DpctGlobalInfo::getLocInfo(SL);
     if (SLocInfo.first != FilePath)
       return;
 
