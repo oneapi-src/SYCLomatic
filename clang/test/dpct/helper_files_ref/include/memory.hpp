@@ -511,18 +511,47 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
     break;
   }
   case device_to_device:
+#ifdef DPCT_USM_LEVEL_NONE
+  {
+    auto &mm = mem_mgr::instance();
+    auto to_alloc = mm.translate_ptr(to_surface);
+    auto from_alloc = mm.translate_ptr(from_surface);
+    size_t to_offset = (byte_t *)to_surface - to_alloc.alloc_ptr;
+    size_t from_offset = (byte_t *)from_surface - from_alloc.alloc_ptr;
+    event_list.push_back(q.submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(dep_events);
+      auto to_o = cl::sycl::id<1>(to_offset);
+      auto from_o = cl::sycl::id<1>(from_offset);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::write,
+                         cl::sycl::access::target::device>
+          to_acc(to_alloc.buffer, cgh, to_slice * size.get(2), to_o);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
+                         cl::sycl::access::target::device>
+          from_acc(from_alloc.buffer, cgh, from_slice * size.get(2), from_o);
+      cgh.parallel_for<class dpct_memcpy_3d_detail_usmnone>(
+          sycl::range<3>(size.get(2), size.get(1), size.get(0)),
+          [=](cl::sycl::id<3> id) {
+            to_acc[to_slice * id.get(0) + to_range.get(0) * id.get(1) +
+                   id.get(2)] =
+                from_acc[from_slice * id.get(0) +
+                         from_range.get(0) * id.get(1) + id.get(2)];
+          });
+    }));
+  }
+#else
     event_list.push_back(q.submit([&](cl::sycl::handler &cgh) {
       cgh.depends_on(dep_events);
       cgh.parallel_for<class dpct_memcpy_3d_detail>(
           sycl::range<3>(size.get(2), size.get(1), size.get(0)),
           [=](cl::sycl::id<3> id) {
-            to_surface[to_slice * id.get(2) + to_range.get(0) * id.get(1) +
-                       id.get(0)] =
+            to_surface[to_slice * id.get(0) + to_range.get(0) * id.get(1) +
+                       id.get(2)] =
                 from_surface[from_slice * id.get(0) +
                              from_range.get(0) * id.get(1) + id.get(2)];
           });
     }));
-    break;
+#endif
+  break;
   default:
     throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
