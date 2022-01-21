@@ -57,6 +57,7 @@ ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
+bool DpctGlobalInfo::ConfusableIdentifiersDetectionFlag = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::MisleadingBidirectionalDetectionFlag = false;
 std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;

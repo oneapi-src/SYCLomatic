@@ -238,6 +238,11 @@ static opt<bool, true>
                                "parsing errors happened. Default: off. \n"),
                 cat(DPCTCat), llvm::cl::location(StopOnParseErr));
 
+bool ConfusableIdentifiersDetectionFlag = false;
+static opt<bool, true>
+    ConfusableIdentifiersDetection("confusable-identifiers-detection",
+                llvm::cl::desc("Detects confusable identifiers. Default: off.\n"),
+                cat(DPCTCat), llvm::cl::location(ConfusableIdentifiersDetectionFlag));
 
 bool SyclNamedLambdaFlag = false;
 static opt<bool, true>
@@ -1247,6 +1252,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
+  DpctGlobalInfo::setConfusableIdentifiersDetectionFlag(
+      ConfusableIdentifiersDetectionFlag);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
   DpctGlobalInfo::setMisleadingBidirectionalDetectionFlag(
     MisleadingBidirectionalDetectionFlag);

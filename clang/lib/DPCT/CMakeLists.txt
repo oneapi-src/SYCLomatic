@@ -59,9 +59,19 @@ set(PROCESS_FILES_OUTPUT
 )
 
 add_custom_command(
+  OUTPUT Confusables.inc
+  COMMAND make_confusable_table ${CMAKE_CURRENT_SOURCE_DIR}/ConfusableTable/confusables.txt ${CMAKE_CURRENT_BINARY_DIR}/Confusables.inc
+  DEPENDS make_confusable_table ConfusableTable/confusables.txt
+  )
+
+add_custom_command(
   DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/HelperFileAndFeatureNames.inc ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
   OUTPUT  ${PROCESS_FILES_OUTPUT}
   COMMAND python3 ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
+  )
+
+add_custom_target(genconfusable 
+  DEPENDS Confusables.inc
   )
 
 add_custom_target(dpct_helper_headers_and_inc
@@ -81,6 +91,7 @@ else()
 endif()
 
 add_subdirectory(docs)
+add_subdirectory(ConfusableTable)
 
 add_clang_library(DPCT
   ASTTraversal.cpp
@@ -114,11 +125,13 @@ add_clang_library(DPCT
   GenMakefile.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
+  Homoglyph.cpp
   MisleadingBidirectional.cpp
 
   DEPENDS
   ClangDriverOptions
   dpct_helper_headers_and_inc
+  genconfusable
 
   LINK_LIBS
   clangBasic

@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "ASTTraversal.h"
+#include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
@@ -17124,6 +17125,8 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   }
 }
 REGISTER_RULE(CubRule)
+
+REGISTER_RULE(ConfusableIdentifierDetectionRule)
 
 REGISTER_RULE(MisleadingBidirectionalRule)
 

@@ -1140,6 +1140,12 @@ public:
   inline static void setKeepOriginCode(bool KOC = true) {
     KeepOriginCode = KOC;
   }
+  inline static void setConfusableIdentifiersDetectionFlag(bool CID) {
+    ConfusableIdentifiersDetectionFlag = CID;
+  }
+  inline static bool getConfusableIdentifiersDetectionFlag() {
+    return ConfusableIdentifiersDetectionFlag;
+  }
   inline static bool isSyclNamedLambda() { return SyclNamedLambda; }
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
@@ -2484,6 +2490,7 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
+  static bool ConfusableIdentifiersDetectionFlag;
   static std::unordered_set<std::string> ExpansionRangeBeginSet;
   static bool MisleadingBidirectionalDetectionFlag;
   static std::map<std::string,

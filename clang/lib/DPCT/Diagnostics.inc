@@ -206,3 +206,5 @@ DEF_WARNING(DEVICE_ID_DIFFERENT, 1093, "The \"%0\" may not be the best XPU devic
 DEF_COMMENT(DEVICE_ID_DIFFERENT, 1093, "The \"{0}\" may not be the best XPU device. Adjust the \"{0}\" if needed.")
 DEF_WARNING(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirectional Unicode characters.")
 DEF_COMMENT(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirectional Unicode characters.")
+DEF_WARNING(CONFUSABLE_IDENTIFIER, 1095, "The identifier \"%0\" is confusable with another identifier \"%1\".")
+DEF_COMMENT(CONFUSABLE_IDENTIFIER, 1095, "The identifier \"{0}\" is confusable with another identifier \"{1}\".")
