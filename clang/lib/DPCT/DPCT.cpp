@@ -1229,7 +1229,8 @@ int runDPCT(int argc, const char **argv) {
   if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 5)) {
+      (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
+      (SDKVersionMajor == 11 && SDKVersionMinor == 6)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
