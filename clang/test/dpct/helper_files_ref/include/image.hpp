@@ -789,10 +789,12 @@ template <> struct image_creator<1> {
           ->create_image<1>(data.get_channel());
     }
     auto ptr = data.get_data_ptr();
+#ifdef DPCT_USM_LEVEL_NONE
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .template get_access<cl::sycl::access_mode::read_write>()
                 .get_pointer();
+#endif
     auto channel = data.get_channel();
     return new cl::sycl::image<1>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
@@ -808,10 +810,12 @@ template <> struct image_creator<2> {
           ->create_image<2>(data.get_channel());
     }
     auto ptr = data.get_data_ptr();
+#ifdef DPCT_USM_LEVEL_NONE
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .template get_access<cl::sycl::access_mode::read_write>()
                 .get_pointer();
+#endif
     auto channel = data.get_channel();
     return new cl::sycl::image<2>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
