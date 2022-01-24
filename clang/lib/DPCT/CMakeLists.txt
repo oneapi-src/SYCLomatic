@@ -13,6 +13,7 @@ set(CONT_FILES
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/kernel.hpp.inc
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/rng_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/algorithm.h.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/functional.h.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/iterators.h.inc
@@ -46,6 +47,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.inc
@@ -55,6 +57,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/HelperFeatureEnum.inc
 )
 

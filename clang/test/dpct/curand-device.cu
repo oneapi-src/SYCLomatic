@@ -5,6 +5,7 @@
 //CHECK-NEXT: #include <dpct/dpct.hpp>
 //CHECK-NEXT: #include <oneapi/mkl.hpp>
 //CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
+//CHECK-NEXT: #include <dpct/rng_utils.hpp>
 //CHECK-NEXT: #include <cstdio>
 //CHECK-NEXT: #include <time.h>
 #include <cuda.h>
@@ -20,17 +21,16 @@ __global__ void picount(int *totals) {
   __shared__ int counter[WARP_SIZE];
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-  //CHECK: oneapi::mkl::rng::device::philox4x32x10<2> rng;
-  //CHECK: rng = oneapi::mkl::rng::device::philox4x32x10<2>(clock64(), {10, static_cast<std::uint64_t>(tid * 4)});
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng;
+  //CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(clock64(), {10, static_cast<std::uint64_t>(tid * 4)});
   curandStatePhilox4_32_10_t rng;
   curand_init(clock64(), tid, 10, &rng);
 
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: oneapi::mkl::rng::device::gaussian<float> distr_ct{{[0-9]+}};
-    //CHECK-NEXT: sycl::float2 x = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
-    //CHECK-NEXT: sycl::float2 y = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, rng);
+    //CHECK: sycl::float2 x = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+    //CHECK-NEXT: sycl::float2 y = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
     float2 x = curand_normal2(&rng);
     float2 y = curand_normal2(&rng);
     counter[threadIdx.x] += 1 - int(x.x * x.x + y.y * y.y);
@@ -44,7 +44,7 @@ __global__ void picount(int *totals) {
   }
 }
 
-//CHECK: void cuda_kernel_initRND(unsigned long seed, oneapi::mkl::rng::device::mrg32k3a<2> *States,
+//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *States,
 //CHECK-NEXT:                     sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *States)
 {
@@ -54,22 +54,21 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *S
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: States[id] = oneapi::mkl::rng::device::mrg32k3a<2>(seed, {10, static_cast<std::uint64_t>(pixel * 8)});
+  //CHECK: States[id] = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>(seed, {10, static_cast<std::uint64_t>(pixel * 8)});
   curand_init(seed, pixel, 10, &States[id]);
 }
 
-//CHECK: void cuda_kernel_RNDnormalDitribution(sycl::double2 *Image, oneapi::mkl::rng::device::mrg32k3a<2> *States,
+//CHECK: void cuda_kernel_RNDnormalDitribution(sycl::double2 *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *States,
 //CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double2 *Image, curandStateMRG32k3a_t *States)
 {
-  //CHECK: oneapi::mkl::rng::device::gaussian<double> distr_ct{{[0-9]+}};
   int tid = threadIdx.x;
   int bid = blockIdx.x;
 
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: Image[pixel] = oneapi::mkl::rng::device::generate(distr_ct{{[0-9]+}}, States[id]);
+  //CHECK: Image[pixel] = States[id].generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
   Image[pixel] = curand_normal2_double(&States[id]);
 }
 
@@ -90,17 +89,17 @@ int main(int argc, char **argv) {
 
   int size = 10;
   double2 *Image;
-  //CHECK: oneapi::mkl::rng::device::mrg32k3a<2> *RandomStates;
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *RandomStates;
   curandStateMRG32k3a_t *RandomStates;
   void *dev;
-  //CHECK: dev = dpct::dpct_malloc(size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
-  //CHECK-NEXT: RandomStates = (oneapi::mkl::rng::device::mrg32k3a<2>*)dev;
+  //CHECK: dev = dpct::dpct_malloc(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>));
+  //CHECK-NEXT: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>*)dev;
   cudaMalloc((void**)&dev, size * sizeof(curandStateMRG32k3a_t));
   RandomStates = (curandStateMRG32k3a_t*)dev;
   
   //CHECK: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     dpct::access_wrapper<oneapi::mkl::rng::device::mrg32k3a<2> *> RandomStates_acc_ct1(RandomStates, cgh);
+  //CHECK-NEXT:     dpct::access_wrapper<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *> RandomStates_acc_ct1(RandomStates, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
@@ -111,7 +110,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> Image_acc_ct0(Image, cgh);
-  //CHECK-NEXT:     dpct::access_wrapper<oneapi::mkl::rng::device::mrg32k3a<2> *> RandomStates_acc_ct1(RandomStates, cgh);
+  //CHECK-NEXT:     dpct::access_wrapper<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *> RandomStates_acc_ct1(RandomStates, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
@@ -132,9 +131,9 @@ __global__ void my_kernel5(          void  ) {
 
 int foo() {
   int size = 10;
-  //CHECK: oneapi::mkl::rng::device::mrg32k3a<2> *RandomStates;
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *RandomStates;
   curandStateMRG32k3a_t *RandomStates;
-  //CHECK: RandomStates = (oneapi::mkl::rng::device::mrg32k3a<2> *)dpct::dpct_malloc(size * sizeof(oneapi::mkl::rng::device::mrg32k3a<2>));
+  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *)dpct::dpct_malloc(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>));
   cudaMalloc((void**)&RandomStates, size * sizeof(curandStateMRG32k3a_t));
 
   //CHECK: dpct::get_default_queue().submit(
@@ -144,7 +143,7 @@ int foo() {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         cuda_kernel_initRND(1234, (oneapi::mkl::rng::device::mrg32k3a<2> *)(&RandomStates_acc_ct1[0]), item_ct1);
+  //CHECK-NEXT:         cuda_kernel_initRND(1234, (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>> *)(&RandomStates_acc_ct1[0]), item_ct1);
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
@@ -152,3 +151,11 @@ int foo() {
   return 0;
 }
 
+//CHECK:void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *state) {
+//CHECK-NEXT:  *state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(1111, {0, 2222 * 8});
+//CHECK-NEXT:  float rand = state->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
+//CHECK-NEXT:}
+__global__ void kernel(curandState *state) {
+  curand_init(1111, 2222, 0, state);
+  float rand = curand_uniform(state);
+}

@@ -42,7 +42,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
-std::unordered_set<int> DpctGlobalInfo::DeviceRNGReturnNumSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -253,7 +252,6 @@ void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
   FFTTypeSet.clear();
-  DeviceRNGReturnNumSet.clear();
   HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
@@ -455,19 +453,6 @@ void DpctFileInfo::buildReplacements() {
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
     }
   }
-
-  // Below four maps are used for device RNG API migration
-  for (auto &StateTypeInfo : DeviceRandomStateTypeMap)
-    StateTypeInfo.second.buildInfo(FilePath, StateTypeInfo.first);
-
-  for (auto &InitAPIInfo : DeviceRandomInitAPIMap)
-    InitAPIInfo.second.buildInfo(FilePath, InitAPIInfo.first);
-
-  buildDeviceDistrDeclInfo();
-  for (auto &Info : DeviceRandomGenerateAPIMap)
-    Info.second.buildInfo(FilePath, Info.first);
-  for (auto &Info : DeviceRandomDistrDeclMap)
-    Info.second.buildInfo(FilePath);
 
   // DPCT need collect the information in curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
@@ -825,21 +810,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
 
-      // If we found this is a RNG state type, we add the vec_size here.
       std::string TypeStr = Arg.getTypeString();
       if (Arg.IsDeviceRandomGeneratorType) {
-        if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-          TypeStr = TypeStr + "<" +
-                    std::to_string(
-                        *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
-                    "> *";
-        } else {
-          DiagnosticsUtils::report(getFilePath(), getBegin(),
-                                   Diagnostics::UNDEDUCED_TYPE, true, false,
-                                   "RNG engine");
-          TypeStr =
-              TypeStr + "<dpct_placeholder/*Fix the vec_size manually*/>*";
-        }
+        TypeStr = TypeStr + " *";
       }
 
       if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
@@ -3164,28 +3137,6 @@ void RandomEngineInfo::buildInfo() {
   }
 }
 
-void DeviceRandomStateTypeInfo::buildInfo(std::string FilePath,
-                                          unsigned int Offset) {
-  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, Offset, Length,
-            GeneratorType + "<" +
-                std::to_string(
-                    *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin()) +
-                ">",
-            nullptr));
-  } else {
-    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, false, "RNG engine");
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, Offset, Length,
-            GeneratorType + "<dpct_placeholder/*Fix the vec_size manually*/>",
-            nullptr));
-  }
-}
-
 void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                  bool isReplTxtWithSB) {
   if (isReplTxtWithSB)
@@ -3196,61 +3147,6 @@ void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
                                          nullptr));
-}
-
-void DeviceRandomInitAPIInfo::buildInfo(std::string FilePath,
-                                        unsigned int Offset) {
-  std::string VecSizeStr;
-  if (DpctGlobalInfo::getDeviceRNGReturnNumSet().size() == 1) {
-    int VecSize = *DpctGlobalInfo::getDeviceRNGReturnNumSet().begin();
-    VecSizeStr = std::to_string(VecSize);
-  } else {
-    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, false, "RNG engine");
-    VecSizeStr = "dpct_placeholder/*Fix the vec_size manually*/";
-  }
-
-  std::string FirstOffsetArg, SecondOffsetArg;
-  if (IsRNGOffsetLiteral) {
-    FirstOffsetArg = RNGOffset;
-  } else {
-    FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
-  }
-
-  std::string Factor = "8";
-  if (GeneratorType == "oneapi::mkl::rng::device::philox4x32x10" &&
-      OriginalGeneratorType == "curandStatePhilox4_32_10_t") {
-    Factor = "4";
-  }
-
-  if (IsRNGSubseqLiteral) {
-    SecondOffsetArg = RNGSubseq + " * " + Factor;
-  } else {
-    SecondOffsetArg =
-        "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
-  }
-
-  std::string ReplStr = RNGStateName + " = " + GeneratorType + "<" +
-                        VecSizeStr + ">(" + RNGSeed + ", {" + FirstOffsetArg +
-                        ", " + SecondOffsetArg + "})";
-
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Length, ReplStr, nullptr));
-}
-
-void DeviceRandomGenerateAPIInfo::buildInfo(std::string FilePath,
-                                            unsigned int Offset) {
-  std::string ReplStr = "oneapi::mkl::rng::device::generate(" + DistrName +
-                        ", " + RNGStateName + ")";
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Length, ReplStr, nullptr));
-}
-
-void DeviceRandomDistrInfo::buildInfo(std::string FilePath) {
-  std::string InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" +
-                          getNL() + IndentStr;
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, 0, InsertStr, nullptr));
 }
 
 void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
@@ -3543,7 +3439,6 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
   // D: deivce, used for pretty code
   // Q: queue, used for pretty code
-  // V: vector size, used for rand API migration
   // R: range dim, used for built-in variables(threadIdx.x,...) migration
   // F: free queries function migration, such as this_nd_item, this_group,
   // this_sub_group.
@@ -3556,11 +3451,6 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
       }
     }
     return "2";
-  case 'V':
-    if (getDeviceRNGReturnNumSet().size() == 1) {
-      return std::to_string(*getDeviceRNGReturnNumSet().begin());
-    }
-    return "dpct_placeholder/*Fix the vec_size manually*/";
   case 'C':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       return std::to_string(DpctGlobalInfo::getInstance()

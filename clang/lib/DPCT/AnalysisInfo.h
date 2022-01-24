@@ -141,86 +141,6 @@ struct TimeStubTypeInfo {
   std::string StrWithoutSB;
 };
 
-// Below four structs are all used for device RNG library API migration.
-// In the origin code, the returned random number vector size is decided when
-// the generate API is called.
-// In MKL side, the vec_size is need when generator is declared.
-// So we collect these info and then build replacement.
-
-// This struct saves the generator's type.
-struct DeviceRandomStateTypeInfo {
-  DeviceRandomStateTypeInfo(unsigned int Length, std::string GeneratorType)
-      : Length(Length), GeneratorType(GeneratorType) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  std::string GeneratorType;
-};
-
-// This struct saves all arguments info of the init API.
-struct DeviceRandomInitAPIInfo {
-  DeviceRandomInitAPIInfo(unsigned int Length, std::string GeneratorType,
-                          std::string OriginalGeneratorType,
-                          std::string RNGSeed, std::string RNGSubseq,
-                          bool IsRNGSubseqLiteral, std::string RNGOffset,
-                          bool IsRNGOffsetLiteral, std::string RNGStateName,
-                          std::string IndentStr)
-      : Length(Length), GeneratorType(GeneratorType),
-        OriginalGeneratorType(OriginalGeneratorType), RNGSeed(RNGSeed),
-        RNGSubseq(RNGSubseq), IsRNGSubseqLiteral(IsRNGSubseqLiteral),
-        RNGOffset(RNGOffset), IsRNGOffsetLiteral(IsRNGOffsetLiteral),
-        RNGStateName(RNGStateName), IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  std::string GeneratorType;
-  std::string OriginalGeneratorType;
-  std::string RNGSeed;
-  std::string RNGSubseq;
-  bool IsRNGSubseqLiteral = false;
-  std::string RNGOffset;
-  bool IsRNGOffsetLiteral = false;
-  std::string RNGStateName;
-  std::string IndentStr;
-};
-
-// This struct saves all argument info of the generate API.
-struct DeviceRandomGenerateAPIInfo {
-  DeviceRandomGenerateAPIInfo(unsigned int Length, unsigned int DistrDeclOffset,
-                              std::string DistrType, std::string ValueType,
-                              std::string DistrIndentStr,
-                              std::string RNGStateName, std::string IndentStr)
-      : Length(Length), DistrDeclOffset(DistrDeclOffset), DistrType(DistrType),
-        ValueType(ValueType), DistrIndentStr(DistrIndentStr),
-        RNGStateName(RNGStateName), IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  unsigned int DistrDeclOffset;
-  std::string DistrType;
-  std::string ValueType;
-  std::string DistrIndentStr;
-  std::string RNGStateName;
-  std::string IndentStr;
-  std::string DistrName;
-};
-
-// This struct saves the info for building the definition of distr variables.
-struct DeviceRandomDistrInfo {
-  DeviceRandomDistrInfo(unsigned int Offset, std::string DistrType,
-                        std::string ValueType, std::string DistrName,
-                        std::string IndentStr)
-      : Offset(Offset), DistrType(DistrType), ValueType(ValueType),
-        DistrName(DistrName), IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath);
-
-  unsigned int Offset;
-  std::string DistrType;
-  std::string ValueType;
-  std::string DistrName;
-  std::string IndentStr;
-};
-
 struct BuiltinVarInfo {
   BuiltinVarInfo(unsigned int Len, std::string Repl,
                  std::shared_ptr<DeviceFunctionInfo> DFI)
@@ -417,6 +337,7 @@ enum HeaderType {
   HT_MKL_BLAS_Solver,
   HT_MKL_BLAS_Solver_Without_Util,
   HT_MKL_RNG,
+  HT_MKL_RNG_Without_Util,
   HT_MKL_SPBLAS,
   HT_MKL_SPBLAS_Without_Util,
   HT_MKL_FFT,
@@ -587,6 +508,11 @@ public:
                           "<oneapi/mkl.hpp>");
     case HT_MKL_RNG:
       return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
+                          "<" + getCustomMainHelperFileName() +
+                              "/rng_utils.hpp>");
+    case HT_MKL_RNG_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case HT_MKL_SPBLAS:
       return insertHeader(
@@ -732,49 +658,10 @@ public:
     return FFTSetStreamAPIInfoMap;
   }
 
-  // The key of below three maps are the offset of the replacement.
-  std::map<unsigned int, DeviceRandomStateTypeInfo> &
-  getDeviceRandomStateTypeMap() {
-    return DeviceRandomStateTypeMap;
-  }
-  std::map<unsigned int, DeviceRandomInitAPIInfo> &getDeviceRandomInitAPIMap() {
-    return DeviceRandomInitAPIMap;
-  }
-  std::map<unsigned int, DeviceRandomGenerateAPIInfo> &
-  getDeviceRandomGenerateAPIMap() {
-    return DeviceRandomGenerateAPIMap;
-  }
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo> &
   getHostRandomDistrMap() {
     return HostRandomDistrMap;
-  }
-  // Since multi generate API can share one distr variable, so this function
-  // merges different distr variables if possible.
-  void buildDeviceDistrDeclInfo() {
-    std::unordered_map<std::string, std::string> NameMap;
-    std::string Key;
-    std::string Name;
-    int ID = 1;
-    for (auto &Info : DeviceRandomGenerateAPIMap) {
-      Key = std::to_string(Info.second.DistrDeclOffset) + ":" +
-            Info.second.DistrType + ":" + Info.second.ValueType;
-      auto Iter = NameMap.find(Key);
-      if (Iter == NameMap.end()) {
-        Name = "distr_ct" + std::to_string(ID);
-        NameMap.insert(std::make_pair(Key, Name));
-        Info.second.DistrName = Name;
-        DeviceRandomDistrDeclMap.insert(std::make_pair(
-            Key,
-            DeviceRandomDistrInfo(
-                Info.second.DistrDeclOffset, Info.second.DistrType,
-                Info.second.ValueType,
-                                  Name, Info.second.DistrIndentStr)));
-        ID++;
-      } else {
-        Info.second.DistrName = Iter->second;
-      }
-    }
   }
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
@@ -862,11 +749,6 @@ private:
   std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
   std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
   std::map<unsigned int, FFTExecAPIInfo> FFTExecAPIInfoMap;
-  std::map<unsigned int, DeviceRandomStateTypeInfo> DeviceRandomStateTypeMap;
-  std::map<unsigned int, DeviceRandomInitAPIInfo> DeviceRandomInitAPIMap;
-  std::map<unsigned int, DeviceRandomGenerateAPIInfo>
-      DeviceRandomGenerateAPIMap;
-  std::map<std::string, DeviceRandomDistrInfo> DeviceRandomDistrDeclMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
@@ -1353,13 +1235,6 @@ public:
     IsMLKHeaderUsed = Used;
   }
 
-  // This set collects all the different vector size of the return value of the
-  // generate API. If the size of this set is 1, then we can use this vec_size
-  // in all generator types. Otherwise, a placeholder will be inserted.
-  inline static std::unordered_set<int> &getDeviceRNGReturnNumSet() {
-    return DeviceRNGReturnNumSet;
-  }
-
   // This set collects all the host RNG engine type from the generator create
   // API. If the size of this set is 1, then we can use this engine type in all
   // generator types. Otherwise, a placeholder will be inserted.
@@ -1782,16 +1657,6 @@ public:
   void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
   void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
-  void insertDeviceRandomStateTypeInfo(SourceLocation SL, unsigned int Length,
-                                       std::string GeneratorType) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getDeviceRandomStateTypeMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(
-          LocInfo.second, DeviceRandomStateTypeInfo(Length, GeneratorType)));
-    }
-  }
   void insertReplInfoFromYAMLToFileInfo(
       std::string FilePath,
       std::shared_ptr<tooling::TranslationUnitReplacements> TUR) {
@@ -1806,39 +1671,6 @@ public:
       return FileInfo->PreviousTUReplFromYAML;
     else
       return nullptr;
-  }
-
-  void insertDeviceRandomInitAPIInfo(
-      SourceLocation SL, unsigned int Length, std::string GeneratorType,
-      std::string OriginalGeneratorType, std::string RNGSeed,
-      std::string RNGSubseq, bool IsRNGSubseqLiteral, std::string RNGOffset,
-      bool IsRNGOffsetLiteral, std::string StateName, std::string IndentStr) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getDeviceRandomInitAPIMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(
-          LocInfo.second, DeviceRandomInitAPIInfo(
-                              Length, GeneratorType, OriginalGeneratorType,
-                              RNGSeed, RNGSubseq, IsRNGSubseqLiteral, RNGOffset,
-                              IsRNGOffsetLiteral, StateName, IndentStr)));
-    }
-  }
-  void insertDeviceRandomGenerateAPIInfo(
-      SourceLocation SL, unsigned int Length, SourceLocation DistrInsetLoc,
-      std::string DistrType, std::string ValueType, std::string DistrIndentStr,
-      std::string RNGStateName, std::string IndentStr) {
-    auto LocInfo = getLocInfo(SL);
-    auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getDeviceRandomGenerateAPIMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(
-          LocInfo.second,
-          DeviceRandomGenerateAPIInfo(Length, DistrInsetLocInfo.second,
-                                      DistrType, ValueType, DistrIndentStr,
-                                      RNGStateName, IndentStr)));
-    }
   }
 
   std::string insertHostRandomDistrInfo(SourceLocation DistrInsetLoc,
@@ -2465,7 +2297,6 @@ private:
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static std::unordered_set<FFTTypeEnum> FFTTypeSet;
-  static std::unordered_set<int> DeviceRNGReturnNumSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;

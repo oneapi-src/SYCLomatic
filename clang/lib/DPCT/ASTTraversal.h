@@ -605,8 +605,6 @@ private:
                                    const TypeLoc *TL);
   bool replaceTransformIterator(SourceManager *SM, LangOptions &LOpts,
                                 const TypeLoc *TL);
-
-  bool isDeviceRandomStateType(const TypeLoc *TL, const SourceLocation &SL);
 };
 
 /// Migration rule for inserting namespace for vector types

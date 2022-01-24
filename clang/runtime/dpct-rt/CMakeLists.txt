@@ -8,6 +8,7 @@ set(dpct_rt_files
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/util.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/blas_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_utils.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/rng_utils.hpp
 )
 
 set(dpct_rt_dpstd_files

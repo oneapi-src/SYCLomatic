@@ -881,10 +881,18 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
-  // Replace with <mkl_rng_sycl.hpp> and <mkl_rng_sycl_device.hpp>
+  // Replace with <oneapi/mkl.hpp> and <oneapi/mkl/rng/device.hpp>
   if ((FileName.compare(StringRef("curand.h")) == 0) ||
       (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
+                                                 HT_MKL_RNG_Without_Util);
+    }
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -2388,11 +2396,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cusparsePointerMode_t", "cublasGemmAlgo_t",
                   "cusparseSolveAnalysisInfo_t", "cudaDataType",
                   "cublasDataType_t", "curandState_t", "curandState",
-                  "curandStateXORWOW_t", "curandStatePhilox4_32_10_t",
-                  "curandStateMRG32k3a_t", "thrust::minus", "thrust::negate",
-                  "thrust::logical_or", "thrust::identity", "thrust::equal_to",
-                  "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
-                  "cufftHandle", "cufftReal", "cufftDoubleReal", "cufftComplex",
+                  "curandStateXORWOW_t", "curandStateXORWOW",
+                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+                  "curandStateMRG32k3a_t", "curandStateMRG32k3a",
+                  "thrust::minus", "thrust::negate", "thrust::logical_or",
+                  "thrust::identity", "thrust::equal_to", "thrust::less",
+                  "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
+                  "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
                   "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
@@ -2928,22 +2938,6 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
   return true;
 }
 
-bool TypeInDeclRule::isDeviceRandomStateType(const TypeLoc *TL,
-                                             const SourceLocation &SL) {
-  std::string TypeStr = TL->getType().getAsString();
-
-  if (MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr) !=
-      MapNames::DeviceRandomGeneratorTypeMap.end()) {
-    if (TypeStr == "curandState_t" || TypeStr == "curandState" ||
-        TypeStr == "curandStateXORWOW_t") {
-      report(SL, Diagnostics::DIFFERENT_GENERATOR, false);
-    }
-    return true;
-  } else {
-    return false;
-  }
-}
-
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
@@ -2985,16 +2979,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
       BeginLoc = SM->getExpansionRange(TL->getBeginLoc()).getBegin();
       EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
-    }
-
-    if (isDeviceRandomStateType(TL, BeginLoc)) {
-      auto P = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
-      DpctGlobalInfo::getInstance().insertDeviceRandomStateTypeInfo(
-          BeginLoc,
-          Lexer::MeasureTokenLength(BeginLoc, *SM,
-                                    DpctGlobalInfo::getContext().getLangOpts()),
-          P->second);
-      return;
     }
 
     if (TypeStr == "curandGenerator_t") {
@@ -3067,6 +3051,17 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string Str =
         MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
     requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
+    if (Str.empty()) {
+      auto Itr = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
+      if (Itr != MapNames::DeviceRandomGeneratorTypeMap.end()) {
+        if (TypeStr == "curandState_t" || TypeStr == "curandState" ||
+            TypeStr == "curandStateXORWOW_t" ||
+            TypeStr == "curandStateXORWOW") {
+          report(BeginLoc, Diagnostics::DIFFERENT_GENERATOR, false);
+        }
+        Str = Itr->second;
+      }
+    }
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
@@ -3507,9 +3502,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -4939,7 +4932,8 @@ void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curandGenerateLogNormal", "curandGenerateLogNormalDouble",
         "curandGenerateNormal", "curandGenerateNormalDouble",
         "curandGeneratePoisson", "curandGenerateUniform",
-        "curandGenerateUniformDouble", "curandSetStream");
+        "curandGenerateUniformDouble", "curandSetStream",
+        "curandCreateGeneratorHost");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -5043,7 +5037,8 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  if (FuncName == "curandCreateGenerator") {
+  if (FuncName == "curandCreateGenerator" ||
+      FuncName == "curandCreateGeneratorHost") {
     bool IsDuplicated = true;
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (!REInfo) {
@@ -5057,8 +5052,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         MapNames::RandomEngineTypeMap.end()) {
       report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
              Diagnostics::UNMIGRATED_TYPE, false, "curandGenerator_t",
-             "the migration depends on the second argument of "
-             "curandCreateGenerator");
+             "the migration depends on the second argument of " + FuncName);
       report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
              FuncName, "parameter " + EnumStr + " is unsupported");
       return;
@@ -5098,12 +5092,19 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd);
 
-    if (isPlaceholderIdxDuplicated(CE->getArg(0)))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-    buildTempVariableMap(Index, CE->getArg(0),
-                         HelperFuncType::HFT_DefaultQueue);
+    if (FuncName == "curandCreateGenerator") {
+      if (isPlaceholderIdxDuplicated(CE->getArg(0)))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
+      buildTempVariableMap(Index, CE->getArg(0),
+                           HelperFuncType::HFT_DefaultQueue);
+    } else {
+      REInfo->setQueueStr(MapNames::getDpctNamespace() +
+                          "cpu_device().default_queue()");
+      requestFeature(HelperFeatureEnum::Device_cpu_device, CE);
+      requestFeature(HelperFeatureEnum::Device_device_ext_default_queue, CE);
+    }
 
     if (IsAssigned) {
       REInfo->setAssigned();
@@ -5295,8 +5296,14 @@ REGISTER_RULE(RandomFunctionCallRule)
 // Rule for device Random function calls.
 void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("curand_init", "curand_normal2", "curand_normal2_double",
-                      "curand_normal_double", "curand_uniform");
+    return hasAnyName(
+        "curand_init", "curand", "curand4", "curand_normal", "curand_normal4",
+        "curand_normal2", "curand_normal2_double", "curand_normal_double",
+        "curand_log_normal", "curand_log_normal2", "curand_log_normal2_double",
+        "curand_log_normal4", "curand_log_normal_double", "curand_uniform",
+        "curand_uniform2_double", "curand_uniform4", "curand_uniform_double",
+        "curand_poisson", "curand_poisson4", "skipahead", "skipahead_sequence",
+        "skipahead_subsequence");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -5356,10 +5363,6 @@ void DeviceRandomFunctionCallRule::runRule(
       return;
     }
 
-    ExprAnalysis EARNGSeed(CE->getArg(0));
-    ExprAnalysis EARNGSubseq(CE->getArg(1));
-    ExprAnalysis EARNGOffset(CE->getArg(2));
-
     auto IsLiteral = [=](const Expr *E) {
       if (dyn_cast<IntegerLiteral>(E->IgnoreCasts()) ||
           dyn_cast<FloatingLiteral>(E->IgnoreCasts()) ||
@@ -5369,48 +5372,62 @@ void DeviceRandomFunctionCallRule::runRule(
       return false;
     };
 
-    DpctGlobalInfo::getInstance().insertDeviceRandomInitAPIInfo(
-        FuncNameBegin, FuncCallLength,
-        MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second,
-        DRefArg3Type, EARNGSeed.getReplacedString(),
-        EARNGSubseq.getReplacedString(), IsLiteral(CE->getArg(1)),
-        EARNGOffset.getReplacedString(), IsLiteral(CE->getArg(2)),
-        getDrefName(CE->getArg(3)), IndentStr);
-  } else {
-    const CompoundStmt *CS = findImmediateBlock(CE);
-    if (!CS || !(CS->body_front()))
-      return;
+    std::string GeneratorType =
+        MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second;
+    std::string RNGSeed = ExprAnalysis::ref(CE->getArg(0));
+    bool IsRNGSubseqLiteral = IsLiteral(CE->getArg(1));
+    std::string RNGSubseq = ExprAnalysis::ref(CE->getArg(1));
+    bool IsRNGOffsetLiteral = IsLiteral(CE->getArg(2));
+    std::string RNGOffset = ExprAnalysis::ref(CE->getArg(2));
+    std::string RNGStateName = getDrefName(CE->getArg(3));
 
-    SourceLocation DistrInsertLoc =
-        SM.getExpansionLoc(CS->body_front()->getBeginLoc());
-    std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
-    std::string DrefedStateName = getDrefName(CE->getArg(0));
-
-    if (FuncName == "curand_uniform") {
-      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
-      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
-          FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::uniform", "float", DistrIndentStr,
-          DrefedStateName, IndentStr);
-    } else if (FuncName == "curand_normal2") {
-      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
-      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
-          FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::gaussian", "float", DistrIndentStr,
-          DrefedStateName, IndentStr);
-    } else if (FuncName == "curand_normal2_double") {
-      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(2);
-      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
-          FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::gaussian", "double", DistrIndentStr,
-          DrefedStateName, IndentStr);
-    } else if (FuncName == "curand_normal_double") {
-      DpctGlobalInfo::getDeviceRNGReturnNumSet().insert(1);
-      DpctGlobalInfo::getInstance().insertDeviceRandomGenerateAPIInfo(
-          FuncNameBegin, FuncCallLength, DistrInsertLoc,
-          "oneapi::mkl::rng::device::gaussian", "double", DistrIndentStr,
-          DrefedStateName, IndentStr);
+    std::string FirstOffsetArg, SecondOffsetArg;
+    if (IsRNGOffsetLiteral) {
+      FirstOffsetArg = RNGOffset;
+    } else {
+      FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
     }
+
+    std::string Factor = "8";
+    if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
+                         "mkl::rng::device::philox4x32x10<4>>" &&
+        (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
+         DRefArg3Type == "curandStatePhilox4_32_10")) {
+      Factor = "4";
+    }
+
+    if (IsRNGSubseqLiteral) {
+      SecondOffsetArg = RNGSubseq + " * " + Factor;
+    } else {
+      SecondOffsetArg =
+          "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+    }
+
+    std::string ReplStr = RNGStateName + " = " + GeneratorType + "(" +
+                          RNGSeed + ", {" + FirstOffsetArg + ", " +
+                          SecondOffsetArg + "})";
+
+    emplaceTransformation(
+        new ReplaceText(FuncNameBegin, FuncCallLength, std::move(ReplStr)));
+  } else if (FuncName == "skipahead" || FuncName == "skipahead_sequence" ||
+             FuncName == "skipahead_subsequence") {
+    if (FuncName == "skipahead") {
+      std::string Arg1Type = CE->getArg(1)->getType().getAsString();
+      if (Arg1Type != "curandStateMRG32k3a_t *" &&
+          Arg1Type != "curandStatePhilox4_32_10_t *" &&
+          Arg1Type != "curandStateXORWOW_t *") {
+        // Unsupport Sobol32 state and Sobol64 state
+        report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
+        return;
+      }
+    }
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  } else {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 

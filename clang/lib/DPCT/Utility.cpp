@@ -2223,8 +2223,7 @@ std::string getFinalCastTypeNameStr(std::string CastTypeName) {
     std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
     if (BeginLoc != std::string::npos) {
       ReplaceLengthStringMap.insert(std::make_pair(
-          Pair.first.size(),
-          std::make_pair(BeginLoc, Pair.second + "<{{NEEDREPLACEV1}}>")));
+          Pair.first.size(), std::make_pair(BeginLoc, Pair.second)));
     }
   }
 

@@ -18,6 +18,7 @@ HELPERFILE(dpl_utils.hpp.inc, DplUtils)
 HELPERFILE(blas_utils.hpp.inc, BlasUtils)
 HELPERFILE(image.hpp.inc, Image)
 HELPERFILE(atomic.hpp.inc, Atomic)
+HELPERFILE(rng_utils.hpp.inc, RngUtils)
 HELPERFILE(dpl_extras/algorithm.h.inc, DplExtrasAlgorithm)
 HELPERFILE(dpl_extras/functional.h.inc, DplExtrasFunctional)
 HELPERFILE(dpl_extras/iterators.h.inc, DplExtrasIterators)
@@ -294,3 +295,10 @@ HELPER_FEATURE_MAP_TO_APINAME(DplExtrasMemory, "device_iterator_forward_decl_dev
 HELPER_FEATURE_MAP_TO_APINAME(DplExtrasVector, "cl_sycl_alias", "namespace sycl")
 HELPER_FEATURE_MAP_TO_APINAME(DplExtrasVector, "using_std_distance", "std::distance")
 HELPER_FEATURE_MAP_TO_APINAME(DplExtrasVector, "using_std_distance", "std::distance")
+
+// rng_utils.hpp
+// sub-features
+HELPER_FEATURE_MAP_TO_APINAME(RngUtils, "rng_generator_1", "rng_generator")
+HELPER_FEATURE_MAP_TO_APINAME(RngUtils, "rng_generator_generate", "rng_generator::generate")
+HELPER_FEATURE_MAP_TO_APINAME(RngUtils, "rng_generator_generate_vec", "rng_generator::generate_vec")
+HELPER_FEATURE_MAP_TO_APINAME(RngUtils, "rng_generator_get_engine", "rng_generator::get_engine")

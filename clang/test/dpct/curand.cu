@@ -369,3 +369,10 @@ int bar6(){
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   return curandGenerateUniform(rng2, d_data, 100*100);
 }
+
+void bar7() {
+  curandGenerator_t rng;
+  //CHECK:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
+  //CHECK-NEXT:  dpct::cpu_device().default_queue(), 0);
+  curandCreateGeneratorHost(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10);
+}
