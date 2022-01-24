@@ -34,10 +34,10 @@ For header file including dependency, please use predefined feature name:
 They must occur and only used once in each file.
 If there is no `#include "..."` statement in the file, need add an empty `local_include_dependency` feature like:
 ```
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 ```
 
 ## Helper file enum name definition

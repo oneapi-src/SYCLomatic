@@ -1422,7 +1422,7 @@ ENTRY(cuLaunchCooperativeKernelMultiDevice, cuLaunchCooperativeKernelMultiDevice
 ENTRY(this_thread_block, this_thread_block, true, NO_FLAG, P4, "Successful")
 ENTRY(this_multi_grid, this_multi_grid, false, NO_FLAG, P4, "comment")
 ENTRY(tiled_partition, tiled_partition, false, NO_FLAG, P4, "comment")
-ENTRY(thread_block_tile , thread_block_tile , false, NO_FLAG, P4, "comment")
+ENTRY(thread_block_tile, thread_block_tile, false, NO_FLAG, P4, "comment")
 ENTRY(coalesced_threads, coalesced_threads, false, NO_FLAG, P4, "comment")
 ENTRY(coalesced_group, coalesced_group, false, NO_FLAG, P4, "comment")
 ENTRY(grid_group, grid_group, false, NO_FLAG, P4, "comment")
