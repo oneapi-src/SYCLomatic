@@ -7,10 +7,12 @@
 //CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
 //CHECK-NEXT: #include <dpct/rng_utils.hpp>
 //CHECK-NEXT: #include <cstdio>
+//CHECK-NEXT: #include <tuple>
 //CHECK-NEXT: #include <time.h>
 #include <cuda.h>
 #include <curand_kernel.h>
 #include <cstdio>
+#include <tuple>
 
 const int WARP_SIZE = 32;
 const int NBLOCKS = 640;
@@ -116,3 +118,11 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+
+__global__ void test() {
+  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  curandStatePhilox4_32_10_t state;
+  //CHECK:state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(std::get<0>(seeds), {static_cast<std::uint64_t>(std::get<1>(seeds)), static_cast<std::uint64_t>(idx * 4)});
+  curand_init(std::get<0>(seeds), idx, std::get<1>(seeds), &state);
+}

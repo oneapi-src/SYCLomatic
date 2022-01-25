@@ -573,9 +573,7 @@ protected:
     return dispatch(MTE->getSubExpr());
   }
 
-  inline void analyzeExpr(const UnresolvedLookupExpr *ULE) {
-    RefString = ULE->getName().getAsString();
-  }
+  inline void analyzeExpr(const UnresolvedLookupExpr *ULE);
 
   inline void analyzeExpr(const PseudoObjectExpr *POE) {
     dispatch(POE->getResultExpr());

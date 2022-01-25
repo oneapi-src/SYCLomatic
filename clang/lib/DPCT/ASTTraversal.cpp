@@ -2001,13 +2001,15 @@ void ThrustFunctionRule::thrustFuncMigration(
   } else {
     ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
+  std::string ThrustFuncNameWithNamespace = "thrust::" + ThrustFuncName;
 
   const unsigned NumArgs = CE->getNumArgs();
   auto QT = CE->getArg(0)->getType();
   LangOptions LO;
   std::string ArgT = QT.getAsString(PrintingPolicy(LO));
 
-  auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
+  auto ReplInfo =
+      MapNames::ThrustFuncNamesMap.find(ThrustFuncNameWithNamespace);
 
   // For the API migration defined in APINamesThrust.inc
   if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
@@ -2025,8 +2027,8 @@ void ThrustFunctionRule::thrustFuncMigration(
   }
 
   // For the API migration defined in APINamesMapThrust.inc
-  auto HelperFeatureIter =
-      MapNames::ThrustFuncNamesHelperFeaturesMap.find(ThrustFuncName);
+  auto HelperFeatureIter = MapNames::ThrustFuncNamesHelperFeaturesMap.find(
+      ThrustFuncNameWithNamespace);
   if (HelperFeatureIter != MapNames::ThrustFuncNamesHelperFeaturesMap.end()) {
     requestFeature(HelperFeatureIter->second, CE);
   }
@@ -2345,8 +2347,7 @@ void ThrustCtorExprRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     auto P = ExprStr.find('<');
     if (P != std::string::npos) {
-      std::string FuncName = ExprStr.substr(8, P - 8);
-      auto ReplInfo = MapNames::ThrustFuncNamesMap.find(FuncName);
+      auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ExprStr);
       if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
         return;
       }

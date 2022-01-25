@@ -374,22 +374,27 @@ void ExprAnalysis::dispatch(const Stmt *Expression) {
   }
 }
 
+bool isMathFunction(std::string Name) {
+  static std::set<std::string> MathFunctions = {
+#define MATH_API(APINAME) APINAME,
+#include "APINamesMathList.inc"
+#undef MATH_API
+  };
+  return MathFunctions.count(Name);
+}
+
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
   if (Qualifier) {
-    // To handle class template specializations,
-    // e.g: template<> class numeric_limits<int>.
-    if (Qualifier->getKind() == clang::NestedNameSpecifier::TypeSpec) {
-      auto CTSDecl = dyn_cast<ClassTemplateSpecializationDecl>(
-          DRE->getDecl()->getDeclContext());
-      if (CTSDecl) {
-        CTSName =
-            CTSDecl->getTypeForDecl()->getAsCXXRecordDecl()->getNameAsString();
-        CTSName += "::" + DRE->getNameInfo().getAsString();
-      }
+    if (!(Qualifier->getKind() ==
+              clang::NestedNameSpecifier::SpecifierKind::Namespace &&
+          isMathFunction(DRE->getNameInfo().getAsString()))) {
+      CTSName = getNestedNameSpecifierString(Qualifier) +
+                DRE->getNameInfo().getAsString();
     }
   }
+
   if (!CTSName.empty()) {
     RefString = CTSName;
   } else {
@@ -562,6 +567,16 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
       analyzeExpr(UETT->getArgumentExpr());
     }
   }
+}
+
+inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
+  RefString.clear();
+  llvm::raw_string_ostream OS(RefString);
+  if (auto NNS = ULE->getQualifier()) {
+    NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+  }
+  ULE->getName().print(OS,
+                       dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {

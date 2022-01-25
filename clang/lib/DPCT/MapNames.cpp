@@ -435,21 +435,21 @@ void MapNames::setExplicitNamespaceMap() {
   };
 
   ThrustFuncNamesHelperFeaturesMap = {
-      {"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-      {"stable_sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
-      {"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
-      {"device_free", HelperFeatureEnum::DplExtrasMemory_free_device},
-      {"device_malloc", HelperFeatureEnum::DplExtrasMemory_malloc_device},
-      {"raw_pointer_cast", HelperFeatureEnum::DplExtrasMemory_get_raw_pointer},
-      {"make_counting_iterator",
+      {"thrust::sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+      {"thrust::stable_sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
+      {"thrust::transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+      {"thrust::device_free", HelperFeatureEnum::DplExtrasMemory_free_device},
+      {"thrust::device_malloc", HelperFeatureEnum::DplExtrasMemory_malloc_device},
+      {"thrust::raw_pointer_cast", HelperFeatureEnum::DplExtrasMemory_get_raw_pointer},
+      {"thrust::make_counting_iterator",
        HelperFeatureEnum::DplExtrasIterators_make_counting_iterator},
-      {"device_pointer_cast",
+      {"thrust::device_pointer_cast",
        HelperFeatureEnum::DplExtrasMemory_get_device_pointer},
-      {"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
-      {"sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_sort},
-      {"make_constant_iterator",
+      {"thrust::inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+      {"thrust::sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_sort},
+      {"thrust::make_constant_iterator",
        HelperFeatureEnum::DplExtrasIterators_make_constant_iterator},
-      {"partition_point",
+      {"thrust::partition_point",
        HelperFeatureEnum::DplExtrasAlgorithm_partition_point}};
 
   ITFName = {
