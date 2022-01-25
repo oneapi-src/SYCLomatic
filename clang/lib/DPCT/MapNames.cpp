@@ -51,6 +51,8 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASGemmExTypeInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
+std::unordered_map<std::string, std::pair<std::string, std::string>>
+    MapNames::MathTypeCastingMap;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -69,6 +71,22 @@ void MapNames::setExplicitNamespaceMap() {
     // Use sycl:: namespce for SYCL math functions
     ClNamespace = {"", "sycl::", "sycl::", "sycl::"};
   }
+
+  MathTypeCastingMap = {
+      {"__half_as_short",
+       {"short", MapNames::getClNamespace(false, true) + "half"}},
+      {"__half_as_ushort",
+       {"unsigned short", MapNames::getClNamespace(false, true) + "half"}},
+      {"__short_as_half",
+       {MapNames::getClNamespace(false, true) + "half", "short"}},
+      {"__ushort_as_half",
+       {MapNames::getClNamespace(false, true) + "half", "unsigned short"}},
+      {"__double_as_longlong", {"long long", "double"}},
+      {"__float_as_int", {"int", "float"}},
+      {"__float_as_uint", {"unsigned int", "float"}},
+      {"__int_as_float", {"float", "int"}},
+      {"__longlong_as_double", {"double", "long long"}},
+      {"__uint_as_float", {"float", "unsigned int"}}};
 
   // Type names mapping.
   TypeNamesMap = {

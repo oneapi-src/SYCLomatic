@@ -3,7 +3,7 @@
 
 // CHECK:#include <CL/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>
-#include <cuda_runtime.h>
+#include "cuda_fp16.h"
 
 __device__ void foo() {
   long long a = 100000;
@@ -28,3 +28,8 @@ __device__ void foo() {
   unsigned l = __float_as_uint(j);
 }
 
+inline __device__ __half bar(uint32_t v) {
+  uint32_t mask = 0x0000ffff;
+  // CHECK: return sycl::bit_cast<sycl::half, unsigned short>(v ^ mask);
+  return __ushort_as_half(v ^ mask);
+}

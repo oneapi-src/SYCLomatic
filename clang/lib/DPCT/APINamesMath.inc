@@ -196,18 +196,18 @@ ENTRY_RENAMED_DOUBLE("__fma_ru", MapNames::getClNamespace(false, true) + "fma")
 ENTRY_RENAMED_DOUBLE("__fma_rz", MapNames::getClNamespace(false, true) + "fma")
 
 //  Half Precision Conversion And Data Movement
-ENTRY_RENAMED("__half_as_short", MapNames::getClNamespace(false, true) + "bit_cast<short>")
-ENTRY_RENAMED("__half_as_ushort", MapNames::getClNamespace(false, true) + "bit_cast<unsigned short>")
-ENTRY_RENAMED("__short_as_half", MapNames::getClNamespace(false, true) + "bit_cast<" + MapNames::getClNamespace() + "half>")
-ENTRY_RENAMED("__ushort_as_half", MapNames::getClNamespace(false, true) + "bit_cast<" + MapNames::getClNamespace() + "half>")
+ENTRY_RENAMED("__half_as_short", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__half_as_ushort", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__short_as_half", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__ushort_as_half", MapNames::getClNamespace(false, true) + "bit_cast")
 
 // Type Casting Intrinsics
-ENTRY_RENAMED("__double_as_longlong", MapNames::getClNamespace(false, true) + "bit_cast<long long>")
-ENTRY_RENAMED("__float_as_int", MapNames::getClNamespace(false, true) + "bit_cast<int>")
-ENTRY_RENAMED("__float_as_uint", MapNames::getClNamespace(false, true) + "bit_cast<unsigned int>")
-ENTRY_RENAMED("__int_as_float", MapNames::getClNamespace(false, true) + "bit_cast<float>")
-ENTRY_RENAMED("__longlong_as_double", MapNames::getClNamespace(false, true) + "bit_cast<double>")
-ENTRY_RENAMED("__uint_as_float", MapNames::getClNamespace(false, true) + "bit_cast<float>")
+ENTRY_RENAMED("__double_as_longlong", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__float_as_int", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__float_as_uint", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__int_as_float", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__longlong_as_double", MapNames::getClNamespace(false, true) + "bit_cast")
+ENTRY_RENAMED("__uint_as_float", MapNames::getClNamespace(false, true) + "bit_cast")
 
 // Device: int => sycl::abs, (float, double) => sycl::fabs
 // Host:   int => abs, float => fabsf, double => fabs, long double => fabsl

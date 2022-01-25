@@ -259,6 +259,18 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             }
           }
         }
+      } else if (MapNames::MathTypeCastingMap.count(SourceCalleeName.str())) {
+        auto TypePair = MapNames::MathTypeCastingMap[SourceCalleeName.str()];
+        bool NeedFromType = false;
+        if (auto ICE = dyn_cast_or_null<ImplicitCastExpr>(Call->getArg(0))) {
+          if (ICE->getCastKind() != CastKind::CK_LValueToRValue)
+            NeedFromType = true;
+        }
+        if (NeedFromType)
+          NewFuncName =
+              NewFuncName + "<" + TypePair.first + ", " + TypePair.second + ">";
+        else
+          NewFuncName = NewFuncName + "<" + TypePair.first + ">";
       }
 
       if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
