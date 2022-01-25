@@ -5,9 +5,3 @@
   In: __forceinline__
   Out: inline
   Includes: ["aaa.h", "\"bbb.h\""]
-- Rule: rule_vector
-  Kind: Macro
-  Priority: Takeover
-  In: VECTOR
-  Out: std::vector<int>
-  Includes: ["<vector>"]

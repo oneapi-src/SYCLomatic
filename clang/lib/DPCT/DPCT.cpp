@@ -281,8 +281,9 @@ opt<std::string>
                value_desc("file"), cat(DPCTCat),
                llvm::cl::Optional);
 
-opt<std::string> RuleFile("rule-file", desc("Specifies the migration rule file.\n"),
-                          value_desc("file"), cat(DPCTCat), llvm::cl::Optional);
+list<std::string> RuleFile("rule-file", desc("Specifies the migration rule file.\n"),
+                           value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore,
+                           llvm::cl::cb<void, std::string>(MetaRuleObject::setRuleFiles));
 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
@@ -1271,7 +1272,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
-  MetaRuleObject::RuleFile = RuleFile;
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 

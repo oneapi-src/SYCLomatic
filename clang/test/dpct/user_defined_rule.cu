@@ -1,9 +1,10 @@
 // RUN: cat %s > %T/user_defined_rule.cu
 // RUN: cat %S/user_defined_rule.yaml > %T/user_defined_rule.yaml
+// RUN: cat %S/user_defined_rule_2.yaml > %T/user_defined_rule_2.yaml
 // RUN: cd %T
 // RUN: rm -rf %T/user_defined_rule_output
 // RUN: mkdir %T/user_defined_rule_output
-// RUN: dpct -out-root %T/user_defined_rule_output user_defined_rule.cu --cuda-include-path="%cuda-path/include" --rule-file=user_defined_rule.yaml --stop-on-parse-err -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/user_defined_rule_output user_defined_rule.cu --cuda-include-path="%cuda-path/include" --rule-file=user_defined_rule.yaml --rule-file=user_defined_rule_2.yaml --stop-on-parse-err -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/user_defined_rule_output/user_defined_rule.dp.cpp --match-full-lines user_defined_rule.cu
 
 

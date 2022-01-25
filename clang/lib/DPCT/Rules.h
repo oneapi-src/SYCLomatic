@@ -14,7 +14,10 @@
 #include <string>
 #include <vector>
 #include "llvm/Support/YAMLTraits.h"
+#include "llvm/Support/CommandLine.h"
 #include "CustomHelperFiles.h"
+
+
 
 enum RuleKind { API, DataType, Macro };
 
@@ -22,7 +25,7 @@ enum RulePriority { Takeover, Default, Fallback };
 
 class MetaRuleObject {
 public:
-  static std::string RuleFile;
+  static std::vector<std::string> RuleFiles;
   std::string RuleId;
   RulePriority Priority;
   RuleKind Kind;
@@ -35,6 +38,9 @@ public:
     RulePriority priority, RuleKind kind)
       : RuleId(id), 
     Priority(priority), Kind(kind) {}
+  static void setRuleFiles(std::string File) {
+    RuleFiles.push_back(File);
+  }
 };
 
 template <> struct llvm::yaml::SequenceTraits<std::vector<MetaRuleObject>> {
@@ -106,6 +112,6 @@ public:
                  Includes) {}
 };
 
-int ImportRules(std::string RuleFile);
+void ImportRules(llvm::cl::list<std::string> &RuleFiles);
 
 #endif // DPCT_RULES_H

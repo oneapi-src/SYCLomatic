@@ -12,10 +12,9 @@
 #include "Utility.h"
 #include "Error.h"
 #include "MapNames.h"
-#include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-std::string MetaRuleObject::RuleFile = "";
+std::vector<std::string> MetaRuleObject::RuleFiles;
 
 void RegisterMacroRule(MetaRuleObject &R) {
   auto It = MapNames::MacroRuleMap.find(R.In);
@@ -38,44 +37,42 @@ void RegisterMacroRule(MetaRuleObject &R) {
   }
 }
 
-int ImportRules(std::string RuleFile) {
-  makeCanonical(RuleFile);
+void ImportRules(llvm::cl::list<std::string> &RuleFiles) {
+  for (auto &RuleFile : RuleFiles) {
+    makeCanonical(RuleFile);
 
-  // open the yaml file
-  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-    llvm::MemoryBuffer::getFile(RuleFile);
-  if (!Buffer) {
-    llvm::errs() << "error: failed to read " << RuleFile << ": "
-      << Buffer.getError().message() << "\n";
-    clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
-    dpctExit(MigrationErrorInvalidRuleFilePath);
-    return -1;
-  }
+    // open the yaml file
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
+      llvm::MemoryBuffer::getFile(RuleFile);
+    if (!Buffer) {
+      llvm::errs() << "error: failed to read " << RuleFile << ": "
+        << Buffer.getError().message() << "\n";
+      clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
+      dpctExit(MigrationErrorInvalidRuleFilePath);
+    }
 
-  // load rules
-  std::vector<MetaRuleObject> rules;
-  llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
-  YAMLIn >> rules;
+    // load rules
+    std::vector<MetaRuleObject> rules;
+    llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
+    YAMLIn >> rules;
 
-  if (YAMLIn.error()) {
-    // yaml parsing fail
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-    return -1;
-  }
+    if (YAMLIn.error()) {
+      // yaml parsing fail
+      clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+      dpctExit(MigrationErrorCannotParseRuleFile);
+    }
 
-  //Register Rules
-  for(MetaRuleObject &r : rules) {
-    switch (r.Kind) {
-    case (RuleKind::Macro):
-      RegisterMacroRule(r);
-      break;
-    default:
-      break;
+    //Register Rules
+    for (MetaRuleObject &r : rules) {
+      switch (r.Kind) {
+      case (RuleKind::Macro):
+        RegisterMacroRule(r);
+        break;
+      default:
+        break;
+      }
     }
   }
-
-  return 0;
 }
 
 
