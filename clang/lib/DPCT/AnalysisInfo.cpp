@@ -2690,7 +2690,16 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   DpctNameGenerator G;
-  return FuncInfoMap[G.getName(FD)];
+  std::string Key;
+  // For static functions or functions in anonymous namespace, we
+  // need to add filepath as prefix to differentiate them.
+  if (FD->isStatic() || FD->isInAnonymousNamespace()) {
+    auto LocInfo = DpctGlobalInfo::getLocInfo(FD);
+    Key = LocInfo.first + G.getName(FD);
+  } else {
+    Key = G.getName(FD);
+  }
+  return FuncInfoMap[Key];
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
