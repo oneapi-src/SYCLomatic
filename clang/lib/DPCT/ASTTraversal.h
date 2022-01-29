@@ -522,22 +522,6 @@ private:
   bool renameBuiltinName(const DeclRefExpr *DRE, std::string &NewName);
 };
 
-/// Migration rule for class attributes.
-/// This rule replace __align__ class attributes to __dpct_align__.
-class AlignAttrsRule : public NamedMigrationRule<AlignAttrsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for function attributes.
-/// This rule replace __forceinline__ class attributes to __dpct_inline__.
-class FuncAttrsRule : public NamedMigrationRule<FuncAttrsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
 /// Migration rule for atomic functions.
 class AtomicFunctionRule : public NamedMigrationRule<AtomicFunctionRule> {
 public:
