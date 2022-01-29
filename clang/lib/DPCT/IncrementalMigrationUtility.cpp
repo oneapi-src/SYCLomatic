@@ -223,6 +223,9 @@ bool printOptions(
       if (UValue & (1 << static_cast<unsigned>(
                         ExperimentalFeatures::Exp_NdRangeBarrier)))
         Str = Str + "nd_range_barrier,";
+      if (UValue & (1 << static_cast<unsigned>(
+                        ExperimentalFeatures::Exp_GroupSharedMemory)))
+        Str = Str + "local-memory-kernel-scope-allocation,";
 
       if (!Str.empty()) {
         Str = "--use-experimental-features=" + Str;
