@@ -400,9 +400,9 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   dpct_memcpy(host_b, b, batch_size * sizeof(T *));
 
   for (std::int64_t i = 0; i < batch_size; ++i) {
-    // Need to create a copy of input matrices A to keep them unchanged.
-    // B (copy of A) will be used as input and output parameter in MKL API
-    // call.
+    // Need to create a copy of input matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as input and output
+    // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_buffer_ptr + i * stride_b, host_a[i], ldb, lda, n, n,
                     dpct::device_to_device, exec_queue);
   }
@@ -470,9 +470,9 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   exec_queue.memcpy(b_shared, b, batch_size * sizeof(T *)).wait();
   for (std::int64_t i = 0; i < batch_size; ++i) {
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
-    // Need to create a copy of input matrices A to keep them unchanged.
-    // B (copy of A) will be used as input and output parameter in MKL API
-    // call.
+    // Need to create a copy of input matrices "a" to keep them unchanged.
+    // Matrices "b" (copy of matrices "a") will be used as input and output
+    // parameter in oneapi::mkl::lapack::getri_batch call.
     matrix_mem_copy(b_shared[i], a_shared[i], ldb, lda, n, n, dpct::device_to_device,
                     exec_queue);
   }
