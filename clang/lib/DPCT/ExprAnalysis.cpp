@@ -557,6 +557,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   }
   dispatch(ME->getBase());
+  RefString.clear();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {

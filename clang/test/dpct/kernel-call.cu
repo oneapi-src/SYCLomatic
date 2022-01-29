@@ -885,3 +885,18 @@ void run_foo16() {
   //CHECK-NEXT:  });
   my_kernel8<<<1,1>>>(fa, fb);
 }
+
+void run_foo17() {
+  foo_class count(3);
+  //CHECK:dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
+  //CHECK-NEXT:    auto count_run_foo_ct2 = count.run_foo();
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class testKernel_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        testKernel(1, 2, item_ct1, count_run_foo_ct2);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  testKernel<<<1,1>>>(1,2,count.run_foo());
+}
