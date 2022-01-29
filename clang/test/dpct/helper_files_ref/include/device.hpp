@@ -48,22 +48,22 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
 class device_info {
 public:
   // get interface
-  char *get_name() { return _name; }
-  cl::sycl::id<3> get_max_work_item_sizes() { return _max_work_item_sizes; }
-  bool get_host_unified_memory() { return _host_unified_memory; }
-  int get_major_version() { return _major; }
-  int get_minor_version() { return _minor; }
-  int get_integrated() { return _integrated; }
-  int get_max_clock_frequency() { return _frequency; }
-  int get_max_compute_units() { return _max_compute_units; }
-  int get_max_work_group_size() { return _max_work_group_size; }
-  int get_max_sub_group_size() { return _max_sub_group_size; }
-  int get_max_work_items_per_compute_unit() {
+  const char *get_name() const { return _name; }
+  cl::sycl::id<3> get_max_work_item_sizes() const { return _max_work_item_sizes; }
+  bool get_host_unified_memory() const { return _host_unified_memory; }
+  int get_major_version() const { return _major; }
+  int get_minor_version() const { return _minor; }
+  int get_integrated() const { return _integrated; }
+  int get_max_clock_frequency() const { return _frequency; }
+  int get_max_compute_units() const { return _max_compute_units; }
+  int get_max_work_group_size() const { return _max_work_group_size; }
+  int get_max_sub_group_size() const { return _max_sub_group_size; }
+  int get_max_work_items_per_compute_unit() const {
     return _max_work_items_per_compute_unit;
   }
-  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
-  size_t get_global_mem_size() { return _global_mem_size; }
-  size_t get_local_mem_size() { return _local_mem_size; }
+  const size_t *get_max_nd_range_size() const { return _max_nd_range_size; }
+  size_t get_global_mem_size() const { return _global_mem_size; }
+  size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
   void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
@@ -143,29 +143,29 @@ public:
   }
 
   int is_native_atomic_supported() { return 0; }
-  int get_major_version() {
+  int get_major_version() const {
     int major, minor;
     get_version(major, minor);
     return major;
   }
 
-  int get_minor_version() {
+  int get_minor_version() const {
     int major, minor;
     get_version(major, minor);
     return minor;
   }
 
-  int get_max_compute_units() {
+  int get_max_compute_units() const {
     return get_device_info().get_max_compute_units();
   }
 
-  int get_max_clock_frequency() {
+  int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
 
-  int get_integrated() { return get_device_info().get_integrated(); }
+  int get_integrated() const { return get_device_info().get_integrated(); }
 
-  void get_device_info(device_info &out) {
+  void get_device_info(device_info &out) const {
     device_info prop;
     prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
 
@@ -218,7 +218,7 @@ public:
     out = prop;
   }
 
-  device_info get_device_info() {
+  device_info get_device_info() const {
     device_info prop;
     get_device_info(prop);
     return prop;
@@ -285,14 +285,14 @@ public:
     std::lock_guard<std::mutex> lock(m_mutex);
     _saved_queue = q;
   }
-  cl::sycl::queue* get_saved_queue() {
+  cl::sycl::queue* get_saved_queue() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return _saved_queue;
   }
-  cl::sycl::context get_context() { return _ctx; }
+  cl::sycl::context get_context() const { return _ctx; }
 
 private:
-  void get_version(int &major, int &minor) {
+  void get_version(int &major, int &minor) const {
     // Version string has the following format:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>
     // b. <major.minor>
@@ -328,7 +328,7 @@ private:
   std::vector<std::thread> _tasks;
 };
 
-static inline unsigned int get_tid(){
+static inline unsigned int get_tid() {
 #if defined(__linux__)
   return syscall(SYS_gettid);
 #elif defined(_WIN64)
