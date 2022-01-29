@@ -39,9 +39,9 @@ void print_data(T* data, int num) {
 
 //CHECK:  void ExclusiveSumKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 //CHECK:    int input = data[threadid];
 //CHECK:    int output = 0;
@@ -85,9 +85,9 @@ __global__ void ExclusiveSumKernel1(int* data, int* aggregate) {
 //CHECK:  void ExclusiveSumKernel2(int* data, sycl::nd_item<3> item_ct1) {
 
 //CHECK:      CallbackOp1 CB(0);
-//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
@@ -128,9 +128,9 @@ __global__ void ExclusiveSumKernel2(int* data) {
 }
 //CHECK:  void ExclusiveSumKernel3(int* data, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:    int input[4];
 //CHECK:    input[0] = data[4 * threadid];
@@ -169,9 +169,9 @@ __global__ void ExclusiveSumKernel3(int* data) {
 }
 //CHECK:  void ExclusiveScanKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
@@ -215,9 +215,9 @@ __global__ void ExclusiveScanKernel1(int* data, int* aggregate) {
 //CHECK:  void ExclusiveScanKernel2(int* data, sycl::nd_item<3> item_ct1) {
 
 //CHECK:      CallbackOp2 CB(0);
-//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
@@ -257,9 +257,9 @@ __global__ void ExclusiveScanKernel2(int* data) {
     data[threadid] = output;
 }
 //CHECK:  void ExclusiveScanKernel3(int* data, sycl::nd_item<3> item_ct1) {
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:    int input[4];
 //CHECK:    input[0] = data[4 * threadid];
@@ -299,9 +299,9 @@ __global__ void ExclusiveScanKernel3(int* data) {
 
 //CHECK:  void InclusiveSumKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
@@ -347,9 +347,9 @@ __global__ void InclusiveSumKernel1(int* data, int* aggregate) {
 
 //CHECK:  void InclusiveSumKernel2(int* data, sycl::nd_item<3> item_ct1) {
 //CHECK:      CallbackOp3 CB(0);
-//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
@@ -391,9 +391,9 @@ __global__ void InclusiveSumKernel2(int* data) {
 
 //CHECK:  void InclusiveSumKernel3(int* data, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:    int input[4];
 //CHECK:    input[0] = data[4 * threadid];
@@ -434,9 +434,9 @@ __global__ void InclusiveSumKernel3(int* data) {
 
 //CHECK:  void InclusiveScanKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
@@ -482,9 +482,9 @@ __global__ void InclusiveScanKernel1(int* data, int* aggregate) {
 
 //CHECK:  void InclusiveScanKernel2(int* data, sycl::nd_item<3> item_ct1) {
 //CHECK:      CallbackOp4 CB(0);
-//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
@@ -526,9 +526,9 @@ __global__ void InclusiveScanKernel2(int* data) {
 
 //CHECK:  void InclusiveScanKernel3(int* data, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                      + item_ct1.get_local_id(2);;
 //CHECK:    int input[4];
 //CHECK:    input[0] = data[4 * threadid];

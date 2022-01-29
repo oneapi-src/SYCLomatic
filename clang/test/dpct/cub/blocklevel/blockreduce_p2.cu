@@ -38,9 +38,9 @@ void print_data(T* data, int num) {
 }
 //CHECK:  void SumKernel(int* data, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 
 //CHECK:    int input[4];
@@ -81,9 +81,9 @@ __global__ void SumKernel(int* data) {
 
 //CHECK:  void ReduceKernel(int* data, sycl::nd_item<3> item_ct1) {
 
-//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1) * item_ct1.get_local_range().get(0))
-//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range().get(2) * item_ct1.get_local_range().get(1))
-//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range().get(2)
+//CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
+//CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
+//CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
 //CHECK:                        + item_ct1.get_local_id(2);;
 
 //CHECK:    int input[4];

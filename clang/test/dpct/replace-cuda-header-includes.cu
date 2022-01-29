@@ -23,9 +23,9 @@ __global__ void foo() {
   // size_t biy = blockIdx.y;
   // size_t biz = blockIdx.z;
 
-  // CHECK: size_t bdx = item_ct1.get_local_range().get(2);
-  // CHECK: size_t bdy = item_ct1.get_local_range().get(1);
-  // CHECK: size_t bdz = item_ct1.get_local_range().get(0);
+  // CHECK: size_t bdx = item_ct1.get_local_range(2);
+  // CHECK: size_t bdy = item_ct1.get_local_range(1);
+  // CHECK: size_t bdz = item_ct1.get_local_range(0);
 
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;

@@ -10,7 +10,7 @@
 // CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
-  // CHECK-NEXT:   int gtid = item_ct1.get_group(2) /*comments*/ * item_ct1.get_local_range().get(2) /*comments
+  // CHECK-NEXT:   int gtid = item_ct1.get_group(2) /*comments*/ * item_ct1.get_local_range(2) /*comments
   // CHECK-NEXT:  comments*/
   // CHECK-NEXT: /* DPCT_ORIG   + threadIdx.x;*/
   // CHECK-NEXT:  + item_ct1.get_local_id(2);
@@ -25,7 +25,7 @@ __global__ void testKernel(int L, int M, int N) {
   // CHECK:      /* DPCT_ORIG   int gtid = blockIdx.x*/
   // CHECK-NEXT:  int gtid = item_ct1.get_group(2)
   // CHECK-NEXT: /* DPCT_ORIG              * blockDim.x*/
-  // CHECK-NEXT:                * item_ct1.get_local_range().get(2)
+  // CHECK-NEXT:                * item_ct1.get_local_range(2)
   // CHECK-NEXT: /* DPCT_ORIG              + threadIdx.x;*/
   // CHECK-NEXT:                + item_ct1.get_local_id(2);
   int gtid = blockIdx.x

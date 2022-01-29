@@ -46,7 +46,7 @@ struct FuncObj {
 // CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT:              float *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
 // CHECK-NEXT:  const_ptr[index] = index;
 // CHECK-NEXT:  if (index < 360) {
@@ -74,7 +74,7 @@ __device__ __constant__ float const_one;
 // CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::constant_buffer> const_float,
 // CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
 // CHECK-NEXT:    d_array[index] = const_one + const_float[index][index];
 // CHECK-NEXT:  }

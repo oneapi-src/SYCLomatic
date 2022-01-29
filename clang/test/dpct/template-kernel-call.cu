@@ -90,14 +90,14 @@ template<class T> void runTest();
 template <class TName, unsigned N, class TData>
 // CHECK: void testKernelPtr(const TData *L, const TData *M, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
-  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
 // CHECK: void testKernel(TData L, TData M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(TData L, TData M, int N) {
-  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   L = M;
 }
@@ -272,7 +272,7 @@ int main() {
 // CHECK:template<typename T>
 // CHECK-NEXT:void convert_kernel(T b, sycl::nd_item<3> item_ct1, int *aaa,
 // CHECK-NEXT:                    sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> bbb){
-// CHECK:  T a = item_ct1.get_local_range().get(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
+// CHECK:  T a = item_ct1.get_local_range(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:}
 template<typename T>
 __global__ void convert_kernel(T b){

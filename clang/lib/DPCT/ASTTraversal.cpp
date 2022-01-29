@@ -1165,7 +1165,7 @@ bool IterationSpaceBuiltinRule::renameBuiltinName(const DeclRefExpr *DRE,
   if (BuiltinName == "threadIdx")
     NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_id(";
   else if (BuiltinName == "blockDim")
-    NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_range().get(";
+    NewName = DpctGlobalInfo::getItem(DRE) + ".get_local_range(";
   else if (BuiltinName == "blockIdx")
     NewName = DpctGlobalInfo::getItem(DRE) + ".get_group(";
   else if (BuiltinName == "gridDim")

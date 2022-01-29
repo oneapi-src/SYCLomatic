@@ -18,8 +18,8 @@ using namespace cooperative_groups;
 
 // CHECK: void test1() {
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<1>();
-// CHECK-NEXT:  int a = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0) + item_ct1.get_group(0) +
-// CHECK-NEXT:  item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
+// CHECK-NEXT:  int a = item_ct1.get_group(0) * item_ct1.get_local_range(0) + item_ct1.get_local_id(0) + item_ct1.get_group(0) +
+// CHECK-NEXT:  item_ct1.get_local_range(0) + item_ct1.get_local_id(0);
 // CHECK-NEXT:  auto cta = sycl::ext::oneapi::experimental::this_group<1>();
 // CHECK-NEXT:  auto b0 = sycl::ext::oneapi::experimental::this_group<1>(), b1 = sycl::ext::oneapi::experimental::this_group<1>();
 // CHECK-NEXT:  /*
@@ -48,8 +48,8 @@ __global__ void test1() {
 
 // CHECK: void test2() {
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<3>();
-// CHECK-NEXT:  int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-// CHECK-NEXT:  item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:  int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+// CHECK-NEXT:  item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:  auto cta = sycl::ext::oneapi::experimental::this_group<3>();
 // CHECK-NEXT:  auto b0 = sycl::ext::oneapi::experimental::this_group<3>(), b1 = sycl::ext::oneapi::experimental::this_group<3>();
 // CHECK-NEXT:  /*

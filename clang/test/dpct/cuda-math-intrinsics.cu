@@ -3342,9 +3342,9 @@ __global__ void test_mul24_complicated() {
   // CHECK: unsigned int  threadN = sycl::mul24((int)item_ct1.get_local_range(2), (int)item_ct1.get_group_range(2));
   unsigned int  threadN = __mul24(blockDim.x, gridDim.x);
 
-  // CHECK: unsigned int     tid2 = MUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
+  // CHECK: unsigned int     tid2 = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
   unsigned int     tid2 = MUL(blockDim.x, blockIdx.x) + threadIdx.x;
-  // CHECK: unsigned int threadN2 = MUL(item_ct1.get_local_range().get(2), item_ct1.get_group_range(2));
+  // CHECK: unsigned int threadN2 = MUL(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
   unsigned int threadN2 = MUL(blockDim.x, gridDim.x);
 }
 
@@ -3357,9 +3357,9 @@ __global__ void test_umul24_complicated() {
   // CHECK: unsigned int  threadN = sycl::mul24((unsigned int)item_ct1.get_local_range(2), (unsigned int)item_ct1.get_group_range(2));
   unsigned int  threadN = __umul24(blockDim.x, gridDim.x);
 
-  // CHECK: unsigned int     tid2 = UMUL(item_ct1.get_local_range().get(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
+  // CHECK: unsigned int     tid2 = UMUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
   unsigned int     tid2 = UMUL(blockDim.x, blockIdx.x) + threadIdx.x;
-  // CHECK: unsigned int threadN2 = UMUL(item_ct1.get_local_range().get(2), item_ct1.get_group_range(2));
+  // CHECK: unsigned int threadN2 = UMUL(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
   unsigned int threadN2 = UMUL(blockDim.x, gridDim.x);
 }
 

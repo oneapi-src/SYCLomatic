@@ -62,7 +62,7 @@ __global__ void k8();
 //CHECK:void d1(sycl::nd_item<1> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
 //CHECK-NEXT:  d2(item_ct1);
 //CHECK-NEXT:}
@@ -77,7 +77,7 @@ __device__ void d1() {
 //CHECK:void d2(sycl::nd_item<1> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
 //CHECK-NEXT:}
 __device__ void d2() {
@@ -94,9 +94,9 @@ __device__ void d2() {
 //CHECK-NEXT:  a = item_ct1.get_group(2);
 //CHECK-NEXT:  a = item_ct1.get_group(1);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(1);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(1);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(1);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
@@ -125,9 +125,9 @@ __device__ void d3() {
 //CHECK-NEXT:  a = item_ct1.get_group(2);
 //CHECK-NEXT:  a = item_ct1.get_group(1);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(1);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(1);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(1);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
@@ -150,7 +150,7 @@ __device__ void d4() {
 //CHECK:void d5(sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(2);
 //CHECK-NEXT:  a = item_ct1.get_group(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  d6(item_ct1);
 //CHECK-NEXT:}
@@ -165,7 +165,7 @@ __device__ void d5() {
 //CHECK:void d6(sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(2);
 //CHECK-NEXT:  a = item_ct1.get_group(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:}
 __device__ void d6() {
@@ -182,9 +182,9 @@ __device__ void d6() {
 //CHECK-NEXT:  a = item_ct1.get_group(2);
 //CHECK-NEXT:  a = item_ct1.get_group(1);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(1);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(1);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(1);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
@@ -277,7 +277,7 @@ __device__ void d14() {
 //CHECK:void k1(sycl::nd_item<1> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
 //CHECK-NEXT:  d1(item_ct1);
 //CHECK-NEXT:}
@@ -296,9 +296,9 @@ __global__ void k1() {
 //CHECK-NEXT:  a = item_ct1.get_group(2);
 //CHECK-NEXT:  a = item_ct1.get_group(1);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(1);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(1);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(1);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
@@ -323,7 +323,7 @@ __global__ void k2() {
 //CHECK:void k3(sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(2);
 //CHECK-NEXT:  a = item_ct1.get_group(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  d5(item_ct1);
 //CHECK-NEXT:}
@@ -342,9 +342,9 @@ __global__ void k3() {
 //CHECK-NEXT:  a = item_ct1.get_group(2);
 //CHECK-NEXT:  a = item_ct1.get_group(1);
 //CHECK-NEXT:  a = item_ct1.get_group(0);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(2);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(1);
-//CHECK-NEXT:  a = item_ct1.get_local_range().get(0);
+//CHECK-NEXT:  a = item_ct1.get_local_range(2);
+//CHECK-NEXT:  a = item_ct1.get_local_range(1);
+//CHECK-NEXT:  a = item_ct1.get_local_range(0);
 //CHECK-NEXT:  a = item_ct1.get_group_range(2);
 //CHECK-NEXT:  a = item_ct1.get_group_range(1);
 //CHECK-NEXT:  a = item_ct1.get_group_range(0);
@@ -468,7 +468,7 @@ int main() {
 //CHECK: #define MM __umul24
 //CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
 //CHECK-NEXT: void foo1(sycl::nd_item<1> item_ct1) {
-//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range().get(0), item_ct1.get_group(0)) + item_ct1.get_local_range().get(0);
+//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(0), item_ct1.get_group(0)) + item_ct1.get_local_range(0);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(0), (unsigned int)item_ct1.get_group_range(0));
 //CHECK-NEXT: }
 #define MM __umul24
@@ -478,7 +478,7 @@ __device__ void foo1() {
   unsigned int      tid2 = MM(blockDim.x, gridDim.x);
 }
 //CHECK: void foo2(sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range().get(1), item_ct1.get_group(0)) + item_ct1.get_local_range().get(2);
+//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(1), item_ct1.get_group(0)) + item_ct1.get_local_range(2);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(1), (unsigned int)item_ct1.get_group_range(0));
 //CHECK-NEXT: }
 __device__ void foo2() {

@@ -13,8 +13,8 @@
 //CHECK-NEXT: #endif
 //CHECK-NEXT:   , int l = 0,
 //CHECK-NEXT:   int m = 0, int n = 0) {
-//CHECK-NEXT: int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-//CHECK-NEXT: item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+//CHECK-NEXT: int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+//CHECK-NEXT: item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 //CHECK-NEXT: }
 __global__ void helloFromGPUDDefaultArgs(int i, int j
 #ifdef PAR
@@ -38,7 +38,7 @@ __global__ void testKernel(int L, int M, int N = 0);
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   L[0];
   M[0];
-  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
@@ -47,13 +47,13 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 // CHECK-NEXT: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
-  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 // CHECK: void helloFromGPU(int i, cl::sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-// CHECK-NEXT:     item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+// CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 __global__ void helloFromGPU(int i) {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
@@ -61,8 +61,8 @@ __global__ void helloFromGPU(int i) {
 }
 
 // CHECK: void helloFromGPU(cl::sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-// CHECK-NEXT:     item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+// CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 __global__ void helloFromGPU(void) {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
@@ -70,8 +70,8 @@ __global__ void helloFromGPU(void) {
 }
 
 // CHECK: void helloFromGPU2(cl::sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
-// CHECK-NEXT:     item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+// CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 __global__ void helloFromGPU2() {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
@@ -594,16 +594,16 @@ struct test_class {
   __device__ test_class() = default;
   // CHECK: test_class(int *a, cl::sycl::nd_item<3> item_ct1, int *s1) {
   // CHECK-NEXT:  // __shared__ variable
-  // CHECK-NEXT:   s1[0] = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT:   s1[0] = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
   // CHECK-NEXT: test_class(int *a, int *b, cl::sycl::nd_item<3> item_ct1, float *s2) {
   // CHECK-NEXT:  // __shared__ variable
-  // CHECK-NEXT:   int d = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
   // CHECK-NEXT: template<class T>
   // CHECK-NEXT: test_class(T *a, T *b, cl::sycl::nd_item<3> item_ct1, T *s3) {
   // CHECK-NEXT:  // __shared__ variable
-  // CHECK-NEXT:   int d = item_ct1.get_local_range().get(2);
+  // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
   __device__ test_class(int *a) {
     __shared__ int s1[10]; // __shared__ variable

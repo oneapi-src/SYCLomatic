@@ -20,9 +20,9 @@ void test_00() {
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK: size_t bdx = [[ITEMNAME]].get_local_range().get(2);
-  // CHECK: size_t bdy = [[ITEMNAME]].get_local_range().get(1);
-  // CHECK: size_t bdz = [[ITEMNAME]].get_local_range().get(0);
+  // CHECK: size_t bdx = [[ITEMNAME]].get_local_range(2);
+  // CHECK: size_t bdy = [[ITEMNAME]].get_local_range(1);
+  // CHECK: size_t bdz = [[ITEMNAME]].get_local_range(0);
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;

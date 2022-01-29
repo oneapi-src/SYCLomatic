@@ -5,7 +5,7 @@
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> item_ct1) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+  // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 

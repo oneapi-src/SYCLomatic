@@ -142,7 +142,7 @@ int main() {
 
 // CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
-// CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
+// CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(&share_array[b], (uint32_t)1);
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>((uint32_t*)share_array, (uint32_t)1);
 // CHECK-NEXT:  }
@@ -161,7 +161,7 @@ __shared__ uint32_t share_v;
 
 // CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
-// CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
+// CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
 // CHECK-NEXT:    uint32_t *p_2 = share_array;
 // CHECK-NEXT:    uint32_t *p_3 = p_2;
@@ -457,7 +457,7 @@ __global__ void k() {
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  unsigned int* as= (unsigned int*)sm;
 // CHECK-NEXT:  const int kc=item_ct1.get_local_id(2);
-// CHECK-NEXT:  const int tid=item_ct1.get_group(2)*item_ct1.get_local_range().get(2)+item_ct1.get_local_id(2);
+// CHECK-NEXT:  const int tid=item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
 // CHECK-NEXT:  dpct::atomic_fetch_or<unsigned int, sycl::access::address_space::generic_space>(&as[kc], (unsigned int)1);
 // CHECK-NEXT:  dev[tid]=as[kc];
 // CHECK-NEXT: }
@@ -479,8 +479,8 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  item_ct1.barrier();
-// CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range().get(2);
-// CHECK-NEXT:  int offset = item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2);
+// CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range(2);
+// CHECK-NEXT:  int offset = item_ct1.get_local_range(2) * item_ct1.get_group_range(2);
 // CHECK-NEXT:  while (i < size) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(&temp[buffer[i]], (unsigned int)1);
 // CHECK-NEXT:    i += offset;
@@ -557,7 +557,7 @@ __device__ void __gpu_sync(int blocks_to_synch) {
 //CHECK:void atomicInc_foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
 //CHECK-NEXT:                   unsigned int *share_v) {
 //CHECK-NEXT:  auto share_array = (unsigned int *)dpct_local;
-//CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
+//CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 //CHECK-NEXT:    dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&share_array[b], (unsigned int)1);
 //CHECK-NEXT:    dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>((unsigned int*)share_array, (unsigned int)1);
 //CHECK-NEXT:  }
