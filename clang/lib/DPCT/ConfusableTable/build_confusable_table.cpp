@@ -37,15 +37,21 @@ int main(int argc, char *argv[]) {
     }
 
     llvm::StringRef From = Values[0].trim();
-    llvm::UTF32 CodePoint;
-    From.getAsInteger(16, CodePoint);
+    llvm::UTF32 CodePoint = 0;
+    if (From.getAsInteger(16, CodePoint)) {
+      errs() << "Failed to parse: " << Line << "\n";
+      return 2;
+    }
 
     SmallVector<llvm::UTF32> To;
     SmallVector<StringRef> ToN;
     Values[1].split(ToN, ' ', -1, false);
     for (StringRef To_ : ToN) {
-      llvm::UTF32 ToCodePoint;
-      To_.trim().getAsInteger(16, ToCodePoint);
+      llvm::UTF32 ToCodePoint = 0;
+      if (To_.trim().getAsInteger(16, ToCodePoint)) {
+        errs() << "Failed to parse: " << Line << "\n";
+        return 2;
+      }
       To.push_back(ToCodePoint);
     }
     while (To.size() < 32)
