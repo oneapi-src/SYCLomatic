@@ -99,6 +99,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   const char *get_name() const { return _name; }
+  char *get_name() { return _name; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_max_work_item_sizes|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -189,6 +190,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   const size_t *get_max_nd_range_size() const { return _max_nd_range_size; }
+  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_global_mem_size|dpct
 // DPCT_PARENT_FEATURE|device_info

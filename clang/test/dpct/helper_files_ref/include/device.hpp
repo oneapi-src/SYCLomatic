@@ -49,6 +49,7 @@ class device_info {
 public:
   // get interface
   const char *get_name() const { return _name; }
+  char *get_name() { return _name; }
   cl::sycl::id<3> get_max_work_item_sizes() const { return _max_work_item_sizes; }
   bool get_host_unified_memory() const { return _host_unified_memory; }
   int get_major_version() const { return _major; }
@@ -62,6 +63,7 @@ public:
     return _max_work_items_per_compute_unit;
   }
   const size_t *get_max_nd_range_size() const { return _max_nd_range_size; }
+  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
