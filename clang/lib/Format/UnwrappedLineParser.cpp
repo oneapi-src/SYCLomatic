@@ -3243,7 +3243,7 @@ void UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel) {
       FormatTok->Previous &&
       isInSameLine(FormatTok->Previous, FormatTok, SourceMgr)) {
 
-    // Below if-stmt is added to fix CTST-2036.
+    // Below if-stmt is added to fix a regression.
     // If a line is devided into 2 parts by some PPDirectives, the calculation
     // of OpeningLineIndex will be incorrect.
     // So here althougth we do not add new UnwrappedLine for "Line",
