@@ -30,8 +30,8 @@ enum class HelperFileEnum : unsigned int {
 #include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
-  HelperFileEnumTypeSize,
   Unknown,
+  HelperFileEnumTypeSize,
 };
 
 enum class HelperFeatureDependencyKind : unsigned int {
