@@ -1109,3 +1109,35 @@ void foo28(){
   //CHECK-NEXT:   });)
   CALL_K(foo_kernel<<<1,1,0>>>();)
 }
+
+
+
+#define SIMD_SIZE 32
+#define BLOCK_PAIR 256
+
+#define local_allocate_store_charge()                                       \
+    __shared__ double red_acc[8][BLOCK_PAIR / SIMD_SIZE];
+
+//CHECK: void foo29(sycl::accessor<local_, 2, sycl::access_mode::read_write, sycl::access::target::local> red_acc) {
+//CHECK-NEXT: }
+__global__ void foo29() {
+  local_allocate_store_charge();
+}
+
+//CHECK: void foo30(){
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+//CHECK-NEXT:     sycl::accessor<local_, 2, sycl::access_mode::read_write,
+//CHECK-NEXT:                    sycl::access::target::local>
+//CHECK-NEXT:         red_acc_acc_ct1(sycl::range<2>(8 /*8*/, 8 /*BLOCK_PAIR / SIMD_SIZE*/),
+//CHECK-NEXT:                         cgh);
+
+//CHECK:     cgh.parallel_for(
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:           foo29(red_acc_acc_ct1);
+//CHECK-NEXT:         });
+//CHECK-NEXT:   });
+//CHECK-NEXT: }
+void foo30(){
+  foo29<<<1,1,0>>>();
+}

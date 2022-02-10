@@ -146,6 +146,7 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
   SourceLocation BeginLoc, EndLoc;
   BeginLoc = S->getBeginLoc();
   EndLoc = S->getEndLoc();
+
   if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
     BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
     EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
@@ -216,9 +217,19 @@ std::string getStmtSpelling(const Stmt *S) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   auto StmtRange = getStmtExpansionSourceRange(S);
-
   BeginLoc = StmtRange.getBegin();
   EndLoc = StmtRange.getEnd();
+
+  // getDefinitionRange generally get more precise location.
+  // However, in some case, we prefer to use the macro expansion location.
+  // e.g. #define BLOCKDIM 8 + 8
+  // when migrating BLOCKDIM in kernel call like foo<<<BLOCKDIM,1,0>>>()
+  // we prefer BLOCKDIM then "8 + 8"
+  if (SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) != 0) {
+    auto DRange = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+    BeginLoc = DRange.getBegin();
+    EndLoc = DRange.getEnd();
+  }
 
   int Length =
       SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
