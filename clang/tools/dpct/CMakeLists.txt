@@ -82,3 +82,5 @@ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-modulefiles
                            COMPONENT dpct-modulefiles)
 endif()
+
+add_subdirectory(DpctOptRules)

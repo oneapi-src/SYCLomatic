@@ -919,6 +919,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct
       install-dpct-vars
       install-dpct-syscheck
+      install-dpct-opt-rules
       )
   else()
     list(APPEND DPCT_RUN
@@ -929,6 +930,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-vars
       install-dpct-syscheck
       install-dpct-modulefiles
+      install-dpct-opt-rules
       )
   endif()
 endif()
