@@ -2555,7 +2555,6 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
   if (FD->getTemplateSpecializationKind() ==
       TSK_ExplicitInstantiationDefinition)
     return;
-
   if (FD->isImplicit() ||
       FD->getTemplateSpecializationKind() == TSK_ImplicitInstantiation) {
     auto &FuncInfo = getFuncInfo(FD);
@@ -2565,6 +2564,10 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       FuncInfo = Info;
     } else if (FuncInfo) {
       Info = FuncInfo;
+    } else {
+      Info = std::make_shared<DeviceFunctionInfo>(
+          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments());
+      FuncInfo = Info;
     }
     return;
   }

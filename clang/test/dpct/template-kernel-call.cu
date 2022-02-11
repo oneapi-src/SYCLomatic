@@ -519,3 +519,29 @@ void foo() {
   auto stream = c10::cuda::getCurrentCUDAStream();
   kernel<<<1, 1, 0, stream>>>();
 }
+
+template<class T, int N>
+class foo_class1{
+public:
+// CHECK: void foo(sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT: int a = item_ct1.get_local_id(2);
+  __device__ void foo() {
+    int a = threadIdx.x;
+  }
+};
+template<int N>
+class foo_class1<int, N>{
+public:
+// CHECK: void foo() {
+// CHECK-NEXT: int a = item_ct1.get_local_id(2);
+  __device__ void foo() {
+    int a = threadIdx.x;
+  }
+};
+
+__global__ void test_fooclass1() {
+  foo_class1<int, 10> a;
+  a.foo();
+  foo_class1<float, 10> b;
+  b.foo();
+}
