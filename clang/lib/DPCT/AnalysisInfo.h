@@ -1997,6 +1997,8 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
+  static bool getUsingGenericSpace() { return UsingGenericSpace; }
+  static void setUsingGenericSpace(bool Flag) { UsingGenericSpace = Flag; }
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
@@ -2358,6 +2360,7 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
+  static bool UsingGenericSpace;
   static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
   // Key: the fft handle declaration "FilePath:Offset"

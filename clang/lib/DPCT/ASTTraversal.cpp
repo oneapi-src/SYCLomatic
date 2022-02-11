@@ -1900,25 +1900,135 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     return;
   }
 
-  std::string SpaceName =
-      MapNames::getClNamespace() + "access::address_space::generic_space";
+  if (DpctGlobalInfo::getUsingGenericSpace()) {
+    std::string SpaceName =
+        MapNames::getClNamespace() + "access::address_space::generic_space";
 
-  std::string ReplAtomicFuncNameWithSpace;
-  if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc") {
-    // dpct::atomic_fetch_compare_inc only supports unsigned int type and it has
-    // no type info for template parameter.
-    ReplAtomicFuncNameWithSpace =
-        ReplacedAtomicFuncName + "<" + SpaceName + ">";
-  } else {
-    if(CE->getBeginLoc().isMacroID())
-      ReplAtomicFuncNameWithSpace = ReplacedAtomicFuncName;
-    else
+    std::string ReplAtomicFuncNameWithSpace;
+    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc") {
+      // dpct::atomic_fetch_compare_inc only supports unsigned int type and it
+      // has no type info for template parameter.
       ReplAtomicFuncNameWithSpace =
-          ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
-  }
+          ReplacedAtomicFuncName + "<" + SpaceName + ">";
+    } else {
+      if (CE->getBeginLoc().isMacroID())
+        ReplAtomicFuncNameWithSpace = ReplacedAtomicFuncName;
+      else
+        ReplAtomicFuncNameWithSpace =
+            ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
+    }
 
-  emplaceTransformation(
-      new ReplaceCalleeName(CE, std::move(ReplAtomicFuncNameWithSpace)));
+    emplaceTransformation(
+        new ReplaceCalleeName(CE, std::move(ReplAtomicFuncNameWithSpace)));
+  } else {
+    bool HasSharedAttr = false;
+    bool NeedReport = false;
+    getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
+
+    // Inline the code for ingeter types
+    static std::unordered_map<std::string, std::string> AtomicMap = {
+        {"atomicAdd", "fetch_add"}, {"atomicSub", "fetch_sub"},
+        {"atomicAnd", "fetch_and"}, {"atomicOr", "fetch_or"},
+        {"atomicXor", "fetch_xor"}, {"atomicMin", "fetch_min"},
+        {"atomicMax", "fetch_max"},
+    };
+
+    auto IsMacro = CE->getBeginLoc().isMacroID();
+    auto Iter = AtomicMap.find(AtomicFuncName);
+    if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
+        Iter != AtomicMap.end()) {
+      if (NeedReport)
+        report(CE->getArg(0)->getBeginLoc(),
+               Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
+               getStmtSpelling(CE->getArg(0)),
+               MapNames::getClNamespace() + "global_ptr",
+               MapNames::getClNamespace() + "local_ptr");
+
+      std::string ReplStr{MapNames::getClNamespace(true)};
+      ReplStr += "atomic<";
+      ReplStr += TypeName;
+      if (HasSharedAttr) {
+        ReplStr += ", ";
+        ReplStr += MapNames::getClNamespace();
+        ReplStr += "access::address_space::local_space";
+      }
+      ReplStr += ">(";
+      ReplStr += MapNames::getClNamespace();
+      if (HasSharedAttr)
+        ReplStr += "local_ptr<";
+      else
+        ReplStr += "global_ptr<";
+      ReplStr += TypeName;
+      ReplStr += ">(";
+      // Take care of __shared__ variables because their types are
+      // changed to pointers
+      bool Arg0NeedDeref = false;
+      const Expr *Arg0RemoveCStyleCast = CE->getArg(0);
+      if (const CStyleCastExpr *Arg0CSCE =
+              dyn_cast<CStyleCastExpr>(CE->getArg(0))) {
+        ReplStr += "(";
+        ReplStr +=
+            DpctGlobalInfo::getReplacedTypeName(Arg0CSCE->getTypeAsWritten());
+        ReplStr += ")";
+        Arg0RemoveCStyleCast = Arg0CSCE->getSubExpr();
+      }
+
+      auto *UO = dyn_cast<UnaryOperator>(Arg0RemoveCStyleCast);
+      if (UO && UO->getOpcode() == clang::UO_AddrOf) {
+        if (auto DRE =
+                dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreImpCasts()))
+          Arg0NeedDeref = IsTypeChangedToPointer(DRE);
+      }
+      // Deref the expression if it is the unary operator of a shared simple
+      // variable
+      if (Arg0NeedDeref) {
+        std::ostringstream OS;
+        printDerefOp(OS, Arg0RemoveCStyleCast);
+        ReplStr += OS.str();
+      } else {
+        ArgumentAnalysis A(CE->getArg(0), false);
+        A.analyze();
+        ReplStr += A.getReplacedString();
+      }
+      ReplStr += ")).";
+      ReplStr += Iter->second;
+      ReplStr += "(";
+
+      auto Arg1NeedDeref = false;
+      if (auto DRE = dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImpCasts()))
+        Arg1NeedDeref = IsTypeChangedToPointer(DRE);
+      if (Arg1NeedDeref) {
+        std::ostringstream OS;
+        printDerefOp(OS, CE->getArg(1));
+        ReplStr += OS.str();
+      } else {
+        ArgumentAnalysis A(CE->getArg(1), false);
+        A.analyze();
+        ReplStr += A.getReplacedString();
+      }
+      ReplStr += ")";
+
+      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+      return;
+    }
+
+    std::string SpaceName =
+        MapNames::getClNamespace() + "access::address_space::local_space";
+    std::string ReplAtomicFuncNameWithSpace =
+        ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
+    if (NeedReport)
+      report(CE->getArg(0)->getBeginLoc(),
+             Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
+             getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
+             ReplAtomicFuncNameWithSpace);
+
+    if (HasSharedAttr) {
+      ReplacedAtomicFuncName = ReplAtomicFuncNameWithSpace;
+    }
+
+    emplaceTransformation(
+        new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
+  }
 
   const unsigned NumArgs = CE->getNumArgs();
   for (unsigned i = 0; i < NumArgs; ++i) {

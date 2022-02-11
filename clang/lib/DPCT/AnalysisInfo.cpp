@@ -101,6 +101,7 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
+bool DpctGlobalInfo::UsingGenericSpace = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 std::unordered_map<std::string, FFTExecAPIInfo>
     DpctGlobalInfo::FFTExecAPIInfoMap;

@@ -331,6 +331,12 @@ static opt<bool, true> NoDRYPattern(
                                    "namespace are inserted. Default: off.\n"),
   cat(DPCTCat), llvm::cl::location(NoDRYPatternFlag));
 
+bool NoUseGenericSpaceFlag = false;
+static opt<bool, true> NoUseGenericSpace(
+  "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
+                                         " function's migration. Default: off.\n"),
+  cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
+
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
@@ -1268,6 +1274,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
@@ -1329,6 +1336,8 @@ int runDPCT(int argc, const char **argv) {
                      NoDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace, NoUseGenericSpaceFlag,
+                     NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32

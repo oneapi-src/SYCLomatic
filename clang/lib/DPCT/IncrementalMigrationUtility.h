@@ -29,6 +29,7 @@ const std::string OPTION_CtadEnabled = "CtadEnabled";
 const std::string OPTION_ExplicitClNamespace = "ExplicitClNamespace";
 const std::string OPTION_ExtensionFlag = "ExtensionFlag";
 const std::string OPTION_NoDRYPattern = "NoDRYPattern";
+const std::string OPTION_NoUseGenericSpace = "NoUseGenericSpace";
 const std::string OPTION_CompilationsDir = "CompilationsDir";
 #ifdef _WIN32
 const std::string OPTION_VcxprojFile = "VcxprojFile";
