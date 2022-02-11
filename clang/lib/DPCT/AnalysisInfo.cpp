@@ -56,9 +56,8 @@ ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
-bool DpctGlobalInfo::ConfusableIdentifiersDetectionFlag = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
-bool DpctGlobalInfo::MisleadingBidirectionalDetectionFlag = false;
+bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;

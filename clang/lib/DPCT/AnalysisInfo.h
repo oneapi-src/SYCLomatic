@@ -1022,21 +1022,15 @@ public:
   inline static void setKeepOriginCode(bool KOC = true) {
     KeepOriginCode = KOC;
   }
-  inline static void setConfusableIdentifiersDetectionFlag(bool CID) {
-    ConfusableIdentifiersDetectionFlag = CID;
-  }
-  inline static bool getConfusableIdentifiersDetectionFlag() {
-    return ConfusableIdentifiersDetectionFlag;
-  }
   inline static bool isSyclNamedLambda() { return SyclNamedLambda; }
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
   }
-  inline static void setMisleadingBidirectionalDetectionFlag(bool MBD) {
-    MisleadingBidirectionalDetectionFlag = MBD;
+  inline static void setCheckUnicodeSecurityFlag(bool CUS) {
+    CheckUnicodeSecurityFlag = CUS;
   }
-  inline static bool getMisleadingBidirectionalDetectionFlag() {
-    return MisleadingBidirectionalDetectionFlag;
+  inline static bool getCheckUnicodeSecurityFlag() {
+    return CheckUnicodeSecurityFlag;
   }
   inline static bool getGuessIndentWidthMatcherFlag() {
     return GuessIndentWidthMatcherFlag;
@@ -2323,9 +2317,8 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
-  static bool ConfusableIdentifiersDetectionFlag;
   static std::unordered_set<std::string> ExpansionRangeBeginSet;
-  static bool MisleadingBidirectionalDetectionFlag;
+  static bool CheckUnicodeSecurityFlag;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;

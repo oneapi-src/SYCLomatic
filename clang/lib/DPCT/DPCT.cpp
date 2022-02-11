@@ -238,23 +238,19 @@ static opt<bool, true>
                                "parsing errors happened. Default: off. \n"),
                 cat(DPCTCat), llvm::cl::location(StopOnParseErr));
 
-bool ConfusableIdentifiersDetectionFlag = false;
-static opt<bool, true>
-    ConfusableIdentifiersDetection("confusable-identifiers-detection",
-                llvm::cl::desc("Detects confusable identifiers. Default: off.\n"),
-                cat(DPCTCat), llvm::cl::location(ConfusableIdentifiersDetectionFlag));
+bool CheckUnicodeSecurityFlag = false;
+static opt<bool, true> CheckUnicodeSecurity(
+    "check-unicode-security",
+    llvm::cl::desc("Enable detection and warn about Unicode constructs that "
+                   "can be exploited by using bi-directional formatting codes "
+                   "and homoglyphs in identifiers. Default: off.\n"),
+    cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag));
 
 bool SyclNamedLambdaFlag = false;
 static opt<bool, true>
     SyclNamedLambda("sycl-named-lambda",
                 llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
-
-bool MisleadingBidirectionalDetectionFlag = false;
-static opt<bool, true>
-    MisleadingBidirectionalDetection("misleading-bidirectional-detection",
-                llvm::cl::desc("Detects misleading bidirectional sequence. Default: off.\n"),
-                cat(DPCTCat), llvm::cl::location(MisleadingBidirectionalDetectionFlag));
 
 opt<OutputVerbosityLevel> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
@@ -588,7 +584,7 @@ public:
     PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
         TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
 
-    if (DpctGlobalInfo::getMisleadingBidirectionalDetectionFlag()) {
+    if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
       CommentHandler =
           std::make_shared<MisleadingBidirectionalHandler>(TransformSet);
       PP.addCommentHandler(CommentHandler.get());
@@ -1260,11 +1256,9 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setConfusableIdentifiersDetectionFlag(
-      ConfusableIdentifiersDetectionFlag);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  DpctGlobalInfo::setMisleadingBidirectionalDetectionFlag(
-    MisleadingBidirectionalDetectionFlag);
+  DpctGlobalInfo::setCheckUnicodeSecurityFlag(
+    CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";

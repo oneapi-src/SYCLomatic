@@ -108,7 +108,7 @@ bool MisleadingBidirectionalHandler::HandleComment(Preprocessor &PP,
 
 void MisleadingBidirectionalRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  if (DpctGlobalInfo::getMisleadingBidirectionalDetectionFlag()) {
+  if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     MF.addMatcher(stringLiteral().bind("strlit"), this);
   }
 }

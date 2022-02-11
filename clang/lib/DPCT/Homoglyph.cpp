@@ -77,7 +77,7 @@ std::string ConfusableIdentifierDetectionRule::skeleton(StringRef Name) {
 
 void ConfusableIdentifierDetectionRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  if (DpctGlobalInfo::getConfusableIdentifiersDetectionFlag()) {
+  if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     MF.addMatcher(namedDecl().bind("confusabledecl"), this);
   }
 }
