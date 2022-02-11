@@ -44,9 +44,6 @@ set(dpct_vars_script
   vars.bat
   )
 
-set(dpct_syscheck_script
-sys_check.bat
-  )
 endif()
 
 install(
@@ -55,12 +52,13 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   DESTINATION ./env)
 
-
+if(UNIX)
 install(
   FILES ${dpct_syscheck_script}
   COMPONENT dpct-syscheck
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   DESTINATION ./sys_check)
+endif()
 
 install(
   FILES ${dpct_modulefiles_script}
