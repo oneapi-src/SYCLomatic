@@ -12,6 +12,7 @@
 #include "ASTTraversal.h"
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
+#include "BarrierFenceSpaceAnalyzer.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
@@ -1827,12 +1828,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 
   // Don't migrate user defined function
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
-                             .getFilename(CalleeDecl->getLocation())
-                             .str();
-    bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
-    bool InCudaPath = DpctGlobalInfo::isInCudaPath(CalleeDecl->getLocation());
-    if (!(InInstallPath || InCudaPath))
+    if (isUserDefinedFunction(CalleeDecl))
       return;
   } else {
     return;
@@ -13213,9 +13209,17 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-    report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
-    std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    BarrierFenceSpaceAnalyzer A;
+    if (A.canSetLocalFenceSpace(CE)) {
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true);
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {

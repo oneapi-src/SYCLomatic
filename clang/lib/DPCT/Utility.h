@@ -22,17 +22,19 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/ParentMapContext.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-#include "clang/ASTMatchers/ASTMatchFinder.h"
 namespace path = llvm::sys::path;
 
 namespace llvm {
@@ -326,6 +328,8 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
 const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
+const clang::Stmt *
+getNonImplicitCastNonParenExprParentStmt(const clang::Stmt *S);
 const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E);
 const std::shared_ptr<clang::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::DynTypedNode> N);
@@ -537,10 +541,12 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
-bool isCubVar(const clang::VarDecl* VD);
+bool isCubVar(const clang::VarDecl *VD);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
+bool isUserDefinedFunction(const clang::FunctionDecl *FD);
+
 #endif // DPCT_UTILITY_H

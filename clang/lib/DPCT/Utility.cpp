@@ -38,6 +38,7 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+extern std::string DpctInstallPath; // Installation directory for this tool
 bool IsUsingDefaultOutRoot = false;
 
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
@@ -485,6 +486,21 @@ const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S) {
   const clang::Stmt *P = getParentStmt(S);
   while (P) {
     if (!dyn_cast<ImplicitCastExpr>(P)) {
+      return P;
+    } else {
+      P = getParentStmt(P);
+    }
+  }
+  return nullptr;
+}
+
+const clang::Stmt *
+getNonImplicitCastNonParenExprParentStmt(const clang::Stmt *S) {
+  if (!S)
+    return nullptr;
+  const clang::Stmt *P = getParentStmt(S);
+  while (P) {
+    if (!dyn_cast<ImplicitCastExpr>(P) && !dyn_cast<ParenExpr>(P)) {
       return P;
     } else {
       P = getParentStmt(P);
@@ -1657,7 +1673,7 @@ bool isExprStraddle(const Stmt *S) {
 }
 
 // Check if an Expr contains macro
-bool isContainMacro(const Expr* E) {
+bool isContainMacro(const Expr *E) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Set = dpct::DpctGlobalInfo::getExpansionRangeBeginSet();
   SourceLocation ExprBegin = getStmtExpansionSourceRange(E).getBegin();
@@ -2953,7 +2969,7 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
 /// 1. func(..., T Val(pass by value), ...)
 /// 2. ... = Val
 /// 3. { ...
-///      Val; 
+///      Val;
 ///      ...}
 /// The varibale is unmodified in above cases
 /// \param [in] DRE Input DeclRefExpr
@@ -3815,4 +3831,14 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
   }
   return true;
 }
+
+bool isUserDefinedFunction(const clang::FunctionDecl *FD) {
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(FD).first;
+  bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(FD->getLocation());
+  if (InInstallPath || InCudaPath)
+    return false;
+  return true;
+}
+
 
