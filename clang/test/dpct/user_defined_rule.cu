@@ -16,6 +16,10 @@
 #define VECTOR int
 //CHECK: inline void foo() {
 __forceinline__ __global__ void foo(){
+  int * ptr;
   //CHECK: std::vector<int> a;
   VECTOR a;
+  //CHECK: size_t *aaa = foo(ptr, (int *)&(&ptr), dpct::get_default_queue(),
+  //CHECK-NEXT:                   dpct::get_default_context(), dpct::get_current_device());
+  cudaMalloc(&ptr, 50);
 }

@@ -591,6 +591,15 @@ private:
                                 const TypeLoc *TL);
 };
 
+class UserDefinedAPIRule
+  : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
+  std::string APIName;
+public:
+  UserDefinedAPIRule(std::string APIName) : APIName(APIName) {};
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
     : public NamedMigrationRule<VectorTypeNamespaceRule> {

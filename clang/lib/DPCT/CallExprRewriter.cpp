@@ -124,9 +124,9 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
           Name == "__fetch_builtin_z")
         return true;
     }
-  } else if(auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
+  } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
     auto VarDecl = DRE->getDecl();
-    if(VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
+    if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
       return !DpctGlobalInfo::isInRoot(VarDecl->getLocation());
     }
   }
@@ -1192,11 +1192,10 @@ makeCallArgCreatorWithCall(unsigned Idx) {
   };
 }
 
-const Expr *removeCStyleCast(const Expr*E) {
+const Expr *removeCStyleCast(const Expr *E) {
   if (auto CSCE = dyn_cast<CStyleCastExpr>(E)) {
     return CSCE->getSubExpr()->IgnoreImplicitAsWritten();
-  }
-  else {
+  } else {
     return E;
   }
 }
@@ -1248,8 +1247,7 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
-std::function<std::string(const CallExpr *)>
-makeQueueStr() {
+std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
     int Index = getPlaceholderIdx(C);
     if (Index == 0) {
@@ -1262,6 +1260,19 @@ makeQueueStr() {
   };
 }
 
+std::function<std::string(const CallExpr *)> makeDeviceStr() {
+  return [=](const CallExpr *C) -> std::string {
+    int Index = getPlaceholderIdx(C);
+    if (Index == 0) {
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    }
+
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_CurrentDevice);
+    std::string S = "{{NEEDREPLACED" + std::to_string(Index) + "}}";
+    return S;
+  };
+}
+
 std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
   return [=](const CallExpr *C) -> std::string {
@@ -1270,13 +1281,15 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
       if (auto DRE = dyn_cast<DeclRefExpr>(ICE->getSubExpr())) {
         std::string EnumName = DRE->getNameInfo().getName().getAsString();
         if (EnumName == "device") {
-          return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) + ")";
+          return "oneapi::dpl::execution::make_device_policy(" +
+                 makeQueueStr()(C) + ")";
         } else if (EnumName == "seq") {
           return "oneapi::dpl::execution::seq";
         }
       }
     }
-    return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) + ")";
+    return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) +
+           ")";
   };
 }
 
@@ -1343,8 +1356,8 @@ makeTemplatedCalleeCreator(std::string CalleeName,
 
 template <class First>
 void setTemplateArgumentInfo(const CallExpr *C,
-  std::vector<TemplateArgumentInfo> &Vec,
-  std::function<First(const CallExpr *)> F) {
+                             std::vector<TemplateArgumentInfo> &Vec,
+                             std::function<First(const CallExpr *)> F) {
   TemplateArgumentInfo TAI;
   TAI.setAsType(F(C));
   Vec.emplace_back(TAI);
@@ -1361,11 +1374,10 @@ void setTemplateArgumentInfo(const CallExpr *C,
   setTemplateArgumentInfo(C, Vec, Args...);
 }
 
-
 template <class... CallArgsT>
 std::function<TemplatedCallee(const CallExpr *)>
-makeTemplatedCalleeWithArgsCreator(std::string Callee,
-                           std::function<CallArgsT(const CallExpr *)>... Args) {
+makeTemplatedCalleeWithArgsCreator(
+    std::string Callee, std::function<CallArgsT(const CallExpr *)>... Args) {
   return PrinterCreator<
       TemplatedCallee, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
@@ -1422,10 +1434,11 @@ makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
 template <class TypeInfoT, class SubExprT>
 std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
-  std::function<SubExprT(const CallExpr *)> Sub) {
+                    std::function<SubExprT(const CallExpr *)> Sub) {
   return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
-    std::function<TypeInfoT(const CallExpr *)>,
-    std::function<SubExprT(const CallExpr *)>>(TypeInfo, Sub);
+                        std::function<TypeInfoT(const CallExpr *)>,
+                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
+                                                                   Sub);
 }
 
 template <class... ArgsT>
@@ -1458,8 +1471,9 @@ unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
 }
 
 /// If the input \p QT is a pointer type or an array type, this function will
-/// return the deref-ed type. Otherwise an empty QualType object will be returned.
-/// The caller need to check if the return value is null using isNull().
+/// return the deref-ed type. Otherwise an empty QualType object will be
+/// returned. The caller need to check if the return value is null using
+/// isNull().
 QualType DerefQualType(QualType QT) {
   QualType DerefQT;
   if (QT->isPointerType()) {
@@ -1470,10 +1484,21 @@ QualType DerefQualType(QualType QT) {
   return DerefQT;
 }
 
-// Get the derefed type name of an arg while getDereferencedExpr is get the derefed expr.
-std::function<std::string(const CallExpr*C)>
-getDerefedType(size_t Idx) {
-  return [=](const CallExpr*C) ->std::string {
+// Get the replaced type of an function call argument
+// For example, foo(x) where x is an int2, this function will return sycl::int2
+std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    if (Idx >= C->getNumArgs())
+      return "";
+    return DpctGlobalInfo::getReplacedTypeName(C->getArg(Idx)->getType());
+  };
+}
+
+
+// Get the derefed type name of an arg while getDereferencedExpr is get the
+// derefed expr.
+std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
     auto TE = removeCStyleCast(C->getArg(Idx));
@@ -1509,10 +1534,10 @@ getDerefedType(size_t Idx) {
     if (TypeStr == "<dependent type>") {
       if (NeedDeref) {
         return "typename std::remove_pointer<decltype(" +
-                  ExprAnalysis::ref(TE) + ")>::type";
+               ExprAnalysis::ref(TE) + ")>::type";
       } else {
         return "typename std::remove_reference<decltype(" +
-                  ExprAnalysis::ref(TE) + ")>::type";
+               ExprAnalysis::ref(TE) + ")>::type";
       }
     }
 
@@ -1527,9 +1552,8 @@ getDerefedType(size_t Idx) {
 }
 
 // Can only be used if CheckCanUseTemplateMalloc is true.
-std::function<std::string(const CallExpr*C)>
-getDoubleDerefedType(size_t Idx) {
-  return [=](const CallExpr*C) ->std::string {
+std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
 
@@ -1552,16 +1576,15 @@ getDoubleDerefedType(size_t Idx) {
 
 // Remove sizeof(T) if using template version.
 // Can only be used if CheckCanUseTemplateMalloc is true.
-std::function<std::string(const CallExpr*C)>
-getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
-  return [=](const CallExpr*C) ->std::string {
+std::function<std::string(const CallExpr *C)> getSizeForMalloc(size_t PtrIdx,
+                                                               size_t SizeIdx) {
+  return [=](const CallExpr *C) -> std::string {
     auto AllocatedExpr = C->getArg(PtrIdx);
     auto SizeExpr = C->getArg(SizeIdx);
     const Expr *AE = nullptr;
     if (auto CSCE = dyn_cast<CStyleCastExpr>(AllocatedExpr)) {
       AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
-    }
-    else {
+    } else {
       AE = AllocatedExpr;
     }
 
@@ -1592,7 +1615,7 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
         AASize.setCallSpelling(C);
         AASize.analyze(BO->getRHS());
         Repl = AASize.getRewritePrefix() + AASize.getRewriteString() +
-          AASize.getRewritePostfix();
+               AASize.getRewritePostfix();
         return Repl;
       } else if (!isContainMacro(BO->getRHS()) &&
                  isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
@@ -1601,7 +1624,7 @@ getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
         AASize.setCallSpelling(C);
         AASize.analyze(BO->getLHS());
         Repl = AASize.getRewritePrefix() + AASize.getRewriteString() +
-          AASize.getRewritePostfix();
+               AASize.getRewritePostfix();
         return Repl;
       } else {
         return OrginalStr;
@@ -1650,7 +1673,7 @@ createFactoryWithSubGroupSizeRequest(
 template <class... StmtPrinters>
 std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       isCallAssigned,
       std::make_shared<AssignableRewriterFactory>(
@@ -1682,24 +1705,20 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatAssignExprRewriterFactory(
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
 
-
 template <class BaseT, class MemberT>
 std::shared_ptr<CallExprRewriterFactoryBase> creatMemberExprRewriterFactory(
-  const std::string &SourceName,
-  std::function<BaseT(const CallExpr *)> &&BaseCreator,
-  bool IsArrow,
-  std::function<MemberT(const CallExpr *)> &&MemberCreator) {
+    const std::string &SourceName,
+    std::function<BaseT(const CallExpr *)> &&BaseCreator, bool IsArrow,
+    std::function<MemberT(const CallExpr *)> &&MemberCreator) {
   return std::make_shared<
-    CallExprRewriterFactory<MemberExprRewriter<BaseT, MemberT>,
-    std::function<BaseT(const CallExpr *)>,
-    bool,
-    std::function<MemberT(const CallExpr *)>>>(
+      CallExprRewriterFactory<MemberExprRewriter<BaseT, MemberT>,
+                              std::function<BaseT(const CallExpr *)>, bool,
+                              std::function<MemberT(const CallExpr *)>>>(
       SourceName,
       std::forward<std::function<BaseT(const CallExpr *)>>(BaseCreator),
       IsArrow,
       std::forward<std::function<MemberT(const CallExpr *)>>(MemberCreator));
 }
-
 
 std::shared_ptr<CallExprRewriterFactoryBase> creatIfElseRewriterFactory(
     const std::string &SourceName,
@@ -1776,17 +1795,13 @@ createMemberCallExprRewriterFactory(
 template <class BaseT, class... ArgsT>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
-  const std::string &SourceName,
-  BaseT BaseCreator, bool IsArrow,
-  std::string MemberName,
-  std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
+    const std::string &SourceName, BaseT BaseCreator, bool IsArrow,
+    std::string MemberName,
+    std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-    MemberCallExprRewriter<BaseT, ArgsT...>,
-    BaseT, bool, std::string,
-    std::function<ArgsT(const CallExpr *)>...>>(
-      SourceName,
-      BaseCreator,
-      IsArrow, MemberName,
+      MemberCallExprRewriter<BaseT, ArgsT...>, BaseT, bool, std::string,
+      std::function<ArgsT(const CallExpr *)>...>>(
+      SourceName, BaseCreator, IsArrow, MemberName,
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
@@ -1812,12 +1827,13 @@ createDeleterCallExprRewriterFactory(
 
 template <class ArgT>
 std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFactory(
-    const std::string &SourceName, std::function<ArgT(const CallExpr *)> &&ArgCreator) {
+    const std::string &SourceName,
+    std::function<ArgT(const CallExpr *)> &&ArgCreator) {
   return std::make_shared<CallExprRewriterFactory<
       ToStringExprRewriter<ArgT>, std::function<ArgT(const CallExpr *)>>>(
-      SourceName, std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
+      SourceName,
+      std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
-
 
 /// Create AssignableRewriterFactory key-value pair with inner key-value.
 /// If the call expr's return value is used, will insert around "(" and ", 0)".
@@ -2002,7 +2018,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 template <class... MsgArgs>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
-                               MsgArgs &&...Args) {
+                               MsgArgs &&... Args) {
   return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
       Source, MsgID, std::forward<MsgArgs>(Args)...);
 }
@@ -2018,6 +2034,11 @@ public:
   }
 };
 
+std::shared_ptr<CallExprRewriterFactoryBase>
+createUserDefinedRewriterFactory(const std::string &Source, std::string &OutStr,
+                                 RulePriority Priority) {
+  return std::make_shared<UserDefinedRewriterFactory>(OutStr, Priority);
+}
 
 // sycl has 2 overloading of malloc_device
 // 1. sycl::malloc_device(Addr, Size)
@@ -2041,8 +2062,7 @@ public:
     const Expr *AE = nullptr;
     if (auto CSCE = dyn_cast<CStyleCastExpr>(AllocatedExpr)) {
       AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
-    }
-    else {
+    } else {
       AE = AllocatedExpr;
     }
 
@@ -2073,8 +2093,7 @@ public:
         return true;
       }
       return false;
-    }
-    else {
+    } else {
       // case 3: sizeof(b)
       if (!isContainMacro(SizeExpr) &&
           isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
@@ -2150,42 +2169,36 @@ public:
       if (!C->getDirectCallee()->getParamDecl(Idx))
         return false;
       return C->getDirectCallee()
-        ->getParamDecl(Idx)
-        ->getType()->isPointerType();
+          ->getParamDecl(Idx)
+          ->getType()
+          ->isPointerType();
     }
     return false;
   }
 };
 
-template<class F, class S>
-class CheckAnd {
+template <class F, class S> class CheckAnd {
   F Fir;
   S Sec;
+
 public:
-  CheckAnd(F Fir, S Sec): Fir(Fir), Sec(Sec){}
-  bool operator()(const CallExpr *C) {
-    return Fir(C) && Sec(C);
-  }
+  CheckAnd(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  bool operator()(const CallExpr *C) { return Fir(C) && Sec(C); }
 };
 
-template<class F, class S>
-CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
+template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
   return CheckAnd<F, S>(Fir, Sec);
 }
 
-template<class T>
-class CheckNot {
+template <class T> class CheckNot {
   T Expr;
 
 public:
   CheckNot(T Expr) : Expr(Expr) {}
-  bool operator()(const CallExpr *C) {
-    return !Expr(C);
-  }
+  bool operator()(const CallExpr *C) { return !Expr(C); }
 };
 
-template<class T>
-CheckNot<T> makeCheckNot(T Expr) {
+template <class T> CheckNot<T> makeCheckNot(T Expr) {
   return CheckNot<T>(Expr);
 }
 
@@ -2236,7 +2249,8 @@ public:
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
-#define SUBGROUP std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
+#define SUBGROUP                                                               \
+  std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define LITERAL(x) makeLiteral(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
@@ -2317,15 +2331,15 @@ public:
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory<>, MsgID)
 
-std::unique_ptr<const std::unordered_map<
+std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
     CallExprRewriterFactoryBase::RewriterMap;
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
   RewriterMap = std::make_unique<std::unordered_map<
-      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
       std::unordered_map<std::string,
-                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+      std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
@@ -2364,8 +2378,9 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-#include "APINamesMemory.inc"
+#include "APINamesComplex.inc"
 #include "APINamesDriver.inc"
+#include "APINamesMemory.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"
@@ -2386,7 +2401,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
-      }));
+        }));
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {

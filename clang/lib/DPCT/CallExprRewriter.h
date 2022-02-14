@@ -40,10 +40,11 @@ public:
   virtual std::shared_ptr<CallExprRewriter> create(const CallExpr *) const = 0;
   virtual ~CallExprRewriterFactoryBase() {}
 
-  static std::unique_ptr<const std::unordered_map<
+  static std::unique_ptr<std::unordered_map<
       std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
       RewriterMap;
   static void initRewriterMap();
+  RulePriority Priority = RulePriority::Fallback;
 };
 
 /// Abstract factory for all rewriter factories
@@ -1038,6 +1039,117 @@ public:
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
 
+std::function<std::string(const CallExpr *)> makeQueueStr();
+std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+makeCallArgCreatorWithCall(unsigned Idx);
+std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx);
+std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx);
+std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx);
+std::function<std::string(const CallExpr *)> makeDeviceStr();
+
+class UserDefinedRewriter : public CallExprRewriter {
+  std::string ResultStr;
+
+public:
+  UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB)
+      : CallExprRewriter(CE, "") {
+    // build result string with call
+    llvm::raw_string_ostream OS(ResultStr);
+    buildRewriterStr(Call, OS, OB);
+    OS.flush();
+  }
+  Optional<std::string> rewrite() override {
+    return Optional<std::string>(ResultStr);
+  }
+
+  void buildRewriterStr(const CallExpr *Call, llvm::raw_string_ostream &OS, const OutputBuilder &OB) {
+    switch (OB.Kind) {
+    case(OutputBuilder::Kind::Top):
+      for (auto &ob : OB.SubBuilders) {
+        buildRewriterStr(Call, OS, *ob);
+      }
+      break;
+    case(OutputBuilder::Kind::String):
+      OS << OB.Str;
+      break;
+    case (OutputBuilder::Kind::Arg): {
+      if (OB.ArgIndex >= Call->getNumArgs()) {
+        OS << "";
+        break;
+      }
+      ArgumentAnalysis AA;
+      AA.setCallSpelling(Call);
+      AA.analyze(Call->getArg(OB.ArgIndex));
+      OS << AA.getRewriteString();
+      break;
+    }
+    case (OutputBuilder::Kind::Queue): {
+      OS << makeQueueStr()(Call);
+      break;
+    }
+    case (OutputBuilder::Kind::Context):
+      OS << MapNames::getDpctNamespace() << "get_default_context()";
+      break;
+    case (OutputBuilder::Kind::Device): {
+      OS << makeDeviceStr()(Call);
+      break;
+    }
+    case (OutputBuilder::Kind::Deref): {
+      makeDerefExprCreator(OB.ArgIndex)(Call).print(OS);
+      break;
+    }
+    case (OutputBuilder::Kind::TypeName): {
+      OS << getReplacedType(OB.ArgIndex)(Call);
+      break;
+    }
+    case (OutputBuilder::Kind::AddrOf): {
+      if (OB.ArgIndex >= Call->getNumArgs()) {
+        OS << "";
+        break;
+      }
+      OS << "&(";
+      ArgumentAnalysis AA;
+      AA.setCallSpelling(Call);
+      AA.analyze(Call->getArg(OB.ArgIndex));
+      OS << AA.getRewriteString();
+      OS << ")";
+      break;
+    }
+    case (OutputBuilder::Kind::DerefedTypeName): {
+      OS << getDerefedType(OB.ArgIndex)(Call);
+      break;
+    }
+    default:
+      break;
+    }
+  }
+};
+
+class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
+  // Information for building the result string from the original function call
+  OutputBuilder OB;
+  std::string &OutStr;
+
+public:
+  UserDefinedRewriterFactory(std::string &OutStr, RulePriority Prio)
+      : OutStr(OutStr) {
+    Priority = Prio;
+    OB.Kind = OutputBuilder::Kind::Top;
+    OB.parse(OutStr);
+  }
+
+  std::shared_ptr<CallExprRewriter>
+  create(const CallExpr *Call) const override {
+    if (!Call)
+      return std::shared_ptr<UserDefinedRewriter>();
+
+    return std::make_shared<UserDefinedRewriter>(Call, OB);
+  }
+};
+
+std::shared_ptr<CallExprRewriterFactoryBase>
+createUserDefinedRewriterFactory(const std::string &Source, std::string &OutStr,
+                                 RulePriority Priority);
 } // namespace dpct
 } // namespace clang
 

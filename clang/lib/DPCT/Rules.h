@@ -16,13 +16,11 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/CommandLine.h"
 #include "CustomHelperFiles.h"
-
-
-
 enum RuleKind { API, DataType, Macro };
 
 enum RulePriority { Takeover, Default, Fallback };
 
+// Record all information of imported rules
 class MetaRuleObject {
 public:
   static std::vector<std::string> RuleFiles;
@@ -112,6 +110,44 @@ public:
                  Includes) {}
 };
 
-void ImportRules(llvm::cl::list<std::string> &RuleFiles);
+// The parsing result of the "Out" attribute of a API rule
+// Kind::Top labels the root node.
+// For example, if the input "Out" string is:
+// foo($1, $deref($2))
+// The SubBuilders of the "Top" OutputBuilder will be:
+// 1. OutputBuilder: Kind="String", Str="foo("
+// 2. OutputBuilder: Kind = "Arg", ArgIndex=1
+// 3. OutputBuilder: Kind = "Deref", ArgIndex=2
+// 4. OutputBuilder: Kind = "String", Str=")"
+class OutputBuilder {
+public:
+  enum Kind {
+    String,
+    Top,
+    Arg,
+    Queue,
+    Context,
+    Device,
+    Deref,
+    TypeName,
+    AddrOf,
+    DerefedTypeName
+  };
+  Kind Kind;
+  size_t ArgIndex;
+  std::string Str;
+  std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
+  void parse(std::string&);
+private:
+  // /OutStr is the string specified in rule's "Out" session
+  std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
+                                                size_t &Idx);
+  int consumeArgIndex(std::string &OutStr, size_t &Idx);
+  void ignoreWhitespaces(std::string &OutStr, size_t &Idx);
+  void consumeRParen(std::string &OutStr, size_t &Idx);
+  void consumeLParen(std::string &OutStr, size_t &Idx);
+};
+
+void importRules(llvm::cl::list<std::string> &RuleFiles);
 
 #endif // DPCT_RULES_H

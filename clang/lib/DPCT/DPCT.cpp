@@ -1306,9 +1306,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  MapNames::setExplicitNamespaceMap();
+  CallExprRewriterFactoryBase::initRewriterMap();
   if (!RuleFile.empty()) {
-    ImportRules(RuleFile);
+    importRules(RuleFile);
   }
+
   {
     setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandlerFlag,
                      AsyncHandler.getNumOccurrences());
@@ -1391,9 +1394,6 @@ int runDPCT(int argc, const char **argv) {
       DpctGlobalInfo::setDPCTNamespaceTempEnabled();
     }
   }
-
-  MapNames::setExplicitNamespaceMap();
-  CallExprRewriterFactoryBase::initRewriterMap();
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
