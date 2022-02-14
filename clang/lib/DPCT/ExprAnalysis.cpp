@@ -338,12 +338,13 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
-    ReplSet.init(std::string(
-        SM.getCharacterData(getExprLocation(Range.getBegin())), SrcLength));
-  } else {
-    SrcLength = 0;
-    ReplSet.init("");
+    if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
+      ReplSet.init(std::string(FileBuffer.getValue().getBuffer().data() + SrcBegin, SrcLength));
+      return;
+    }
   }
+  SrcLength = 0;
+  ReplSet.init("");
 }
 
 void StringReplacements::replaceString() {

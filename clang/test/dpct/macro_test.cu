@@ -1118,15 +1118,24 @@ void foo28(){
 #define local_allocate_store_charge()                                       \
     __shared__ double red_acc[8][BLOCK_PAIR / SIMD_SIZE];
 
-//CHECK: void foo29(sycl::accessor<local_, 2, sycl::access_mode::read_write, sycl::access::target::local> red_acc) {
+//CHECK: void foo29(sycl::accessor<double, 2, sycl::access_mode::read_write, sycl::access::target::local> red_acc) {
 //CHECK-NEXT: }
 __global__ void foo29() {
   local_allocate_store_charge();
 }
 
-//CHECK: void foo30(){
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {
-//CHECK-NEXT:     sycl::accessor<local_, 2, sycl::access_mode::read_write,
+template<class T1, class T2, int N> __global__ void foo31();
+
+//CHECK: #define FOO31(DIMS)                                                            \
+//CHECK-NEXT: q_ct1.parallel_for(                                                          \
+//CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),     \
+//CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) { foo31<unsigned int, float, DIMS>(); });
+
+
+#define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
+
+//CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
+//CHECK-NEXT:     sycl::accessor<double, 2, sycl::access_mode::read_write,
 //CHECK-NEXT:                    sycl::access::target::local>
 //CHECK-NEXT:         red_acc_acc_ct1(sycl::range<2>(8 /*8*/, 8 /*BLOCK_PAIR / SIMD_SIZE*/),
 //CHECK-NEXT:                         cgh);
@@ -1137,7 +1146,9 @@ __global__ void foo29() {
 //CHECK-NEXT:           foo29(red_acc_acc_ct1);
 //CHECK-NEXT:         });
 //CHECK-NEXT:   });
+//CHECK-NEXT:   FOO31(1)
 //CHECK-NEXT: }
 void foo30(){
   foo29<<<1,1,0>>>();
+  FOO31(1)
 }
