@@ -97,3 +97,37 @@ __global__ void test3() {
 label:
   b++;
 }
+
+struct S1 {
+  float *data;
+};
+__global__ void test4(S1 s1) {
+  s1.data;
+  // CHECK:item_ct1.barrier();
+  __syncthreads();
+}
+
+struct S2 {
+  float data;
+};
+__global__ void test5(S2 s2) {
+  s2.data;
+  // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+  __syncthreads();
+}
+
+struct S3 {
+  float data[10];
+};
+__global__ void test7(S3 s3) {
+  s3.data;
+  // CHECK:item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test8(S3 *s3) {
+  int a = 1;
+  s3[a].data;
+  // CHECK:item_ct1.barrier();
+  __syncthreads();
+}

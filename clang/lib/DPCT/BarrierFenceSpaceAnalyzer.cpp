@@ -111,6 +111,20 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
+  if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
+    return false;
+  }
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    clang::CXXDependentScopeMemberExpr *) {
+  return false;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    clang::CXXDependentScopeMemberExpr *) {}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
   CurrentLevel.CurrentLoc = FD->getBody()->getBeginLoc();

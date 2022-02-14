@@ -50,6 +50,8 @@ public:
   VISIT_NODE(DeclRefExpr)
   VISIT_NODE(GotoStmt)
   VISIT_NODE(LabelStmt)
+  VISIT_NODE(MemberExpr)
+  VISIT_NODE(CXXDependentScopeMemberExpr)
 #undef VISIT_NODE
 
 public:
