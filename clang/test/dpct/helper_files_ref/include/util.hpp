@@ -239,6 +239,107 @@ template <typename T> inline int ffs(T a) {
   return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 
+/// select_from_sub_group allows work-items to obtain a copy of a value held by
+/// any other work-item in the sub_group. The input sub_group will be divided
+/// into several logical sub_groups with id range [0, \p logical_sub_group_size
+/// - 1]. Each work-item in logical sub_group gets value from another work-item
+/// whose id is \p remote_local_id. If \p remote_local_id is outside the
+/// logical sub_group id range, \p remote_local_id will modulo with \p
+/// logical_sub_group_size. The \p logical_sub_group_size must be a power of 2
+/// and not exceed input sub_group size.
+/// \param [in] T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] remote_local_id Input source work item id
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T select_from_sub_group(sycl::sub_group g, T x, int remote_local_id,
+                        int logical_sub_group_size = 32) {
+  unsigned int start_index =
+      g.get_local_linear_id() / logical_sub_group_size * logical_sub_group_size;
+  return sycl::select_from_group(
+      g, x, start_index + remote_local_id % logical_sub_group_size);
+}
+
+/// shift_sub_group_left move values held by the work-items in a sub_group
+/// directly to another work-item in the sub_group, by shifting values a fixed
+/// number of work-items to the left. The input sub_group will be divided into
+/// several logical sub_groups with id range [0, \p logical_sub_group_size - 1].
+/// Each work-item in logical sub_group gets value from another work-item whose
+/// id is caller's id adds \p delta. If calculated id is outside the logical
+/// sub_group id range, the work-item will get value from itself. The \p
+/// logical_sub_group_size must be a power of 2 and not exceed input sub_group
+/// size.
+/// \param [in] T The value type
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T shift_sub_group_left(sycl::sub_group g, T x, unsigned int delta,
+                       int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int end_index =
+      (id / logical_sub_group_size + 1) * logical_sub_group_size;
+  return sycl::select_from_group(g, x,
+                                 (id + delta) < end_index ? id + delta : id);
+}
+
+/// shift_sub_group_right move values held by the work-items in a sub_group
+/// directly to another work-item in the sub_group, by shifting values a fixed
+/// number of work-items to the right. The input sub_group will be divided into
+/// several logical_sub_groups with id range [0, \p logical_sub_group_size - 1].
+/// Each work-item in logical_sub_group gets value from another work-item whose
+/// id is caller's id subtracts \p delta. If calculated id is outside the
+/// logical sub_group id range, the work-item will get value from itself. The \p
+/// logical_sub_group_size must be a power of 2 and not exceed input sub_group
+/// size.
+/// \param [in] T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T shift_sub_group_right(sycl::sub_group g, T x, unsigned int delta,
+                        int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int start_index =
+      id / logical_sub_group_size * logical_sub_group_size;
+  return sycl::select_from_group(g, x,
+                                 id - start_index >= delta ? id - delta : id);
+}
+
+/// permute_sub_group_by_xor permutes values by exchanging values held by pairs
+/// of work-items identified by computing the bitwise exclusive OR of the
+/// work-item id and some fixed mask. The input sub_group will be divided into
+/// several logical sub_groups with id range [0, \p logical_sub_group_size - 1].
+/// Each work-item in logical sub_group gets value from another work-item whose
+/// id is bitwise exclusive OR of the caller's id and \p mask. If calculated id
+/// is outside the logical sub_group id range, the work-item will get value from
+/// itself. The \p logical_sub_group_size must be a power of 2 and not exceed
+/// input sub_group size.
+/// \param [in] T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] mask Input mask
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
+                           int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int start_index =
+      id / logical_sub_group_size * logical_sub_group_size;
+  unsigned int target_offset = (id % logical_sub_group_size) ^ mask;
+  return sycl::select_from_group(g, x,
+                                 target_offset < logical_sub_group_size
+                                     ? start_index + target_offset
+                                     : id);
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a DPC++ kernel.
 /// \param [in] item:  Represents a work group.

@@ -945,10 +945,10 @@ void foo20() {
 
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
-//CHECK-NEXT: sycl::select_from_group.
+//CHECK-NEXT: dpct::select_from_sub_group.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
-//CHECK-NEXT:   sycl::select_from_group(item_ct1.get_sub_group(), x, 3 ^ 1);
+//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
 //CHECK: #define CALLANYSYNC(x)                                                         \
 //CHECK-NEXT:   sycl::any_of_group(                                                          \
@@ -997,7 +997,7 @@ foo23(void)
 }
 
 //CHECK: #define SHFL(x, y, z)                                                          \
-//CHECK-NEXT:   sycl::select_from_group(item_ct1.get_sub_group(), (x), (y))
+//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), (x), (y), (z))
 #define SHFL(x, y, z) __shfl((x), (y), (z))
 __global__ void foo24(){
   int i;

@@ -32,7 +32,7 @@ using namespace cooperative_groups;
 // CHECK-NEXT:  */
 // CHECK-NEXT:  a = (item_ct1.barrier(), sycl::all_of_group(sycl::ext::oneapi::experimental::this_group<1>(), a));
 // CHECK-NEXT:  sycl::all_of_group(sycl::ext::oneapi::experimental::this_sub_group(), a);
-// CHECK-NEXT:  sycl::select_from_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
+// CHECK-NEXT:  dpct::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
 // CHECK-NEXT:}
 __global__ void test1() {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
@@ -58,7 +58,7 @@ __global__ void test1() {
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  TB1(b);
 // CHECK-NEXT:  sycl::all_of_group(sycl::ext::oneapi::experimental::this_sub_group(), a);
-// CHECK-NEXT:  sycl::select_from_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
+// CHECK-NEXT:  dpct::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
 // CHECK-NEXT:}
 __global__ void test2() {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
