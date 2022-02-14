@@ -40,6 +40,7 @@ const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
+const std::string OPTION_RuleFile = "RuleFile";
 
 bool isOnlyContainDigit(const std::string &Str);
 bool convertToIntVersion(std::string VersionStr, unsigned int &Result);
@@ -81,6 +82,13 @@ inline void setValueToOptMap(std::string Key, std::set<ExplicitNamespace> Set,
     Value |= (1 << static_cast<unsigned int>(Item));
   }
   setValueToOptMap(Key, Value, Specified);
+}
+template <>
+inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
+                             bool Specified) {
+  std::sort(StrVec.begin(), StrVec.end());
+  DpctGlobalInfo::getCurrentOptMap()[Key] =
+      clang::tooling::OptionInfo(StrVec, Specified);
 }
 
 

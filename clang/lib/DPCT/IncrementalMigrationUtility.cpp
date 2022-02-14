@@ -95,8 +95,18 @@ int checkDpctOptionSet(
     const std::map<std::string, clang::tooling::OptionInfo> &PreviousOpts) {
   for (const auto &CurrentOpt : CurrentOpts) {
     if (PreviousOpts.count(CurrentOpt.first)) {
+      if (CurrentOpt.first == OPTION_RuleFile) {
+        if (PreviousOpts.at(OPTION_RuleFile).ValueVec.size() !=
+            CurrentOpt.second.ValueVec.size())
+          return -1;
+        for (size_t Idx = 0; Idx < CurrentOpt.second.ValueVec.size(); Idx++) {
+          if (PreviousOpts.at(OPTION_RuleFile).ValueVec[Idx] !=
+              CurrentOpt.second.ValueVec[Idx])
+            return -1;
+        }
+      }
 #ifdef _WIN32
-      if (CurrentOpt.first == OPTION_VcxprojFile) {
+      else if (CurrentOpt.first == OPTION_VcxprojFile) {
         if (!PreviousOpts.count(OPTION_CompilationsDir)) {
           return -2;
         }
@@ -121,7 +131,7 @@ int checkDpctOptionSet(
         }
       }
 #else
-      if (PreviousOpts.at(CurrentOpt.first).Value != CurrentOpt.second.Value) {
+      else if (PreviousOpts.at(CurrentOpt.first).Value != CurrentOpt.second.Value) {
         return -1;
       }
 #endif
@@ -131,7 +141,7 @@ int checkDpctOptionSet(
           return -1;
       } else {
         return -2;
-	    }
+      }
     }
   }
   return 0;
@@ -146,6 +156,7 @@ bool printOptions(
   for (const auto &Item : OptsMap) {
     const std::string Key = Item.first;
     const std::string Value = Item.second.Value;
+    const std::vector<std::string> ValueVec = Item.second.ValueVec;
     const bool Specified = Item.second.Specified;
 
     if (Key == clang::dpct::OPTION_AsyncHandler) {
@@ -287,6 +298,10 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_OptimizeMigration) {
       if ("true" == Value)
         Opts.emplace_back("--optimize-migration");
+    }
+    if (Key == clang::dpct::OPTION_RuleFile && Specified) {
+      for (const auto &Item : ValueVec)
+        Opts.emplace_back("--rule-file=\"" + Item + "\"");
     }
   }
 

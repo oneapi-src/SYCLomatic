@@ -62,6 +62,8 @@ void ImportRules(llvm::cl::list<std::string> &RuleFiles) {
       dpctExit(MigrationErrorCannotParseRuleFile);
     }
 
+    MetaRuleObject::setRuleFiles(RuleFile);
+
     //Register Rules
     for (MetaRuleObject &r : rules) {
       switch (r.Kind) {

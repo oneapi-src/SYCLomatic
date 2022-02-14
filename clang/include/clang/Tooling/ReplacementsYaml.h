@@ -190,16 +190,19 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
   struct NormalizedOptionInfo {
     NormalizedOptionInfo(const IO &) : Value(""), Specified(true) {}
     NormalizedOptionInfo(const IO &, clang::tooling::OptionInfo &OptInfo)
-        : Value(OptInfo.Value), Specified(OptInfo.Specified) {}
+        : Value(OptInfo.Value), ValueVec(OptInfo.ValueVec),
+          Specified(OptInfo.Specified) {}
 
     clang::tooling::OptionInfo denormalize(const IO &) {
       clang::tooling::OptionInfo OptInfo;
       OptInfo.Value = Value;
+      OptInfo.ValueVec = ValueVec;
       OptInfo.Specified = Specified;
       return OptInfo;
     }
 
     std::string Value;
+    std::vector<std::string> ValueVec;
     bool Specified;
   };
 
@@ -207,6 +210,7 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
     MappingNormalization<NormalizedOptionInfo, clang::tooling::OptionInfo> Keys(
         Io, OptInfo);
     Io.mapOptional("Value", Keys->Value);
+    Io.mapOptional("ValueVec", Keys->ValueVec);
     Io.mapOptional("Specified", Keys->Specified);
   }
 };

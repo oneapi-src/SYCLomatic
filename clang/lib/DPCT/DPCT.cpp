@@ -278,8 +278,7 @@ opt<std::string>
                llvm::cl::Optional);
 
 list<std::string> RuleFile("rule-file", desc("Specifies the migration rule file.\n"),
-                           value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore,
-                           llvm::cl::cb<void, std::string>(MetaRuleObject::setRuleFiles));
+                           value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
@@ -1307,6 +1306,9 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  if (!RuleFile.empty()) {
+    ImportRules(RuleFile);
+  }
   {
     setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandlerFlag,
                      AsyncHandler.getNumOccurrences());
@@ -1363,6 +1365,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
+                     RuleFile.getNumOccurrences());
 
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
@@ -1395,9 +1399,6 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
 
-  if(!RuleFile.empty()){
-    ImportRules(RuleFile);
-  }
   auto &Global = DpctGlobalInfo::getInstance();
   int RunCount = 0;
   do {

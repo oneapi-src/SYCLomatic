@@ -394,7 +394,11 @@ struct OptionInfo {
   OptionInfo() {}
   OptionInfo(std::string Value, bool Specified)
       : Value(Value), Specified(Specified) {}
+  OptionInfo(std::vector<std::string> ValueVec, bool Specified)
+      : ValueVec(ValueVec), Specified(Specified) {}
   std::string Value;
+  // ValueVec is used for option which have list value. E.g., --rule-file
+  std::vector<std::string> ValueVec;
   bool Specified = true;
 };
 #endif
