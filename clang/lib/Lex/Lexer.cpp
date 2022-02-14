@@ -3763,6 +3763,27 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
+#ifdef INTEL_CUSTOMIZATION
+        // Support kernel call with whitespace between "<<" and "<"
+        // e.g. foo<< <1, 1, 0>>>()
+        if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
+          // Set LookingForwardPtr to the end of "<<"
+          const char *LookingForwardPtr = CurPtr + SizeTmp + SizeTmp2;
+          After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          while (After == ' ' || After == '\t') {
+            LookingForwardPtr++;
+            After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          }
+          // LookingForwardPtr is at the begin of the last whitespace and
+          // thus need to cunsume the last whitespace.
+          if (After == '<') {
+            CurPtr = LookingForwardPtr;
+            CurPtr = ConsumeChar(CurPtr, 1, Result);
+            Kind = tok::lesslessless;
+            break;
+          }
+        }
+#endif
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::lessless;
       }
@@ -3840,6 +3861,28 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
+#ifdef INTEL_CUSTOMIZATION
+        // Support kernel call with whitespace between ">>" and ">"
+        // e.g. foo<<<1, 1, 0>> >()
+        if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
+          // Set LookingForwardPtr to the end of ">>"
+          const char *LookingForwardPtr = CurPtr + SizeTmp + SizeTmp2;
+          After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          // Skipping all whitespaces
+          while (After == ' ' || After == '\t') {
+            LookingForwardPtr++;
+            After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          }
+          // LookingForwardPtr is at the begin of the last whitespace
+          // and thus need to cunsume the last whitespace.
+          if (After == '>') {
+            CurPtr = LookingForwardPtr;
+            CurPtr = ConsumeChar(CurPtr, 1, Result);
+            Kind = tok::greatergreatergreater;
+            break;
+          }
+        }
+#endif
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::greatergreater;
       }

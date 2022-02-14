@@ -89,7 +89,7 @@ void testReference(const int &i) {
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
   // CHECK-NEXT:         });
-  helloFromGPU<<<griddim, threaddim>>>(i);
+  helloFromGPU<<	<griddim, threaddim>> >(i);
 
 }
 
