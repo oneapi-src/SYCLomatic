@@ -2036,8 +2036,10 @@ public:
 
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedRewriterFactory(const std::string &Source, std::string &OutStr,
-                                 RulePriority Priority) {
-  return std::make_shared<UserDefinedRewriterFactory>(OutStr, Priority);
+                                 RulePriority Priority,
+                                 const std::string &RuleName) {
+  return std::make_shared<UserDefinedRewriterFactory>(OutStr, Priority,
+                                                      RuleName);
 }
 
 // sycl has 2 overloading of malloc_device

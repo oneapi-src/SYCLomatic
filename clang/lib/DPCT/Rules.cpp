@@ -58,11 +58,12 @@ void registerAPIRule(MetaRuleObject &R) {
       clang::dpct::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
   if (It == clang::dpct::CallExprRewriterFactoryBase::RewriterMap->end()) {
     clang::dpct::CallExprRewriterFactoryBase::RewriterMap->emplace(
-        R.In,
-        clang::dpct::createUserDefinedRewriterFactory(R.In, R.Out, R.Priority));
+        R.In, clang::dpct::createUserDefinedRewriterFactory(
+                  R.In, R.Out, R.Priority, R.RuleId));
   } else if (It->second->Priority > R.Priority) {
     (*clang::dpct::CallExprRewriterFactoryBase::RewriterMap)[R.In] =
-        clang::dpct::createUserDefinedRewriterFactory(R.In, R.Out, R.Priority);
+        clang::dpct::createUserDefinedRewriterFactory(R.In, R.Out, R.Priority,
+                                                      R.RuleId);
   }
 }
 
@@ -162,9 +163,17 @@ void OutputBuilder::ignoreWhitespaces(std::string &OutStr, size_t &Idx) {
 // /OutStr is the string specified in rule's "Out" session
 void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx) {
   ignoreWhitespaces(OutStr, Idx);
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << "rule parse error: in rule " << RuleName
+                 << ", expect an ')' at end of 'Out' option value.\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+
   if (OutStr[Idx] != ')') {
-    llvm::errs() << "error: expecting an RParen around "
-      << OutStr.substr(Idx, 10) << "\n";
+    llvm::errs() << "rule parse error : in rule " << RuleName
+                 << ", expect an ')' in 'Out' option value around: "
+                 << OutStr.substr(Idx, 10) << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   } else {
@@ -177,8 +186,16 @@ void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx) {
 // /OutStr is the string specified in rule's "Out" session
 void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx) {
   ignoreWhitespaces(OutStr, Idx);
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << "rule parse error: in rule " << RuleName
+      << ", expect an '(' at end of 'Out' option value.\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+
   if (OutStr[Idx] != '(') {
-    llvm::errs() << "error: expecting an LParen around "
+    llvm::errs() << "rule parse error : in rule " << RuleName
+      << ", expect an '(' in 'Out' option value around: "
       << OutStr.substr(Idx, 10) << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
@@ -191,10 +208,20 @@ void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx) {
 // /OutStr is the string specified in rule's "Out" session
 int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
   ignoreWhitespaces(OutStr, Idx);
+
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << "rule parse error: in rule " << RuleName
+                 << ", expect \'$\' followed by a positive integer at end of "
+                    "'Out' option value.\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+
   if (OutStr[Idx] != '$') {
-    llvm::errs()
-        << "error: expecting \'$\' followed by a positive integer around "
-        << OutStr.substr(Idx, 10) << "\n";
+    llvm::errs() << "rule parse error: in rule " << RuleName
+                 << ", expect \'$\' followed by a positive integer in 'Out' "
+                    "option value around: "
+                 << OutStr.substr(Idx, 10) << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
@@ -203,27 +230,41 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
   auto DollarSignIdx = Idx;
   ignoreWhitespaces(OutStr, Idx);
   int ArgIndex = 0;
-  for (int i = Idx; i < OutStr.size(); i++) {
+
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << "rule parse error: in rule " << RuleName
+                 << ", expect a positive integer at end of "
+                    "'Out' option value.\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+  int i = Idx;
+  for (; i < OutStr.size(); i++) {
     if (!std::isdigit(OutStr[i])) {
-      if (i == 0) {
+      if (i == Idx) {
         // report unknown KW
-        llvm::errs() << "error: expecting a positive integer around "
-          << OutStr.substr(i, 10) << "\n";
+        llvm::errs() << "rule parse error: in rule " << RuleName
+                     << ", unknown keyword in 'Out' option value around: "
+                     << OutStr.substr(i, 10) << "\n";
         clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
         dpctExit(MigrationErrorCannotParseRuleFile);
       } else {
-        // process arg number
-        std::string ArgNumStr = OutStr.substr(Idx, i - Idx);
-        Idx = i;
-        ArgIndex = std::stoi(ArgNumStr);
         break;
       }
     }
   }
+
+  // process arg number
+  std::string ArgNumStr = OutStr.substr(Idx, i - Idx);
+  Idx = i;
+  ArgIndex = std::stoi(ArgNumStr);
+
+
   if (ArgIndex <= 0) {
     // report invalid ArgIndex
-    llvm::errs() << "error: expecting a positive integer around "
-      << OutStr.substr(DollarSignIdx, 10) << "\n";
+    llvm::errs() << "rule parse error: in rule " << RuleName
+                 << ", expect a positive integer in 'Out' option value around: "
+                 << OutStr.substr(DollarSignIdx, 10) << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }

@@ -133,6 +133,7 @@ public:
     AddrOf,
     DerefedTypeName
   };
+  std::string RuleName;
   Kind Kind;
   size_t ArgIndex;
   std::string Str;

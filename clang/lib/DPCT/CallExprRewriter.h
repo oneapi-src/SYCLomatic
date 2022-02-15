@@ -1131,10 +1131,12 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   std::string &OutStr;
 
 public:
-  UserDefinedRewriterFactory(std::string &OutStr, RulePriority Prio)
+  UserDefinedRewriterFactory(std::string &OutStr, RulePriority Prio,
+                             const std::string &RuleName)
       : OutStr(OutStr) {
     Priority = Prio;
     OB.Kind = OutputBuilder::Kind::Top;
+    OB.RuleName = RuleName;
     OB.parse(OutStr);
   }
 
@@ -1149,7 +1151,8 @@ public:
 
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedRewriterFactory(const std::string &Source, std::string &OutStr,
-                                 RulePriority Priority);
+                                 RulePriority Priority,
+                                 const std::string &RuleName);
 } // namespace dpct
 } // namespace clang
 
