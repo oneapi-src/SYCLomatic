@@ -547,6 +547,6 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
-bool isUserDefinedFunction(const clang::FunctionDecl *FD);
+bool isUserDefinedFunction(const clang::ValueDecl *VD);
 
 #endif // DPCT_UTILITY_H

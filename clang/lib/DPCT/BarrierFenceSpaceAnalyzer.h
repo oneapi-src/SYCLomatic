@@ -52,6 +52,7 @@ public:
   VISIT_NODE(LabelStmt)
   VISIT_NODE(MemberExpr)
   VISIT_NODE(CXXDependentScopeMemberExpr)
+  VISIT_NODE(CXXConstructExpr)
 #undef VISIT_NODE
 
 public:

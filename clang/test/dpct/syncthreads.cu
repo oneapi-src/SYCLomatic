@@ -87,6 +87,7 @@ __global__ void test2(float *ptr1, float *ptr2) {
   ptr2[aaa];
 }
 
+// Unsupport label and goto stmt
 __global__ void test3() {
   int a;
   int b;
@@ -98,6 +99,7 @@ label:
   b++;
 }
 
+// Unsupport MemberExpr whose type is pointer
 struct S1 {
   float *data;
 };
@@ -116,6 +118,7 @@ __global__ void test5(S2 s2) {
   __syncthreads();
 }
 
+// Unsupport MemberExpr whose type is array
 struct S3 {
   float data[10];
 };
@@ -128,6 +131,22 @@ __global__ void test7(S3 s3) {
 __global__ void test8(S3 *s3) {
   int a = 1;
   s3[a].data;
+  // CHECK:item_ct1.barrier();
+  __syncthreads();
+}
+
+// Unsupport c++ constructor
+__device__ void process_data(float*, float*);
+
+struct S4 {
+  float *data;
+  __device__ S4(S4 &a) {
+    process_data(data, a.data);
+  }
+};
+
+__global__ void test9(S4 a) {
+  S4 b(a);
   // CHECK:item_ct1.barrier();
   __syncthreads();
 }

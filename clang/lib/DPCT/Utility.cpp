@@ -3832,10 +3832,10 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
   return true;
 }
 
-bool isUserDefinedFunction(const clang::FunctionDecl *FD) {
-  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(FD).first;
+bool isUserDefinedFunction(const clang::ValueDecl *VD) {
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
-  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(FD->getLocation());
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
   return true;

@@ -124,6 +124,15 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
+  auto Ctor = CCE->getConstructor();
+  std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
+  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedFunction(Ctor))
+    return true;
+  return false;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    clang::CXXConstructExpr *) {}
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
@@ -198,6 +207,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     return false;
   if (!FD->hasAttr<clang::CUDAGlobalAttr>())
     return false;
+  if (FD->getTemplateSpecializationKind() !=
+          TemplateSpecializationKind::TSK_Undeclared ||
+      FD->getDescribedFunctionTemplate()) {
+    return false;
+  }
 
   CELoc = getHashStrFromLoc(CE->getBeginLoc());
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
@@ -281,7 +295,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 
   // DRELoc: input pointer parameter's usage location
   // For a syncthreads call, tool will use local_space fence for this barrier,
-  // if it meets: 
+  // if it meets:
   // For arbitrary input pointer of kernel, all DREs of this pointer are only
   // used in either predecessor parts or successor parts
   for (auto &I : LevelVec) {
@@ -321,4 +335,4 @@ std::unordered_map<std::string, std::unordered_map<std::string, bool>>
 const std::unordered_set<std::string>
     clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
         "__popc", "atomicAdd", "__fetch_builtin_x", "__fetch_builtin_y",
-        "__fetch_builtin_z"};
+        "__fetch_builtin_z", "uint4"};
