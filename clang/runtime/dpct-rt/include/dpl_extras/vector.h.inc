@@ -284,6 +284,10 @@ public:
   }
   void resize(size_type new_size, const T &x = T()) {
     reserve(new_size);
+    if (_size < new_size) {
+      std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                begin() + _size, begin() + new_size, x);
+    }
     _size = new_size;
   }
   size_type max_size(void) const {
@@ -631,6 +635,11 @@ public:
   }
   void resize(size_type new_size, const T &x = T()) {
     reserve(new_size);
+    if (_size < new_size) {
+      auto src_buf = get_buffer();
+      std::fill(oneapi::dpl::execution::dpcpp_default,
+                oneapi::dpl::begin(src_buf) + _size, oneapi::dpl::begin(src_buf) + new_size, x);
+    }
     _size = new_size;
   }
   size_type max_size(void) const {
