@@ -915,11 +915,8 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
 void ManagedPointerAnalysis::dispatch(const Decl *Decleration) {
-  if (Decleration) {
-    std::string DKind(Decleration->getDeclKindName());
-    if (DKind == "CXXRecord") {
-      analyzeExpr(dyn_cast<CXXRecordDecl>(Decleration));
-    }
+  if (auto CXXRD = dyn_cast_or_null<CXXRecordDecl>(Decleration)) {
+    analyzeExpr(CXXRD);
   }
 }
 void ManagedPointerAnalysis::dispatch(const Stmt *Expression) {

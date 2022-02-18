@@ -2364,15 +2364,14 @@ void ThrustFunctionRule::thrustFuncMigration(
 
 void ThrustFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 
-  if (const UnresolvedLookupExpr *ULExpr =
-          getAssistNodeAsType<UnresolvedLookupExpr>(
-              Result, "unresolvedThrustAPILookupExpr")) {
-    const CallExpr *CE =
-        getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr");
-    thrustFuncMigration(Result, CE, ULExpr);
+  if (const auto ULExpr = getAssistNodeAsType<UnresolvedLookupExpr>(
+          Result, "unresolvedThrustAPILookupExpr")) {
+    if (const auto CE =
+            getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr"))
+      thrustFuncMigration(Result, CE, ULExpr);
   }
 
-  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+  if (const auto CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     thrustFuncMigration(Result, CE);
   }
 }
@@ -2734,7 +2733,10 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     auto ArgLoc = TSL.getArgLoc(i);
     if (ArgLoc.getArgument().getKind() != TemplateArgument::Type)
       continue;
-    auto UTL = ArgLoc.getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+    auto TSI = ArgLoc.getTypeSourceInfo();
+    if (!TSI)
+      continue;
+    auto UTL = TSI->getTypeLoc().getUnqualifiedLoc();
 
     if (UTL.getTypeLocClass() == clang::TypeLoc::Elaborated) {
       auto ETC = UTL.getAs<ElaboratedTypeLoc>();
@@ -3004,19 +3006,25 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
         TSTL.getArgLoc(0).getArgument().getKind() == TemplateArgument::Type &&
         TSTL.getArgLoc(1).getArgument().getKind() == TemplateArgument::Type) {
       // Two template arguments must be swapped
-      auto Arg1 = TSTL.getArgLoc(0).getTypeSourceInfo()->getTypeLoc();
-      auto Arg2 = TSTL.getArgLoc(1).getTypeSourceInfo()->getTypeLoc();
-      std::string Arg1Str = getNewTypeStr(&Arg1);
-      std::string Arg2Str = getNewTypeStr(&Arg2);
-      return NewBaseTypeStr + "<" + Arg2Str + ", " + Arg1Str + ">";
+      auto TSI1 = TSTL.getArgLoc(0).getTypeSourceInfo();
+      auto TSI2 = TSTL.getArgLoc(1).getTypeSourceInfo();
+      if (TSI1 && TSI2) {
+        auto Arg1 = TSI1->getTypeLoc();
+        auto Arg2 = TSI2->getTypeLoc();
+        std::string Arg1Str = getNewTypeStr(&Arg1);
+        std::string Arg2Str = getNewTypeStr(&Arg2);
+        return NewBaseTypeStr + "<" + Arg2Str + ", " + Arg1Str + ">";
+      }
     }
     // Recurse down through the template arguments
     std::string NewTypeStr = NewBaseTypeStr + "<";
     for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
       std::string ArgStr;
       if (TSTL.getArgLoc(i).getArgument().getKind() == TemplateArgument::Type) {
-        auto ArgLoc = TSTL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc();
-        ArgStr = getNewTypeStr(&ArgLoc);
+        if (auto TSI = TSTL.getArgLoc(i).getTypeSourceInfo()) {
+          auto ArgLoc = TSI->getTypeLoc();
+          ArgStr = getNewTypeStr(&ArgLoc);
+        }
       } else {
         ExprAnalysis EA;
         EA.analyze(TSTL.getArgLoc(i));
@@ -5248,9 +5256,10 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       BufferName = getBufferNameAndDeclStr(
           CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
     }
-
-    SourceLocation DistrInsertLoc =
-        SM.getExpansionLoc(CS->body_front()->getBeginLoc());
+    auto bf = CS->body_front();
+    if (!bf)
+      return;
+    SourceLocation DistrInsertLoc = SM.getExpansionLoc(bf->getBeginLoc());
     std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
     std::string DistrName;
     if (FuncName == "curandGenerateLogNormal" ||
@@ -16418,10 +16427,12 @@ bool CubRule::isRedundantCallExpr(const CallExpr *CE) {
       // tempstorage = { nullptr/NULL/0/... }
     } else if (VD->getInitStyle() == VarDecl::InitializationStyle::ListInit) {
       if (auto InitList = dyn_cast<InitListExpr>(VD->getInit())) {
-        Init = InitList->getInit(0)->IgnoreImplicitAsWritten();
-        if (isNullptrOrZero(Init)) {
-          InitLoc = DpctGlobalInfo::getSourceManager().getExpansionLoc(
-              VD->getBeginLoc());
+        if (auto Init0 = InitList->getInit(0)) {
+          Init = Init0->IgnoreImplicitAsWritten();
+          if (isNullptrOrZero(Init)) {
+            InitLoc = DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                VD->getBeginLoc());
+          }
         }
       }
     }
