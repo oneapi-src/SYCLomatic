@@ -104,7 +104,7 @@ bool MisleadingBidirectionalHandler::HandleComment(Preprocessor &PP,
         dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false);
   }
   return false;
-};
+}
 
 void MisleadingBidirectionalRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {

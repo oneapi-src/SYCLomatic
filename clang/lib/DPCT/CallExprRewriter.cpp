@@ -46,7 +46,6 @@ Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   OS << TargetCalleeName << "(";
-  auto NumArgs = RewriteArgList.size();
   for (auto &Arg : RewriteArgList)
     OS << Arg << ", ";
   OS.flush();
@@ -2150,7 +2149,7 @@ public:
     Expr::EvalResult Result;
     if (!Arg->isValueDependent() &&
         Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
-        Result.Val.getInt().getZExtValue() == value) {
+        Result.Val.getInt().getSExtValue() == value) {
       return true;
     }
     return false;

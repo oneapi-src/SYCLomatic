@@ -56,7 +56,7 @@ public:
     virtual UserConsent getUserConsentValue() const override;
     virtual void setStatisticCollectionEnabled(bool value) override;
     virtual void postEvent(const char *category, const char *action, const char *label, const std::string &Data, int value = 0) override;
-    virtual void  dumpStat();
+    virtual void  dumpStat() override;
 private:
     ustring getIsipFilePath();
     bool isEnabled();

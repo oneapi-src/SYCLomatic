@@ -375,7 +375,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool,
     TargetIdx = 0;
     for (const auto &Entry : CmdsPerTarget) {
 
-      for (int Idx = 0; Idx < Entry.second.size(); Idx++) {
+      for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
                                  "_SRC_" + std::to_string(Idx);
         std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) +
@@ -406,7 +406,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool,
                         std::to_string(TargetIdx), ")\n");
       OS << buildString("\t$(LD) -o $@ $^ $(LIB) ", MKLOption, "\n\n");
 
-      for (int Idx = 0; Idx < Entry.second.size(); Idx++) {
+      for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
                                  "_SRC_" + std::to_string(Idx);
         std::string ObjStrName = "TARGET_" + std::to_string(TargetIdx) +

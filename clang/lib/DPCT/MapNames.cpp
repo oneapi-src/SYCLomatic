@@ -3530,9 +3530,8 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
     dpctExit(MigrationError);
-#else
-    return false;
 #endif
+    return false;
   }
 }
 

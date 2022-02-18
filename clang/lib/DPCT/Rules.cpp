@@ -110,8 +110,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
 
 // /RuleOutputString is the string specified in rule's "Out" session
 void OutputBuilder::parse(std::string &RuleOutputString) {
-  int StrStartIdx = 0;
-  size_t i;
+  size_t i, StrStartIdx = 0;
   for (i = 0; i < RuleOutputString.length(); i++) {
     switch (RuleOutputString[i]) {
     case '\\': {
@@ -238,7 +237,7 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
-  int i = Idx;
+  unsigned i = Idx;
   for (; i < OutStr.size(); i++) {
     if (!std::isdigit(OutStr[i])) {
       if (i == Idx) {

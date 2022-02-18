@@ -557,7 +557,6 @@ void ReplaceDim3Ctor::setRange() {
       auto Range = getStmtExpansionSourceRange(S);
       auto Begin = Range.getBegin();
       auto End = Range.getEnd();
-      auto L = Lexer::MeasureTokenLength(End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
       CSR = CharSourceRange::getTokenRange(
           Begin,
           End.getLocWithOffset(Lexer::MeasureTokenLength(
