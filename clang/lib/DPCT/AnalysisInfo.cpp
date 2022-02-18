@@ -1782,6 +1782,10 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
   if (auto CallDecl =
           dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
     Name = getNameWithNamespace(CallDecl, Callee);
+    if (auto FTD = CallDecl->getPrimaryTemplate()) {
+      if (FTD->getTemplateParameters()->hasParameterPack())
+        return;
+    }
     setFuncInfo(DeviceFunctionDecl::LinkRedecls(CallDecl));
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments());
@@ -1852,6 +1856,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     if (Unresolved->getNumDecls())
       IsAllTemplateArgsSpecified = deduceTemplateArguments(
           CE, Unresolved->decls_begin().getDecl(), TemplateArgs);
+  } else if (isa<CXXDependentScopeMemberExpr>(
+                 CE->getCallee()->IgnoreImplicitAsWritten())) {
+    // Un-instantiate member call. Cannot analyze related method declaration.
+    return;
   }
 
   if (HasImplicitArg) {

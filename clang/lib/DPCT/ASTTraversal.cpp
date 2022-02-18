@@ -3689,7 +3689,7 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
     const std::pair<FileID, unsigned> StartLocInfo =
         SM.getDecomposedExpansionLoc(StartLoc);
     llvm::StringRef Buffer(SM.getCharacterData(EndLoc));
-    const std::string Str = std::string(";") + getNL();
+    const std::string Str = std::string(";}");
     size_t Offset = Buffer.find_first_of(Str);
     assert(Offset != llvm::StringRef::npos);
     const std::pair<FileID, unsigned> EndLocInfo =
