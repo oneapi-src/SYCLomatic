@@ -247,7 +247,7 @@ template <typename T> inline int ffs(T a) {
 /// logical sub_group id range, \p remote_local_id will modulo with \p
 /// logical_sub_group_size. The \p logical_sub_group_size must be a power of 2
 /// and not exceed input sub_group size.
-/// \param [in] T Input value type
+/// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] x Input value
 /// \param [in] remote_local_id Input source work item id
@@ -271,7 +271,7 @@ T select_from_sub_group(sycl::sub_group g, T x, int remote_local_id,
 /// sub_group id range, the work-item will get value from itself. The \p
 /// logical_sub_group_size must be a power of 2 and not exceed input sub_group
 /// size.
-/// \param [in] T The value type
+/// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] x Input value
 /// \param [in] delta Input delta
@@ -283,8 +283,11 @@ T shift_sub_group_left(sycl::sub_group g, T x, unsigned int delta,
   unsigned int id = g.get_local_linear_id();
   unsigned int end_index =
       (id / logical_sub_group_size + 1) * logical_sub_group_size;
-  return sycl::select_from_group(g, x,
-                                 (id + delta) < end_index ? id + delta : id);
+  T result = sycl::shift_group_left(g, x, delta);
+  if ((id + delta) >= end_index) {
+    result = x;
+  }
+  return result;
 }
 
 /// shift_sub_group_right move values held by the work-items in a sub_group
@@ -296,7 +299,7 @@ T shift_sub_group_left(sycl::sub_group g, T x, unsigned int delta,
 /// logical sub_group id range, the work-item will get value from itself. The \p
 /// logical_sub_group_size must be a power of 2 and not exceed input sub_group
 /// size.
-/// \param [in] T Input value type
+/// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] x Input value
 /// \param [in] delta Input delta
@@ -308,8 +311,11 @@ T shift_sub_group_right(sycl::sub_group g, T x, unsigned int delta,
   unsigned int id = g.get_local_linear_id();
   unsigned int start_index =
       id / logical_sub_group_size * logical_sub_group_size;
-  return sycl::select_from_group(g, x,
-                                 id - start_index >= delta ? id - delta : id);
+  T result = sycl::shift_group_right(g, x, delta);
+  if ((id - start_index) < delta) {
+    result = x;
+  }
+  return result;
 }
 
 /// permute_sub_group_by_xor permutes values by exchanging values held by pairs
@@ -321,7 +327,7 @@ T shift_sub_group_right(sycl::sub_group g, T x, unsigned int delta,
 /// is outside the logical sub_group id range, the work-item will get value from
 /// itself. The \p logical_sub_group_size must be a power of 2 and not exceed
 /// input sub_group size.
-/// \param [in] T Input value type
+/// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] x Input value
 /// \param [in] mask Input mask

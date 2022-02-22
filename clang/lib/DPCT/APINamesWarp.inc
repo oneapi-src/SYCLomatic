@@ -62,19 +62,33 @@ SUBGROUPSIZE_FACTORY(
 // __shfl_up_sync
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "shift_sub_group_right",
-        WARNING_FACTORY_ENTRY(
-            "__shfl_up_sync",
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Util_shift_sub_group_right,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "shift_group_right",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_up_sync",
                 CALL_FACTORY_ENTRY("__shfl_up_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "shift_sub_group_right",
+                                   CALL(MapNames::getClNamespace() +
+                                            "shift_group_right",
                                         SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))),
-            Diagnostics::MASK_UNSUPPORTED,
-            ARG(MapNames::getDpctNamespace() + "shift_sub_group_right"))),
+                                        makeCallArgCreatorWithCall(2))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getClNamespace() + "shift_group_right"))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "shift_sub_group_right",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_up_sync",
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Util_shift_sub_group_right,
+                    CALL_FACTORY_ENTRY("__shfl_up_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "shift_sub_group_right",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2)))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getDpctNamespace() + "shift_sub_group_right")))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, "shift_sub_group_right",
         WARNING_FACTORY_ENTRY(
@@ -93,15 +107,24 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl_up
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_right,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getClNamespace() + "shift_group_right",
             CALL_FACTORY_ENTRY("__shfl_up",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_right",
+                               CALL(MapNames::getClNamespace() +
+                                        "shift_group_right",
                                     SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+                                    makeCallArgCreatorWithCall(1)))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_shift_sub_group_right,
+                CALL_FACTORY_ENTRY("__shfl_up",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_right",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
@@ -116,19 +139,33 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl_down_sync
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "shift_sub_group_left",
-        WARNING_FACTORY_ENTRY(
-            "__shfl_down_sync",
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Util_shift_sub_group_left,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "shift_group_left",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_down_sync",
                 CALL_FACTORY_ENTRY("__shfl_down_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "shift_sub_group_left",
+                                   CALL(MapNames::getClNamespace() +
+                                            "shift_group_left",
                                         SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))),
-            Diagnostics::MASK_UNSUPPORTED,
-            ARG(MapNames::getDpctNamespace() + "shift_sub_group_left"))),
+                                        makeCallArgCreatorWithCall(2))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getClNamespace() + "shift_group_left"))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "shift_sub_group_left",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_down_sync",
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Util_shift_sub_group_left,
+                    CALL_FACTORY_ENTRY("__shfl_down_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "shift_sub_group_left",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2)))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getDpctNamespace() + "shift_sub_group_left")))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, "shift_sub_group_left",
         WARNING_FACTORY_ENTRY(
@@ -147,15 +184,24 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl_down
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getClNamespace() + "shift_group_left",
             CALL_FACTORY_ENTRY("__shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
+                               CALL(MapNames::getClNamespace() +
+                                        "shift_group_left",
                                     SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+                                    makeCallArgCreatorWithCall(1)))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_shift_sub_group_left,
+                CALL_FACTORY_ENTRY("__shfl_down",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_left",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
@@ -170,19 +216,33 @@ CONDITIONAL_FACTORY_ENTRY(
 //__shfl_sync
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "select_from_sub_group",
-        WARNING_FACTORY_ENTRY(
-            "__shfl_sync",
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Util_select_from_sub_group,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "select_from_group",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_sync",
                 CALL_FACTORY_ENTRY("__shfl_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "select_from_sub_group",
+                                   CALL(MapNames::getClNamespace() +
+                                            "select_from_group",
                                         SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))),
-            Diagnostics::MASK_UNSUPPORTED,
-            ARG(MapNames::getDpctNamespace() + "select_from_sub_group"))),
+                                        makeCallArgCreatorWithCall(2))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getClNamespace() + "select_from_group"))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "select_from_sub_group",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_sync",
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Util_select_from_sub_group,
+                    CALL_FACTORY_ENTRY("__shfl_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "select_from_sub_group",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2)))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getDpctNamespace() + "select_from_sub_group")))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, "select_from_sub_group",
         WARNING_FACTORY_ENTRY(
@@ -201,15 +261,23 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_select_from_sub_group,
-            CALL_FACTORY_ENTRY("__shfl",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "select_from_sub_group",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getClNamespace() + "select_from_group",
+            CALL_FACTORY_ENTRY(
+                "__shfl", CALL(MapNames::getClNamespace() + "select_from_group",
+                               SUBGROUP, makeCallArgCreatorWithCall(0),
+                               makeCallArgCreatorWithCall(1)))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_select_from_sub_group,
+                CALL_FACTORY_ENTRY("__shfl",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "select_from_sub_group",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
@@ -224,19 +292,34 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl_xor_sync
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "permute_sub_group_by_xor",
-        WARNING_FACTORY_ENTRY(
-            "__shfl_xor_sync",
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Util_permute_sub_group_by_xor,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "permute_group_by_xor",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_xor_sync",
                 CALL_FACTORY_ENTRY("__shfl_xor_sync",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "permute_sub_group_by_xor",
+                                   CALL(MapNames::getClNamespace() +
+                                            "permute_group_by_xor",
                                         SUBGROUP, makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))),
-            Diagnostics::MASK_UNSUPPORTED,
-            ARG(MapNames::getDpctNamespace() + "permute_sub_group_by_xor"))),
+                                        makeCallArgCreatorWithCall(2))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getClNamespace() + "permute_group_by_xor"))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, "permute_sub_group_by_xor",
+            WARNING_FACTORY_ENTRY(
+                "__shfl_xor_sync",
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Util_permute_sub_group_by_xor,
+                    CALL_FACTORY_ENTRY("__shfl_xor_sync",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "permute_sub_group_by_xor",
+                                            SUBGROUP,
+                                            makeCallArgCreatorWithCall(1),
+                                            makeCallArgCreatorWithCall(2)))),
+                Diagnostics::MASK_UNSUPPORTED,
+                ARG(MapNames::getDpctNamespace() +
+                    "permute_sub_group_by_xor")))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, "permute_sub_group_by_xor",
         WARNING_FACTORY_ENTRY(
@@ -255,15 +338,24 @@ CONDITIONAL_FACTORY_ENTRY(
 // __shfl_xor
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
-    SUBGROUPSIZE_FACTORY(
-        UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_permute_sub_group_by_xor,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckOptimizeMigrationFlag(),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getClNamespace() + "permute_group_by_xor",
             CALL_FACTORY_ENTRY("__shfl_xor",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "permute_sub_group_by_xor",
+                               CALL(MapNames::getClNamespace() +
+                                        "permute_group_by_xor",
                                     SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+                                    makeCallArgCreatorWithCall(1)))),
+        SUBGROUPSIZE_FACTORY(
+            UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_permute_sub_group_by_xor,
+                CALL_FACTORY_ENTRY("__shfl_xor",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "permute_sub_group_by_xor",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
@@ -276,7 +368,8 @@ CONDITIONAL_FACTORY_ENTRY(
                                     makeCallArgCreatorWithCall(2))))))
 
 WARNING_FACTORY_ENTRY("__activemask",
-                      TOSTRING_FACTORY_ENTRY("__activemask", LITERAL("0xffffffff")),
+                      TOSTRING_FACTORY_ENTRY("__activemask",
+                                             LITERAL("0xffffffff")),
                       Diagnostics::ACTIVE_MASK)
 
 // __ballot
@@ -285,12 +378,12 @@ SUBGROUPSIZE_FACTORY(
     CALL_FACTORY_ENTRY(
         "__ballot",
         CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
-             makeCombinedArg(ARG(0),
-                             makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "),
-                                                             SUBGROUP),
-                                             ARG(".get_local_linear_id()) : 0, " +
-                                                 MapNames::getClNamespace() +
-                                                 "ext::oneapi::plus<>()"))))))
+             makeCombinedArg(
+                 ARG(0),
+                 makeCombinedArg(makeCombinedArg(ARG(" ? (0x1 << "), SUBGROUP),
+                                 ARG(".get_local_linear_id()) : 0, " +
+                                     MapNames::getClNamespace() +
+                                     "ext::oneapi::plus<>()"))))))
 
 // __ballot_sync
 SUBGROUPSIZE_FACTORY(

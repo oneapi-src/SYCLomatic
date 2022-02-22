@@ -2106,6 +2106,13 @@ public:
   }
 };
 
+class CheckOptimizeMigrationFlag {
+public:
+  bool operator()(const CallExpr *C) {
+    return DpctGlobalInfo::isOptimizeMigration();
+  }
+};
+
 class CheckArgCount {
   unsigned Count;
 
