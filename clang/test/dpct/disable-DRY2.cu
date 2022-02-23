@@ -7,7 +7,7 @@
 void bar(){
   int device = 0;
 // CHECK:/*
-// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device" may not be the best XPU device. Adjust the "device" if needed.
+// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device" may not be the best XPU device. Adjust the selected device if needed.
 // CHECK-NEXT:*/
 //CHECK-NEXT:dpct::dev_mgr::instance().select_device(device);
   cudaSetDevice(device);

@@ -241,9 +241,8 @@ static opt<bool, true>
 bool CheckUnicodeSecurityFlag = false;
 static opt<bool, true> CheckUnicodeSecurity(
     "check-unicode-security",
-    llvm::cl::desc("Enable detection and warn about Unicode constructs that "
-                   "can be exploited by using bi-directional formatting codes "
-                   "and homoglyphs in identifiers. Default: off.\n"),
+    llvm::cl::desc("Enable detection and warnings about Unicode constructs that can be exploited by using\n"
+                   "bi-directional formatting codes and homoglyphs in identifiers. Default: off.\n"),
     cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag));
 
 bool SyclNamedLambdaFlag = false;
@@ -277,7 +276,7 @@ opt<std::string>
                value_desc("file"), cat(DPCTCat),
                llvm::cl::Optional);
 
-list<std::string> RuleFile("rule-file", desc("Specifies the migration rule file.\n"),
+list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that contains rules used for migration.\n"),
                            value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 opt<UsmLevel> USMLevel(
@@ -464,11 +463,13 @@ static bits<ExperimentalFeatures> Experimentals(
         false },
     llvm::cl::OptionEnumValue{
         "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
-        "The extension allows to get `id`, `item`, `nd_item`, `group`, `sub_group` instances globally.",
+        "Experimental extension that allows getting `id`, `item`, `nd_item`, `group`, and\n"
+        "`sub_group` instances globally.",
         false },
     llvm::cl::OptionEnumValue{
         "local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
-        "The extension allows allocation of local memory objects at the kernel functor scope",
+        "Experimental extension that allows allocation of local memory objects at the kernel\n"
+        "functor scope",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
@@ -487,7 +488,7 @@ opt<std::string>
 static list<std::string> ExcludePathList(
     "in-root-exclude",
     llvm::cl::desc(
-        "Excludes directory or file from processing."),
+        "Excludes the specified directory or file from processing."),
     value_desc("dir|file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 static opt<bool> OptimizeMigration(
