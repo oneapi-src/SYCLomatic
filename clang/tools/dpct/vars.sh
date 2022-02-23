@@ -125,5 +125,6 @@ component_root=$(dirname -- "${my_script_path}")
 # Export required env vars for dpct package.
 
 DPCT_BUNDLE_ROOT=$component_root; export DPCT_BUNDLE_ROOT
+DIAGUTIL_PATH=$(prepend_path "$DPCT_BUNDLE_ROOT/sys_check/sys_check.sh" "${DIAGUTIL_PATH:-}") ; export DIAGUTIL_PATH
 PATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/bin" "${PATH:-}") ; export PATH
 CPATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/include" "${CPATH:-}") ; export CPATH
