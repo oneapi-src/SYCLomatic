@@ -136,7 +136,8 @@ int checkDpctOptionSet(
       }
 #endif
     } else {
-      if (CurrentOpt.first == OPTION_NoUseGenericSpace) {
+      if (CurrentOpt.first == OPTION_NoUseGenericSpace ||
+          CurrentOpt.first == OPTION_AggressiveMigrationForShflFunction) {
         if (CurrentOpt.second.Value == "true")
           return -1;
       } else {
@@ -209,6 +210,10 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_NoUseGenericSpace) {
       if ("true" == Value)
         Opts.emplace_back("--no-use-generic-space");
+    }
+    if (Key == clang::dpct::OPTION_AggressiveMigrationForShflFunction) {
+      if ("true" == Value)
+        Opts.emplace_back("--aggressive-migration-for-shfl-function");
     }
     if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
       Opts.emplace_back("-p=\"" + Value + "\"");

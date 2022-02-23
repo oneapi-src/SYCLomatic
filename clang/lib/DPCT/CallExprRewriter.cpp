@@ -2106,10 +2106,10 @@ public:
   }
 };
 
-class CheckOptimizeMigrationFlag {
+class CheckAggressiveMigrationForShflFunctionFlag {
 public:
   bool operator()(const CallExpr *C) {
-    return DpctGlobalInfo::isOptimizeMigration();
+    return DpctGlobalInfo::getAggressiveMigrationForShflFunctionFlag();
   }
 };
 

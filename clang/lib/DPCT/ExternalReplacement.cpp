@@ -72,6 +72,10 @@ int save2Yaml(
   if (TUR.OptionMap[clang::dpct::OPTION_NoUseGenericSpace].Value == "false") {
     TUR.OptionMap.erase(clang::dpct::OPTION_NoUseGenericSpace);
   }
+  if (TUR.OptionMap[clang::dpct::OPTION_AggressiveMigrationForShflFunction]
+          .Value == "false") {
+    TUR.OptionMap.erase(clang::dpct::OPTION_AggressiveMigrationForShflFunction);
+  }
 
   YAMLOut << TUR;
   YamlContentStream.flush();

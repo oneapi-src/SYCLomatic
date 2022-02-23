@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --optimize-migration --format-range=none -out-root %T/warp_2 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --aggressive-migration-for-shfl-function --format-range=none -out-root %T/warp_2 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warp_2/warp_2.dp.cpp --match-full-lines %s
 
 #include "cuda.h"

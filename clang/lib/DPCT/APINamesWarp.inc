@@ -63,7 +63,7 @@ SUBGROUPSIZE_FACTORY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, "shift_group_right",
             WARNING_FACTORY_ENTRY(
@@ -108,7 +108,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getClNamespace() + "shift_group_right",
             CALL_FACTORY_ENTRY("__shfl_up",
@@ -140,7 +140,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, "shift_group_left",
             WARNING_FACTORY_ENTRY(
@@ -185,7 +185,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getClNamespace() + "shift_group_left",
             CALL_FACTORY_ENTRY("__shfl_down",
@@ -217,7 +217,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, "select_from_group",
             WARNING_FACTORY_ENTRY(
@@ -262,7 +262,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getClNamespace() + "select_from_group",
             CALL_FACTORY_ENTRY(
@@ -293,7 +293,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(3, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, "permute_group_by_xor",
             WARNING_FACTORY_ENTRY(
@@ -339,7 +339,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgIsConstantIntWithValue(2, 32),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckOptimizeMigrationFlag(),
+        CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getClNamespace() + "permute_group_by_xor",
             CALL_FACTORY_ENTRY("__shfl_xor",
