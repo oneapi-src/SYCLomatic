@@ -208,3 +208,5 @@ DEF_WARNING(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirec
 DEF_COMMENT(MISLEADING_BIDIRECTIONAL, 1094, "Content contains misleading bidirectional Unicode characters.")
 DEF_WARNING(CONFUSABLE_IDENTIFIER, 1095, "The identifier \"%0\" is confusable with another identifier \"%1\".")
 DEF_COMMENT(CONFUSABLE_IDENTIFIER, 1095, "The identifier \"{0}\" is confusable with another identifier \"{1}\".")
+DEF_WARNING(UNSAFE_WORKGROUP_SIZE, 1096, "The right-most dimension of work group used in SYCL kernel that is calling this function may be less than \"%0\", the function \"%1\" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of \"%2\".")
+DEF_COMMENT(UNSAFE_WORKGROUP_SIZE, 1096, "The right-most dimension of work group used in SYCL kernel that is calling this function may be less than \"{0}\", the function \"{1}\" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of \"{2}\".")

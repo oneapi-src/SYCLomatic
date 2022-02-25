@@ -65,7 +65,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "shift_group_right",
+            UINT_MAX, MapNames::getClNamespace() + "shift_group_right",
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 CALL_FACTORY_ENTRY("__shfl_up_sync",
@@ -76,7 +76,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getClNamespace() + "shift_group_right"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "shift_sub_group_right",
+            UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
@@ -90,7 +90,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_right")))),
     SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "shift_sub_group_right",
+        UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         WARNING_FACTORY_ENTRY(
             "__shfl_up_sync",
             FEATURE_REQUEST_FACTORY(
@@ -142,7 +142,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "shift_group_left",
+            UINT_MAX, MapNames::getClNamespace() + "shift_group_left",
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 CALL_FACTORY_ENTRY("__shfl_down_sync",
@@ -153,7 +153,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getClNamespace() + "shift_group_left"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "shift_sub_group_left",
+            UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
@@ -167,7 +167,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_left")))),
     SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "shift_sub_group_left",
+        UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         WARNING_FACTORY_ENTRY(
             "__shfl_down_sync",
             FEATURE_REQUEST_FACTORY(
@@ -219,7 +219,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "select_from_group",
+            UINT_MAX, MapNames::getClNamespace() + "select_from_group",
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 CALL_FACTORY_ENTRY("__shfl_sync",
@@ -230,7 +230,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getClNamespace() + "select_from_group"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "select_from_sub_group",
+            UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
@@ -244,7 +244,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "select_from_sub_group")))),
     SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "select_from_sub_group",
+        UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         WARNING_FACTORY_ENTRY(
             "__shfl_sync",
             FEATURE_REQUEST_FACTORY(
@@ -295,7 +295,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckAggressiveMigrationForShflFunctionFlag(),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "permute_group_by_xor",
+            UINT_MAX, MapNames::getClNamespace() + "permute_group_by_xor",
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 CALL_FACTORY_ENTRY("__shfl_xor_sync",
@@ -306,7 +306,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getClNamespace() + "permute_group_by_xor"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, "permute_sub_group_by_xor",
+            UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
@@ -321,7 +321,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 ARG(MapNames::getDpctNamespace() +
                     "permute_sub_group_by_xor")))),
     SUBGROUPSIZE_FACTORY(
-        UINT_MAX, "permute_sub_group_by_xor",
+        UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         WARNING_FACTORY_ENTRY(
             "__shfl_xor_sync",
             FEATURE_REQUEST_FACTORY(

@@ -4391,6 +4391,7 @@ private:
   std::string KernelArgs;
   int TotalArgsSize = 0;
   bool EmitSizeofWarning = false;
+  unsigned int SizeOfHighestDimension = 0;
 };
 
 class CudaMallocInfo {

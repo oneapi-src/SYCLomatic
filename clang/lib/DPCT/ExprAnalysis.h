@@ -795,6 +795,7 @@ private:
   bool MustDim3 = false;
   unsigned int ArgIndex = 0;
   bool NeedEmitWGSizeWarning = true;
+  unsigned int SizeOfHighestDimension = 0;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const CXXDependentScopeMemberExpr *CDSME);
@@ -818,6 +819,7 @@ public:
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }
   inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
+  unsigned int getSizeOfHighestDimension() { return SizeOfHighestDimension; }
   unsigned int Dim = 3;
   bool IsTryToUseOneDimension = false;
 };

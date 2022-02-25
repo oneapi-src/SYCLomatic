@@ -1125,6 +1125,9 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
   auto Num = Ctor->getNumArgs();
   for (size_t i = 0; i < Num; ++i) {
     if (Ctor->getArg(i)->isDefaultArgument()) {
+      if(i == 0) {
+        SizeOfHighestDimension = 1;
+      }
       return Size;
     }
 
@@ -1132,6 +1135,9 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
     if (!Ctor->getArg(i)->isValueDependent() &&
         Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       int64_t Value = ER.Val.getInt().getExtValue();
+      if(i == 0) {
+        SizeOfHighestDimension = Value;
+      }
       Size = Size * Value;
     } else {
       // Not all args can be evaluated, so return a value larger than 256 to

@@ -633,6 +633,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
         DiagnosticsUtils::report(getFilePath(), getBegin(),
                                  Diagnostics::EXCEED_MAX_WORKGROUP_SIZE, true,
                                  false);
+      SizeOfHighestDimension = KFA.getSizeOfHighestDimension();
     } else if (Idx == 3) {
       llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> DREResults;
       DREResults = findDREInScope(Arg);
@@ -904,7 +905,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   struct {
     bool isFirstRef = true;
     bool isEvaluated = true;
-    unsigned int Size;
+    unsigned int Size = 0;
     std::string SizeStr;
   } RequiredSubGroupSize;
   if (DeviceFuncInfo) {
@@ -912,10 +913,24 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     std::set<std::shared_ptr<DeviceFunctionInfo>> ProcessedSet;
     ProcessRequireQueue.push_back(DeviceFuncInfo);
     ProcessedSet.insert(DeviceFuncInfo);
+    // New function name, LocInfo
+    std::vector<std::pair<std::string, std::pair<std::string, unsigned>>> ShflFunctions;
     while (!ProcessRequireQueue.empty()) {
       auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
       for (auto &Element : SGSize) {
+        std::string NewAPIName = std::get<3>(Element);
         unsigned int Size = std::get<0>(Element);
+        if (NewAPIName ==
+                (MapNames::getDpctNamespace() + "shift_sub_group_right") ||
+            NewAPIName ==
+                (MapNames::getDpctNamespace() + "shift_sub_group_left") ||
+            NewAPIName ==
+                (MapNames::getDpctNamespace() + "select_from_sub_group") ||
+            NewAPIName ==
+                (MapNames::getDpctNamespace() + "permute_sub_group_by_xor")) {
+          ShflFunctions.push_back(
+              {NewAPIName, {std::get<1>(Element), std::get<2>(Element)}});
+        }
         if (RequiredSubGroupSize.isFirstRef) {
           RequiredSubGroupSize.isFirstRef = false;
           if (Size == UINT_MAX) {
@@ -955,7 +970,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
           if (isNeedEmitWarning) {
             DiagnosticsUtils::report(std::get<1>(Element), std::get<2>(Element),
                                      Diagnostics::SUBGROUP_SIZE_CONFLICT, true,
-                                     false, std::get<3>(Element), ConflictSize);
+                                     false, NewAPIName, ConflictSize);
           }
         }
       }
@@ -967,6 +982,16 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
         }
       }
       ProcessRequireQueue.pop_front();
+    }
+    if (RequiredSubGroupSize.Size != 0 &&
+        (SizeOfHighestDimension == 0 ||
+         SizeOfHighestDimension < RequiredSubGroupSize.Size)) {
+      for (auto &E : ShflFunctions) {
+        DiagnosticsUtils::report(E.second.first, E.second.second,
+                                 Diagnostics::UNSAFE_WORKGROUP_SIZE, true,
+                                 false, RequiredSubGroupSize.Size, E.first,
+                                 RequiredSubGroupSize.Size);
+      }
     }
   }
   Printer.indent();

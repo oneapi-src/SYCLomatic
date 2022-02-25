@@ -55,6 +55,9 @@ __global__ void kernel6() {
 __global__ void kernel7() {
   int val;
   int srcLane;
+  // CHECK: /*
+  // CHECK: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK: */
   // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane);
 }
@@ -66,6 +69,9 @@ __global__ void kernel8() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK-NEXT: */
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
 }
@@ -76,6 +82,9 @@ __global__ void kernel9() {
   int srcLane;
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);
@@ -310,46 +319,46 @@ int main() {
   // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel1(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel1<<<1,1>>>();
+  kernel1<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel2(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel2<<<1,1>>>();
+  kernel2<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel3(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel3<<<1,1>>>();
+  kernel3<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel4(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel4<<<1,1>>>();
+  kernel4<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel5(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel5<<<1,1>>>();
+  kernel5<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel6(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel6<<<1,1>>>();
+  kernel6<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -358,185 +367,188 @@ int main() {
   // CHECK-NEXT:   });
   kernel7<<<1,1>>>();
 
+  auto BS = dim3(1);
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(BS, BS),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel8(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel8<<<1,1>>>();
-
+  kernel8<<<1,BS>>>();
+  
+  int a;
+  auto BS2 = dim3(a);
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(BS2, BS2),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel9(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel9<<<1,1>>>();
+  kernel9<<<1,BS2>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel10(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel10<<<1,1>>>();
+  kernel10<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel11(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel11<<<1,1>>>();
+  kernel11<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel12(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel12<<<1,1>>>();
+  kernel12<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel13(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel13<<<1,1>>>();
+  kernel13<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel14(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel14<<<1,1>>>();
+  kernel14<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel15(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel15<<<1,1>>>();
+  kernel15<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel16(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel16<<<1,1>>>();
+  kernel16<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel17(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel17<<<1,1>>>();
+  kernel17<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel18(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel18<<<1,1>>>();
+  kernel18<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel19(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel19<<<1,1>>>();
+  kernel19<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel20(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel20<<<1,1>>>();
+  kernel20<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel21(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel21<<<1,1>>>();
+  kernel21<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {
   // CHECK-NEXT:     kernel22();
   // CHECK-NEXT:   });
-  kernel22<<<1,1>>>();
+  kernel22<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel23(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel23<<<1,1>>>();
+  kernel23<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel24(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel24<<<1,1>>>();
+  kernel24<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel25(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel25<<<1,1>>>();
+  kernel25<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel26(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel26<<<1,1>>>();
+  kernel26<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel27(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel27<<<1,1>>>();
+  kernel27<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel28(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel28<<<1,1>>>();
+  kernel28<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel29(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel29<<<1,1>>>();
+  kernel29<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel30(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel30<<<1,1>>>();
+  kernel30<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel31(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel31<<<1,1>>>();
+  kernel31<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel32(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel32<<<1,1>>>();
+  kernel32<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel33(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
-  kernel33<<<1,1>>>();
+  kernel33<<<1,32>>>();
 }
