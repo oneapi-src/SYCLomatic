@@ -5256,10 +5256,13 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       BufferName = getBufferNameAndDeclStr(
           CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
     }
-    auto bf = CS->body_front();
-    if (!bf)
+
+    if (!CS)
       return;
-    SourceLocation DistrInsertLoc = SM.getExpansionLoc(bf->getBeginLoc());
+    auto BF = CS->body_front();
+    if (!BF)
+      return;
+    SourceLocation DistrInsertLoc = SM.getExpansionLoc(BF->getBeginLoc());
     std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
     std::string DistrName;
     if (FuncName == "curandGenerateLogNormal" ||
