@@ -66,7 +66,7 @@ int main() {
   // CHECK:  /* DPCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
   // CHECK-NEXT:  karg2, karg3);*/
   // CHECK: /*
-  // CHECK-NEXT: DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT: DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
@@ -90,7 +90,7 @@ int main() {
   // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, 
   // CHECK:  karg3int);*/
   // CHECK:   /*
-  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -129,7 +129,7 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
   // CHECK:   /*
-  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+  // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[2]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),

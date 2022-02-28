@@ -40,9 +40,9 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  karg2 = cl::sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1049:0: The workgroup size passed to the SYCL kernel may exceed the limit.
-//CHECK-NEXT:  To get the device limit, query info::device::max_work_group_size. Adjust the
-//CHECK-NEXT:  workgroup size if needed.
+//CHECK-NEXT:  DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the
+//CHECK-NEXT:  limit. To get the device limit, query info::device::max_work_group_size.
+//CHECK-NEXT:  Adjust the work-group size if needed.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  q_ct1.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](cl::sycl::nd_item<3> item_ct1) {

@@ -315,7 +315,7 @@ void foo()
             // read texels from texture
             for (int iter = 0; iter < iterations; iter++)
             {
-// CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
@@ -349,7 +349,7 @@ void foo()
             cudaEventRecord(start, 0);
             for (int iter = 0; iter < iterations; iter++)
             {
-// CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
@@ -384,7 +384,7 @@ void foo()
             // read texels from texture
             for (int iter = 0; iter < iterations; iter++)
             {
-// CHECK:                DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
@@ -476,7 +476,7 @@ int foo_test_4()
     // dispatch job with depth first ordering
     for (int i = 0; i < n_streams; i++)
     {
-// CHECK:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:              sycl::nd_range<3>(grid * block, block), 

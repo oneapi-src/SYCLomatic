@@ -174,7 +174,7 @@ __global__ void BroadcastKernel(int* data) {
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-EMPTY:
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires subgroup size to be 16, while other subgroup functions in same DPC++ kernel require a different subgroup size. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires sub-group size to be 16, while other sub-group functions in same DPC++ kernel require a different sub-group size. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:  data[threadid] = output + data[threadid];
@@ -202,7 +202,7 @@ __global__ void WarningTestKernel1(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int data;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires subgroup size to be 32, while other subgroup functions in same DPC++ kernel require a different subgroup size. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function inclusive_scan_over_group requires sub-group size to be 32, while other sub-group functions in same DPC++ kernel require a different sub-group size. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  data = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), data, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:}
@@ -217,7 +217,7 @@ __device__ void WarpScanTest(){
 //CHECK-EMPTY:
 //CHECK-NEXT:  int data;
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function reduce_over_group requires subgroup size to be 16, while other subgroup functions in same DPC++ kernel require a different subgroup size. You may need to adjust the code.
+//CHECK-NEXT:  DPCT1085:{{[0-9]+}}: The function reduce_over_group requires sub-group size to be 16, while other sub-group functions in same DPC++ kernel require a different sub-group size. You may need to adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  data = sycl::reduce_over_group(item_ct1.get_sub_group(), data, sycl::ext::oneapi::plus<>());
 //CHECK-NEXT:}

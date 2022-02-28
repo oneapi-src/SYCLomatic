@@ -56,7 +56,7 @@ __global__ void kernel7() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK: */
   // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane);
@@ -70,7 +70,7 @@ __global__ void kernel8() {
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
@@ -84,7 +84,7 @@ __global__ void kernel9() {
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of work group used in SYCL kernel that is calling this function may be less than "32", the function "dpct::select_from_sub_group" may return unexpected result on CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);

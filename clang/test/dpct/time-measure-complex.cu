@@ -323,7 +323,7 @@ int foo_test_2()
     for (int i = 0; i < n_streams; i++)
     {
 // CHECK:        /*
-// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -333,7 +333,7 @@ int foo_test_2()
         foo_kernel_1<<<grid, block, 0, streams[i]>>>();
 
 // CHECK:        /*
-// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -343,7 +343,7 @@ int foo_test_2()
 
         foo_kernel_2<<<grid, block, 0, streams[i]>>>();
 // CHECK:        /*
-// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -353,7 +353,7 @@ int foo_test_2()
 
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
 // CHECK:        /*
-// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_4_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
@@ -447,7 +447,7 @@ void foo_test_3()
 // CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK((stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(grid * block, block),
@@ -519,7 +519,7 @@ void foo_test_4() {
   dim3 dimGrid;
 
 // CHECK:  /*
-// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
 // CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
@@ -548,7 +548,7 @@ void foo_test_4() {
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
 // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
@@ -574,7 +574,7 @@ void foo_test_4() {
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the workgroup size if needed.
+// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
 // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
