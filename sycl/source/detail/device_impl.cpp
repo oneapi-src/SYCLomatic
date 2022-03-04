@@ -17,7 +17,9 @@ namespace sycl {
 namespace detail {
 
 device_impl::device_impl()
-    : MIsHostDevice(true), MPlatform(platform_impl::getHostPlatformImpl()) {}
+    : MIsHostDevice(true), MPlatform(platform_impl::getHostPlatformImpl()),
+      // assert is natively supported by host
+      MIsAssertFailSupported(true) {}
 
 device_impl::device_impl(pi_native_handle InteropDeviceHandle,
                          const plugin &Plugin)
@@ -51,13 +53,11 @@ device_impl::device_impl(pi_native_handle InteropDeviceHandle,
   Plugin.call<PiApiKind::piDeviceGetInfo>(
       MDevice, PI_DEVICE_INFO_TYPE, sizeof(RT::PiDeviceType), &MType, nullptr);
 
-  RT::PiDevice parent = nullptr;
   // TODO catch an exception and put it to list of asynchronous exceptions
   Plugin.call<PiApiKind::piDeviceGetInfo>(MDevice, PI_DEVICE_INFO_PARENT_DEVICE,
-                                          sizeof(RT::PiDevice), &parent,
+                                          sizeof(RT::PiDevice), &MRootDevice,
                                           nullptr);
 
-  MIsRootDevice = (nullptr == parent);
   if (!InteroperabilityConstructor) {
     // TODO catch an exception and put it to list of asynchronous exceptions
     // Interoperability Constructor already calls DeviceRetain in
@@ -70,6 +70,9 @@ device_impl::device_impl(pi_native_handle InteropDeviceHandle,
     Platform = platform_impl::getPlatformFromPiDevice(MDevice, Plugin);
   }
   MPlatform = Platform;
+
+  MIsAssertFailSupported =
+      has_extension(PI_DEVICE_INFO_EXTENSION_DEVICELIB_ASSERT);
 }
 
 device_impl::~device_impl() {
@@ -127,9 +130,9 @@ device_impl::create_sub_devices(const cl_device_partition_property *Properties,
   std::vector<RT::PiDevice> SubDevices(SubDevicesCount);
   pi_uint32 ReturnedSubDevices = 0;
   const detail::plugin &Plugin = getPlugin();
-  Plugin.call<PiApiKind::piDevicePartition>(MDevice, Properties,
-                                            SubDevicesCount, SubDevices.data(),
-                                            &ReturnedSubDevices);
+  Plugin.call<sycl::errc::invalid, PiApiKind::piDevicePartition>(
+      MDevice, Properties, SubDevicesCount, SubDevices.data(),
+      &ReturnedSubDevices);
   // TODO: check that returned number of sub-devices matches what was
   // requested, otherwise this walk below is wrong.
   //
@@ -257,7 +260,7 @@ bool device_impl::has(aspect Aspect) const {
            (get_device_info<
                 pi_usm_capabilities,
                 info::device::usm_host_allocations>::get(MDevice, getPlugin()) &
-            PI_USM_ATOMIC_ACCESS);
+            PI_USM_CONCURRENT_ATOMIC_ACCESS);
   case aspect::usm_shared_allocations:
     return get_info<info::device::usm_shared_allocations>();
   case aspect::usm_atomic_shared_allocations:
@@ -266,7 +269,7 @@ bool device_impl::has(aspect Aspect) const {
                 pi_usm_capabilities,
                 info::device::usm_shared_allocations>::get(MDevice,
                                                            getPlugin()) &
-            PI_USM_ATOMIC_ACCESS);
+            PI_USM_CONCURRENT_ATOMIC_ACCESS);
   case aspect::usm_restricted_shared_allocations:
     return get_info<info::device::usm_restricted_shared_allocations>();
   case aspect::usm_system_allocations:
@@ -298,6 +301,11 @@ bool device_impl::has(aspect Aspect) const {
                MDevice, PI_DEVICE_INFO_GPU_EU_COUNT_PER_SUBSLICE,
                sizeof(pi_device_type), &device_type,
                &return_size) == PI_SUCCESS;
+  case aspect::ext_intel_gpu_hw_threads_per_eu:
+    return getPlugin().call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+               MDevice, PI_DEVICE_INFO_GPU_HW_THREADS_PER_EU,
+               sizeof(pi_device_type), &device_type,
+               &return_size) == PI_SUCCESS;
   case aspect::ext_intel_device_info_uuid: {
     auto Result = getPlugin().call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
         MDevice, PI_DEVICE_INFO_UUID, 0, nullptr, &return_size);
@@ -317,6 +325,8 @@ bool device_impl::has(aspect Aspect) const {
     return false;
   case aspect::ext_oneapi_srgb:
     return get_info<info::device::ext_oneapi_srgb>();
+  case aspect::ext_oneapi_native_assert:
+    return isAssertFailSupported();
 
   default:
     throw runtime_error("This device aspect has not been implemented yet.",
@@ -329,6 +339,17 @@ std::shared_ptr<device_impl> device_impl::getHostDeviceImpl() {
       std::make_shared<device_impl>();
 
   return HostImpl;
+}
+
+bool device_impl::isAssertFailSupported() const {
+  return MIsAssertFailSupported;
+}
+
+std::string device_impl::getDeviceName() const {
+  std::call_once(MDeviceNameFlag,
+                 [this]() { MDeviceName = get_info<info::device::name>(); });
+
+  return MDeviceName;
 }
 
 } // namespace detail

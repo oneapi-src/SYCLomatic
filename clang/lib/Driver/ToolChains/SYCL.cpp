@@ -47,44 +47,6 @@ void SYCLInstallationDetector::print(llvm::raw_ostream &OS) const {
   }
 }
 
-const char *SYCL::Linker::constructLLVMSpirvCommand(
-    Compilation &C, const JobAction &JA, const InputInfo &Output,
-    StringRef OutputFilePrefix, bool ToBc, const char *InputFileName) const {
-  // Construct llvm-spirv command.
-  // The output is a bc file or vice versa depending on the -r option usage
-  // llvm-spirv -r -o a_kernel.bc a_kernel.spv
-  // llvm-spirv -o a_kernel.spv a_kernel.bc
-  ArgStringList CmdArgs;
-  const char *OutputFileName = nullptr;
-  if (ToBc) {
-    std::string TmpName =
-        C.getDriver().GetTemporaryPath(OutputFilePrefix.str() + "-spirv", "bc");
-    OutputFileName = C.addTempFile(C.getArgs().MakeArgString(TmpName));
-    CmdArgs.push_back("-r");
-    CmdArgs.push_back("-o");
-    CmdArgs.push_back(OutputFileName);
-  } else {
-    CmdArgs.push_back("-spirv-max-version=1.3");
-    CmdArgs.push_back("-spirv-ext=+all");
-    if (!C.getDriver().isFPGAEmulationMode())
-      CmdArgs.push_back("-spirv-debug-info-version=legacy");
-    else
-      CmdArgs.push_back("-spirv-debug-info-version=ocl-100");
-    CmdArgs.push_back("-spirv-allow-extra-diexpressions");
-    CmdArgs.push_back("-spirv-allow-unknown-intrinsics=llvm.genx.");
-    CmdArgs.push_back("-o");
-    CmdArgs.push_back(Output.getFilename());
-  }
-  CmdArgs.push_back(InputFileName);
-
-  SmallString<128> LLVMSpirvPath(C.getDriver().Dir);
-  llvm::sys::path::append(LLVMSpirvPath, "llvm-spirv");
-  const char *LLVMSpirv = C.getArgs().MakeArgString(LLVMSpirvPath);
-  C.addCommand(std::make_unique<Command>(
-      JA, *this, ResponseFileSupport::AtFileUTF8(), LLVMSpirv, CmdArgs, None));
-  return OutputFileName;
-}
-
 static void addFPGATimingDiagnostic(std::unique_ptr<Command> &Cmd,
                                     Compilation &C) {
   const char *Msg = C.getArgs().MakeArgString(
@@ -100,8 +62,8 @@ void SYCL::constructLLVMForeachCommand(Compilation &C, const JobAction &JA,
                                        std::unique_ptr<Command> InputCommand,
                                        const InputInfoList &InputFiles,
                                        const InputInfo &Output, const Tool *T,
-                                       StringRef Increment,
-                                       StringRef Ext = "out") {
+                                       StringRef Increment, StringRef Ext,
+                                       StringRef ParallelJobs) {
   // Construct llvm-foreach command.
   // The llvm-foreach command looks like this:
   // llvm-foreach --in-file-list=a.list --in-replace='{}' -- echo '{}'
@@ -123,6 +85,28 @@ void SYCL::constructLLVMForeachCommand(Compilation &C, const JobAction &JA,
   if (!Increment.empty())
     ForeachArgs.push_back(
         C.getArgs().MakeArgString("--out-increment=" + Increment));
+  if (!ParallelJobs.empty())
+    ForeachArgs.push_back(C.getArgs().MakeArgString("--jobs=" + ParallelJobs));
+
+  if (C.getDriver().isSaveTempsEnabled()) {
+    SmallString<128> OutputDirName;
+    if (C.getDriver().isSaveTempsObj()) {
+      OutputDirName =
+          T->getToolChain().GetFilePath(OutputFileName.c_str()).c_str();
+      llvm::sys::path::remove_filename(OutputDirName);
+    }
+    // Use the current dir if the `GetFilePath` returned en empty string, which
+    // is the case when the `OutputFileName` does not contain any directory
+    // information, or if in CWD mode. This is necessary for `llvm-foreach`, as
+    // it would disregard the parameter without it. Otherwise append separator.
+    if (OutputDirName.empty())
+      llvm::sys::path::native(OutputDirName = "./");
+    else
+      OutputDirName.append(llvm::sys::path::get_separator());
+    ForeachArgs.push_back(
+        C.getArgs().MakeArgString("--out-dir=" + OutputDirName));
+  }
+
   ForeachArgs.push_back(C.getArgs().MakeArgString("--"));
   ForeachArgs.push_back(
       C.getArgs().MakeArgString(InputCommand->getExecutable()));
@@ -146,12 +130,15 @@ void SYCL::constructLLVMForeachCommand(Compilation &C, const JobAction &JA,
 // The list should match pre-built SYCL device library files located in
 // compiler package. Once we add or remove any SYCL device library files,
 // the list should be updated accordingly.
-static llvm::SmallVector<StringRef, 10> SYCLDeviceLibList{
+static llvm::SmallVector<StringRef, 16> SYCLDeviceLibList{
     "crt",
     "cmath",
     "cmath-fp64",
     "complex",
     "complex-fp64",
+    "itt-compiler-wrappers",
+    "itt-stubs",
+    "itt-user-wrappers",
     "fallback-cassert",
     "fallback-cstring",
     "fallback-cmath",
@@ -164,8 +151,8 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
     const ArgList &Args, StringRef SubArchName, StringRef OutputFilePrefix,
     const InputInfoList &InputFiles) const {
   // Split inputs into libraries which have 'archive' type and other inputs
-  // which can be either objects or list files. Objects/list files are linked
-  // together in a usual way, but the libraries need to be linked differently.
+  // which can be either objects or list files. Object files are linked together
+  // in a usual way, but the libraries/list files need to be linked differently.
   // We need to fetch only required symbols from the libraries. With the current
   // llvm-link command line interface that can be achieved with two step
   // linking: at the first step we will link objects into an intermediate
@@ -188,14 +175,14 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
         LibPostfix = ".obj";
       StringRef InputFilename =
           llvm::sys::path::filename(StringRef(II.getFilename()));
-      if (!InputFilename.startswith("libsycl-") ||
+      StringRef LibSyclPrefix("libsycl-");
+      if (!InputFilename.startswith(LibSyclPrefix) ||
           !InputFilename.endswith(LibPostfix) || (InputFilename.count('-') < 2))
         return false;
-      size_t PureLibNameLen = InputFilename.find_last_of('-');
       // Skip the prefix "libsycl-"
-      StringRef PureLibName = InputFilename.substr(8, PureLibNameLen - 8);
+      StringRef PureLibName = InputFilename.substr(LibSyclPrefix.size());
       for (const auto &L : SYCLDeviceLibList) {
-        if (PureLibName.compare(L) == 0)
+        if (PureLibName.startswith(L))
           return true;
       }
       return false;
@@ -214,7 +201,7 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
       if (II.getType() == types::TY_Tempfilelist) {
         // Pass the unbundled list with '@' to be processed.
         std::string FileName(II.getFilename());
-        Objs.push_back(C.getArgs().MakeArgString("@" + FileName));
+        Libs.push_back(C.getArgs().MakeArgString("@" + FileName));
       } else if (II.getType() == types::TY_Archive && !LinkSYCLDeviceLibs) {
         Libs.push_back(II.getFilename());
       } else
@@ -321,23 +308,11 @@ void SYCL::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     return;
   }
 
-  // We want to use llvm-spirv linker to link spirv binaries before putting
-  // them into the fat object.
-  // Each command outputs different files.
   InputInfoList SpirvInputs;
   for (const auto &II : Inputs) {
     if (!II.isFilename())
       continue;
-    if (Args.hasFlag(options::OPT_fsycl_use_bitcode,
-                     options::OPT_fno_sycl_use_bitcode, true) ||
-        Args.hasArg(options::OPT_foffload_static_lib_EQ))
-      SpirvInputs.push_back(II);
-    else {
-      const char *LLVMSpirvOutputFile = constructLLVMSpirvCommand(
-          C, JA, Output, Prefix, true, II.getFilename());
-      SpirvInputs.push_back(InputInfo(types::TY_LLVM_BC, LLVMSpirvOutputFile,
-                                      LLVMSpirvOutputFile));
-    }
+    SpirvInputs.push_back(II);
   }
 
   constructLLVMLinkCommand(C, JA, Output, Args, SubArchName, Prefix,
@@ -360,7 +335,6 @@ void SYCL::fpga::BackendCompiler::constructOpenCLAOTCommand(
   // will be compiled to an aocx file.
   InputInfoList ForeachInputs;
   InputInfoList FPGADepFiles;
-  StringRef CreatedReportName;
   ArgStringList CmdArgs{"-device=fpga_fast_emu"};
 
   for (const auto &II : Inputs) {
@@ -395,10 +369,12 @@ void SYCL::fpga::BackendCompiler::constructOpenCLAOTCommand(
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
                                        Exec, CmdArgs, None);
-  if (!ForeachInputs.empty())
+  if (!ForeachInputs.empty()) {
+    StringRef ParallelJobs =
+        Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
     constructLLVMForeachCommand(C, JA, std::move(Cmd), ForeachInputs, Output,
-                                this, "", ForeachExt);
-  else
+                                this, "", ForeachExt, ParallelJobs);
+  } else
     C.addCommand(std::move(Cmd));
 }
 
@@ -560,10 +536,12 @@ void SYCL::fpga::BackendCompiler::ConstructJob(
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
                                        Exec, CmdArgs, None);
   addFPGATimingDiagnostic(Cmd, C);
-  if (!ForeachInputs.empty())
+  if (!ForeachInputs.empty()) {
+    StringRef ParallelJobs =
+        Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
     constructLLVMForeachCommand(C, JA, std::move(Cmd), ForeachInputs, Output,
-                                this, ReportOptArg, ForeachExt);
-  else
+                                this, ReportOptArg, ForeachExt, ParallelJobs);
+  } else
     C.addCommand(std::move(Cmd));
 }
 
@@ -599,10 +577,12 @@ void SYCL::gen::BackendCompiler::ConstructJob(Compilation &C,
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
                                        Exec, CmdArgs, None);
-  if (!ForeachInputs.empty())
+  if (!ForeachInputs.empty()) {
+    StringRef ParallelJobs =
+        Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
     constructLLVMForeachCommand(C, JA, std::move(Cmd), ForeachInputs, Output,
-                                this, "");
-  else
+                                this, "", "out", ParallelJobs);
+  } else
     C.addCommand(std::move(Cmd));
 }
 
@@ -632,10 +612,12 @@ void SYCL::x86_64::BackendCompiler::ConstructJob(
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
                                        Exec, CmdArgs, None);
-  if (!ForeachInputs.empty())
+  if (!ForeachInputs.empty()) {
+    StringRef ParallelJobs =
+        Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
     constructLLVMForeachCommand(C, JA, std::move(Cmd), ForeachInputs, Output,
-                                this, "");
-  else
+                                this, "", "out", ParallelJobs);
+  } else
     C.addCommand(std::move(Cmd));
 }
 
@@ -668,8 +650,6 @@ SYCLToolChain::TranslateArgs(const llvm::opt::DerivedArgList &Args,
       switch ((options::ID)A->getOption().getID()) {
       default:
         DAL->append(A);
-        break;
-      case options::OPT_fcoverage_mapping:
         break;
       }
     }
@@ -723,7 +703,8 @@ void SYCLToolChain::TranslateTargetOpt(const llvm::opt::ArgList &Args,
     if (OptNoTriple) {
       // With multiple -fsycl-targets, a triple is required so we know where
       // the options should go.
-      if (Args.getAllArgValues(options::OPT_fsycl_targets_EQ).size() != 1) {
+      const Arg *TargetArg = Args.getLastArg(options::OPT_fsycl_targets_EQ);
+      if (TargetArg && TargetArg->getValues().size() != 1) {
         getDriver().Diag(diag::err_drv_Xsycl_target_missing_triple)
             << A->getSpelling();
         continue;

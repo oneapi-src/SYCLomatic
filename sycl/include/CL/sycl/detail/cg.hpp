@@ -79,8 +79,8 @@ namespace detail {
 //
 // 0x00000001 - CG type KERNEL version 0
 // 0x01000001 - CG type KERNEL version 1
-//   /\
-//   ||
+//    ^
+//    |
 // The byte specifies the version
 //
 // A user of this vector should not expect that a specific data is stored at a
@@ -94,6 +94,10 @@ namespace detail {
 enum class ExtendedMembersType : unsigned int {
   HANDLER_KERNEL_BUNDLE = 0,
   HANDLER_MEM_ADVICE,
+  // handler_impl is stored in the exended members to avoid breaking ABI.
+  // TODO: This should be made a member of the handler class once ABI can be
+  //       broken.
+  HANDLER_IMPL,
 };
 
 // Holds a pointer to an object of an arbitrary type and an ID value which
@@ -286,6 +290,7 @@ public:
   }
 
   void clearStreams() { MStreams.clear(); }
+  bool hasStreams() { return !MStreams.empty(); }
 };
 
 /// "Copy memory" command group class.
@@ -439,11 +444,11 @@ public:
   pi_mem_advice getAdvice() {
     auto ExtendedMembers = getExtendedMembers();
     if (!ExtendedMembers)
-      return PI_MEM_ADVISE_UNKNOWN;
+      return PI_MEM_ADVICE_UNKNOWN;
     for (const ExtendedMemberT &EM : *ExtendedMembers)
       if ((ExtendedMembersType::HANDLER_MEM_ADVICE == EM.MType) && EM.MData)
         return *std::static_pointer_cast<pi_mem_advice>(EM.MData);
-    return PI_MEM_ADVISE_UNKNOWN;
+    return PI_MEM_ADVICE_UNKNOWN;
   }
 };
 

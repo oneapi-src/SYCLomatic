@@ -72,9 +72,8 @@ static cl::opt<bool>
 RunLoopRerolling("reroll-loops", cl::Hidden,
                  cl::desc("Run the loop rerolling pass"));
 
-static cl::opt<bool>
-    SYCLOptimizationMode("sycl-opt", cl::init(false), cl::Hidden,
-                         cl::desc("Enable SYCL optimization mode."));
+cl::opt<bool> SYCLOptimizationMode("sycl-opt", cl::init(false), cl::Hidden,
+                                   cl::desc("Enable SYCL optimization mode."));
 
 cl::opt<bool> RunNewGVN("enable-newgvn", cl::init(false), cl::Hidden,
                         cl::desc("Run the NewGVN pass"));
@@ -444,6 +443,11 @@ void PassManagerBuilder::addFunctionSimplificationPasses(
   if (!SYCLOptimizationMode)
     MPM.add(createReassociatePass()); // Reassociate expressions
 
+  // The matrix extension can introduce large vector operations early, which can
+  // benefit from running vector-combine early on.
+  if (EnableMatrix)
+    MPM.add(createVectorCombinePass());
+
   // Do not run loop pass pipeline in "SYCL Optimization Mode". Loop
   // optimizations rely on TTI, which is not accurate for SPIR target.
   if (!SYCLOptimizationMode) {
@@ -537,8 +541,12 @@ void PassManagerBuilder::addFunctionSimplificationPasses(
     MPM.add(createLoopRerollPass());
 
   // Merge & remove BBs and sink & hoist common instructions.
-  MPM.add(createCFGSimplificationPass(
-      SimplifyCFGOptions().hoistCommonInsts(true).sinkCommonInsts(true)));
+  if (SYCLOptimizationMode)
+    MPM.add(createCFGSimplificationPass());
+  else
+    MPM.add(createCFGSimplificationPass(
+        SimplifyCFGOptions().hoistCommonInsts(true).sinkCommonInsts(true)));
+
   // Clean up after everything.
   MPM.add(createInstructionCombiningPass());
   addExtensionsToPM(EP_Peephole, MPM);
@@ -1026,7 +1034,7 @@ void PassManagerBuilder::addLTOOptimizationPasses(legacy::PassManagerBase &PM) {
         createPGOIndirectCallPromotionLegacyPass(true, !PGOSampleUse.empty()));
 
     // Propage constant function arguments by specializing the functions.
-    if (EnableFunctionSpecialization)
+    if (EnableFunctionSpecialization && OptLevel > 2)
       PM.add(createFunctionSpecializationPass());
 
     // Propagate constants at call sites into the functions they call.  This

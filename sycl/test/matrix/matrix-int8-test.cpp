@@ -1,4 +1,9 @@
-// RUN: %clangxx -march=sapphirerapids -fsycl -O2 %s -o %t.out
+// RUN: %clangxx -fsycl -fsycl-device-only -O2 -S -emit-llvm -o - %s | FileCheck %s
+
+// CHECK-DAG: %"struct.__spv::__spirv_JointMatrixINTEL" = type { [12 x [48 x [1 x [4 x i8]]]] addrspace(4)* }
+// CHECK-DAG: %"struct.__spv::__spirv_JointMatrixINTEL.[[#]]" = type { [12 x [12 x [1 x [4 x i32]]]] addrspace(4)* }
+// CHECK-DAG: %"struct.__spv::__spirv_JointMatrixINTEL.[[#]]" = type { [48 x [12 x [4 x [4 x i8]]]] addrspace(4)* }
+
 #include <CL/sycl.hpp>
 #if (SYCL_EXT_ONEAPI_MATRIX == 2)
 #include <iostream>
@@ -68,14 +73,11 @@ void matrix_multiply(big_matrix<T1, NUM_ROWS_C, NUM_COLS_C> &C, big_matrix<T2, N
 
            // AMX: 8 register tiles : 1k byte size, SMmaxxSKmax =16x64
            // strideX = X's cols, so strideC = N, strideA = K, strideB = N*4
-           joint_matrix_load(sg, sub_c,
-                             accC.get_pointer() + (sg_startx * TM) * N +
-                                 sg_starty / SG_SZ * TN,
-                             N, matrix_layout::row_major);
+           joint_matrix_fill(sg, sub_c, 0);
            for (int k = 0; k < K / TK; k += 1) {
              joint_matrix_load(
                  sg, sub_a, accA.get_pointer() + (sg_startx * TM) * K + k * TK,
-                 K, matrix_layout::packed_a);
+                 K, matrix_layout::row_major);
              // Assuming B data is already in VNNI format.
              joint_matrix_load(sg, sub_b,
                                accB.get_pointer() + (k * TK / 4) * (N * 4) +
@@ -129,8 +131,8 @@ int main() {
   }
   for (int i = 0; i < MATRIX_M; i++) {
     for (int j = 0; j < MATRIX_N; j++) {
-      C[i][j] = 1;
-      D[i][j] = 1;
+      C[i][j] = 0;
+      D[i][j] = 0;
     }
   }
 

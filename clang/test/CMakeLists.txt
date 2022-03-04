@@ -11,15 +11,18 @@ string(REPLACE ${CMAKE_CFG_INTDIR} ${LLVM_BUILD_MODE} CLANG_TOOLS_DIR ${LLVM_RUN
 
 llvm_canonicalize_cmake_booleans(
   CLANG_BUILD_EXAMPLES
+  CLANG_DEFAULT_PIE_ON_LINUX
   CLANG_ENABLE_ARCMT
   CLANG_ENABLE_STATIC_ANALYZER
+  CLANG_PLUGIN_SUPPORT
   CLANG_SPAWN_CC1
   ENABLE_BACKTRACES
   LLVM_ENABLE_NEW_PASS_MANAGER
   LLVM_ENABLE_ZLIB
   LLVM_ENABLE_PER_TARGET_RUNTIME_DIR
-  LLVM_ENABLE_PLUGINS
-  LLVM_ENABLE_THREADS)
+  LLVM_ENABLE_THREADS
+  LLVM_WITH_Z3
+  )
 
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
@@ -75,6 +78,7 @@ list(APPEND CLANG_TEST_DEPS
   clang-repl
   clang-diff
   clang-scan-deps
+  clang-pseudo
   diagtool
   hmaptool
   dpct
@@ -94,12 +98,12 @@ if (CLANG_ENABLE_ARCMT)
   )
 endif ()
 
-if (CLANG_BUILD_EXAMPLES)
+if(CLANG_BUILD_EXAMPLES AND CLANG_PLUGIN_SUPPORT)
   list(APPEND CLANG_TEST_DEPS
     Attribute
     AnnotateFunctions
     CallSuperAttr
-    clang-interpreter
+    PluginsOrder
     PrintFunctionNames
     )
 endif ()
@@ -112,6 +116,7 @@ if( NOT CLANG_BUILT_STANDALONE )
   list(APPEND CLANG_TEST_DEPS
     llvm-config
     FileCheck count not
+    append-file
     llc
     llvm-ar
     llvm-as
@@ -127,6 +132,7 @@ if( NOT CLANG_BUILT_STANDALONE )
     llvm-nm
     llvm-objcopy
     llvm-objdump
+    llvm-pdbutil
     llvm-profdata
     llvm-rc
     llvm-readelf
@@ -144,8 +150,8 @@ if( NOT CLANG_BUILT_STANDALONE )
   endif()
 endif()
 
-if (CLANG_ENABLE_STATIC_ANALYZER)
-  if (LLVM_ENABLE_PLUGINS)
+if(CLANG_ENABLE_STATIC_ANALYZER)
+  if(CLANG_PLUGIN_SUPPORT AND LLVM_ENABLE_PLUGINS) # Determine if we built them
     list(APPEND CLANG_TEST_DEPS
       SampleAnalyzerPlugin
       CheckerDependencyHandlingAnalyzerPlugin

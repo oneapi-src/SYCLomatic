@@ -54,7 +54,8 @@ public:
 
   bool tryCombineAnyExt(MachineInstr &MI,
                         SmallVectorImpl<MachineInstr *> &DeadInsts,
-                        SmallVectorImpl<Register> &UpdatedDefs) {
+                        SmallVectorImpl<Register> &UpdatedDefs,
+                        GISelObserverWrapper &Observer) {
     assert(MI.getOpcode() == TargetOpcode::G_ANYEXT);
 
     Builder.setInstrAndDebugLoc(MI);
@@ -65,7 +66,11 @@ public:
     Register TruncSrc;
     if (mi_match(SrcReg, MRI, m_GTrunc(m_Reg(TruncSrc)))) {
       LLVM_DEBUG(dbgs() << ".. Combine MI: " << MI;);
-      Builder.buildAnyExtOrTrunc(DstReg, TruncSrc);
+      if (MRI.getType(DstReg) == MRI.getType(TruncSrc))
+        replaceRegOrBuildCopy(DstReg, TruncSrc, MRI, Builder, UpdatedDefs,
+                              Observer);
+      else
+        Builder.buildAnyExtOrTrunc(DstReg, TruncSrc);
       UpdatedDefs.push_back(DstReg);
       markInstAndDefDead(MI, *MRI.getVRegDef(SrcReg), DeadInsts);
       return true;
@@ -122,12 +127,14 @@ public:
         return false;
       LLVM_DEBUG(dbgs() << ".. Combine MI: " << MI;);
       LLT SrcTy = MRI.getType(SrcReg);
-      APInt MaskVal = APInt::getAllOnesValue(SrcTy.getScalarSizeInBits());
+      APInt MaskVal = APInt::getAllOnes(SrcTy.getScalarSizeInBits());
       auto Mask = Builder.buildConstant(
         DstTy, MaskVal.zext(DstTy.getScalarSizeInBits()));
-      auto Extended = SextSrc ? Builder.buildSExtOrTrunc(DstTy, SextSrc) :
-                                Builder.buildAnyExtOrTrunc(DstTy, TruncSrc);
-      Builder.buildAnd(DstReg, Extended, Mask);
+      if (SextSrc && (DstTy != MRI.getType(SextSrc)))
+        SextSrc = Builder.buildSExtOrTrunc(DstTy, SextSrc).getReg(0);
+      if (TruncSrc && (DstTy != MRI.getType(TruncSrc)))
+        TruncSrc = Builder.buildAnyExtOrTrunc(DstTy, TruncSrc).getReg(0);
+      Builder.buildAnd(DstReg, SextSrc ? SextSrc : TruncSrc, Mask);
       markInstAndDefDead(MI, *MRI.getVRegDef(SrcReg), DeadInsts);
       return true;
     }
@@ -178,9 +185,9 @@ public:
       LLVM_DEBUG(dbgs() << ".. Combine MI: " << MI;);
       LLT SrcTy = MRI.getType(SrcReg);
       uint64_t SizeInBits = SrcTy.getScalarSizeInBits();
-      Builder.buildInstr(
-          TargetOpcode::G_SEXT_INREG, {DstReg},
-          {Builder.buildAnyExtOrTrunc(DstTy, TruncSrc), SizeInBits});
+      if (DstTy != MRI.getType(TruncSrc))
+        TruncSrc = Builder.buildAnyExtOrTrunc(DstTy, TruncSrc).getReg(0);
+      Builder.buildSExtInReg(DstReg, TruncSrc, SizeInBits);
       markInstAndDefDead(MI, *MRI.getVRegDef(SrcReg), DeadInsts);
       return true;
     }
@@ -480,7 +487,8 @@ public:
       // That is not done yet.
       if (ConvertOp == 0)
         return true;
-      return !DestTy.isVector() && OpTy.isVector();
+      return !DestTy.isVector() && OpTy.isVector() &&
+             DestTy == OpTy.getElementType();
     case TargetOpcode::G_CONCAT_VECTORS: {
       if (ConvertOp == 0)
         return true;
@@ -814,6 +822,12 @@ public:
 
     Builder.setInstrAndDebugLoc(MI);
 
+    ArtifactValueFinder Finder(MRI, Builder, LI);
+    if (Finder.tryCombineUnmergeDefs(MI, Observer, UpdatedDefs)) {
+      markInstAndDefDead(MI, *SrcDef, DeadInsts, SrcDefIdx);
+      return true;
+    }
+
     if (auto *SrcUnmerge = dyn_cast<GUnmerge>(SrcDef)) {
       // %0:_(<4 x s16>) = G_FOO
       // %1:_(<2 x s16>), %2:_(<2 x s16>) = G_UNMERGE_VALUES %0
@@ -837,14 +851,8 @@ public:
         if (ActionStep.TypeIdx == 1)
           return false;
         break;
-      default: {
-        ArtifactValueFinder Finder(MRI, Builder, LI);
-        if (Finder.tryCombineUnmergeDefs(MI, Observer, UpdatedDefs)) {
-          markInstAndDefDead(MI, *SrcDef, DeadInsts, SrcDefIdx);
-          return true;
-        }
+      default:
         return false;
-      }
       }
 
       auto NewUnmerge = Builder.buildUnmerge(DestTy, SrcUnmergeSrc);
@@ -876,16 +884,7 @@ public:
                                        ConvertOp, OpTy, DestTy)) {
       // We might have a chance to combine later by trying to combine
       // unmerge(cast) first
-      if (tryFoldUnmergeCast(MI, *SrcDef, DeadInsts, UpdatedDefs))
-        return true;
-
-      // Try using the value finder.
-      ArtifactValueFinder Finder(MRI, Builder, LI);
-      if (Finder.tryCombineUnmergeDefs(MI, Observer, UpdatedDefs)) {
-        markInstAndDefDead(MI, *SrcDef, DeadInsts, SrcDefIdx);
-        return true;
-      }
-      return false;
+      return tryFoldUnmergeCast(MI, *SrcDef, DeadInsts, UpdatedDefs);
     }
 
     const unsigned NumMergeRegs = MergeI->getNumOperands() - 1;
@@ -979,10 +978,13 @@ public:
         Builder.setInstr(MI);
 
         for (unsigned Idx = 0; Idx < NumDefs; ++Idx) {
-          Register MergeSrc = MergeI->getOperand(Idx + 1).getReg();
           Register DefReg = MI.getOperand(Idx).getReg();
-          Builder.buildInstr(ConvertOp, {DefReg}, {MergeSrc});
-          UpdatedDefs.push_back(DefReg);
+          Register MergeSrc = MergeI->getOperand(Idx + 1).getReg();
+
+          if (!MRI.use_empty(DefReg)) {
+            Builder.buildInstr(ConvertOp, {DefReg}, {MergeSrc});
+            UpdatedDefs.push_back(DefReg);
+          }
         }
 
         markInstAndDefDead(MI, *MergeI, DeadInsts);
@@ -1078,7 +1080,7 @@ public:
     default:
       return false;
     case TargetOpcode::G_ANYEXT:
-      Changed = tryCombineAnyExt(MI, DeadInsts, UpdatedDefs);
+      Changed = tryCombineAnyExt(MI, DeadInsts, UpdatedDefs, WrapperObserver);
       break;
     case TargetOpcode::G_ZEXT:
       Changed = tryCombineZExt(MI, DeadInsts, UpdatedDefs, WrapperObserver);
@@ -1250,7 +1252,7 @@ private:
     for (auto *DeadMI : DeadInsts) {
       LLVM_DEBUG(dbgs() << *DeadMI << "Is dead, eagerly deleting\n");
       WrapperObserver.erasingInstr(*DeadMI);
-      DeadMI->eraseFromParentAndMarkDBGValuesForRemoval();
+      DeadMI->eraseFromParent();
     }
     DeadInsts.clear();
   }

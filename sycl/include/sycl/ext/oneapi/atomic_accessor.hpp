@@ -18,7 +18,7 @@ namespace sycl {
 namespace ext {
 namespace oneapi {
 
-#if __cplusplus > 201402L
+#if __cplusplus >= 201703L
 
 template <memory_order> struct order_tag_t {
   explicit order_tag_t() = default;
@@ -42,7 +42,7 @@ inline constexpr scope_tag_t<memory_scope::system> system_scope{};
 
 template <typename DataT, int Dimensions, memory_order DefaultOrder,
           memory_scope DefaultScope,
-          access::target AccessTarget = access::target::global_buffer,
+          access::target AccessTarget = access::target::device,
           access::placeholder IsPlaceholder = access::placeholder::false_t>
 class atomic_accessor
     : public accessor<DataT, Dimensions, access::mode::read_write, AccessTarget,
@@ -69,7 +69,7 @@ public:
 
   using AccessorT::AccessorT;
 
-#if __cplusplus > 201402L
+#if __cplusplus >= 201703L
 
   template <typename T = DataT, int Dims = Dimensions, typename AllocatorT,
             memory_order Order, memory_scope Scope>
@@ -108,20 +108,20 @@ public:
   }
 };
 
-#if __cplusplus > 201402L
+#if __cplusplus >= 201703L
 
 template <typename DataT, int Dimensions, typename AllocatorT,
           memory_order Order, memory_scope Scope>
 atomic_accessor(buffer<DataT, Dimensions, AllocatorT>, order_tag_t<Order>,
                 scope_tag_t<Scope>, property_list = {})
-    -> atomic_accessor<DataT, Dimensions, Order, Scope, target::global_buffer,
+    -> atomic_accessor<DataT, Dimensions, Order, Scope, target::device,
                        access::placeholder::true_t>;
 
 template <typename DataT, int Dimensions, typename AllocatorT,
           memory_order Order, memory_scope Scope>
 atomic_accessor(buffer<DataT, Dimensions, AllocatorT>, handler,
                 order_tag_t<Order>, scope_tag_t<Scope>, property_list = {})
-    -> atomic_accessor<DataT, Dimensions, Order, Scope, target::global_buffer,
+    -> atomic_accessor<DataT, Dimensions, Order, Scope, target::device,
                        access::placeholder::false_t>;
 
 #endif
@@ -129,8 +129,5 @@ atomic_accessor(buffer<DataT, Dimensions, AllocatorT>, handler,
 } // namespace oneapi
 } // namespace ext
 
-namespace __SYCL2020_DEPRECATED("use 'ext::oneapi' instead") ONEAPI {
-  using namespace ext::oneapi;
-}
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

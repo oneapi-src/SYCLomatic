@@ -44,9 +44,9 @@ context_impl::context_impl(const std::vector<cl::sycl::device> Devices,
   }
 
   const auto Backend = getPlugin().getBackend();
-  if (Backend == backend::cuda) {
-    const bool UseCUDAPrimaryContext =
-        MPropList.has_property<property::context::cuda::use_primary_context>();
+  if (Backend == backend::ext_oneapi_cuda) {
+    const bool UseCUDAPrimaryContext = MPropList.has_property<
+        ext::oneapi::cuda::property::context::use_primary_context>();
     const pi_context_properties Props[] = {
         static_cast<pi_context_properties>(
             __SYCL_PI_CONTEXT_PROPERTIES_CUDA_PRIMARY),
@@ -162,6 +162,24 @@ context_impl::get_info<info::context::atomic_memory_order_capabilities>()
           info::context::atomic_memory_order_capabilities),
       sizeof(Result), &Result, nullptr);
   return readMemoryOrderBitfield(Result);
+}
+template <>
+std::vector<cl::sycl::memory_scope>
+context_impl::get_info<info::context::atomic_memory_scope_capabilities>()
+    const {
+  if (is_host())
+    return {cl::sycl::memory_scope::work_item,
+            cl::sycl::memory_scope::sub_group,
+            cl::sycl::memory_scope::work_group, cl::sycl::memory_scope::device,
+            cl::sycl::memory_scope::system};
+
+  pi_memory_scope_capabilities Result;
+  getPlugin().call<PiApiKind::piContextGetInfo>(
+      MContext,
+      pi::cast<pi_context_info>(
+          info::context::atomic_memory_scope_capabilities),
+      sizeof(Result), &Result, nullptr);
+  return readMemoryScopeBitfield(Result);
 }
 
 RT::PiContext &context_impl::getHandleRef() { return MContext; }

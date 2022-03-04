@@ -30,7 +30,7 @@ DbiStreamBuilder::DbiStreamBuilder(msf::MSFBuilder &Msf)
       PdbDllVersion(0), PdbDllRbld(0), Flags(0), MachineType(PDB_Machine::x86),
       Header(nullptr) {}
 
-DbiStreamBuilder::~DbiStreamBuilder() {}
+DbiStreamBuilder::~DbiStreamBuilder() = default;
 
 void DbiStreamBuilder::setVersionHeader(PdbRaw_DbiVer V) { VerHeader = V; }
 
@@ -332,8 +332,6 @@ static uint16_t toSecMapFlags(uint32_t Flags) {
     Ret |= static_cast<uint16_t>(OMFSegDescFlags::Read);
   if (Flags & COFF::IMAGE_SCN_MEM_WRITE)
     Ret |= static_cast<uint16_t>(OMFSegDescFlags::Write);
-  if (Flags & COFF::IMAGE_SCN_MEM_EXECUTE)
-    Ret |= static_cast<uint16_t>(OMFSegDescFlags::Execute);
   if (Flags & COFF::IMAGE_SCN_MEM_EXECUTE)
     Ret |= static_cast<uint16_t>(OMFSegDescFlags::Execute);
   if (!(Flags & COFF::IMAGE_SCN_MEM_16BIT))

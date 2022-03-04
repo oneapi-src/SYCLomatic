@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <CL/sycl/detail/defines_elementary.hpp>
+
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 
@@ -58,6 +60,22 @@ readMemoryOrderBitfield(pi_memory_order_capabilities bits) {
     result.push_back(memory_order::acq_rel);
   if (bits & PI_MEMORY_ORDER_SEQ_CST)
     result.push_back(memory_order::seq_cst);
+  return result;
+}
+
+inline std::vector<memory_scope>
+readMemoryScopeBitfield(pi_memory_scope_capabilities bits) {
+  std::vector<memory_scope> result;
+  if (bits & PI_MEMORY_SCOPE_WORK_ITEM)
+    result.push_back(memory_scope::work_item);
+  if (bits & PI_MEMORY_SCOPE_SUB_GROUP)
+    result.push_back(memory_scope::sub_group);
+  if (bits & PI_MEMORY_SCOPE_WORK_GROUP)
+    result.push_back(memory_scope::work_group);
+  if (bits & PI_MEMORY_SCOPE_DEVICE)
+    result.push_back(memory_scope::device);
+  if (bits & PI_MEMORY_SCOPE_SYSTEM)
+    result.push_back(memory_scope::system);
   return result;
 }
 

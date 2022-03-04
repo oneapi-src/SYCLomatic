@@ -4,7 +4,7 @@ If you have any technical (non-legal) questions about the Compatibility Tool, pl
 
 # Intel® DPC++ Compatibility Tool
 
-## Introduction
+Intel staging area for llvm.org contribution. Home for Intel LLVM-based projects:
 
 Intel® DPC++ Compatibility Tool is a new tool that will assist developers in migrating some portion of their existing code written in CUDA\* to the newly developed DPC++ language. Our experience has shown that this can vary
 greatly, but on average, about 80-90% of CUDA\* code in applications can be migrated by this tool. Completion of the code and verification of the final code is expected to be manual process done by the developer.

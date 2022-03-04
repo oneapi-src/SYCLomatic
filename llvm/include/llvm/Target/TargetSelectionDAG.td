@@ -297,10 +297,6 @@ def SDTAtomicLoad : SDTypeProfile<1, 1, [
   SDTCisInt<0>, SDTCisPtrTy<1>
 ]>;
 
-def SDTConvertOp : SDTypeProfile<1, 5, [ //cvtss, su, us, uu, ff, fs, fu, sf, su
-  SDTCisVT<2, OtherVT>, SDTCisVT<3, OtherVT>, SDTCisPtrTy<4>, SDTCisPtrTy<5>
-]>;
-
 class SDCallSeqStart<list<SDTypeConstraint> constraints> :
         SDTypeProfile<0, 2, constraints>;
 class SDCallSeqEnd<list<SDTypeConstraint> constraints> :
@@ -369,6 +365,10 @@ def mul        : SDNode<"ISD::MUL"       , SDTIntBinOp,
                         [SDNPCommutative, SDNPAssociative]>;
 def mulhs      : SDNode<"ISD::MULHS"     , SDTIntBinOp, [SDNPCommutative]>;
 def mulhu      : SDNode<"ISD::MULHU"     , SDTIntBinOp, [SDNPCommutative]>;
+def avgfloors  : SDNode<"ISD::AVGFLOORS" , SDTIntBinOp, [SDNPCommutative]>;
+def avgflooru  : SDNode<"ISD::AVGFLOORU" , SDTIntBinOp, [SDNPCommutative]>;
+def avgceils   : SDNode<"ISD::AVGCEILS"  , SDTIntBinOp, [SDNPCommutative]>;
+def avgceilu   : SDNode<"ISD::AVGCEILU"  , SDTIntBinOp, [SDNPCommutative]>;
 def abds       : SDNode<"ISD::ABDS"      , SDTIntBinOp, [SDNPCommutative]>;
 def abdu       : SDNode<"ISD::ABDU"      , SDTIntBinOp, [SDNPCommutative]>;
 def smullohi   : SDNode<"ISD::SMUL_LOHI" , SDTIntBinHiLoOp, [SDNPCommutative]>;
@@ -1476,7 +1476,7 @@ def any_fsetccs : PatFrags<(ops node:$lhs, node:$rhs, node:$pred),
                           [(strict_fsetccs node:$lhs, node:$rhs, node:$pred),
                            (setcc node:$lhs, node:$rhs, node:$pred)]>;
 
-multiclass binary_atomic_op_ord<SDNode atomic_op> {
+multiclass binary_atomic_op_ord {
   def NAME#_monotonic : PatFrag<(ops node:$ptr, node:$val),
       (!cast<SDPatternOperator>(NAME) node:$ptr, node:$val)> {
     let IsAtomic = true;
@@ -1504,7 +1504,7 @@ multiclass binary_atomic_op_ord<SDNode atomic_op> {
   }
 }
 
-multiclass ternary_atomic_op_ord<SDNode atomic_op> {
+multiclass ternary_atomic_op_ord {
   def NAME#_monotonic : PatFrag<(ops node:$ptr, node:$cmp, node:$val),
       (!cast<SDPatternOperator>(NAME) node:$ptr, node:$cmp, node:$val)> {
     let IsAtomic = true;
@@ -1554,10 +1554,10 @@ multiclass binary_atomic_op<SDNode atomic_op, bit IsInt = 1> {
     let MemoryVT = !if(IsInt, i64, f64);
   }
 
-  defm NAME#_8  : binary_atomic_op_ord<atomic_op>;
-  defm NAME#_16 : binary_atomic_op_ord<atomic_op>;
-  defm NAME#_32 : binary_atomic_op_ord<atomic_op>;
-  defm NAME#_64 : binary_atomic_op_ord<atomic_op>;
+  defm NAME#_8  : binary_atomic_op_ord;
+  defm NAME#_16 : binary_atomic_op_ord;
+  defm NAME#_32 : binary_atomic_op_ord;
+  defm NAME#_64 : binary_atomic_op_ord;
 }
 
 multiclass ternary_atomic_op<SDNode atomic_op> {
@@ -1582,10 +1582,10 @@ multiclass ternary_atomic_op<SDNode atomic_op> {
     let MemoryVT = i64;
   }
 
-  defm NAME#_8  : ternary_atomic_op_ord<atomic_op>;
-  defm NAME#_16 : ternary_atomic_op_ord<atomic_op>;
-  defm NAME#_32 : ternary_atomic_op_ord<atomic_op>;
-  defm NAME#_64 : ternary_atomic_op_ord<atomic_op>;
+  defm NAME#_8  : ternary_atomic_op_ord;
+  defm NAME#_16 : ternary_atomic_op_ord;
+  defm NAME#_32 : ternary_atomic_op_ord;
+  defm NAME#_64 : ternary_atomic_op_ord;
 }
 
 defm atomic_load_add  : binary_atomic_op<atomic_load_add>;

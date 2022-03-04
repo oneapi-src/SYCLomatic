@@ -25,7 +25,14 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   message("Building Flang as a standalone project.")
   project(Flang)
   set(FLANG_STANDALONE_BUILD ON)
+else()
+  set(FLANG_STANDALONE_BUILD OFF)
+endif()
 
+# Must go below project(..)
+include(GNUInstallDirs)
+
+if (FLANG_STANDALONE_BUILD)
   set(FLANG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
   if (NOT MSVC_IDE)
     set(LLVM_ENABLE_ASSERTIONS ${ENABLE_ASSERTIONS}
@@ -35,7 +42,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   endif()
 
   # We need a pre-built/installed version of LLVM.
-  find_package(LLVM REQUIRED HINTS "${LLVM_CMAKE_PATH}")
+  find_package(LLVM REQUIRED HINTS "${LLVM_CMAKE_DIR}")
   # If the user specifies a relative path to LLVM_DIR, the calls to include
   # LLVM modules fail. Append the absolute path to LLVM_DIR instead.
   get_filename_component(LLVM_DIR_ABSOLUTE ${LLVM_DIR} REALPATH)
@@ -72,6 +79,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   include(AddLLVM)
   include(HandleLLVMOptions)
   include(VersionFromVCS)
+  include(GetErrcMessages)
 
   include(AddClang)
 
@@ -132,6 +140,8 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
          "Generate build targets for the Flang unit tests."
          ON)
 
+  get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
+
 #Handle unittests when out-of-tree
 #LLVM_BUILD_MAIN_SRC_DIR - Path to llvm source when out-of-tree.
   set(FLANG_GTEST_AVAIL 0)
@@ -174,7 +184,6 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   endif()
 
 else()
-  set(FLANG_STANDALONE_BUILD OFF)
   option(FLANG_INCLUDE_TESTS
          "Generate build targets for the Flang unit tests."
          ${LLVM_INCLUDE_TESTS})
@@ -222,8 +231,15 @@ include_directories(BEFORE
   ${FLANG_BINARY_DIR}/include
   ${FLANG_SOURCE_DIR}/include)
 
+if(NOT DEFINED LLVM_COMMON_CMAKE_UTILS)
+  set(LLVM_COMMON_CMAKE_UTILS ${FLANG_SOURCE_DIR}/../cmake)
+endif()
+
 # Add Flang-centric modules to cmake path.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+list(INSERT CMAKE_MODULE_PATH 0
+  "${FLANG_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+  )
 include(AddFlang)
 
 if (NOT DEFAULT_SYSROOT)
@@ -291,6 +307,14 @@ set(FLANG_REPOSITORY_STRING "" CACHE STRING
 if (FLANG_REPOSITORY_STRING)
   add_definitions(-DFLANG_REPOSITORY_STRING="${FLANG_REPOSITORY_STRING}")
 endif()
+
+include(TestBigEndian)
+test_big_endian(IS_BIGENDIAN)
+if (IS_BIGENDIAN)
+  add_compile_definitions(FLANG_BIG_ENDIAN=1)
+else ()
+  add_compile_definitions(FLANG_LITTLE_ENDIAN=1)
+endif ()
 
 # Configure Flang's Version.inc file.
 configure_file(
@@ -433,7 +457,7 @@ endif()
 
 if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
   install(DIRECTORY include/flang
-    DESTINATION include
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT flang-headers
     FILES_MATCHING
     PATTERN "*.def"
@@ -445,7 +469,7 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
     PATTERN "CMakeFiles" EXCLUDE)
     
   install(DIRECTORY ${FLANG_INCLUDE_DIR}/flang
-    DESTINATION include
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT flang-headers
     FILES_MATCHING
     PATTERN "*.inc"

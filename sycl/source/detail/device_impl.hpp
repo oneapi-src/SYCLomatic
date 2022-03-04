@@ -10,11 +10,13 @@
 
 #include <CL/sycl/aspects.hpp>
 #include <CL/sycl/detail/pi.hpp>
+#include <CL/sycl/kernel_bundle.hpp>
 #include <CL/sycl/stl.hpp>
 #include <detail/device_info.hpp>
 #include <detail/platform_impl.hpp>
 
 #include <memory>
+#include <mutex>
 
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
@@ -222,14 +224,23 @@ public:
   /// \return the host device_impl singleton
   static std::shared_ptr<device_impl> getHostDeviceImpl();
 
+  bool isAssertFailSupported() const;
+
+  bool isRootDevice() const { return MRootDevice == nullptr; }
+
+  std::string getDeviceName() const;
+
 private:
   explicit device_impl(pi_native_handle InteropDevice, RT::PiDevice Device,
                        PlatformImplPtr Platform, const plugin &Plugin);
   RT::PiDevice MDevice = 0;
   RT::PiDeviceType MType;
-  bool MIsRootDevice = false;
+  RT::PiDevice MRootDevice = nullptr;
   bool MIsHostDevice;
   PlatformImplPtr MPlatform;
+  bool MIsAssertFailSupported = false;
+  mutable std::string MDeviceName;
+  mutable std::once_flag MDeviceNameFlag;
 }; // class device_impl
 
 } // namespace detail

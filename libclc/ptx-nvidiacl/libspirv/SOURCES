@@ -1,3 +1,5 @@
+assert/__assert_fail.cl
+reflect.ll
 atomic/loadstore_helpers.ll
 cl_khr_int64_extended_atomics/minmax_helpers.ll
 integer/mul24.cl
@@ -53,7 +55,7 @@ math/native_sqrt.cl
 math/native_tan.cl
 math/nextafter.cl
 math/pow.cl
-math/remainer.cl
+math/remainder.cl
 math/round.cl
 math/rsqrt.cl
 math/sin.cl
@@ -69,6 +71,8 @@ relational/isfinite.cl
 relational/isinf.cl
 relational/isnan.cl
 synchronization/barrier.cl
+async/async_work_group_strided_copy.cl
+async/wait_group_events.cl
 workitem/get_global_id.cl
 workitem/get_global_offset.cl
 workitem/get_global_size.cl
@@ -85,5 +89,17 @@ images/image_helpers.ll
 images/image.cl
 group/collectives_helpers.ll
 group/collectives.cl
-SPV_EXT_shader_atomic_float_add/atomicfaddext.cl
-SPV_EXT_shader_atomic_float_add/faddext_helpers.ll
+group/group_ballot.cl
+atomic/atomic_add.cl
+atomic/atomic_and.cl
+atomic/atomic_cmpxchg.cl
+atomic/atomic_dec.cl
+atomic/atomic_inc.cl
+atomic/atomic_max.cl
+atomic/atomic_min.cl
+atomic/atomic_sub.cl
+atomic/atomic_xchg.cl
+atomic/atomic_or.cl
+atomic/atomic_xor.cl
+atomic/atomic_load.cl
+atomic/atomic_store.cl

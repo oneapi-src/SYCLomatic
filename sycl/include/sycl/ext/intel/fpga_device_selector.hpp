@@ -8,10 +8,17 @@
 
 #pragma once
 
-#include <CL/sycl.hpp>
+#include <CL/sycl/device.hpp>
+#include <CL/sycl/device_selector.hpp>
+
+#include <string>
 
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
+
+// Forward declaration
+class platform;
+
 namespace ext {
 namespace intel {
 
@@ -51,8 +58,5 @@ public:
 } // namespace intel
 } // namespace ext
 
-namespace __SYCL2020_DEPRECATED("use 'ext::intel' instead") INTEL {
-  using namespace ext::intel;
-}
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)

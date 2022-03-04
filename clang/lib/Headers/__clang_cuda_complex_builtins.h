@@ -19,8 +19,10 @@
 #ifdef INTEL_CUSTOMIZATION
 #pragma push_macro("__OPENMP_NVPTX__")
 #undef __OPENMP_NVPTX__
+#pragma push_macro("__OPENMP_AMDGCN__")
+#undef __OPENMP_AMDGCN__
 #endif
-#ifdef __OPENMP_NVPTX__
+#if defined(__OPENMP_NVPTX__) || defined(__OPENMP_AMDGCN__)
 #pragma omp declare target
 #define __DEVICE__ __attribute__((noinline, nothrow, cold, weak))
 #else
@@ -28,13 +30,14 @@
 #endif
 #ifdef INTEL_CUSTOMIZATION
 #pragma pop_macro("__OPENMP_NVPTX__")
+#pragma pop_macro("__OPENMP_AMDGCN__")
 #endif
 
 
 // To make the algorithms available for C and C++ in CUDA and OpenMP we select
 // different but equivalent function versions. TODO: For OpenMP we currently
 // select the native builtins as the overload support for templates is lacking.
-#if !defined(__OPENMP_NVPTX__)
+#if !defined(__OPENMP_NVPTX__) && !defined(__OPENMP_AMDGCN__)
 #define _ISNANd std::isnan
 #define _ISNANf std::isnan
 #define _ISINFd std::isinf
@@ -287,12 +290,15 @@ __DEVICE__ float _Complex __divsc3(float __a, float __b, float __c, float __d) {
 #ifdef INTEL_CUSTOMIZATION
 #pragma push_macro("__OPENMP_NVPTX__")
 #undef __OPENMP_NVPTX__
+#pragma push_macro("__OPENMP_AMDGCN__")
+#undef __OPENMP_AMDGCN__
 #endif
-#ifdef __OPENMP_NVPTX__
+#if defined(__OPENMP_NVPTX__) || defined(__OPENMP_AMDGCN__)
 #pragma omp end declare target
 #endif
 #ifdef INTEL_CUSTOMIZATION
 #pragma pop_macro("__OPENMP_NVPTX__")
+#pragma pop_macro("__OPENMP_AMDGCN__")
 #endif
 
 #pragma pop_macro("__DEVICE__")

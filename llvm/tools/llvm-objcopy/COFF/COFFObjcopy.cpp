@@ -94,7 +94,7 @@ static Error addGnuDebugLink(Object &Obj, StringRef DebugLinkFile) {
   return Error::success();
 }
 
-static void setSectionFlags(Section &Sec, SectionFlag AllFlags) {
+static uint32_t flagsToCharacteristics(SectionFlag AllFlags, uint32_t OldChar) {
   // Need to preserve alignment flags.
   const uint32_t PreserveMask =
       IMAGE_SCN_ALIGN_1BYTES | IMAGE_SCN_ALIGN_2BYTES | IMAGE_SCN_ALIGN_4BYTES |
@@ -107,8 +107,7 @@ static void setSectionFlags(Section &Sec, SectionFlag AllFlags) {
 
   // Setup new section characteristics based on the flags provided in command
   // line.
-  uint32_t NewCharacteristics =
-      (Sec.Header.Characteristics & PreserveMask) | IMAGE_SCN_MEM_READ;
+  uint32_t NewCharacteristics = (OldChar & PreserveMask) | IMAGE_SCN_MEM_READ;
 
   if ((AllFlags & SectionFlag::SecAlloc) && !(AllFlags & SectionFlag::SecLoad))
     NewCharacteristics |= IMAGE_SCN_CNT_UNINITIALIZED_DATA;
@@ -128,10 +127,11 @@ static void setSectionFlags(Section &Sec, SectionFlag AllFlags) {
   if (AllFlags & SectionFlag::SecExclude)
     NewCharacteristics |= IMAGE_SCN_LNK_REMOVE;
 
-  Sec.Header.Characteristics = NewCharacteristics;
+  return NewCharacteristics;
 }
 
-static Error handleArgs(const CommonConfig &Config, Object &Obj) {
+static Error handleArgs(const CommonConfig &Config,
+                        const COFFConfig &COFFConfig, Object &Obj) {
   // Perform the actual section removals.
   Obj.removeSections([&Config](const Section &Sec) {
     // Contrary to --only-keep-debug, --only-section fully removes sections that
@@ -226,7 +226,8 @@ static Error handleArgs(const CommonConfig &Config, Object &Obj) {
     for (Section &Sec : Obj.getMutableSections()) {
       const auto It = Config.SetSectionFlags.find(Sec.Name);
       if (It != Config.SetSectionFlags.end())
-        setSectionFlags(Sec, It->second.NewFlags);
+        Sec.Header.Characteristics = flagsToCharacteristics(
+            It->second.NewFlags, Sec.Header.Characteristics);
     }
 
   for (const auto &Flag : Config.AddSection) {
@@ -238,29 +239,81 @@ static Error handleArgs(const CommonConfig &Config, Object &Obj) {
       return createFileError(FileName, errorCodeToError(BufOrErr.getError()));
     auto Buf = std::move(*BufOrErr);
 
+    uint32_t Characteristics;
+    const auto It = Config.SetSectionFlags.find(SecName);
+    if (It != Config.SetSectionFlags.end())
+      Characteristics = flagsToCharacteristics(It->second.NewFlags, 0);
+    else
+      Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_ALIGN_1BYTES;
+
     addSection(
         Obj, SecName,
         makeArrayRef(reinterpret_cast<const uint8_t *>(Buf->getBufferStart()),
                      Buf->getBufferSize()),
-        IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_ALIGN_1BYTES);
+        Characteristics);
+  }
+
+  for (StringRef Flag : Config.UpdateSection) {
+    StringRef SecName, FileName;
+    std::tie(SecName, FileName) = Flag.split('=');
+
+    auto BufOrErr = MemoryBuffer::getFile(FileName);
+    if (!BufOrErr)
+      return createFileError(FileName, errorCodeToError(BufOrErr.getError()));
+    auto Buf = std::move(*BufOrErr);
+
+    auto It = llvm::find_if(Obj.getMutableSections(), [SecName](auto &Sec) {
+      return Sec.Name == SecName;
+    });
+    if (It == Obj.getMutableSections().end())
+      return createStringError(errc::invalid_argument,
+                               "could not find section with name '%s'",
+                               SecName.str().c_str());
+    size_t ContentSize = It->getContents().size();
+    if (!ContentSize)
+      return createStringError(
+          errc::invalid_argument,
+          "section '%s' cannot be updated because it does not have contents",
+          SecName.str().c_str());
+    if (ContentSize < Buf->getBufferSize())
+      return createStringError(
+          errc::invalid_argument,
+          "new section cannot be larger than previous section");
+    It->setOwnedContents({Buf->getBufferStart(), Buf->getBufferEnd()});
   }
 
   if (!Config.AddGnuDebugLink.empty())
     if (Error E = addGnuDebugLink(Obj, Config.AddGnuDebugLink))
       return E;
 
+  if (COFFConfig.Subsystem || COFFConfig.MajorSubsystemVersion ||
+      COFFConfig.MinorSubsystemVersion) {
+    if (!Obj.IsPE)
+      return createStringError(
+          errc::invalid_argument,
+          "'" + Config.OutputFilename +
+              "': unable to set subsystem on a relocatable object file");
+    if (COFFConfig.Subsystem)
+      Obj.PeHeader.Subsystem = *COFFConfig.Subsystem;
+    if (COFFConfig.MajorSubsystemVersion)
+      Obj.PeHeader.MajorSubsystemVersion = *COFFConfig.MajorSubsystemVersion;
+    if (COFFConfig.MinorSubsystemVersion)
+      Obj.PeHeader.MinorSubsystemVersion = *COFFConfig.MinorSubsystemVersion;
+  }
+
   return Error::success();
 }
 
-Error executeObjcopyOnBinary(const CommonConfig &Config, const COFFConfig &,
-                             COFFObjectFile &In, raw_ostream &Out) {
+Error executeObjcopyOnBinary(const CommonConfig &Config,
+                             const COFFConfig &COFFConfig, COFFObjectFile &In,
+                             raw_ostream &Out) {
   COFFReader Reader(In);
   Expected<std::unique_ptr<Object>> ObjOrErr = Reader.create();
   if (!ObjOrErr)
     return createFileError(Config.InputFilename, ObjOrErr.takeError());
   Object *Obj = ObjOrErr->get();
   assert(Obj && "Unable to deserialize COFF object");
-  if (Error E = handleArgs(Config, *Obj))
+  if (Error E = handleArgs(Config, COFFConfig, *Obj))
     return createFileError(Config.InputFilename, std::move(E));
   COFFWriter Writer(*Obj, Out);
   if (Error E = Writer.write())

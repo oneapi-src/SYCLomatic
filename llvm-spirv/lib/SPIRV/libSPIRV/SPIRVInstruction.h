@@ -397,12 +397,12 @@ public:
       assert(MemoryAccess.size() > 1 && "Alignment operand is missing");
       Alignment = MemoryAccess[MemAccessNumParam++];
     }
-    if (MemoryAccess[0] & internal::MemoryAccessAliasScopeINTELMask) {
+    if (MemoryAccess[0] & MemoryAccessAliasScopeINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
           "Aliasing operand is missing");
       AliasScopeInstID = MemoryAccess[MemAccessNumParam++];
     }
-    if (MemoryAccess[0] & internal::MemoryAccessNoAliasINTELMask) {
+    if (MemoryAccess[0] & MemoryAccessNoAliasINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
           "Aliasing operand is missing");
       NoAliasInstID = MemoryAccess[MemAccessNumParam];
@@ -415,10 +415,10 @@ public:
     return getMemoryAccessMask() & MemoryAccessNontemporalMask;
   }
   SPIRVWord isAliasScope() const {
-    return getMemoryAccessMask() & internal::MemoryAccessAliasScopeINTELMask;
+    return getMemoryAccessMask() & MemoryAccessAliasScopeINTELMaskMask;
   }
   SPIRVWord isNoAlias() const {
-    return getMemoryAccessMask() & internal::MemoryAccessNoAliasINTELMask;
+    return getMemoryAccessMask() & MemoryAccessNoAliasINTELMaskMask;
   }
   SPIRVWord getMemoryAccessMask() const { return TheMemoryAccessMask; }
   SPIRVWord getAlignment() const { return Alignment; }
@@ -1863,7 +1863,7 @@ public:
   // Incomplete constructor
   SPIRVCompositeConstruct() : SPIRVInstruction(OC) {}
 
-  const std::vector<SPIRVValue *> getConstituents() const {
+  std::vector<SPIRVValue *> getOperands() override {
     return getValues(Constituents);
   }
 
@@ -1875,13 +1875,15 @@ protected:
   _SPIRV_DEF_ENCDEC3(Type, Id, Constituents)
   void validate() const override {
     SPIRVInstruction::validate();
-    switch (getValueType(this->getId())->getOpCode()) {
+    size_t TypeOpCode = this->getType()->getOpCode();
+    switch (TypeOpCode) {
     case OpTypeVector:
-      assert(getConstituents().size() > 1 &&
+      assert(Constituents.size() > 1 &&
              "There must be at least two Constituent operands in vector");
       break;
     case OpTypeArray:
     case OpTypeStruct:
+    case internal::OpTypeJointMatrixINTEL:
       break;
     default:
       assert(false && "Invalid type");
@@ -2090,6 +2092,9 @@ public:
 
   SPIRVValue *getVector() { return getValue(VectorId); }
   SPIRVValue *getIndex() const { return getValue(IndexId); }
+  std::vector<SPIRVValue *> getOperands() override {
+    return {getVector(), getIndex()};
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC4(Type, Id, VectorId, IndexId)
@@ -2097,7 +2102,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    assert(getValueType(VectorId)->isTypeVector() ||
+           getValueType(VectorId)->isTypeJointMatrixINTEL());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2122,8 +2128,11 @@ public:
         IndexId(SPIRVID_INVALID), ComponentId(SPIRVID_INVALID) {}
 
   SPIRVValue *getVector() { return getValue(VectorId); }
-  SPIRVValue *getIndex() const { return getValue(IndexId); }
   SPIRVValue *getComponent() { return getValue(ComponentId); }
+  SPIRVValue *getIndex() const { return getValue(IndexId); }
+  std::vector<SPIRVValue *> getOperands() override {
+    return {getVector(), getComponent(), getIndex()};
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC5(Type, Id, VectorId, ComponentId, IndexId)
@@ -2131,7 +2140,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    assert(getValueType(VectorId)->isTypeVector() ||
+           getValueType(VectorId)->isTypeJointMatrixINTEL());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2623,7 +2633,7 @@ _SPIRV_OP(ATanPi, true, 9)
 _SPIRV_OP(ATan2, true, 11)
 _SPIRV_OP(Pow, true, 11)
 _SPIRV_OP(PowR, true, 11)
-_SPIRV_OP(PowN, true, 10)
+_SPIRV_OP(PowN, true, 11)
 #undef _SPIRV_OP
 
 class SPIRVAtomicInstBase : public SPIRVInstTemplateBase {
@@ -2757,17 +2767,35 @@ _SPIRV_OP(ImageQuerySamples, true, 4)
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> SPIRV##x;
 // Other instructions
-_SPIRV_OP(SpecConstantOp, true, 4, true, 0)
 _SPIRV_OP(GenericPtrMemSemantics, true, 4, false)
 _SPIRV_OP(GenericCastToPtrExplicit, true, 5, false, 1)
 #undef _SPIRV_OP
 
-class SPIRVAssumeTrueINTEL : public SPIRVInstruction {
+class SPIRVSpecConstantOpBase : public SPIRVInstTemplateBase {
 public:
-  static const Op OC = internal::OpAssumeTrueINTEL;
+  bool isOperandLiteral(unsigned I) const override {
+    // If SpecConstant results from CompositeExtract/Insert operation, then all
+    // operands are expected to be literals.
+    switch (Ops[0]) { // Opcode of underlying SpecConstant operation
+    case OpCompositeExtract:
+    case OpCompositeInsert:
+      return true;
+    default:
+      return SPIRVInstTemplateBase::isOperandLiteral(I);
+    }
+  }
+};
+
+typedef SPIRVInstTemplate<SPIRVSpecConstantOpBase, OpSpecConstantOp, true, 4,
+                          true, 0>
+    SPIRVSpecConstantOp;
+
+class SPIRVAssumeTrueKHR : public SPIRVInstruction {
+public:
+  static const Op OC = OpAssumeTrueKHR;
   static const SPIRVWord FixedWordCount = 2;
 
-  SPIRVAssumeTrueINTEL(SPIRVId TheCondition, SPIRVBasicBlock *BB)
+  SPIRVAssumeTrueKHR(SPIRVId TheCondition, SPIRVBasicBlock *BB)
       : SPIRVInstruction(FixedWordCount, OC, BB), ConditionId(TheCondition) {
     validate();
     setHasNoId();
@@ -2775,17 +2803,17 @@ public:
     assert(BB && "Invalid BB");
   }
 
-  SPIRVAssumeTrueINTEL() : SPIRVInstruction(OC), ConditionId(SPIRVID_MAX) {
+  SPIRVAssumeTrueKHR() : SPIRVInstruction(OC), ConditionId(SPIRVID_MAX) {
     setHasNoId();
     setHasNoType();
   }
 
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityOptimizationHintsINTEL);
+    return getVec(CapabilityExpectAssumeKHR);
   }
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_INTEL_optimization_hints;
+    return ExtensionID::SPV_KHR_expect_assume;
   }
 
   SPIRVValue *getCondition() const { return getValue(ConditionId); }
@@ -2799,23 +2827,22 @@ protected:
   SPIRVId ConditionId;
 };
 
-class SPIRVExpectINTELInstBase : public SPIRVInstTemplateBase {
+class SPIRVExpectKHRInstBase : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityOptimizationHintsINTEL);
+    return getVec(CapabilityExpectAssumeKHR);
   }
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_INTEL_optimization_hints;
+    return ExtensionID::SPV_KHR_expect_assume;
   }
 };
 
-#define _SPIRV_OP_INTERNAL(x, ...)                                             \
-  typedef SPIRVInstTemplate<SPIRVExpectINTELInstBase, internal::Op##x,         \
-                            __VA_ARGS__>                                       \
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVExpectKHRInstBase, Op##x, __VA_ARGS__>        \
       SPIRV##x;
-_SPIRV_OP_INTERNAL(ExpectINTEL, true, 5)
-#undef _SPIRV_OP_INTERNAL
+_SPIRV_OP(ExpectKHR, true, 5)
+#undef _SPIRV_OP
 
 class SPIRVDotKHRBase : public SPIRVInstTemplateBase {
 protected:
@@ -3251,6 +3278,29 @@ protected:
   typedef SPIRVBfloat16ConversionINTELInstBase<internal::Op##x> SPIRV##x;
 _SPIRV_OP(ConvertFToBF16INTEL)
 _SPIRV_OP(ConvertBF16ToFINTEL)
+#undef _SPIRV_OP
+
+class SPIRVJointMatrixINTELInstBase : public SPIRVInstTemplateBase {
+protected:
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_joint_matrix;
+  }
+};
+
+class SPIRVJointMatrixINTELInst : public SPIRVJointMatrixINTELInstBase {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityJointMatrixINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVJointMatrixINTELInst, internal::Op##x##INTEL, \
+                            __VA_ARGS__>                                       \
+      SPIRV##x##INTEL;
+_SPIRV_OP(JointMatrixLoad, true, 6, true)
+_SPIRV_OP(JointMatrixStore, false, 5, true)
+_SPIRV_OP(JointMatrixMad, true, 7)
+_SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 #undef _SPIRV_OP
 } // namespace SPIRV
 

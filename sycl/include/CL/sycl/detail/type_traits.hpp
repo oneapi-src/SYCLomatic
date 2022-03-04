@@ -26,9 +26,6 @@ struct sub_group;
 } // namespace oneapi
 } // namespace ext
 
-namespace __SYCL2020_DEPRECATED("use 'ext::oneapi' instead") ONEAPI {
-  using namespace ext::oneapi;
-}
 namespace detail {
 
 template <typename T> struct is_group : std::false_type {};
@@ -61,7 +58,7 @@ __SYCL_INLINE_CONSTEXPR bool is_group_v =
 namespace detail {
 // Type for Intel device UUID extension.
 // For details about this extension, see
-// sycl/doc/extensions/IntelGPU/IntelGPUDeviceInfo.md
+// sycl/doc/extensions/supported/sycl_ext_intel_device_info.md
 using uuid_type = std::array<unsigned char, 16>;
 
 template <typename T, typename R> struct copy_cv_qualifiers;

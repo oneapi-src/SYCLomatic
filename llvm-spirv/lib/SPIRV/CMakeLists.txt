@@ -9,6 +9,7 @@ add_llvm_library(LLVMSPIRVLib
   OCLTypeToSPIRV.cpp
   OCLUtil.cpp
   VectorComputeUtil.cpp
+  SPIRVLowerBitCastToNonStandardType.cpp
   SPIRVLowerBool.cpp
   SPIRVLowerConstExpr.cpp
   SPIRVLowerMemmove.cpp
@@ -38,7 +39,9 @@ add_llvm_library(LLVMSPIRVLib
   LINK_COMPONENTS
     Analysis
     BitWriter
+    CodeGen
     Core
+    Demangle
     IRReader
     Linker
     Support

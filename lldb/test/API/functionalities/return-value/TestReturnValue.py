@@ -22,9 +22,10 @@ class ReturnValueTestCase(TestBase):
         return (self.getArchitecture() in ["aarch64", "arm"] and
                 self.getPlatform() in ["freebsd", "linux"])
 
-    # ABIMacOSX_arm can't fetch simple values inside a structure
+    # ABIMacOSX_arm(64) can't fetch simple values inside a structure
     def affected_by_radar_34562999(self):
-        return (self.getArchitecture() == 'armv7' or self.getArchitecture() == 'armv7k') and self.platformIsDarwin()
+        arch = self.getArchitecture().lower()
+        return arch in ['arm64', 'arm64e', 'armv7', 'armv7k'] and self.platformIsDarwin()
 
     @expectedFailureAll(oslist=["freebsd"], archs=["i386"],
                         bugnumber="llvm.org/pr48376")
@@ -49,7 +50,7 @@ class ReturnValueTestCase(TestBase):
         # inner_sint returns the variable value, so capture that here:
         in_int = thread.GetFrameAtIndex(0).FindVariable(
             "value").GetValueAsSigned(error)
-        self.assertTrue(error.Success())
+        self.assertSuccess(error)
 
         thread.StepOut()
 
@@ -64,7 +65,7 @@ class ReturnValueTestCase(TestBase):
         self.assertTrue(return_value.IsValid())
 
         ret_int = return_value.GetValueAsSigned(error)
-        self.assertTrue(error.Success())
+        self.assertSuccess(error)
         self.assertEquals(in_int, ret_int)
 
         # Run again and we will stop in inner_sint the second time outer_sint is called.
@@ -81,7 +82,7 @@ class ReturnValueTestCase(TestBase):
         fun_name = frame.GetFunctionName()
         self.assertEquals(fun_name, "outer_sint(int)")
         in_int = frame.FindVariable("value").GetValueAsSigned(error)
-        self.assertTrue(error.Success())
+        self.assertSuccess(error)
 
         thread.StepOutOfFrame(frame)
 
@@ -94,7 +95,7 @@ class ReturnValueTestCase(TestBase):
         ret_value = thread.GetStopReturnValue()
         self.assertTrue(return_value.IsValid())
         ret_int = ret_value.GetValueAsSigned(error)
-        self.assertTrue(error.Success())
+        self.assertSuccess(error)
         self.assertEquals(2 * in_int, ret_int)
 
         # Now try some simple returns that have different types:

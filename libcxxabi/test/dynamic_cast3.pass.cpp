@@ -1,4 +1,4 @@
-//===------------------------- dynamic_cast3.cpp --------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -13,7 +13,7 @@
 // bases.
 #if defined(__clang__)
 #   pragma clang diagnostic ignored "-Winaccessible-base"
-#elif defined(__GNUC__) && (__GNUC__ >= 10)
+#elif defined(__GNUC__)
 #   pragma GCC diagnostic ignored "-Winaccessible-base"
 #endif
 

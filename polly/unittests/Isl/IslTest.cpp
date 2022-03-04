@@ -136,7 +136,7 @@ TEST(Isl, APIntToIslVal) {
   {
     APInt APNOne(32, (1ull << 32) - 1, false);
     auto IslNOne = valFromAPInt(IslCtx, APNOne, false);
-    auto IslRef = isl::val(IslCtx, 32).pow2().sub_ui(1);
+    auto IslRef = isl::val(IslCtx, 32).pow2().sub(1);
     EXPECT_EQ(IslNOne, IslRef);
   }
 
@@ -223,7 +223,7 @@ TEST(Isl, IslValToAPInt) {
   }
 
   {
-    auto IslNOne = isl::val(IslCtx, 32).pow2().sub_ui(1);
+    auto IslNOne = isl::val(IslCtx, 32).pow2().sub(1);
     auto APNOne = APIntFromVal(IslNOne);
     EXPECT_EQ((1ull << 32) - 1, APNOne);
     EXPECT_EQ(33u, APNOne.getBitWidth());
@@ -232,7 +232,7 @@ TEST(Isl, IslValToAPInt) {
   {
     auto IslLargeNum = isl::val(IslCtx, 60);
     IslLargeNum = IslLargeNum.pow2();
-    IslLargeNum = IslLargeNum.sub_ui(1);
+    IslLargeNum = IslLargeNum.sub(1);
     auto APLargeNum = APIntFromVal(IslLargeNum);
     EXPECT_EQ((1ull << 60) - 1, APLargeNum);
     EXPECT_EQ(61u, APLargeNum.getBitWidth());
@@ -644,16 +644,16 @@ TEST(ISLTools, getNumScatterDims) {
                                                         &isl_ctx_free);
 
   // Basic usage
-  EXPECT_EQ(0, getNumScatterDims(UMAP("{ [] -> [] }")));
-  EXPECT_EQ(1, getNumScatterDims(UMAP("{ [] -> [i] }")));
-  EXPECT_EQ(2, getNumScatterDims(UMAP("{ [] -> [i,j] }")));
-  EXPECT_EQ(3, getNumScatterDims(UMAP("{ [] -> [i,j,k] }")));
+  EXPECT_EQ(0u, getNumScatterDims(UMAP("{ [] -> [] }")));
+  EXPECT_EQ(1u, getNumScatterDims(UMAP("{ [] -> [i] }")));
+  EXPECT_EQ(2u, getNumScatterDims(UMAP("{ [] -> [i,j] }")));
+  EXPECT_EQ(3u, getNumScatterDims(UMAP("{ [] -> [i,j,k] }")));
 
   // Different scatter spaces
-  EXPECT_EQ(0, getNumScatterDims(UMAP("{ A[] -> []; [] -> []}")));
-  EXPECT_EQ(1, getNumScatterDims(UMAP("{ A[] -> []; [] -> [i] }")));
-  EXPECT_EQ(2, getNumScatterDims(UMAP("{ A[] -> [i]; [] -> [i,j] }")));
-  EXPECT_EQ(3, getNumScatterDims(UMAP("{ A[] -> [i]; [] -> [i,j,k] }")));
+  EXPECT_EQ(0u, getNumScatterDims(UMAP("{ A[] -> []; [] -> []}")));
+  EXPECT_EQ(1u, getNumScatterDims(UMAP("{ A[] -> []; [] -> [i] }")));
+  EXPECT_EQ(2u, getNumScatterDims(UMAP("{ A[] -> [i]; [] -> [i,j] }")));
+  EXPECT_EQ(3u, getNumScatterDims(UMAP("{ A[] -> [i]; [] -> [i,j,k] }")));
 }
 
 TEST(ISLTools, getScatterSpace) {

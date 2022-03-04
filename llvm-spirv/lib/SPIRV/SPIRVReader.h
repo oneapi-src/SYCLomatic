@@ -89,7 +89,6 @@ public:
                     bool CreatePlaceHolder = true);
   Value *transValueWithoutDecoration(SPIRVValue *, Function *F, BasicBlock *,
                                      bool CreatePlaceHolder = true);
-  Value *transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB);
   bool transDecoration(SPIRVValue *, Value *);
   bool transAlign(SPIRVValue *, Value *);
   Instruction *transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB);
@@ -97,7 +96,6 @@ public:
                                   Function *F, BasicBlock *);
   Function *transFunction(SPIRVFunction *F);
   Value *transBlockInvoke(SPIRVValue *Invoke, BasicBlock *BB);
-  Instruction *transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transWGSizeQueryBI(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transSGSizeQueryBI(SPIRVInstruction *BI, BasicBlock *BB);
   bool transFPContractMetadata();
@@ -108,9 +106,9 @@ public:
   Value *transAsmINTEL(SPIRVAsmINTEL *BA);
   CallInst *transAsmCallINTEL(SPIRVAsmCallINTEL *BI, Function *F,
                               BasicBlock *BB);
-  CallInst *transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB);
-  CallInst *transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
-                              bool IsBinaryInst = false);
+  Value *transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB);
+  Value *transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
+                           bool IsBinaryInst = false);
   bool transNonTemporalMetadata(Instruction *I);
   template <typename SPIRVInstType>
   void transAliasingMemAccess(SPIRVInstType *BI, Instruction *I);
@@ -158,7 +156,15 @@ private:
   SPIRVBlockToLLVMStructMap BlockMap;
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
+  // GlobalAnnotations collects array of annotation entries for global variables
+  // and functions. They are used in translation of llvm.global.annotations
+  // instruction.
   std::vector<Constant *> GlobalAnnotations;
+  // AnnotationsMap helps to translate annotation strings for local variables.
+  // Map values are pointers on global strings in LLVM-IR. It is used to avoid
+  // duplication of these annotation strings in LLVM-IR, which can be caused by
+  // multiple translation of UserSemantic decorations with the same literal.
+  std::unordered_map<std::string, Constant *> AnnotationsMap;
 
   // Loops metadata is translated in the end of a function translation.
   // This storage contains pairs of translated loop header basic block and loop
@@ -186,7 +192,6 @@ private:
     return BuiltInConstFunc.count(Name);
   }
 
-  bool isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const;
   bool isDirectlyTranslatedToOCL(Op OpCode) const;
   MDString *transOCLKernelArgTypeName(SPIRVFunctionParameter *);
   Value *mapFunction(SPIRVFunction *BF, Function *F);
@@ -206,9 +211,7 @@ private:
   std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST);
   std::string transVMEImageTypeName(SPIRV::SPIRVTypeVmeImageINTEL *VT);
-  std::string transOCLPipeTypeName(
-      SPIRV::SPIRVTypePipe *ST, bool UseSPIRVFriendlyFormat = false,
-      SPIRVAccessQualifierKind PipeAccess = AccessQualifierReadOnly);
+  std::string transPipeTypeName(SPIRV::SPIRVTypePipe *ST);
   std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST);
   std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe *ST);
@@ -228,8 +231,8 @@ private:
                                                  int64_t Parameter);
   template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue *V);
-  Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);
-  Instruction *transOCLRelational(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transAllAny(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transRelational(SPIRVInstruction *BI, BasicBlock *BB);
 
   void transUserSemantic(SPIRV::SPIRVFunction *Fun);
   void transGlobalAnnotations();
@@ -238,6 +241,8 @@ private:
                          SmallVectorImpl<Function *> &Funcs);
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
   void transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V);
+  void transVarDecorationsToMetadata(SPIRVValue *BV, Value *V);
+  void transFunctionDecorationsToMetadata(SPIRVFunction *BF, Function *F);
 }; // class SPIRVToLLVM
 
 } // namespace SPIRV

@@ -83,6 +83,7 @@ add_clang_library(clangDaemon
   HeaderSourceSwitch.cpp
   HeuristicResolver.cpp
   Hover.cpp
+  IncludeCleaner.cpp
   IncludeFixer.cpp
   InlayHints.cpp
   JSONTransport.cpp
@@ -130,6 +131,7 @@ add_clang_library(clangDaemon
   index/dex/PostingList.cpp
   index/dex/Trigram.cpp
 
+  refactor/InsertionPoint.cpp
   refactor/Rename.cpp
   refactor/Tweak.cpp
 

@@ -2385,15 +2385,18 @@ void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
                          hasDeclContext(namespaceDecl(hasName("thrust"))));
   };
   auto hasFunctionalActor = []() {
-    return cxxRecordDecl(hasName("thrust::detail::functional::actor"));
+    return hasType(qualType(hasDeclaration(cxxRecordDecl(hasName("thrust::detail::functional::actor")))));
   };
 
   MF.addMatcher(
       cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
       this);
-  MF.addMatcher(cxxConstructExpr(hasType(hasFunctionalActor()))
-                    .bind("thrustCtorPlaceHolder"),
-                this);
+  MF.addMatcher(
+      cxxConstructExpr(anyOf(hasFunctionalActor(),
+                             hasType(qualType(hasDeclaration(
+                                 typedefNameDecl(hasFunctionalActor()))))))
+          .bind("thrustCtorPlaceHolder"),
+      this);
 }
 
 void ThrustCtorExprRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {

@@ -15,23 +15,21 @@
 #include "llvm/BinaryFormat/ELF.h"
 #include "llvm/MC/MCInstrAnalysis.h"
 #include "llvm/MC/SubtargetFeature.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Object/ELF.h"
 #include "llvm/Object/ELFTypes.h"
 #include "llvm/Object/Error.h"
 #include "llvm/Support/ARMAttributeParser.h"
 #include "llvm/Support/ARMBuildAttributes.h"
-#include "llvm/Support/Endian.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/RISCVAttributeParser.h"
 #include "llvm/Support/RISCVAttributes.h"
-#include "llvm/Support/TargetRegistry.h"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <system_error>
 #include <utility>
 
 using namespace llvm;
@@ -653,4 +651,73 @@ ELFObjectFileBase::getPltAddresses() const {
     }
   }
   return Result;
+}
+
+template <class ELFT>
+static Expected<std::vector<VersionEntry>>
+readDynsymVersionsImpl(const ELFFile<ELFT> &EF,
+                       ELFObjectFileBase::elf_symbol_iterator_range Symbols) {
+  using Elf_Shdr = typename ELFT::Shdr;
+  const Elf_Shdr *VerSec = nullptr;
+  const Elf_Shdr *VerNeedSec = nullptr;
+  const Elf_Shdr *VerDefSec = nullptr;
+  // The user should ensure sections() can't fail here.
+  for (const Elf_Shdr &Sec : cantFail(EF.sections())) {
+    if (Sec.sh_type == ELF::SHT_GNU_versym)
+      VerSec = &Sec;
+    else if (Sec.sh_type == ELF::SHT_GNU_verdef)
+      VerDefSec = &Sec;
+    else if (Sec.sh_type == ELF::SHT_GNU_verneed)
+      VerNeedSec = &Sec;
+  }
+  if (!VerSec)
+    return std::vector<VersionEntry>();
+
+  Expected<SmallVector<Optional<VersionEntry>, 0>> MapOrErr =
+      EF.loadVersionMap(VerNeedSec, VerDefSec);
+  if (!MapOrErr)
+    return MapOrErr.takeError();
+
+  std::vector<VersionEntry> Ret;
+  size_t I = 0;
+  for (const ELFSymbolRef &Sym : Symbols) {
+    ++I;
+    Expected<const typename ELFT::Versym *> VerEntryOrErr =
+        EF.template getEntry<typename ELFT::Versym>(*VerSec, I);
+    if (!VerEntryOrErr)
+      return createError("unable to read an entry with index " + Twine(I) +
+                         " from " + describe(EF, *VerSec) + ": " +
+                         toString(VerEntryOrErr.takeError()));
+
+    Expected<uint32_t> FlagsOrErr = Sym.getFlags();
+    if (!FlagsOrErr)
+      return createError("unable to read flags for symbol with index " +
+                         Twine(I) + ": " + toString(FlagsOrErr.takeError()));
+
+    bool IsDefault;
+    Expected<StringRef> VerOrErr = EF.getSymbolVersionByIndex(
+        (*VerEntryOrErr)->vs_index, IsDefault, *MapOrErr,
+        (*FlagsOrErr) & SymbolRef::SF_Undefined);
+    if (!VerOrErr)
+      return createError("unable to get a version for entry " + Twine(I) +
+                         " of " + describe(EF, *VerSec) + ": " +
+                         toString(VerOrErr.takeError()));
+
+    Ret.push_back({(*VerOrErr).str(), IsDefault});
+  }
+
+  return Ret;
+}
+
+Expected<std::vector<VersionEntry>>
+ELFObjectFileBase::readDynsymVersions() const {
+  elf_symbol_iterator_range Symbols = getDynamicSymbolIterators();
+  if (const auto *Obj = dyn_cast<ELF32LEObjectFile>(this))
+    return readDynsymVersionsImpl(Obj->getELFFile(), Symbols);
+  if (const auto *Obj = dyn_cast<ELF32BEObjectFile>(this))
+    return readDynsymVersionsImpl(Obj->getELFFile(), Symbols);
+  if (const auto *Obj = dyn_cast<ELF64LEObjectFile>(this))
+    return readDynsymVersionsImpl(Obj->getELFFile(), Symbols);
+  return readDynsymVersionsImpl(cast<ELF64BEObjectFile>(this)->getELFFile(),
+                                Symbols);
 }
