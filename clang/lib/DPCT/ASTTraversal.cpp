@@ -3071,6 +3071,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
+    if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
+      if (FD->isImplicit())
+        return;
+    }
+
     if (ProcessedTypeLocs.find(*TL) != ProcessedTypeLocs.end())
       return;
 
@@ -5463,15 +5468,19 @@ void DeviceRandomFunctionCallRule::runRule(
       return;
     }
 
-    std::string Arg0Type = CE->getArg(0)->getType().getAsString();
-    std::string Arg1Type = CE->getArg(1)->getType().getAsString();
-    std::string Arg2Type = CE->getArg(2)->getType().getAsString();
+    std::string Arg0Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(0)->getType().getCanonicalType());
+    std::string Arg1Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(1)->getType().getCanonicalType());
+    std::string Arg2Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(2)->getType().getCanonicalType());
     std::string DRefArg3Type;
 
     if (Arg0Type == "unsigned long long" && Arg1Type == "unsigned long long" &&
         Arg2Type == "unsigned long long" &&
-        CE->getArg(3)->getType()->isPointerType()) {
-      DRefArg3Type = CE->getArg(3)->getType()->getPointeeType().getAsString();
+        CE->getArg(3)->getType().getCanonicalType()->isPointerType()) {
+      DRefArg3Type = DpctGlobalInfo::getTypeName(
+          CE->getArg(3)->getType().getCanonicalType()->getPointeeType());
       if (MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type) ==
           MapNames::DeviceRandomGeneratorTypeMap.end()) {
         report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
