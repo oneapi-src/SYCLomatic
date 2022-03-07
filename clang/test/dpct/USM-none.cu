@@ -101,7 +101,7 @@ void foo() {
   cudaFreeHost(h_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaHostGetDevicePointer is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaHostGetDevicePointer is not supported.
   // CHECK-NEXT: */
   cudaHostGetDevicePointer(&d_A, h_A, 0);
 

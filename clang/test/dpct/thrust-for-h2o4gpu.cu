@@ -436,7 +436,7 @@ private:
 __global__ void kernel1(){
   int a[10];
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of thrust::sort is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of thrust::sort is not supported.
   // CHECK-NEXT:  */
   thrust::sort(thrust::device, a, a + 9);
 }

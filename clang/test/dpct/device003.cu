@@ -37,19 +37,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(accessSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(perfRank = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));

@@ -19,7 +19,7 @@
 
 // CHECK: int a = 0;
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1056:{{[0-9]+}}: The Intel(R) DPC++ Compatibility Tool did not detect the variable const_angle used in device code. If this variable is also used in device code, you need to rewrite the code.
+// CHECK-NEXT: DPCT1056:{{[0-9]+}}: The use of variable const_angle in device code was not detected. If this variable is also used in device code, you need to rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: float const_angle[360];
 // CHECK-NEXT: void simple_kernel(float *d_array) {

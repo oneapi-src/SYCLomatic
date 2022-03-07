@@ -156,13 +156,13 @@ int main() {
   MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaThreadGetCacheConfig is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaThreadGetCacheConfig is not supported.
   // CHECK-NEXT:*/
   cudaThreadGetCacheConfig(NULL);
 
   // CHECK: /* DPCT_ORIG   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cudaThreadGetCacheConfig is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cudaThreadGetCacheConfig is not supported.
   // CHECK-NEXT: */
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 

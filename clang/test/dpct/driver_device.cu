@@ -33,7 +33,7 @@ int main(){
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+  // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, attr, device);
   CUdevice_attribute attr = CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK;
@@ -58,7 +58,7 @@ int main(){
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuDeviceGetAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuDeviceGetAttribute is not supported.
   // CHECK-NEXT: */
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 

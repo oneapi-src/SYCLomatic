@@ -56,7 +56,7 @@ struct attr{
     cudaDeviceAttr attr;
 } attr1;
 // CHECK: /*
-// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK_NEXT: cudaDeviceGetAttribute(&result, attr1.attr, dev_id);
 cudaDeviceGetAttribute(&val, attr1.attr, dev_id);
@@ -89,7 +89,7 @@ cudaDeviceGetAttribute(&val, attr4, dev_id);
 // CHECK-NEXT: if(somecondition)
 // CHECK-NEXT:   attr5 = 86;
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK_NEXT: cudaDeviceGetAttribute(&result, attr5, dev_id);
 cudaDeviceAttr attr5;
@@ -108,7 +108,7 @@ attr6 = attr5;
 checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized by the Intel(R) DPC++ Compatibility Tool. You may need to adjust the code.
+// CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
 // CHECK_NEXT: cudaDeviceGetAttribute(&result, attr6, dev_id);
 cudaDeviceGetAttribute(&val, attr6, dev_id);
@@ -138,19 +138,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: accessSupported = 0;
 cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: perfRank = 0;
 cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetP2PAttribute is not supported.
 // CHECK-NEXT:*/
 // CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
@@ -158,7 +158,7 @@ cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported,
 
 char pciBusId[80];
 // CHECK:/*
-// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetPCIBusId is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaDeviceGetPCIBusId is not supported.
 // CHECK-NEXT:*/
 cudaDeviceGetPCIBusId(pciBusId, 80, 0);
 

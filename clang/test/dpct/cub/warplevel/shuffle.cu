@@ -52,7 +52,7 @@ __global__ void ShuffleIndexKernel2(int* data) {
   int input = data[threadid];
   int output = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex is not supported.
 // CHECK-NEXT: */
 // CHECK-NEXT: output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
   output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
@@ -66,7 +66,7 @@ __global__ void ShuffleIndexKernel3(int* data) {
   int input = data[threadid];
   int output = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleUp is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleUp is not supported.
 // CHECK-NEXT: */
 // CHECK-NEXT: output = cub::ShuffleUp<32>(input, 0, 0, 0xaaaaaaaa);
   output = cub::ShuffleUp<32>(input, 0, 0, 0xaaaaaaaa);

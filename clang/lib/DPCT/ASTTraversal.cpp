@@ -8607,7 +8607,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       AttributeName = findValueofAttrVar(AttrArg, CE);
       if (AttributeName.empty()) {
         report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-               false, "recognized by the Intel(R) DPC++ Compatibility Tool");
+               false);
         return;
       }
     }
@@ -10811,11 +10811,9 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
-  std::string Warning =
-      "The Intel\\(R\\) DPC\\+\\+ Compatibility Tool did not detect the "
-      "variable "
-      "[_a-zA-Z][_a-zA-Z0-9]+ used in device code. If this variable is also "
-      "used in device code, you need to rewrite the code.";
+  std::string Warning = "The use of variable [_a-zA-Z][_a-zA-Z0-9]+ in device "
+                        "code was not detected. If this variable is also used "
+                        "in device code, you need to rewrite the code.";
   std::string Pattern =
       "/\\*\\s+DPCT" +
       std::to_string(static_cast<int>(Diagnostics::HOST_CONSTANT)) +

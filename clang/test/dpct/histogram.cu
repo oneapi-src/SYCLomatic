@@ -12,7 +12,7 @@ void foo() {
   const int B = 32;
   int grid_size, block_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:0: Migration of cudaOccupancyMaxPotentialBlockSize is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:0: Migration of cudaOccupancyMaxPotentialBlockSize is not supported.
   // CHECK-NEXT: */
   cudaOccupancyMaxPotentialBlockSize(&grid_size, &block_size, &wg_private_local_kernel, B * sizeof(uint32_t));
 

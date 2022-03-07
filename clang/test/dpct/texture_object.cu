@@ -141,7 +141,7 @@ int main() {
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::readMode is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::readMode is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: texDesc21.readMode = cudaReadModeElementType;
   // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);

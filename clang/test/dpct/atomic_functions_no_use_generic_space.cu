@@ -32,7 +32,7 @@ __global__ void test(T *data) {
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
-  // CHECK: DPCT1007:0: Migration of atomicDec is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK: DPCT1007:0: Migration of atomicDec is not supported.
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
