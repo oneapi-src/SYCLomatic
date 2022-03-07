@@ -2515,7 +2515,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
                   "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
-                  "cudaComputeMode"),
+                  "cudaComputeMode", "__nv_bfloat16"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -3188,6 +3188,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
+    }
+    // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
+    if (TypeStr == "__nv_bfloat16") {
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
     }
 
     if (TypeStr.rfind("identity", 0) == 0) {

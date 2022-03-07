@@ -345,6 +345,7 @@ enum HeaderType {
   HT_DL,
   HT_STD_Numeric_Limits,
   HT_DPL_Utils,
+  HT_BFloat16
 };
 
 enum UsingType {
@@ -545,6 +546,9 @@ public:
       return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dpl_utils.hpp>");
+    case HT_BFloat16:
+      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
+                          "<oneapi/mkl/bfloat16.hpp>");
     }
   }
 
